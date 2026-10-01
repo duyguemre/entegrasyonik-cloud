@@ -101,6 +101,8 @@ function onPreset(item: EkMenuItem) {
   gap: var(--ek-space-2);
   align-items: start;
   min-width: 0;
+  min-inline-size: 0; /* fieldset'in içerik-genişlik varsayılanı ızgara hücresini taşırıp hizayı kaydırmasın */
+  box-sizing: border-box;
   margin: 0;
   padding: 0;
   border: 0;
@@ -111,6 +113,8 @@ function onPreset(item: EkMenuItem) {
 }
 
 .ek-date-range__presets {
+  align-self: start; /* alanlarla AYNI üst çizgi (alan altındaki yardım/hata alanı düğmeyi uzatmasın) */
+  box-sizing: border-box;
   display: inline-flex;
   align-items: center;
   justify-content: center;

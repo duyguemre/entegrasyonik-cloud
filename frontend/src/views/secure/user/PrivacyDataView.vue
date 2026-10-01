@@ -322,7 +322,7 @@ defineExpose({
 }
 
 .privacyDataView__link:hover span:first-of-type {
-  text-decoration: underline;
+  text-decoration: none;
 }
 
 .privacyDataView__link:focus-visible {

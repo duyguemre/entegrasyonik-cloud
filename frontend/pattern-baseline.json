@@ -10,7 +10,7 @@
     "rawSpinner": 0,
     "iconBtnNoLabel": 1,
     "patternExceptions": 3,
-    "pageHeaderMissing": 4
+    "pageHeaderMissing": 5
   },
   "files": {
     "packages/chat/src/components/ChatComposer.vue": {
@@ -3229,7 +3229,7 @@
     "src/views/secure/adminPanel/integrations/IntegrationConfigListView.vue": 0,
     "src/views/secure/adminPanel/integrations/IntegrationSettingsView.vue": 0,
     "src/views/secure/definitions/BrandDefinitionView.vue": 0,
-    "src/views/secure/definitions/CategoryDefinitionView.vue": 0,
+    "src/views/secure/definitions/CategoryDefinitionView.vue": 1,
     "src/views/secure/definitions/CustomerDefinitionView.vue": 0,
     "src/views/secure/definitions/HashtagDefinitionView.vue": 0,
     "src/views/secure/definitions/InvoiceDefinitionView.vue": 0,

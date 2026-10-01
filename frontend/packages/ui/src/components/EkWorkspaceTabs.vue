@@ -330,11 +330,16 @@ defineExpose({ focusActive: () => focusTab(props.modelValue) })
   padding: 0 var(--ek-space-2) 0 0;
   /* Kap hiçbir yönde kaydırılmaz (dikey kaydırma çubuğu hatası — Aşama 5); taşma yalnız listede, yatay. */
   overflow: hidden;
+  /* Şerit zemini: tabstrip-bg ile sayfa zemini arası sakin ton (token dosyası değişmez). */
+  /* Şerit + pasif sekme zemini = sol menünün yumuşak site mavisi (menü zemininin orta tonu); hover bir kademe koyu.
+     Token'lar bu kapsamda yeniden tanımlanır → solma/ışıma karışımları da aynı tonu izler. */
+  --ek-color-tabstrip-bg: color-mix(in srgb, var(--ek-color-action) 6%, var(--ek-color-sidebar-bg));
+  --ek-color-tab-hover: color-mix(in srgb, var(--ek-color-action) 10%, var(--ek-color-sidebar-bg));
   background: var(--ek-color-tabstrip-bg);
   /* A10 — sekme dış hattı tek token: şeridin alt çizgisi → etkin sekmenin içbükey köşesi → yan/üst kenarı
      KESİNTİSİZ aynı çizgi (renk sıçraması yok). Alt çizgi kenarlık değil iç gölge: etkin sekme üstüne biner ve
      çizgiyi KESER — sekme ile içerik arasında çizgi YOK (A5, tek parça). */
-  --ek-tab-line: var(--ek-color-border-strong);
+  --ek-tab-line: var(--ek-color-border-default);
   box-shadow: inset 0 -1px 0 var(--ek-tab-line);
 }
 
@@ -379,19 +384,6 @@ defineExpose({ focusActive: () => focusTab(props.modelValue) })
   display: none;
   width: 0;
   height: 0;
-}
-
-/* Taşan kenarda solma: sekme metni şeridin tonuna erir (maske — renk literal'i yok). */
-.ek-tabs__viewport.can-left .ek-tabs__list {
-  mask-image: linear-gradient(to right, transparent 0, black 40px);
-}
-
-.ek-tabs__viewport.can-right .ek-tabs__list {
-  mask-image: linear-gradient(to left, transparent 0, black 40px);
-}
-
-.ek-tabs__viewport.can-left.can-right .ek-tabs__list {
-  mask-image: linear-gradient(to right, transparent 0, black 40px, black calc(100% - 40px), transparent 100%);
 }
 
 .ek-tabs__more {
@@ -482,8 +474,8 @@ defineExpose({ focusActive: () => focusTab(props.modelValue) })
   content: '';
   position: absolute;
   left: -1px;
-  top: 11px;
-  bottom: 11px;
+  top: 10px;
+  bottom: 10px;
   width: 1px;
   background: var(--ek-color-border-default);
   transition: opacity var(--ek-motion-feedback);
@@ -510,9 +502,12 @@ defineExpose({ focusActive: () => focusTab(props.modelValue) })
   top: 0;
   left: var(--ek-radius-tab);
   right: var(--ek-radius-tab);
-  height: 2px;
+  /* Etkin göstergeyle AYNI biçim (1.5px, uçlarda solan) — hover'da daha soluk, basılıyken etkin tonun aynısı:
+     bırakınca gelen gösterge ile renk/biçim sıçraması olmaz. */
+  --ek-tab-hint: color-mix(in srgb, var(--ek-color-action) 28%, transparent);
+  height: 1.5px;
   border-radius: 0 0 2px 2px;
-  background: var(--ek-color-action-border);
+  background: linear-gradient(90deg, transparent 0%, var(--ek-tab-hint) 18%, var(--ek-tab-hint) 82%, transparent 100%);
 }
 
 .ek-tab:not(.is-active):hover .ek-tab__wash,
@@ -523,7 +518,7 @@ defineExpose({ focusActive: () => focusTab(props.modelValue) })
 
 /* Basılıyken saç çizgisi aksiyon rengine döner (yalnız renk): bırakınca gelecek etkin göstergenin önizlemesi. */
 .ek-tab:not(.is-active):active .ek-tab__wash::after {
-  background: var(--ek-color-action);
+  --ek-tab-hint: color-mix(in srgb, var(--ek-color-action) 55%, transparent);
 }
 
 /* Etkinleşince ışıma ANINDA kalkar (A10: zemin/kenarlık/köşeler aynı karede değişir). */
@@ -552,16 +547,25 @@ defineExpose({ focusActive: () => focusTab(props.modelValue) })
   color: var(--ek-color-content-muted);
 }
 
+/* Pasif sekme metni + ikonu çok hafif soluk (şerit zeminine %28 karışım — okunur kalır); hover'da tam renge döner. */
+.ek-tab:not(.is-active):not(:hover):not(.is-hover) {
+  color: color-mix(in srgb, var(--ek-color-content-default) 72%, var(--ek-color-tabstrip-bg));
+}
+
+.ek-tab:not(.is-active):not(:hover):not(.is-hover) .ek-tab__icon {
+  color: color-mix(in srgb, var(--ek-color-content-muted) 72%, var(--ek-color-tabstrip-bg));
+}
+
 /* ETKİN (A10 — klasör sekmesi): zemin = içerik zemini (`tab-active` ≡ `background`), şeridin önüne çıkar.
    Dış hat 1px `--ek-tab-line` YALNIZ üst + yanlarda (alt kenar yok → içerikle tek parça); hat alt köşelerde
    içbükey eğriyle şeridin alt çizgisine bağlanır. Gölge yalnız yukarı (şeride), içeriğe düşmez. */
 .ek-tab.is-active {
-  /* FR3 madde 4: etkin sekme KISALMAZ (başlık tam okunur; en fazla 260px) — taşmada önce pasifler "Tüm sekmeler"e düşer. */
-  flex: 0 0 auto;
-  max-width: 260px;
+  /* Etkin sekme pasiflerle AYNI genişlik kuralını izler (0 1 220px) — tıklayınca sekme genişliği değişmez.
+     Tam başlık ipucunda. */
   height: 36px;
   border-color: var(--ek-tab-line);
-  background: var(--ek-color-tab-active);
+  /* Üstte beyaz → altta içerik zemini (`tab-active`): alt kenar içerikle aynı renkte biter, tek parça birleşir. */
+  background: linear-gradient(to bottom, var(--ek-color-surface) 0%, var(--ek-color-tab-active) 100%);
   background-clip: padding-box;
   color: var(--ek-color-content-strong);
   box-shadow: var(--ek-shadow-tab-active);
@@ -576,16 +580,33 @@ defineExpose({ focusActive: () => focusTab(props.modelValue) })
   top: -1px;
   left: var(--ek-radius-tab);
   right: var(--ek-radius-tab);
-  height: 2px;
+  /* Naif gösterge: ince (1.5px), site mavisinin yumuşak tonu, uçlarda hafif solma; ortadan yavaşça açılır. */
+  height: 1.5px;
   border-radius: 0 0 2px 2px;
-  background: var(--ek-color-action);
-  animation: ek-tab-indicator var(--ek-motion-overlay) both;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in srgb, var(--ek-color-action) 55%, transparent) 18%,
+    color-mix(in srgb, var(--ek-color-action) 55%, transparent) 82%,
+    transparent 100%
+  );
+  transform-origin: center;
+  animation: ek-tab-indicator 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 @keyframes ek-tab-indicator {
   from {
     opacity: 0;
-    transform: scaleX(0.6);
+    transform: scaleX(0.2);
+  }
+  40% {
+    opacity: 0.6;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ek-tab.is-active::after {
+    animation: none;
   }
 }
 
@@ -696,8 +717,8 @@ defineExpose({ focusActive: () => focusTab(props.modelValue) })
 /* FR3 madde 4: pasif sekmede kesilen başlık "…" yerine yumuşak solar (tarayıcı sekmesi dili); kapatma düğmesi yer
    AYIRMAZ — hover/odakta solma bölgesinin üstünde belirir (geometri değişmez). */
 .ek-tab:not(.is-active) .ek-tab__title {
-  text-overflow: clip;
-  mask-image: linear-gradient(to left, transparent 0, black var(--ek-space-6));
+  text-overflow: ellipsis;
+  color: inherit;
 }
 
 .ek-tab:not(.is-active) .ek-tab__button {

@@ -26,6 +26,8 @@
     :aria-labelledby="titleId"
   >
     <header class="ek-filter__head" @click="onHeadClick">
+      <!-- Araç çubuğu düzeni: [arama] [⧩ Filtreler n ⌄] │ çipler … [#head-actions] — arama her zaman açık, birincil. -->
+      <div v-if="$slots['head-search']" class="ek-filter__search" data-filter-interactive @click.stop><slot name="head-search" /></div>
       <component :is="`h${headingLevel}`" :id="titleId" class="ek-filter__heading">
         <button
           ref="toggleRef"
@@ -39,8 +41,10 @@
           <span class="ek-filter__title">{{ title }}</span>
           <span v-if="activeCount" class="ek-filter__count ek-num" aria-hidden="true">{{ activeCount }}</span>
           <span class="ek-sr-only">, {{ filterCountText(activeCount) }}</span>
+          <span class="ek-filter__chevron" aria-hidden="true"><v-icon icon="mdi-chevron-down" /></span>
         </button>
       </component>
+
 
       <div class="ek-filter__summary" data-filter-interactive>
         <EkActiveFilters v-if="chips.length" variant="compact" :filters="chips" @remove="(k: string) => emit('remove-chip', k)" @clear="emit('clear')" />
@@ -48,7 +52,6 @@
       </div>
 
       <div v-if="$slots['head-actions']" class="ek-filter__head-actions" data-filter-interactive><slot name="head-actions" /></div>
-      <span class="ek-filter__chevron" aria-hidden="true"><v-icon icon="mdi-chevron-down" /></span>
     </header>
     <!-- Aşama 5: aç/kapa `EkCollapse` (yükseklik + opaklık, 200ms; reduced-motion'da anında; içerik zıplamaz). -->
     <EkCollapse :open="!collapsed">
@@ -61,7 +64,6 @@
       <div class="ek-filter__actions">
         <div class="ek-filter__extra">
           <slot name="extra-actions" />
-          <span v-if="!$slots['extra-actions']" class="ek-filter__enter-hint" aria-hidden="true"><kbd>Enter</kbd> ile sorgula</span>
         </div>
         <EkButton type="reset" tone="ghost" :icon="icons.clearFilters" :disabled="!activeCount">Temizle</EkButton>
         <EkButton type="submit" tone="primary" :icon="icons.search" :loading="loading">Sorgula</EkButton>
@@ -289,6 +291,48 @@ function onHeadClick(e: MouseEvent) {
   }
 }
 
+/* Arama: başlıkta solda birincil öğe; sonrasında Filtreler düğmesi + çipler aynı satırda. */
+.ek-filter__search {
+  position: relative;
+  display: flex;
+  flex: 0 1 360px;
+  align-items: center;
+  gap: var(--ek-space-2);
+  min-width: 200px;
+  padding-left: var(--ek-space-3);
+  cursor: default;
+}
+
+/* Başlık ile arama arasında kısa dikey ayraç — iki öğe tek şeritte ama ayrı roller. */
+.ek-filter__search::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 1px;
+  height: 20px;
+  transform: translateY(-50%);
+  background: var(--ek-color-border-subtle);
+}
+
+.ek-filter__search > :first-child {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+@container (max-width: 599px) {
+  .ek-filter__search {
+    flex: 1 1 100%;
+    order: 2;
+    min-width: 0;
+    padding: 0 0 var(--ek-space-1);
+  }
+
+  .ek-filter__search::before {
+    display: none;
+  }
+}
+
 /* Dar kap: başlık satırı [⧩ Filtreler (n) … görünümler ⌄]; çip özeti altta tam genişlik (başlık çubuğunun içinde). */
 @container (max-width: 599px) {
   .ek-filter__head {
@@ -368,5 +412,154 @@ function onHeadClick(e: MouseEvent) {
   min-width: 0;
   align-items: center;
   gap: var(--ek-space-2);
+}
+
+/* ── Araç çubuğu düzeni (oturum düzenlemesi) ───────────────────────────────────────────────────────────────────
+   [🔍 arama] [⧩ Filtreler n ⌄] │ çipler …  — arama solda ve her zaman açık; "Filtreler" çerçeveli küçük DÜĞME
+   (başlık değil), paneli açar/kapar, ok düğmenin içinde. Başlık şeridinin hover zemini kalktı (sakin araç çubuğu). */
+.ek-filter__head {
+  gap: var(--ek-space-2);
+  padding: 6px var(--ek-space-2);
+}
+
+.ek-filter__head:hover {
+  background: var(--ek-color-surface);
+}
+
+.ek-filter__search {
+  padding-left: 0;
+}
+
+.ek-filter__search::before {
+  display: none;
+}
+
+.ek-filter__toggle {
+  gap: 6px;
+  height: var(--ek-control-h-sm);
+  padding: 0 6px 0 var(--ek-space-2);
+  border: 1px solid var(--ek-color-border-default);
+  background: var(--ek-color-surface);
+  color: var(--ek-color-content-default);
+  transition: var(--ek-transition-colors);
+}
+
+.ek-filter__toggle:hover {
+  border-color: var(--ek-color-border-strong);
+  background: var(--ek-color-surface-muted);
+  color: var(--ek-color-content-strong);
+}
+
+.ek-filter:not(.is-collapsed) .ek-filter__toggle {
+  border-color: var(--ek-color-border-strong);
+  background: var(--ek-color-surface-muted);
+}
+
+.ek-filter__glyph {
+  width: auto;
+  height: auto;
+  background: transparent;
+  box-shadow: none;
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-icon-sm);
+}
+
+.ek-filter.has-active .ek-filter__glyph {
+  background: transparent;
+  box-shadow: none;
+  color: var(--ek-color-action);
+}
+
+.ek-filter__title {
+  font-size: var(--ek-type-label-size);
+  line-height: var(--ek-type-label-line);
+  font-weight: var(--ek-font-weight-medium);
+}
+
+.ek-filter__count {
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+}
+
+.ek-filter__toggle .ek-filter__chevron {
+  width: 18px;
+  height: 18px;
+  font-size: var(--ek-icon-sm);
+}
+
+.ek-filter__head:hover .ek-filter__chevron {
+  background: transparent;
+}
+
+/* Gövdenin eylem satırı: solda ek eylemler (ör. Görünümler), sağda Temizle · Sorgula. */
+.ek-filter__actions {
+  justify-content: flex-end;
+}
+
+/* Dar kap: arama ilk satırda tam genişlik; altında [Filtreler] + çipler. */
+@container (max-width: 599px) {
+  .ek-filter__search {
+    order: 0;
+    padding: 0;
+  }
+
+  .ek-filter__heading {
+    order: 1;
+    flex: none;
+  }
+
+  .ek-filter__summary {
+    order: 2;
+    flex: 1 1 0;
+    flex-basis: auto;
+    padding: 0;
+  }
+
+  .ek-filter__head-actions {
+    order: 3;
+    margin-left: auto;
+  }
+}
+
+/* ── Çerçevesiz araç çubuğu (oturum kararı) ────────────────────────────────────────────────────────────────────
+   Dış kart kalktı: [arama] [⧩ Filtreler ⌄] │ çipler doğrudan sayfa zemininde (filtresiz listelerin şeridiyle aynı).
+   "Filtreler"e basınca alanlar + Temizle/Sorgula ALTTA ayrı bir kart olarak açılır. */
+.ek-filter {
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+/* "Filtreler" düğmesi yanındaki arama alanıyla AYNI yükseklikte (alan yüksekliği token'ı). */
+.ek-filter__toggle {
+  height: var(--ek-control-h-field);
+  padding: 0 8px 0 12px;
+  /* Çerçeve = arama alanının çerçevesi (vuetify-overrides: border-input; hover content-muted). */
+  border-color: var(--ek-color-border-input);
+}
+
+.ek-filter__toggle:hover,
+.ek-filter:not(.is-collapsed) .ek-filter__toggle {
+  border-color: var(--ek-color-content-muted);
+}
+
+.ek-filter__head,
+.ek-filter__head:hover {
+  min-height: 0;
+  padding: 0;
+  border-bottom: 0;
+  background: transparent;
+}
+
+.ek-filter__form {
+  margin-top: var(--ek-space-2);
+  overflow: hidden;
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-card);
+  background: var(--ek-color-surface);
+  box-shadow: var(--ek-shadow-card);
 }
 </style>

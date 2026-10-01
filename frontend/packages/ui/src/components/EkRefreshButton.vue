@@ -172,21 +172,21 @@ function onClick() {
   align-items: center;
   justify-content: center;
   gap: var(--ek-space-2);
-  min-width: var(--ek-control-h-md);
-  height: var(--ek-control-h-md);
+  min-width: var(--ek-app-chip-h-md);
+  height: var(--ek-app-chip-h-md);
   padding: 0;
-  border: 1px solid var(--ek-color-border-default);
+  border: 1px solid transparent;
   border-radius: var(--ek-radius-control);
-  background: var(--ek-color-surface);
-  box-shadow: var(--ek-shadow-card);
-  color: var(--ek-color-content-default);
+  background: transparent;
+  box-shadow: none;
+  color: var(--ek-color-content-muted);
   font-family: inherit;
   cursor: pointer;
   transition: var(--ek-transition-colors);
 }
 
 .ek-refresh:hover:not(:disabled) {
-  border-color: var(--ek-color-border-input);
+  border-color: transparent;
   background: var(--ek-color-surface-muted);
   color: var(--ek-color-content-strong);
 }
@@ -215,7 +215,7 @@ function onClick() {
 }
 
 .ek-refresh__icon {
-  font-size: var(--ek-icon-md);
+  font-size: var(--ek-icon-sm, 16px);
 }
 
 .ek-refresh.is-loading {
@@ -236,8 +236,8 @@ function onClick() {
 .ek-refresh.is-quiet.is-success {
   padding: 0 var(--ek-space-3) 0 var(--ek-space-2);
   gap: var(--ek-space-1);
-  border-color: var(--ek-color-border-default);
-  background: var(--ek-color-surface);
+  border-color: transparent;
+  background: transparent;
   color: var(--ek-color-content-muted);
 }
 

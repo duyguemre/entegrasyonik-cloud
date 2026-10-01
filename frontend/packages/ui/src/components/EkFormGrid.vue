@@ -29,6 +29,22 @@ withDefaults(defineProps<{ columns?: 1 | 2 | 3 | 4 }>(), { columns: 2 })
   min-width: 0;
 }
 
+/* Hizalı satırlar: yardım/hata alanı (details) yalnız içerik varken yer kaplasın — "ipucu olan" ve "olmayan" alan
+   yan yana gelince alt çizgi kaymasın; tüm alanlar aynı kontrol yüksekliği (--ek-control-h-field) ile üstten hizalı. */
+.ek-form-grid > :deep(.v-input),
+.ek-form-grid > :deep(.ek-date-range) {
+  align-self: start;
+}
+
+.ek-form-grid :deep(.v-input__details:not(:has(.v-messages__message))) {
+  min-height: 0;
+  padding-top: 0;
+}
+
+.ek-form-grid :deep(.v-input .v-field) {
+  --v-field-input-min-height: var(--ek-control-h-field);
+}
+
 .ek-form-grid--1 {
   --ek-form-cols: 1;
 }

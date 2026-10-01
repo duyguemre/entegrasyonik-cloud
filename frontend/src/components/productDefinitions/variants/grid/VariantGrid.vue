@@ -118,14 +118,10 @@
             </td>
 
             <td class="vg-td vg-sticky-end vg-actions" aria-colindex="11">
-              <EkTooltip text="Özellikler ve kanal bilgileri">
-                <v-btn icon variant="text" size="small" density="comfortable" class="vg-act"
-                    aria-label="Varyantı düzenle" @click="emit('edit', r.variant)"><v-icon icon="mdi-pencil-outline" size="18" /></v-btn>
-              </EkTooltip>
-              <EkTooltip text="Varyantı sil">
-                <v-btn icon variant="text" size="small" density="comfortable" class="vg-act vg-act--danger"
-                    aria-label="Varyantı sil" @click="emit('delete', r.variant)"><v-icon icon="mdi-trash-can-outline" size="18" /></v-btn>
-              </EkTooltip>
+              <EkRowActions :label="`${rowTitle(r.variant)} işlemleri`" :items="[
+                { key: 'edit', action: 'edit', label: 'Varyantı düzenle', onClick: () => emit('edit', r.variant) },
+                { key: 'delete', action: 'delete', label: 'Varyantı sil', onClick: () => emit('delete', r.variant) },
+              ]" />
             </td>
           </tr>
           <tr v-if="win.end < rows.length" class="vg-pad vg-pad--bottom" aria-hidden="true"><td colspan="11"></td></tr>
@@ -141,7 +137,7 @@
 
 <script setup lang="ts">
 import { computed, defineComponent, h, nextTick, onBeforeUnmount, onMounted, ref, watch, type PropType } from 'vue'
-import { EkTooltip } from '@entegrasyonik/ui/components'
+import { EkRowActions } from '@entegrasyonik/ui/components'
 import { useI18n } from 'vue-i18n'
 import { formatMoney } from '@entegrasyonik/ui/format'
 import { useChoicesStore } from '@/stores/choicesStore'
@@ -764,10 +760,6 @@ const CellBody = defineComponent({
 .vg-rangebtn__sub { color: var(--ek-color-action); font-size: var(--ek-type-caption-size); line-height: var(--ek-type-caption-line); }
 
 /* eylemler */
-.vg-actions { text-align: right; padding: 0 var(--ek-space-2); }
-.vg-act { color: var(--ek-color-content-muted) !important; }
-.vg-act:hover { color: var(--ek-color-content-strong) !important; }
-.vg-act--danger:hover { color: var(--ek-color-error) !important; }
 
 .vg-empty { padding: var(--ek-space-8) var(--ek-space-4); }
 

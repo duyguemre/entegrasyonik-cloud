@@ -6,6 +6,8 @@ import type { CreateResult } from '@/components/common/quickCreate'
 export const useCategoriesStore = defineStore('categoriesStore', () => {
   const categories = ref()
   const selectCategories = ref()
+  /** Son `retrieve` durumu (Kategoriler ekranı yükleniyor/hata/boş ayrımı için; diğer tüketiciler yok sayar). */
+  const status = ref<'idle' | 'loading' | 'ready' | 'error'>('idle')
   const restApi = useRestApi()
 
   const getCategory = (_id: any) => {
@@ -125,12 +127,14 @@ export const useCategoriesStore = defineStore('categoriesStore', () => {
 
 
   const retrieve = async () => {
+    status.value = 'loading'
     await restApi.get("CategoryService").then((resp: any) => {
       if (resp && resp.length > 0) {
         categories.value = resp
         selectCategories.value = processCategories(categories.value, [])
       }
-    })
+      status.value = Array.isArray(resp) ? 'ready' : 'error'
+    }).catch(() => { status.value = 'error' })
     return categories.value
   }
 
@@ -203,7 +207,7 @@ export const useCategoriesStore = defineStore('categoriesStore', () => {
   }
 
   // R9b: çıkış sonrası önceki kiracının kategori önbelleği kalmasın.
-  registerStoreReset('categoriesStore', () => { categories.value = undefined; selectCategories.value = undefined })
+  registerStoreReset('categoriesStore', () => { categories.value = undefined; selectCategories.value = undefined; status.value = 'idle' })
 
-  return { retrieve, getCategoryTitle, getCategoryPlatformMappingForChoiceId, checkCategoryPlatformMapping, getCategoryPlatformMapping, getCategoryPlatformChoiceId, getCategoryNameFromIntegrationCategoryId, getIntegrationCategoryId, getCategories, getSelectCategories, addCategory, getCategory, countOfCategories }
+  return { status, retrieve, getCategoryTitle, getCategoryPlatformMappingForChoiceId, checkCategoryPlatformMapping, getCategoryPlatformMapping, getCategoryPlatformChoiceId, getCategoryNameFromIntegrationCategoryId, getIntegrationCategoryId, getCategories, getSelectCategories, addCategory, getCategory, countOfCategories }
 })

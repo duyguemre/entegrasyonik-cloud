@@ -21,7 +21,7 @@
           <ol class="ek-crumbs__list">
             <li v-if="section && view.showRoot" class="ek-crumbs__item ek-crumbs__item--root">
               <span class="ek-crumbs__chip ek-crumbs__chip--static">
-                <v-icon v-if="rootIcon" class="ek-crumbs__chip-icon" :icon="rootIcon" size="13" aria-hidden="true" />
+                <v-icon v-if="rootIcon" class="ek-crumbs__chip-icon" :icon="rootIcon" size="14" aria-hidden="true" />
                 <span class="ek-crumbs__text">{{ section }}</span>
               </span>
             </li>
@@ -47,7 +47,25 @@
             </li>
             <li class="ek-crumbs__item ek-crumbs__item--current">
               <span v-if="(section && view.showRoot) || view.folded.length || view.middle.length" class="ek-crumbs__sep" aria-hidden="true"><v-icon icon="mdi-chevron-right" size="14" /></span>
-              <h1 class="ek-page-bar__title" aria-current="page" :title="title">{{ title }}</h1>
+              <!-- Yenile düğmesi kalktı: sayfa adına tıklamak sayfayı yeniler (Alt+R da bu düğmeyi tetikler — `data-page-refresh`). -->
+              <h1 class="ek-page-bar__title" aria-current="page" :title="refreshable ? undefined : title">
+                <EkTooltip v-if="refreshable" :text="`Sayfayı yenile · ${shortcutKeys('pageRefresh').join('+')}`" :open-delay="500">
+                  <button
+                    type="button"
+                    class="ek-page-bar__title-btn"
+                    :class="{ 'is-loading': refreshing }"
+                    data-page-refresh
+                    :disabled="refreshing || undefined"
+                    :aria-label="`${title} — sayfayı yenile`"
+                    :aria-busy="refreshing || undefined"
+                    @click="emit('refresh')"
+                  >
+                    <span class="ek-page-bar__title-text">{{ title }}</span>
+                    <v-icon class="ek-page-bar__title-refresh" icon="mdi-refresh" size="14" aria-hidden="true" />
+                  </button>
+                </EkTooltip>
+                <template v-else>{{ title }}</template>
+              </h1>
               <span v-if="record?.code" class="ek-record-id" :class="channelClass(record.channel)">
                 <span v-if="record.channel" class="ek-record-id__dot" aria-hidden="true"></span>
                 <span class="ek-sr-only">{{ record.label || 'Kayıt' }}:</span>
@@ -61,7 +79,7 @@
               </span>
               <!-- B4: zarif yardım tetikleyicisi — küçük yuvarlak nötr düğme, ince çizgili soru işareti; ipucu +
                    odak halkası. Davranış/API aynı (aria-expanded/controls, "Sayfa hakkında" paneli). -->
-              <EkTooltip :text="about.open.value ? 'Sayfa hakkında bilgiyi gizle' : 'Sayfa hakkında'" :open-delay="300">
+              <EkTooltip :text="about.open.value ? 'Sayfa rehberini gizle' : 'Sayfa rehberi'" :open-delay="300" location="end">
                 <button
                   type="button"
                   class="ek-page-bar__info"
@@ -71,19 +89,18 @@
                   :aria-label="`Sayfa hakkında: ${title}`"
                   @click="about.toggle()"
                 >
-                  <v-icon icon="mdi-help" size="14" aria-hidden="true" />
+                  <v-icon icon="mdi-lightbulb-on-outline" size="15" aria-hidden="true" />
                 </button>
               </EkTooltip>
             </li>
           </ol>
         </nav>
+        <!-- Durum yuvası: sayfanın kısa durum göstergeleri (ör. "Maliyet kapsamı %0") — başlığın yanında küçük haplar;
+             ayrı satır açmaz, tabloyu kaydırmaz. İşlem gerektiren önemli uyarılar burada DEĞİL (liste üstü uyarı). -->
+        <div v-if="$slots.status" class="ek-page-bar__status"><slot name="status" /></div>
         <span v-if="meta" class="ek-page-bar__meta ek-page-header__description">{{ meta }}</span>
       </div>
       <div v-if="$slots.actions" class="ek-page-bar__actions"><slot name="actions" /></div>
-      <!-- Aşama 6b (Standart 9): tek yenile düğmesi — satırın EN SAĞI, her sayfada aynı yer (dar ekranda başlık satırında). -->
-      <span v-if="refreshable" class="ek-page-bar__refresh">
-        <EkRefreshButton :loading="refreshing" :label="refreshLabel" :last-updated="lastUpdated" @refresh="emit('refresh')" />
-      </span>
     </div>
 
     <EkCollapse :id="panelId" :open="about.open.value" role="region" :aria-label="`${title} sayfası hakkında`">
@@ -103,7 +120,7 @@
         </header>
         <div class="ek-about__grid">
           <section class="ek-page-bar__block ek-page-bar__block--purpose">
-            <h3 class="ek-page-bar__label">Bu sayfa</h3>
+            <h3 class="ek-page-bar__label"><v-icon icon="mdi-text-box-outline" aria-hidden="true" />Bu sayfa</h3>
             <p class="ek-page-bar__text">{{ purpose || `${title} ekranı.` }}</p>
             <button v-if="help?.article" type="button" class="ek-link ek-page-bar__read" data-page-help-read @click="nav.openHelp(help.article)">
               Yardım merkezinde oku
@@ -111,7 +128,7 @@
             </button>
           </section>
           <section v-if="tipList?.length" class="ek-page-bar__block ek-page-bar__block--tips">
-            <h3 class="ek-page-bar__label">İpuçları</h3>
+            <h3 class="ek-page-bar__label"><v-icon icon="mdi-star-four-points-outline" aria-hidden="true" />İpuçları</h3>
             <ol class="ek-page-bar__tips">
               <li v-for="(tip, i) in tipList" :key="tip">
                 <span class="ek-page-bar__tip-n ek-num" aria-hidden="true">{{ i + 1 }}</span>
@@ -120,7 +137,7 @@
             </ol>
           </section>
           <section class="ek-page-bar__block ek-page-bar__block--keys">
-            <h3 class="ek-page-bar__label">Kısayollar</h3>
+            <h3 class="ek-page-bar__label"><v-icon icon="mdi-keyboard-outline" aria-hidden="true" />Kısayollar</h3>
             <dl class="ek-page-bar__keys">
               <div v-for="k in keys" :key="k.id" class="ek-page-bar__key">
                 <dt>{{ k.label }}</dt>
@@ -141,12 +158,12 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, ref, useId, watch } from 'vue'
 import { useResizeObserver } from '@vueuse/core'
-import { EkCollapse, EkContextMenu, EkKbd, EkRefreshButton, EkTooltip } from '@entegrasyonik/ui/components'
+import { EkCollapse, EkContextMenu, EkKbd, EkTooltip } from '@entegrasyonik/ui/components'
 import type { EkMenuGroup, EkMenuItem } from '@entegrasyonik/ui/components'
 import { buildTrail, type EkCrumb, type EkRecordRef } from '@entegrasyonik/ui/components/pageTrail'
 import { icons } from '@entegrasyonik/ui/icons'
 import { channelClass } from '@entegrasyonik/ui/tokens'
-import { SHORTCUTS, type ShortcutId } from '@entegrasyonik/ui/shortcuts'
+import { SHORTCUTS, shortcutKeys, type ShortcutId } from '@entegrasyonik/ui/shortcuts'
 import { usePageAbout } from '@/composables/usePageAbout'
 import { usePageContext } from '@/composables/usePageContext'
 import { useToast } from '@entegrasyonik/ui/composables/useToast'
@@ -300,16 +317,17 @@ async function copyRecord() {
   display: grid;
   /* A7: başlık sütunu esner (uzun yol kısalır), eylemler kendi genişliğinde — üst üste binme yok. */
   grid-template-columns: minmax(0, 1fr) auto auto;
-  grid-template-areas: 'titles actions refresh';
+  grid-template-areas: 'titles refresh actions';
   width: 100%;
   align-items: center;
-  gap: var(--ek-space-2) var(--ek-space-3);
-  min-height: 40px;
+  gap: var(--ek-space-1) var(--ek-space-2);
+  min-height: 32px;
 }
 
 .ek-page-bar__titles { grid-area: titles; }
 .ek-page-bar__actions { grid-area: actions; }
 .ek-page-bar__refresh { grid-area: refresh; display: inline-flex; justify-self: end; }
+.ek-page-bar__actions { margin-left: 0; }
 
 .ek-page-bar__titles {
   display: flex;
@@ -377,7 +395,7 @@ async function copyRecord() {
 }
 
 .ek-crumbs__item--current {
-  min-width: calc(var(--ek-type-title-size) * 4 + 32px);
+  min-width: calc(var(--ek-type-heading-size) * 4 + 32px);
 }
 
 .ek-crumbs__item--current > .ek-crumbs__sep {
@@ -401,16 +419,16 @@ async function copyRecord() {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  height: var(--ek-app-chip-h-sm);
-  padding: 0 var(--ek-space-2);
-  border: 1px solid var(--ek-color-border-subtle);
+  height: 20px;
+  padding: 0 var(--ek-space-1);
+  border: 1px solid transparent;
   border-radius: var(--ek-radius-chip);
-  background: var(--ek-color-surface-muted);
+  background: transparent;
   color: var(--ek-color-content-muted);
   font: inherit;
   font-size: var(--ek-type-caption-size);
   line-height: 1;
-  font-weight: var(--ek-font-weight-medium);
+  font-weight: var(--ek-font-weight-regular, 400);
   white-space: nowrap;
   transition: var(--ek-transition-colors);
 }
@@ -440,8 +458,9 @@ async function copyRecord() {
 .ek-crumbs__sep {
   display: inline-flex;
   align-items: center;
-  margin: 0 var(--ek-space-1);
-  color: var(--ek-color-content-subtle);
+  margin: 0 2px;
+  color: var(--ek-color-border-strong);
+  opacity: 0.8;
   user-select: none;
 }
 
@@ -459,7 +478,7 @@ async function copyRecord() {
 
 .ek-crumbs__link {
   display: inline-block;
-  line-height: calc(var(--ek-app-chip-h-sm) - 2px);
+  line-height: 18px;
 }
 
 .ek-crumbs__more,
@@ -479,8 +498,8 @@ async function copyRecord() {
 .ek-crumbs__more:hover,
 .ek-crumbs__back:hover,
 .ek-crumbs__more[aria-expanded='true'] {
-  border-color: var(--ek-color-border-strong);
-  background: var(--ek-color-surface);
+  border-color: transparent;
+  background: var(--ek-color-surface-muted);
   color: var(--ek-color-content-strong);
 }
 
@@ -496,9 +515,9 @@ async function copyRecord() {
   margin: 0;
   overflow: hidden;
   color: var(--ek-color-content-strong);
-  font-size: var(--ek-type-title-size);
-  line-height: var(--ek-type-title-line);
-  font-weight: var(--ek-type-title-weight);
+  font-size: var(--ek-type-heading-size);
+  line-height: var(--ek-type-heading-line);
+  font-weight: var(--ek-type-heading-weight);
   letter-spacing: var(--ek-type-title-tracking);
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -605,21 +624,221 @@ async function copyRecord() {
   line-height: var(--ek-type-caption-line);
 }
 
+/* ---- Premium konum yolu (oturum düzenlemesi) ----
+   [ikon kutucuğu] Bölüm  /  Ara  /  Başlık (?) — kök ikonu menüdeki etkin öğeyle aynı dilde (site mavisinin açık tonunda
+   küçük kutucuk), ayraç ince eğik çizgi, ara halkalar sakin, başlık tek güçlü nokta; yardım düğmesi çerçevesiz. */
+.ek-crumbs__item--root .ek-crumbs__chip {
+  gap: var(--ek-space-2);
+  height: 24px;
+  padding: 0;
+}
+
+.ek-crumbs__item--root .ek-crumbs__chip-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px !important;
+  height: 22px !important;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--ek-color-action) 12%, var(--ek-color-surface));
+  color: var(--ek-color-action);
+  font-size: var(--ek-icon-xs) !important; /* ikon ölçeği: 14px */
+}
+
+.ek-crumbs__chip {
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-label-size);
+  font-weight: var(--ek-font-weight-medium);
+  letter-spacing: -0.005em;
+}
+
+.ek-crumbs__sep {
+  margin: 0 var(--ek-space-2);
+  color: var(--ek-color-border-strong);
+  opacity: 1;
+}
+
+.ek-crumbs__item--current > .ek-crumbs__sep {
+  margin: 0 var(--ek-space-2);
+}
+
+.ek-crumbs__sep :deep(.v-icon) {
+  display: none;
+}
+
+.ek-crumbs__sep::before {
+  content: '/';
+  font-size: 15px;
+  line-height: 1;
+  font-weight: var(--ek-font-weight-regular, 400);
+  transform: skewX(-8deg);
+}
+
+.ek-crumbs__link:hover {
+  background: transparent;
+  color: var(--ek-color-content-strong);
+  text-decoration: none;
+}
+
+.ek-page-bar__title {
+  /* Koyu nötr başlık rengi (tam siyah değil, lacivert de değil). */
+  color: var(--ek-color-content-strong);
+  /* Konum yolundaki diğer halkalarla AYNI boyut — ayrımı yalnız kalınlık + lacivert verir. */
+  font-size: var(--ek-type-label-size);
+  line-height: var(--ek-type-label-line);
+  font-weight: var(--ek-font-weight-semibold);
+  letter-spacing: -0.015em;
+}
+
+
+/* Sayfa adı = yenile tetikleyicisi: görünüm başlıkla aynı; hover'da ince yenile ikonu belirir, yüklenirken döner. */
+
+.ek-page-bar__status {
+  display: inline-flex;
+  flex: 0 1 auto;
+  align-items: center;
+  gap: var(--ek-space-2);
+  min-width: 0;
+  overflow: hidden;
+}
+
+.ek-page-bar__title-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  margin: 0 -4px;
+  padding: 0 4px;
+  border: 0;
+  border-radius: var(--ek-radius-sm);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  cursor: pointer;
+  transition: var(--ek-transition-colors);
+}
+
+.ek-page-bar__title-btn {
+  position: relative;
+}
+
+/* Ad tam genişlikte kalır (kısalmaz); yenile ikonu akış DIŞINDA, adın hemen sağında belirir — yer kaplamaz. */
+.ek-page-bar__title-text {
+  flex: none;
+  white-space: nowrap;
+}
+
+.ek-page-bar__title:has(.ek-page-bar__title-btn) {
+  overflow: visible;
+}
+
+.ek-page-bar__title-refresh {
+  position: absolute;
+  top: 50%;
+  left: calc(100% + 6px);
+  margin-top: -7px;
+  color: var(--ek-color-action);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--ek-motion-feedback);
+}
+
+.ek-page-bar__title-btn:hover .ek-page-bar__title-refresh,
+.ek-page-bar__title-btn:focus-visible .ek-page-bar__title-refresh,
+.ek-page-bar__title-btn.is-loading .ek-page-bar__title-refresh {
+  opacity: 1;
+}
+
+.ek-page-bar__title-btn.is-loading {
+  cursor: progress;
+}
+
+.ek-page-bar__title-btn.is-loading .ek-page-bar__title-refresh {
+  animation: ek-title-spin 900ms linear infinite;
+}
+
+.ek-page-bar__title-btn:focus-visible {
+  outline: none;
+  box-shadow: var(--ek-focus-ring);
+}
+
+@keyframes ek-title-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* İkon adın sağına taştığı için yardım düğmesi ondan biraz uzakta durur. */
+.ek-crumbs__item--current:has(.ek-page-bar__title-btn) > :last-child {
+  margin-left: 22px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ek-page-bar__title-btn.is-loading .ek-page-bar__title-refresh {
+    animation: none;
+  }
+}
+
+.ek-page-bar__info {
+  width: 22px;
+  height: 22px;
+  border-color: transparent;
+  background: transparent;
+  color: var(--ek-color-content-subtle, var(--ek-color-content-muted));
+  opacity: 0.75;
+}
+
+.ek-page-bar__info:hover,
+.ek-page-bar__info.is-on {
+  opacity: 1;
+}
+
+.ek-page-bar__info:hover,
+.ek-page-bar__info.is-on {
+  border-color: transparent;
+  background: color-mix(in srgb, var(--ek-color-action) 10%, transparent);
+  color: var(--ek-color-action);
+}
+
+.ek-page-bar__meta {
+  position: relative;
+  padding-left: var(--ek-space-3);
+}
+
+.ek-page-bar__meta::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--ek-color-border-strong);
+  transform: translateY(-50%);
+}
+
 /* fe-polish: dar kapta meta (ör. "Son güncelleme …") başlığın yanında değil altında — 390px'te başlığı "Genel …"e
    kısaltıyordu. */
 .is-narrow .ek-page-bar__titles {
   flex-wrap: wrap;
-  row-gap: var(--ek-space-1);
+  row-gap: 2px;
 }
 
 .is-narrow .ek-page-bar__meta {
   flex: 1 1 100%;
 }
 
+/* Dar kap: durum hapları başlık satırıyla (alt satır) aynı hizada — iki satırın arasında havada durmaz. */
+.is-narrow .ek-page-bar__status {
+  align-self: flex-end;
+  margin-bottom: 1px;
+}
+
 /* Dar kap: iki satır — üstte [← ebeveyn] (ya da kök), altta başlık + kayıt + (i). Başlık her zaman görünür. */
 .is-narrow .ek-crumbs__list {
   flex-wrap: wrap;
-  row-gap: var(--ek-space-1);
+  row-gap: 2px;
 }
 
 .is-narrow .ek-crumbs__item--current {
@@ -633,7 +852,7 @@ async function copyRecord() {
 /* Dar: başlık + (i) önce; kayıt kimliği sığmazsa alt satıra iner (başlığı kesmez). */
 .is-narrow .ek-crumbs__item--current {
   flex-wrap: wrap;
-  row-gap: var(--ek-space-2);
+  row-gap: 2px;
 }
 
 .is-narrow .ek-crumbs__item--current > :deep(.ek-tooltip__anchor) {
@@ -920,5 +1139,246 @@ async function copyRecord() {
     height: max(100%, var(--ek-control-h-touch));
     transform: translate(-50%, -50%);
   }
+}
+
+/* ---- Sayfa rehberi — premium sürüm (oturum düzenlemesi) ----
+   Kalın tonlu başlık bandı ve sert sütun çizgileri kalktı: tek sakin kart, sol üstte çok hafif site mavisi ışıması,
+   kompakt başlık (açık mavi kutucukta ampul), sütunlar boşlukla ayrılır; kısayollar kendi yumuşak kutusunda. */
+.ek-page-bar__about {
+  border-color: var(--ek-color-border-subtle);
+  background: var(--ek-color-surface);
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.04), 0 8px 24px -12px rgb(15 23 42 / 0.10);
+}
+
+.ek-about__head {
+  gap: var(--ek-space-3);
+  padding: var(--ek-space-4) var(--ek-space-3) var(--ek-space-1) var(--ek-space-4);
+  border-bottom: 0;
+  background: transparent;
+}
+
+.ek-about__glyph {
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--ek-color-action) 10%, var(--ek-color-surface));
+  box-shadow: none;
+  font-size: var(--ek-icon-sm);
+}
+
+.ek-about__eyebrow {
+  color: var(--ek-color-content-muted);
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+}
+
+.ek-about__title {
+  font-size: var(--ek-type-label-size);
+  line-height: var(--ek-type-label-line);
+  font-weight: var(--ek-font-weight-semibold);
+}
+
+.ek-about__close {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  font-size: var(--ek-icon-sm);
+}
+
+.ek-about__grid {
+  gap: var(--ek-space-5);
+  padding: var(--ek-space-4) var(--ek-space-4) var(--ek-space-4);
+}
+
+.ek-page-bar__block {
+  padding: 0;
+}
+
+.ek-page-bar__block + .ek-page-bar__block {
+  border-left: 0;
+}
+
+.ek-page-bar__label {
+  color: var(--ek-color-content-muted);
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+}
+
+.ek-page-bar__text {
+  font-size: var(--ek-type-table-size);
+  line-height: 1.6;
+  color: var(--ek-color-content-default);
+}
+
+.ek-page-bar__tips {
+  gap: var(--ek-space-2);
+}
+
+.ek-page-bar__tip-n {
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  background: color-mix(in srgb, var(--ek-color-action) 10%, var(--ek-color-surface));
+  color: var(--ek-color-action);
+  font-size: 10.5px;
+  font-weight: var(--ek-font-weight-bold);
+}
+
+.ek-page-bar__block--keys {
+  align-self: start;
+  padding: var(--ek-space-3);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--ek-color-content-strong) 3%, var(--ek-color-surface));
+}
+
+.ek-page-bar__key dt::after {
+  border-bottom-color: var(--ek-color-border-default);
+}
+
+@media (max-width: 1023px) {
+  .ek-page-bar__block--keys {
+    border-top: 0;
+  }
+}
+
+@media (max-width: 599px) {
+  .ek-page-bar__block + .ek-page-bar__block {
+    border-top: 0;
+  }
+
+  .ek-about__grid {
+    gap: var(--ek-space-4);
+  }
+}
+
+/* ---- Rehber bölümleri — albenili sürüm ---- */
+.ek-page-bar__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ek-color-content-default);
+}
+
+.ek-page-bar__label .v-icon {
+  font-size: 14px;
+  color: var(--ek-color-action);
+}
+
+/* Bu sayfa: okunur gövde + hap bağlantı. */
+.ek-page-bar__block--purpose .ek-page-bar__text {
+  font-size: var(--ek-type-body-size);
+  color: var(--ek-color-content-strong);
+}
+
+.ek-page-bar__read {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 28px;
+  padding: 0 10px 0 12px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ek-color-action) 8%, var(--ek-color-surface));
+  text-decoration: none;
+  font-size: var(--ek-type-caption-size);
+  font-weight: var(--ek-font-weight-semibold);
+  transition: background-color var(--ek-motion-feedback);
+}
+
+.ek-page-bar__read:hover {
+  background: color-mix(in srgb, var(--ek-color-action) 14%, var(--ek-color-surface));
+  text-decoration: none;
+}
+
+/* İpuçları: numaralar ince dikey çizgiyle bağlı adım akışı; satır hover'da yumuşak vurgu. */
+.ek-page-bar__tips {
+  position: relative;
+  gap: 2px;
+}
+
+.ek-page-bar__tips > li {
+  position: relative;
+  gap: var(--ek-space-3);
+  margin: 0 calc(-1 * var(--ek-space-2));
+  padding: 6px var(--ek-space-2);
+  border-radius: 8px;
+  color: var(--ek-color-content-default);
+  transition: background-color var(--ek-motion-feedback);
+}
+
+.ek-page-bar__tips > li:hover {
+  background: color-mix(in srgb, var(--ek-color-action) 5%, transparent);
+}
+
+.ek-page-bar__tips > li:not(:last-child)::before {
+  content: '';
+  position: absolute;
+  left: calc(var(--ek-space-2) + 10px);
+  top: 30px;
+  bottom: -8px;
+  width: 1px;
+  background: color-mix(in srgb, var(--ek-color-action) 22%, transparent);
+}
+
+.ek-page-bar__tip-n {
+  position: relative;
+  z-index: 1;
+  width: 20px;
+  height: 20px;
+  margin-top: 0;
+  background: color-mix(in srgb, var(--ek-color-action) 12%, var(--ek-color-surface));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ek-color-action) 22%, transparent);
+  color: var(--ek-color-action);
+  font-size: 11px;
+}
+
+/* Kısayollar: her biri ayrı ince satır kartı; tuşlar sağda. */
+.ek-page-bar__block--keys {
+  gap: var(--ek-space-3);
+  background: color-mix(in srgb, var(--ek-color-action) 5%, var(--ek-color-surface));
+  box-shadow: inset 0 0 0 1px var(--ek-color-border-subtle);
+}
+
+.ek-page-bar__keys {
+  gap: 6px;
+}
+
+.ek-page-bar__key {
+  padding: 6px 6px 6px 10px;
+  border-radius: 8px;
+  background: var(--ek-color-surface);
+  box-shadow: inset 0 0 0 1px var(--ek-color-border-subtle);
+  font-size: var(--ek-type-caption-size);
+  font-weight: var(--ek-font-weight-medium);
+}
+
+.ek-page-bar__key dt::after {
+  display: none;
+}
+
+.ek-page-bar__all {
+  margin-top: 0;
+  font-weight: var(--ek-font-weight-semibold);
+}
+
+/* Panel olduğu net belli olsun: çok hafif mavi zemin, belirgin çerçeve, üstte 3px site mavisi şeridi, yükseltilmiş
+   gölge; başlık ince ayraçla gövdeden ayrılır. */
+.ek-page-bar__about {
+  position: relative;
+  border: 1px solid color-mix(in srgb, var(--ek-color-action) 22%, var(--ek-color-border-default));
+  background: color-mix(in srgb, var(--ek-color-action) 3%, var(--ek-color-surface));
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.05), 0 12px 32px -14px rgb(30 64 175 / 0.22);
+}
+
+.ek-page-bar__about::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 1.5px;
+  background: color-mix(in srgb, var(--ek-color-action) 70%, transparent);
+}
+
+.ek-about__head {
+  padding-bottom: var(--ek-space-3);
+  border-bottom: 1px solid color-mix(in srgb, var(--ek-color-action) 12%, var(--ek-color-border-subtle));
 }
 </style>

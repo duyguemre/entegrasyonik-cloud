@@ -144,7 +144,7 @@ export type SemanticColorKey = CoreSemanticColorKey | NewSemanticColorKey | Work
 
 /** DS-v2 light değerleri (workspace profili). */
 export const workspaceColorsLight: Record<WorkspaceColorKey, string> = {
-  'app-bg': ink[100],
+  'app-bg': '#F9FAFD', // ink 0 ile 50 arası: içerik + aktif sekme tek parça, kart beyazı hâlâ seçilir
   'surface-raised': ink[0],
   'surface-inverse': ink[800],
   scrim: ink[950],
@@ -164,9 +164,9 @@ export const workspaceColorsLight: Record<WorkspaceColorKey, string> = {
   'sidebar-active': cobalt[100],
   // Aşama 5: şerit bir kademe koyu (ink-200) → etkin sekme (= içerik zemini ink-100) çok daha belirgin öne çıkar;
   // pasif hover şeritten açık (ink-150), etkinden koyu — "öne gelme" sırası tek yönde.
-  'tabstrip-bg': ink[200],
-  'tab-hover': ink[150],
-  'tab-active': ink[100],
+  'tabstrip-bg': ink[150],
+  'tab-hover': ink[100],
+  'tab-active': '#F9FAFD',
   'content-inverse': ink[0],
   'border-subtle': ink[150],
   'border-focus': cobalt[600],

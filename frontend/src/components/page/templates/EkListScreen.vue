@@ -26,10 +26,11 @@
     <header v-if="title" class="ek-list-screen__head">
       <EkPageBar :section="section" :section-icon="sectionIcon" :trail="trail" :record="record" :title="title" :description="description" :tips="tips ?? autoTips"
         :refreshable="refreshable" :refreshing="loading" :refresh-label="refreshLabel" @refresh="emit('refresh')">
+        <template v-if="$slots.status" #status><slot name="status" /></template>
         <template #actions>
           <div class="ek-list-screen__head-actions">
             <v-text-field
-              v-if="searchPlaceholder !== undefined"
+              v-if="searchPlaceholder !== undefined && !searchInFilter"
               :model-value="search"
               :label="searchPlaceholder"
               prepend-inner-icon="mdi-magnify"
@@ -41,7 +42,7 @@
               @keyup.enter="emit('search-submit')"
               @click:clear="emit('search-submit')"
             />
-            <slot name="search-append" />
+            <slot v-if="!searchInFilter" name="search-append" />
             <span v-if="$slots['header-actions']" class="ek-list-screen__extra"><slot name="header-actions" /></span>
           </div>
         </template>
@@ -53,7 +54,7 @@
       <Teleport defer :to="hostedTarget || 'body'" :disabled="!hostedTarget">
       <div class="ek-list-screen__head-actions" :class="{ 'is-hosted': !!hostedTarget }">
         <v-text-field
-          v-if="searchPlaceholder !== undefined"
+          v-if="searchPlaceholder !== undefined && !searchInFilter"
           :model-value="search"
           :label="searchPlaceholder"
           prepend-inner-icon="mdi-magnify"
@@ -65,7 +66,7 @@
           @keyup.enter="emit('search-submit')"
           @click:clear="emit('search-submit')"
         />
-        <slot name="search-append" />
+        <slot v-if="!searchInFilter" name="search-append" />
         <span v-if="$slots['header-actions']" class="ek-list-screen__extra"><slot name="header-actions" /></span>
         <span v-if="refreshable" class="ek-list-screen__refresh"><EkRefreshButton :loading="loading" :label="refreshLabel" @refresh="emit('refresh')" /></span>
       </div>
@@ -74,6 +75,25 @@
 
     <!-- Aşama 3: başlık ile liste arasında özet (KPI satırı vb.) — başlığın ÜSTÜNE konmasın (hiyerarşi). -->
     <div v-if="$slots.summary" class="ek-list-screen__summary"><slot name="summary" /></div>
+
+    <div v-if="$slots.create && !$slots.filters" class="ek-list-screen__strip">
+      <div v-if="searchInStrip" class="ek-list-screen__strip-search">
+        <v-text-field
+          :model-value="search"
+          :label="searchPlaceholder"
+          prepend-inner-icon="mdi-magnify"
+          clearable
+          hide-details
+          density="compact"
+          class="ek-list-screen__search is-in-strip"
+          @update:model-value="(v: string | null) => emit('update:search', v ?? '')"
+          @keyup.enter="emit('search-submit')"
+          @click:clear="emit('search-submit')"
+        />
+        <slot name="search-append" />
+      </div>
+      <div class="ek-list-screen__strip-create"><slot name="create" /></div>
+    </div>
 
     <EkListFrame :label="label" class="ek-list-screen__frame">
       <template v-if="$slots.filters || chips.length" #filters>
@@ -91,10 +111,28 @@
           @clear="emit('clear-filters')"
         >
           <slot name="filters" />
-          <template v-if="savedViews" #head-actions>
-            <EkSavedViews v-bind="savedViews" @apply="(p: Record<string, any>) => emit('apply-view', p)" />
+          <template v-if="searchPlaceholder !== undefined" #head-search>
+            <v-text-field
+              :model-value="search"
+              :label="searchPlaceholder"
+              prepend-inner-icon="mdi-magnify"
+              clearable
+              hide-details
+              density="compact"
+              class="ek-list-screen__search is-in-filter"
+              @update:model-value="(v: string | null) => emit('update:search', v ?? '')"
+              @keyup.enter="emit('search-submit')"
+              @click:clear="emit('search-submit')"
+            />
+            <slot name="search-append" />
           </template>
-          <template v-if="$slots['filter-extra-actions']" #extra-actions><slot name="filter-extra-actions" /></template>
+          <!-- Kayıtlı görünümler artık panelin eylem satırında (solda) — araç çubuğu sade kalır. -->
+          <!-- Standart: sayfanın birincil "oluştur" eylemi şeridin SAĞ ucunda (filtresiz listedeki şeritle aynı yer). -->
+          <template v-if="$slots.create" #head-actions><slot name="create" /></template>
+          <template v-if="savedViews || $slots['filter-extra-actions']" #extra-actions>
+            <EkSavedViews v-if="savedViews" v-bind="savedViews" @apply="(p: Record<string, any>) => emit('apply-view', p)" />
+            <slot name="filter-extra-actions" />
+          </template>
         </EkFilterPanel>
         <!-- A8: çipler filtre panelinin BAŞLIĞINDA (kompakt özet); panelsiz listede ayrı satır. -->
         <EkActiveFilters v-else :filters="chips" @remove="(k: string) => emit('remove-chip', k)" @clear="emit('clear-filters')" />
@@ -301,6 +339,11 @@ const hostedTarget = computed(() => {
 
 const slots = useSlots()
 const cellSlots = computed(() => Object.keys(slots).filter((n) => n.startsWith('cell-')))
+// Arama + filtre tek şerit: filtre paneli varsa arama panel başlığının soluna taşınır (sayfa başlığında çizilmez).
+/** Araç şeridi: filtresiz listede ekran `#create` verirse arama + oluşturma tablonun üstünde TEK kartta (filtre şeridiyle
+ *  aynı görünüm) — arama başlık satırında değil, her listede aynı yerde. */
+const searchInStrip = computed(() => props.searchPlaceholder !== undefined && !slots.filters && !!slots.create)
+const searchInFilter = computed(() => (props.searchPlaceholder !== undefined && !!slots.filters) || searchInStrip.value)
 const isFiltered = computed(() => props.chips.length > 0)
 
 /** Listenin GERÇEKTEN sunduğu yeteneklerden kısa kullanım ipuçları (uydurma özellik anlatılmaz). */
@@ -372,6 +415,10 @@ function setCollapsed(v: boolean) {
   max-width: 100%;
 }
 
+.ek-list-screen__search.is-in-filter {
+  width: 100%;
+}
+
 .ek-list-screen__extra {
   display: flex;
   flex-wrap: wrap;
@@ -426,6 +473,45 @@ function setCollapsed(v: boolean) {
        satıra düşüyordu, ör. Ürünler). */
     flex: 1 1 160px;
     width: auto;
+  }
+}
+
+/* Araç şeridi (arama + oluşturma): ÇERÇEVESİZ — açılır paneli olmayan şerit kart taşımaz (ağırlık katıyordu); alanlar
+   doğrudan sayfa zemininde, tablonun hemen üstünde. Filtre paneli olan listelerde kart `EkFilterPanel`'de kalır. */
+.ek-list-screen__strip {
+  flex: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ek-space-2) var(--ek-space-3);
+}
+
+.ek-list-screen__strip-search {
+  display: flex;
+  flex: 0 1 360px;
+  align-items: center;
+  gap: var(--ek-space-2);
+  min-width: 200px;
+}
+
+.ek-list-screen__strip-search > :first-child {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.ek-list-screen__strip-create {
+  display: flex;
+  flex: 0 1 auto;
+  align-items: center;
+  gap: var(--ek-space-2);
+  margin-left: auto;
+}
+
+@media (max-width: 599px) {
+  .ek-list-screen__strip-search,
+  .ek-list-screen__strip-create {
+    flex: 1 1 100%;
+    margin-left: 0;
   }
 }
 </style>

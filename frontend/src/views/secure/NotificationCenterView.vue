@@ -752,7 +752,7 @@ defineExpose({
 
 .ek-nc-item__title:hover {
   color: var(--ek-color-action-emphasis);
-  text-decoration: underline;
+  text-decoration: none;
 }
 
 .ek-nc-item__title:focus-visible {

@@ -3,21 +3,25 @@
   `EkAppHeader` `#end-start` yuvasına oturur (ui paketine değişiklik yok). DISABLED iken hiç çizilmez (§3.3).
 -->
 <template>
-  <button
-    v-if="otopilot.available"
-    type="button"
-    class="ek-otopilot-launcher"
-    :class="{ 'is-active': otopilot.panelOpen || otopilot.onPage, 'is-compact': compact }"
-    data-header-action="otopilot"
-    :aria-label="label"
-    :aria-pressed="otopilot.panelOpen || otopilot.onPage ? 'true' : 'false'"
-    :title="label"
-    @click="otopilot.toggle('button')"
-  >
-    <v-icon :icon="CHAT_ICON" aria-hidden="true" />
-    <span v-if="!compact" class="ek-otopilot-launcher__text">{{ CHAT_PRODUCT.name }}</span>
-    <EkKbd v-if="!compact" :keys="keys" tone="inverse" />
-  </button>
+  <v-tooltip v-if="otopilot.available" location="bottom" :open-delay="400" transition="fade-transition">
+    <template #activator="{ props: tip }">
+      <button
+        v-bind="tip"
+        type="button"
+        class="ek-otopilot-launcher"
+        :class="{ 'is-active': otopilot.panelOpen || otopilot.onPage, 'is-compact': compact }"
+        data-header-action="otopilot"
+        :aria-label="label"
+        :aria-keyshortcuts="keys.join('+')"
+        :aria-pressed="otopilot.panelOpen || otopilot.onPage ? 'true' : 'false'"
+        @click="otopilot.toggle('button')"
+      >
+        <v-icon :icon="CHAT_ICON" aria-hidden="true" />
+        <span v-if="!compact" class="ek-otopilot-launcher__text">{{ CHAT_PRODUCT.name }}</span>
+      </button>
+    </template>
+    <span>{{ hint }} <EkKbd :keys="keys" tone="inverse" /></span>
+  </v-tooltip>
 </template>
 
 <script setup lang="ts">
@@ -30,7 +34,8 @@ import { useOtopilotStore } from './otopilotStore'
 defineProps<{ compact?: boolean }>()
 const otopilot = useOtopilotStore()
 const keys = appShortcutKeys('otopilotToggle')
-const label = computed(() => `${otopilot.getController().t(otopilot.panelOpen ? 'entry.closeHint' : 'entry.openHint')} (${keys.join('+')})`)
+const hint = computed(() => otopilot.getController().t(otopilot.panelOpen ? 'entry.closeHint' : 'entry.openHint'))
+const label = computed(() => `${hint.value} (${keys.join('+')})`)
 </script>
 
 <style scoped>

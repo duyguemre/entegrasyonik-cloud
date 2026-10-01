@@ -106,12 +106,12 @@ export const HELP_HINTS = {
     article: 'cat-products-variants',
   },
 
-  // Kanıt: components/CategorySyncComponent.vue (yalnız children.length == 0 kategoride eşleştirme, Kaydet → "Bağlantı Kuruldu",
-  //        otomatik eşleştirme notları), components/CategoryIntegrationSelectBoxComponent.vue (komisyon oranı ipucu)
-  // Yer: components/CategorySyncComponent.vue → CardComponent title="Platform Kategori Eşleştirme" başlığının yanı
+  // Kanıt: components/categories/CategoryChannelRow.vue + ChannelCategoryPicker.vue (yalnız uç kategoride eşleştirme, Eşle → arama → Kaydet,
+  //        komisyon oranı ipucu), CategoryManager.vue (otomatik eşleştirme notları)
+  // Yer: kanal eşleme satırı (components/categories/CategoryChannelRow.vue)
   'mapping.category': {
     title: 'Kategori eşleştirme',
-    text: 'Yalnızca alt kategorisi olmayan (uç) kategoriler platform kategorisiyle eşleştirilir. Platform ve kategori seçip kaydettiğinizde "Bağlantı Kuruldu" görünür; ardından seçenek eşleştirmesine geçebilirsiniz. Otomatik eşleştirme yalnızca boş eşleşmeleri doldurur, sonucu kontrol edin.',
+    text: 'Yalnızca alt kategorisi olmayan (uç) kategoriler kanal kategorisiyle eşleştirilir. Kanal satırında Eşle’ye basıp kanal kategorisini arayın, seçin ve kaydedin; kanaldaki tam yol görünür ve altındaki Özellikler bölümünden seçenek eşleştirmesine geçebilirsiniz. Otomatik eşleştirme yalnızca boş eşleşmeleri doldurur, sonucu kontrol edin.',
     article: 'cat-mapping',
   },
 
@@ -124,10 +124,10 @@ export const HELP_HINTS = {
     article: 'cat-mapping',
   },
 
-  // Kanıt: components/CategorySyncComponent.vue ("Seçenek eşleştirme" yalnız kategori kaydedildikten sonra; Nitelik/Varyant/Ürün bölen rozetleri),
+  // Kanıt: components/categories/CategoryChannelRow.vue ("Özellikler" yalnız kanal kategorisi kaydedildikten sonra; Nitelik/Varyant/Ürün bölen rozetleri),
   //        components/ChoicesMappingComponent.vue (Grup (slicer) / Varyant düğmeleri, değer eşleştirme, Otomatik Eşleştir)
   // Yer: components/ChoicesMappingComponent.vue → EkFormSection title="Değer eşleştirme" başlığının yanı
-  //      (ikincil: components/CategorySyncComponent.vue → "Platform seçeneği" seçim kutusu)
+  //      (ikincil: components/categories/CategoryChannelRow.vue → "Özellikler" listesi)
   'mapping.attribute': {
     title: 'Seçenek ve değer eşleştirme',
     text: 'Kategori bağlantısı kaydedildikten sonra platform seçeneklerini Entegrasyonik seçenek gruplarınızla, değerleri de tek tek eşleştirin. Bir kategoride yalnızca bir seçenek grup (slicer) olarak atanabilir. Otomatik Eşleştir önerileri kaydetmeden önce kontrol edin.',

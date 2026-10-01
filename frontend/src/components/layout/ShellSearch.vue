@@ -15,26 +15,33 @@
   ADR-0012 Karar 2 PII kuralı; screens.ts urlParams'ta yok).
 -->
 <template>
-  <EkSmartSearch
-    ref="searchRef"
-    v-model="query"
-    class="ek-shell-search"
-    :groups="groups"
-    :loading="showSkeleton"
-    :placeholder="placeholder"
-    label="Akıllı arama"
-    open-on-focus
-    :empty-text="emptyText"
-    @select="onSelect"
-    @dismiss="$emit('dismiss')"
-  />
+  <v-tooltip :open-on-focus="false" :open-on-click="false" location="bottom" :open-delay="600" transition="fade-transition">
+    <template #activator="{ props: tip }">
+      <EkSmartSearch
+        v-bind="tip"
+        ref="searchRef"
+        v-model="query"
+        class="ek-shell-search"
+        :groups="groups"
+        :loading="showSkeleton"
+        :placeholder="placeholder"
+        label="Akıllı arama"
+        aria-keyshortcuts="Control+K"
+        open-on-focus
+        :empty-text="emptyText"
+        @select="onSelect"
+        @dismiss="$emit('dismiss')"
+      />
+    </template>
+    <span class="ek-shell-search__tip">Ara <EkKbd :keys="['Ctrl', 'K']" tone="inverse" /></span>
+  </v-tooltip>
 </template>
 
 <script lang="ts" setup>
 import { computed, inject, ref, shallowRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useDebounceFn } from '@vueuse/core'
-import { EkSmartSearch, type EkSearchGroup, type EkSearchItem } from '@entegrasyonik/ui/components'
+import { EkKbd, EkSmartSearch, type EkSearchGroup, type EkSearchItem } from '@entegrasyonik/ui/components'
 import useRestApi from '@/composables/restapi'
 import logger from '@/composables/logger'
 import { formatDate, formatMoney, formatNumber } from '@entegrasyonik/ui/format'
@@ -64,7 +71,7 @@ const remoteLoading = ref(false)
 const remoteFailed = ref(false)
 let requestSeq = 0
 
-const placeholder = computed(() => `${t('common.smartsearch')} — sipariş no, ürün, müşteri, ekran`)
+const placeholder = computed(() => 'Ara…')
 
 const norm = (value: unknown) => String(value ?? '').toLocaleLowerCase('tr-TR')
 const q = computed(() => query.value.trim())
@@ -293,5 +300,10 @@ defineExpose({ focus: () => searchRef.value?.focus() })
 <style scoped>
 .ek-shell-search {
   max-width: 600px;
+}
+
+/* Kısayol görünür rozet değil, tooltip'te (kullanıcı geri bildirimi). */
+.ek-shell-search :deep(.ek-search__hint) {
+  display: none;
 }
 </style>

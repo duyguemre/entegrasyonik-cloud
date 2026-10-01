@@ -136,7 +136,8 @@
                 <td class="pvl-td pvl-td--channels" data-label="Kanallar">
                   <!-- FR2 21: ürün satırıyla AYNI kanal karosu (kısa rozet + durum işareti); gönderilmiş kanal tıklanınca ayrıntı kartı. -->
                   <span class="pvl-channels">
-                    <template v-for="ch in rowChannels(r.variant).all" :key="ch.code">
+                    <!-- Ürün satırıyla AYNI dil: yalnız gönderilmiş kanallar karo; gönderilmeyenler tek soluk "+n" hapında. -->
+                    <template v-for="ch in rowChannels(r.variant).sent" :key="ch.code">
                       <v-menu v-if="ch.status.key !== 'none'" :close-on-content-click="false" location="bottom center" transition="fade-transition" offset="8">
                         <template #activator="{ props: menuProps }">
                           <v-tooltip location="top" :open-delay="300" :eager="false" transition="fade-transition" max-width="320">
@@ -144,7 +145,7 @@
                               <button type="button" v-bind="mergeProps(menuProps, tipProps)" class="pvl-ch"
                                 :data-channel-state="ch.state.tone"
                                 :aria-label="`${channelTitle(ch.code)}: ${ch.state.label}${ch.state.reason ? ' — ' + ch.state.reason : ''}. Ayrıntı`">
-                                <ChannelStatusTile :status="ch.status" :name="channelTitle(ch.code)" :size="isCompact ? 'xs' : 'sm'" />
+                                <ChannelStatusTile :status="ch.status" :name="channelTitle(ch.code)" size="xs" />
                               </button>
                             </template>
                             <span class="pvl-tip">
@@ -156,11 +157,34 @@
                         </template>
                         <ProductVariantListTooltipComponent :data="r.variant.platforms?.[ch.code]" :channel-code="ch.code" :channel-name="channelTitle(ch.code)" />
                       </v-menu>
-                      <span v-else class="pvl-ch is-unsent" :title="`${channelTitle(ch.code)}: gönderilmedi`">
-                        <ChannelStatusTile :status="ch.status" :name="channelTitle(ch.code)" :size="isCompact ? 'xs' : 'sm'" />
-                        <span class="ek-sr-only">{{ channelTitle(ch.code) }}: gönderilmedi</span>
-                      </span>
                     </template>
+                    <!-- "+n" tıklanınca bilgi kartı: hangi kanallara gönderilmedi + nasıl gönderilir. -->
+                    <v-menu v-if="rowChannels(r.variant).unsent.length" :close-on-content-click="false" location="bottom end"
+                      transition="fade-transition" offset="8">
+                      <template #activator="{ props: absentProps }">
+                        <button type="button" v-bind="absentProps" class="pvl-absent"
+                          :aria-label="`${rowChannels(r.variant).unsent.length} kanala gönderilmedi. Ayrıntı`">
+                          <span aria-hidden="true">+{{ rowChannels(r.variant).unsent.length }}</span>
+                        </button>
+                      </template>
+                      <section class="pvl-absent-card" role="dialog" :aria-label="`${r.variant.stockcode} — gönderilmeyen kanallar`">
+                        <header class="pvl-absent-card__head">
+                          <span class="pvl-absent-card__title">Gönderilmeyen kanallar</span>
+                          <span class="pvl-absent-card__sub">{{ r.variant.stockcode }}</span>
+                        </header>
+                        <ul class="pvl-absent-card__list">
+                          <li v-for="code in rowChannels(r.variant).unsent" :key="code">
+                            <EkChannelBadge :code="code" :name="channelTitle(code)" size="xs" />
+                            <span class="pvl-absent-card__state">Gönderilmedi</span>
+                          </li>
+                        </ul>
+                        <p class="pvl-absent-card__hint">
+                          <v-icon icon="mdi-information-outline" aria-hidden="true" />
+                          Göndermek için ürünü seçip Toplu işlemler → Kanallara yükle.
+                        </p>
+                      </section>
+                    </v-menu>
+                    <span v-if="!rowChannels(r.variant).sent.length && !rowChannels(r.variant).unsent.length" class="pvl-absent-none">—</span>
                   </span>
                 </td>
                 <td class="pvl-td pvl-td--actions">
@@ -774,14 +798,48 @@ td.pvl-vgroup { border-top: 0; border-bottom: 1px solid var(--ek-color-border-st
 .pvl-channels {
   display: flex;
   flex-wrap: nowrap; /* B1: satır yüksekliği sabit — çipler tek satır */
-  gap: 2px;
+  align-items: center;
+  gap: 4px 6px; /* ürün satırı (`.pcs__channels`) ile aynı aralık */
   max-width: 360px;
 }
+
+/* Gönderilmemiş kanallar: ürün satırındaki "+n" hapının aynısı (kesik çizgili, soluk). */
+.pvl-absent {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 6px;
+  border: 1px dashed var(--ek-color-border-strong);
+  border-radius: var(--ek-radius-chip);
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-caption-size);
+  font-weight: var(--ek-font-weight-semibold);
+  cursor: default;
+}
+
+button.pvl-absent {
+  background: transparent;
+  font-family: inherit;
+  cursor: pointer;
+  transition: var(--ek-transition-colors);
+}
+
+button.pvl-absent:hover,
+button.pvl-absent[aria-expanded='true'] {
+  border-color: var(--ek-color-action);
+  border-style: solid;
+  background: color-mix(in srgb, var(--ek-color-action) 8%, var(--ek-color-surface));
+  color: var(--ek-color-action);
+}
+
+button.pvl-absent:focus-visible { outline: none; box-shadow: var(--ek-focus-ring); }
+
+.pvl-absent-none { color: var(--ek-color-content-subtle); }
 
 .pvl-ch {
   display: inline-flex;
   align-items: center;
-  padding: 4px 8px 6px 4px;
+  padding: 2px;
   border: 1px solid transparent;
   border-radius: var(--ek-radius-control);
   background: transparent;
@@ -960,4 +1018,36 @@ td.pvl-vgroup { border-top: 0; border-bottom: 1px solid var(--ek-color-border-st
   .pvl-copy { opacity: 1; }
   .pvl-summary { padding: var(--ek-space-2) var(--ek-space-3); }
 }
+</style>
+
+<style>
+/* "+n" bilgi kartı (teleport edilir → kapsamsız; önek bu bileşene özgü). */
+.pvl-absent-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ek-space-2);
+  min-width: 240px;
+  max-width: 300px;
+  padding: var(--ek-space-3);
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-popover, 10px);
+  background: var(--ek-color-surface);
+  box-shadow: var(--ek-shadow-popover, 0 8px 24px rgb(15 23 42 / 0.12));
+}
+.pvl-absent-card__head { display: flex; flex-direction: column; gap: 1px; }
+.pvl-absent-card__title { color: var(--ek-color-content-strong); font-size: var(--ek-type-label-size); font-weight: var(--ek-font-weight-semibold); }
+.pvl-absent-card__sub { color: var(--ek-color-content-muted); font-size: var(--ek-type-caption-size); }
+.pvl-absent-card__list { display: flex; flex-direction: column; gap: 4px; margin: 0; padding: 0; list-style: none; }
+.pvl-absent-card__list > li {
+  display: flex; align-items: center; gap: var(--ek-space-2);
+  padding: 6px 8px; border-radius: 8px;
+  background: color-mix(in srgb, var(--ek-color-content-strong) 3%, var(--ek-color-surface));
+  font-size: var(--ek-type-caption-size);
+}
+.pvl-absent-card__state { margin-left: auto; color: var(--ek-color-content-muted); }
+.pvl-absent-card__hint {
+  display: flex; gap: 6px; margin: 0;
+  color: var(--ek-color-content-muted); font-size: var(--ek-type-caption-size); line-height: var(--ek-type-caption-line);
+}
+.pvl-absent-card__hint .v-icon { flex: none; margin-top: 1px; font-size: 14px; color: var(--ek-color-info, var(--ek-color-action)); }
 </style>

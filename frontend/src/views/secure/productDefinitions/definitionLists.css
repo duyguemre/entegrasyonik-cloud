@@ -1,0 +1,264 @@
+/* Seçenek grupları (ChoiceListView) + Etiketler (HashtagListView) — ORTAK görünüm.
+   İki ekran aynı dili konuşur: başlık satırı (arama · ikincil eylem · hızlı ekle + tek birincil eylem),
+   satırda ad + özellik hapları, değerler küçük hap çipleri. Yalnız --ek-* tokenları. */
+
+.choiceListView,
+.hashtagListView {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: var(--ek-space-5) var(--ek-space-6);
+}
+
+@media (max-width: 767px) {
+  .choiceListView,
+  .hashtagListView {
+    overflow-y: auto;
+    padding: var(--ek-space-4);
+  }
+}
+
+/* Başlık satırı sıkışmasın: arama bu iki ekranda biraz dar (yol/başlık kısalmasın). */
+@media (min-width: 1024px) {
+  .choiceListView .ek-list-screen__search.ek-list-screen__search,
+  .hashtagListView .ek-list-screen__search.ek-list-screen__search {
+    width: 260px;
+  }
+}
+
+/* Hızlı ekleme: ad alanı + sayfanın TEK birincil eylemi (Enter da gönderir). */
+.def-new-form {
+  display: flex;
+  align-items: center;
+  gap: var(--ek-space-2);
+}
+
+.def-new-input {
+  width: 180px;
+  max-width: 100%;
+}
+
+.def-new-input input::placeholder {
+  color: var(--ek-color-content-muted);
+  opacity: 1;
+}
+
+.def-new {
+  flex: none;
+}
+
+@media (max-width: 767px) {
+  .choiceListView .ek-list-screen__extra,
+  .hashtagListView .ek-list-screen__extra {
+    flex: 1 1 100%;
+    flex-wrap: nowrap;
+  }
+
+  .def-new-form {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .def-new-input {
+    flex: 1;
+    width: auto;
+    min-width: 0;
+  }
+}
+
+/* Sayfanın tek birincil eylemi; dar ekranda yalnız "+" (etiket ekran okuyucuya açık). */
+@media (max-width: 599px) {
+  .def-new {
+    gap: 0;
+    min-width: var(--ek-control-h-md);
+    padding-inline: 0;
+    justify-content: center;
+  }
+
+  .def-new .ek-btn__label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+}
+
+/* Grup adı hücresi: ad (13px semibold) + altında özellik hapları. */
+.def-title-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--ek-space-2);
+  padding: var(--ek-space-2) 0;
+}
+
+.def-title {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ek-space-2);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ek-color-content-strong);
+  font-size: var(--ek-font-size-sm);
+  font-weight: var(--ek-font-weight-semibold);
+  text-align: start;
+  cursor: pointer;
+}
+
+.def-title__icon,
+.def-title__tag {
+  color: var(--ek-color-content-subtle);
+}
+
+.def-title:hover .def-title__icon {
+  color: var(--ek-color-content-default);
+}
+
+.def-flags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ek-space-2);
+}
+
+/* Aç/kapa özelliği (aria-pressed düğmesi): kapalı = nötr, açık = site mavisi (etkin durum). */
+.def-flag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ek-space-1);
+  height: 22px;
+  padding: 0 var(--ek-space-3) 0 var(--ek-space-2);
+  border: 1px solid var(--ek-color-border-subtle);
+  border-radius: var(--ek-radius-chip);
+  background: none;
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-font-size-xs);
+  font-weight: var(--ek-font-weight-semibold);
+  cursor: pointer;
+  transition: var(--ek-transition-colors);
+}
+
+.def-flag:hover {
+  border-color: var(--ek-color-border-default);
+  color: var(--ek-color-content-default);
+}
+
+.def-flag.is-on {
+  border-color: color-mix(in srgb, var(--ek-color-action) 35%, transparent);
+  background: var(--ek-color-action-subtle);
+  color: var(--ek-color-action);
+}
+
+.def-title:focus-visible,
+.def-flag:focus-visible,
+.def-swatch:focus-visible {
+  outline: 2px solid var(--ek-color-action);
+  outline-offset: 2px;
+}
+
+/* Değer çipleri satırı. */
+.def-values {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ek-space-2);
+  padding: var(--ek-space-2) 0;
+}
+
+/* Popover (ad/renk düzenleme). */
+.def-pop {
+  padding: var(--ek-space-4);
+  border: 1px solid var(--ek-color-border-subtle);
+  border-radius: var(--ek-radius-card);
+}
+
+.def-pop__row {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--ek-space-2);
+}
+
+.def-pop__caption {
+  margin-bottom: var(--ek-space-2);
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-font-size-xs);
+  font-weight: var(--ek-font-weight-semibold);
+}
+
+.def-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ek-space-1);
+  margin-bottom: var(--ek-space-4);
+}
+
+/* Renk kutuları: zemin, kullanıcının seçtiği VERİ rengidir (v-btn `color` prop'u) — token değil. */
+.def-swatch {
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-sm);
+}
+
+.def-swatch.is-selected {
+  border: 2px solid var(--ek-color-content-strong);
+}
+
+/* Grup hücresi (etiket grupları): renkli "#" kutucuğu + ad + alt satırda adet. */
+.def-title--grouped {
+  gap: var(--ek-space-3);
+}
+
+.def-group-tile {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--grp) 14%, var(--ek-color-surface));
+  color: var(--grp);
+  font-size: 16px;
+}
+
+.def-group-tile .v-icon {
+  font-size: 16px;
+}
+
+.def-title__text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.def-title__name {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.def-title__meta {
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-caption-size);
+  font-weight: var(--ek-font-weight-regular);
+}
+
+/* Seçenek grubu hücresi: kutucuk + (ad / adet / bayraklar) sütunu. */
+.def-title-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ek-space-3);
+  padding: var(--ek-space-2) 0;
+}
+
+.def-title-row > .def-group-tile {
+  margin-top: 2px;
+}
+
+.def-title-row > .def-title-cell {
+  padding: 0;
+}

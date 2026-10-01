@@ -325,7 +325,7 @@ async function submit() {
 }
 
 .accountDeletion__link:hover span:first-of-type {
-  text-decoration: underline;
+  text-decoration: none;
 }
 
 .accountDeletion__link:focus-visible {

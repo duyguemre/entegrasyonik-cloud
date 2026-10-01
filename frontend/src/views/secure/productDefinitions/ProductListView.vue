@@ -77,10 +77,11 @@
       <template #empty-action><HelpStartLink article="gs-first-product-transfer" /></template>
       <!-- MOB-03: telefonda barkod okut → aynı arama (barkod/stok kodu/ad); tek sonuçta ürün açılır. -->
       <template #search-append><BarcodeScanButton target="product" @code="onScannedCode" /></template>
-      <!-- PRC-R0: maliyet kapsamı (kâr hesabının girdisi) — başlık ile filtre paneli arasında sakin tek satır; %100 değilse ipucu yanında. -->
-      <template #summary><CostCoverageChip /></template>
-      <template #header-actions>
-        <EkButton icon="mdi-plus" @click="openProductDefinition()">Yeni ürün</EkButton>
+      <!-- PRC-R0: maliyet kapsamı (kâr hesabının girdisi) — sayfa başlığının yanındaki durum yuvasında küçük bilgi hapı. -->
+      <template #status><CostCoverageChip /></template>
+      <!-- Standart: birincil "oluştur" filtre şeridinin sağ ucunda (EkListScreen `#create`). -->
+      <template #create>
+        <EkButton tone="primary" icon="mdi-plus" class="plv-new" @click="openProductDefinition()">Yeni ürün</EkButton>
       </template>
 
       <template #filters>
@@ -1287,5 +1288,24 @@ const resetSearchProductForm = () => {
 
 :deep(.plv-row-offsale) .plv-product__title {
   color: var(--ek-color-content-muted);
+}
+
+/* Sayfanın tek birincil aksiyonu; dar ekranda yalnız "+" (etiket görsel olarak gizli, ekran okuyucuya açık). */
+@media (max-width: 599px) {
+  .plv-new {
+    gap: 0;
+    min-width: var(--ek-control-h-md);
+    padding-inline: 0;
+    justify-content: center;
+  }
+
+  .plv-new :deep(.ek-btn__label) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
 }
 </style>

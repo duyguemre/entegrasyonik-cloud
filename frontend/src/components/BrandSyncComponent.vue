@@ -1,302 +1,250 @@
 <!--
   frontend/src/components/BrandSyncComponent.vue
 
-  Marka tanımları sağ paneli: seçili markayı düzenleme + platform marka eşleştirme.
-  DS-v2 Aşama 2: kartlar, `EkFormGrid` (yardım metni kalıcı — odak kaybında düğme
-  kaymaz), `PlatformChoiceChip`, tehlikeli silme onayı (ConfirmationDialogComponent →
-  EkDialog), bağlantı durumu `EkStatusChip`. İstek gövdeleri/akışlar DEĞİŞMEDİ.
+  Marka DETAY paneli (sağdan açılan yan panel; dar ekranda tam ekran): başlıkta satır içi düzenlenebilir marka adı
+  (kalem → alan → Enter kaydeder / Esc vazgeçer), ⋯ menüsünde "Markayı sil" (onayı üst ekran açar) ve kapat.
+  Gövde "Kanal eşlemeleri": BAĞLI TÜM kanallar alt alta (bkz. BrandChannelRow) — eşli kanal + kanaldaki marka ✓ /
+  "Eşlenmedi" + Eşle|Değiştir; satır yerinde açılıp yerel marka adıyla önden aranır ve öneri sunar.
+  İstek gövdeleri DEĞİŞMEDİ (BrandService/updateBrand · saveIntegrationBrand). Silme API'sini üst ekran çağırır.
 -->
 <template>
-  <div class="brandListComponentView ek-brand-sync">
+  <section v-if="brand" class="ek-brand-sync bd" aria-label="Marka ayrıntısı">
+    <header class="bd__head">
+      <span class="ek-brand-tile ek-brand-tile--lg" aria-hidden="true"><v-icon icon="mdi-tag-outline" /></span>
 
-    <LoadingComponent attach=".brandDefinition" ref="loadingComponentRef"></LoadingComponent>
+      <div class="bd__titlebox">
+        <div v-if="!renaming" class="bd__titlerow">
+          <h2 class="bd__title" :title="brand.title">{{ brand.title }}</h2>
+          <EkButton tone="ghost" size="sm" icon="mdi-pencil-outline" icon-only aria-label="Marka adını düzenle"
+            @click="startRename()" />
+        </div>
+        <div v-else class="bd__rename" data-ek-esc-local @keydown.esc.stop.prevent="renaming = false">
+          <v-text-field v-model="newTitle" autofocus clearable maxlength="160" density="compact" variant="outlined"
+            hide-details="auto" autocomplete="off" label="Marka Adı" :error-messages="renameError"
+            @keyup.enter="saveRename()" />
+          <EkButton tone="primary" size="sm" icon="mdi-check" icon-only aria-label="Marka adını kaydet"
+            :loading="renameSaving" :disabled="!!renameError || newTitle?.trim() === brand.title" @click="saveRename()" />
+          <EkButton tone="ghost" size="sm" icon="mdi-close" icon-only aria-label="Düzenlemeden vazgeç"
+            @click="renaming = false" />
+        </div>
+        <span class="bd__meta" :class="meta.tone">{{ meta.text }}</span>
+      </div>
 
-    <ConfirmationDialogComponent v-model="isConfirmationDialogOpen" :title="`'${selectedBrand?.title ?? ''}' markası silinsin mi?`"
-      :subtitle="$t('productDefinitions.brand.deleteConfirmation')" color="error" icon="mdi-trash-can-outline"
-      confirm-icon="mdi-trash-can-outline" attach=".brandDefinition" confirm-text="Sil" @confirm="deleteBrand()" />
+      <EkContextMenu :groups="menuGroups" label="Marka işlemleri" location="bottom end" @select="onMenu">
+        <template #activator="{ props: act }">
+          <EkButton v-bind="act" tone="ghost" size="sm" icon="mdi-dots-horizontal" icon-only aria-label="Marka işlemleri" />
+        </template>
+      </EkContextMenu>
+      <EkButton tone="ghost" size="sm" icon="mdi-close" icon-only aria-label="Paneli kapat" @click="emit('close')" />
+    </header>
 
-    <section v-if="!selectedBrand" class="ek-brand-sync__empty" aria-labelledby="ek-brand-sync-empty-title">
-      <EkIconTile icon="mdi-cog-outline" tone="neutral" size="lg" />
-      <h2 id="ek-brand-sync-empty-title" class="ek-brand-sync__empty-title">{{ $t('productDefinitions.brand.brandWarning') }}</h2>
-      <p class="ek-brand-sync__empty-text">
-        Soldaki listeden bir markanın <v-icon icon="mdi-cog-outline" size="16" aria-hidden="true" /> ayar düğmesine basarak
-        marka adını düzenleyebilir ve platform markalarıyla eşleştirebilirsiniz.
-      </p>
-    </section>
+    <div class="bd__body">
+      <div class="bd__section-head">
+        <h3 class="bd__section-title">Kanal eşlemeleri</h3>
+        <span v-if="mappableChannels.length" class="bd__count">{{ mapped.length }}/{{ mappableChannels.length }} kanalda eşli</span>
+        <EkHelpHint hint="mapping.brand" />
+      </div>
 
-    <div v-else class="ek-brand-sync__panels">
-      <CardComponent icon="mdi-cog-outline" :title="`${selectedBrand.title} Markasını Düzenle`" :isHovered="false">
-        <v-form v-model="editingBrand.form" @keydown.enter.prevent @submit.prevent>
-          <EkFormGrid :columns="1">
-            <v-text-field @click.stop type="tel" maxlength="160" clearable
-              :hint="$t('productDefinitions.brand.updateBrandDesc')" persistent-hint v-model="newBrandTitle"
-              :rules="formRules.titleRules" :label="$t('productDefinitions.brand.title')" @keyup.enter="updateBrand()" />
-          </EkFormGrid>
-          <div class="ek-brand-sync__row-actions">
-            <EkButton tone="ghost" icon="mdi-trash-can-outline" class="ek-brand-sync__delete"
-              @click.stop="isConfirmationDialogOpen = true">
-              {{ $t('common.delete') }}
-            </EkButton>
-            <EkButton tone="primary" icon="mdi-content-save-outline" :disabled="newBrandTitle == selectedBrand.title"
-              @click.stop="updateBrand()">
-              {{ $t('common.save') }}
-            </EkButton>
-          </div>
-        </v-form>
-      </CardComponent>
+      <EkEmptyState v-if="!channels.length" variant="not-connected" title="Bağlı kanal yok"
+        message="Marka eşlemesi için önce bir pazaryeri, e-ticaret veya ERP entegrasyonu bağlayın." />
 
-      <CardComponent icon="mdi-connection" title="Platform Marka Eşleştirme" :isHovered="false">
-        <template #header><EkHelpHint hint="mapping.brand" /></template>
-        <v-form v-model="editingPlatformForm" @keydown.enter.prevent @submit.prevent>
-          <EkFormSection title="Platform" icon="mdi-storefront-outline" :columns="1"
-            description="Marka eşleştirmesi yapılacak platformu seçin.">
-            <div class="ek-brand-sync__platforms">
-              <PlatformChoiceChip
-                v-for="clientPlatform of [...integrationStore.getClientMarketplaces(), ...integrationStore.getClientECommerces(), ...integrationStore.getClientErps()]"
-                :key="clientPlatform.code" :code="clientPlatform.code" :name="platformName(clientPlatform.code)"
-                :active="integrationCode == clientPlatform.code" @select="integrationCode = clientPlatform.code" />
-            </div>
-          </EkFormSection>
-
-          <EkFormSection v-if="checkIfHasBrandMapping()" title="Platform markası" icon="mdi-tag-outline" :columns="1">
-            <BrandIntegrationSelectBoxComponent v-model="integrationBrand" :integrationCode="integrationCode" />
-            <div class="ek-brand-sync__row-actions">
-              <EkStatusChip v-if="isBrandConnected" tone="success" label="Bağlantı Kuruldu" />
-              <EkButton v-else tone="primary" icon="mdi-content-save-outline" :disabled="!integrationBrand?.id"
-                @click.stop="saveIntegrationBrand()">
-                {{ $t('common.save') }}
-              </EkButton>
-            </div>
-          </EkFormSection>
-
-          <p v-else-if="integrationCode != -1" class="ek-brand-sync__note">
-            <v-icon icon="mdi-lightbulb-outline" size="16" aria-hidden="true" />
-            <span><strong>{{ platformName(integrationCode) }}</strong> platformu marka eşleştirme yeteneği sunmamaktadır.</span>
-          </p>
-        </v-form>
-      </CardComponent>
+      <ul v-else class="bd__rows" aria-label="Kanal eşlemeleri">
+        <BrandChannelRow v-for="ch in channels" :key="ch.code" :brand="brand" :channel="ch" @saved="onSaved" />
+      </ul>
     </div>
-  </div>
+  </section>
 </template>
 
 <script setup lang="ts">
+import { computed, ref, watch } from 'vue'
+import { EkButton, EkContextMenu, EkEmptyState } from '@entegrasyonik/ui/components'
+import type { EkMenuItem } from '@entegrasyonik/ui/components'
 import EkHelpHint from '@/components/page/EkHelpHint.vue'
-import { computed, nextTick, inject, watch, ref, onMounted, onBeforeMount } from 'vue'
-import { EkButton, EkIconTile, EkFormGrid, EkFormSection, EkStatusChip } from '@entegrasyonik/ui/components'
-import PlatformChoiceChip from '@/components/platforms/PlatformChoiceChip.vue'
-import BrandIntegrationSelectBoxComponent from '@/components/BrandIntegrationSelectBoxComponent.vue'
-import ConfirmationDialogComponent from '@/components/layout/ConfirmationDialogComponent.vue';
+import BrandChannelRow from '@/components/brands/BrandChannelRow.vue'
+import './brands/brands.css'
 import useRestApi from '@/composables/restapi'
-import LoadingComponent from '@/components/LoadingComponent.vue'
+import { useBrandsStore } from '@/stores/brandsStore'
+import { useSnackbarStore } from '@/stores/snackbarStore'
+import { useBrandChannels } from '@/composables/brandChannels'
 
-import { useI18n } from 'vue-i18n';
-import { useIntegrationStore } from '@/stores/integrationStore';
-import useFormRules from '@/composables/formrules';
-import { useBrandsStore } from '@/stores/brandsStore';
-import CardComponent from './CardComponent.vue'
-import { useSnackbarStore } from '@/stores/snackbarStore';
-const snackbarStore = useSnackbarStore();
+const props = defineProps<{ brandId: string }>()
+const emit = defineEmits<{ close: []; delete: [brand: any] }>()
 
-const brandsStore = useBrandsStore()
-
-const formRules = useFormRules()
 const restApi = useRestApi()
+const brandsStore = useBrandsStore()
+const snackbarStore = useSnackbarStore()
+const brandsRef = brandsStore.getBrands()
+const { channels, mappableChannels, isMapped, summarize } = useBrandChannels()
 
-const { t } = useI18n()
-const integrationStore = useIntegrationStore()
-const editingBrand: any = ref({})
-const integrationBrand: any = ref()
+// Canlı marka: mağazadaki nesne (kayıt sonrası yerel güncelleme + liste özeti aynı kaynaktan).
+const brand = computed(() => (brandsRef.value ?? []).find((b: any) => b._id === props.brandId))
+const mapped = computed(() => mappableChannels.value.filter((c) => isMapped(brand.value, c.code)))
 
-const editingPlatformForm: any = ref()
-const editingPlatform: any = ref()
-const selectedBrandModel: any = defineModel({ default: undefined })
-const selectedBrand: any = ref()
-const isConfirmationDialogOpen = ref(false)
-const loadingComponentRef: any = ref(null)
-const selectedIntegrationBrand: any = ref()
-const integrationCode: any = ref(-1)
-const newBrandTitle: any = ref()
-
-const platformName = (code: string) => integrationStore.getIntegrationTitle(code) || (code ? code.charAt(0).toUpperCase() + code.slice(1) : '')
-// Seçili platform markası, markanın kayıtlı eşleşmesiyle aynıysa bağlantı kurulmuş sayılır (eski düğme durumu).
-const isBrandConnected = computed(() => !!(integrationBrand.value?.id && integrationBrand.value?.id == selectedBrand.value?.platforms?.[integrationCode.value]?.id))
-
-const reset = async () => {
-  integrationBrand.value = undefined
-  if (selectedBrandModel.value) {
-    selectedBrand.value = JSON.parse(JSON.stringify(brandsStore.getBrand(selectedBrandModel.value._id)))
-    newBrandTitle.value = selectedBrand.value.title
-
-    const svalue = selectedBrand.value.platforms?.[integrationCode.value]
-    if (svalue?.id) {
-      integrationBrand.value = JSON.parse(JSON.stringify(svalue))
-    }
-
-    editingBrand.value.platforms = selectedBrand.value.platforms || {}
-    editingBrand.value.title = selectedBrand.value.title
-    editingBrand.value._id = selectedBrand.value._id
-    const clientMarketplaces = integrationStore.getClientMarketplaces()
-    clientMarketplaces.forEach((clientMarketplace: any) => {
-      editingBrand.value.platforms[clientMarketplace.code] = editingBrand.value.platforms[clientMarketplace.code] || {}
-    })
-  }
-}
-
-
-const checkIfHasBrandMapping = () => {
-  if (!integrationCode.value || integrationCode.value == -1) return false
-  const currentIntegration = integrationStore.getIntegration(integrationCode.value)
-  if (currentIntegration?.hasBrandMapping == false) return false
-  return true
-}
-
-watch(() => integrationCode.value, (newValue: any, oldValue: any) => {
-  reset()
+const meta = computed(() => {
+  const s = summarize(brand.value)
+  if (!s.total) return { text: 'Bağlı kanal yok', tone: '' }
+  if (!s.missing.length) return { text: `${s.mapped.length} kanalda eşli`, tone: 'is-ok' }
+  if (!s.mapped.length) return { text: `Hiçbir kanalda eşli değil · ${s.missing.length} eksik`, tone: 'is-warn' }
+  return { text: `${s.mapped.length} kanalda eşli · ${s.missing.length} eksik`, tone: 'is-warn' }
 })
 
+// Marka silinirse / bulunamazsa panel kapanır.
+watch(brand, (b) => { if (!b && brandsRef.value) emit('close') })
 
-watch(() => selectedBrandModel.value, (newValue: any, oldValue: any) => {
-  reset()
+const menuGroups = [{ items: [{ key: 'delete', label: 'Markayı sil', icon: 'mdi-trash-can-outline', danger: true }] }]
+const onMenu = (item: EkMenuItem) => { if (item.key === 'delete') emit('delete', brand.value) }
+
+// --- Satır içi ad düzenleme ---
+const renaming = ref(false)
+const renameSaving = ref(false)
+const newTitle = ref<string | null>('')
+
+const renameError = computed(() => {
+  const v = (newTitle.value ?? '').trim()
+  if (!v) return 'Marka adı boş olamaz.'
+  if (v.length < 2 || v.length > 160) return 'Marka adı 2–160 karakter olmalı.'
+  const dup = (brandsRef.value ?? []).some((b: any) => b._id !== props.brandId && (b.title ?? '').toLocaleLowerCase('tr') === v.toLocaleLowerCase('tr'))
+  return dup ? 'Bu adda bir marka zaten var.' : ''
 })
 
-const updateBrand = async () => {
-  let guid = loadingComponentRef.value.info("")
-  const response = await restApi.post("BrandService/updateBrand", { brandId: selectedBrand.value._id, title: newBrandTitle.value })
+const startRename = () => { newTitle.value = brand.value?.title ?? ''; renaming.value = true }
+
+const saveRename = async () => {
+  if (renameError.value || renameSaving.value || !brand.value) return
+  const title = (newTitle.value ?? '').trim()
+  if (title === brand.value.title) { renaming.value = false; return }
+  renameSaving.value = true
+  const response = await restApi.post('BrandService/updateBrand', { brandId: brand.value._id, title })
+  renameSaving.value = false
   if (response && response.result == true) {
+    brand.value.title = title
     brandsStore.getBrands(true)
-
-    snackbarStore.addSnackbar({
-      show: true,
-      text: 'Marka güncellendi',
-      timeout: 2000,
-      color: 'success'
-    })
-
-
-    selectedBrand.value.title = editingBrand.value.title
+    snackbarStore.addSnackbar({ show: true, text: 'Marka güncellendi', timeout: 2000, color: 'success' })
+    renaming.value = false
+  } else {
+    snackbarStore.addSnackbar({ show: true, text: 'Marka adı güncellenemedi — bağlantınızı kontrol edip tekrar deneyin.', timeout: 4000, color: 'error' })
   }
-  loadingComponentRef.value.remove(guid)
 }
 
-const saveIntegrationBrand = async () => {
-  let guid = loadingComponentRef.value.info("")
-  const response = await restApi.post("BrandService/saveIntegrationBrand", { brandId: selectedBrand.value._id, integrationCode: integrationCode.value, integrationBrand: integrationBrand.value })
-  if (response && response.result == true) {
-    brandsStore.getBrands(true)
-    snackbarStore.addSnackbar({
-      show: true,
-      text: 'Platform marka eşlemesi kaydedildi',
-      timeout: 2000,
-      color: 'success'
-    })
+watch(() => props.brandId, () => { renaming.value = false })
 
-  }
-  loadingComponentRef.value.remove(guid)
+// Kayıt sonrası yerel kopya hemen güncellenir (satır ✓ olur); liste özeti mağaza yenilemesiyle de gelir.
+const onSaved = (code: string, value: any) => {
+  if (!brand.value) return
+  brand.value.platforms = { ...(brand.value.platforms || {}), [code]: value }
+  brandsStore.getBrands(true)
 }
-
-
-
-const deleteBrand = async () => {
-  if (!editingBrand.value)
-    return
-  let guid = loadingComponentRef.value.info("")
-  const response = await restApi.post("BrandService/deleteBrand", { _id: selectedBrand.value._id })
-  if (response && response.acknowledged == true) {
-    selectedBrand.value = undefined
-    brandsStore.getBrands(true)
-    isConfirmationDialogOpen.value = false
-  }
-  loadingComponentRef.value.remove(guid)
-}
-
-onMounted(() => {
-  reset()
-})
-
-// R4/T-02 (docs/FRONTEND_CODE_AUDIT.md): `save()` şablondan HİÇ ÇAĞRILMIYOR (doğrulandı — gerçek
-// kaydet düğmesi `saveIntegrationBrand()`'i çağırıyor, `IntegrationService/saveOrUpdateIntegrationBrand`
-// uç noktası bu bileşende başka hiçbir yerde kullanılmıyor). `integrationStore.retrieveIntegrationBrandsMap()`
-// store'da YOK (vue-tsc TS2551) — niyeti (bir "Map" önbelleğini yenilemek) doğrulanamadı ve karşılığı
-// yok; ölü/erişilemeyen bu kod yolunda var olmayan bir metoda "uydurma" bir çağrı bağlanmadı (R4
-// kuralı). Fonksiyonun kendisi R1/R2 (ölü kod) kapsamına girer — silinmedi, yalnızca kırık çağrı
-// kaldırıldı; kayıt sonrası yenileme burada YAPILMAZ (önceki hâlde zaten hiç çalışmıyordu — TypeError
-// fırlatıyordu; davranış "hiçbir şey olmaz" olarak aynı kalır, yalnızca artık sessiz).
-const save = async () => {
-  editingPlatform.value.integrationBrandId = selectedIntegrationBrand.value ? selectedIntegrationBrand.value.id : undefined
-  editingPlatform.value.integrationBrandTitle = selectedIntegrationBrand.value ? selectedIntegrationBrand.value.title : undefined
-
-  let guid = loadingComponentRef.value.info("")
-  await restApi.post("IntegrationService/saveOrUpdateIntegrationBrand", { integrationBrand: editingPlatform.value })
-  loadingComponentRef.value.remove(guid)
-}
-
 </script>
 
 <style scoped>
-.ek-brand-sync {
-  padding: var(--ek-space-1) var(--ek-space-6) var(--ek-space-6) var(--ek-space-2);
-}
-
-.ek-brand-sync__empty {
+.bd {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: var(--ek-space-3);
-  max-width: 480px;
-  margin: var(--ek-space-12) auto 0;
-  text-align: center;
+  height: 100%;
+  min-height: 0;
+  background: var(--ek-color-surface);
 }
 
-.ek-brand-sync__empty-title {
+.bd__head {
+  display: flex;
+  flex: none;
+  align-items: flex-start;
+  gap: var(--ek-space-3);
+  padding: var(--ek-space-4) var(--ek-space-4) var(--ek-space-4) var(--ek-space-5);
+  border-bottom: 1px solid var(--ek-color-border-subtle);
+}
+
+.bd__titlebox {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.bd__titlerow {
+  display: flex;
+  align-items: center;
+  gap: var(--ek-space-1);
+  min-width: 0;
+}
+
+.bd__title {
   margin: 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   color: var(--ek-color-content-strong);
   font-size: var(--ek-type-heading-size);
   line-height: var(--ek-type-heading-line);
   font-weight: var(--ek-type-heading-weight);
 }
 
-.ek-brand-sync__empty-text {
-  margin: 0;
+.bd__rename {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ek-space-1);
+}
+
+.bd__rename > :first-child {
+  flex: 1;
+  min-width: 0;
+}
+
+.bd__rename > .ek-btn {
+  margin-top: 6px;
+}
+
+.bd__meta {
   color: var(--ek-color-content-muted);
-  font-size: var(--ek-type-body-size);
-  line-height: var(--ek-type-body-line);
-}
-
-.ek-brand-sync__panels {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ek-space-4);
-}
-
-.ek-brand-sync__row-actions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: var(--ek-space-2);
-  margin-top: var(--ek-space-3);
-}
-
-.ek-brand-sync__delete {
-  margin-right: auto;
-  color: var(--ek-color-error);
-}
-
-.ek-brand-sync__platforms {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: var(--ek-space-3);
-}
-
-.ek-brand-sync__note {
-  display: flex;
-  align-items: center;
-  gap: var(--ek-space-2);
-  margin: var(--ek-space-4) 0 0;
-  padding: var(--ek-space-2) var(--ek-space-3);
-  border: 1px solid var(--ek-color-info-border);
-  border-radius: var(--ek-radius-control);
-  background: var(--ek-color-info-subtle);
-  color: var(--ek-color-info-emphasis);
   font-size: var(--ek-type-caption-size);
+}
+
+.bd__meta.is-ok { color: var(--ek-color-success-emphasis); }
+.bd__meta.is-warn { color: var(--ek-color-warning-emphasis); }
+
+.bd__body {
+  flex: 1;
+  min-height: 0;
+  padding: var(--ek-space-4) var(--ek-space-5) var(--ek-space-6);
+  overflow-y: auto;
+}
+
+.bd__section-head {
+  display: flex;
+  align-items: center;
+  gap: var(--ek-space-2);
+  margin-bottom: var(--ek-space-2);
+}
+
+.bd__section-title {
+  margin: 0;
+  color: var(--ek-color-content-strong);
+  font-size: var(--ek-font-size-sm);
+  font-weight: var(--ek-font-weight-semibold);
+}
+
+.bd__count {
+  margin-right: auto;
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-caption-size);
+}
+
+.bd__rows {
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--ek-color-border-subtle);
+  list-style: none;
+}
+
+@media (max-width: 599px) {
+  .bd__head {
+    padding: var(--ek-space-3) var(--ek-space-3) var(--ek-space-3) var(--ek-space-4);
+  }
+
+  .bd__body {
+    padding: var(--ek-space-3) var(--ek-space-4) var(--ek-space-5);
+  }
 }
 </style>
