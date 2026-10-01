@@ -99,6 +99,7 @@
 import { computed, ref, watch } from 'vue'
 import { EkAlert, EkButton, EkEmptyState } from '@entegrasyonik/ui/components'
 import { useToast } from '@entegrasyonik/ui/composables/useToast'
+import { useGallerySrc } from './gallerySrc'
 import { useChoicesStore } from '@/stores/choicesStore'
 import GalleryThumb from './GalleryThumb.vue'
 import ImagePicker from './ImagePicker.vue'
@@ -108,6 +109,7 @@ import {
 } from './galleryModel'
 
 const props = defineProps<{ variants: VariantLike[]; images: GalleryImage[] }>()
+const srcOf = useGallerySrc()
 const emit = defineEmits<{ announce: [msg: string] }>()
 
 const choicesStore = useChoicesStore()
@@ -129,7 +131,7 @@ const missingText = computed(() => {
 })
 const onlyMissing = ref(false)
 
-const urlOf = (id: string) => props.images.find((x) => x._id === id)?.url
+const urlOf = (id: string) => srcOf(props.images.find((x) => x._id === id))
 
 const rows = computed(() => {
   const g = activeGroup.value

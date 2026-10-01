@@ -20,3 +20,23 @@ export function supportContactHref(key: string, email: string, phone: string): s
   if (key === 'support-phone' && phone) return `tel:${phone.replace(/[^\d+]/g, '')}`
   return undefined
 }
+
+export interface SupportContactLink {
+  key: 'support-email' | 'support-phone'
+  /** Erişilebilir ad (ekran okuyucu): "Destek e-postası: …". */
+  label: string
+  /** Görünen değer (düz metin). */
+  text: string
+  href: string
+  icon: string
+}
+
+/** Giriş ekranı satırı (FE-CFG-2): yardım menüsüyle aynı değer ve bağlantılar; boş olan öğe yok, ikisi boşsa boş dizi. */
+export function supportContactLinks(email: string, phone: string): SupportContactLink[] {
+  const links: SupportContactLink[] = []
+  const mail = supportContactHref('support-email', email, phone)
+  const tel = supportContactHref('support-phone', email, phone)
+  if (mail) links.push({ key: 'support-email', label: `Destek e-postası: ${email}`, text: email, href: mail, icon: 'mdi-email-outline' })
+  if (tel) links.push({ key: 'support-phone', label: `Destek telefonu: ${phone}`, text: phone, href: tel, icon: 'mdi-phone-outline' })
+  return links
+}

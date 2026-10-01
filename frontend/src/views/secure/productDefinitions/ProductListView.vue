@@ -209,6 +209,7 @@
 </template>
 
 <script setup lang="ts">
+import { defaultListPageSize } from '@/stores/publicConfig'
 import HelpStartLink from '@/components/help/HelpStartLink.vue'
 import { EkSelect, EkRowActions, EkButton, EkDialogHost } from '@entegrasyonik/ui/components'
 import type { EkGridColumn, EkGridSort, EkActiveFilterChip } from '@entegrasyonik/ui/components'
@@ -963,7 +964,7 @@ const resetSearchProductForm = () => {
     },
     sort: { field: '_id', direction: 'desc' },
     pagination: {
-      limit: 25,
+      limit: defaultListPageSize(),
       page: 1,
       totalNumberOfPages: 1,
       totalNumberOfRecords: 0

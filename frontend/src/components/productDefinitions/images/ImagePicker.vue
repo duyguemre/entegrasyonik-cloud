@@ -10,7 +10,7 @@
     <li v-for="(img, i) in images" :key="img._id">
       <button type="button" class="ipk__item" :class="{ 'is-on': isOn(img._id), 'is-partial': partial?.includes(img._id) && !isOn(img._id) }"
         :aria-pressed="isOn(img._id)" :aria-label="itemLabel(img, i)" @click="toggle(img._id)">
-        <GalleryThumb :src="img.url" />
+        <GalleryThumb :src="srcOf(img)" />
         <span class="ipk__check" aria-hidden="true"><v-icon :icon="isOn(img._id) ? 'mdi-check' : 'mdi-plus'" /></span>
         <span v-if="i === 0" class="ipk__cover" aria-hidden="true">Kapak</span>
       </button>
@@ -21,6 +21,9 @@
 <script setup lang="ts">
 import GalleryThumb from './GalleryThumb.vue'
 import { sortByGallery, type GalleryImage } from './galleryModel'
+import { useGallerySrc } from './gallerySrc'
+
+const srcOf = useGallerySrc()
 
 const props = withDefaults(defineProps<{
   images: GalleryImage[]

@@ -20,7 +20,7 @@
 
       <div class="ilb__body">
         <div class="ilb__stage">
-          <GalleryThumb :key="current._id" :src="current.url" :alt="`Görsel ${index + 1}`" />
+          <GalleryThumb :key="current._id" :src="srcOf(current)" :alt="`Görsel ${index + 1}`" />
           <button type="button" class="ilb__nav ilb__nav--prev" :disabled="index === 0" aria-label="Önceki görsel" @click="go(index - 1)">
             <v-icon icon="mdi-chevron-left" aria-hidden="true" />
           </button>
@@ -61,7 +61,7 @@
       <nav class="ilb__strip" aria-label="Görseller arasında geçiş">
         <button v-for="(img, i) in images" :key="img._id" type="button" class="ilb__strip-item" :class="{ 'is-current': i === index }"
           :aria-label="`Görsel ${i + 1}${i === 0 ? ' (kapak)' : ''}`" :aria-current="i === index ? 'true' : undefined" @click="go(i)">
-          <GalleryThumb :src="img.url" />
+          <GalleryThumb :src="srcOf(img)" />
         </button>
       </nav>
     </div>
@@ -72,6 +72,7 @@
 import { computed, nextTick, ref, watch } from 'vue'
 import { EkDialogHost, EkButton } from '@entegrasyonik/ui/components'
 import { icons } from '@entegrasyonik/ui/icons'
+import { useGallerySrc } from './gallerySrc'
 import GalleryThumb from './GalleryThumb.vue'
 import { formatBytes, imageQuality, type GalleryImage } from './galleryModel'
 
@@ -83,6 +84,7 @@ const props = withDefaults(defineProps<{
   usageOf?: (id: string) => string[]
   showUsage?: boolean
 }>(), { showUsage: false })
+const srcOf = useGallerySrc()
 
 const emit = defineEmits<{
   close: []

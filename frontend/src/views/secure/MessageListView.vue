@@ -129,6 +129,7 @@
 </template>
 
 <script setup lang="ts">
+import { defaultListPageSize } from '@/stores/publicConfig'
 import HelpStartLink from '@/components/help/HelpStartLink.vue'
 import { EkSelect, EkRowActions, type EkRowAction, EkButton, EkDateRange, EkChannelDot, EkStatusChip, EkTooltip } from '@entegrasyonik/ui/components'
 import type { EkGridColumn, EkGridSort, EkActiveFilterChip } from '@entegrasyonik/ui/components'
@@ -181,7 +182,7 @@ const actionDialog = ref<any>({ show: false });
 
 const pagination = reactive({
   page: 1,
-  limit: 25,
+  limit: defaultListPageSize(),
   totalNumberOfRecords: 0,
   totalNumberOfPages: 1
 });

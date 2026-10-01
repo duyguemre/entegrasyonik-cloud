@@ -264,6 +264,7 @@
 </template>
 
 <script setup lang="ts">
+import { defaultListPageSize } from '@/stores/publicConfig'
 import { EkSelect, EkRowActions, EkButton, EkDateRange, EkChannelDot, EkStatusChip, EkPageTabs, EkTooltip, type EkPageTab } from '@entegrasyonik/ui/components'
 import type { EkGridColumn, EkGridSort, EkActiveFilterChip } from '@entegrasyonik/ui/components'
 import { channelOptionsFrom } from '@entegrasyonik/ui/components/selectOptions'
@@ -330,7 +331,7 @@ const searchForm = reactive({
 
 const pagination = reactive({
   page: 1,
-  limit: 25,
+  limit: defaultListPageSize(),
   totalPages: 1,
   totalNumberOfRecords: 0,
   totalNumberOfPages: 1,

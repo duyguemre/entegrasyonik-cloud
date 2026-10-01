@@ -100,7 +100,7 @@
             <div class="pig-tile__media">
             <button type="button" class="pig-tile__open" :aria-label="`Görsel ${i + 1}${i === 0 ? ' (kapak)' : ''} — büyük önizleme`"
               @click="openLightbox(i)">
-              <GalleryThumb :src="img.url" :alt="`Görsel ${i + 1}`" />
+              <GalleryThumb :src="srcOf(img)" :alt="`Görsel ${i + 1}`" />
             </button>
 
             <div class="pig-tile__top">
@@ -241,6 +241,8 @@ import GalleryThumb from '@/components/productDefinitions/images/GalleryThumb.vu
 import ImageLightbox from '@/components/productDefinitions/images/ImageLightbox.vue'
 import VariantImageAssign from '@/components/productDefinitions/images/VariantImageAssign.vue'
 import { useImageUploads } from '@/components/productDefinitions/images/useImageUploads'
+import { provideGallerySrc } from '@/components/productDefinitions/images/gallerySrc'
+import { usePublicConfigStore } from '@/stores/publicConfig'
 import { PhotoPrepError, PHOTO_PREP_MESSAGES, preparePhoto } from '@/components/productDefinitions/images/photoPrep'
 import { useDeviceInput } from '@/composables/useDeviceInput'
 import { hasNativeCamera, takeNativePhoto } from '@entegrasyonik/ui/native'
@@ -256,6 +258,10 @@ import {
 defineModel({ default: false })
 const emits = defineEmits(['refreshImages', 'close'])
 const props = defineProps<{ productInfoForm: any; /** Açılış sekmesi (varyant adımından 'variants'). */ initialTab?: 'gallery' | 'variants' }>()
+// FE-CFG-1: görsel adresi tek kuraldan (DB url → public-config tabanı); önizleme/varyant ataması da aynısını alır.
+const srcOf = provideGallerySrc(() => props.productInfoForm)
+// FE-CFG-1: kamera fotoğrafı yükleme tavanına (backend `env.images.uploadMaxBytes`) göre küçültülür.
+const publicConfig = usePublicConfigStore()
 
 const restApi = useRestApi() as any
 const { showToast, toasts, dismissToast } = useToast()
@@ -691,7 +697,7 @@ async function prepareAndAdd(files: File[]) {
   const failed: { name: string; reason: string }[] = []
   for (const f of files) {
     try {
-      ready.push((await preparePhoto(f)).file)
+      ready.push((await preparePhoto(f, undefined, undefined, publicConfig.uploadMaxBytes)).file)
     } catch (err) {
       failed.push({ name: f.name || 'Fotoğraf', reason: err instanceof PhotoPrepError ? err.message : PHOTO_PREP_MESSAGES['encode-failed'] })
     } finally {
