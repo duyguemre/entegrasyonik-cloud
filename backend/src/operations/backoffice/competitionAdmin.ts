@@ -13,12 +13,22 @@ import {
     SUBSCRIPTION_COMPETITION_PROJECTION, type SettingReader,
 } from '@operations/pricing/competitionSettings';
 
+/** `applicationDB` tutamağı (handler model çağırmaz; ratchet `handlerGetModel`) ya da testte doğrudan modeller. */
 export interface CompetitionAdminDeps {
-    subscriptionModel: any;
-    clientModel: any;
-    billingEventModel: any;
+    applicationDB?: { getSubscriptionModel(): any; getClientModel(): any; getBillingEventModel(): any };
+    subscriptionModel?: any;
+    clientModel?: any;
+    billingEventModel?: any;
     read?: SettingReader;
     now?: () => Date;
+}
+
+function models(d: CompetitionAdminDeps) {
+    return {
+        subscriptionModel: d.subscriptionModel ?? d.applicationDB!.getSubscriptionModel(),
+        clientModel: d.clientModel ?? d.applicationDB!.getClientModel(),
+        billingEventModel: d.billingEventModel ?? d.applicationDB!.getBillingEventModel(),
+    };
 }
 export interface CompetitionActorCtx { sub?: string; reason: string; reqId?: string }
 
@@ -28,11 +38,12 @@ const REASON_MIN = 10;
 
 /** Ekranın tek okuma çağrısı: plan varsayılanları (yayınlanmış), bütçe, bildirim, istisnası olan tenant'lar, sınırlar ve katalog anahtarları. */
 export async function getCompetitionSettings(d: CompetitionAdminDeps) {
-    const rows: any[] = await d.subscriptionModel
+    const m = models(d);
+    const rows: any[] = await m.subscriptionModel
         .find({ 'limitOverrides.competition': { $exists: true } }, SUBSCRIPTION_COMPETITION_PROJECTION)
         .sort({ clientId: 1 }).limit(MAX_OVERRIDES_LISTED).lean();
     const tids = rows.map((r) => Number(r.clientId));
-    const clients: any[] = tids.length ? await d.clientModel.find({ order: { $in: tids } }, { order: 1, name: 1, title: 1 }).lean() : [];
+    const clients: any[] = tids.length ? await m.clientModel.find({ order: { $in: tids } }, { order: 1, name: 1, title: 1 }).lean() : [];
     const names = new Map(clients.map((c) => [Number(c.order), c.title ?? c.name ?? null]));
     return {
         plans: COMPETITION_PLANS.map((plan) => ({
@@ -63,7 +74,7 @@ function pickOverride(o: any) {
 export async function getTenantCompetition(d: CompetitionAdminDeps, input: { tid: unknown }) {
     const tid = Number(input.tid);
     if (!Number.isInteger(tid) || tid <= 0) throw new ApplicationError('tid geçersiz.', 400, 'VALIDATION');
-    const sub: any = await d.subscriptionModel.findOne({ clientId: tid }, SUBSCRIPTION_COMPETITION_PROJECTION).lean();
+    const sub: any = await models(d).subscriptionModel.findOne({ clientId: tid }, SUBSCRIPTION_COMPETITION_PROJECTION).lean();
     if (!sub) throw new ApplicationError('Abonelik bulunamadı.', 404, 'SUBSCRIPTION_NOT_FOUND');
     return { tid, planCode: sub.planCode ?? null, billingExempt: sub.billingExempt === true, override: pickOverride(sub.limitOverrides?.competition), effective: settingsFromSubscription(sub, d.read) };
 }
@@ -85,17 +96,18 @@ export async function setCompetitionOverride(d: CompetitionAdminDeps, input: { t
     }
     const note = typeof input.note === 'string' ? input.note.trim().slice(0, 280) : undefined;
     const now = (d.now ?? (() => new Date()))();
-    const before: any = await d.subscriptionModel.findOne({ clientId: tid }, SUBSCRIPTION_COMPETITION_PROJECTION).lean();
+    const m = models(d);
+    const before: any = await m.subscriptionModel.findOne({ clientId: tid }, SUBSCRIPTION_COMPETITION_PROJECTION).lean();
     if (!before) throw new ApplicationError('Abonelik bulunamadı.', 404, 'SUBSCRIPTION_NOT_FOUND');
     const update = clear
         ? { $unset: { 'limitOverrides.competition': '' } }
         : { $set: { 'limitOverrides.competition': { ...parsed, ...(note ? { note } : {}), updatedBy: ctx.sub ?? null, updatedAt: now } } };
-    await d.subscriptionModel.updateOne({ clientId: tid }, update);
-    const after: any = await d.subscriptionModel.findOne({ clientId: tid }, SUBSCRIPTION_COMPETITION_PROJECTION).lean();
+    await m.subscriptionModel.updateOne({ clientId: tid }, update);
+    const after: any = await m.subscriptionModel.findOne({ clientId: tid }, SUBSCRIPTION_COMPETITION_PROJECTION).lean();
     const beforeOverride = pickOverride(before.limitOverrides?.competition);
     const afterOverride = pickOverride(after?.limitOverrides?.competition);
     try {
-        await d.billingEventModel.create({
+        await m.billingEventModel.create({
             provider: 'system', providerEventId: `competition-override:${tid}:${now.getTime()}`, type: 'subscription.competition_override', clientId: tid,
             receivedAt: now, processedAt: now, status: 'processed',
             payloadRedacted: { before: beforeOverride, after: afterOverride, cleared: clear, actor: ctx.sub ?? null, reason: ctx.reason.slice(0, 500) },

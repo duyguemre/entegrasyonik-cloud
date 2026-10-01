@@ -28,7 +28,7 @@ import { createAnnouncementFanoutDeps } from '@operations/notifications/createAn
 import { createAlertEvaluator } from '@operations/alerts/createAlertEvaluator';
 import type { AlertEvaluator } from '@operations/alerts/AlertEvaluator';
 import { createBuyboxRefreshJob } from '@operations/pricing/createBuyboxRefreshJob';
-import type { BuyboxRefreshJob } from '@operations/pricing/BuyboxRefreshJob';
+import { BUYBOX_JOB_NAME, type BuyboxRefreshJob } from '@operations/pricing/BuyboxRefreshJob';
 import { writeResilienceSnapshot } from '@integration/modules/common/http/resilienceSnapshot';
 import { RedisService } from '@services/redis/RedisService';
 import { runsWorker } from './roles';
@@ -124,10 +124,10 @@ export const SCHEDULES: readonly ScheduleSpec[] = [
   } },
   // PRC-R1/PRC-CFG: Trendyol buybox SALT OKUMA isi. `features.competition` kapaliyken (varsayilan) DB/agla hic konusmadan doner.
   // Dakikalik cagri butcesi (`pricing.buybox.budget.trendyol.perMin`) tenant'lar arasinda adil paylastirilir; LIVE_READONLY'de BASLAMAZ (K57-S8 acik).
-  { id: 'pricing.buyboxRefresh', runsOn: 'worker', build: (impl?: BuyboxRefreshJob) => {
+  { id: BUYBOX_JOB_NAME, runsOn: 'worker', build: (impl?: BuyboxRefreshJob) => {
     let j: BuyboxRefreshJob | undefined = impl;
     return defineJob({
-      name: 'pricing.buyboxRefresh', everyMs: MIN, maxDurationMs: 50 * 1000, criticality: 'normal', runOnStart: 'always',
+      name: BUYBOX_JOB_NAME, everyMs: MIN, maxDurationMs: 50 * 1000, criticality: 'normal', runOnStart: 'always',
       run: async () => {
         j ??= createBuyboxRefreshJob();
         const r = await j.runOnce();

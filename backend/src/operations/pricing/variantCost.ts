@@ -36,8 +36,6 @@ export const listCostsInput = z.object({
     cursor: z.string().regex(OBJECT_ID).optional(),
 }).strict();
 
-export type SetCostsInput = z.infer<typeof setCostsInput>;
-export type ListCostsInput = z.infer<typeof listCostsInput>;
 
 export interface CostCoverage { total: number; withCost: number; percent: number; stale: number }
 
