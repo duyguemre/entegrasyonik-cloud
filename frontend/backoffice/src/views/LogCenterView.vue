@@ -189,6 +189,7 @@
         />
         <BoSection title="Eğilim" :heading-level="3" plain>
           <BarTrend v-if="trend" :points="trend.points" :bucket="trend.bucket" :label="`${selected.title} eğilimi`" />
+          <BoPanelState v-else-if="trendError" state="error" :error="trendError" error-text="Eğilim yüklenemedi" @retry="openIssue(selected)" />
           <EkSkeleton v-else type="cards" :rows="1" />
         </BoSection>
         <BoSection v-if="trend?.tenants.length" title="Etkilenen müşteriler" :heading-level="3" plain>
@@ -294,6 +295,7 @@ const selected = ref<IssueGroup | null>(null)
 const trend = ref<GetIssueTrendResponse | null>(null)
 const traceId = ref<string | null>(null)
 const issuesError = ref<unknown>(null)
+const trendError = ref<unknown>(null)
 const streamError = ref<unknown>(null)
 
 // Hüküm: süzgeç ve aralıktan bağımsız son 24 saatin sorun grupları (+ ?tid= varsa müşterinin olay sayıları).
@@ -480,8 +482,15 @@ function onIssueRow(issue: IssueGroup, e: MouseEvent) {
 async function openIssue(issue: IssueGroup) {
   selected.value = issue
   trend.value = null
+  trendError.value = null
   if (route.query.fp !== issue.fp) router.replace({ query: { ...route.query, fp: issue.fp } })
-  trend.value = await api.call('LogCenterService/getIssueTrend', { fp: issue.fp, range: range.value === '1h' ? '24h' : range.value })
+  try {
+    const res = await api.call('LogCenterService/getIssueTrend', { fp: issue.fp, range: range.value === '1h' ? '24h' : range.value })
+    // Hızlı ardışık seçimde eski yanıt yeni seçimin üstüne yazmasın.
+    if (selected.value?.fp === issue.fp) trend.value = res
+  } catch (e) {
+    if (selected.value?.fp === issue.fp) trendError.value = e
+  }
 }
 
 function closeIssue() {
@@ -924,8 +933,17 @@ onMounted(async () => {
 
 .bo-drawer__reqs li {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
+  gap: var(--ek-space-1);
+  min-width: 0;
   font-size: var(--ek-type-label-size);
+}
+
+/* Uzun istek kimliği dar çekmecede taşmaz (390 px): kendi içinde kırılır, düğmeler alt satıra iner. */
+.bo-drawer__reqs code {
+  flex: 1 1 12rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 </style>

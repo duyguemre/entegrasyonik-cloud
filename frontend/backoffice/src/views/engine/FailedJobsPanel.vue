@@ -190,6 +190,7 @@
       title="İş yeniden denensin mi?"
       irreversible
       :description="retry.context.value ? `${retry.context.value.id} · ${retry.context.value.operation}` : ''"
+      :scope="jobScope(retry.context.value)"
       :items="['İş başarısız kümeden kuyruğa geri alınır ve sıradaki işçi tarafından yeniden çalıştırılır.', 'İş pazaryerine yazabilir; canlı salt-okuma kipinde bu işlem kapalıdır.', 'Gerekçe ve sonuç denetim kaydına yazılır.']"
       confirm-label="Yeniden dene"
       confirm-icon="mdi-replay"
@@ -206,10 +207,11 @@
     />
     <GuardedDialog
       :action="discard"
-      title="Başarısız iş silinsin mi?"
+      title="İş atılsın mı?"
       :description="discard.context.value ? `${discard.context.value.id} · ${discard.context.value.operation}` : ''"
-      :items="['İş başarısız kümeden kalıcı olarak silinir; yeniden denenemez.', 'Aktif işler silinemez. Gerekçe denetim kaydına yazılır.']"
-      confirm-label="Sil"
+      :scope="jobScope(discard.context.value)"
+      :items="['İş başarısız kümeden kalıcı olarak atılır (silinir); yeniden denenemez.', 'Aktif işler atılamaz. Gerekçe denetim kaydına yazılır.']"
+      confirm-label="Gerekçeyle at"
       confirm-icon="mdi-delete-outline"
       :confirm-text="discard.context.value?.id"
       danger
@@ -242,7 +244,7 @@ import { formatDateTime, formatRelative } from '@bo/utils/format'
 import { CHANNEL } from '@bo/utils/labels'
 import { ERROR_CODE_TEXT, codeInfo } from '@bo/utils/codes'
 import { formatCount } from '@bo/utils/units'
-import { notify } from '@bo/utils/toast'
+import { notify, notifyAuditedAt } from '@bo/utils/toast'
 import '@bo/styles/kit.css'
 
 const SOURCES: Array<{ value: FailedJobSource; label: string }> = [
@@ -411,6 +413,11 @@ const REASON_TEXT: Record<string, string> = {
 }
 const reasonText = (e?: string) => (e && REASON_TEXT[e]) || 'yeniden denenemedi'
 const bulkJobs = (): FailedBullJob[] => (list.items.value as FailedBullJob[]).filter((j) => selected.value.has(j.id))
+/** §6 "Etkilenen": kuyruk · iş · müşteri. */
+function jobScope(job: FailedBullJob | null): string | undefined {
+  if (!job) return undefined
+  return [queue.value || 'Kuyruk', job.id, job.tenantId ? `Müşteri #${job.tenantId}` : 'Platform'].join(' · ')
+}
 const bulkScope = computed(() => {
   const jobs = bulk.context.value ?? []
   const codes = [...new Set(jobs.map((j) => j.errorCode))]
@@ -443,14 +450,14 @@ const retry = useGuardedAction(
   (job: FailedBullJob, reason) => api.call('BackofficeEngineService/retryJob', { queue: queue.value, jobId: job.id, reason }),
   (_r, job) => {
     list.removeWhere((j) => j.id === job.id)
-    notify('success', `${job.id} yeniden kuyruğa alındı.`)
+    notifyAuditedAt(`${job.id} yeniden kuyruğa alındı.`, job.tenantId ? { tid: String(job.tenantId) } : {})
   },
 )
 const discard = useGuardedAction(
   (job: FailedBullJob, reason) => api.call('BackofficeEngineService/discardJob', { queue: queue.value, jobId: job.id, reason }),
   (_r, job) => {
     list.removeWhere((j) => j.id === job.id)
-    notify('success', `${job.id} silindi.`)
+    notifyAuditedAt(`${job.id} atıldı.`, job.tenantId ? { tid: String(job.tenantId) } : {})
   },
 )
 

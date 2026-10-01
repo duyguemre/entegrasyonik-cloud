@@ -231,6 +231,7 @@
       :description="`${title} hesabı yeni sekmede destek oturumuyla açılır.`"
       icon="mdi-account-eye-outline"
       :items="IMP_RULES"
+      :tenant="{ tid, name: title }"
       confirm-label="Gerekçeyle aç"
       confirm-icon="mdi-open-in-new"
     />
@@ -240,6 +241,7 @@
       :description="`${title} yeniden aktif olur; planlanan kalıcı silme iptal edilir.`"
       icon="mdi-undo-variant"
       :items="['Mağaza DELETION_PENDING → ACTIVE durumuna geçer.', 'Müşteri uygulamasına erişim ve eşitlemeler normal akışa döner.', 'Gerekçe denetim kaydına yazılır.']"
+      :tenant="{ tid, name: title }"
       confirm-label="Silmeyi geri al"
       confirm-icon="mdi-undo-variant"
     />

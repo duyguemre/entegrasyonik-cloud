@@ -95,6 +95,7 @@
       irreversible
       :description="`${title} · mevcut bitiş: ${sub?.trialEndsAt ? formatDateTime(sub.trialEndsAt) : '—'}`"
       :icon="reopen ? 'mdi-restore' : 'mdi-timer-plus-outline'"
+      :tenant="{ tid, name: title }"
       :items="extendItems"
       :confirm-label="reopen ? 'Denemeyi yeniden aç' : 'Denemeyi uzat'"
       :confirm-icon="reopen ? 'mdi-restore' : 'mdi-timer-plus-outline'"
@@ -121,6 +122,7 @@
       title="Plan değiştirilsin mi?"
       :description="`${title} · mevcut plan: ${planLabel(sub?.planCode)}`"
       icon="mdi-swap-horizontal"
+      :tenant="{ tid, name: title }"
       :items="['Plan değişimi ödeme sağlayıcısında uygulanır; oransal ücret ve fatura sağlayıcı sorumluluğundadır.', 'Gerekçe denetim kaydına yazılır.']"
       confirm-label="Planı değiştir"
       confirm-icon="mdi-swap-horizontal"
@@ -137,6 +139,7 @@
       icon="mdi-cancel"
       danger
       :confirm-text="String(tid)"
+      :tenant="{ tid, name: title }"
       :items="cancelItems"
       confirm-label="Aboneliği iptal et"
       confirm-icon="mdi-cancel"
@@ -172,7 +175,7 @@ import { TRIAL_EXTENSION_MAX_DAYS, TRIAL_EXTENSION_MAX_TOTAL_DAYS } from '@bo/ap
 import { PLAN, SUB_STATUS, planLabel } from '@bo/utils/labels'
 import { formatCount, formatMinor } from '@bo/utils/units'
 import { formatDate, formatDateTime } from '@bo/utils/format'
-import { notify } from '@bo/utils/toast'
+import { notifyAuditedAt } from '@bo/utils/toast'
 import '@bo/styles/kit.css'
 
 const DAY_MS = 86_400_000
@@ -272,7 +275,7 @@ const extend = useGuardedAction(
   (id: number, reason) => api.call('BackofficeBillingService/extendTrial', { tid: id, days: days.value, reason }),
   (r) => {
     const head = r.reopened ? `Deneme yeniden açıldı (${r.extendedDays} gün)` : `Deneme ${r.extendedDays} gün uzatıldı`
-    notify('success', `${head}; yeni bitiş ${formatDateTime(r.trialEndsAt)}. Kalan uzatma hakkı ${r.remainingExtensionDays} gün.`)
+    notifyAuditedAt(`${head}; yeni bitiş ${formatDateTime(r.trialEndsAt)}. Kalan uzatma hakkı ${r.remainingExtensionDays} gün.`, { tid: String(tid) })
     res.load()
   },
 )
@@ -294,7 +297,7 @@ const planHint = computed(() => (targetPlan.value === sub.value?.planCode ? 'Ayn
 const change = useGuardedAction(
   (id: number, reason) => api.call('BackofficeBillingService/changePlan', { tid: id, planCode: targetPlan.value, reason }),
   (r) => {
-    notify('success', `Plan ${planLabel(r.planCode)} olarak değiştirildi.`)
+    notifyAuditedAt(`Plan ${planLabel(r.planCode)} olarak değiştirildi.`, { tid: String(tid) })
     res.load()
   },
 )
@@ -325,7 +328,7 @@ const cancel = useGuardedAction(
   (id: number, reason) => api.call('BackofficeBillingService/cancelSubscription', { tid: id, atPeriodEnd: cancelLocal.value ? false : atPeriodEnd.value, reason }),
   (r) => {
     const where = r.external ? 'ödeme sağlayıcısında' : 'doğrudan (sağlayıcı kaydı yok)'
-    notify('success', r.status === 'canceled' ? `Abonelik ${where} iptal edildi.` : `Abonelik dönem sonunda iptal edilecek (${where}).`)
+    notifyAuditedAt(r.status === 'canceled' ? `Abonelik ${where} iptal edildi.` : `Abonelik dönem sonunda iptal edilecek (${where}).`, { tid: String(tid) })
     res.load()
   },
 )

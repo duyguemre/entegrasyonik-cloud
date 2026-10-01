@@ -62,6 +62,7 @@
       irreversible
       :description="release.context.value ? `${release.context.value.kind === 'export' ? 'Gönderim sinyali' : 'İçe aktarma işi'} · sahip ${release.context.value.lockedBy}` : ''"
       :items="releaseItems"
+      :scope="release.context.value ? `${release.context.value.kind === 'export' ? 'Gönderim sinyali' : 'İçe aktarma işi'} · ${release.context.value.id}` : undefined"
       confirm-label="Serbest bırak"
       confirm-icon="mdi-lock-open-variant-outline"
     />
@@ -84,7 +85,7 @@ import MeterList, { type MeterRow } from '@bo/components/kit/MeterList.vue'
 import { CHANNEL } from '@bo/utils/labels'
 import { formatRelative } from '@bo/utils/format'
 import { formatCount, formatDuration } from '@bo/utils/units'
-import { notify } from '@bo/utils/toast'
+import { notifyAuditedAt } from '@bo/utils/toast'
 import '@bo/styles/kit.css'
 
 const emit = defineEmits<{ stuck: [count: number | null] }>()
@@ -119,7 +120,7 @@ const releaseItems = computed(() => {
 const release = useGuardedAction(
   (l: StuckLease, reason) => api.call('BackofficeEngineService/releaseStuckLease', { kind: l.kind, id: l.id, reason }),
   (r) => {
-    notify('success', `Kira serbest bırakıldı (önceki sahip: ${r.previousOwner}).`)
+    notifyAuditedAt(`Kira serbest bırakıldı (önceki sahip: ${r.previousOwner}).`, {})
     res.load()
   },
 )

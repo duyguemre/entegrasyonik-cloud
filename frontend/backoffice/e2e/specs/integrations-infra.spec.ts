@@ -97,6 +97,6 @@ test.describe('entegrasyonlar ve altyapı', () => {
     await reauth.getByLabel('Parola').fill(ACCOUNT.password)
     await reauth.getByLabel('Doğrulama kodu').fill('135790')
     await reauth.getByRole('button', { name: 'Doğrula ve devam et' }).click()
-    await expect(page.getByText('12 anahtar silindi (pod api-1)')).toBeVisible()
+    await expect(page.getByText('12 anahtar silindi (pod api-1).')).toBeVisible()
   })
 })

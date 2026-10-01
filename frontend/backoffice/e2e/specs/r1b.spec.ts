@@ -83,7 +83,7 @@ test.describe('BO-R1b NEXT_TASKS', () => {
     await dialog.getByLabel('Gerekçe').fill('Test: yinelenen iş, müşteri onayıyla siliniyor')
     const typed = dialog.getByTestId('danger-confirm-text').locator('input')
     await expect(typed).toBeVisible()
-    const confirm = dialog.getByRole('button', { name: 'Sil', exact: true })
+    const confirm = dialog.getByRole('button', { name: 'Gerekçeyle at', exact: true })
     await expect(confirm).toBeDisabled()
     const label = await dialog.getByTestId('danger-confirm-text').locator('label').first().textContent()
     const id = /Onay için (\S+) yazın/.exec(label ?? '')?.[1] ?? ''

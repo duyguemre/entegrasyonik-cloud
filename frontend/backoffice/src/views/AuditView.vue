@@ -8,7 +8,7 @@
 
     <PageVerdict :verdict="verdict" />
 
-    <BoFilterBar class="bo-fb" label="Denetim süzgeçleri" :active="activeCount" @clear="clearFilters">
+    <BoFilterBar label="Denetim süzgeçleri" :active="activeCount" @clear="clearFilters">
       <BoSegmented v-model="surfaceKey" :options="SURFACES" label="Yüzey" />
       <v-select v-model="event" :items="eventItems" label="Olay" density="compact" hide-details clearable />
       <v-select v-model="result" :items="RESULTS" label="Sonuç" density="compact" hide-details clearable />
@@ -299,13 +299,6 @@ const changes = (a: AuditRecord) => auditChanges(a.meta)
 </script>
 
 <style scoped>
-@media (min-width: 768px) {
-  .bo-fb :deep(.bo-filter__fields) {
-    flex: 1 1 auto;
-    flex-wrap: nowrap;
-  }
-}
-
 .bo-audit__panel {
   padding: var(--ek-space-4);
 }

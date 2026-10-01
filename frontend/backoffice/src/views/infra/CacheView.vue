@@ -50,6 +50,7 @@
       :action="flush"
       title="Önbellek ailesi boşaltılsın mı?"
       :description="flush.context.value ? `${flush.context.value} · pod ${res.data.value?.pod ?? ''}` : ''"
+      :scope="flush.context.value ? `Pod ${res.data.value?.pod ?? '—'} · ${flush.context.value} ailesi` : undefined"
       :items="['Aile içindeki tüm kayıtlar yalnız bu podun belleğinden silinir; diğer podlara dokunulmaz.', 'Sonraki istekler veriyi yeniden yükler; kısa süreli yavaşlama olabilir.', 'Gerekçe ve sonuç denetim kaydına yazılır.']"
       confirm-label="Aileyi boşalt"
       confirm-icon="mdi-broom"
@@ -75,7 +76,7 @@ import BoStat from '@bo/components/r2/BoStat.vue'
 import BoDataTable from '@bo/components/r2/BoDataTable.vue'
 import StateBlock from '@bo/components/kit/StateBlock.vue'
 import GuardedDialog from '@bo/components/kit/GuardedDialog.vue'
-import { notify } from '@bo/utils/toast'
+import { notifyAuditedAt } from '@bo/utils/toast'
 import { formatCount, formatPercent } from '@bo/utils/units'
 import '@bo/styles/kit.css'
 
@@ -125,7 +126,7 @@ const flush = useGuardedAction(
     }
   },
   (r) => {
-    notify('success', `${r.removed} anahtar silindi (pod ${r.pod})`)
+    notifyAuditedAt(`${formatCount(r.removed)} anahtar silindi (pod ${r.pod}).`, {})
     void res.load()
   },
 )

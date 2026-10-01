@@ -14,3 +14,11 @@ export function notify(tone: ToastTone, text: string, ms?: number) {
 export function notifyAudited(text: string, open: () => void, title = 'İşlem tamamlandı') {
   showToast({ tone: 'success', title, message: text, actionLabel: 'Denetim kaydını aç', onAction: open, duration: 8000 })
 }
+
+/**
+ * `notifyAudited` kısayolu (bo-wdg): denetim ekranını verilen süzgeçle açar (`tid`, `event`, `reqId`, `surface`, `range`).
+ * Yönlendirici tembel alınır (görünümler → toast → yönlendirici döngüsü kurulmaz).
+ */
+export function notifyAuditedAt(text: string, query: Record<string, string>, title?: string) {
+  notifyAudited(text, () => void import('@bo/router').then(({ router }) => router.push({ path: '/denetim', query })), title)
+}
