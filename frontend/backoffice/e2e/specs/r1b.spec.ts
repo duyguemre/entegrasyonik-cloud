@@ -78,7 +78,7 @@ test.describe('BO-R1b NEXT_TASKS', () => {
     await expect(page).toHaveURL(/\/genel-bakis/)
     await page.goto('/motor?sekme=basarisiz&gorunum=ayrinti&env=production')
     await settle(page)
-    await page.getByRole('button', { name: /sil/i }).first().click()
+    await page.getByRole('button', { name: / at$/ }).first().click()
     const dialog = page.getByRole('dialog')
     await dialog.getByLabel('Gerekçe').fill('Test: yinelenen iş, müşteri onayıyla siliniyor')
     const typed = dialog.getByTestId('danger-confirm-text').locator('input')
@@ -95,7 +95,7 @@ test.describe('BO-R1b NEXT_TASKS', () => {
     await signInFully(page)
     await page.goto('/motor?sekme=basarisiz&gorunum=ayrinti')
     await settle(page)
-    await page.getByRole('button', { name: /sil/i }).first().click()
+    await page.getByRole('button', { name: / at$/ }).first().click()
     await expect(page.getByRole('dialog').getByTestId('danger-confirm-text')).toHaveCount(0)
   })
 
