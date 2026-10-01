@@ -2,6 +2,7 @@
 // Üst düzey `strictBody`: bilinmeyen alan 400 VALIDATION. Sözleşme: docs/API_BACKOFFICE_ATTENTION.md.
 import { z } from 'zod';
 import { strictBody } from './common';
+import { PUSH_SUBSCRIBE_BODY, PUSH_UNSUBSCRIBE_BODY } from './notification';
 import type { RpcRef } from '../types';
 
 const tid = z.number().int().positive().max(2_000_000_000);
@@ -28,4 +29,8 @@ export const BACKOFFICE_ATTENTION_RPC_INPUT: Partial<Record<RpcRef, z.ZodType<an
     'BackofficePrefsService/listViews': strictBody({ screen: z.string().regex(/^[a-z][a-z0-9-]{0,39}$/).optional() }),
     'BackofficePrefsService/saveView': strictBody({ screen: z.string().regex(/^[a-z][a-z0-9-]{0,39}$/), name: z.string().trim().min(1).max(60), query: viewQuery }),
     'BackofficePrefsService/deleteView': strictBody({ id: z.string().regex(/^[a-f0-9]{24}$/i) }),
+    // MOB-06 web push (MOB-04 ile aynı gövde; izinli uç + bayt uzunluğu operations/notifications/push/subscriptions.ts'te)
+    'BackofficePrefsService/getPushConfig': strictBody({}),
+    'BackofficePrefsService/subscribePush': strictBody(PUSH_SUBSCRIBE_BODY),
+    'BackofficePrefsService/unsubscribePush': strictBody(PUSH_UNSUBSCRIBE_BODY),
 };

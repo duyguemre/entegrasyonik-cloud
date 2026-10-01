@@ -61,3 +61,7 @@ buraya tarihli bir blok ekler (ADR-0019 §4.1). Kademe değişiklikleri HER ZAMA
 
 - Eklenen: `notifications.push.config`, `notifications.push.subscribe`, `notifications.push.unsubscribe`
 
+## 2026-10-01 — sha256 110d6cf1a3bf…
+
+- Eklenen: `platform.prefs.push_config`, `platform.prefs.push_subscribe`, `platform.prefs.push_unsubscribe`
+

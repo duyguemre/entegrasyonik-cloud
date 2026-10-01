@@ -39,6 +39,11 @@ export class PushSubscriptionRepository {
         await this.model.updateOne({ _id: id }, { $set: { lastSuccessAt: at } })
     }
 
+    /** MOB-06: bir tid'nin TUM abonelikleri (yalniz platform yoneticisi kayitlari icin, tid=0; en yeniler, ust sinirli). */
+    async listByTid(tid: number, limit = 200): Promise<any[]> {
+        return await this.model.find({ tid }).sort({ createdAt: -1 }).limit(limit).lean()
+    }
+
     /** Verilen kullanicilardan en az bir cihaz aboneligi olanlar (dagitim hedefi on suzgeci). */
     async usersWithSubscriptions(tid: number, userIds: string[]): Promise<string[]> {
         if (!userIds.length) return []

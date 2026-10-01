@@ -23,6 +23,8 @@ import { createEmailDispatcher } from '@operations/notifications/delivery/create
 import type { EmailDispatcher } from '@operations/notifications/delivery/EmailDispatcher';
 import { createPushDispatcher } from '@operations/notifications/push/createPushDispatcher';
 import type { PushDispatcher } from '@operations/notifications/push/PushDispatcher';
+import type { PlatformAttentionPusher } from '@operations/notifications/push/platformAttentionPush';
+import { createAttentionPusher } from '@api/admin/createAttentionPusher';
 import { runAnnouncementFanout, type FanoutDeps } from '@operations/notifications/announcements';
 import { createAnnouncementFanoutDeps } from '@operations/notifications/createAnnouncementFanout';
 import { createAlertEvaluator } from '@operations/alerts/createAlertEvaluator';
@@ -97,6 +99,13 @@ export const SCHEDULES: readonly ScheduleSpec[] = [
     return defineJob({
       name: 'notifications.push-dispatch', everyMs: 10 * 1000, maxDurationMs: 60 * 1000, criticality: 'normal', runOnStart: 'always',
       run: async () => { d ??= createPushDispatcher(); const r = await d.runOnce(); return { skipped: r.skipped, processed: r.processed, failed: r.failed, note: r.note }; } });
+  } },
+  // MOB-06: backoffice kritik dikkat maddeleri -> abone platform yoneticisi cihazlari (web push). Kanal kapaliysa DB'ye dokunmaz; abone yoksa dikkat hesaplanmaz.
+  { id: 'notifications.platform-attention-push', runsOn: 'worker', build: (impl?: PlatformAttentionPusher) => {
+    let d: PlatformAttentionPusher | undefined = impl;
+    return defineJob({
+      name: 'notifications.platform-attention-push', everyMs: 2 * 60 * 1000, maxDurationMs: 60 * 1000, criticality: 'normal', runOnStart: 'always',
+      run: async () => { d ??= createAttentionPusher(); const r = await d.runOnce(); return { skipped: r.skipped, processed: r.processed, failed: r.failed, note: r.note }; } });
   } },
   // ADR-0029 NB7: duyuru durum gecisleri + inApp/e-posta fan-out. NOTIFY_V2_ENABLED=false iken DB'ye dokunmadan doner (`skipped:'notify_disabled'`).
   { id: 'notifications.announcements', runsOn: 'worker', build: (deps?: FanoutDeps) => {

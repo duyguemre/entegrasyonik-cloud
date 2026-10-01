@@ -19,9 +19,9 @@ describe('WP-A1 parite: 174 operasyon, bugünkü kademe kararı == izin modeli k
   const pairs: Array<[string, string, string]> = [];
   for (const [svc, ops] of Object.entries(OPERATION_POLICY_SNAPSHOT)) for (const [op, tier] of Object.entries(ops)) pairs.push([svc, op, tier as string]);
 
-  it('290 operasyon = 194 tenant + 96 platformAdmin (hepsi aynı karar testinden geçer)', () => {
+  it('293 operasyon = 194 tenant + 99 platformAdmin (hepsi aynı karar testinden geçer)', () => {
     expect(pairs.filter(([, , t]) => t !== 'platformAdmin')).toHaveLength(194); // MOB-04: +3 web push (member)
-    expect(pairs).toHaveLength(290);
+    expect(pairs).toHaveLength(293); // MOB-06: +3 backoffice web push (platformAdmin)
   });
 
   it('her operasyon ve her aktör için karar birebir aynı (fark listelenir)', () => {

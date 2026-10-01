@@ -23,6 +23,17 @@ const prefsBody = {
 };
 
 /** Ortak ilk öğeler: sayfalama tavanı 200 (imleç yoksa) / 50 (imleçle) servis içinde sıkılaştırılır. */
+/** MOB-04/MOB-06 web push gövdeleri (tenant NotificationService ve backoffice BackofficePrefsService ortak). */
+export const PUSH_SUBSCRIBE_BODY = {
+    subscription: z.object({
+        endpoint: z.string().url().max(1024),
+        expirationTime: z.number().nullable().optional(),
+        keys: z.object({ p256dh: b64url.max(128), auth: b64url.max(64) }).strict(),
+    }).strict(),
+    deviceLabel: z.string().max(60).optional(),
+};
+export const PUSH_UNSUBSCRIBE_BODY = { endpoint: z.string().url().max(1024).optional(), id: objectIdStr.optional() };
+
 export const NOTIFICATION_RPC_INPUT: Partial<Record<RpcRef, z.ZodType<any>>> = {
     'NotificationService/get': strictBody({
         cursor: objectIdStr.optional(), afterId: objectIdStr.optional(), limit: z.number().int().min(1).max(200).optional(),
@@ -40,13 +51,6 @@ export const NOTIFICATION_RPC_INPUT: Partial<Record<RpcRef, z.ZodType<any>>> = {
     'NotificationService/updateTenantDefaults': strictBody(prefsBody),
     // MOB-04 web push: uc/anahtar bicimi burada, izinli push servisi + bayt uzunlugu operations/notifications/push/subscriptions.ts'te.
     'NotificationService/getPushConfig': strictBody({}),
-    'NotificationService/subscribePush': strictBody({
-        subscription: z.object({
-            endpoint: z.string().url().max(1024),
-            expirationTime: z.number().nullable().optional(),
-            keys: z.object({ p256dh: b64url.max(128), auth: b64url.max(64) }).strict(),
-        }).strict(),
-        deviceLabel: z.string().max(60).optional(),
-    }),
-    'NotificationService/unsubscribePush': strictBody({ endpoint: z.string().url().max(1024).optional(), id: objectIdStr.optional() }), // yalnız biri (serviste 400)
+    'NotificationService/subscribePush': strictBody(PUSH_SUBSCRIBE_BODY),
+    'NotificationService/unsubscribePush': strictBody(PUSH_UNSUBSCRIBE_BODY), // yalnız biri (serviste 400)
 };

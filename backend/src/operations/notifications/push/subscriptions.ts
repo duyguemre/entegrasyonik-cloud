@@ -67,23 +67,24 @@ export async function listPushDevices(repo: PushSubscriptionRepoLike, tid: numbe
     return rows.map((r) => ({ id: String(r._id), deviceLabel: r.deviceLabel ?? null, createdAt: r.createdAt, lastSuccessAt: r.lastSuccessAt ?? null }));
 }
 
+/** Sifreli kaydi gonderim hedefine cevirir; gecersiz/cozulemeyen kayit null (SILINMEZ: anahtar halkasi hatasi tum abonelikleri yok etmesin). */
+export function decodePushTarget(r: { _id: unknown; sub: string }): PushTarget | null {
+    try {
+        const s = JSON.parse(decryptField(r.sub));
+        if (isAllowedPushEndpoint(s?.endpoint) && s?.keys?.p256dh && s?.keys?.auth) return { id: String(r._id), endpoint: s.endpoint, keys: s.keys };
+        log.warn({ subscriptionId: String(r._id) }, 'push aboneligi gecersiz; atlandi');
+    } catch {
+        log.warn({ subscriptionId: String(r._id) }, 'push aboneligi cozulemedi; atlandi');
+    }
+    return null;
+}
+
 /** Gonderici portu: sifre cozumu burada; cozulemeyen (anahtar donusu/bozuk) kayit atlanir (silinmez). */
 export function createPushSubscriptionPort(repo: PushSubscriptionRepoLike): PushSubscriptionPort {
     return {
         async listForUser(tid, userId) {
             const rows = await repo.listByUser(tid, userId);
-            const out: PushTarget[] = [];
-            for (const r of rows) {
-                try {
-                    const s = JSON.parse(decryptField(r.sub));
-                    if (isAllowedPushEndpoint(s?.endpoint) && s?.keys?.p256dh && s?.keys?.auth) out.push({ id: String(r._id), endpoint: s.endpoint, keys: s.keys });
-                    else log.warn({ subscriptionId: String(r._id) }, 'push aboneligi gecersiz; atlandi');
-                } catch {
-                    // SILINMEZ: anahtar halkasi yapilandirma hatasi (eski kid eksik) tum abonelikleri yok etmesin.
-                    log.warn({ subscriptionId: String(r._id) }, 'push aboneligi cozulemedi; atlandi');
-                }
-            }
-            return out;
+            return rows.map(decodePushTarget).filter((t): t is PushTarget => t !== null);
         },
         remove: (id) => repo.deleteById(id),
         markSuccess: (id, at) => repo.markSuccess(id, at),

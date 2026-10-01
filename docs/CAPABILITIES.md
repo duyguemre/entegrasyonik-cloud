@@ -3,15 +3,15 @@
 **ÜRETİLMİŞ BELGE — ELLE DÜZENLENMEZ.** Kaynak: `backend/src/capabilities/**` (zod-şemalı TypeScript kaydı).
 Yeniden üretmek için: `cd backend && npm run capabilities:docs`. Bu belge `docs/OPERATION_POLICY.md`'nin yerine geçer (ADR-0019 §2).
 
-Üretim zamanı: 2026-10-01T12:46:50.982Z · Kaynak commit bilgisi bu betiğin dışında (git) tutulur.
+Üretim zamanı: 2026-10-01T13:24:57.835Z · Kaynak commit bilgisi bu betiğin dışında (git) tutulur.
 
 ## Özet
 
-- Toplam yetenek: **283** (toplam RPC bağı: 319)
-- `effect`: write=119, read=133, destructive=28, propose=3
-- `minTier`: platformAdmin=98, member=144, owner=4, admin=37
-- MCP: `exposed`=6, `notExposed`=277 (bunun `deferred`=99)
-- Yetim (ui.none + mcp.notExposed + agent.allowed:false): 120 (bkz. `capability-baseline.json`, artamaz mandalı)
+- Toplam yetenek: **286** (toplam RPC bağı: 322)
+- `effect`: write=121, read=134, destructive=28, propose=3
+- `minTier`: platformAdmin=101, member=144, owner=4, admin=37
+- MCP: `exposed`=6, `notExposed`=280 (bunun `deferred`=99)
+- Yetim (ui.none + mcp.notExposed + agent.allowed:false): 123 (bkz. `capability-baseline.json`, artamaz mandalı)
 
 **Operasyon/yetenek sayısı tutarsızlığı çözümü (ADR-0019 Bağlam):** `operationPolicy.ts`nin bugünkü mekanik sayımı 
 (ImageApi sözde-servisi DAHİL, `OPEN_OPERATIONS` HARİÇ) **174** `(servis, operasyon)` çiftidir (member 137, admin 19, owner 2, 
@@ -260,7 +260,7 @@ metodu yok (bugün de 403/çalışmıyor; `operation-policy.test.ts` `FE_CALLS_W
 | `orders.mark_printed` | write | member | OrderService/markAsPrinted | notExposed:ui_plumbing | none (Backend-only: FE henüz çağırmıyor (BACKEND_ONLY_NOT_YET_IN_FE); yalnızca yerel bayrak + platformActions kaydı.) | allowed:false |  |
 | `orders.rejection_reasons.list` | read | member | OrderService/getOrderRejectionReasons | notExposed:ui_plumbing | OrderListView#cancel | allowed:false |  |
 
-### platform (98)
+### platform (101)
 
 | id | effect | minTier | RPC bağları | mcp | ui | agent | review |
 |---|---|---|---|---|---|---|---|
@@ -344,6 +344,9 @@ metodu yok (bugün de 403/çalışmıyor; `operation-policy.test.ts` `FE_CALLS_W
 | `platform.overview.pulse` | read | platformAdmin | BackofficeOverviewService/getPulse | notExposed:platform_admin | none (Backoffice SPA (ayrı depo/yüzey): /admin-api üzerinden çağrılır; müşteri arayüzünde ekranı yok.) | allowed:false |  |
 | `platform.prefs.delete_view` | write | platformAdmin | BackofficePrefsService/deleteView | notExposed:platform_admin | none (Backoffice SPA (ayrı depo/yüzey): /admin-api üzerinden çağrılır; müşteri arayüzünde ekranı yok.) | allowed:false |  |
 | `platform.prefs.list_views` | read | platformAdmin | BackofficePrefsService/listViews | notExposed:platform_admin | none (Backoffice SPA (ayrı depo/yüzey): /admin-api üzerinden çağrılır; müşteri arayüzünde ekranı yok.) | allowed:false |  |
+| `platform.prefs.push_config` | read | platformAdmin | BackofficePrefsService/getPushConfig | notExposed:platform_admin | none (Backoffice SPA (ayrı depo/yüzey): /admin-api üzerinden çağrılır; müşteri arayüzünde ekranı yok.) | allowed:false |  |
+| `platform.prefs.push_subscribe` | write | platformAdmin | BackofficePrefsService/subscribePush | notExposed:platform_admin | none (Backoffice SPA (ayrı depo/yüzey): /admin-api üzerinden çağrılır; müşteri arayüzünde ekranı yok.) | allowed:false |  |
+| `platform.prefs.push_unsubscribe` | write | platformAdmin | BackofficePrefsService/unsubscribePush | notExposed:platform_admin | none (Backoffice SPA (ayrı depo/yüzey): /admin-api üzerinden çağrılır; müşteri arayüzünde ekranı yok.) | allowed:false |  |
 | `platform.prefs.save_view` | write | platformAdmin | BackofficePrefsService/saveView | notExposed:platform_admin | none (Backoffice SPA (ayrı depo/yüzey): /admin-api üzerinden çağrılır; müşteri arayüzünde ekranı yok.) | allowed:false |  |
 | `platform.revenue.metrics` | read | platformAdmin | BackofficeBillingService/getRevenueMetrics | notExposed:platform_admin | none (Backoffice SPA (ayrı depo/yüzey): /admin-api üzerinden çağrılır; müşteri arayüzünde ekranı yok.) | allowed:false |  |
 | `platform.store.select` | write | platformAdmin | SecurityService/selectStore | notExposed:platform_admin | shell:session | allowed:false |  |

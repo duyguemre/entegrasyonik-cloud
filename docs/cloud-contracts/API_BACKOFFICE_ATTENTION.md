@@ -200,6 +200,16 @@ Yeni servis `BackofficePrefsService`; veri `ApplicationDB` yeni koleksiyon **`Ba
 
 `BackofficeLogService/issueGroups` girdisine `tid?: number` (pozitif tam sayı) eklenir. Süzgeç, `ErrorEvents.tenantBuckets` (tenant kimliği saklanmaz; ADR-0026 L1) üzerinden **kova eşleşmesiyle** uygulanır → sonuç **yaklaşık**dır (çakışma nedeniyle başka tenant'ın grubu da gelebilir; eksik gelmez). Yanıta `tenantFilter: { tid, approximate: true } | null` eklenir; her satırın alanları aynı. Log gezgini (`list`) zaten kesin `tenantId` süzgeci taşır (değişmedi). FE "yalnız olay akışına uygulanır" notunu kaldırır, sorun gruplarında "yaklaşık" ipucu gösterir.
 
+## BE-07 — Kritik dikkat maddeleri için web push (MOB-06)
+
+`BackofficePrefsService`'e üç uç (MOB-04 kanalı ve kuralları aynen; ayrıntı `docs/NOTIFICATION_PLAN.md` NB9 + "MOB-06 backoffice push"):
+- `getPushConfig {}` → `{ enabled, publicKey, devices: [ { id, deviceLabel, createdAt, lastSuccessAt } ] }` — kanal kapalıysa `{enabled:false, publicKey:null, devices:[]}`; yalnız çağıranın cihazları.
+- `subscribePush { subscription: { endpoint, expirationTime?, keys: { p256dh, auth } }, deviceLabel? }` → `{ ok: true }` — kanal kapalı `409 PUSH_DISABLED`, izinsiz uç `400 PUSH_ENDPOINT_NOT_ALLOWED`, bozuk anahtar `400 PUSH_KEYS_INVALID`.
+- `unsubscribePush { endpoint } | { id }` → `{ removed }` — yalnız kendi kaydı; kanal kapalıyken de çalışır; ikisi birden ya da hiçbiri `400 VALIDATION`.
+- Kayıt `PushSubscriptions` koleksiyonunda `tid = 0` (platform; tenant tid'leri ≥ 1) + `userId = principal.sub` — yeni koleksiyon/göç yok (göç `0020` yeterli).
+- Yetenekler `platform.prefs.push_{config,subscribe,unsubscribe}` (`platformAdmin`, MCP'ye kapalı); yazmalar step-up/gerekçe istemez (kişisel tercih).
+- Gönderici `notifications.platform-attention-push` (worker, 2 dk): `getAttention` ile aynı kaynaklar, yalnız `severity:'critical'` maddeler; yeni madde ya da 6 sa'tir süren madde bildirim üretir (süreç belleği; yeniden başlatmada en çok bir tekrar). İçerik sabit madde başlıkları (tenant adı/`subjects` yok), `url:'/'`, `tag:'bo-attention'`. Gönderim anında alıcı DB'den taze denetlenir: `isGlobalAdmin !== true` ya da `isActive === false` olanın aboneliği silinir.
+
 ---
 
 ## Uygulama notları (sözleşme sonrası, kırıcı değil)

@@ -299,6 +299,13 @@ Test komutları `docs/TESTING.md`'den alınır:
 3. `NOTIFY_V2_ENABLED=true`; backend'i `EGRESS_ALLOW_WEBPUSH=1 npm run start:local` ile çalıştır (egress guard yalnız bu bayrakla push servislerine izin verir; LLM/pazaryeri açılmaz).
 4. Push yalnız güvenli bağlamda çalışır: `localhost` ya da HTTPS. Telefonla denemek için HTTPS tünel/staging gerekir; iOS'ta önce Safari → Paylaş → "Ana Ekrana Ekle", sonra uygulamayı ana ekrandan açıp Ayarlar > Bildirimler'den aç.
 
+**MOB-06 backoffice push (2026-10-01, bulut `cloud/mob-android`)**
+- Platform yöneticisi aboneliği: `BackofficePrefsService/{getPushConfig,subscribePush,unsubscribePush}` (sözleşme `docs/API_BACKOFFICE_ATTENTION.md` BE-07). Aynı `PushSubscriptions`, `tid = 0` + `userId = Users._id`; aynı SSRF/şifreleme/cihaz sınırı.
+- Kaynak: outbox DEĞİL — `notifications.platform-attention-push` (worker, 2 dk; `operations/notifications/push/platformAttentionPush.ts`, üretim bağlantısı `api/admin/createAttentionPusher.ts`) her turda abone yönetici varsa `getAttention` (K51 kaynakları) hesaplar, yalnız **kritik** maddeleri gönderir. Kanal kapalı → DB'ye dokunmaz; abone yok → dikkat hesaplanmaz.
+- Tekrar: yeni kritik madde ya da 6 sa'tir süren madde; çözülüp yeniden kritikleşen madde tekrar bildirilir. Durum süreç belleğinde (birden çok worker podunda aynı bildirim çoğalabilir; cihazda `tag:'bo-attention'` öncekinin yerine geçer). Yalnız geçici hatalarla iletilemezse durum yazılmaz (sonraki tur).
+- Alıcı: gönderim anında `Users.isGlobalAdmin===true` ve `isActive!==false`; değilse abonelik silinir. 404/410 → silinir. `Urgency: high`, TTL 12 sa.
+- Önyüz: `frontend/backoffice/src/pwa/{webPush.ts,PushCard.vue}` (Platform uyarıları ekranında kart; izin yalnız "Bu cihazda aç" ile), SW `push`/`notificationclick` (yalnız panel içi göreli yol). Testler: backend `tests/unit/notifications/platformAttentionPush.test.ts`; backoffice `tests/web-push.test.ts`, `tests/pwa-sw-push.test.ts`.
+
 ## 4. Bulut görev brifleri — müşteri uygulaması (yapıştırmaya hazır)
 
 Ortak ek (her brifin sonuna):

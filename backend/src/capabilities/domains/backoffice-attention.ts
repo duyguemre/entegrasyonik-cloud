@@ -35,4 +35,17 @@ export const BACKOFFICE_ATTENTION_CAPABILITIES = [
         id: 'platform.prefs.delete_view', domain: 'platform', summary: { tr: 'Kayıtlı görünümü sil (yalnız kendi kaydı)', en: 'Delete a saved view (own records only)' },
         effect: 'write', minTier: 'platformAdmin', permission: PLATFORM_ONLY, bindings: [{ rpc: 'BackofficePrefsService/deleteView' }], ui: UI, mcp: PA, agent: NO_AGENT,
     }),
+    // MOB-06: platform yöneticisi web push aboneliği (yalnız kritik dikkat maddeleri). Kişisel tercih: step-up/gerekçe YOK.
+    c({
+        id: 'platform.prefs.push_config', domain: 'platform', summary: { tr: 'Kritik uyarı anlık bildirim durumu ve cihazlarım', en: 'Critical alert push status and my devices' },
+        effect: 'read', minTier: 'platformAdmin', permission: PLATFORM_ONLY, bindings: [{ rpc: 'BackofficePrefsService/getPushConfig' }], ui: UI, mcp: PA, agent: NO_AGENT,
+    }),
+    c({
+        id: 'platform.prefs.push_subscribe', domain: 'platform', summary: { tr: 'Bu cihazda kritik uyarı bildirimlerini aç', en: 'Enable critical alert push on this device' },
+        effect: 'write', minTier: 'platformAdmin', permission: PLATFORM_ONLY, bindings: [{ rpc: 'BackofficePrefsService/subscribePush' }], ui: UI, mcp: PA, agent: NO_AGENT,
+    }),
+    c({
+        id: 'platform.prefs.push_unsubscribe', domain: 'platform', summary: { tr: 'Cihazda kritik uyarı bildirimlerini kapat (yalnız kendi kaydı)', en: 'Disable critical alert push on a device (own records only)' },
+        effect: 'write', minTier: 'platformAdmin', permission: PLATFORM_ONLY, bindings: [{ rpc: 'BackofficePrefsService/unsubscribePush' }], ui: UI, mcp: PA, agent: NO_AGENT,
+    }),
 ];
