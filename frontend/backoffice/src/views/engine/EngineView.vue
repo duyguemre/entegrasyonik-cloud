@@ -31,6 +31,7 @@ import QueuesPanel from './QueuesPanel.vue'
 import FailedJobsPanel from './FailedJobsPanel.vue'
 import StateMachinePanel from './StateMachinePanel.vue'
 import JobRunsPanel from './JobRunsPanel.vue'
+import type { FailedBullJob } from '@bo/api/contract'
 import { engineVerdict } from './engineVerdict'
 
 const TABS = ['kuyruklar', 'basarisiz', 'durum', 'zamanlanmis'] as const
@@ -45,6 +46,8 @@ const summary = useVerdictSources({
   queues: () => api.call('BackofficeEngineService/getQueues', {}),
   sm: () => api.call('BackofficeEngineService/getStateMachineJobs', {}),
   jobs: () => api.call('BackofficeEngineService/listJobRuns', { limit: 1 }),
+  // Baskın hata kodu için en yeni 50 başarısız iş (Redis yoksa 503 → hüküm kodsuz sürer; ayrıca "okunamadı" üretmez).
+  sample: () => api.call('BackofficeEngineService/listFailedJobs', { queue: 'order-sync-queue', source: 'bullmq', limit: 50 }).catch(() => null),
 })
 
 const verdict = computed(() =>
@@ -53,6 +56,7 @@ const verdict = computed(() =>
         queues: summary.sources.queues.data.value,
         sm: summary.sources.sm.data.value,
         jobs: summary.sources.jobs.data.value?.states ?? null,
+        failedSample: (summary.sources.sample.data.value?.items as FailedBullJob[] | undefined) ?? null,
         failed: { queues: summary.failed('queues'), sm: summary.failed('sm'), jobs: summary.failed('jobs') },
         retry: () => summary.load(),
       })

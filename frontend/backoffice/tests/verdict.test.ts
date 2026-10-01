@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { buildVerdict, rankAttention, toneOf, unreadable, type AttentionItem } from '@bo/utils/verdict'
-import { engineVerdict } from '@bo/views/engine/engineVerdict'
+import { dominantErrorCode, engineVerdict } from '@bo/views/engine/engineVerdict'
 import type { GetQueuesResponse, GetStateMachineJobsResponse, JobState } from '@bo/api/contract'
 
 const item = (id: string, tone: AttentionItem['tone']): AttentionItem => ({ id, tone, title: id })
@@ -76,5 +76,24 @@ describe('motor hükmü', () => {
     expect(engineVerdict({ ...base, queues: queues(), sm: sm(), jobs: [job] }).tone).toBe('error')
     const v = engineVerdict({ ...base, queues: null, sm: null, jobs: null, failed: { queues: true, sm: true, jobs: true } })
     expect(v.summary).toContain('okunamadı')
+  })
+
+  it('baskın hata koduna göre süzgeçli bağlantı ve toplu yeniden deneme önerisi (BE-03)', () => {
+    const counts = { wait: 0, active: 0, delayed: 0, failed: 5, completed: 0, paused: 0 }
+    const sample = ['UNAVAILABLE', 'UNAVAILABLE', 'AUTH', 'UNAVAILABLE', 'RATE_LIMITED'].map((errorCode) => ({ errorCode })) as never
+    expect(dominantErrorCode(sample)).toBe('UNAVAILABLE')
+    expect(dominantErrorCode([])).toBeNull()
+    const v = engineVerdict({ ...base, queues: queues({ counts }), sm: sm(), jobs: [], failedSample: sample })
+    const item = v.attention.find((a) => a.id === 'failed')!
+    expect(item.to).toEqual({ query: { sekme: 'basarisiz', kod: 'UNAVAILABLE' } })
+    expect(item.advice).toContain('toplu yeniden deneyin')
+    const act = v.actions.find((a) => a.id === 'retry')!
+    expect(act.to).toEqual({ query: { sekme: 'basarisiz', kod: 'UNAVAILABLE' } })
+    expect(act.guarded).toBe(true)
+    // Kalıcı kod: yeniden deneme önerilmez, süzgeçli bağlantı yine var.
+    const auth = engineVerdict({ ...base, queues: queues({ counts }), sm: sm(), jobs: [], failedSample: [{ errorCode: 'AUTH' }] as never })
+    expect(auth.attention.find((a) => a.id === 'failed')!.to).toEqual({ query: { sekme: 'basarisiz', kod: 'AUTH' } })
+    expect(auth.attention.find((a) => a.id === 'failed')!.advice).not.toContain('toplu')
+    expect(auth.actions.find((a) => a.id === 'retry')!.to).toEqual({ query: { sekme: 'basarisiz' } })
   })
 })

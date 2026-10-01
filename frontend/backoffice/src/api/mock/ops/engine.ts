@@ -1,5 +1,5 @@
 /** Sahte BackofficeEngineService (B7a-d) — sözleşme şekli birebir; yük/hata metni yok (yalnız kod). */
-import type { DlqRecord, FailedBullJob, JobRun, JobRunStatus, JobState, StuckLease } from '../../contract'
+import { RETRY_JOBS_MAX, type DlqRecord, type FailedBullJob, type JobRun, type JobRunStatus, type JobState, type ListFailedJobsResponse, type RetryJobsResponse, type StuckLease } from '../../contract'
 import { rng } from '../data'
 import { MockHttpError } from '../errors'
 import { DAY, HOUR, MIN, UNHANDLED, conflict, hex24, iso, liveReadonly, notFound, page, strict, validation, type MockCtx, type MockDomain } from './context'
@@ -33,8 +33,13 @@ export function createEngineMock(t0: number): MockDomain {
       maxAttempts: 5,
       failedAt: iso(at),
       enqueuedAt: iso(at - Math.floor(3 * MIN + r() * 40 * MIN)),
+      // BE-04: üçte biri korelasyon kimliği taşımaz (null); periyodik işler `ord_…`, webhook `req_…`.
+      reqId: i % 3 === 0 ? null : i % 3 === 1 ? `ord_${hex24(300 + i).slice(0, 12)}` : `req_${hex24(300 + i).slice(0, 12)}`,
+      traceId: null,
     }
   })
+  /** Toplu denemede "zaten işleniyor" gibi davranan iş (önceki denemede kuyruğa alınmış): JOB_NOT_FAILED, listede kalır. */
+  const racing = new Set([failed[12].id])
   const dlq: DlqRecord[] = Array.from({ length: 8 }, (_, i) => ({
     id: hex24(700 + i),
     originalJobId: `fetch-orders-${880 - i * 13}`,
@@ -44,6 +49,8 @@ export function createEngineMock(t0: number): MockDomain {
     dlqType: i % 3 ? 'MAX_RETRIES_EXCEEDED' : 'FATAL_ERROR',
     status: i < 5 ? 'PENDING_MANUAL_REVIEW' : 'RESOLVED',
     failedAt: iso(t0 - (i + 1) * 7 * HOUR),
+    reqId: i % 2 ? `ord_${hex24(500 + i).slice(0, 12)}` : null,
+    traceId: null,
   }))
   let stuck: StuckLease[] = [
     { kind: 'export', id: hex24(901), tenantId: 104, integrationCode: 'trendyol', status: 'PENDING', lockedBy: 'worker-1', leaseExpiredAt: iso(t0 - 45 * MIN), lastActivityAt: iso(t0 - 75 * MIN), staleForMs: 45 * MIN },
@@ -148,13 +155,43 @@ export function createEngineMock(t0: number): MockDomain {
           }
         }
         case 'BackofficeEngineService/listFailedJobs': {
-          strict(body, ['queue', 'source', 'cursor', 'limit'])
+          strict(body, ['queue', 'source', 'cursor', 'limit', 'tid', 'integrationCode', 'errorCode'])
           checkQueue(body)
+          if (body.tid !== undefined && (!Number.isInteger(body.tid) || (body.tid as number) < 1)) throw validation('tid', 'pozitif tam sayı')
+          if (body.integrationCode !== undefined && (typeof body.integrationCode !== 'string' || !/^[a-z0-9_-]{1,32}$/i.test(body.integrationCode))) throw validation('integrationCode', 'geçersiz entegrasyon kodu')
+          if (body.errorCode !== undefined && (typeof body.errorCode !== 'string' || !/^[A-Z_]{2,32}$/.test(body.errorCode))) throw validation('errorCode', 'A-Z ve _ (2..32)')
           const source = (body.source as string) ?? 'bullmq'
           if (source !== 'bullmq' && source !== 'dlq') throw validation('source', 'bullmq | dlq')
           if (source === 'bullmq' && ctx.degraded) throw new MockHttpError(503, 'QUEUE_UNAVAILABLE', 'Kuyruk şu an kullanılamıyor.')
-          const list = source === 'dlq' ? dlq : failed
-          return { source, queue: QUEUE, ...page<FailedBullJob | DlqRecord>(list, body) }
+          const filter = {
+            ...(body.tid !== undefined ? { tid: body.tid as number } : {}),
+            ...(body.integrationCode !== undefined ? { integrationCode: body.integrationCode as string } : {}),
+            ...(body.errorCode !== undefined ? { errorCode: body.errorCode as string } : {}),
+          }
+          const base: Array<FailedBullJob | DlqRecord> = source === 'dlq' ? dlq : failed
+          const list = base.filter((j) => (filter.tid === undefined || j.tenantId === filter.tid) && (filter.integrationCode === undefined || j.integrationCode === filter.integrationCode) && (filter.errorCode === undefined || j.errorCode === filter.errorCode))
+          const res: ListFailedJobsResponse = { source, queue: QUEUE, ...page<FailedBullJob | DlqRecord>(list, body) }
+          if (Object.keys(filter).length) res.filter = { tid: filter.tid ?? null, integrationCode: filter.integrationCode ?? null, errorCode: filter.errorCode ?? null }
+          if (source === 'bullmq' && Object.keys(filter).length) res.total = list.length
+          return res
+        }
+        case 'BackofficeEngineService/retryJobs': {
+          strict(body, ['queue', 'jobIds', 'reason'])
+          checkQueue(body)
+          const ids = body.jobIds
+          if (!Array.isArray(ids) || ids.length < 1 || ids.length > RETRY_JOBS_MAX) throw validation('jobIds', `1..${RETRY_JOBS_MAX} iş kimliği`)
+          for (const id of ids) if (typeof id !== 'string' || !/^[A-Za-z0-9:_.-]{1,128}$/.test(id)) throw validation('jobIds', 'geçersiz iş kimliği')
+          if (ctx.liveReadonly) throw liveReadonly()
+          if (ctx.degraded) throw new MockHttpError(503, 'QUEUE_UNAVAILABLE', 'Kuyruk şu an kullanılamıyor.')
+          const results: RetryJobsResponse['results'] = [...new Set(ids as string[])].map((jobId) => {
+            if (racing.has(jobId) || jobId === 'push-status-active') return { jobId, ok: false, error: 'JOB_NOT_FAILED' }
+            const job = failed.find((j) => j.id === jobId)
+            if (!job) return { jobId, ok: false, error: 'JOB_NOT_FOUND' }
+            failed = failed.filter((j) => j !== job)
+            return { jobId, ok: true }
+          })
+          const succeeded = results.filter((x) => x.ok).length
+          return { queue: QUEUE, requested: results.length, succeeded, failed: results.length - succeeded, results } satisfies RetryJobsResponse
         }
         case 'BackofficeEngineService/retryJob':
         case 'BackofficeEngineService/discardJob': {

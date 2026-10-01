@@ -1,8 +1,9 @@
 /** Motor ve kuyruklar — sayfa hükmü (K51, BO_UI_PATTERNS §11). Saf: girdi okunan özetler, çıktı `PageVerdict`. */
 import type { RouteLocationRaw } from 'vue-router'
-import type { GetQueuesResponse, GetStateMachineJobsResponse, JobState } from '@bo/api/contract'
+import type { FailedBullJob, GetQueuesResponse, GetStateMachineJobsResponse, JobState } from '@bo/api/contract'
 import { buildVerdict, unreadable, type AttentionItem, type PageVerdict, type SuggestedAction } from '@bo/utils/verdict'
 import { formatCount, formatDuration } from '@bo/utils/units'
+import { codeInfo } from '@bo/utils/codes'
 
 /** Bekleyen iş bu sayıyı aşarsa birikim sayılır (sözleşmede eşik yok; işçi kapasitesinin ~10 dk'sı). */
 export const BACKLOG_WARN = 500
@@ -13,12 +14,29 @@ export type EngineTab = 'kuyruklar' | 'basarisiz' | 'durum' | 'zamanlanmis'
 /** Aynı sayfada sekme (+ kaynak) — göreli konum; paylaşılan bağlantı aynı görünümü açar. */
 export const engineTab = (tab: EngineTab, kaynak?: 'dlq'): RouteLocationRaw => ({ query: { ...(tab === 'kuyruklar' ? {} : { sekme: tab }), ...(kaynak ? { kaynak } : {}) } })
 
+/** Geçici (kendiliğinden düzelebilen) hata kodları: toplu yeniden deneme güvenli ilk adımdır. */
+export const TRANSIENT_CODES = ['UNAVAILABLE', 'RATE_LIMITED']
+
+/** En sık hata kodu (eşitlikte ilk görülen); örnek boşsa null. */
+export function dominantErrorCode(sample: Array<Pick<FailedBullJob, 'errorCode'>> | null | undefined): string | null {
+  const n = new Map<string, number>()
+  for (const j of sample ?? []) n.set(j.errorCode, (n.get(j.errorCode) ?? 0) + 1)
+  let best: string | null = null
+  for (const [k, v] of n) if (best === null || v > n.get(best)!) best = k
+  return best
+}
+
+/** Başarısız işler sekmesi + hata kodu süzgeci (kod yoksa süzgeçsiz). */
+export const failedTab = (code?: string | null): RouteLocationRaw => ({ query: { sekme: 'basarisiz', ...(code ? { kod: code } : {}) } })
+
 export interface EngineVerdictInput {
   queues: GetQueuesResponse | null
   sm: GetStateMachineJobsResponse | null
   jobs: JobState[] | null
   failed: { queues: boolean; sm: boolean; jobs: boolean }
   retry: () => void
+  /** Başarısız iş örneği (ilk sayfa) — baskın hata kodu için; okunamadıysa/yoksa null. */
+  failedSample?: FailedBullJob[] | null
 }
 
 export function engineVerdict(i: EngineVerdictInput): PageVerdict {
@@ -52,14 +70,22 @@ export function engineVerdict(i: EngineVerdictInput): PageVerdict {
     })
 
   const failedJobs = qs.reduce((n, q) => n + (q.counts?.failed ?? 0), 0)
+  const topCode = dominantErrorCode(i.failedSample)
+  const transient = topCode !== null && TRANSIENT_CODES.includes(topCode)
   if (failedJobs > 0)
     attention.push({
       id: 'failed',
       tone: 'warning',
       title: `${formatCount(failedJobs)} başarısız iş yeniden denenebilir`,
       impact: 'İlgili siparişlerin pazaryerine aktarımı yarım kaldı.',
-      advice: 'Geçici hata kodlarında (UNAVAILABLE, RATE_LIMITED) yeniden deneyin; AUTH ise önce müşteri anahtarını yeniletin.',
-      to: engineTab('basarisiz'),
+      advice: !topCode
+        ? 'Geçici hata kodlarında (UNAVAILABLE, RATE_LIMITED) yeniden deneyin; AUTH ise önce müşteri anahtarını yeniletin.'
+        : transient
+          ? `Çoğu ${topCode} (${codeInfo(topCode).text.replace(/\.$/, '').toLowerCase()}) — seçip toplu yeniden deneyin.`
+          : topCode === 'AUTH'
+            ? 'Çoğu AUTH — yeniden denemeden önce müşterilerin pazaryeri anahtarını yeniletin.'
+            : `Çoğu ${topCode} — hata kodunu inceleyin; neden giderilmeden yeniden denemek aynı sonucu verir.`,
+      to: failedTab(topCode),
       cta: 'Başarısız işleri aç',
     })
 
@@ -119,7 +145,7 @@ export function engineVerdict(i: EngineVerdictInput): PageVerdict {
   if (down.length) actions.push({ id: 'infra', label: 'Redis bağlantısını kontrol edin', detail: 'Bellek, bağlantı ve gecikme — salt okuma.', cta: 'Redis durumunu aç', icon: 'mdi-memory', to: { path: '/altyapi', query: { sekme: 'redis' } } })
   if (streak.length) actions.push({ id: 'jobs', label: 'Başarısız görevin son koşusunu inceleyin', detail: 'Hata kodu ve süre zamanlanmış görevler sekmesinde.', cta: 'Görevleri aç', icon: 'mdi-calendar-alert', to: engineTab('zamanlanmis') })
   if (dlq > 0) actions.push({ id: 'review-dlq', label: 'Ölü mektupları inceleyin', detail: 'Neden çözülünce iş müşteri tarafında yeniden tetiklenir.', cta: 'Ölü mektupları aç', icon: 'mdi-email-alert-outline', to: engineTab('basarisiz', 'dlq') })
-  if (failedJobs > 0) actions.push({ id: 'retry', label: 'Başarısız işleri yeniden deneyin', detail: 'İş başına; her deneme gerekçeyle denetime yazılır.', cta: 'Başarısız işler', icon: 'mdi-replay', guarded: true, to: engineTab('basarisiz') })
+  if (failedJobs > 0) actions.push({ id: 'retry', label: transient ? `${topCode} hatalı işleri seçip toplu yeniden deneyin` : 'Başarısız işleri yeniden deneyin', detail: 'En çok 50 iş birlikte; her deneme gerekçeyle denetime yazılır.', cta: 'Başarısız işler', icon: 'mdi-replay', guarded: true, to: failedTab(transient ? topCode : null) })
   if (stuck > 0) actions.push({ id: 'release', label: 'Takılı kirayı serbest bırakın', detail: 'Sunucu kirayı yeniden denetler; sağlıklıysa değişiklik olmaz.', cta: 'Takılı kiralar', icon: 'mdi-lock-open-variant-outline', guarded: true, to: engineTab('durum') })
   if (failedJobs > 0 || dlq > 0 || streak.length) actions.push({ id: 'logs', label: 'Sipariş hatalarını loglarda açın', icon: 'mdi-pulse', to: LOGS })
 
