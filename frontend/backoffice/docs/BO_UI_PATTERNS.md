@@ -181,7 +181,7 @@ Bu ek bo-p1 desenlerinin ÜZERİNE kuruludur; çelişki yoksa yukarıdaki kurall
 | Yapı taşı | Yer | Ne zaman |
 |---|---|---|
 | `useResource(fetcher)` | `src/composables/useResource.ts` | Tek okuma (pano, detay). Durum: loading → ready / error / degraded (503) / notFound (404); yenilemede veri korunur (`refreshing`), hatada son iyi veri kalır (`stale`). |
-| `useCursorList(fetchPage)` | `src/composables/useCursorList.ts` | İmleçli liste. İlk istek imleçsiz; `nextCursor` aynı filtrelerle geri gönderilir; filtre değişince `reload()`; eski yanıt yok sayılır. "Daha fazla" hatası listeyi silmez. `LoadMore` bileşeniyle. |
+| `useCursorList(fetchPage)` | `src/composables/useCursorList.ts` | İmleçli liste. İlk istek imleçsiz; `nextCursor` aynı filtrelerle geri gönderilir; filtre değişince `reload()`; eski yanıt yok sayılır. "Daha fazla" hatası listeyi silmez. `BoPagination` bileşeniyle (R2; eski `LoadMore` kaldırıldı). |
 | `useGuardedAction(run, onDone)` + `GuardedDialog` | `src/composables/useGuardedAction.ts`, `src/components/kit/GuardedDialog.vue` | Step-up + gerekçe isteyen HER yazma. `GuardedDialog` = `DangerActionDialog` (items[0] → "Ne olacak", kalanlar ayrıntı; `danger` → yıkıcı; `irreversible`/`reversible` açıkça). Varsayılan slot: işleme özgü alan (gün, plan, e-posta). |
 | `StateBlock` | `src/components/kit/StateBlock.vue` | Panel gövdesinin dört durumu; hata metni `describeError` ile koda özgü eylem taşır (504 → "daha dar aralık", 423 → "salt-okuma kapanınca", 409 → "listeyi yenileyin"). `BoPanelState` ile aynı görsel dil (EkProblemState). |
 | `describeError` | `src/utils/errors.ts` | Sunucu iletisi + koda göre eylem: "<ne oldu> — <ne yapılmalı>". Ham istisna asla. |

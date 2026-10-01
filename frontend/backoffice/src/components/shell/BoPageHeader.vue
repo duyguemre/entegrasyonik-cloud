@@ -227,13 +227,9 @@ const badge = computed(() => (screen.value && !props.extraCrumbs?.length ? STATU
 }
 
 @media (max-width: 600px) {
+  /* Dar ekranda dikey alan değerli: kimlik ikonu menüde zaten var. */
   .bo-ph__icon {
-    width: 32px;
-    height: 32px;
-  }
-
-  .bo-ph__icon .v-icon {
-    font-size: var(--ek-icon-md);
+    display: none;
   }
 
   .bo-ph__actions {

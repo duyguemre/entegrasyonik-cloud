@@ -66,12 +66,14 @@ test.describe('BO-R2a genel bakış ve sistem katmanı', () => {
     await expectNoA11yViolations(page)
   })
 
-  test('sayfa başlığı standardı: ikon + h1 + açıklama; Yenile sözlükten (Alt+R hedefi)', async ({ page }) => {
+  test('sayfa başlığı standardı: ikon + h1 + açıklama; Yenile sözlükten (Alt+R hedefi)', async ({ page }, info) => {
     for (const path of ['/genel-bakis', '/motor', '/musteriler']) {
       await page.goto(path)
       await settle(page)
       const head = page.locator('header.bo-ph')
-      await expect(head.locator('.bo-ph__icon')).toBeVisible()
+      // Masaüstünde ekran ikonu kapsülde; < 600 px gizli (dikey alan).
+      if (info.project.name === 'chromium-mobile') await expect(head.locator('.bo-ph__icon')).toBeHidden()
+      else await expect(head.locator('.bo-ph__icon')).toBeVisible()
       await expect(head.locator('h1')).toHaveCount(1)
       await expect(head.locator('[data-page-refresh][data-action="refresh"]')).toHaveText(/Yenile/)
       await noHorizontalScroll(page)
