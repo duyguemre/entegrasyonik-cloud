@@ -3,6 +3,7 @@
  *   g + harf  → ekran (ekran kaydındaki `hotkey`; 1,5 sn içinde)
  *   ?         → kısayol yardımı
  *   Alt+R     → sayfa verisini yenile (görünür ilk `[data-page-refresh]`; EkRefreshButton ipucunda zaten yazıyordu)
+ *   j / k     → tablo satırı (NT-10; navigation/rowNav.ts), Enter satırı açar, Esc satır odağından çıkar
  * Metin alanında, açık diyalog/palet varken ya da Ctrl/⌘ ile birlikte basıldığında hiçbir şey yapmaz (Ctrl+K/J kendi
  * işleyicilerinde).
  */
@@ -21,6 +22,8 @@ export interface HotkeyActions {
   refresh(): void
   /** Açık diyalog / palet / menü örtüsü: kısayollar beklemede. */
   blocked(): boolean
+  /** NT-10 satır gezinmesi; true dönerse tuş tüketildi. */
+  row?(cmd: 'next' | 'prev' | 'enter' | 'exit'): boolean
   now?(): number
 }
 
@@ -55,6 +58,14 @@ export function createHotkeyHandler(actions: HotkeyActions) {
         actions.go(hit.screen.path)
       }
       return
+    }
+    if (actions.row && !e.shiftKey && !e.altKey) {
+      const cmd = key === 'j' ? 'next' : key === 'k' ? 'prev' : e.key === 'Enter' ? 'enter' : e.key === 'Escape' ? 'exit' : null
+      if (cmd && actions.row(cmd)) {
+        e.preventDefault()
+        pendingAt = 0
+        return
+      }
     }
     pendingAt = key === 'g' && !e.shiftKey ? now() : 0
   }

@@ -39,6 +39,7 @@ import TopBar from '@bo/components/TopBar.vue'
 import CommandPalette from '@bo/components/shell/CommandPalette.vue'
 import ShortcutsDialog from '@bo/components/shell/ShortcutsDialog.vue'
 import { clickPageRefresh, createHotkeyHandler } from '@bo/navigation/hotkeys'
+import { createRowNav } from '@bo/navigation/rowNav'
 import { loadRecents, pushRecent } from '@bo/navigation/recents'
 import OtopilotDock from '@bo/chat/OtopilotDock.vue'
 import { otopilot } from '@bo/chat/otopilot'
@@ -57,8 +58,10 @@ const helpOpen = ref(false)
 watch(mobile, (m) => (drawerOpen.value = !m))
 
 // BO-ELEV E2: g + harf, ?, Alt+R (navigation/hotkeys.ts). Açık diyalog/palet varken beklemede.
+const rowNav = createRowNav()
 const onHotkey = createHotkeyHandler({
   go: (path) => router.push(path),
+  row: (cmd) => (cmd === 'next' ? rowNav.move(1) : cmd === 'prev' ? rowNav.move(-1) : cmd === 'enter' ? rowNav.enter() : rowNav.exit()),
   help: () => (helpOpen.value = true),
   refresh: () => clickPageRefresh(),
   blocked: () => paletteOpen.value || helpOpen.value || !!document.querySelector('.v-dialog.v-overlay--active'),

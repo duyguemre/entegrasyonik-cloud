@@ -93,6 +93,7 @@
       :items="['İş başarısız kümeden kalıcı olarak silinir; yeniden denenemez.', 'Aktif işler silinemez. Gerekçe denetim kaydına yazılır.']"
       confirm-label="Sil"
       confirm-icon="mdi-delete-outline"
+      :confirm-text="discard.context.value?.id"
       danger
     />
   </section>
