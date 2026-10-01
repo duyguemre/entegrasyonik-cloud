@@ -149,7 +149,9 @@ test.describe('bildirimler ve duyurular', () => {
     await expect(page.getByTestId('template-preview')).toContainText('UPSTREAM_TIMEOUT')
     await page.getByRole('radiogroup', { name: 'Kanal' }).locator('[data-value="email"]').click()
     await expect(page.frameLocator('[data-testid="email-frame"]').locator('h1')).toContainText('Sipariş eşitleme başarısız')
-    await expectNoA11yViolations(page)
+    // Sandbox'lı e-posta çerçevesi axe taramasından çıkarılır (betik çalışmaz → axe ~30 sn çerçeve bekler, testi zaman aşımına
+    // düşürüyordu); sayfanın geri kalanı taranır. Çerçeve içeriği EmailFrame kuralıyla güvenli kalır (BO_UI_PATTERNS Ek bo-next).
+    await expectNoA11yViolations(page, undefined, '[data-testid="email-frame"]')
     await page.getByTestId('test-email').click()
     const d = page.getByRole('dialog', { name: 'Test e-postası gönderilsin mi?' })
     await d.getByLabel('Gerekçe').fill(REASON)

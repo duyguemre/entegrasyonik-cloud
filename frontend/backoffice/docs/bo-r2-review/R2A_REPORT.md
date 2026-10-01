@@ -49,7 +49,9 @@ Kapsam yalnız `frontend/backoffice/` (+ kök `frontend/package-lock.json` works
 - **Önemli metrikler öne:** hükmün hemen altında 6 kutuluk KPI şeridi (`BoStat`): Kritik konu · İzlenecek konu · API isteği 24 sa
   (+ sparkline) · 5xx hata oranı (+ sparkline, eşik) · Aktif müşteri · MRR. Ayrıntı ⓘ ipucunda ya da kutunun bağlantısında.
 - **Metin yükü azaldı:** dikkat maddelerinde açıklama ve "ne yapmalı" katlandı; görünür limit 4/5 → 3 (mobil 2, kritikler hep görünür).
-  Sayfa açıklaması kısaldı. Ölçüm (1440 açık, tam sayfa): önce 2.291 px → sonra 2.189 px, üstelik KPI şeridi ve grafik eklendi.
+  Sayfa açıklaması kısaldı. Ölçüm (tam sayfa yüksekliği): **1440 açık 2.291 → 1.808 px (−%21)**, üstelik KPI şeridi ve grafik
+  eklendi. 390 px'te 3.026 → 3.389 px (+%12): KPI şeridi (2 sütun × 3 satır) öne geldi, dikkat listeleri 2 maddeyle kısa —
+  CONSOLE_IDENTITY "mobilde önce hüküm ve sayılar" kuralı; bo-r2b gerekirse şeridi mobilde 4 kutuya indirebilir.
 - **Hizalı düzen:** duvar düzeni yerine iki eş yükseklikli satır (1 Sistem | 2 Büyük resim · 3 Müşteriler | 4 Genel kullanım; K51
   okuma sırası korundu). "Büyük resim" kutusuna API isteği alan grafiği (ECharts, 24 sa saatlik, tablo görünümü); "Genel kullanım"
   müşteri durumu halkası + abonelik sayıları (aktif müşteri ve MRR şeritte, tekrar yok).
@@ -57,6 +59,7 @@ Kapsam yalnız `frontend/backoffice/` (+ kök `frontend/package-lock.json` works
 
 ### 3.2 Teknik ayrıntılar (`/genel-bakis?ayrinti=teknik`) — BO2-P2
 - Önce: 2 sütun `align-items: start` (farklı yükseklik) + tek başına "Veri alımı" + tam genişlik yönetim işlemleri.
+  Açık ayrıntıyla tam sayfa (1440): 3.448 → 2.597 px.
 - Sonra: **satır 1** (3 eş kutu) Bağımlılıklar · Kuyruklar · Veri alımı; **satır 2** (2 eş kutu) Podlar · Son yönetim işlemleri.
   Kutular `BoSection` (ikon + başlık + açıklama + alt bağlantı `#footer` — alt bağlantılar aynı hizada). Kuyruk tablosu üçte bir
   genişlikte yatay kayıyordu → kuyruk başına 2×2 sayı kutusu. Pod tablosu `BoTableFrame`. Olay kodu satırdan kaldırıldı (ipucunda).
@@ -80,7 +83,35 @@ Kapsam yalnız `frontend/backoffice/` (+ kök `frontend/package-lock.json` works
 - Kareler: `docs/bo-r2-review/once/*.png` ↔ `sonra/*.png` (aynı ad)
 
 ## 5. Test sonuçları
-GATE_RESULTS
+| Kapı | Sonuç |
+|---|---|
+| `npm run test:backoffice` | backoffice **33 dosya / 357 test geçti** (yeni: `r2-system` 11, `r2-charts-actions` 7) + ui **6 / 43 geçti** |
+| frontend vitest tam (`npm test`) | **94 dosya / 1.751 test geçti** |
+| chat vitest (`npm run test:chat`) | **12 dosya / 183 geçti, 1 atlandı** (paket değişmedi) |
+| vue-tsc | uygulama `typecheck` 0 hata (typecheck-ratchet taban 0 korundu); backoffice `vue-tsc -p tsconfig.json` 0 hata |
+| Ratchet'ler | style (635 dosya) · pattern (319 dosya) · no-console · typecheck — hepsi OK |
+| `test:contract-paths` | OK (171 yol kancası) |
+| `build:backoffice` + `build` | ikisi de başarılı. ECharts ayrı tembel parça `BoChart-*.js` 578 kB (gzip 201 kB) |
+| Backoffice Playwright ara adımlar | `r1a` 6/6, `r2a` 12/12 (3 proje), `smoke`+`mobile`+`engine-tenant`+`r1a`+`r2a` yeniden koşu 101 geçti (8 kırmızı = yalnız "linux tabanı yok, yazılıyor") → smoke tek başına **48 geçti / 3 atlandı** |
+| **Backoffice Playwright tam koşu** (3 proje, `--update-snapshots=missing`, 28 dk) | **371 geçti, 167 atlandı (inceleme/ortam kapılı), 5 kırmızı.** Kök nedenler aşağıda; düzeltme sonrası `notifications`+`smoke` yeniden koşu **67 geçti / 6 atlandı / 2 kırmızı** |
+
+Kırmızıların açıklaması:
+1. **Katalog önizleme (notifications.spec:144, 3 proje) — düzeltildi.** axe, betiksiz `sandbox=""` e-posta çerçevesine betik
+   enjekte edemediği için ~31 sn bekliyordu (ölçüm: çerçeveli 31,3 sn / çerçeve hariç 1,1 sn); 45 sn test bütçesini aşıyordu.
+   **Taban commit'te (fafc2d7f) de aynı** (axe 32,7 sn, tek başına da zaman aşımı) → R2a'dan önce var. Test sağlamlaştırıldı:
+   `expectNoA11yViolations(page, undefined, '[data-testid="email-frame"]')` (yalnız sandbox'lı çerçeve hariç; sayfa taranıyor).
+   Test atlanmadı/devre dışı bırakılmadı.
+2. **Smoke "Log kontrol merkezi" görsel taban (açık + koyu) — R2a dışı.** Karşılaştırma, bu oturumda yazılan yerel `*-linux.png`
+   ile; fark sahte log verisinin rastgeleliği (grup sayıları/sırası, ör. "64 uyarı" ↔ "62 uyarı", ek hüküm maddesi) — yerleşim aynı.
+   Önceki smoke koşusunda aynı test yeşildi. Linux tabanları git-ignored; Windows tabanları yerelde yeniden üretilmeli (§6.10).
+3. Ara koşudaki diğer kırmızılar giderildi: grafik alanı `role="img"` adı (Loglar sorun eğilimi, Motor `order-sync-queue`
+   metni ikilenmesi), dokunmatik 44 px (grafik düğmeleri, kullanım sayıları, müşteri "Şu an" satırları — dar kenar boşluğuyla tek
+   satıra sığdıkları için 39 px'e inmişlerdi).
+
+Notlar: bulutta Playwright `PW_CHROMIUM_PATH=/opt/pw-browsers/chromium` ile (kurulum betiğinin tarayıcı indirmesi
+`cdn.playwright.dev` 403); rollup linux ikilisi `npm i --no-save @rollup/rollup-linux-x64-gnu@4.63.5`; token css `npm run tokens`.
+İlk soğuk koşuda Vite yeni bağımlılığı (echarts) ön-derlerken sayfayı bir kez yeniden yükler → ilk girişte zaman aşımı; ısınınca yok.
+`*-linux.png` commit'lenmedi.
 
 ## 6. bo-r2b için devir notları
 1. **İş listesi = taban:** `tests/r2-baseline.json`. Her sayfa taşındığında ilgili satır düşer; `R2_BASELINE_WRITE=1 npx vitest run

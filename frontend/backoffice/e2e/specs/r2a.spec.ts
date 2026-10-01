@@ -44,7 +44,7 @@ test.describe('BO-R2a genel bakış ve sistem katmanı', () => {
   test('grafik: erişilebilir özet + "Tablo olarak göster"', async ({ page }) => {
     await settle(page)
     const chart = page.getByTestId('triage-buyuk-resim').locator('[data-bo-chart]').last()
-    await expect(chart.getByTestId('chart-summary')).toContainText('Saatlik API isteği')
+    await expect(chart.getByRole('img', { name: /^Saatlik API isteği, son 24 saat\. İstek: toplam/ })).toBeVisible()
     await chart.getByRole('button', { name: 'Tablo olarak göster' }).click()
     await expect(chart.getByRole('region', { name: /tablosu$/ })).toBeVisible()
     await expect(chart.locator('tbody tr')).toHaveCount(24)
