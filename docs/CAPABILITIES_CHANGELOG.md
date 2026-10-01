@@ -77,3 +77,7 @@ buraya tarihli bir blok ekler (ADR-0019 §4.1). Kademe değişiklikleri HER ZAMA
 
 - Eklenen: `platform.pricing_rules.overview`, `pricing.rules.list`, `pricing.rules.save`, `pricing.rules.settings`, `pricing.suggestions.apply`, `pricing.suggestions.list`
 
+## 2026-10-01 — sha256 ebd1470f6254…
+
+- Eklenen: `platform.prefs.push_config`, `platform.prefs.push_subscribe`, `platform.prefs.push_unsubscribe`, `platform.tenants.usage`
+

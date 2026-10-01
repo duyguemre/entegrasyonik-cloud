@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "sha256": "059b0a852c7ff3458125ecaa899172950a85c667ed0fdcd7945999b66554a0eb",
-  "generatedAt": "2026-10-01T14:17:03.992Z",
+  "sha256": "ebd1470f62547a8a63c48687e2a9e16f3ebbb98704bf59fdf38dd73d7169cb4a",
+  "generatedAt": "2026-10-01T15:14:16.844Z",
   "stage": "A",
-  "totalCapabilities": 295,
-  "totalBindings": 336,
+  "totalCapabilities": 299,
+  "totalBindings": 340,
   "capabilities": [
     {
       "id": "account.email_verification.resend",
@@ -4128,6 +4128,60 @@
       }
     },
     {
+      "id": "platform.prefs.push_config",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "read",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "BackofficePrefsService/getPushConfig"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.prefs.push_subscribe",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "write",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "BackofficePrefsService/subscribePush"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.prefs.push_unsubscribe",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "write",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "BackofficePrefsService/unsubscribePush"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
       "id": "platform.prefs.save_view",
       "version": "1.0",
       "domain": "platform",
@@ -4388,6 +4442,24 @@
       "scope": "platform",
       "rpc": [
         "BackofficeTenantService/listTenants"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.tenants.usage",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "read",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "BackofficeTenantService/getUsage"
       ],
       "mcp": {
         "exposed": false,
