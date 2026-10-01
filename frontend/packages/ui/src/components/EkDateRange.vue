@@ -31,8 +31,8 @@
       <template #activator="{ props: menuProps }">
         <button v-bind="menuProps" type="button" class="ek-date-range__presets" :class="{ 'is-open': open }"
           :aria-label="`${label}: hazır aralıklar`" :title="`${label}: hazır aralıklar`">
-          <v-icon icon="mdi-calendar-range-outline" aria-hidden="true" />
-          <v-icon class="ek-date-range__chevron" icon="mdi-chevron-down" aria-hidden="true" />
+          <v-icon icon="mdi-calendar-range-outline" size="18" aria-hidden="true" />
+          <v-icon class="ek-date-range__chevron" icon="mdi-chevron-down" size="16" aria-hidden="true" />
         </button>
       </template>
       <EkMenuPanel autofocus :groups="groups" :label="`${label}: hazır aralıklar`" @select="onPreset" @close="open = false" />
@@ -120,14 +120,12 @@ function onPreset(item: EkMenuItem) {
   border: 1px solid var(--ek-color-border-input);
   border-radius: var(--ek-radius-control);
   background: var(--ek-color-surface);
-  color: var(--ek-color-content-default);
-  font-size: var(--ek-icon-md);
+  color: var(--ek-color-content-muted);
   cursor: pointer;
   transition: var(--ek-transition-colors);
 }
 
 .ek-date-range__chevron {
-  font-size: var(--ek-icon-sm);
   color: var(--ek-color-content-muted);
   transition: transform var(--ek-motion-reveal);
 }

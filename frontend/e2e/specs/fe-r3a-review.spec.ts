@@ -3,7 +3,8 @@
 //   R3A_REVIEW=1 R3A_WIDTH=1440|390 [R3A_THEMES=light,dark] [R3A_ONLY=a,b] R3A_OUT=docs/fe-r3a-review/sonra \
 //     npx playwright test -c playwright.cloud.config.ts e2e/specs/fe-r3a-review.spec.ts --project=chromium-desktop
 // Sentetik veri (PII yok). Favoriler durumlu mock (ekle/çıkar/sırala) — backend sözleşmesi `MenuService/*Favorite*`.
-import { mkdirSync } from 'node:fs'
+import { mkdirSync, writeFileSync } from 'node:fs'
+import AxeBuilder from '@axe-core/playwright'
 import type { Page, Route } from '@playwright/test'
 import { test } from '@playwright/test'
 import { installApiMocks } from '../fixtures/mockApi'
@@ -203,6 +204,14 @@ test.describe('fe-r3a inceleme görüntüleri', () => {
           await page.screenshot({ path: `${OUT}/${n}-${theme}-${WIDTH}.png`, fullPage: full })
         }
         await c.run(page, theme, shot)
+        // axe (WCAG 2.1 AA) — son durumun makine bulgusu (iddia yok; README özetler).
+        if (process.env.R3A_AXE !== '0') {
+          await page.mouse.move(1, HEIGHT - 2)
+          const res = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze()
+          mkdirSync(`${OUT}/axe`, { recursive: true })
+          const v = res.violations.map((x) => ({ id: x.id, impact: x.impact, n: x.nodes.length, targets: x.nodes.slice(0, 4).map((nd) => nd.target.join(' ')) }))
+          writeFileSync(`${OUT}/axe/${c.name}-${theme}-${WIDTH}.json`, JSON.stringify(v, null, 2))
+        }
       })
     }
   }
