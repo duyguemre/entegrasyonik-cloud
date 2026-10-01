@@ -35,7 +35,8 @@ test.describe('müşteri listesi: sıralama ve paylaşılan görünüm (NT-05, N
   test('hüküm maddesi listeyi süzer (kanalsız hesaplar)', async ({ page }) => {
     await page.goto('/musteriler')
     await settle(page)
-    await page.getByRole('link', { name: /Kanalsız hesapları aç/ }).click()
+    // Sakin sayfada bilgi maddeleri Durum'daki bağlantılı özet çipleridir (PageVerdict `facts`).
+    await page.getByTestId('page-verdict').getByRole('link', { name: /bağlı kanal yok/ }).click()
     await expect(page).toHaveURL(/durum=kanalsiz/)
     await expect(page.getByRole('radio', { name: /Kanalsız/ })).toHaveAttribute('aria-checked', 'true')
   })

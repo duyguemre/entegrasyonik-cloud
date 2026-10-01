@@ -22,6 +22,7 @@
     label="Sayfa durumu"
     data-testid="page-verdict"
     :data-tone="verdict?.tone ?? 'loading'"
+    @click.capture="onFactClick"
   >
     <BoActionCard
       v-if="first"
@@ -73,7 +74,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { RouterLink } from 'vue-router'
+import { RouterLink, useRouter } from 'vue-router'
 import BoStatusHeader, { type StatusFact } from '@bo/components/triage/BoStatusHeader.vue'
 import BoAttentionList from '@bo/components/triage/BoAttentionList.vue'
 import BoActionCard from '@bo/components/triage/BoActionCard.vue'
@@ -95,9 +96,18 @@ function defaultBadge(t: VerdictTone) {
 const linked = computed(() => (props.verdict?.attention ?? []).filter((a) => !a.source && a.to))
 /** Acil (kırmızı/sarı) madde yoksa bilgi maddeleri büyük liste yerine Durum'daki bağlantılı özet çiplerine iner (en çok 4). */
 const calmInfo = computed(() => !linked.value.some((a) => a.tone !== 'info'))
+// BoStatusHeader `to`'lu özette RouterLink'e `href=undefined` bağlıyor (href'siz <a> — odaklanmaz; bo-r1a'ya bildirildi).
+// Geçici: çözülmüş `href` verilir, tıklama SPA içinde yönlendirilir (tam sayfa yenilemesi yok).
+const router = useRouter()
 const facts = computed<StatusFact[]>(() =>
-  calmInfo.value ? linked.value.slice(0, 4).map((a) => ({ label: a.title, value: '', tone: 'unknown' as Health, to: a.to })) : [],
+  calmInfo.value ? linked.value.slice(0, 4).map((a) => ({ label: a.title, value: '', tone: 'unknown' as Health, href: router.resolve(a.to!).href })) : [],
 )
+function onFactClick(e: MouseEvent) {
+  const a = (e.target as HTMLElement | null)?.closest<HTMLAnchorElement>('a.bo-sh__fact[href]')
+  if (!a || e.ctrlKey || e.metaKey || e.shiftKey || e.button !== 0) return
+  e.preventDefault()
+  void router.push(a.getAttribute('href')!)
+}
 const listed = computed<AttentionEntry[]>(() =>
   linked.value
     .filter(() => !calmInfo.value)
