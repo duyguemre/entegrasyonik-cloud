@@ -1,3 +1,4 @@
+import type { IClientDB } from '@interfaces/common';
 import { DatabaseManagerInstance } from '@database/index';
 import { ICustomer, ICustomerDocument } from '@interfaces/customer';
 import { getLogPrefix, LoggerType } from '@utils/Logger';
@@ -10,6 +11,17 @@ const log = eventLog('worker', 'CustomerRepository');
 export class CustomerRepository {
     private workerName: LoggerType = "Customer Repository"
     private logPrefix!: string;
+
+    /**
+     * ADR-0024 Dalga 3 (P3-ORD): RPC/use-case yolu kurucuda tenant DB tutamacını alır (clientId parametresi yok); motor (ingest)
+     * yöntemleri tutamaçsız örnekte `clientId` ile çalışmayı sürdürür.
+     */
+    constructor(private readonly tenantDb?: IClientDB) { }
+
+    /** Tutamaçsız örnekte RPC yöntemi çağrılırsa eski handler gibi TypeError oluşur (ek kontrol yok). */
+    private tenant(): IClientDB {
+        return this.tenantDb as IClientDB;
+    }
 
     /**
      * Telefon numarasını normalleştirir (Son 10 hane üzerinden eşleşme güvenliği).
@@ -244,5 +256,53 @@ export class CustomerRepository {
         } catch (error) {
             log.error('CUSTOMERREPOSITORY_IADE_METRIK_GUNCELLEME_HATASI', 'İade metrik güncelleme hatası:', { err: error });
         }
+    }
+
+    // ---- Tenant-bağlı (RPC) yöntemler: sorgu biçimleri eski handler gövdeleriyle BİREBİR ----
+
+    private get customers() { return this.tenant().getCustomerModel(); }
+
+    /**
+     * Sayfalı liste + finansal içgörü (iade oranı %, net kazanç). $sort facet dışında (DB-02: indeks kullanılabilir).
+     * Ham toplulaştırma sonucu döner (`[{ metadata, data }]`).
+     */
+    pagedSearch(match: Record<string, any>, sort: Record<string, any>, skip: number, limit: number): Promise<any[]> {
+        return this.customers.aggregate([
+            { $match: match },
+            { $sort: sort },
+            {
+                $facet: {
+                    metadata: [{ $count: 'total' }],
+                    data: [
+                        { $skip: skip },
+                        { $limit: limit },
+                        {
+                            $addFields: {
+                                returnRate: {
+                                    $cond: [
+                                        { $gt: ['$metrics.totalOrderCount', 0] },
+                                        { $multiply: [{ $divide: ['$metrics.totalClaimCount', '$metrics.totalOrderCount'] }, 100] },
+                                        0,
+                                    ],
+                                },
+                                netRevenue: { $subtract: [{ $ifNull: ['$metrics.totalSpent', 0] }, { $ifNull: ['$metrics.totalReturnAmount', 0] }] },
+                            },
+                        },
+                    ],
+                },
+            },
+        ]);
+    }
+
+    findByIdLean(id: unknown): Promise<any> {
+        return this.customers.findById(id).lean();
+    }
+
+    updateById(id: unknown, update: unknown): Promise<any> {
+        return this.customers.findByIdAndUpdate(id, update);
+    }
+
+    setFields(id: unknown, set: Record<string, any>): Promise<any> {
+        return this.customers.updateOne({ _id: id }, { $set: set });
     }
 }

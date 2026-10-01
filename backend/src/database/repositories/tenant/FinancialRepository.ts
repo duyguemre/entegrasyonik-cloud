@@ -1,3 +1,4 @@
+import type { IClientDB } from '@interfaces/common';
 import { DatabaseManagerInstance } from '@database/index';
 import { IFinancialTransaction } from '@interfaces/platforms';
 import { getLogPrefix, LoggerType } from '@utils/Logger';
@@ -8,6 +9,17 @@ const log = eventLog('worker', 'FinancialRepository');
 export class FinancialRepository {
     private workerName: LoggerType = "Financial Repository";
     private logPrefix!: string;
+
+    /**
+     * ADR-0024 Dalga 3 (P3-ORD): RPC/use-case yolu kurucuda tenant DB tutamacını alır (clientId parametresi yok); motor (ingest)
+     * yöntemleri tutamaçsız örnekte `clientId` ile çalışmayı sürdürür.
+     */
+    constructor(private readonly tenantDb?: IClientDB) { }
+
+    /** Tutamaçsız örnekte RPC yöntemi çağrılırsa eski handler gibi TypeError oluşur (ek kontrol yok). */
+    private tenant(): IClientDB {
+        return this.tenantDb as IClientDB;
+    }
 
     public async saveFinancials(clientId: number, financials: IFinancialTransaction[]): Promise<void> {
         if (!financials || financials.length === 0) return;
@@ -50,5 +62,46 @@ export class FinancialRepository {
             log.error('FINANCIALREPOSITORY_FINANS_REPOSITORY_HATASI', 'Finans Repository Hatası:', { err: error });
             throw error;
         }
+    }
+
+    // ---- Tenant-bağlı (RPC) yöntemler: sorgu biçimleri eski handler gövdeleriyle BİREBİR ----
+
+    /** Ekstre: toplam sayı, sayfa ve özet (tek filtre, paralel). */
+    pagedTransactions(match: Record<string, any>, sort: Record<string, any>, skip: number, limit: number): Promise<[number, any[], any[]]> {
+        const model = this.tenant().getFinancialTransactionModel();
+        return Promise.all([
+            model.countDocuments(match),
+            model.find(match).sort(sort).skip(skip).limit(limit).lean(),
+            model.aggregate(FinancialRepository.summaryPipeline(match)),
+        ]);
+    }
+
+    summary(match: Record<string, any>): Promise<any[]> {
+        return this.tenant().getFinancialTransactionModel().aggregate(FinancialRepository.summaryPipeline(match));
+    }
+
+    byPaymentOrder(paymentOrderId: unknown): Promise<any[]> {
+        return this.tenant().getFinancialTransactionModel().find({ paymentOrderId }).sort({ transactionDate: 1 }).lean();
+    }
+
+    /** Kargo faturaları (en yeni önce, `maxRows` tavanlı). */
+    cargoInvoices(match: Record<string, any>, maxRows: number): Promise<any[]> {
+        return this.tenant().getCargoInvoiceModel().find(match).sort({ transactionDate: -1 }).limit(maxRows).lean();
+    }
+
+    private static summaryPipeline(match: Record<string, any>): Record<string, any>[] {
+        return [
+            { $match: match },
+            {
+                $group: {
+                    _id: null,
+                    totalCredit: { $sum: '$credit' },
+                    totalDebt: { $sum: '$debt' },
+                    totalCargo: { $sum: '$cargoAmount' },
+                    netAmount: { $sum: '$netAmount' },
+                    transactionCount: { $sum: 1 },
+                },
+            },
+        ];
     }
 }

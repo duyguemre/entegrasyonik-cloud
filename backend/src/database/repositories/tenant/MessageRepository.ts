@@ -1,3 +1,4 @@
+import type { IClientDB } from '@interfaces/common';
 import { DatabaseManagerInstance } from '@database/index';
 import { IMessage } from '@interfaces/index';
 import { getLogPrefix, LoggerType } from '@utils/Logger';
@@ -8,6 +9,17 @@ const log = eventLog('worker', 'MessageRepository');
 export class MessageRepository {
     private workerName: LoggerType = "Message Repository"
     private logPrefix!: string;
+
+    /**
+     * ADR-0024 Dalga 3 (P3-ORD): RPC/use-case yolu kurucuda tenant DB tutamacını alır (clientId parametresi yok); motor (ingest)
+     * yöntemleri tutamaçsız örnekte `clientId` ile çalışmayı sürdürür.
+     */
+    constructor(private readonly tenantDb?: IClientDB) { }
+
+    /** Tutamaçsız örnekte RPC yöntemi çağrılırsa eski handler gibi TypeError oluşur (ek kontrol yok). */
+    private tenant(): IClientDB {
+        return this.tenantDb as IClientDB;
+    }
 
     public async saveMessages(clientId: number, messages: IMessage[]): Promise<void> {
         if (!messages || messages.length === 0) return;
@@ -85,5 +97,54 @@ export class MessageRepository {
             log.error('MESSAGEREPOSITORY_MESAJ_REPOSITORY_HATASI', 'Mesaj Repository Hatası:', { err: error });
             throw error;
         }
+    }
+
+    // ---- Tenant-bağlı (RPC) yöntemler: sorgu biçimleri eski handler gövdeleriyle BİREBİR ----
+
+    private get messages() { return this.tenant().getMessageModel(); }
+
+    /** Sayfalı liste + müşteri ve sipariş eşlemesi; ham toplulaştırma sonucu (`[{ metadata, data }]`). */
+    pagedSearch(match: Record<string, any>, sort: Record<string, any>, skip: number, limit: number): Promise<any[]> {
+        return this.messages.aggregate([
+            { $match: match },
+            { $sort: sort },
+            {
+                $facet: {
+                    metadata: [{ $count: 'total' }],
+                    data: [
+                        { $skip: skip },
+                        { $limit: limit },
+                        { $lookup: { from: 'Customers', localField: 'customerId', foreignField: '_id', as: 'customer' } },
+                        { $unwind: { path: '$customer', preserveNullAndEmptyArrays: true } },
+                        { $lookup: { from: 'Orders', localField: 'orderId', foreignField: '_id', as: 'order' } },
+                        { $unwind: { path: '$order', preserveNullAndEmptyArrays: true } },
+                    ],
+                },
+            },
+        ]);
+    }
+
+    findById(id: unknown): Promise<any> {
+        return this.messages.findById(id);
+    }
+
+    updateById(id: unknown, update: Record<string, any>, options: Record<string, any>): Promise<any> {
+        return this.messages.findByIdAndUpdate(id, update, options);
+    }
+
+    deleteById(id: unknown): Promise<any> {
+        return this.messages.findByIdAndDelete(id);
+    }
+
+    deleteByIds(ids: unknown[]): Promise<any> {
+        return this.messages.deleteMany({ _id: { $in: ids } });
+    }
+
+    countWaitingSeller(): Promise<number> {
+        return this.messages.countDocuments({ status: 'WAITING_SELLER', isRejected: { $ne: true } });
+    }
+
+    maskUserNameByCustomer(customerId: unknown, mask: string): Promise<any> {
+        return this.messages.updateMany({ customerId }, { $set: { externalUserName: mask } });
     }
 }

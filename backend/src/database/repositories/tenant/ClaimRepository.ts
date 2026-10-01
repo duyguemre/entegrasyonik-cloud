@@ -1,3 +1,4 @@
+import type { IClientDB } from '@interfaces/common';
 import { DatabaseManagerInstance } from '@database/index';
 import { IClaim } from '@interfaces/claim';
 import { getLogPrefix, LoggerType } from '@utils/Logger';
@@ -13,6 +14,17 @@ export interface ISaveClaimResponse {
 export class ClaimRepository {
     private workerName: LoggerType = "Claim Repository"
     private logPrefix!: string;
+
+    /**
+     * ADR-0024 Dalga 3 (P3-ORD): RPC/use-case yolu kurucuda tenant DB tutamacını alır (clientId parametresi yok); motor (ingest)
+     * yöntemleri tutamaçsız örnekte `clientId` ile çalışmayı sürdürür.
+     */
+    constructor(private readonly tenantDb?: IClientDB) { }
+
+    /** Tutamaçsız örnekte RPC yöntemi çağrılırsa eski handler gibi TypeError oluşur (ek kontrol yok). */
+    private tenant(): IClientDB {
+        return this.tenantDb as IClientDB;
+    }
 
     public async saveClaims(clientId: number, claims: IClaim[]): Promise<ISaveClaimResponse> {
         if (!claims || claims.length === 0) return { insertedExternalIds: [], updatedExternalIds: [] };
@@ -127,5 +139,57 @@ export class ClaimRepository {
         const clientDb = await DatabaseManagerInstance.getClientDB(clientId);
         const ClaimModel = clientDb!.getClaimModel();
         return await ClaimModel.find({ externalOrderId }).lean<IClaim[]>().exec();
+    }
+
+    // ---- Tenant-bağlı (RPC) yöntemler: sorgu biçimleri eski handler gövdeleriyle BİREBİR ----
+
+    private get claims() { return this.tenant().getClaimModel(); }
+
+    /** Sayfalı liste + müşteri özeti (adres/metrik/kimlik alanları hariç). */
+    async pagedSearch(match: Record<string, any>, sort: Record<string, any>, skip: number, limit: number): Promise<{ total: number; items: any[] }> {
+        const result = await this.claims.aggregate([
+            { $match: match },
+            { $sort: sort },
+            {
+                $facet: {
+                    totalNumberOfRecords: [{ $count: 'count' }],
+                    claims: [
+                        { $skip: skip },
+                        { $limit: limit },
+                        { $lookup: { from: 'Customers', localField: 'customerId', foreignField: '_id', as: 'customer' } },
+                        { $unwind: { path: '$customer', preserveNullAndEmptyArrays: true } },
+                        { $project: { 'customer.addresses': 0, 'customer.metrics': 0, 'customer.externalIdentities': 0 } },
+                    ],
+                },
+            },
+        ]);
+        const aggregationResult = result[0] || {};
+        return { total: aggregationResult.totalNumberOfRecords?.[0]?.count || 0, items: aggregationResult.claims || [] };
+    }
+
+    /** Mongoose sorgusu döner (çağıran `.populate` zincirleyebilir). */
+    findById(id: unknown): any {
+        return this.claims.findById(id);
+    }
+
+    /** `options` verilmezse sürücüye iki argümanla gider (eski çağrı biçimi). */
+    updateById(id: unknown, update: Record<string, any>, options?: Record<string, any>): Promise<any> {
+        return options === undefined ? this.claims.findByIdAndUpdate(id, update) : this.claims.findByIdAndUpdate(id, update, options);
+    }
+
+    recentByCustomer(customerId: unknown): Promise<any[]> {
+        return this.claims.find({ customerId }).sort({ createdAt: -1 }).limit(20).lean();
+    }
+
+    /** İade sayısı ve tutarı (iptal/red hariç). */
+    returnTotals(): Promise<any[]> {
+        return this.claims.aggregate([
+            { $match: { internalStatus: { $nin: ['CANCELLED', 'REJECTED'] } } },
+            { $group: { _id: null, totalReturnCount: { $sum: 1 }, totalReturnAmount: { $sum: '$totalRefundAmount' } } },
+        ]);
+    }
+
+    countAwaitingAction(): Promise<number> {
+        return this.claims.countDocuments({ internalStatus: { $in: ['WAITING', 'SHIPPED', 'DELIVERED'] } });
     }
 }

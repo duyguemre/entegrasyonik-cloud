@@ -1,3 +1,4 @@
+import type { IClientDB } from '@interfaces/common';
 import { DatabaseManagerInstance } from '@database/index';
 import { IOrder } from '@interfaces/order';
 import { getLogPrefix, LoggerType } from '@utils/Logger';
@@ -19,6 +20,17 @@ export interface ISaveOrderResponse {
 export class OrderRepository {
     private workerName: LoggerType = "Order Repository"
     private logPrefix!: string;
+
+    /**
+     * ADR-0024 Dalga 3 (P3-ORD): RPC/use-case yolu kurucuda tenant DB tutamacını alır (clientId parametresi yok); motor (ingest)
+     * yöntemleri tutamaçsız örnekte `clientId` ile çalışmayı sürdürür.
+     */
+    constructor(private readonly tenantDb?: IClientDB) { }
+
+    /** Tutamaçsız örnekte RPC yöntemi çağrılırsa eski handler gibi TypeError oluşur (ek kontrol yok). */
+    private tenant(): IClientDB {
+        return this.tenantDb as IClientDB;
+    }
 
     /**
      * saveOrders
@@ -313,5 +325,94 @@ export class OrderRepository {
         } catch (error) {
             log.error('ORDERREPOSITORY_GUNCELLEME_HATASI', `${field} Güncelleme Hatası:`, { err: error });
         }
+    }
+
+    // ---- Tenant-bağlı (RPC) yöntemler: sorgu biçimleri eski handler gövdeleriyle BİREBİR ----
+
+    private get orders() { return this.tenant().getOrderModel(); }
+
+    /** Sayfalı liste: $match -> $sort (facet dışında, indeks kullanılabilir) -> $facet { totalNumberOfRecords, orders }. */
+    async pagedSearch(match: Record<string, any>, sort: Record<string, any>, skip: number, limit: number): Promise<{ total: number; items: any[] }> {
+        const result = await this.orders.aggregate([
+            { $match: match },
+            { $sort: sort },
+            { $facet: { totalNumberOfRecords: [{ $count: 'count' }], orders: [{ $skip: skip }, { $limit: limit }] } },
+        ]);
+        const aggregationResult = result[0] || {};
+        return { total: aggregationResult.totalNumberOfRecords?.[0]?.count || 0, items: aggregationResult.orders || [] };
+    }
+
+    /** Mongoose sorgusu döner (çağıran `.select`/`.lean` zincirleyebilir). */
+    findById(id: unknown): any {
+        return this.orders.findById(id);
+    }
+
+    /** `options` verilmezse sürücüye iki argümanla gider (eski çağrı biçimi; toplu işlemler `{new:true}` kullanmaz). */
+    updateById(id: unknown, update: Record<string, any>, options?: Record<string, any>): Promise<any> {
+        return options === undefined ? this.orders.findByIdAndUpdate(id, update) : this.orders.findByIdAndUpdate(id, update, options);
+    }
+
+    findByNumberOrExternalId(value: unknown): Promise<any> {
+        return this.orders.findOne({ $or: [{ orderNumber: value }, { externalOrderId: value }] }).lean();
+    }
+
+    markInvoiceGenerated(orderId: unknown): Promise<any> {
+        return this.orders.updateOne({ _id: orderId }, { $set: { 'flags.isInvoiceGenerated': true, 'invoice.status': 'SUCCESS' } });
+    }
+
+    recentByCustomer(customerId: unknown): Promise<any[]> {
+        return this.orders.find({ customerId }).sort({ createdAt: -1 }).limit(20).lean();
+    }
+
+    maskByCustomer(customerId: unknown, set: Record<string, any>): Promise<any> {
+        return this.orders.updateMany({ customerId }, { $set: set });
+    }
+
+    // Pano (dashboard) sorguları: tenant DB izole olduğundan clientId filtresi YOK.
+    statusDistribution(): Promise<any[]> {
+        return this.orders.aggregate([{ $group: { _id: '$internalStatus', count: { $sum: 1 } } }]);
+    }
+
+    /** Tüm zamanlar: iptal edilmeyen siparişlerin cirosu ve sayısı. */
+    revenueTotals(): Promise<any[]> {
+        return this.orders.aggregate([
+            { $match: { internalStatus: { $nin: ['CANCELLED'] } } },
+            { $group: { _id: null, totalRevenue: { $sum: '$financials.grandTotal' }, totalCount: { $sum: 1 } } },
+        ]);
+    }
+
+    /** `from`'dan bu yana günlük sipariş + ciro (gün sınırı `timeZone`). */
+    dailySince(from: Date, timeZone: string): Promise<any[]> {
+        return this.orders.aggregate([
+            { $match: { 'dates.orderDate': { $gte: from } } },
+            {
+                $group: {
+                    _id: {
+                        year: { $year: { date: '$dates.orderDate', timezone: timeZone } },
+                        month: { $month: { date: '$dates.orderDate', timezone: timeZone } },
+                        day: { $dayOfMonth: { date: '$dates.orderDate', timezone: timeZone } },
+                    },
+                    count: { $sum: 1 },
+                    revenue: { $sum: '$financials.grandTotal' },
+                },
+            },
+            { $sort: { '_id.year': 1, '_id.month': 1, '_id.day': 1 } },
+        ]);
+    }
+
+    /** Sipariş tarihi aralığındaki sayı + ciro (`range`: `{ $gte }` veya `{ $gte, $lt }`). */
+    totalsInRange(range: Record<string, Date>): Promise<any[]> {
+        return this.orders.aggregate([
+            { $match: { 'dates.orderDate': range } },
+            { $group: { _id: null, count: { $sum: 1 }, revenue: { $sum: '$financials.grandTotal' } } },
+        ]);
+    }
+
+    countAwaitingInvoice(): Promise<number> {
+        return this.orders.countDocuments({ internalStatus: 'APPROVED', 'flags.isInvoiceGenerated': { $ne: true } });
+    }
+
+    countAwaitingShipment(): Promise<number> {
+        return this.orders.countDocuments({ internalStatus: 'APPROVED' });
     }
 }
