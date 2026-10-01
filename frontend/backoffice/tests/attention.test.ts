@@ -104,7 +104,8 @@ describe('getPulse (sahte) — sözleşme şekli', () => {
   it('bloklar; sipariş DAİMA hesaplanamadı; saatlik seri 24 nokta; strict gövde', async () => {
     const { api } = await signedIn()
     const p = await api.call('BackofficeOverviewService/getPulse', {})
-    expect(Object.keys(p).sort()).toEqual(['calls', 'errorRate', 'generatedAt', 'mrr', 'orders', 'tenants'])
+    // activeUsers: MOB-08 kullanım bloğu (INT-1001 birleşimi; sözleşme docs/API_BACKOFFICE_USAGE.md).
+    expect(Object.keys(p).sort()).toEqual(['activeUsers', 'calls', 'errorRate', 'generatedAt', 'mrr', 'orders', 'tenants'])
     expect(p.orders).toMatchObject({ status: 'ok', computable: false, last24h: null, hourly: [], note: 'hesaplanamadı' })
     if (p.calls.status !== 'ok' || p.errorRate.status !== 'ok') throw new Error('beklenmeyen degraded')
     expect(p.calls.http.hourly).toHaveLength(24)
