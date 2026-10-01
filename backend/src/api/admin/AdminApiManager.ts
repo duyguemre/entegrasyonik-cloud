@@ -86,7 +86,7 @@ function adminCors() {
             origin: origins.length ? origins : false,
             credentials: true,
             methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // PUT/DELETE: yalniz /agent/provider + /agent/conversations (BR-4)
-            allowedHeaders: ['Content-Type', 'X-Request-Id'],
+            allowedHeaders: ['Content-Type', 'X-Request-Id', 'X-Client-Platform'],   // MOB-08: istemci platform sınıfı
             exposedHeaders: ['X-Request-Id'],
             maxAge: 600,
             optionsSuccessStatus: 204,
