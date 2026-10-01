@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "sha256": "e8ab45c628666d0e30d350c21e11511fc1bb4df48623bd77286e4a3ab8cc4e7e",
-  "generatedAt": "2026-10-01T08:07:49.703Z",
+  "sha256": "3bfd6aab54068b562e56a3c961c6035a3ed5d8cc3cf5f9a2227564a20dae11ca",
+  "generatedAt": "2026-10-01T12:46:51.009Z",
   "stage": "A",
-  "totalCapabilities": 280,
-  "totalBindings": 316,
+  "totalCapabilities": 283,
+  "totalBindings": 319,
   "capabilities": [
     {
       "id": "account.email_verification.resend",
@@ -2387,6 +2387,60 @@
       "scope": "user",
       "rpc": [
         "NotificationService/updatePreferences"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "ui_plumbing"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "notifications.push.config",
+      "version": "1.0",
+      "domain": "account",
+      "effect": "read",
+      "minTier": "member",
+      "scope": "user",
+      "rpc": [
+        "NotificationService/getPushConfig"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "ui_plumbing"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "notifications.push.subscribe",
+      "version": "1.0",
+      "domain": "account",
+      "effect": "write",
+      "minTier": "member",
+      "scope": "user",
+      "rpc": [
+        "NotificationService/subscribePush"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "ui_plumbing"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "notifications.push.unsubscribe",
+      "version": "1.0",
+      "domain": "account",
+      "effect": "write",
+      "minTier": "member",
+      "scope": "user",
+      "rpc": [
+        "NotificationService/unsubscribePush"
       ],
       "mcp": {
         "exposed": false,
