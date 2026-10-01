@@ -102,7 +102,7 @@
 </template>
 
 <script setup lang="ts">
-import { EkRowActions, EkButton, EkDataTable, type EkTableColumn, EkDetailSheet, EkSection, EkDescriptionList, type EkDescriptionListItem, EkEmptyState, EkErrorState, EkSkeleton, EkStatusChip, EkPlatformMark } from '@entegrasyonik/ui/components'
+import { EkRowActions, EkDataTable, type EkTableColumn, EkDetailSheet, EkSection, EkDescriptionList, type EkDescriptionListItem, EkEmptyState, EkErrorState, EkSkeleton, EkStatusChip, EkPlatformMark } from '@entegrasyonik/ui/components'
 import type { EkGridColumn, EkGridSort, EkActiveFilterChip } from '@entegrasyonik/ui/components'
 import { computed, onMounted, ref } from 'vue'
 import EkListScreen from '@/components/page/templates/EkListScreen.vue'
