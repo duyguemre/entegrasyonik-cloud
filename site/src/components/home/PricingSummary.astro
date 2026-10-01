@@ -17,8 +17,8 @@
  * Vurgulanan plan: sabit fiyatlı planlar arasında en kapsamlı özellik setine sahip kademe (seed'deki plan koduna
  * bağlı TASARIM kararı; "en popüler" gibi uydurma istatistik İDDİASI DEĞİLDİR).
  *
- * S27a (SR4 madde 4, K46): her plan kartında Otopilot bloğu — fiyat sayfasıyla AYNI kayıt (`getPlanAgentSummary`,
- * `planAgentIntro`; pricing.ts). Alt plan temel küme ("sınırlı"), üst planlar yalnız eklenenler; rakam/kredi/token yok.
+ * S27a (SR4 madde 4, K46): her plan kartında Otopilot bloğu — fiyat sayfasıyla AYNI kayıt (`getPlanCards().agent`,
+ * plan-cards.ts ← `getPlanAgentSummary`, pricing.ts; alt not `planAgentIntro`). Taslak notu `getPlanNotice()` (N4). Alt plan temel küme ("sınırlı"), üst planlar yalnız eklenenler; rakam/kredi/token yok.
  * Kart altındaki güvence satırı (kart verisi, rol yetkisi, izole veri) kaldırıldı: aynı iddialar hemen aşağıdaki
  * Güvenlik bölümünde (N3: her güvenlik iddiası sayfada bir kez).
  */
@@ -26,49 +26,17 @@ import Section from '../Section.astro'
 import SectionHeading from './SectionHeading.astro'
 import Button from '../Button.astro'
 import Icon from './Icon.astro'
-import { appUrls } from '../../lib/site-config'
-import { getPublicPlans, getPlanSourceNotice, getPublicTrial, getTrialPlanCode, type PublicPlan } from '../../data/plans'
-import { getPlanPitch, getPlanCommonFeatures, getPlanAgentSummary, planAgentIntro } from '../../data/pricing'
+import { getPublicTrial } from '../../data/plans'
+import { planAgentIntro } from '../../data/pricing'
+import { getPlanCards, getPlanNotice } from '../../data/plan-cards'
 import { pageHref } from './links'
 
-const plans = getPublicPlans()
-const notice = getPlanSourceNotice()
+// S27a + S27b: anasayfa ve /fiyatlandirma AYNI görünüm kaydından çizer (`getPlanCards`, plan-cards.ts) — önerilen
+// plan, CTA, "öncekine ek olarak" listesi ve Otopilot özeti tek yerde hesaplanır. Bu bileşen yalnız biçimler.
+const cards = getPlanCards()
+const notice = getPlanNotice()
 const trial = getPublicTrial()
-const trialPlanCode = getTrialPlanCode()
-const common = getPlanCommonFeatures()
 const pricingHref = pageHref('/fiyatlandirma')
-const contactHref = pageHref('/iletisim')
-const fmt = (n: number) => new Intl.NumberFormat('tr-TR').format(n)
-
-const RECOMMENDED_PLAN_CODE = 'growth'
-
-/** Bir önceki plana göre limit artışı var mı (ya da özel limit mi)? Kart "artı" listesinde tek satır özetler. */
-const limitStep = (p: PublicPlan, prev: PublicPlan | undefined): string | undefined => {
-  if (!prev) return undefined
-  if (p.limits.every((l) => l.value === null)) return 'Kanal, ürün ve kullanıcı limitleri ihtiyacınıza göre'
-  const higher = p.limits.some((l) => {
-    const before = prev.limits.find((x) => x.key === l.key)?.value
-    return l.value !== null && before !== null && before !== undefined && l.value > before
-  })
-  return higher ? 'Daha fazla kanal, ürün varyantı ve kullanıcı' : undefined
-}
-
-const cards = plans.map((p, i) => {
-  const prev = plans[i - 1]
-  const prevFeatures = new Set(prev?.features.map((f) => f.code) ?? [])
-  const extra = [limitStep(p, prev), p.priceKind === 'quote' ? 'Operasyonunuza özel fiyat teklifi' : undefined, ...p.features.filter((f) => !prevFeatures.has(f.code)).map((f) => f.label)].filter(
-    (x): x is string => Boolean(x),
-  )
-  return {
-    plan: p,
-    pitch: getPlanPitch(p.code),
-    recommended: p.code === RECOMMENDED_PLAN_CODE,
-    includesLabel: prev ? `${prev.name} planındaki her şey, artı:` : 'Her planda standart:',
-    includes: prev ? extra : common,
-    agent: getPlanAgentSummary(p.code),
-    agentLabel: prev ? `${prev.name} planındakilere ek olarak` : undefined,
-  }
-})
 ---
 
 <Section id="fiyatlar" labelledby="fiyat-baslik">
@@ -89,82 +57,65 @@ const cards = plans.map((p, i) => {
 
   <ul class="pr__grid" data-scene="price-emphasis" data-testid="plan-grid">
     {
-      cards.map(({ plan: p, pitch, recommended, includesLabel, includes, agent, agentLabel }) => (
-        <li class:list={['plan', { 'plan--rec': recommended }]} data-part="plan" data-code={p.code} data-tilt data-recommended={recommended ? 'true' : undefined}>
-          {recommended && <span class="plan__glow" data-part="plan-glow" aria-hidden="true" />}
+      cards.map((c) => (
+        <li class:list={['plan', { 'plan--rec': c.recommended }]} data-part="plan" data-code={c.code} data-tilt data-recommended={c.recommended ? 'true' : undefined}>
+          {c.recommended && <span class="plan__glow" data-part="plan-glow" aria-hidden="true" />}
           <div class="plan__frame">
-            {recommended && <span class="plan__beam" aria-hidden="true" />}
+            {c.recommended && <span class="plan__beam" aria-hidden="true" />}
             <div class="plan__top">
-              <h3 class="plan__name">{p.name}</h3>
-              {recommended && (
+              <h3 class="plan__name">{c.name}</h3>
+              {c.recommended && (
                 <span class="plan__badge" data-part="plan-badge">
                   <Icon name="sparkle" size="sm" />
                   Önerilen
                 </span>
               )}
             </div>
-            {pitch && <p class="plan__pitch">{pitch.headline}</p>}
-            <p class="plan__tagline">{p.tagline}</p>
+            {c.headline && <p class="plan__pitch">{c.headline}</p>}
+            <p class="plan__tagline">{c.tagline}</p>
 
             <p class="plan__price">
-              {p.priceKind === 'fixed' ? (
-                <span class="plan__amount" data-part="price" data-count={Math.round(p.priceMinor / 100)} data-count-final={p.priceLabel}>
-                  {p.priceLabel}
+              {c.price.kind === 'fixed' ? (
+                <span class="plan__amount" data-part="price" data-count={c.price.amount} data-count-final={c.price.label}>
+                  {c.price.label}
                 </span>
               ) : (
-                <span class="plan__amount plan__amount--quote" data-part="price">{p.priceLabel}</span>
+                <span class="plan__amount plan__amount--quote" data-part="price">{c.price.label}</span>
               )}
-              {p.periodLabel && <span class="plan__period">{p.periodLabel}</span>}
+              {c.price.period && <span class="plan__period">{c.price.period}</span>}
             </p>
-            <p class="plan__vat">{p.vatLabel || 'Size özel hazırlanır'}</p>
+            <p class="plan__vat">{c.price.note}</p>
 
             <div class="plan__cta">
-              {p.cta === 'trial' && (
-                <>
-                  <Button
-                    href={appUrls.register({ plan: p.code, interval: p.interval })}
-                    variant={recommended ? 'inverse' : 'primary'}
-                    size="lg"
-                    data-testid={`plan-cta-${p.code}`}
-                  >
-                    {pitch?.ctaLabel ?? 'Ücretsiz deneyin'}
-                  </Button>
-                  <p class="plan__trial">
-                    {trialPlanCode === p.code
-                      ? `${trial.days} gün ücretsiz${trial.cardRequired ? '' : ', kart bilgisi gerekmez'}`
-                      : 'Ücretsiz denemeyle başlayın, planı uygulamada seçin'}
-                  </p>
-                </>
-              )}
-              {p.cta === 'contact' && contactHref && (
-                <>
-                  <Button href={contactHref} variant="secondary" size="lg" data-testid={`plan-cta-${p.code}`}>
-                    {pitch?.ctaLabel ?? 'Teklif isteyin'}
-                  </Button>
-                  <p class="plan__trial">İhtiyacınıza göre kapsam ve limitler</p>
-                </>
-              )}
-              {p.cta === 'contact' && !contactHref && (
-                <p class="plan__trial">Teklif için iletişim bilgileri sitenin yayın sürümünde yer alacaktır.</p>
-              )}
+              {c.cta.href ? (
+                <Button
+                  href={c.cta.href}
+                  variant={c.cta.kind === 'contact' ? 'secondary' : c.recommended ? 'inverse' : 'primary'}
+                  size="lg"
+                  data-testid={`plan-cta-${c.code}`}
+                >
+                  {c.cta.label}
+                </Button>
+              ) : null}
+              <p class="plan__trial">{c.cta.note}</p>
             </div>
 
             <dl class="plan__limits">
               {
-                p.limits.map((l) => (
+                c.limits.map((l) => (
                   <div class="plan__limit">
                     <dt>{l.label}</dt>
-                    <dd>{l.value === null ? 'Özel limit' : fmt(l.value)}</dd>
+                    <dd>{l.display}</dd>
                   </div>
                 ))
               }
             </dl>
 
-            {includes.length > 0 && (
+            {c.includes.length > 0 && (
               <div class="plan__inc">
-                <p class="plan__inc-label">{includesLabel}</p>
+                <p class="plan__inc-label">{c.includesLabel}</p>
                 <ul class="plan__features">
-                  {includes.map((f) => (
+                  {c.includes.map((f) => (
                     <li>
                       <span class="plan__tick"><Icon name="check" size="sm" /></span>
                       <span>{f}</span>
@@ -174,15 +125,15 @@ const cards = plans.map((p, i) => {
               </div>
             )}
 
-            {agent && (
-              <div class="plan__agent" data-testid={`plan-agent-${p.code}`}>
+            {c.agent && (
+              <div class="plan__agent" data-testid={`plan-agent-${c.code}`}>
                 <p class="plan__agent-title">
                   <span class="plan__agent-icon" aria-hidden="true"><Icon name="sparkle" size="sm" /></span>
-                  {agent.title}
-                  {agentLabel && <span class="plan__agent-sub">{agentLabel}</span>}
+                  {c.agent.title}
+                  {c.agent.previous && <span class="plan__agent-sub">{c.agent.previous} planındakilere ek olarak</span>}
                 </p>
                 <ul class="plan__agent-list">
-                  {agent.items.map((it) => <li>{it}</li>)}
+                  {c.agent.items.map((it) => <li>{it}</li>)}
                 </ul>
               </div>
             )}
@@ -203,9 +154,9 @@ const cards = plans.map((p, i) => {
     )}
     {
       notice && (
-        <p class="pr__notice" data-testid="plan-notice">
+        <p class="pr__notice" data-testid="plan-notice" data-proposal-notice={notice.internal}>
           <span class="pr__notice-tag">Taslak fiyatlar</span>
-          <span>{notice}</span>
+          <span>{notice.visitor}</span>
         </p>
       )
     }

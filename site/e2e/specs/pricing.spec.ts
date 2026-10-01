@@ -38,9 +38,11 @@ test.describe('Fiyatlandırma', () => {
     await expect(cards.nth(2)).toContainText('Özel teklif')
     await expect(cards.nth(2)).toContainText('Özel limit')
 
-    // Taslak/öneri işareti (seed ÖNERİ) görünür
-    await expect(page.getByTestId('pricing-notice')).toContainText('ÖNERİ')
+    // Taslak/öneri işareti (seed ÖNERİ) görünür — S27b/N4: ziyaretçi dili görünür, iç kayıt öznitelikte birebir
+    await expect(page.getByTestId('pricing-notice')).toContainText('yayın öncesi kesinleşir')
     await expect(page.getByTestId('pricing-notice')).toContainText('KDV')
+    await expect(page.getByTestId('pricing-notice')).toHaveAttribute('data-proposal-notice', /ÖNERİ — insan kararı bekliyor/)
+    await expect(page.getByTestId('pricing-notice')).not.toContainText('ADR')
 
     await waitForFonts(page)
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)
@@ -82,14 +84,15 @@ test.describe('Fiyatlandırma', () => {
     const cards = page.getByTestId('plan-cards').locator('.plan')
     await expect(cards.nth(0).getByTestId('plan-cta')).toHaveAttribute('href', `${APP_URL}/login?mode=register&plan=starter&interval=month`)
     await expect(cards.nth(1).getByTestId('plan-cta')).toHaveAttribute('href', `${APP_URL}/login?mode=register&plan=growth&interval=month`)
-    await expect(cards.nth(0).getByTestId('plan-cta')).toHaveText('Ücretsiz dene')
-    await expect(cards.nth(1).getByTestId('plan-cta')).toHaveText('Planı seç')
+    await expect(cards.nth(0).getByTestId('plan-cta')).toHaveText('Ücretsiz deneyin')
+    await expect(cards.nth(1).getByTestId('plan-cta')).toHaveText('Büyüme ile başlayın')
     // Kurumsal: kayıt bağlantısı ÜRETİLMEZ (özel teklif)
     const links = await page.locator(`main a[href^="${APP_URL}/login"]`).evaluateAll((els) => els.map((e) => (e as HTMLAnchorElement).href))
     expect(links.some((h) => h.includes('plan=enterprise'))).toBe(false)
-    // Kapanış CTA'sı deneme planıyla; giriş bağlantısı düz /login
+    // Kapanış CTA'sı deneme planıyla; ikincil eylem "Demo talep edin" (ELEV A3 — kapanışta "Giriş yap" yok)
     expect(links).toContain(`${APP_URL}/login?mode=register&plan=starter&interval=month`)
-    expect(links).toContain(`${APP_URL}/login`)
+    expect(links).not.toContain(`${APP_URL}/login`)
+    await expect(page.locator('main a[href^="mailto:"]', { hasText: 'Demo talep edin' })).toHaveCount(1)
   })
 
   test('kurumsal CTA: /iletisim yayımlıysa teklif bağlantısı, değilse kırık link yerine not', async ({ page }) => {
@@ -151,6 +154,25 @@ test.describe('Fiyatlandırma', () => {
     await page.goto('/fiyatlandirma')
     await page.getByTestId('pricing-faq').locator('summary').first().click()
     await expectNoViolations(page)
+  })
+
+  test('S27b: önerilen plan tek koyu vitrin kartı; kartlar hero\'ya taşar; güven şeridi kayıttan; aralık geçişi yok', async ({ page }) => {
+    await page.goto('/fiyatlandirma')
+    const featured = page.locator('.plan__card--featured')
+    await expect(featured).toHaveCount(1)
+    await expect(featured).toContainText('Büyüme')
+    await expect(featured).toContainText('Önerilen')
+    // ilk ekranda fiyat görünür (kartlar hero'nun alt kenarına taşar)
+    const vh = page.viewportSize()!.height
+    const hero = (await page.locator('.page-hero').boundingBox())!
+    const card = (await page.getByTestId('plan-cards').locator('.plan').first().boundingBox())!
+    expect(card.y).toBeLessThan(hero.y + hero.height)
+    if (isDesktop(page)) expect((await page.getByTestId('plan-price').first().boundingBox())!.y).toBeLessThan(vh)
+    await expect(page.getByTestId('plan-trust').locator('li')).toHaveCount(6)
+    await expect(page.getByTestId('plan-trust')).toContainText('6 kanal')
+    await expect(page.getByTestId('interval-options')).toHaveCount(0)
+    const text = (await page.locator('main').innerText()).toLocaleLowerCase('tr-TR')
+    for (const w of ['indirim', '%', 'en popüler']) expect(text, w).not.toContain(w)
   })
 
   test('ekran görüntüsü tabanı (fiyatlandırma)', async ({ page }) => {

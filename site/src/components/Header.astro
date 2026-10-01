@@ -10,14 +10,16 @@
  * `nav-menu.ts`; footer da aynı). Her panel = ikonlu kartlar (başlık + tek satır fayda) + sağda öne çıkan kart +
  * tabanda alt şerit. Çözümler satırları kanal rozetleri (ChannelMono) taşır.
  *  - Üst bar: kaydırınca cam zemin kısalır ve içerik yukarı kayar (yalnızca transform; akış yüksekliği sabit →
- *    sayfa zıplamaz). Aktif grup/sayfa: alt çizgi + yarı kalın; hover: yumuşak hap.
+ *    sayfa zıplamaz). Aktif grup/sayfa: küçük teal nokta + yarı kalın (S27b); hover: yumuşak hap.
  *  - Masaüstü (>= 64rem): grup düğmeleri `aria-expanded` + `aria-controls` (WAI-ARIA disclosure navigation deseni).
  *    Klavye ve hover niyeti `src/scripts/menu.ts`'te. Odak tuzağı YOK. JS yoksa panel üzerine gelince / odak
  *    içindeyken görünür. Açılış/kapanış opaklık + kısa kayma (reduced-motion / "Hareket" kapalı: yalnız opaklık).
  *  - Mobil/tablet (< 64rem): yerel <details> çekmece (JS'siz çalışır) header altından ekranın sonuna kadar; arka sayfa
  *    kaydırılmaz; grup başına akordeon (<details name>), bulunulan sayfanın grubu açık; altta sabit CTA.
  * Aktif sayfa: bağlantıda tam eşleşme `aria-current="page"`, alt sayfa `aria-current="true"`; içinde aktif bağlantı
- * olan grup düğmesi `data-active` ile alt çizgi alır (renk tek başına değil — çizgi + kalınlık).
+ * olan grup düğmesi `data-active` ile nokta işareti alır (renk tek başına değil — işaret + kalınlık).
+ * S27b (SR4-9, premium panel): editoryal başlık (Eyebrow + lead), dolgun-hover ikon karoları + beliren ok, sıralı giriş,
+ * öne çıkan kartlarda ajan döngüsü / deneme adımları / rehber kapağı, ikonlu alt şerit ve hap bağlantılar.
  */
 import Icon from './home/Icon.astro'
 import Container from './Container.astro'
@@ -25,6 +27,7 @@ import Button from './Button.astro'
 import Logo from './Logo.astro'
 import MotionToggle from './MotionToggle.astro'
 import ChannelMono from './pages/ChannelMono.astro'
+import Eyebrow from './Eyebrow.astro'
 import { flatLinks, menuDirect, menuGroups, type MenuGroup } from '../data/nav-menu'
 import { appUrls } from '../lib/site-config'
 
@@ -52,6 +55,9 @@ const groupHrefs = (g: MenuGroup) => [
 const groupActive = (g: MenuGroup) => groupHrefs(g).some((h) => currentOf(h))
 const agentFeature = groups.map((g) => g.feature).find((f) => f?.kind === 'agent')
 const descId = (group: string, i: number) => `nav-desc-${group}-${i}`
+// S27b: öne çıkan kart eyebrow ikonu ve alt şerit ikonu (yalnız görsel; metin kayıttan).
+const FEATURE_ICON = { agent: 'sparkle', trial: 'check', guide: 'book' } as const
+const FOOT_ICON = { product: 'layers', solutions: 'plug', resources: 'help' } as const
 const loginHref = appUrls.login()
 const registerHref = appUrls.register()
 ---
@@ -83,7 +89,10 @@ const registerHref = appUrls.register()
                 <div class:list={['mega', `mega--${g.id}`]} id={`mega-${g.id}`} data-nav-panel>
                   <div class="mega__body">
                     <div class="mega__main">
-                      <p class="mega__lead">{g.lead}</p>
+                      <div class="mega__head">
+                        <Eyebrow class="mega__eyebrow">{g.label}</Eyebrow>
+                        <p class="mega__lead">{g.lead}</p>
+                      </div>
                       <ul class="mega__list" role="list">
                         {g.links.map((l, i) => (
                           <li class:list={['mega-item', { 'mega-item--row': !!l.channels }]}>
@@ -93,8 +102,9 @@ const registerHref = appUrls.register()
                               </span>
                             )}
                             <a class="nav-link" href={l.href} aria-current={currentOf(l.href)} aria-describedby={l.description ? descId(g.id, i) : undefined}>
-                              {l.label}
+                              <span class="mega-item__label">{l.label}</span>
                               {l.badge && <span class="nav-badge" data-testid="nav-badge">{l.badge}</span>}
+                              <Icon name="arrow" size="sm" class="mega-item__arrow" />
                             </a>
                             {l.description && (
                               <span class="mega-item__desc" id={descId(g.id, i)}>
@@ -124,7 +134,7 @@ const registerHref = appUrls.register()
                               <li>
                                 <a class="mega-topic" href={l.href} aria-current={currentOf(l.href)}>
                                   {l.icon && <Icon name={l.icon} size="sm" />}
-                                  {l.label}
+                                  <span>{l.label}</span>
                                 </a>
                               </li>
                             ))}
@@ -133,13 +143,14 @@ const registerHref = appUrls.register()
                       )}
                     </div>
                     {g.feature && (
-                      <div class:list={['mega-feature', `mega-feature--${g.feature.kind}`]} data-testid={`nav-feature-${g.feature.kind}`}>
-                        <p class="mega-feature__eyebrow">
-                          {g.feature.kind === 'agent' && <Icon name="sparkle" size="sm" />}
-                          {g.feature.kind === 'trial' && <Icon name="check" size="sm" />}
-                          {g.feature.kind === 'guide' && <Icon name="book" size="sm" />}
-                          {g.feature.eyebrow}
-                        </p>
+                      <div class:list={['mega-feature', `mega-feature--${g.feature.kind}`]} data-testid={`nav-feature-${g.feature.kind}`} data-surface={g.feature.kind === 'agent' ? 'dark' : undefined}>
+                        {g.feature.kind === 'guide' && (
+                          <div class="mega-feature__cover" aria-hidden="true">
+                            <span class="mega-feature__cover-icon"><Icon name="book" size="md" /></span>
+                            <span class="mega-feature__cover-lines"><span /><span /><span /></span>
+                          </div>
+                        )}
+                        <Eyebrow class="mega-feature__eyebrow" icon={FEATURE_ICON[g.feature.kind]}>{g.feature.eyebrow}</Eyebrow>
                         <p class="mega-feature__title" id={`nav-feature-${g.id}`}>
                           {g.feature.title}
                           {g.feature.badge && <span class="nav-badge nav-badge--on-dark">{g.feature.badge}</span>}
@@ -152,6 +163,13 @@ const registerHref = appUrls.register()
                           </ul>
                         )}
                         <p class="mega-feature__text">{g.feature.text}</p>
+                        {g.feature.flow && (
+                          <ol class="mega-feature__flow" aria-label={`${g.feature.title}: çalışma döngüsü`}>
+                            {g.feature.flow.map((step) => (
+                              <li>{step}</li>
+                            ))}
+                          </ol>
+                        )}
                         {g.feature.points && (
                           <ol class="mega-feature__points">
                             {g.feature.points.map((pt) => (
@@ -167,7 +185,10 @@ const registerHref = appUrls.register()
                     )}
                   </div>
                   <div class="mega__foot">
-                    <p class="mega__foot-text">{g.footer.text}</p>
+                    <p class="mega__foot-text">
+                      <span class="mega__foot-icon" aria-hidden="true"><Icon name={FOOT_ICON[g.id]} size="sm" /></span>
+                      {g.footer.text}
+                    </p>
                     {g.footer.links.length > 0 && (
                       <ul class="mega__foot-links" role="list">
                         {g.footer.links.map((l) => (
@@ -443,15 +464,8 @@ const registerHref = appUrls.register()
     font-weight: var(--ek-font-weight-semibold);
     text-decoration: none;
   }
-  .mega-more :global(.icon) {
-    transition: transform var(--ek-duration-base) var(--ek-easing-standard);
-  }
   .mega-more:hover {
-    text-decoration: underline;
-    text-underline-offset: 0.2em;
-  }
-  .mega-more:hover :global(.icon) {
-    transform: translateX(calc(var(--ek-space-1) * 0.5));
+    color: var(--site-color-link-hover);
   }
 
   /* ------------------------------------------------------------------ mobil / tablet (< 64rem): tam ekran çekmece */
@@ -617,9 +631,15 @@ const registerHref = appUrls.register()
     justify-content: center;
     width: var(--ek-space-10);
     height: var(--ek-space-10);
-    border-radius: var(--ek-radius-md);
-    background: color-mix(in srgb, var(--ek-color-secondary) 10%, var(--ek-color-background));
+    border: var(--site-border-width) solid color-mix(in srgb, var(--ek-color-secondary) 24%, var(--ek-color-border-default));
+    border-radius: var(--ek-radius-lg);
+    background: linear-gradient(160deg, var(--ek-color-background), color-mix(in srgb, var(--ek-color-secondary) 14%, var(--ek-color-background)));
     color: var(--site-link-accent);
+  }
+  .drawer-link:has(> [aria-current]) .drawer-link__icon {
+    border-color: transparent;
+    background: var(--site-link-accent);
+    color: var(--site-color-on-primary);
   }
   .drawer-link__label {
     color: var(--ek-color-content-strong);
@@ -720,6 +740,16 @@ const registerHref = appUrls.register()
       opacity: 1;
     }
   }
+  @keyframes mega-item-in {
+    from {
+      opacity: 0;
+      transform: translateY(var(--ek-space-1));
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
   @keyframes mega-in {
     from {
       opacity: 0;
@@ -784,7 +814,7 @@ const registerHref = appUrls.register()
     .nav-trigger[aria-expanded='true'] :global(.icon) {
       transform: rotate(180deg);
     }
-    /* Aktif grup / sayfa: vurgu alt çizgisi (renk tek başına değil — kalınlık ve çizgi de değişir). */
+    /* Aktif grup / sayfa (S27b): alt çizgi yerine metnin altında küçük teal nokta + yarı kalın (renk tek başına değil). */
     .nav-trigger[data-active],
     .nav-top[aria-current] {
       position: relative;
@@ -795,11 +825,16 @@ const registerHref = appUrls.register()
     .nav-top[aria-current]::after {
       content: '';
       position: absolute;
-      inset-inline: var(--ek-space-3);
+      inset-inline-start: 50%;
       inset-block-end: calc(var(--ek-space-1) * 0.5);
-      height: calc(var(--site-border-width) * 2);
+      width: var(--ek-space-1);
+      height: var(--ek-space-1);
       border-radius: var(--ek-radius-full);
       background: var(--ek-color-secondary-darken-1);
+      translate: -50% 0;
+    }
+    .nav-trigger[data-active]::after {
+      inset-inline-start: calc(50% - var(--ek-space-2));
     }
     .nav-desktop__actions {
       display: flex;
@@ -812,21 +847,27 @@ const registerHref = appUrls.register()
       font-weight: var(--ek-font-weight-semibold);
     }
 
-    /* --- açılır panel: bar'ın altında, kapsayıcıda ortalı (tüm gruplar aynı yerde açılır → tek menü hissi) --- */
+    /* --- açılır panel (S27b premium): bar'ın altında, kapsayıcıda ortalı (tüm gruplar aynı yerde → tek menü hissi).
+       Katmanlar: ince üst ışık çizgisi (vurgu degradesi) · editoryal başlık (eyebrow + lead) · kart ızgarası · öne çıkan
+       kart · alt şerit. Hareket: panel opaklık + kısa kayma; kartlar 40 ms aralıkla sırayla oturur (yalnız
+       transform/opacity; reduced-motion / "Hareket" kapalı: yalnız opaklık, sıralama yok). */
     .mega {
-      --mega-width: 56rem;
+      --mega-width: 60rem;
+      --mega-pad: var(--ek-space-6);
       position: absolute;
       top: calc(100% - var(--ek-space-2));
       inset-inline-start: 50%;
       z-index: 1;
       display: grid;
       width: min(var(--mega-width), calc(100vw - 2 * var(--site-gutter)));
-      border: var(--site-border-width) solid var(--ek-color-border-default);
+      border: var(--site-border-width) solid color-mix(in srgb, var(--ek-color-border-default) 85%, transparent);
       border-radius: var(--site-radius-panel);
-      background: var(--ek-color-background);
+      background:
+        radial-gradient(120% 60% at 0% 0%, color-mix(in srgb, var(--ek-color-secondary) 6%, transparent), transparent 60%),
+        var(--ek-color-background);
       box-shadow:
-        0 var(--ek-space-6) var(--ek-space-16) calc(var(--ek-space-4) * -1) color-mix(in srgb, var(--ek-color-content-strong) 28%, transparent),
-        var(--ek-shadow-md);
+        0 var(--ek-space-8) var(--ek-space-16) calc(var(--ek-space-6) * -1) color-mix(in srgb, var(--ek-color-content-strong) 30%, transparent),
+        0 var(--ek-space-1) var(--ek-space-3) color-mix(in srgb, var(--ek-color-content-strong) 6%, transparent);
       translate: -50% 0;
       opacity: 0;
       visibility: hidden;
@@ -837,6 +878,16 @@ const registerHref = appUrls.register()
         opacity var(--ek-duration-fast) var(--ek-easing-standard),
         transform var(--ek-duration-fast) var(--ek-easing-standard),
         visibility 0s linear var(--ek-duration-fast);
+    }
+    /* Üst kenarda ince ışık çizgisi (panelin "imzası"); dekoratif. */
+    .mega::after {
+      content: '';
+      position: absolute;
+      inset-inline: var(--ek-space-8);
+      top: calc(var(--site-border-width) * -1);
+      height: var(--site-border-width);
+      background: linear-gradient(90deg, transparent, var(--site-accent-line), transparent);
+      pointer-events: none;
     }
     /* Düğme ile panel arasındaki boşlukta hover kopmasın (görünmez köprü). */
     .mega::before {
@@ -858,82 +909,149 @@ const registerHref = appUrls.register()
         transform var(--ek-duration-base) var(--ek-easing-enter),
         visibility 0s;
     }
-    /* Paneller arası geçiş (biri açıkken diğerine): yeniden giriş animasyonu yok. */
-    .nav-desktop[data-switching] .mega {
+    /* Kartların sıralı girişi (yalnız açılışta; paneller arası geçişte ve hareket kapalıyken yok). */
+    .nav-desktop[data-js] .nav-trigger[aria-expanded='true'] + .mega :is(.mega-item, .mega-feature, .mega-topics) {
+      animation: mega-item-in var(--ek-duration-slow) var(--ek-easing-enter) both;
+    }
+    .mega .mega-item:nth-child(2) {
+      animation-delay: calc(var(--ek-duration-fast) * 0.25);
+    }
+    .mega .mega-item:nth-child(3) {
+      animation-delay: calc(var(--ek-duration-fast) * 0.5);
+    }
+    .mega .mega-item:nth-child(n + 4),
+    .mega .mega-topics {
+      animation-delay: calc(var(--ek-duration-fast) * 0.75);
+    }
+    .mega .mega-feature {
+      animation-delay: calc(var(--ek-duration-fast) * 0.4);
+    }
+    .nav-desktop[data-switching] .mega,
+    .nav-desktop[data-switching] .mega :is(.mega-item, .mega-feature, .mega-topics) {
       transition: none;
+      animation: none;
     }
     :global(html:is([data-motion='paused'], [data-motion='reduced'])) .mega {
       transform: none;
     }
+    :global(html:is([data-motion='paused'], [data-motion='reduced'])) .mega :is(.mega-item, .mega-feature, .mega-topics) {
+      animation: none;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .mega :is(.mega-item, .mega-feature, .mega-topics) {
+        animation: none !important;
+      }
+    }
 
     .mega__body {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) 17.5rem;
-      gap: var(--ek-space-5);
-      padding: var(--ek-space-5);
+      grid-template-columns: minmax(0, 1fr) 20rem;
+      gap: var(--ek-space-6);
+      padding: var(--mega-pad);
+    }
+    .mega__head {
+      display: grid;
+      gap: var(--ek-space-2);
+      margin: 0 0 var(--ek-space-4);
+      padding-inline: var(--ek-space-3);
     }
     .mega__lead {
-      margin: 0 0 var(--ek-space-3);
-      padding-inline: var(--ek-space-3);
-      color: var(--ek-color-content-muted);
-      font-size: var(--ek-font-size-xs);
-      font-weight: var(--ek-font-weight-semibold);
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
+      margin: 0;
+      color: var(--site-text-heading);
+      font-size: var(--ek-font-size-xl);
+      font-weight: var(--ek-font-weight-bold);
+      letter-spacing: -0.015em;
+      line-height: var(--ek-line-height-tight);
     }
     .mega__list {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: var(--ek-space-1);
+      gap: var(--ek-space-2);
     }
     .mega--solutions .mega__list {
       grid-template-columns: minmax(0, 1fr);
+      gap: var(--ek-space-1);
     }
-    /* Kart: ikon iki satırı kaplar; başlık + açıklama üst üste; tüm kart tıklanabilir (bağlantı alanı kartı kaplar). */
+    .mega--solutions .mega-item {
+      padding-block: var(--ek-space-3);
+    }
+    /* Kart: ikon karosu iki satırı kaplar; başlık (+ hover'da beliren ok) ve fayda satırı; tüm kart tıklanabilir. */
     .mega-item {
       position: relative;
       display: grid;
       grid-template-columns: auto minmax(0, 1fr);
       align-content: start;
-      column-gap: var(--ek-space-3);
-      row-gap: calc(var(--ek-space-1) * 0.5);
-      padding: var(--ek-space-3);
+      column-gap: var(--ek-space-4);
+      row-gap: var(--ek-space-1);
+      padding: var(--ek-space-4);
+      border: var(--site-border-width) solid transparent;
       border-radius: var(--ek-radius-lg);
-      transition: background-color var(--ek-duration-base) var(--ek-easing-standard);
+      transition:
+        background-color var(--ek-duration-base) var(--ek-easing-standard),
+        border-color var(--ek-duration-base) var(--ek-easing-standard),
+        box-shadow var(--ek-duration-base) var(--ek-easing-standard);
     }
     .mega-item:hover,
     .mega-item:focus-within {
-      background: color-mix(in srgb, var(--ek-color-surface-sunken) 55%, var(--ek-color-background));
+      border-color: color-mix(in srgb, var(--ek-color-secondary) 22%, var(--ek-color-border-default));
+      background: color-mix(in srgb, var(--ek-color-secondary) 4%, var(--ek-color-background));
+      box-shadow: var(--site-shadow-card);
     }
     .mega-item__icon {
       grid-row: 1 / span 2;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: var(--ek-space-10);
-      height: var(--ek-space-10);
-      border: var(--site-border-width) solid color-mix(in srgb, var(--ek-color-secondary) 22%, var(--ek-color-border-default));
-      border-radius: var(--ek-radius-md);
-      background: color-mix(in srgb, var(--ek-color-secondary) 9%, var(--ek-color-background));
+      width: calc(var(--ek-space-10) + var(--ek-space-1));
+      height: calc(var(--ek-space-10) + var(--ek-space-1));
+      border: var(--site-border-width) solid color-mix(in srgb, var(--ek-color-secondary) 24%, var(--ek-color-border-default));
+      border-radius: var(--ek-radius-lg);
+      background: linear-gradient(160deg, var(--ek-color-background), color-mix(in srgb, var(--ek-color-secondary) 14%, var(--ek-color-background)));
+      box-shadow: inset 0 var(--site-border-width) 0 var(--ek-color-background);
       color: var(--site-link-accent);
       transition:
         background-color var(--ek-duration-base) var(--ek-easing-standard),
-        border-color var(--ek-duration-base) var(--ek-easing-standard);
+        border-color var(--ek-duration-base) var(--ek-easing-standard),
+        color var(--ek-duration-base) var(--ek-easing-standard),
+        transform var(--ek-duration-base) var(--ek-easing-standard);
     }
-    .mega-item:hover .mega-item__icon {
-      border-color: var(--site-accent-line);
-      background: color-mix(in srgb, var(--ek-color-secondary) 16%, var(--ek-color-background));
+    /* Hover: karo dolgun koyu teal'e döner, ikon beyaz — tek, net geri bildirim. */
+    .mega-item:hover .mega-item__icon,
+    .mega-item:focus-within .mega-item__icon {
+      border-color: transparent;
+      background: var(--site-link-accent);
+      color: var(--site-color-on-primary);
     }
     .mega-item .nav-link {
       grid-column: 2;
+      display: inline-flex;
+      align-items: center;
+      gap: var(--ek-space-1);
       min-height: 0;
       padding: 0;
       border-radius: 0;
       background: transparent;
-      color: var(--ek-color-content-strong);
+      color: var(--site-text-heading);
       font-size: var(--ek-font-size-md);
       font-weight: var(--ek-font-weight-semibold);
       white-space: normal;
+    }
+    .mega-item .nav-link:hover {
+      background: transparent;
+    }
+    .mega-item:hover .nav-link {
+      color: var(--site-link-accent);
+    }
+    .mega-item :global(.mega-item__arrow) {
+      opacity: 0;
+      transform: translateX(calc(var(--ek-space-1) * -1));
+      transition:
+        opacity var(--ek-duration-base) var(--ek-easing-standard),
+        transform var(--ek-duration-base) var(--ek-easing-standard);
+    }
+    .mega-item:is(:hover, :focus-within) :global(.mega-item__arrow) {
+      opacity: 1;
+      transform: none;
     }
     .mega-item .nav-link::after {
       content: '';
@@ -952,7 +1070,8 @@ const registerHref = appUrls.register()
       color: var(--site-link-accent);
     }
     .mega-item:has(> .nav-link[aria-current]) {
-      background: color-mix(in srgb, var(--ek-color-secondary) 6%, var(--ek-color-background));
+      border-color: color-mix(in srgb, var(--ek-color-secondary) 30%, var(--ek-color-border-default));
+      background: color-mix(in srgb, var(--ek-color-secondary) 7%, var(--ek-color-background));
     }
     .mega-item:not(:has(.mega-item__desc)) .nav-link {
       grid-row: 1 / span 2;
@@ -960,7 +1079,7 @@ const registerHref = appUrls.register()
     }
     .mega-item__desc {
       grid-column: 2;
-      color: var(--ek-color-content-muted);
+      color: var(--site-text-meta);
       font-size: var(--ek-font-size-sm);
       line-height: var(--ek-line-height-normal);
     }
@@ -980,38 +1099,29 @@ const registerHref = appUrls.register()
 
     .mega-topics {
       margin-top: var(--ek-space-4);
-      padding: var(--ek-space-4) var(--ek-space-3) 0;
-      border-top: var(--site-border-width) solid var(--ek-color-border-default);
+      padding-top: var(--ek-space-4);
+      border-top: var(--site-border-width) dashed var(--ek-color-border-default);
     }
     .mega-topics__title {
-      margin: 0 0 var(--ek-space-2);
-      color: var(--ek-color-content-muted);
+      margin: 0 0 var(--ek-space-3);
+      padding-inline: var(--ek-space-3);
+      color: var(--site-text-meta);
       font-size: var(--ek-font-size-xs);
       font-weight: var(--ek-font-weight-semibold);
-      letter-spacing: 0.08em;
+      letter-spacing: var(--site-eyebrow-tracking);
       text-transform: uppercase;
-    }
-    /* Kart ızgarasıyla aynı sütunlar (kart dolgusu kadar içeriden): konu hapları kartların altına hizalanır. */
-    .mega-topics {
-      margin-inline: 0;
-      padding-inline: 0;
-    }
-    .mega-topics__title {
-      padding-inline: var(--ek-space-3);
     }
     .mega-topics__list {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: var(--ek-space-2) var(--ek-space-1);
+      gap: var(--ek-space-2);
+      padding-inline: var(--ek-space-2);
     }
     .mega-topics__list li {
       display: flex;
-      padding-inline: var(--ek-space-2);
     }
     .mega-topic {
       flex: 1;
-    }
-    .mega-topic {
       display: inline-flex;
       align-items: center;
       gap: var(--ek-space-2);
@@ -1019,17 +1129,21 @@ const registerHref = appUrls.register()
       padding-inline: var(--ek-space-3);
       border: var(--site-border-width) solid var(--ek-color-border-default);
       border-radius: var(--ek-radius-full);
-      color: var(--ek-color-content-strong);
+      color: var(--site-text-heading);
       font-size: var(--ek-font-size-sm);
       font-weight: var(--ek-font-weight-medium);
-      text-decoration: none;
-      transition: border-color var(--ek-duration-base) var(--ek-easing-standard);
+      transition:
+        border-color var(--ek-duration-base) var(--ek-easing-standard),
+        background-color var(--ek-duration-base) var(--ek-easing-standard),
+        color var(--ek-duration-base) var(--ek-easing-standard);
     }
     .mega-topic :global(.icon) {
       color: var(--site-link-accent);
     }
     .mega-topic:hover {
-      border-color: var(--ek-color-border-strong);
+      border-color: var(--site-accent-line);
+      background: var(--site-link-hover-bg);
+      color: var(--site-text-heading);
     }
     .mega-topic[aria-current] {
       border-color: var(--site-accent-line);
@@ -1039,26 +1153,23 @@ const registerHref = appUrls.register()
     /* --- öne çıkan kart --- */
     .mega-feature {
       position: relative;
+      isolation: isolate;
       display: flex;
       flex-direction: column;
-      gap: var(--ek-space-2);
-      padding: var(--ek-space-5);
+      gap: var(--ek-space-3);
+      padding: var(--ek-space-6);
       overflow: hidden;
       border: var(--site-border-width) solid var(--ek-color-border-default);
       border-radius: calc(var(--site-radius-panel) - var(--ek-space-1));
       background: var(--ek-color-surface-sunken);
-      transition: border-color var(--ek-duration-base) var(--ek-easing-standard);
+      transition:
+        border-color var(--ek-duration-base) var(--ek-easing-standard),
+        box-shadow var(--ek-duration-base) var(--ek-easing-standard),
+        transform var(--ek-duration-base) var(--ek-easing-standard);
     }
-    .mega-feature__eyebrow {
-      display: inline-flex;
-      align-items: center;
-      gap: var(--ek-space-2);
-      margin: 0;
-      color: var(--site-accent);
-      font-size: var(--ek-font-size-xs);
-      font-weight: var(--ek-font-weight-bold);
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
+    .mega-feature:hover {
+      border-color: var(--ek-color-border-strong);
+      box-shadow: var(--site-shadow-card-hover);
     }
     .mega-feature__title {
       margin: 0;
@@ -1074,7 +1185,7 @@ const registerHref = appUrls.register()
       gap: var(--ek-space-2);
     }
     .mega-feature__meta li {
-      padding: 0 var(--ek-space-2);
+      padding: calc(var(--ek-space-1) * 0.5) var(--ek-space-2);
       border: var(--site-border-width) solid var(--ek-color-border-default);
       border-radius: var(--ek-radius-full);
       background: var(--ek-color-background);
@@ -1082,7 +1193,6 @@ const registerHref = appUrls.register()
       font-size: var(--ek-font-size-xs);
       font-weight: var(--ek-font-weight-semibold);
       line-height: var(--ek-line-height-normal);
-      padding-block: calc(var(--ek-space-1) * 0.5);
     }
     .mega-feature__points {
       display: grid;
@@ -1110,8 +1220,8 @@ const registerHref = appUrls.register()
       width: var(--ek-space-6);
       height: var(--ek-space-6);
       border-radius: var(--ek-radius-full);
-      background: color-mix(in srgb, var(--ek-color-secondary) 18%, var(--ek-color-background));
-      color: var(--site-link-accent);
+      background: var(--site-link-accent);
+      color: var(--site-color-on-primary);
       font-size: var(--ek-font-size-xs);
       font-weight: var(--ek-font-weight-bold);
     }
@@ -1137,10 +1247,6 @@ const registerHref = appUrls.register()
       color: var(--site-link-accent);
       font-size: var(--ek-font-size-sm);
       font-weight: var(--ek-font-weight-semibold);
-      text-decoration: none;
-    }
-    .mega-feature__cta :global(.icon) {
-      transition: transform var(--ek-duration-base) var(--ek-easing-standard);
     }
     .mega-feature__cta::after {
       content: '';
@@ -1154,34 +1260,40 @@ const registerHref = appUrls.register()
       outline: var(--site-focus-ring-width) solid var(--site-color-focus-ring);
       outline-offset: var(--site-focus-ring-offset);
     }
-    .mega-feature:hover {
-      border-color: var(--ek-color-border-strong);
-    }
+    /* Kartın herhangi bir yerine gelince CTA'nın oku da ilerler (bağlantı alanı kartı kaplar). */
     .mega-feature:hover .mega-feature__cta :global(.icon) {
-      transform: translateX(calc(var(--ek-space-1) * 0.5));
+      transform: translateX(var(--site-link-arrow-shift));
     }
-    /* Ajan kartı: koyu "sahne" + ince ızgara dokusu (sitenin koyu kahraman dili). */
+    /* Ajan kartı: koyu "sahne" + ince ızgara + tek yumuşak ışıma (ekrandaki tek parlayan öğe) + çalışma döngüsü. */
     .mega-feature--agent {
       border-color: transparent;
       background: var(--site-stage-mesh);
+      box-shadow: inset 0 var(--site-border-width) 0 var(--site-glass-border);
     }
     .mega-feature--agent::before {
       content: '';
       position: absolute;
       inset: 0;
+      z-index: -1;
       background-image: var(--site-texture-grid);
       background-size: var(--site-texture-grid-size);
       mask-image: linear-gradient(200deg, var(--ek-color-content-strong), transparent 70%);
       pointer-events: none;
     }
-    .mega-feature--agent > * {
-      position: relative;
+    .mega-feature--agent::after {
+      content: '';
+      position: absolute;
+      inset-inline-end: -30%;
+      top: -40%;
+      z-index: -1;
+      width: 80%;
+      aspect-ratio: 1;
+      border-radius: var(--ek-radius-full);
+      background: radial-gradient(closest-side, color-mix(in srgb, var(--ek-color-secondary) 32%, transparent), transparent);
+      pointer-events: none;
     }
     .mega-feature--agent .mega-feature__cta {
       position: static;
-    }
-    .mega-feature--agent .mega-feature__eyebrow,
-    .mega-feature--agent .mega-feature__cta {
       color: var(--site-accent-on-dark);
     }
     .mega-feature--agent .mega-feature__title {
@@ -1194,6 +1306,45 @@ const registerHref = appUrls.register()
     .mega-feature--agent:hover {
       border-color: var(--site-glass-border);
     }
+    /* Ajan çalışma döngüsü: noktalarla bağlı yatay zaman çizgisi (adlar kayıttan). */
+    .mega-feature__flow {
+      position: relative;
+      display: grid;
+      grid-auto-columns: minmax(0, 1fr);
+      grid-auto-flow: column;
+      margin: var(--ek-space-1) 0 0;
+      padding: 0;
+      list-style: none;
+    }
+    .mega-feature__flow::before {
+      content: '';
+      position: absolute;
+      inset-inline: 10%;
+      top: calc(var(--ek-space-1) * 0.75);
+      height: var(--site-border-width);
+      background: linear-gradient(90deg, var(--site-accent-line), var(--site-glass-border));
+    }
+    .mega-feature__flow li {
+      position: relative;
+      display: grid;
+      justify-items: center;
+      gap: var(--ek-space-2);
+      color: var(--site-text-on-dark-body);
+      font-size: var(--ek-font-size-xs);
+      font-weight: var(--ek-font-weight-semibold);
+      text-align: center;
+    }
+    .mega-feature__flow li::before {
+      content: '';
+      width: calc(var(--ek-space-1) * 1.5);
+      height: calc(var(--ek-space-1) * 1.5);
+      border-radius: var(--ek-radius-full);
+      background: var(--site-accent-on-dark);
+      box-shadow: 0 0 0 calc(var(--ek-space-1) * 0.75) color-mix(in srgb, var(--ek-color-secondary) 22%, transparent);
+    }
+    .mega-feature__flow li:nth-child(3) {
+      color: var(--site-text-on-dark-heading);
+    }
     .mega-feature--trial {
       border-color: color-mix(in srgb, var(--ek-color-secondary) 28%, var(--ek-color-border-default));
       background:
@@ -1201,15 +1352,69 @@ const registerHref = appUrls.register()
         color-mix(in srgb, var(--ek-color-secondary) 5%, var(--ek-color-background));
     }
     .mega-feature--trial .mega-feature__cta {
-      align-self: flex-start;
+      position: static;
+      align-self: stretch;
+      justify-content: center;
       margin-top: auto;
+      min-height: var(--site-tap-target);
       padding: var(--ek-space-2) var(--ek-space-4);
-      border-radius: var(--ek-radius-full);
+      border-radius: var(--ek-radius-lg);
       background: var(--ek-color-primary);
       color: var(--site-color-on-primary);
+      transition: background-color var(--ek-duration-base) var(--ek-easing-standard);
     }
-    .mega-feature--trial .mega-feature__cta {
-      position: static;
+    .mega-feature--trial .mega-feature__cta:hover {
+      background: var(--ek-color-primary-darken-1);
+      color: var(--site-color-on-primary);
+    }
+    .mega-feature--trial .mega-feature__cta:focus-visible {
+      outline: var(--site-focus-ring-width) solid var(--site-color-focus-ring);
+      outline-offset: var(--site-focus-ring-offset);
+    }
+    .mega-feature--trial:has(.mega-feature__cta:focus-visible) {
+      outline: none;
+    }
+    .mega-feature--guide {
+      background: var(--ek-color-background);
+    }
+    /* Rehber kartı "kapağı": yalnız dekor (ikon + metin satırı çizgileri). */
+    .mega-feature__cover {
+      display: flex;
+      align-items: center;
+      gap: var(--ek-space-4);
+      margin: calc(var(--ek-space-6) * -1) calc(var(--ek-space-6) * -1) var(--ek-space-1);
+      padding: var(--ek-space-5) var(--ek-space-6);
+      border-bottom: var(--site-border-width) solid var(--ek-color-border-default);
+      background:
+        radial-gradient(80% 120% at 100% 0%, color-mix(in srgb, var(--ek-color-secondary) 18%, transparent), transparent 70%),
+        var(--ek-color-surface-sunken);
+    }
+    .mega-feature__cover-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: var(--ek-space-12);
+      height: var(--ek-space-12);
+      border-radius: var(--ek-radius-lg);
+      background: var(--site-link-accent);
+      color: var(--site-color-on-primary);
+      box-shadow: var(--site-shadow-card);
+    }
+    .mega-feature__cover-lines {
+      display: grid;
+      flex: 1;
+      gap: var(--ek-space-2);
+    }
+    .mega-feature__cover-lines span {
+      height: calc(var(--ek-space-1) * 1.5);
+      border-radius: var(--ek-radius-full);
+      background: color-mix(in srgb, var(--ek-color-content-strong) 10%, transparent);
+    }
+    .mega-feature__cover-lines span:nth-child(2) {
+      width: 80%;
+    }
+    .mega-feature__cover-lines span:nth-child(3) {
+      width: 55%;
     }
 
     /* --- alt şerit --- */
@@ -1218,19 +1423,47 @@ const registerHref = appUrls.register()
       align-items: center;
       justify-content: space-between;
       gap: var(--ek-space-4);
-      padding: var(--ek-space-2) var(--ek-space-5) var(--ek-space-2) calc(var(--ek-space-5) + var(--ek-space-3));
+      padding: var(--ek-space-3) var(--mega-pad) var(--ek-space-3) calc(var(--mega-pad) + var(--ek-space-3));
       border-top: var(--site-border-width) solid var(--ek-color-border-default);
       border-radius: 0 0 var(--site-radius-panel) var(--site-radius-panel);
-      background: color-mix(in srgb, var(--ek-color-surface-sunken) 60%, var(--ek-color-background));
+      background: color-mix(in srgb, var(--ek-color-surface-sunken) 70%, var(--ek-color-background));
     }
     .mega__foot-text {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--ek-space-3);
       margin: 0;
-      color: var(--ek-color-content-muted);
+      color: var(--site-text-body);
       font-size: var(--ek-font-size-sm);
+    }
+    .mega__foot-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: var(--ek-space-8);
+      height: var(--ek-space-8);
+      border: var(--site-border-width) solid var(--ek-color-border-default);
+      border-radius: var(--ek-radius-md);
+      background: var(--ek-color-background);
+      color: var(--site-link-accent);
     }
     .mega__foot-links {
       display: flex;
-      gap: var(--ek-space-5);
+      gap: var(--ek-space-2);
+    }
+    .mega__foot .mega-more {
+      padding-inline: var(--ek-space-4);
+      border: var(--site-border-width) solid var(--ek-color-border-default);
+      border-radius: var(--ek-radius-full);
+      background: var(--ek-color-background);
+      transition:
+        border-color var(--ek-duration-base) var(--ek-easing-standard),
+        background-color var(--ek-duration-base) var(--ek-easing-standard),
+        color var(--ek-duration-base) var(--ek-easing-standard);
+    }
+    .mega__foot .mega-more:hover {
+      border-color: var(--site-accent-line);
+      background: var(--site-link-hover-bg);
     }
   }
 

@@ -15,6 +15,7 @@
  * Bölüm ritmi: koyu hero (tek başlık + tek cümle + tek CTA; ajan konsolu) -> açık (ajan döngüsü) -> koyu (ajanlar)
  * -> açık (kontrol sizde) -> gri (sohbet) -> açık (SSS) -> koyu (demo).
  */
+import Eyebrow from '../components/Eyebrow.astro'
 import BaseLayout from '../layouts/BaseLayout.astro'
 import Section from '../components/Section.astro'
 import Button from '../components/Button.astro'
@@ -186,7 +187,7 @@ const [titleBefore, titleAfter] = hero.title.split(hero.accent)
   <Section id="demo" labelledby="demo-title" tone="stage" class="ai-section ai-cta">
     <div class="cta">
       <div class="cta__body">
-        <p class="cta__eyebrow">{assistantCta.eyebrow}</p>
+        <Eyebrow>{assistantCta.eyebrow}</Eyebrow>
         <h2 id="demo-title">{assistantCta.title}</h2>
         <p class="cta__text">{assistantCta.text}</p>
         <ul class="cta__points" role="list">
@@ -527,13 +528,6 @@ const [titleBefore, titleAfter] = hero.title.split(hero.accent)
     flex-direction: column;
     gap: var(--ek-space-4);
   }
-  .cta__eyebrow {
-    color: var(--site-accent-on-dark);
-    font-size: var(--site-card-eyebrow-size);
-    font-weight: var(--site-card-eyebrow-weight);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
   .cta h2 {
     color: var(--site-text-on-dark-heading);
     font-size: var(--site-font-display-md);
@@ -593,10 +587,6 @@ const [titleBefore, titleAfter] = hero.title.split(hero.accent)
     color: var(--site-accent-on-dark);
     font-weight: var(--ek-font-weight-semibold);
     text-decoration: none;
-  }
-  .cta__start:hover {
-    text-decoration: underline;
-    text-underline-offset: 0.2em;
   }
   .cta__start:focus-visible {
     outline: var(--site-focus-ring-width) solid currentColor;

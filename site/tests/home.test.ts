@@ -13,6 +13,7 @@ import { buildSite, siteRoot } from '../scripts/lib/build.mjs'
 import { getPublicIntegrations, integrations, AVAILABLE_INTEGRATION_CODES, getEcosystemNodes, ecosystemPromises } from '../src/data/integrations'
 import { getPublicPlans, getPlanSourceNotice, getPublicTrial } from '../src/data/plans'
 import { getPublicCapabilities } from '../src/data/capabilities'
+import { getPlanNotice } from '../src/data/plan-cards'
 import { getPublicFaq } from '../src/data/faq'
 
 const APP_URL = 'https://app.example.test'
@@ -247,9 +248,14 @@ describe('içerik kayıttan gelir', () => {
       expect(text(), p.name).toContain(p.name)
       expect(text(), `${p.name} fiyat`).toContain(p.priceLabel)
     }
+    // N4 (S27b varsayılanı, kullanıcı kararı bekliyor — site/docs/s27b-review/DECISIONS_PENDING.md): görünür metin
+    // ziyaretçi dili; iç kayıt (PROPOSAL_NOTICE) DEĞİŞMEDEN data-proposal-notice özniteliğinde (fiyat sayfasıyla aynı kayıt).
     const notice = getPlanSourceNotice()
     expect(notice).toBeDefined()
-    expect(text()).toContain(notice!)
+    const n = getPlanNotice()!
+    expect(n.internal).toBe(notice)
+    expect(text()).toContain(n.visitor)
+    expect(html).toContain(`data-proposal-notice="${notice}"`)
     expect(text()).toContain('KDV hariç')
     const quote = plans.find((p) => p.priceKind === 'quote')!
     expect(text()).toContain('Özel teklif')

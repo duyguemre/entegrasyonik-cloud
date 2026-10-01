@@ -10,6 +10,7 @@
  * - Künye bloğu: şirket kaydındaki dolu alanlar gösterilir; adres/telefon boşsa satır GİZLENİR (ham yer tutucu yok).
  *   Unvan/MERSİS insan kararı bekler — yasal metinlerle aynı `{{…}}` anahtarlarıyla dürüstçe işaretlenir.
  */
+import Eyebrow from '../components/Eyebrow.astro'
 import BaseLayout from '../layouts/BaseLayout.astro'
 import { crumbsFor } from '../data/seo'
 import Section from '../components/Section.astro'
@@ -107,7 +108,7 @@ const showPhone = hasValue(company.phone)
   <Section labelledby="kunye-title" tone="muted" class="tight-section">
     <div class="kunye-grid">
       <div class="head head--compact">
-        <p class="eyebrow">Künye</p>
+        <Eyebrow>Künye</Eyebrow>
         <h2 id="kunye-title">Şirket bilgileri</h2>
         <p>Hizmet sağlayıcıya ilişkin resmî bilgiler. Tüm yasal belgelere aşağıdaki bağlantılardan ulaşabilirsiniz.</p>
         <p class="kunye-links">
@@ -172,7 +173,7 @@ const showPhone = hasValue(company.phone)
 </script>
 
 <style>
-  .tight-section:global(.section) {
+  :global(.section.tight-section) {
     padding-block: calc(var(--site-section-y) * 0.72);
   }
   .head {
@@ -184,13 +185,6 @@ const showPhone = hasValue(company.phone)
   }
   .head--compact {
     margin-bottom: 0;
-  }
-  .eyebrow {
-    color: var(--site-link-accent);
-    font-size: var(--site-card-eyebrow-size);
-    font-weight: var(--ek-font-weight-semibold);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
   }
   .head h2 {
     color: var(--site-text-heading);
@@ -367,9 +361,6 @@ const showPhone = hasValue(company.phone)
     font-weight: var(--ek-font-weight-semibold);
     text-decoration: none;
   }
-  .kunye-links .link:hover {
-    text-decoration: underline;
-  }
   .kunye {
     padding: var(--ek-space-2) var(--ek-space-6);
     border: var(--site-border-width) solid var(--ek-color-border-default);
@@ -406,9 +397,6 @@ const showPhone = hasValue(company.phone)
   .kunye__row dd a {
     color: var(--site-link-accent);
     text-decoration: none;
-  }
-  .kunye__row dd a:hover {
-    text-decoration: underline;
   }
   .pending {
     display: inline-block;

@@ -11,6 +11,7 @@
  *   ilgili rehberler.
  * İçindekiler vurgusu `src/scripts/legal-toc.ts` (genel `data-toc-link` betiği; JS'siz hâlde düz bağlantı listesi).
  */
+import Eyebrow from '../Eyebrow.astro'
 import BaseLayout from '../../layouts/BaseLayout.astro'
 import Container from '../Container.astro'
 import PageHero from '../pages/PageHero.astro'
@@ -159,7 +160,7 @@ const toc = [
           </section>
 
           <aside class="guide-cta" aria-labelledby="guide-cta-title" data-testid="guide-cta">
-            <p class="guide-cta__eyebrow">Entegrasyonik ile</p>
+            <Eyebrow class="guide-cta__eyebrow">Entegrasyonik ile</Eyebrow>
             <h2 id="guide-cta-title">{cta.title}</h2>
             <p class="guide-cta__text">{cta.text}</p>
             {cta.note && <p class="guide-cta__note">{cta.note}</p>}
@@ -456,14 +457,6 @@ const toc = [
     background: var(--site-gradient-stage);
     box-shadow: var(--site-shadow-panel);
     color: var(--site-text-on-dark-body);
-  }
-  .guide-cta__eyebrow {
-    margin: 0;
-    color: var(--site-accent-on-dark);
-    font-size: var(--ek-font-size-xs);
-    font-weight: var(--ek-font-weight-bold);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
   }
   .guide-cta h2 {
     color: var(--site-text-on-dark-heading);

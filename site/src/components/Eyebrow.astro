@@ -1,0 +1,53 @@
+---
+/**
+ * Eyebrow — sitenin TEK üst etiket biçimi (S27b, N6 / ELEV A14). Biçim yalnız `--site-eyebrow-*` tokenlarından:
+ * küçük, büyük harf, aralıklı, vurgu rengi; solda ince degrade çizgi işareti (`mark`, varsayılan) ya da bir ikon.
+ * Koyu zeminde (`.section--stage`, `[data-surface='dark']`) renk kendiliğinden açık teal'e döner (AA).
+ * Kullanım: bölüm başlıkları (anasayfa `SectionHeading`, iç sayfa `SectionHead`, `PageHero`), menü öne çıkan kartları,
+ * fiyat sayfası. Kart içi küçük etiketler (`--site-card-eyebrow-*`) ayrı bir kademedir.
+ */
+import Icon from './home/Icon.astro'
+
+interface Props {
+  /** Varsayılan `p`; başlık içinde satır içi kullanım için `span`. */
+  as?: 'p' | 'span'
+  /** Çizgi işareti yerine ikon (ör. Otopilot için `sparkle`). */
+  icon?: 'sparkle' | 'check' | 'book' | 'shield' | 'layers' | 'plug' | 'help'
+  class?: string
+  id?: string
+  [key: `data-${string}`]: string | undefined
+}
+
+const { as: Tag = 'p', icon, class: className, ...rest } = Astro.props
+---
+
+<Tag class:list={['eyebrow', className]} {...rest}>
+  {icon ? <Icon name={icon} size="sm" /> : <span class="eyebrow__mark" aria-hidden="true" />}
+  <slot />
+</Tag>
+
+<style>
+  /* Çift sınıf: `.section--stage p` gibi bağlam kurallarından güçlü kalsın (renk/ölçü yalnız tokenlardan). */
+  .eyebrow.eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--site-eyebrow-gap);
+    margin: 0;
+    color: var(--site-eyebrow-color);
+    font-size: var(--site-eyebrow-size);
+    font-weight: var(--site-eyebrow-weight);
+    letter-spacing: var(--site-eyebrow-tracking);
+    line-height: var(--ek-line-height-tight);
+    text-transform: uppercase;
+  }
+  .eyebrow__mark {
+    flex: none;
+    width: var(--site-eyebrow-mark-width);
+    height: var(--site-eyebrow-mark-height);
+    border-radius: var(--ek-radius-full);
+    background: var(--site-gradient-accent);
+  }
+  .eyebrow > :global(.icon) {
+    flex: none;
+  }
+</style>

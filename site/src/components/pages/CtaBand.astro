@@ -31,7 +31,7 @@ const { id, title, text, primary, secondary } = Astro.props
 </Section>
 
 <style>
-  .cta-band:global(.section) {
+  :global(.section.cta-band) {
     padding-block: calc(var(--site-section-y) * 0.7);
   }
   .cta-band__body {
