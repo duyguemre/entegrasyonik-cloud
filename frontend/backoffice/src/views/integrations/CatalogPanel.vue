@@ -1,18 +1,16 @@
 <template>
-  <section class="bo-panel" aria-labelledby="bo-cat-title">
-    <header class="bo-panel__bar">
-      <div>
-        <h2 id="bo-cat-title" class="bo-panel__title">Katalog ve etkin ayar</h2>
-        <p class="bo-panel__hint">Ayar tanımları ile seçili hedefte bugün geçerli değerler. Değer kaynağı, riski ve uygulanma zamanı görünür. Bu ekranda ayar değiştirilmez.</p>
-      </div>
+  <BoSection id="bo-cat" title="Katalog ve etkin ayar" description="Ayar tanımları ile seçili hedefte bugün geçerli değerler. Değer kaynağı, riski ve uygulanma zamanı görünür. Bu ekranda ayar değiştirilmez." icon="mdi-tune-variant">
+    <template #actions>
       <EkRefreshButton quiet-success :loading="res.refreshing.value || res.phase.value === 'loading'" :last-updated="res.loadedAt.value" :error="res.stale.value ? res.error.value?.title : null" @refresh="res.load()" />
-    </header>
+    </template>
 
-    <div class="bo-toolbar">
+    <BoFilterBar label="Katalog süzgeçleri" :active="activeFilters" @clear="clearFilters">
+      <template #search>
+        <v-text-field v-model="query" label="Ara (anahtar, etiket, yardım)" density="compact" hide-details clearable prepend-inner-icon="mdi-magnify" :disabled="!res.data.value" />
+      </template>
       <v-select v-model="target" :items="TARGET_ITEMS" item-title="title" item-value="value" label="Hedef" density="compact" hide-details class="bo-toolbar__field" data-testid="catalog-target" />
       <v-select v-model="group" :items="groupItems" label="Grup" density="compact" hide-details class="bo-toolbar__field" :disabled="!res.data.value" />
-      <v-text-field v-model="query" label="Ara (anahtar, etiket, yardım)" density="compact" hide-details clearable prepend-inner-icon="mdi-magnify" class="bo-toolbar__field bo-cat__search" :disabled="!res.data.value" />
-    </div>
+    </BoFilterBar>
 
     <StateBlock
       :phase="phase"
@@ -31,15 +29,15 @@
           :text="`Katalog ${res.data.value.catalog.catalogVersion}, etkin yapılandırma ${res.data.value.effective.catalogVersion} sürümünde. Yeni bir yayın sürüyor olabilir; bazı değerler eksik ya da eski görünebilir — sayfayı yenileyin.`"
           live
         />
-        <dl class="bo-kv bo-cat__meta">
-          <div><dt>Katalog sürümü</dt><dd>{{ res.data.value.catalog.catalogVersion }}</dd></div>
-          <div><dt>Yayınlanan revizyon</dt><dd>{{ res.data.value.effective.publishedVersion }}</dd></div>
-          <div><dt>Gösterilen ayar</dt><dd>{{ filtered.length }} / {{ res.data.value.catalog.items.length }}</dd></div>
-        </dl>
+        <BoTileGrid :min="176" dense>
+          <BoStat label="Katalog sürümü" :value="res.data.value.catalog.catalogVersion" />
+          <BoStat label="Yayınlanan revizyon" :value="res.data.value.effective.publishedVersion" />
+          <BoStat label="Gösterilen ayar" :value="`${filtered.length} / ${res.data.value.catalog.items.length}`" />
+        </BoTileGrid>
 
-        <EkCard flush>
-          <EkDataTable tabindex="0" v-if="filtered.length" :items="filtered as unknown as Array<Record<string, unknown>>" :columns="COLUMNS" row-key="key">
-            <template #cell-key="{ item }">
+        <div v-if="filtered.length">
+          <BoDataTable tabindex="0" :items="visible as unknown as Array<Record<string, unknown>>" :columns="COLUMNS" row-key="key" label="Ayar kataloğu">
+          <template #cell-key="{ item }">
               <span class="bo-cell-stack bo-cat__key">
                 <span class="bo-cat__label">{{ (item as unknown as Row).label.tr }}</span>
                 <code class="bo-code">{{ item.key }}</code>
@@ -68,20 +66,29 @@
               <EkStatusChip :tone="DANGER[(item as unknown as Row).danger].tone" :label="DANGER[(item as unknown as Row).danger].label" />
             </template>
             <template #cell-applies="{ item }">{{ APPLIES[(item as unknown as Row).applies] }}</template>
-          </EkDataTable>
-          <EkEmptyState v-else variant="no-results" title="Eşleşen ayar yok" message="Arama ya da grup filtresini değiştirin." />
-        </EkCard>
+                    <template #footer>
+              <BoPagination :count="visible.length" :total="filtered.length" :has-more="visible.length < filtered.length" @more="shown += PAGE" />
+            </template>
+          </BoDataTable>
+        </div>
+        <EkEmptyState v-else variant="no-results" title="Eşleşen ayar yok" message="Arama ya da grup filtresini değiştirin." />
       </div>
     </StateBlock>
-  </section>
+  </BoSection>
 </template>
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { EkAlert, EkCard, EkDataTable, EkEmptyState, EkRefreshButton, EkStatusChip, type EkTableColumn, type StatusTone } from '@entegrasyonik/ui/components'
+import { EkAlert, EkEmptyState, EkRefreshButton, EkStatusChip, type EkTableColumn, type StatusTone } from '@entegrasyonik/ui/components'
 import { api } from '@bo/api'
 import type { CatalogItem, EffectiveValue, SettingApplies, SettingDanger, SettingType, ValueSource } from '@bo/api/contract'
 import { useResource } from '@bo/composables/useResource'
+import BoSection from '@bo/components/r2/BoSection.vue'
+import BoTileGrid from '@bo/components/r2/BoTileGrid.vue'
+import BoStat from '@bo/components/r2/BoStat.vue'
+import BoDataTable from '@bo/components/r2/BoDataTable.vue'
+import BoFilterBar from '@bo/components/r2/BoFilterBar.vue'
+import BoPagination from '@bo/components/r2/BoPagination.vue'
 import StateBlock from '@bo/components/kit/StateBlock.vue'
 import { CHANNEL } from '@bo/utils/labels'
 import { formatCount, formatDuration } from '@bo/utils/units'
@@ -132,6 +139,14 @@ watch(
   { immediate: true },
 )
 
+const PAGE = 25
+const shown = ref(PAGE)
+watch([target, group, query], () => (shown.value = PAGE))
+const activeFilters = computed(() => (group.value !== 'Tümü' ? 1 : 0) + ((query.value ?? '').trim() ? 1 : 0))
+function clearFilters() {
+  group.value = 'Tümü'
+  query.value = ''
+}
 const phase = computed(() => (res.stale.value ? 'error' : res.phase.value))
 const effectiveMap = computed(() => new Map((res.data.value?.effective.values ?? []).map((v) => [v.key, v])))
 const effectiveOf = (key: string): EffectiveValue | undefined => effectiveMap.value.get(key)
@@ -144,6 +159,8 @@ const filtered = computed(() => {
     return !q || [i.key, i.label.tr, i.help.tr].some((s) => s.toLocaleLowerCase('tr').includes(q))
   })
 })
+
+const visible = computed(() => filtered.value.slice(0, shown.value))
 
 function isPerIntegration(d: unknown): d is Record<string, unknown> {
   return !!d && typeof d === 'object' && !Array.isArray(d) && '_' in d
@@ -177,12 +194,6 @@ function sourceLabel(v: EffectiveValue): string {
   flex-direction: column;
   gap: var(--ek-space-4);
   min-width: 0;
-}
-.bo-cat__search {
-  flex: 1 1 260px;
-}
-.bo-cat__meta {
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
 }
 .bo-cat__key {
   min-width: 260px;

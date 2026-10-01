@@ -189,7 +189,9 @@ test.describe('kabuk ve ekranlar', () => {
       await expect(page).toHaveURL(/fp=/, { timeout: 1000 })
     }).toPass()
     const drawer = page.getByRole('dialog').locator('.bo-drawer')
-    await expect(drawer.getByRole('img', { name: /eğilimi/ })).toBeVisible()
+    await expect(drawer.locator('[data-bo-chart]')).toContainText('eğilimi')
+    // Kanıtlar ikinci planda: "Son istekler" açılınca iz bağlantıları görünür.
+    await drawer.getByRole('button', { name: /Son istekler/ }).click()
     await drawer.getByRole('button', { name: 'İzi aç' }).first().click()
     const trace = page.getByRole('dialog', { name: 'İstek zinciri' })
     await expect(trace.locator('.bo-trace__item').first()).toBeVisible()

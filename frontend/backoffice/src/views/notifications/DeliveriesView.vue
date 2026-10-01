@@ -9,113 +9,90 @@
 
     <PageVerdict :verdict="verdict" />
 
-    <section class="bo-panel" aria-labelledby="bo-dlv-stats">
-      <header class="bo-panel__bar">
-        <div>
-          <h2 id="bo-dlv-stats" class="bo-panel__title">Teslim durumu</h2>
-          <p class="bo-panel__hint">E-posta kanalı. Kalıcı hatalar elle yeniden denenebilir ya da atılabilir.</p>
-        </div>
-        <div class="bo-seg" role="radiogroup" aria-label="Zaman aralığı">
-          <button v-for="w in WINDOWS" :key="w.value" type="button" role="radio" class="bo-seg__opt" :aria-checked="win === w.value" :data-window="w.value" @click="win = w.value">{{ w.label }}</button>
-        </div>
-      </header>
-      <StateBlock v-if="!stats.data.value" :phase="stats.phase.value" :error="stats.error.value" skeleton="cards" :rows="2" degraded-title="Teslim istatistikleri şu an okunamıyor" @retry="stats.load()" />
-      <template v-else>
-        <div class="bo-nstat" data-testid="delivery-kpis">
-          <div v-for="k in kpis" :key="k.key" class="bo-nstat__tile" :class="k.tone && `is-${k.tone}`">
-            <span class="bo-nstat__label">{{ k.label }}</span>
-            <span class="bo-nstat__value ek-num">{{ k.value }}</span>
-            <span class="bo-nstat__hint">{{ k.hint }}</span>
-          </div>
-        </div>
-        <div class="bo-grid-2">
-          <EkCard title="Durum dağılımı" :heading-level="3">
-            <MeterList :rows="statusRows" label="Teslim durum dağılımı" />
-          </EkCard>
-          <EkCard title="Koda göre" subtitle="En çok teslim üreten bildirim kodları" :heading-level="3" flush>
-            <EkEmptyState v-if="!byCode.length" variant="no-data" title="Teslim yok" message="Bu aralıkta e-posta teslimi oluşmadı." />
-            <div v-else class="bo-table-wrap" tabindex="0" role="region" aria-label="Koda göre teslimler">
-              <table class="bo-table" data-density="compact">
-                <caption class="ek-sr-only">Koda göre teslimler ({{ win === '24h' ? 'son 24 saat' : 'son 7 gün' }})</caption>
-                <thead>
-                  <tr><th scope="col">Kod</th><th scope="col" class="is-num">Toplam</th><th scope="col" class="is-num">Gönderildi</th><th scope="col" class="is-num">Sorunlu</th></tr>
-                </thead>
-                <tbody>
-                  <tr v-for="c in byCode" :key="c.code">
-                    <th scope="row"><button type="button" class="bo-link-btn bo-mono" :aria-label="`${c.code} teslimlerini listele`" @click="code = c.code">{{ c.code }}</button></th>
-                    <td class="is-num ek-num">{{ c.total }}</td>
-                    <td class="is-num ek-num">{{ c.sent }}</td>
-                    <td class="is-num ek-num" :class="{ 'bo-dlv__bad': c.bad > 0 }">{{ c.bad }}</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </EkCard>
-        </div>
+    <BoSection id="bo-dlv-stats" title="Teslim durumu" description="E-posta kanalı. Kalıcı hatalar elle yeniden denenebilir ya da atılabilir." icon="mdi-email-fast-outline">
+      <template #actions>
+        <BoSegmented v-model="win" label="Zaman aralığı" :options="WINDOWS" />
       </template>
-    </section>
+      <StateBlock v-if="!stats.data.value" :phase="stats.phase.value" :error="stats.error.value" skeleton="cards" :rows="2" degraded-title="Teslim istatistikleri şu an okunamıyor" @retry="stats.load()" />
+      <div v-else class="bo-dlv__stats">
+        <BoTileGrid :min="176" dense data-testid="delivery-kpis">
+          <BoStat v-for="k in kpis" :key="k.key" :label="k.label" :value="k.value" :hint="k.hint" :tone="k.tone" />
+        </BoTileGrid>
+        <BoTileGrid :cols="2">
+          <BoSection title="Durum dağılımı" :heading-level="3" fill>
+            <MeterList :rows="statusRows" label="Teslim durum dağılımı" />
+          </BoSection>
+          <BoSection title="Koda göre" description="En çok teslim üreten bildirim kodları" :heading-level="3" fill flush>
+            <EkEmptyState v-if="!byCode.length" variant="no-data" title="Teslim yok" message="Bu aralıkta e-posta teslimi oluşmadı." />
+            <BoTableFrame v-else :label="`Koda göre teslimler (${win === '24h' ? 'son 24 saat' : 'son 7 gün'})`" flat>
+              <template #head>
+                <tr><th scope="col">Kod</th><th scope="col" class="is-num">Toplam</th><th scope="col" class="is-num">Gönderildi</th><th scope="col" class="is-num">Sorunlu</th></tr>
+              </template>
+              <tr v-for="c in byCode" :key="c.code">
+                <th scope="row"><button type="button" class="bo-link-btn bo-mono" :aria-label="`${c.code} teslimlerini listele`" @click="code = c.code">{{ c.code }}</button></th>
+                <td class="is-num ek-num">{{ c.total }}</td>
+                <td class="is-num ek-num">{{ c.sent }}</td>
+                <td class="is-num ek-num" :class="{ 'bo-dlv__bad': c.bad > 0 }">{{ c.bad }}</td>
+              </tr>
+            </BoTableFrame>
+          </BoSection>
+        </BoTileGrid>
+      </div>
+    </BoSection>
 
-    <section class="bo-panel" aria-labelledby="bo-dlv-list">
-      <header class="bo-panel__bar">
-        <div>
-          <h2 id="bo-dlv-list" class="bo-panel__title">Teslimler</h2>
-          <p class="bo-panel__hint">En yeni önce. Satırda alıcı adresi ve ileti metni yoktur; hata yalnız sınıf koduyla gösterilir.</p>
-        </div>
-      </header>
-      <div class="bo-toolbar">
-        <div class="bo-seg" role="radiogroup" aria-label="Teslim durumu">
-          <button v-for="o in STATUS_OPTS" :key="o.value" type="button" role="radio" class="bo-seg__opt" :aria-checked="status === o.value" :data-status="o.value" @click="status = o.value">{{ o.label }}</button>
-        </div>
+    <BoSection id="bo-dlv-list" title="Teslimler" description="En yeni önce. Satırda alıcı adresi ve ileti metni yoktur; hata yalnız sınıf koduyla gösterilir." icon="mdi-format-list-bulleted">
+      <BoFilterBar label="Teslim süzgeçleri" :active="activeFilters" @clear="clearFilters">
+        <BoSegmented v-model="status" label="Teslim durumu" :options="STATUS_OPTS" />
         <v-text-field v-model="codeInput" label="Bildirim kodu" placeholder="ORDER_SYNC_FAILED" density="compact" hide-details clearable class="bo-toolbar__field" data-testid="code-filter" @keydown.enter="code = codeInput?.trim().toUpperCase() || ''" @click:clear="code = ''" @blur="code = codeInput?.trim().toUpperCase() || ''" />
         <v-text-field v-model="tidInput" label="Müşteri no" type="number" min="1" density="compact" hide-details clearable class="bo-toolbar__field bo-dlv__tid" @keydown.enter="applyTid" @blur="applyTid" @click:clear="tid = null" />
-      </div>
+      </BoFilterBar>
       <EkAlert v-if="eventId" tone="info" dense :title="`Olay ${eventId} teslimleri`" text="Müşteri bildirim geçmişinden açılan tek olayın teslimleri gösteriliyor.">
         <template #actions><EkButton size="sm" tone="secondary" icon="mdi-close" @click="eventId = ''">Olay süzgecini kaldır</EkButton></template>
       </EkAlert>
-      <EkCard flush>
-        <StateBlock
-          :phase="list.phase.value"
-          :error="list.error.value"
-          :retrying="list.phase.value === 'loading'"
-          :empty-title="filtered ? 'Süzgece uyan teslim yok' : 'Teslim yok'"
-          :empty-message="filtered ? 'Durum, kod ya da müşteri süzgecini değiştirin.' : 'Henüz e-posta teslimi oluşmadı.'"
-          :empty-variant="filtered ? 'no-results' : 'no-data'"
-          @retry="list.reload()"
-        >
-          <EkDataTable :items="rows" :columns="COLUMNS" row-key="id">
-            <template #cell-code="{ item }">
-              <span class="bo-cell-stack"><code class="bo-code">{{ item.code }}</code><span class="bo-mono bo-muted">{{ item.id }}</span></span>
-            </template>
-            <template #cell-tid="{ item }">
-              <RouterLink v-if="(item as DeliveryRow).tid" :to="`/musteriler/${item.tid}`" class="ek-num bo-hit">#{{ item.tid }}</RouterLink>
-              <span v-else class="bo-muted">platform</span>
-            </template>
-            <template #cell-status="{ item }">
-              <span class="bo-cell-stack">
-                <EkStatusChip :tone="DELIVERY_STATUS[(item as DeliveryRow).status].tone" :label="DELIVERY_STATUS[(item as DeliveryRow).status].label" dot :title="DELIVERY_STATUS[(item as DeliveryRow).status].hint" />
-                <span v-if="item.lastErrorCode" class="bo-muted">{{ deliveryErrorLabel((item as DeliveryRow).lastErrorCode) }}</span>
-              </span>
-            </template>
-            <template #cell-attempts="{ item }">
-              <span class="bo-cell-stack"><span class="ek-num">{{ item.attempts }}</span><span class="bo-muted">{{ item.mode === 'digest' ? 'özet' : 'anlık' }}</span></span>
-            </template>
-            <template #cell-when="{ item }">
-              <span class="bo-cell-stack">
-                <span>{{ formatRelative((item as DeliveryRow).createdAt) }}</span>
-                <span class="bo-muted">{{ whenText(item as DeliveryRow) }}</span>
-              </span>
-            </template>
-            <template #cell-actions="{ item }">
-              <span class="bo-row-actions">
-                <EkButton v-if="canRetry(item as DeliveryRow)" size="sm" tone="secondary" icon="mdi-replay" :aria-label="`${item.id} yeniden dene`" data-testid="retry" @click="retry.open(item as DeliveryRow)">Yeniden dene</EkButton>
-                <EkButton v-if="canDiscard(item as DeliveryRow)" size="sm" tone="ghost" icon="mdi-delete-outline" icon-only :aria-label="`${item.id} at`" data-testid="discard" @click="discard.open(item as DeliveryRow)" />
-              </span>
-            </template>
-          </EkDataTable>
+      <BoDataTable
+        :items="rows"
+        :columns="COLUMNS"
+        row-key="id"
+        label="Teslimler"
+        :phase="list.phase.value"
+        :error="list.error.value"
+        :empty-title="filtered ? 'Süzgece uyan teslim yok' : 'Teslim yok'"
+        :empty-message="filtered ? 'Durum, kod ya da müşteri süzgecini değiştirin.' : 'Henüz e-posta teslimi oluşmadı.'"
+        @retry="list.reload()"
+      >
+        <template #cell-code="{ item }">
+          <span class="bo-cell-stack"><code class="bo-code">{{ item.code }}</code><span class="bo-mono bo-muted">{{ item.id }}</span></span>
+        </template>
+        <template #cell-tid="{ item }">
+          <RouterLink v-if="(item as DeliveryRow).tid" :to="`/musteriler/${item.tid}`" class="ek-num bo-hit">#{{ item.tid }}</RouterLink>
+          <span v-else class="bo-muted">platform</span>
+        </template>
+        <template #cell-status="{ item }">
+          <span class="bo-cell-stack">
+            <EkStatusChip :tone="DELIVERY_STATUS[(item as DeliveryRow).status].tone" :label="DELIVERY_STATUS[(item as DeliveryRow).status].label" dot :title="DELIVERY_STATUS[(item as DeliveryRow).status].hint" />
+            <span v-if="item.lastErrorCode" class="bo-muted">{{ deliveryErrorLabel((item as DeliveryRow).lastErrorCode) }}</span>
+          </span>
+        </template>
+        <template #cell-attempts="{ item }">
+          <span class="bo-cell-stack"><span class="ek-num">{{ item.attempts }}</span><span class="bo-muted">{{ item.mode === 'digest' ? 'özet' : 'anlık' }}</span></span>
+        </template>
+        <template #cell-when="{ item }">
+          <span class="bo-cell-stack">
+            <span>{{ formatRelative((item as DeliveryRow).createdAt) }}</span>
+            <span class="bo-muted">{{ whenText(item as DeliveryRow) }}</span>
+          </span>
+        </template>
+        <template #cell-actions="{ item }">
+          <span class="bo-row-actions">
+            <BoAction v-if="canRetry(item as DeliveryRow)" kind="retry" size="sm" icon-only :object="String(item.id)" data-testid="retry" @click="retry.open(item as DeliveryRow)" />
+            <BoAction v-if="canDiscard(item as DeliveryRow)" kind="discard" size="sm" icon-only :object="String(item.id)" data-testid="discard" @click="discard.open(item as DeliveryRow)" />
+          </span>
+        </template>
+        <template v-if="list.phase.value === 'ready'" #footer>
           <BoPagination :count="list.items.value.length" :has-more="list.hasMore.value" :loading="list.loadingMore.value" :error="list.moreError.value" @more="list.loadMore()" />
-        </StateBlock>
-      </EkCard>
-    </section>
+        </template>
+      </BoDataTable>
+    </BoSection>
 
     <GuardedDialog
       :action="retry"
@@ -144,7 +121,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { EkAlert, EkButton, EkCard, EkDataTable, EkEmptyState, EkStatusChip, type EkTableColumn } from '@entegrasyonik/ui/components'
+import { EkAlert, EkButton, EkEmptyState, EkStatusChip, type EkTableColumn } from '@entegrasyonik/ui/components'
 import { api } from '@bo/api'
 import type { DeliveryRow, DeliveryStats, DeliveryStatus, DeliveryWindow } from '@bo/api/contract'
 import { useCursorList } from '@bo/composables/useCursorList'
@@ -157,6 +134,13 @@ import CopyViewLink from '@bo/components/CopyViewLink.vue'
 import { deliveriesVerdict } from './notificationsVerdict'
 import StateBlock from '@bo/components/kit/StateBlock.vue'
 import BoPagination from '@bo/components/r2/BoPagination.vue'
+import BoSection from '@bo/components/r2/BoSection.vue'
+import BoTileGrid from '@bo/components/r2/BoTileGrid.vue'
+import BoStat from '@bo/components/r2/BoStat.vue'
+import BoFilterBar from '@bo/components/r2/BoFilterBar.vue'
+import BoSegmented, { type BoSegmentOption } from '@bo/components/r2/BoSegmented.vue'
+import BoDataTable from '@bo/components/r2/BoDataTable.vue'
+import BoTableFrame from '@bo/components/r2/BoTableFrame.vue'
 import GuardedDialog from '@bo/components/kit/GuardedDialog.vue'
 import MeterList, { type MeterRow } from '@bo/components/kit/MeterList.vue'
 import { DELIVERY_STATUS, deliveryErrorLabel } from '@bo/utils/labels'
@@ -167,11 +151,11 @@ import '@bo/styles/kit.css'
 
 const route = useRoute()
 const router = useRouter()
-const WINDOWS: Array<{ value: DeliveryWindow; label: string }> = [
+const WINDOWS: Array<BoSegmentOption<DeliveryWindow>> = [
   { value: '24h', label: 'Son 24 saat' },
   { value: '7d', label: 'Son 7 gün' },
 ]
-const STATUS_OPTS: Array<{ value: DeliveryStatus | 'all'; label: string }> = [
+const STATUS_OPTS: Array<BoSegmentOption<DeliveryStatus | 'all'>> = [
   { value: 'all', label: 'Tümü' },
   { value: 'dead', label: 'Kalıcı hata' },
   { value: 'failed', label: 'Başarısız' },
@@ -198,6 +182,14 @@ const codeInput = ref(code.value)
 const tid = ref<number | null>(Number(q('tid')) > 0 ? Number(q('tid')) : null)
 const tidInput = ref<string>(tid.value ? String(tid.value) : '')
 const eventId = ref(/^[a-f0-9]{24}$/i.test(q('olay')) ? q('olay') : '')
+const activeFilters = computed(() => (status.value !== 'all' ? 1 : 0) + (code.value ? 1 : 0) + (tid.value ? 1 : 0) + (eventId.value ? 1 : 0))
+function clearFilters() {
+  status.value = 'all'
+  code.value = ''
+  tid.value = null
+  tidInput.value = ''
+  eventId.value = ''
+}
 const filtered = computed(() => status.value !== 'all' || !!code.value || !!tid.value || !!eventId.value)
 
 function applyTid() {
@@ -213,15 +205,15 @@ const kpis = computed(() => {
   if (!s) return []
   const total = Object.values(s).reduce((a, b) => a + b, 0)
   return [
-    { key: 'total', label: 'Toplam', value: formatCount(total), hint: win.value === '24h' ? 'son 24 saat' : 'son 7 gün', tone: '' },
-    { key: 'sent', label: 'Gönderildi', value: formatCount(s.sent), hint: total ? `%${Math.round((s.sent / total) * 100)}` : '—', tone: '' },
-    { key: 'dead', label: 'Kalıcı hata', value: formatCount(s.dead), hint: s.dead ? 'elle işlem bekliyor' : 'yok', tone: s.dead ? 'danger' : '' },
+    { key: 'total', label: 'Toplam', value: formatCount(total), hint: win.value === '24h' ? 'son 24 saat' : 'son 7 gün', tone: undefined },
+    { key: 'sent', label: 'Gönderildi', value: formatCount(s.sent), hint: total ? `%${Math.round((s.sent / total) * 100)}` : '—', tone: undefined },
+    { key: 'dead', label: 'Kalıcı hata', value: formatCount(s.dead), hint: s.dead ? 'elle işlem bekliyor' : 'yok', tone: s.dead ? ('critical' as const) : undefined },
     {
       key: 'oldest',
       label: 'En eski bekleyen',
       value: oldest === null ? '—' : oldest < 60 ? `${oldest} sn` : `${Math.round(oldest / 60)} dk`,
       hint: oldest === null ? 'bekleyen teslim yok' : `${formatCount(s.pending)} bekliyor`,
-      tone: oldest !== null && oldest > 600 ? 'warning' : '',
+      tone: oldest !== null && oldest > 600 ? ('warning' as const) : undefined,
     },
   ]
 })
@@ -320,44 +312,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.bo-nstat {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: var(--ek-space-3);
-  margin-bottom: var(--ek-space-4);
-}
-.bo-nstat__tile {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ek-space-1);
-  padding: var(--ek-space-3) var(--ek-space-4);
-  border: 1px solid var(--ek-color-border-subtle);
-  border-radius: var(--ek-radius-md);
-  background: var(--ek-color-surface-raised);
-}
-.bo-nstat__tile.is-danger {
-  border-color: var(--ek-color-error-border);
-}
-.bo-nstat__tile.is-warning {
-  border-color: var(--ek-color-warning-border);
-}
-.bo-nstat__label {
-  color: var(--ek-color-content-muted);
-  font-size: var(--ek-type-micro-size);
-  font-weight: var(--ek-type-micro-weight);
-  letter-spacing: var(--ek-type-micro-tracking);
-  text-transform: uppercase;
-}
-.bo-nstat__value {
-  color: var(--ek-color-content-strong);
-  font-size: var(--ek-type-metric-size);
-  line-height: var(--ek-type-metric-line);
-  font-weight: var(--ek-font-weight-semibold);
-}
-.bo-nstat__hint {
-  color: var(--ek-color-content-muted);
-  font-size: var(--ek-type-caption-size);
-}
 .bo-dlv__bad {
   color: var(--ek-color-error-emphasis);
   font-weight: var(--ek-font-weight-semibold);
@@ -365,9 +319,9 @@ onMounted(() => {
 .bo-dlv__tid {
   max-width: 160px;
 }
-@media (max-width: 959px) {
-  .bo-nstat {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
+.bo-dlv__stats {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ek-space-4);
 }
 </style>

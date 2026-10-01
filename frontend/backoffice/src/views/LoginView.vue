@@ -348,10 +348,10 @@ function download() {
 
 .bo-login__claim {
   margin: 0;
-  font-size: var(--ek-type-metric-size);
-  line-height: 1.3;
-  font-weight: var(--ek-font-weight-semibold);
-  letter-spacing: -0.01em;
+  font-size: var(--ek-type-title-size);
+  line-height: var(--ek-type-title-line);
+  font-weight: var(--ek-type-title-weight);
+  letter-spacing: var(--ek-type-title-tracking);
 }
 
 .bo-login__points {
@@ -590,6 +590,14 @@ function download() {
 .bo-codes__actions {
   display: flex;
   gap: var(--ek-space-2);
+}
+
+@media (pointer: coarse) {
+  .bo-login__link,
+  .bo-login__reveal {
+    min-width: 44px;
+    min-height: 44px;
+  }
 }
 
 @media (max-width: 959px) {

@@ -79,7 +79,7 @@ for (const cfg of CONFIGS) {
 
     // Üretimde yıkıcı işlem: hedef kimliği yazdırma (NT-02).
     if (want('71-uretim') && cfg.width > 600) {
-      await page.goto('/motor?sekme=basarisiz&env=production')
+      await page.goto('/motor?sekme=basarisiz&gorunum=ayrinti&env=production')
       await page.waitForLoadState('networkidle')
       await page.getByRole('button', { name: /sil/i }).first().click()
       await expect(page.getByRole('dialog')).toBeVisible()

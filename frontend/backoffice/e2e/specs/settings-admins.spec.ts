@@ -30,9 +30,14 @@ test.describe('sistem ayarları', () => {
     await page.goto('/sistem/bayraklar')
     await expect(page.getByRole('heading', { level: 1, name: 'Platform ayarları' })).toBeVisible()
     await settle(page)
+    // BO2-70: sayfa sekmelere bölünür; varsayılan sekme Platform ayarları (URL'de ?sekme= yok).
+    await expect(page.getByRole('tab', { name: /Platform ayarları/ })).toHaveAttribute('aria-selected', 'true')
+    await expect(page).not.toHaveURL(/sekme=/)
     // Backend kataloğunda gerçek bayrak var (features.competition, PRC-CFG); `platform.pricing` grubu burada ÇİFT görünmez.
+    await page.getByRole('tab', { name: /Özellik bayrakları/ }).click()
     await expect(page.getByText('features.competition', { exact: true })).toBeVisible()
     await expect(page.getByText('pricing.buybox')).toHaveCount(0)
+    await page.getByRole('tab', { name: /Ortam/ }).click()
     await expect(page.locator('[data-env="upload-max"]')).toContainText('10 MB')
     await expect(page.locator('[data-env="image-base"]')).toContainText("env'den gelir")
     await expectNoA11yViolations(page)
@@ -42,12 +47,13 @@ test.describe('sistem ayarları', () => {
     await call(page, '(m) => m.setFeatureFlags(true)')
     await openFromMenu(page, 'Sistem ayarları', 'Platform ayarları')
     await settle(page)
+    await page.getByRole('tab', { name: /Özellik bayrakları/ }).click()
     await expect(page.getByText('features.aiListing', { exact: true })).toBeVisible()
     await expect(page.getByText('Yalnız yönetici').first()).toBeVisible()
   })
 
   test('bakım modu: taslak → fark → gerekçe + step-up → yayın; geçmişte yeni sürüm', async ({ page }) => {
-    await page.goto('/sistem/bayraklar')
+    await page.goto('/sistem/bayraklar?sekme=bakim')
     await settle(page)
     await call(page, '(m) => m.expireReauth()')
     const card = page.getByTestId('maintenance-card')
@@ -100,12 +106,13 @@ test.describe('sistem ayarları — duyuru ve geri alma (BO-CFG-1)', () => {
     await reauth(page)
     await expect(page.getByText(/yayınlandı; değerler/)).toBeVisible()
     await expect(page.getByTestId('draft-bar')).toHaveCount(0)
+    await page.getByRole('tab', { name: /Yayın geçmişi/ }).click()
     const hist = page.getByRole('region', { name: 'Yayın geçmişi' })
     await expect(hist.getByRole('row').nth(1)).toContainText('Yayında')
   })
 
   test('geçmişten geri alma: fark + gerekçe + step-up → yeni sürüm "Geri alma" kökenli', async ({ page }) => {
-    await page.goto('/sistem/bayraklar')
+    await page.goto('/sistem/bayraklar?sekme=gecmis')
     await settle(page)
     await call(page, '(m) => m.expireReauth()')
     const hist = page.getByRole('region', { name: 'Yayın geçmişi' })

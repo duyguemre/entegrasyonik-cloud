@@ -2,7 +2,7 @@
   <div class="bo-page">
     <BoPageHeader :updated-at="cfg.loadedAt ?? undefined">
       <template #actions>
-        <EkRefreshButton :loading="cfg.refreshing || cs.comp.refreshing || cfg.phase === 'loading'" @refresh="state.load()" />
+        <BoAction kind="refresh" :loading="cfg.refreshing || cs.comp.refreshing || cfg.phase === 'loading'" data-page-refresh @click="state.load()" />
       </template>
     </BoPageHeader>
 
@@ -17,23 +17,30 @@
       </EkAlert>
 
       <div class="bo-settings">
+        <!-- DURUM her zaman görünür (K51); karar/eylem ve ayrıntı sekmelerde (BO2-70) -->
         <CompetitionStatusPanel :cs="cs" />
-        <!-- PRC-R2: fiyat kuralları kill-switch + toplam istatistik (tenant verisi yok) -->
-        <PricingRulesPanel :cfg="cfg" />
-        <CompetitionPlansPanel :cs="cs" />
-        <CompetitionOverridesPanel :cs="cs" />
 
-        <!-- AYRINTI: geçmiş ve denetim -->
-        <HistoryPanel :cfg="cfg" />
-        <EkCard title="Denetim" subtitle="Hangi değişiklik nerede görünür?" icon="mdi-shield-search" :heading-level="2" data-testid="competition-audit-note">
-          <ul class="bo-audit-note">
-            <li><strong>Plan, bütçe ve gölge mod:</strong> yukarıdaki yayın geçmişinde (gerekçe, yayınlayan, fark) ve geri alınabilir.</li>
-            <li>
-              <strong>Müşteri istisnası:</strong> müşterinin abonelik olaylarında “subscription.competition_override” (önce/sonra, gerekçe) ve
-              <RouterLink :to="{ path: '/denetim', query: { event: 'backoffice.write' } }">denetim kaydında</RouterLink> “backoffice.write” olarak görünür.
-            </li>
-          </ul>
-        </EkCard>
+        <BoTabs :tabs="TABS" label="Rekabet ayarları bölümleri">
+          <template #default="{ tab }">
+            <CompetitionPlansPanel v-if="tab === 'planlar'" :cs="cs" />
+            <CompetitionOverridesPanel v-else-if="tab === 'istisnalar'" :cs="cs" />
+            <!-- PRC-R2: fiyat kuralları kill-switch + toplam istatistik (tenant verisi yok) -->
+            <PricingRulesPanel v-else-if="tab === 'fiyat-kurallari'" :cfg="cfg" />
+            <template v-else>
+              <!-- AYRINTI: geçmiş ve denetim -->
+              <HistoryPanel :cfg="cfg" />
+              <BoSection id="bo-cs-audit" title="Denetim" description="Hangi değişiklik nerede görünür?" icon="mdi-shield-search" data-testid="competition-audit-note">
+                <ul class="bo-audit-note">
+                  <li><strong>Plan, bütçe ve gölge mod:</strong> yukarıdaki yayın geçmişinde (gerekçe, yayınlayan, fark) ve geri alınabilir.</li>
+                  <li>
+                    <strong>Müşteri istisnası:</strong> müşterinin abonelik olaylarında “subscription.competition_override” (önce/sonra, gerekçe) ve
+                    <RouterLink :to="{ path: '/denetim', query: { event: 'backoffice.write' } }">denetim kaydında</RouterLink> “backoffice.write” olarak görünür.
+                  </li>
+                </ul>
+              </BoSection>
+            </template>
+          </template>
+        </BoTabs>
       </div>
     </StateBlock>
 
@@ -44,9 +51,12 @@
 
 <script setup lang="ts">
 import BoPageHeader from '@bo/components/shell/BoPageHeader.vue'
+import BoAction from '@bo/components/r2/BoAction.vue'
+import BoSection from '@bo/components/r2/BoSection.vue'
+import BoTabs from '@bo/components/r2/BoTabs.vue'
 import { onMounted, reactive, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { EkAlert, EkButton, EkCard, EkRefreshButton } from '@entegrasyonik/ui/components'
+import { EkAlert, EkButton } from '@entegrasyonik/ui/components'
 import StateBlock from '@bo/components/kit/StateBlock.vue'
 import { usePlatformConfig } from './usePlatformConfig'
 import { useCompetition } from './useCompetition'
@@ -65,6 +75,14 @@ const cfg = reactive(platformState)
 const state = useCompetition(cfg)
 const cs = reactive(state)
 
+/** BO2-70: Durum üstte sabit; plan / istisna / fiyat kuralı / geçmiş sekmelerde (`?sekme=`, varsayılan Planlar URL'e yazılmaz). */
+const TABS = [
+  { value: 'planlar', label: 'Plan varsayılanları', icon: 'mdi-view-list-outline' },
+  { value: 'istisnalar', label: 'Müşteri istisnaları', icon: 'mdi-account-cog-outline' },
+  { value: 'fiyat-kurallari', label: 'Fiyat kuralları', icon: 'mdi-tag-multiple-outline' },
+  { value: 'gecmis', label: 'Geçmiş ve denetim', icon: 'mdi-history' },
+]
+
 // Bağlantı: /sistem/rekabet?tid=101 → istisna diyaloğu o müşteriyle açılır (müşteri/abonelik detayından). Sorgu bir kez tüketilir.
 const route = useRoute()
 const router = useRouter()
@@ -72,7 +90,7 @@ function consumeTid() {
   const id = parseTidParam(route.query.tid)
   if (id === null) return
   cs.openEditor(id)
-  void router.replace({ query: { ...route.query, tid: undefined } })
+  void router.replace({ query: { ...route.query, tid: undefined, sekme: 'istisnalar' } }) // sonuç şeridi istisnalar sekmesinde
 }
 onMounted(async () => {
   await state.load()
@@ -90,7 +108,7 @@ watch(
 .bo-settings {
   display: flex;
   flex-direction: column;
-  gap: var(--ek-space-6);
+  gap: var(--ek-space-5);
 }
 .bo-draftbar {
   margin-bottom: var(--ek-space-4);
@@ -99,7 +117,7 @@ watch(
   margin: 0;
   padding-left: var(--ek-space-5);
   color: var(--ek-color-content-default);
-  font-size: var(--ek-type-label-size);
+  font-size: var(--ek-type-body-size);
 }
 .bo-audit-note li + li {
   margin-top: var(--ek-space-2);

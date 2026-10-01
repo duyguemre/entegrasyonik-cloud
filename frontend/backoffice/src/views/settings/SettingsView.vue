@@ -18,13 +18,15 @@
         </template>
       </EkAlert>
 
-      <div class="bo-settings">
-        <MaintenanceCard :cfg="cfg" />
-        <PlatformSettingsPanel :cfg="cfg" />
-        <FeatureFlagsPanel :cfg="cfg" />
-        <EnvPanel />
-        <HistoryPanel :cfg="cfg" />
-      </div>
+      <BoTabs :tabs="TABS" label="Sistem ayarları bölümleri" class="bo-settings">
+        <template #default="{ tab }">
+          <PlatformSettingsPanel v-if="tab === 'ayarlar'" :cfg="cfg" />
+          <MaintenanceCard v-else-if="tab === 'bakim'" :cfg="cfg" />
+          <FeatureFlagsPanel v-else-if="tab === 'bayraklar'" :cfg="cfg" />
+          <EnvPanel v-else-if="tab === 'ortam'" />
+          <HistoryPanel v-else :cfg="cfg" />
+        </template>
+      </BoTabs>
     </StateBlock>
 
     <PublishDialogs :cfg="cfg" :publish="state.publish" :rollback="state.rollback" />
@@ -34,6 +36,7 @@
 <script setup lang="ts">
 import BoPageHeader from '@bo/components/shell/BoPageHeader.vue'
 import BoAction from '@bo/components/r2/BoAction.vue'
+import BoTabs from '@bo/components/r2/BoTabs.vue'
 import { computed, nextTick, onMounted, reactive, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import PageVerdict from '@bo/components/verdict/PageVerdict.vue'
@@ -52,21 +55,41 @@ import '@bo/styles/kit.css'
 const state = usePlatformConfig()
 const cfg = reactive(state)
 
-/** Hüküm bağlantıları `#bakim` / `#taslak` / `#gecmis` / `#ayarlar` konumudur (BO_UI_PATTERNS §11.6). */
-const ANCHORS: Record<string, string> = { '#bakim': '#bo-maint-title', '#taslak': '[data-testid="draft-bar"]', '#gecmis': '#bo-hist-title', '#ayarlar': '#bo-plat-title' }
+/** BO2-70: uzun sayfa sekmelere bölünür (`?sekme=`); varsayılan sekme (Platform ayarları) URL'e yazılmaz. */
+const TABS = [
+  { value: 'ayarlar', label: 'Platform ayarları', icon: 'mdi-tune-variant' },
+  { value: 'bakim', label: 'Bakım modu', icon: 'mdi-wrench-clock' },
+  { value: 'bayraklar', label: 'Özellik bayrakları', icon: 'mdi-flag-outline' },
+  { value: 'ortam', label: 'Ortam', icon: 'mdi-server-outline' },
+  { value: 'gecmis', label: 'Yayın geçmişi', icon: 'mdi-history' },
+]
+/**
+ * Hüküm bağlantıları `#bakim` / `#taslak` / `#gecmis` / `#ayarlar` konumudur (BO_UI_PATTERNS §11.6). Bölüm artık bir sekmede
+ * olduğundan bağlantı önce ilgili sekmeyi açar (`?sekme=`), sonra bölüm başlığına odaklanır.
+ */
+const ANCHORS: Record<string, { selector: string; tab?: string }> = {
+  '#bakim': { selector: '#bo-maint-title', tab: 'bakim' },
+  '#taslak': { selector: '[data-testid="draft-bar"]' },
+  '#gecmis': { selector: '#bo-hist-title', tab: 'gecmis' },
+  '#ayarlar': { selector: '#bo-plat-title', tab: 'ayarlar' },
+}
 const route = useRoute()
 async function focusAnchor() {
-  const selector = ANCHORS[route.hash]
-  if (!selector) return
+  const anchor = ANCHORS[route.hash]
+  if (!anchor) return
   await nextTick()
-  const el = document.querySelector<HTMLElement>(selector)
+  await nextTick()
+  const el = document.querySelector<HTMLElement>(anchor.selector)
   if (!el) return
   if (!el.hasAttribute('tabindex')) el.setAttribute('tabindex', '-1')
   el.scrollIntoView({ block: 'start' })
   el.focus({ preventScroll: true })
 }
 watch(() => route.fullPath, () => void focusAnchor())
-const at = (hash: string) => ({ hash, query: route.query })
+const at = (hash: string) => {
+  const tab = ANCHORS[hash]?.tab
+  return { hash, query: { ...route.query, sekme: tab && tab !== 'ayarlar' ? tab : undefined } }
+}
 
 const verdict = computed(() =>
   cfg.phase === 'loading' && !cfg.data
@@ -92,11 +115,6 @@ onMounted(() => cfg.load())
 </script>
 
 <style scoped>
-.bo-settings {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ek-space-6);
-}
 .bo-draftbar {
   margin-bottom: var(--ek-space-4);
 }

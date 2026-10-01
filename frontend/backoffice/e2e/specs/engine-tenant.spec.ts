@@ -42,6 +42,8 @@ test.describe('motor ve kuyruklar', () => {
     await expect(page.getByRole('heading', { name: 'Kuyruk şu an kullanılamıyor' })).toBeVisible()
     await mock(page, (m) => m.setDegraded(false))
     await page.getByRole('button', { name: 'Tekrar dene' }).click()
+    await expect(page.getByTestId('group-open').first()).toBeVisible()
+    await page.getByRole('radio', { name: 'Ayrıntılı' }).click()
     await expect(page.getByTestId('retry').first()).toBeVisible()
     await mock(page, (m) => m.setDegraded(true))
     await page.getByRole('tab', { name: 'Kuyruklar' }).click()
@@ -49,8 +51,29 @@ test.describe('motor ve kuyruklar', () => {
     await expect(page.getByText('Redis hazır değil', { exact: true })).toBeVisible()
   })
 
-  test('yeniden dene: gerekçe ≥10 + step-up → satır listeden çıkar; salt-okumada 423 iletisi', async ({ page }) => {
+  test('başarısız işler: özet hata nedenine göre sayar; gruptan süzgeçli ayrıntılı görünüme geçilir; her satırda tür, durum, neden, zaman', async ({ page }) => {
     await page.goto('/motor?sekme=basarisiz')
+    await settle(page)
+    const summary = page.getByTestId('failed-summary')
+    await expect(page.getByRole('radio', { name: 'Özet' })).toHaveAttribute('aria-checked', 'true')
+    await expect(summary.getByText('Dış servis geçici olarak kullanılamıyor.')).toBeVisible()
+    await expect(summary.getByText('Sipariş çekme').first()).toBeVisible()
+    await summary.getByRole('button', { name: /UNAVAILABLE hatalı işlerini/ }).click()
+    await expect(page).toHaveURL(/gorunum=ayrinti/)
+    await expect(page).toHaveURL(/kod=UNAVAILABLE/)
+    await settle(page)
+    const first = page.locator('tbody tr').first()
+    await expect(first).toContainText('Başarısız')
+    await expect(first).toContainText('Dış servis geçici olarak kullanılamıyor.')
+    await expect(first).toContainText('UNAVAILABLE')
+    await expect(first).toContainText(/\d\/\d/)
+    await expect(first).toContainText('Son hata')
+    await expect(first).toContainText(/Sipariş|Kargo|İade/)
+    await expectNoA11yViolations(page)
+  })
+
+  test('yeniden dene: gerekçe ≥10 + step-up → satır listeden çıkar; salt-okumada 423 iletisi', async ({ page }) => {
+    await page.goto('/motor?sekme=basarisiz&gorunum=ayrinti')
     await settle(page)
     const firstId = await page.locator('tbody tr').first().locator('code').first().innerText()
     await mock(page, (m) => m.setLiveReadonly(true))
@@ -73,7 +96,7 @@ test.describe('motor ve kuyruklar', () => {
   })
 
   test('imleçli sayfalama: Daha fazla 25 → 37 → listenin sonu', async ({ page }) => {
-    await page.goto('/motor?sekme=basarisiz')
+    await page.goto('/motor?sekme=basarisiz&gorunum=ayrinti')
     await settle(page)
     await expect(page.getByText('25 kayıt gösteriliyor')).toBeVisible()
     await page.getByTestId('load-more').click()

@@ -4,36 +4,36 @@
 -->
 <template>
   <section class="bo-tu" aria-label="Müşteri kullanımı">
-    <div class="bo-toolbar bo-tu__bar">
-      <div class="bo-seg" role="radiogroup" aria-label="Aralık">
-        <button v-for="d in DAYS" :key="d" type="button" role="radio" class="bo-seg__opt" :aria-checked="days === d" :data-days="d" @click="days = d">{{ d }} gün</button>
-      </div>
+    <BoFilterBar :active="platform ? 1 : 0" label="Kullanım süzgeçleri" @clear="platform = null">
+      <BoSegmented v-model="days" :options="DAY_OPTIONS" label="Aralık" />
       <PlatformFilter v-model="platform" label="Platform süzgeci" />
-      <EkRefreshButton :loading="res.refreshing.value || res.phase.value === 'loading'" @refresh="res.load()" />
-    </div>
+      <template #trailing>
+        <EkRefreshButton quiet-success :loading="res.refreshing.value || res.phase.value === 'loading'" @refresh="res.load()" />
+      </template>
+    </BoFilterBar>
 
     <StateBlock :phase="res.phase.value" :error="res.error.value" skeleton="cards" :rows="3" degraded-title="Kullanım verisi şu an okunamıyor" @retry="res.load()">
       <template v-if="u">
         <UsageVerdictBlock :verdict="verdict!" id-base="bo-tenant-usage" />
 
-        <div class="bo-grid-2">
-          <EkCard title="Aktif kullanıcı" :subtitle="`${formatDate(u.from)} – ${formatDate(u.to)} · tekil`" icon="mdi-account-multiple-outline">
+        <BoTileGrid :cols="2">
+          <BoSection title="Aktif kullanıcı" :description="`${formatDate(u.from)} – ${formatDate(u.to)} aralığında bu müşteriden işlem yapan tekil kullanıcı.`" icon="mdi-account-multiple-outline">
             <template v-if="u.activeUsers.computable">
               <p class="bo-tu__big ek-num" data-testid="tenant-usage-users">{{ formatCount(u.activeUsers.users) }}</p>
               <PlatformBreakdown :by-class="u.activeUsers.byClass" :by-platform="u.activeUsers.byPlatform" label="Aktif kullanıcı" />
               <p class="bo-muted bo-tu__note">Son aktif gün: {{ u.activeUsers.lastActiveDay ? formatDate(u.activeUsers.lastActiveDay) : '—' }}</p>
             </template>
             <EkEmptyState v-else variant="no-data" title="Kullanım kaydı yok" message="Bu aralıkta günlük kullanım kaydı bulunmuyor. Kayıt platform ayrımıyla birlikte başladı; öncesi görünmez." />
-          </EkCard>
-          <EkCard title="Başarılı girişler" :subtitle="`${formatDate(u.from)} – ${formatDate(u.to)}`" icon="mdi-login-variant">
+          </BoSection>
+          <BoSection title="Başarılı girişler" :description="`${formatDate(u.from)} – ${formatDate(u.to)} aralığındaki başarılı oturum açmalar.`" icon="mdi-login-variant">
             <p class="bo-tu__big ek-num" data-testid="tenant-usage-logins">{{ formatCount(u.logins.total) }}</p>
             <PlatformBreakdown :by-class="u.logins.byClass" :by-platform="u.logins.byPlatform" label="Giriş" unit="giriş" note="Platform alanı olmayan eski giriş kayıtları “Belirlenemedi” sayılır." />
-          </EkCard>
-        </div>
+          </BoSection>
+        </BoTileGrid>
 
-        <EkCard v-if="u.activeUsers.computable" title="Günlük aktif kullanıcı" subtitle="Masaüstü / mobil" icon="mdi-chart-bar">
+        <BoSection v-if="u.activeUsers.computable" title="Günlük aktif kullanıcı" description="Seçili aralıkta gün gün seyir; masaüstü / mobil ayrımıyla." icon="mdi-chart-bar">
           <SeriesBars :points="points" :series="SERIES" bucket="day" :label="`Son ${u.days} gün günlük aktif kullanıcı, masaüstü ve mobil`" />
-        </EkCard>
+        </BoSection>
         <p class="bo-muted bo-tu__note">Kaynak: BackofficeTenantService/getUsage · yalnız sayaç (kullanıcı kimliği, cihaz, IP dönmez) · destek oturumları sayılmaz.</p>
       </template>
     </StateBlock>
@@ -43,11 +43,15 @@
 <script setup lang="ts">
 import { computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { EkCard, EkEmptyState, EkRefreshButton } from '@entegrasyonik/ui/components'
+import { EkEmptyState, EkRefreshButton } from '@entegrasyonik/ui/components'
 import type { PlatformFilter as Filter } from '@entegrasyonik/ui/platform'
 import { api } from '@bo/api'
 import type { TenantUsage, UsageDays } from '@bo/api/contract'
 import { useResource } from '@bo/composables/useResource'
+import BoSection from '@bo/components/r2/BoSection.vue'
+import BoTileGrid from '@bo/components/r2/BoTileGrid.vue'
+import BoFilterBar from '@bo/components/r2/BoFilterBar.vue'
+import BoSegmented from '@bo/components/r2/BoSegmented.vue'
 import StateBlock from '@bo/components/kit/StateBlock.vue'
 import SeriesBars, { type SeriesDef } from '@bo/components/kit/SeriesBars.vue'
 import { PLATFORM_CLASS } from '@bo/utils/labels'
@@ -64,6 +68,7 @@ const props = defineProps<{ tid: number }>()
 const route = useRoute()
 const router = useRouter()
 const DAYS: readonly UsageDays[] = [7, 30, 90]
+const DAY_OPTIONS = DAYS.map((d) => ({ value: d, label: `${d} gün` }))
 const days = computed<UsageDays>({
   get: () => { const n = Number(route.query.gun); return (DAYS as readonly number[]).includes(n) ? (n as UsageDays) : 30 },
   set: (v) => { void router.replace({ query: { ...route.query, gun: v === 30 ? undefined : String(v) } }) },
@@ -94,9 +99,8 @@ onMounted(() => res.load())
 .bo-tu {
   display: flex;
   flex-direction: column;
-  gap: var(--ek-space-4);
+  gap: var(--ek-space-5);
 }
-.bo-tu__bar { justify-content: flex-end; }
 .bo-tu__big {
   margin: 0 0 var(--ek-space-3);
   color: var(--ek-color-content-strong);

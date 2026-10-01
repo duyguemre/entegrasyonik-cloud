@@ -12,38 +12,37 @@
       <div v-if="res.data.value" class="bo-stack">
         <EkAlert tone="info" :title="`Bu değerler yalnız ${d.pod} podunu gösterir`" text="Önbellek pod-yereldir: yük dengeleyici isteği hangi poda düşürürse onun sayaçları görünür ve boşaltma yalnız o podu etkiler. Çok podlu ortamda her pod için yenileyip ayrıca boşaltın." data-testid="pod-band" />
 
-        <div class="bo-cache__kpis">
-          <EkMetricCard label="İsabet oranı" :value="formatPercent(hitRatio)" :description="hitRatio === null ? 'henüz ölçüm yok' : `${formatCount(d.hits)} isabet · ${formatCount(d.misses)} ıska`" icon="mdi-target" :tone="hitRatio !== null && hitRatio < 0.8 ? 'warning' : 'success'" />
-          <EkMetricCard label="Anahtar" :value="formatCount(d.keys)" :description="`üst sınır ${formatCount(d.maxKeys)} · doluluk ${formatPercent(d.maxKeys ? d.keys / d.maxKeys : null, 0)}`" icon="mdi-key-outline" tone="info" />
-          <EkMetricCard label="Yazma (set)" :value="formatCount(d.sets)" icon="mdi-content-save-outline" tone="neutral" />
-          <EkMetricCard label="Tahliye" :value="formatCount(d.evictions)" :description="d.evictions ? 'üst sınıra ulaşıldı' : 'sınır aşılmadı'" icon="mdi-delete-sweep-outline" :tone="d.evictions ? 'warning' : 'success'" />
-          <EkMetricCard label="Devam eden yükleme" :value="formatCount(d.inflight)" icon="mdi-progress-clock" tone="neutral" />
-        </div>
+        <BoTileGrid :min="176" dense>
+          <BoStat label="İsabet oranı" :value="formatPercent(hitRatio)" :hint="hitRatio === null ? 'henüz ölçüm yok' : `${formatCount(d.hits)} isabet · ${formatCount(d.misses)} ıska`" :tone="hitRatio !== null && hitRatio < 0.8 ? 'warning' : 'success'" />
+          <BoStat label="Anahtar" :value="formatCount(d.keys)" :hint="`üst sınır ${formatCount(d.maxKeys)}`" :info="`Doluluk ${formatPercent(d.maxKeys ? d.keys / d.maxKeys : null, 0)}`" tone="info" />
+          <BoStat label="Yazma (set)" :value="formatCount(d.sets)" />
+          <BoStat label="Tahliye" :value="formatCount(d.evictions)" :hint="d.evictions ? 'üst sınıra ulaşıldı' : 'sınır aşılmadı'" :tone="d.evictions ? 'warning' : 'success'" />
+          <BoStat label="Devam eden yükleme" :value="formatCount(d.inflight)" />
+        </BoTileGrid>
 
-        <EkCard title="Toplam sayaçlar" :subtitle="`Pod ${d.pod} · süreç başlangıcından beri`" icon="mdi-counter">
+        <BoSection id="bo-cache-families" title="Önbellek aileleri" :description="`Pod ${d.pod}`" icon="mdi-lightning-bolt-outline" flush>
+            <BoDataTable tabindex="0" :items="rows" :columns="COLUMNS" row-key="name" label="Önbellek aileleri" :phase="d.breakdown.length ? 'ready' : 'empty'" empty-title="Önbellekte aile yok" empty-message="Bu pod'un önbelleğinde henüz kayıt bulunmuyor.">
+              <template #cell-name="{ item }"><code class="bo-code">{{ item.name }}</code></template>
+              <template #cell-count="{ item }"><span class="ek-num">{{ formatCount(item.count as number) }}</span></template>
+              <template #cell-hit="{ item }"><span class="ek-num">{{ formatCount(item.hit as number) }}</span></template>
+              <template #cell-miss="{ item }"><span class="ek-num">{{ formatCount(item.miss as number) }}</span></template>
+              <template #cell-hitRatio="{ item }">
+                <EkStatusChip v-if="item.hitRatio !== null" :tone="(item.hitRatio as number) >= 0.8 ? 'success' : (item.hitRatio as number) >= 0.5 ? 'warning' : 'danger'" :label="formatPercent(item.hitRatio as number)" dot />
+                <span v-else class="bo-muted">—</span>
+              </template>
+              <template #cell-actions="{ item }">
+                <span class="bo-row-actions">
+                  <BoAction kind="delete" label="Aileyi boşalt" icon-only size="sm" :aria-label="`${item.name} ailesini boşalt`" :title="`${item.name} ailesini boşalt`" data-testid="flush" @click="flush.open(String(item.name))" />
+                </span>
+              </template>
+            </BoDataTable>
+        </BoSection>
+
+        <BoSection title="Toplam sayaçlar" :description="`Pod ${d.pod} · süreç başlangıcından beri`" icon="mdi-counter">
           <dl class="bo-kv">
             <div v-for="[k, label] in TOTAL_LABELS" :key="k"><dt>{{ label }}</dt><dd>{{ formatCount(d.totals[k]) }}</dd></div>
           </dl>
-        </EkCard>
-
-        <EkCard id="bo-cache-families" title="Önbellek aileleri" :subtitle="`Pod ${d.pod}`" icon="mdi-lightning-bolt-outline" flush>
-          <EkEmptyState v-if="!d.breakdown.length" title="Önbellekte aile yok" message="Bu pod'un önbelleğinde henüz kayıt bulunmuyor." />
-          <EkDataTable tabindex="0" v-else :items="rows" :columns="COLUMNS" row-key="name">
-            <template #cell-name="{ item }"><code class="bo-code">{{ item.name }}</code></template>
-            <template #cell-count="{ item }"><span class="ek-num">{{ formatCount(item.count as number) }}</span></template>
-            <template #cell-hit="{ item }"><span class="ek-num">{{ formatCount(item.hit as number) }}</span></template>
-            <template #cell-miss="{ item }"><span class="ek-num">{{ formatCount(item.miss as number) }}</span></template>
-            <template #cell-hitRatio="{ item }">
-              <EkStatusChip v-if="item.hitRatio !== null" :tone="(item.hitRatio as number) >= 0.8 ? 'success' : (item.hitRatio as number) >= 0.5 ? 'warning' : 'danger'" :label="formatPercent(item.hitRatio as number)" dot />
-              <span v-else class="bo-muted">—</span>
-            </template>
-            <template #cell-actions="{ item }">
-              <span class="bo-row-actions">
-                <EkButton size="sm" tone="secondary" icon="mdi-broom" :aria-label="`${item.name} ailesini boşalt`" data-testid="flush" @click="flush.open(String(item.name))">Aileyi boşalt</EkButton>
-              </span>
-            </template>
-          </EkDataTable>
-        </EkCard>
+        </BoSection>
       </div>
     </StateBlock>
 
@@ -65,11 +64,15 @@ import BoAction from '@bo/components/r2/BoAction.vue'
 import PageVerdict from '@bo/components/verdict/PageVerdict.vue'
 import { cacheVerdict } from './cacheVerdict'
 import { computed, onMounted } from 'vue'
-import { EkAlert, EkButton, EkCard, EkDataTable, EkEmptyState, EkMetricCard, EkStatusChip, type EkTableColumn } from '@entegrasyonik/ui/components'
+import { EkAlert, EkStatusChip, type EkTableColumn } from '@entegrasyonik/ui/components'
 import { api } from '@bo/api'
 import type { CacheMetrics } from '@bo/api/contract'
 import { useResource } from '@bo/composables/useResource'
 import { useGuardedAction } from '@bo/composables/useGuardedAction'
+import BoSection from '@bo/components/r2/BoSection.vue'
+import BoTileGrid from '@bo/components/r2/BoTileGrid.vue'
+import BoStat from '@bo/components/r2/BoStat.vue'
+import BoDataTable from '@bo/components/r2/BoDataTable.vue'
 import StateBlock from '@bo/components/kit/StateBlock.vue'
 import GuardedDialog from '@bo/components/kit/GuardedDialog.vue'
 import { notify } from '@bo/utils/toast'
@@ -134,10 +137,5 @@ const flush = useGuardedAction(
   flex-direction: column;
   gap: var(--ek-space-4);
   min-width: 0;
-}
-.bo-cache__kpis {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-  gap: var(--ek-space-4);
 }
 </style>

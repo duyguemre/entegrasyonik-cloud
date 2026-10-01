@@ -6,7 +6,7 @@
       </template>
       <template #actions>
         <EkButton tone="secondary" icon="mdi-close" @click="router.push(isEdit ? `/sistem/duyurular/${id}` : '/sistem/duyurular')">Vazgeç</EkButton>
-        <EkButton tone="primary" icon="mdi-content-save-outline" :disabled="!!blocking || !ready" data-testid="save" @click="save.open('draft')">Taslağı kaydet</EkButton>
+        <BoAction kind="save" label="Taslağı kaydet" :disabled="!!blocking || !ready" data-testid="save" @click="save.open('draft')" />
       </template>
     </BoPageHeader>
 
@@ -19,27 +19,13 @@
     />
     <StateBlock v-else-if="loadState !== 'ready'" :phase="loadState" :error="loadError" skeleton="form" :rows="6" @retry="loadExisting" />
 
-    <div v-else class="bo-grid-2 bo-anne">
+    <div v-else class="bo-anne">
       <form class="bo-anne__form" novalidate aria-label="Duyuru formu" @submit.prevent="!blocking && save.open('draft')">
-        <EkCard title="Tür ve önem" icon="mdi-shape-outline">
-          <div class="bo-anne__kinds" role="radiogroup" aria-label="Duyuru türü">
-            <button
-              v-for="k in KINDS"
-              :key="k"
-              type="button"
-              role="radio"
-              class="bo-anne__kind"
-              :aria-checked="form.kind === k"
-              :data-kind="k"
-              @click="setKind(k)"
-            >
-              <v-icon :icon="ANN_KIND[k].icon" aria-hidden="true" />
-              <span class="bo-anne__kind-label">{{ ANN_KIND[k].label }}</span>
-              <span class="bo-anne__kind-hint">{{ ANN_KIND[k].hint }}</span>
-            </button>
-          </div>
-          <div class="bo-anne__row">
-            <v-select v-model="severityChoice" :items="severityItems" label="Önem" density="compact" hide-details class="bo-anne__half" data-testid="severity" />
+        <BoSection title="Tür ve önem" icon="mdi-shape-outline" :heading-level="2">
+          <div class="bo-anne__stack">
+            <BoSegmented :model-value="form.kind" label="Duyuru türü" :options="KIND_OPTS" @update:model-value="setKind" />
+            <p class="bo-muted bo-anne__hint" data-testid="kind-hint">{{ ANN_KIND[form.kind].hint }}</p>
+            <BoSegmented v-model="severityChoice" label="Önem" :options="severityOpts" data-testid="severity" />
             <v-checkbox
               v-model="form.dismissible"
               :disabled="undismissable"
@@ -48,9 +34,9 @@
               :label="undismissable ? 'Kapatılamaz (bakım / olay)' : 'Kullanıcı bandı kapatabilir'"
             />
           </div>
-        </EkCard>
+        </BoSection>
 
-        <EkCard title="Metin" subtitle="Düz metin; bağlantı ve biçim yorumlanmaz." icon="mdi-text-box-edit-outline">
+        <BoSection title="Metin" description="Düz metin; bağlantı ve biçim yorumlanmaz." icon="mdi-text-box-edit-outline">
           <v-text-field v-model="form.titleTr" label="Başlık (Türkçe)" density="compact" counter="160" maxlength="160" :error-messages="touched && !form.titleTr.trim() ? 'Başlık zorunlu.' : undefined" data-testid="title-tr" />
           <v-textarea v-model="form.bodyTr" label="Metin (Türkçe)" density="compact" rows="4" auto-grow counter="2000" maxlength="2000" :error-messages="touched && !form.bodyTr.trim() ? 'Metin zorunlu.' : undefined" data-testid="body-tr" />
           <button type="button" class="bo-link-btn bo-anne__toggle" :aria-expanded="showEn" aria-controls="bo-anne-en" data-testid="toggle-en" @click="showEn = !showEn">
@@ -61,38 +47,36 @@
             <v-textarea v-model="form.bodyEn" label="Body (English)" density="compact" rows="3" auto-grow counter="2000" maxlength="2000" />
             <p class="bo-muted bo-anne__hint">Boş bırakılırsa İngilizce kullanan üyeler Türkçe metni görür.</p>
           </EkCollapse>
-        </EkCard>
+        </BoSection>
 
-        <EkCard title="Hedef" icon="mdi-target">
-          <div class="bo-seg" role="radiogroup" aria-label="Hedef">
-            <button v-for="o in TARGETS" :key="o.value" type="button" role="radio" class="bo-seg__opt" :aria-checked="form.targetMode === o.value" :data-target="o.value" @click="form.targetMode = o.value">{{ o.label }}</button>
+        <BoSection title="Hedef" icon="mdi-target">
+          <div class="bo-anne__stack">
+            <BoSegmented v-model="form.targetMode" label="Hedef" :options="TARGETS" />
+            <p v-if="form.targetMode === 'all'" class="bo-muted bo-anne__hint">Tüm aktif müşteriler (deneme, aktif ve ödemesi gecikmiş abonelikler).</p>
+            <fieldset v-else-if="form.targetMode === 'plans'" class="bo-anne__plans">
+              <legend class="ek-sr-only">Planlar</legend>
+              <v-checkbox v-for="p in PLANS" :key="p" v-model="form.planCodes" :value="p" :label="planLabel(p)" density="compact" hide-details />
+              <p v-if="touched && !form.planCodes.length" class="bo-anne__err" role="alert">En az bir plan seçin.</p>
+            </fieldset>
+            <template v-else>
+              <v-textarea
+                v-model="form.tidsText"
+                label="Müşteri numaraları"
+                placeholder="101, 102, 107"
+                density="compact"
+                rows="2"
+                auto-grow
+                :hint="`${parsed.tids.length} müşteri · virgül, boşluk ya da satırla ayırın (en çok 5.000)`"
+                persistent-hint
+                :error-messages="tidError"
+                data-testid="tids"
+              />
+            </template>
+            <BoSegmented v-model="form.audience" label="Kitle" :options="AUDIENCES" />
           </div>
-          <p v-if="form.targetMode === 'all'" class="bo-muted bo-anne__hint">Tüm aktif müşteriler (deneme, aktif ve ödemesi gecikmiş abonelikler).</p>
-          <fieldset v-else-if="form.targetMode === 'plans'" class="bo-anne__plans">
-            <legend class="ek-sr-only">Planlar</legend>
-            <v-checkbox v-for="p in PLANS" :key="p" v-model="form.planCodes" :value="p" :label="planLabel(p)" density="compact" hide-details />
-            <p v-if="touched && !form.planCodes.length" class="bo-anne__err" role="alert">En az bir plan seçin.</p>
-          </fieldset>
-          <template v-else>
-            <v-textarea
-              v-model="form.tidsText"
-              label="Müşteri numaraları"
-              placeholder="101, 102, 107"
-              density="compact"
-              rows="2"
-              auto-grow
-              :hint="`${parsed.tids.length} müşteri · virgül, boşluk ya da satırla ayırın (en çok 5.000)`"
-              persistent-hint
-              :error-messages="tidError"
-              data-testid="tids"
-            />
-          </template>
-          <div class="bo-seg bo-anne__aud" role="radiogroup" aria-label="Kitle">
-            <button v-for="o in AUDIENCES" :key="o.value" type="button" role="radio" class="bo-seg__opt" :aria-checked="form.audience === o.value" @click="form.audience = o.value">{{ o.label }}</button>
-          </div>
-        </EkCard>
+        </BoSection>
 
-        <EkCard title="Kanallar ve zaman" icon="mdi-broadcast">
+        <BoSection title="Kanallar ve zaman" icon="mdi-broadcast">
           <div class="bo-anne__channels">
             <v-checkbox v-model="form.banner" density="compact" hide-details label="Bant (uygulamanın üstünde)" data-testid="ch-banner" />
             <v-checkbox v-model="form.inApp" :disabled="form.email" density="compact" hide-details label="Uygulama içi bildirim" data-testid="ch-inapp" />
@@ -108,13 +92,14 @@
             Saatler tarayıcınızın saat diliminde. Geçmiş bir başlangıç zamanlandığında hemen yayına girer.
             <button type="button" class="bo-link-btn" @click="startNow">Şimdiye ayarla</button>
           </p>
-        </EkCard>
+        </BoSection>
       </form>
 
-      <EkCard class="bo-anne__preview">
-        <AnnouncementPreview :preview="preview" :channels="{ banner: form.banner, inApp: form.inApp, email: form.email }" :phase="previewPhase" :error="previewError" :refreshing="previewBusy" @retry="refreshPreview" />
-        <p v-if="blocking" class="bo-muted bo-anne__hint" data-testid="preview-blocked">{{ blocking }}</p>
-      </EkCard>
+      <div class="bo-anne__preview">
+        <AnnouncementPreview :preview="preview" :channels="{ banner: form.banner, inApp: form.inApp, email: form.email }" :phase="previewPhase" :error="previewError" :refreshing="previewBusy" @retry="refreshPreview">
+          <p v-if="blocking" class="bo-muted bo-anne__hint" data-testid="preview-blocked">{{ blocking }}</p>
+        </AnnouncementPreview>
+      </div>
     </div>
 
     <GuardedDialog
@@ -136,11 +121,14 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, reactive, ref, shallowRef, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { EkButton, EkCard, EkCollapse, EkEmptyState } from '@entegrasyonik/ui/components'
+import { EkButton, EkCollapse, EkEmptyState } from '@entegrasyonik/ui/components'
 import { api } from '@bo/api'
 import type { AnnouncementAudience, AnnouncementInput, AnnouncementKind, AnnouncementPreview as Preview, AnnouncementSeverity } from '@bo/api/contract'
 import { useGuardedAction } from '@bo/composables/useGuardedAction'
 import BoPageHeader from '@bo/components/shell/BoPageHeader.vue'
+import BoAction from '@bo/components/r2/BoAction.vue'
+import BoSection from '@bo/components/r2/BoSection.vue'
+import BoSegmented, { type BoSegmentOption } from '@bo/components/r2/BoSegmented.vue'
 import StateBlock from '@bo/components/kit/StateBlock.vue'
 import GuardedDialog from '@bo/components/kit/GuardedDialog.vue'
 import { ANN_KIND, ANN_SEVERITY, planLabel } from '@bo/utils/labels'
@@ -153,12 +141,13 @@ import '@bo/styles/kit.css'
 const KINDS: AnnouncementKind[] = ['info', 'release', 'maintenance', 'incident']
 /** SÖZLEŞME EKSİĞİ (abonelik ekranıyla aynı): admin plan listesi ucu yok; sunucu plan kodunu doğrular. */
 const PLANS = ['starter', 'growth', 'enterprise']
-const TARGETS = [
+const KIND_OPTS: Array<BoSegmentOption<AnnouncementKind>> = KINDS.map((k) => ({ value: k, label: ANN_KIND[k].label, icon: ANN_KIND[k].icon }))
+const TARGETS: Array<BoSegmentOption<'all' | 'plans' | 'tenants'>> = [
   { value: 'all', label: 'Tüm müşteriler' },
   { value: 'plans', label: 'Plana göre' },
   { value: 'tenants', label: 'Seçili müşteriler' },
-] as const
-const AUDIENCES: Array<{ value: AnnouncementAudience; label: string }> = [
+]
+const AUDIENCES: Array<BoSegmentOption<AnnouncementAudience>> = [
   { value: 'all_members', label: 'Tüm üyeler' },
   { value: 'owners_admins', label: 'Yalnız sahip ve yöneticiler' },
 ]
@@ -202,9 +191,9 @@ function setKind(k: AnnouncementKind) {
   if (k === 'maintenance' || k === 'incident') form.dismissible = false
   else if (!isEdit) form.dismissible = true
 }
-const severityItems = computed(() => [
-  { title: `Türe göre (${ANN_SEVERITY[DEFAULT_SEVERITY[form.kind]].label})`, value: 'auto' },
-  ...(['info', 'warning', 'critical'] as AnnouncementSeverity[]).map((s) => ({ title: ANN_SEVERITY[s].label, value: s })),
+const severityOpts = computed<Array<BoSegmentOption<string>>>(() => [
+  { value: 'auto', label: `Türe göre (${ANN_SEVERITY[DEFAULT_SEVERITY[form.kind]].label})` },
+  ...(['info', 'warning', 'critical'] as AnnouncementSeverity[]).map((s) => ({ value: s, label: ANN_SEVERITY[s].label })),
 ])
 const severityChoice = computed({
   get: () => form.severity ?? 'auto',
@@ -372,6 +361,9 @@ onMounted(async () => {
 
 <style scoped>
 .bo-anne {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  gap: var(--ek-space-5);
   align-items: start;
 }
 .bo-anne__form {
@@ -380,51 +372,15 @@ onMounted(async () => {
   gap: var(--ek-space-5);
   min-width: 0;
 }
-.bo-anne__kinds {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--ek-space-2);
-  margin-bottom: var(--ek-space-4);
+.bo-anne__stack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--ek-space-3);
+  min-width: 0;
 }
-.bo-anne__kind {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: var(--ek-space-1) var(--ek-space-2);
-  padding: var(--ek-space-3);
-  border: 1px solid var(--ek-color-border-default);
-  border-radius: var(--ek-radius-md);
-  background: var(--ek-color-surface-raised);
-  color: var(--ek-color-content-default);
-  text-align: left;
-  cursor: pointer;
-  transition: var(--ek-transition-colors);
-}
-.bo-anne__kind:hover {
-  border-color: var(--ek-color-border-strong);
-}
-.bo-anne__kind:focus-visible {
-  outline: none;
-  box-shadow: var(--ek-focus-ring);
-}
-.bo-anne__kind[aria-checked='true'] {
-  border-color: var(--ek-color-action);
-  background: var(--ek-color-surface-muted);
-  box-shadow: inset 0 0 0 1px var(--ek-color-action);
-}
-.bo-anne__kind .v-icon {
-  grid-row: span 2;
-  color: var(--ek-color-content-muted);
-}
-.bo-anne__kind[aria-checked='true'] .v-icon {
-  color: var(--ek-color-action);
-}
-.bo-anne__kind-label {
-  font-weight: var(--ek-font-weight-semibold);
-  font-size: var(--ek-type-label-size);
-}
-.bo-anne__kind-hint {
-  color: var(--ek-color-content-muted);
-  font-size: var(--ek-type-caption-size);
+.bo-anne__stack > * {
+  max-width: 100%;
 }
 .bo-anne__row {
   display: flex;
@@ -458,9 +414,6 @@ onMounted(async () => {
   gap: var(--ek-space-1);
   margin: var(--ek-space-2) 0;
 }
-.bo-anne__aud {
-  margin-top: var(--ek-space-4);
-}
 .bo-anne__channels {
   display: flex;
   flex-wrap: wrap;
@@ -472,14 +425,12 @@ onMounted(async () => {
   top: var(--ek-space-5);
   min-width: 0;
 }
-@media (max-width: 959px) {
+@media (max-width: 1023px) {
+  .bo-anne {
+    grid-template-columns: minmax(0, 1fr);
+  }
   .bo-anne__preview {
     position: static;
-  }
-}
-@media (max-width: 599px) {
-  .bo-anne__kinds {
-    grid-template-columns: 1fr;
   }
 }
 </style>

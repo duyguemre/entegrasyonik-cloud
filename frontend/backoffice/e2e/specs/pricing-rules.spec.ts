@@ -9,7 +9,7 @@ test.describe('fiyat kuralları paneli', () => {
   test.beforeEach(async ({ page }) => signInFully(page))
 
   test('durum + toplam istatistik + dikkat; kill-switch taslağa düşer; tenant verisi yok; axe 0', async ({ page }, info) => {
-    await page.goto('/sistem/rekabet')
+    await page.goto('/sistem/rekabet?sekme=fiyat-kurallari')
     await expect(page.getByRole('heading', { level: 1, name: 'Rekabet ayarları' })).toBeVisible()
     await settle(page)
     const panel = page.getByTestId('pricing-rules-panel')

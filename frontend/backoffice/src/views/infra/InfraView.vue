@@ -8,7 +8,7 @@
 
     <PageVerdict :verdict="verdict" />
 
-    <EkPageTabs v-model="tab" :tabs="tabs" label="Altyapı bölümleri" />
+    <BoTabs v-model="tab" :tabs="tabs" label="Altyapı bölümleri" />
 
     <RedisPanel v-if="tab === 'redis'" :key="`r${gen}`" />
     <MongoPanel v-else-if="tab === 'mongodb'" :key="`m${gen}`" />
@@ -21,7 +21,8 @@ import BoPageHeader from '@bo/components/shell/BoPageHeader.vue'
 import BoAction from '@bo/components/r2/BoAction.vue'
 import PageVerdict from '@bo/components/verdict/PageVerdict.vue'
 import { computed, onMounted, ref } from 'vue'
-import { EkPageTabs, type EkPageTab } from '@entegrasyonik/ui/components'
+import { type EkPageTab } from '@entegrasyonik/ui/components'
+import BoTabs from '@bo/components/r2/BoTabs.vue'
 import { api } from '@bo/api'
 import { useTabQuery } from '@bo/composables/useTabQuery'
 import { useVerdictSources } from '@bo/composables/useVerdictSources'

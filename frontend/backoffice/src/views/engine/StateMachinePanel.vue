@@ -1,33 +1,38 @@
 <template>
-  <section class="bo-panel" aria-labelledby="bo-sm-title">
-    <header class="bo-panel__bar">
-      <div>
-        <h2 id="bo-sm-title" class="bo-panel__title">Katalog durum makinesi</h2>
-        <p class="bo-panel__hint">Ürün gönderim sinyalleri (ExportSignals) ve içe aktarma işleri (ImportJobs). Takılı kira: sahibi dolu ama süresi dolmuş ya da {{ timeoutText }} boyunca ilerlemeyen iş.</p>
-      </div>
-      <EkRefreshButton quiet-success :loading="res.refreshing.value || res.phase.value === 'loading'" :last-updated="res.loadedAt.value" @refresh="res.load()" />
-    </header>
+  <div class="bo-engine-stack">
+    <p class="bo-panel__hint">Katalog gönderim ve içe aktarma işlerinin hangi aşamada olduğu; sahibi kaybolmuş (takılı) işler burada serbest bırakılır.</p>
 
     <StateBlock :phase="res.phase.value" :error="res.error.value" skeleton="cards" :rows="2" @retry="res.load()">
       <template v-if="res.data.value">
-        <div class="bo-grid-2">
-          <EkCard title="Gönderim sinyalleri" :subtitle="`${formatCount(res.data.value.exportSignals.locked)} kilitli · kira ${formatDuration(res.data.value.leaseTimeoutMs.export)}`" icon="mdi-upload-outline" icon-tone="info">
-            <MeterList :rows="rows(res.data.value.exportSignals.byStatus, EXPORT_ORDER)" label="Gönderim sinyali durum dağılımı" />
-          </EkCard>
-          <EkCard title="İçe aktarma işleri" :subtitle="`${formatCount(res.data.value.importJobs.locked)} kilitli · kira ${formatDuration(res.data.value.leaseTimeoutMs.import)}`" icon="mdi-download-outline" icon-tone="info">
-            <MeterList :rows="rows(res.data.value.importJobs.byStatus, IMPORT_ORDER)" label="İçe aktarma durum dağılımı" />
-          </EkCard>
-        </div>
+        <BoSection
+          id="bo-sm-title"
+          title="Katalog durum makinesi"
+          :description="`Ürün gönderim sinyalleri (ExportSignals) ve içe aktarma işleri (ImportJobs). Takılı kira: sahibi dolu ama süresi dolmuş ya da ${timeoutText} boyunca ilerlemeyen iş.`"
+          icon="mdi-state-machine"
+        >
+          <template #actions>
+            <EkRefreshButton quiet-success :loading="res.refreshing.value || res.phase.value === 'loading'" :last-updated="res.loadedAt.value" @refresh="res.load()" />
+          </template>
+          <BoTileGrid :cols="2">
+            <BoSection plain fill :heading-level="3" title="Gönderim sinyalleri" :description="`${formatCount(res.data.value.exportSignals.locked)} kilitli · kira ${formatDuration(res.data.value.leaseTimeoutMs.export)}`" icon="mdi-upload-outline">
+              <MeterList :rows="rows(res.data.value.exportSignals.byStatus, EXPORT_ORDER)" label="Gönderim sinyali durum dağılımı" />
+            </BoSection>
+            <BoSection plain fill :heading-level="3" title="İçe aktarma işleri" :description="`${formatCount(res.data.value.importJobs.locked)} kilitli · kira ${formatDuration(res.data.value.leaseTimeoutMs.import)}`" icon="mdi-download-outline">
+              <MeterList :rows="rows(res.data.value.importJobs.byStatus, IMPORT_ORDER)" label="İçe aktarma durum dağılımı" />
+            </BoSection>
+          </BoTileGrid>
+        </BoSection>
 
-        <EkCard
+        <BoSection
+          id="bo-stuck"
           title="Takılı kiralar"
-          :subtitle="res.data.value.stuckLeaseCount ? `${res.data.value.stuckLeaseCount} kayıt${res.data.value.stuckListTruncated ? ' · liste ilk 100 ile sınırlı' : ''}` : 'Sahip pod sağlıklı'"
+          :description="res.data.value.stuckLeaseCount ? `${res.data.value.stuckLeaseCount} kayıt${res.data.value.stuckListTruncated ? ' · liste ilk 100 ile sınırlı' : ''}` : 'Sahip pod sağlıklı'"
           icon="mdi-lock-clock"
-          :icon-tone="res.data.value.stuckLeaseCount ? 'warning' : 'success'"
+          :tone="res.data.value.stuckLeaseCount ? 'warning' : undefined"
           flush
         >
           <EkEmptyState v-if="!res.data.value.stuckLeases.length" variant="no-data" title="Takılı kira yok" message="Tüm kilitli işlerin sahibi pod kirasını yeniliyor." />
-          <EkDataTable v-else :items="leases" :columns="COLUMNS" row-key="id">
+          <BoDataTable v-else :items="leases" :columns="COLUMNS" row-key="id" label="Takılı kiralar">
             <template #cell-kind="{ item }">
               <span class="bo-cell-stack"><span>{{ item.kind === 'export' ? 'Gönderim' : 'İçe aktarma' }}</span><code class="bo-code">{{ item.id }}</code></span>
             </template>
@@ -36,18 +41,18 @@
               <span v-else class="bo-muted">—</span>
             </template>
             <template #cell-integrationCode="{ item }">
-              <EkChannelDot v-if="item.integrationCode" :code="item.integrationCode" :name="CHANNEL[item.integrationCode] ?? item.integrationCode" variant="plain" />
+              <EkChannelDot v-if="item.integrationCode" :code="String(item.integrationCode)" :name="CHANNEL[String(item.integrationCode)] ?? String(item.integrationCode)" variant="plain" />
             </template>
             <template #cell-status="{ item }"><code class="bo-code">{{ item.status }}</code></template>
             <template #cell-lockedBy="{ item }"><code class="bo-code">{{ item.lockedBy }}</code></template>
             <template #cell-staleForMs="{ item }">
-              <span class="bo-cell-stack"><strong class="ek-num">{{ formatDuration(item.staleForMs) }}</strong><span>son etkinlik {{ formatRelative(item.lastActivityAt ?? undefined) }}</span></span>
+              <span class="bo-cell-stack"><strong class="ek-num">{{ formatDuration(Number(item.staleForMs)) }}</strong><span>son etkinlik {{ formatRelative((item.lastActivityAt as string | null) ?? undefined) }}</span></span>
             </template>
             <template #cell-actions="{ item }">
-              <EkButton size="sm" tone="secondary" icon="mdi-lock-open-variant-outline" :aria-label="`${item.id} kirasını serbest bırak`" data-testid="release" @click="release.open(item as StuckLease)">Serbest bırak</EkButton>
+              <EkButton size="sm" tone="secondary" icon="mdi-lock-open-variant-outline" :aria-label="`${item.id} kirasını serbest bırak`" data-testid="release" @click="release.open(item as unknown as StuckLease)">Serbest bırak</EkButton>
             </template>
-          </EkDataTable>
-        </EkCard>
+          </BoDataTable>
+        </BoSection>
       </template>
     </StateBlock>
 
@@ -60,16 +65,19 @@
       confirm-label="Serbest bırak"
       confirm-icon="mdi-lock-open-variant-outline"
     />
-  </section>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, watch } from 'vue'
-import { EkButton, EkCard, EkChannelDot, EkDataTable, EkEmptyState, EkRefreshButton, type EkTableColumn, type StatusTone } from '@entegrasyonik/ui/components'
+import { EkButton, EkChannelDot, EkEmptyState, EkRefreshButton, type EkTableColumn, type StatusTone } from '@entegrasyonik/ui/components'
 import { api } from '@bo/api'
 import type { GetStateMachineJobsResponse, StuckLease } from '@bo/api/contract'
 import { useResource } from '@bo/composables/useResource'
 import { useGuardedAction } from '@bo/composables/useGuardedAction'
+import BoSection from '@bo/components/r2/BoSection.vue'
+import BoDataTable from '@bo/components/r2/BoDataTable.vue'
+import BoTileGrid from '@bo/components/r2/BoTileGrid.vue'
 import StateBlock from '@bo/components/kit/StateBlock.vue'
 import GuardedDialog from '@bo/components/kit/GuardedDialog.vue'
 import MeterList, { type MeterRow } from '@bo/components/kit/MeterList.vue'
@@ -119,3 +127,11 @@ const release = useGuardedAction(
 watch(() => res.data.value, (d) => emit('stuck', d ? d.stuckLeaseCount : null))
 onMounted(() => res.load())
 </script>
+<style scoped>
+.bo-engine-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ek-space-4);
+  min-width: 0;
+}
+</style>

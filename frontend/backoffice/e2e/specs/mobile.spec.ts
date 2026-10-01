@@ -81,17 +81,18 @@ test('üst bar < 600 px: tema hesap menüsünde, bar 360 px\'e sığar; üretimd
   await prod.context.close()
 })
 
-test('log merkezi: süzgeç telefonda katlanır, sorunlar önce gelir', async ({ browser }) => {
+test('log merkezi: telefonda süzgeç çubuğu tek sütun, sayfa yatay kaymaz, tek temizle düğmesi', async ({ browser }) => {
   const { context, page } = await phone(browser, 390)
   await spaGo(page, '/loglar')
   await settle(page)
-  const toggle = page.getByTestId('facets-toggle')
-  await expect(toggle).toHaveAttribute('aria-expanded', 'false')
-  await expect(page.getByRole('complementary', { name: 'Filtreler' })).toBeHidden()
-  await toggle.click()
-  await expect(page.getByRole('complementary', { name: 'Filtreler' })).toBeVisible()
-  await page.getByRole('checkbox', { name: /Hata/ }).first().check()
-  await expect(toggle).toContainText('1')
+  await expect(page.getByTestId('page-verdict')).toBeVisible()
+  const bar = page.getByRole('search', { name: 'Log süzgeçleri' })
+  await expect(bar).toBeVisible()
+  await expect(page.getByTestId('filters-clear')).toHaveCount(0)
+  await page.locator('[data-category="integration"]').click()
+  await expect(bar).toContainText('1 süzgeç etkin')
+  await expect(page.getByTestId('filters-clear')).toHaveCount(1)
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0)
   await context.close()
 })
 

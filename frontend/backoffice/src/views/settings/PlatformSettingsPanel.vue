@@ -1,42 +1,38 @@
 <template>
-  <section class="bo-panel" aria-labelledby="bo-plat-title">
-    <header class="bo-panel__bar">
-      <div>
-        <h2 id="bo-plat-title" class="bo-panel__title">Platform ayarları</h2>
-        <p class="bo-panel__hint">Destek iletişimi, duyuru şeridi ve arayüz varsayılanları. Değişiklikler yayınlanana kadar yürürlüğe girmez.</p>
-      </div>
-    </header>
-    <EkCard flush>
-      <div class="bo-plat">
-        <fieldset v-for="g in groups" :key="g.group" class="bo-plat__group">
-          <legend class="bo-plat__legend">{{ g.title }}</legend>
-          <div class="bo-plat__fields">
-            <SettingField
-              v-for="item in g.items"
-              :key="item.key"
-              :item="item"
-              :model-value="cfg.form[item.key]"
-              :effective="cfg.data?.values[item.key]"
-              :changed="cfg.isChanged(item.key)"
-              :error="cfg.fieldErrors[item.key]"
-              :counter="item.type === 'text' && item.key !== 'support.phone'"
-              @update:model-value="(v) => (cfg.form[item.key] = v)"
-            />
-          </div>
-        </fieldset>
-        <EkAlert v-if="cfg.saveError" tone="error" live dense :text="cfg.saveError.message" data-testid="save-error" />
-        <div class="bo-plat__actions">
-          <EkButton tone="primary" icon="mdi-file-eye-outline" :loading="cfg.saving" :disabled="!cfg.changedKeys.length && !cfg.hasDraft" data-testid="settings-save" @click="cfg.saveAndPreview()">Taslak kaydet ve önizle</EkButton>
-          <span class="bo-panel__hint">{{ cfg.changedKeys.length ? `${cfg.changedKeys.length} değişiklik bekliyor` : 'Değişiklik yok' }}</span>
+  <BoSection id="bo-plat" title="Platform ayarları" description="Destek iletişimi, duyuru şeridi ve arayüz varsayılanları. Değişiklikler yayınlanana kadar yürürlüğe girmez.">
+    <div class="bo-plat">
+      <fieldset v-for="g in groups" :key="g.group" class="bo-plat__group">
+        <legend class="bo-plat__legend">{{ g.title }}</legend>
+        <div class="bo-plat__fields">
+          <SettingField
+            v-for="item in g.items"
+            :key="item.key"
+            :item="item"
+            :model-value="cfg.form[item.key]"
+            :effective="cfg.data?.values[item.key]"
+            :changed="cfg.isChanged(item.key)"
+            :error="cfg.fieldErrors[item.key]"
+            :counter="item.type === 'text' && item.key !== 'support.phone'"
+            @update:model-value="(v) => (cfg.form[item.key] = v)"
+          />
         </div>
+      </fieldset>
+      <EkAlert v-if="cfg.saveError" tone="error" live dense :text="cfg.saveError.message" data-testid="save-error" />
+    </div>
+    <template #footer>
+      <div class="bo-plat__actions">
+        <BoAction kind="save" label="Taslak kaydet ve önizle" :loading="cfg.saving" :disabled="!cfg.changedKeys.length && !cfg.hasDraft" data-testid="settings-save" @click="cfg.saveAndPreview()" />
+        <span class="bo-panel__hint">{{ cfg.changedKeys.length ? `${cfg.changedKeys.length} değişiklik bekliyor` : 'Değişiklik yok' }}</span>
       </div>
-    </EkCard>
-  </section>
+    </template>
+  </BoSection>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { EkAlert, EkButton, EkCard } from '@entegrasyonik/ui/components'
+import { EkAlert } from '@entegrasyonik/ui/components'
+import BoSection from '@bo/components/r2/BoSection.vue'
+import BoAction from '@bo/components/r2/BoAction.vue'
 import SettingField from './SettingField.vue'
 import type { PlatformConfig } from './usePlatformConfig'
 import '@bo/styles/kit.css'
@@ -55,7 +51,6 @@ const groups = computed(() => GROUPS.map((g) => ({ ...g, items: props.cfg.catalo
   display: flex;
   flex-direction: column;
   gap: var(--ek-space-5);
-  padding: var(--ek-space-5);
 }
 .bo-plat__group {
   min-width: 0;

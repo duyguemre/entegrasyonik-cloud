@@ -13,12 +13,12 @@
           <EkCopyButton :value="a.id" label="Duyuru kimliği" />
         </template>
         <template #actions>
-          <EkButton v-if="a.status === 'draft'" tone="secondary" icon="mdi-pencil-outline" data-testid="edit" @click="router.push(`/sistem/duyurular/${a.id}/duzenle`)">Düzenle</EkButton>
+          <BoAction v-if="a.status === 'draft'" kind="edit" object="Duyuruyu" data-testid="edit" @click="router.push(`/sistem/duyurular/${a.id}/duzenle`)" />
           <EkButton v-if="a.status === 'draft'" tone="primary" :icon="startsInFuture ? 'mdi-calendar-clock' : 'mdi-send-outline'" data-testid="schedule" @click="openSchedule">
             {{ startsInFuture ? 'Zamanla' : 'Şimdi yayınla' }}
           </EkButton>
-          <EkButton v-if="cancellable" tone="danger" icon="mdi-cancel" data-testid="cancel" @click="cancel.open(a.id)">İptal et</EkButton>
-          <EkRefreshButton quiet-success :loading="res.refreshing.value" @refresh="reload" />
+          <BoAction v-if="cancellable" kind="cancel" data-testid="cancel" @click="cancel.open(a.id)" />
+          <BoAction kind="refresh" :loading="res.refreshing.value" data-page-refresh @click="reload" />
         </template>
       </BoPageHeader>
 
@@ -27,9 +27,9 @@
       <EkAlert v-if="a.status === 'draft'" tone="info" dense title="Taslak — müşteriler henüz görmüyor" :text="draftText" />
       <EkAlert v-else-if="a.status === 'ended' || a.status === 'cancelled'" tone="info" dense title="Bu duyuru artık değiştirilemez" text="Gönderilmiş uygulama içi bildirimler ve e-postalar geri alınmaz. Yeni bir duyuru oluşturabilirsiniz." />
 
-      <div class="bo-grid-2 bo-annd__grid">
+      <div class="bo-annd__grid">
         <div class="bo-annd__col">
-          <EkCard title="Kapsam ve zaman" icon="mdi-target">
+          <BoSection title="Kapsam ve zaman" icon="mdi-target">
             <dl class="bo-kv">
               <div><dt>Hedef</dt><dd data-testid="target">{{ targetText(a.target) }}</dd></div>
               <div><dt>Kitle</dt><dd>{{ ANN_AUDIENCE[a.audience] }}</dd></div>
@@ -39,9 +39,9 @@
               <div v-if="a.channels.email"><dt>Hizmet duyurusu onayı</dt><dd class="ek-num">{{ a.emailConsentAt ? formatDateTime(a.emailConsentAt) : 'Zamanlarken istenir' }}</dd></div>
             </dl>
             <p v-if="a.target.mode === 'tenants' && a.target.tids.length > 4" class="bo-annd__tids bo-mono">{{ a.target.tids.map((n) => `#${n}`).join(' ') }}</p>
-          </EkCard>
+          </BoSection>
 
-          <EkCard title="Dağıtım" icon="mdi-send-check-outline" :subtitle="a.fanout ? (a.fanout.done ? 'Tamamlandı' : 'Sürüyor') : 'Henüz dağıtılmadı'">
+          <BoSection title="Dağıtım" icon="mdi-send-check-outline" :description="a.fanout ? (a.fanout.done ? 'Tamamlandı' : 'Sürüyor') : 'Henüz dağıtılmadı'">
             <dl v-if="a.fanout" class="bo-kv">
               <div><dt>İşlenen müşteri</dt><dd class="ek-num">{{ formatCount(a.fanout.tenants) }}</dd></div>
               <div><dt>Üretilen bildirim</dt><dd class="ek-num">{{ formatCount(a.fanout.notified) }}</dd></div>
@@ -50,11 +50,11 @@
               Bant, başlangıç zamanında hesaplanarak görünür. Uygulama içi ve e-posta dağıtımı yayın anında her hedef müşteriye bir kez yapılır.
             </p>
             <template v-if="a.channels.email && a.fanout" #footer>
-              <RouterLink :to="{ path: '/bildirimler/teslimler', query: { kod: 'SYSTEM_ANNOUNCEMENT' } }" class="bo-annd__more">E-posta teslimlerini aç <v-icon icon="mdi-arrow-right" aria-hidden="true" /></RouterLink>
+              <BoAction kind="detail" size="sm" label="E-posta teslimlerini aç" :to="{ path: '/bildirimler/teslimler', query: { kod: 'SYSTEM_ANNOUNCEMENT' } }" />
             </template>
-          </EkCard>
+          </BoSection>
 
-          <EkCard title="Metin" icon="mdi-text-box-outline">
+          <BoSection title="Metin" icon="mdi-text-box-outline">
             <div class="bo-annd__text">
               <h3>Türkçe</h3>
               <p class="bo-annd__t">{{ a.title.tr }}</p>
@@ -66,9 +66,9 @@
               </template>
               <p v-else class="bo-muted bo-annd__p">İngilizce metin yok; İngilizce kullanan üyeler Türkçe metni görür.</p>
             </div>
-          </EkCard>
+          </BoSection>
 
-          <EkCard title="Kayıt" icon="mdi-history" :heading-level="3">
+          <BoSection title="Kayıt" icon="mdi-history">
             <dl class="bo-kv">
               <div><dt>Oluşturuldu</dt><dd class="ek-num">{{ formatDateTime(a.createdAt) }}</dd></div>
               <div><dt>Son değişiklik</dt><dd class="ek-num">{{ formatDateTime(a.updatedAt) }}</dd></div>
@@ -77,14 +77,14 @@
               <div v-if="a.cancelledBy"><dt>İptal eden</dt><dd class="bo-mono">{{ a.cancelledBy }}</dd></div>
             </dl>
             <template #footer>
-              <RouterLink :to="{ path: '/denetim', query: { event: 'backoffice.write' } }" class="bo-annd__more">Denetim kayıtlarında aç <v-icon icon="mdi-arrow-right" aria-hidden="true" /></RouterLink>
+              <BoAction kind="detail" size="sm" label="Denetim kayıtlarında aç" :to="{ path: '/denetim', query: { event: 'backoffice.write' } }" />
             </template>
-          </EkCard>
+          </BoSection>
         </div>
 
-        <EkCard class="bo-annd__preview">
+        <div class="bo-annd__preview">
           <AnnouncementPreview :preview="pv.data.value" :channels="a.channels" :phase="pv.phase.value" :error="pv.error.value" :refreshing="pv.refreshing.value" @retry="pv.load()" />
-        </EkCard>
+        </div>
       </div>
     </template>
 
@@ -130,12 +130,14 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { EkAlert, EkButton, EkCard, EkCopyButton, EkEmptyState, EkRefreshButton, EkStatusChip } from '@entegrasyonik/ui/components'
+import { EkAlert, EkButton, EkCopyButton, EkEmptyState, EkStatusChip } from '@entegrasyonik/ui/components'
 import { api } from '@bo/api'
 import type { Announcement, AnnouncementPreview as Preview } from '@bo/api/contract'
 import { useResource } from '@bo/composables/useResource'
 import { useGuardedAction } from '@bo/composables/useGuardedAction'
 import BoPageHeader from '@bo/components/shell/BoPageHeader.vue'
+import BoAction from '@bo/components/r2/BoAction.vue'
+import BoSection from '@bo/components/r2/BoSection.vue'
 import StateBlock from '@bo/components/kit/StateBlock.vue'
 import GuardedDialog from '@bo/components/kit/GuardedDialog.vue'
 import { ANN_AUDIENCE, ANN_KIND, ANN_SEVERITY, ANN_STATUS } from '@bo/utils/labels'
@@ -207,6 +209,9 @@ onMounted(reload)
 
 <style scoped>
 .bo-annd__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  gap: var(--ek-space-5);
   align-items: start;
 }
 .bo-annd__col {
@@ -248,18 +253,10 @@ onMounted(reload)
   margin: var(--ek-space-1) 0 0;
   white-space: pre-line;
 }
-.bo-annd__more {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--ek-space-1);
-  color: var(--ek-color-action);
-  font-size: var(--ek-type-label-size);
-  text-decoration: none;
-}
-.bo-annd__more:hover {
-  text-decoration: underline;
-}
-@media (max-width: 959px) {
+@media (max-width: 1023px) {
+  .bo-annd__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
   .bo-annd__preview {
     position: static;
   }

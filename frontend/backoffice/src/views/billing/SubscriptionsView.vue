@@ -8,10 +8,12 @@
 
     <PageVerdict :verdict="verdict" />
 
-    <EkPageTabs v-model="tab" :tabs="TABS" label="Abonelik bölümleri" />
-
-    <SubscriptionsPanel v-if="tab === 'abonelikler'" :key="`s${gen}`" />
-    <RevenuePanel v-else :key="`r${gen}`" />
+    <BoTabs :tabs="TABS" fallback="abonelikler" label="Abonelik bölümleri">
+      <template #default="{ tab }">
+        <SubscriptionsPanel v-if="tab === 'abonelikler'" :key="`s${gen}`" />
+        <RevenuePanel v-else :key="`r${gen}`" />
+      </template>
+    </BoTabs>
   </div>
 </template>
 
@@ -20,20 +22,23 @@ import { computed, onMounted, ref } from 'vue'
 import BoPageHeader from '@bo/components/shell/BoPageHeader.vue'
 import BoAction from '@bo/components/r2/BoAction.vue'
 import PageVerdict from '@bo/components/verdict/PageVerdict.vue'
-import { EkPageTabs } from '@entegrasyonik/ui/components'
+import BoTabs from '@bo/components/r2/BoTabs.vue'
+import type { EkPageTab } from '@entegrasyonik/ui/components'
 import { api } from '@bo/api'
-import { useTabQuery } from '@bo/composables/useTabQuery'
 import { useVerdictSources } from '@bo/composables/useVerdictSources'
 import SubscriptionsPanel from './SubscriptionsPanel.vue'
 import RevenuePanel from './RevenuePanel.vue'
 import { subscriptionsVerdict } from './billingVerdict'
 
-const TAB_VALUES = ['abonelikler', 'gelir'] as const
-const tab = useTabQuery(TAB_VALUES, 'abonelikler')
-const TABS = [
-  { value: 'abonelikler', label: 'Abonelikler', icon: 'mdi-card-account-details-outline' },
+/** Sekme sayısı: abonelik toplamı gelir özetinin durum dağılımından (+ muaf) okunur; özet gelene dek sayı gösterilmez. */
+const totalSubs = computed(() => {
+  const r = summary.sources.revenue.data.value
+  return r ? Object.values(r.statusDistribution).reduce((a, b) => a + b, 0) + r.exemptSubscriptions : null
+})
+const TABS = computed<EkPageTab[]>(() => [
+  { value: 'abonelikler', label: 'Abonelikler', icon: 'mdi-card-account-details-outline', count: totalSubs.value },
   { value: 'gelir', label: 'Gelir metrikleri', icon: 'mdi-chart-line' },
-]
+])
 /** Sayfa "Yenile": hüküm kaynakları + açık sekme paneli birlikte tazelenir. */
 const gen = ref(0)
 

@@ -1,25 +1,15 @@
 <!-- KARAR/EYLEM: plan varsayılanları + Trendyol bütçesi + gölge mod. Düzenleme mevcut `_platform` taslak → yayın akışıyla (PublishDialogs). -->
 <template>
-  <section class="bo-panel" aria-labelledby="bo-cs-plans-title" data-testid="competition-plans">
-    <header class="bo-panel__bar">
-      <div>
-        <h2 id="bo-cs-plans-title" class="bo-panel__title">Plan varsayılanları</h2>
-        <p class="bo-panel__hint">Her abonelik planının buybox izleme kapsamı. Tek tek müşteri için aşağıdaki istisnalar bu değerleri alan alan geçersiz kılar.</p>
-      </div>
-    </header>
-    <EkCard flush>
+  <BoSection id="bo-cs-plans" title="Plan varsayılanları" description="Her abonelik planının buybox izleme kapsamı. Tek tek müşteri için “Müşteri istisnaları” bölümü bu değerleri alan alan geçersiz kılar." data-testid="competition-plans">
       <StateBlock v-if="!cs.hasCatalog" phase="empty" empty-title="Rekabet ayarları katalogda yok" empty-message="Sunucu sürümü bu ayar grubunu henüz içermiyor; sunucuyu güncelleyin ve sayfayı yenileyin." />
       <div v-else class="bo-cp">
-        <div class="bo-table-wrap" tabindex="0" role="region" aria-label="Plan varsayılanları tablosu">
-          <table class="bo-table" data-density="compact">
-            <caption class="ek-sr-only">Plan başına SKU tavanı, tazeleme aralığı, tazelik eşiği ve öncelik politikası</caption>
-            <thead>
-              <tr>
-                <th scope="col">Plan</th>
-                <th v-for="f in FIELDS" :key="f" scope="col">{{ FIELD_LABEL[f] }}<span v-if="FIELD_UNIT[f]" class="bo-cp__unit"> ({{ FIELD_UNIT[f] }})</span></th>
-              </tr>
-            </thead>
-            <tbody>
+        <BoTableFrame label="Plan varsayılanları">
+          <template #head>
+            <tr>
+              <th scope="col">Plan</th>
+              <th v-for="f in FIELDS" :key="f" scope="col">{{ FIELD_LABEL[f] }}<span v-if="FIELD_UNIT[f]" class="bo-cp__unit"> ({{ FIELD_UNIT[f] }})</span></th>
+            </tr>
+          </template>
               <tr v-for="plan in plans" :key="plan" :data-plan="plan">
                 <th scope="row">{{ PLAN_NAME[plan] }}</th>
                 <td v-for="f in FIELDS" :key="f" class="bo-cp__cell" :class="{ 'is-changed': cfg.isChanged(keyOf(plan, f)) }">
@@ -55,9 +45,7 @@
                   </template>
                 </td>
               </tr>
-            </tbody>
-          </table>
-        </div>
+        </BoTableFrame>
         <p class="bo-panel__hint">
           Tazeleme aralığı: bir barkodun buybox bilgisi en erken bu kadar dakikada bir okunur (360 dk = günde 4). Tazelik eşiği: bundan eski gözlem “eski veri” etiketi alır ve bildirim üretmez.
           Öncelik politikası bütçe dar kaldığında hangi SKU’ların önce okunacağını belirler.
@@ -81,22 +69,26 @@
         </ul>
         <EkAlert v-if="cfg.saveError && !messages.length" tone="error" live dense :text="cfg.saveError.message" data-testid="save-error" />
 
-        <div class="bo-cp__actions">
-          <EkButton tone="primary" icon="mdi-file-eye-outline" :loading="cfg.saving" :disabled="saveDisabled" data-testid="competition-save" @click="cfg.saveAndPreview()">Taslak kaydet ve önizle</EkButton>
-          <span class="bo-panel__hint" aria-live="polite">{{ hint }}</span>
-        </div>
         <p class="bo-panel__hint bo-cp__effect">
           <v-icon icon="mdi-timer-sand" aria-hidden="true" />
           Yayınlanan değerler en geç ~15 sn içinde tüm sunucularda etkinleşir; yeniden başlatma gerekmez. Yayın gerekçe ister, geçmişten geri alınabilir.
         </p>
       </div>
-    </EkCard>
-  </section>
+    <template v-if="cs.hasCatalog" #footer>
+      <div class="bo-cp__actions">
+        <BoAction kind="save" label="Taslak kaydet ve önizle" :loading="cfg.saving" :disabled="saveDisabled" data-testid="competition-save" @click="cfg.saveAndPreview()" />
+        <span class="bo-panel__hint" aria-live="polite">{{ hint }}</span>
+      </div>
+    </template>
+  </BoSection>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { EkAlert, EkButton, EkCard } from '@entegrasyonik/ui/components'
+import { EkAlert } from '@entegrasyonik/ui/components'
+import BoSection from '@bo/components/r2/BoSection.vue'
+import BoAction from '@bo/components/r2/BoAction.vue'
+import BoTableFrame from '@bo/components/r2/BoTableFrame.vue'
 import StateBlock from '@bo/components/kit/StateBlock.vue'
 import SettingField from './SettingField.vue'
 import type { CompetitionState } from './useCompetition'
@@ -128,7 +120,6 @@ const hint = computed(() => (messages.value.length ? 'Geçersiz değer var; düz
   display: flex;
   flex-direction: column;
   gap: var(--ek-space-4);
-  padding: var(--ek-space-5);
 }
 .bo-cp__unit {
   text-transform: none;

@@ -1,7 +1,7 @@
 <template>
-  <EkCard title="Olaylar" subtitle="En yeni 50 faturalama olayı. Yönetim kaynaklı değişiklikler 'yönetim' olarak görünür." icon="mdi-history" flush>
+  <BoSection id="olaylar" title="Faturalama olayları" description="Bu aboneliğin en yeni 50 faturalama olayı. Yönetim ekibinin yaptığı değişiklikler kaynak olarak 'yönetim' görünür." icon="mdi-history">
     <EkEmptyState v-if="!events.length" variant="no-data" title="Olay yok" message="Bu abonelik için henüz faturalama olayı kaydedilmemiş." />
-    <EkDataTable v-else :items="rows" :columns="COLUMNS" row-key="id">
+    <BoDataTable v-else :items="rows" :columns="COLUMNS" row-key="id" label="Faturalama olayları">
       <template #cell-at="{ item }">
         <span class="bo-cell-stack"><span class="ek-num">{{ formatDateTime((item as Ev).at) }}</span><span>{{ formatRelative((item as Ev).at) }}</span></span>
       </template>
@@ -18,13 +18,15 @@
         </ul>
         <span v-else class="bo-muted">—</span>
       </template>
-    </EkDataTable>
-  </EkCard>
+    </BoDataTable>
+  </BoSection>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { EkCard, EkDataTable, EkEmptyState, type EkTableColumn } from '@entegrasyonik/ui/components'
+import { EkEmptyState, type EkTableColumn } from '@entegrasyonik/ui/components'
+import BoSection from '@bo/components/r2/BoSection.vue'
+import BoDataTable from '@bo/components/r2/BoDataTable.vue'
 import type { BillingEventRow } from '@bo/api/contract'
 import { formatDateTime, formatRelative } from '@bo/utils/format'
 import '@bo/styles/kit.css'

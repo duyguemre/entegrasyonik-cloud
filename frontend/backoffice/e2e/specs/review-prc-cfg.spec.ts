@@ -71,6 +71,7 @@ for (const cfg of CONFIGS) {
     await page.keyboard.press('Escape')
     await page.getByTestId('discard-draft').click()
 
+    await page.getByRole('tab', { name: /Müşteri istisnaları/ }).click()
     // 20/21 — istisna ekle (numara → mevcut ayar → alanlar → gerekçe), sonra önce/sonra
     await page.getByTestId('override-add').click()
     const dlg = page.getByRole('dialog', { name: 'Müşteri istisnası ekle' })
@@ -104,6 +105,7 @@ for (const cfg of CONFIGS) {
     await page.goto('/genel-bakis')
     await mock(page, `(m) => m.failOps('BackofficeBillingService/getCompetitionSettings')`)
     await openFromMenu(page)
+    await page.getByRole('tab', { name: /Müşteri istisnaları/ }).click()
     await expect(page.getByText('Müşteri istisnaları yüklenemedi')).toBeVisible()
     await shot(page, '30-hata-istisna-listesi', cfg)
 

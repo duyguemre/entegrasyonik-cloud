@@ -9,35 +9,25 @@
 
     <PageVerdict :verdict="verdict" />
 
-    <div class="bo-toolbar">
-      <v-text-field
-        v-model="search"
-        class="bo-tenants__search"
-        label="Mağaza adı ya da numarası"
-        prepend-inner-icon="mdi-magnify"
-        density="compact"
-        clearable
-        hide-details
-        @update:model-value="debouncedLoad"
-      />
-      <div class="bo-seg" role="radiogroup" aria-label="Durum">
-        <button
-          v-for="opt in STATUS_OPTIONS"
-          :key="opt.value"
-          type="button"
-          role="radio"
-          class="bo-seg__opt"
-          :aria-checked="status === opt.value"
-          :data-segment="opt.value"
-          @click="status = opt.value"
-        >
-          {{ opt.label }} <span class="bo-seg__count">{{ countOf(opt.value) }}</span>
-        </button>
-      </div>
-    </div>
+    <BoFilterBar :active="activeFilters" label="Müşteri süzgeçleri" @clear="clearFilters">
+      <template #search>
+        <v-text-field
+          v-model="search"
+          class="bo-tenants__search"
+          label="Mağaza adı ya da numarası"
+          prepend-inner-icon="mdi-magnify"
+          density="compact"
+          clearable
+          hide-details
+          @update:model-value="debouncedLoad"
+        />
+      </template>
+      <BoSegmented v-model="status" :options="segmentOptions" label="Durum" />
+    </BoFilterBar>
 
-    <div v-if="state !== 'ready'" class="bo-tenants__panel">
+    <BoSection id="musteri-listesi" title="Müşteriler" description="Mağaza sağlığı, abonelik ve kanallar; satıra tıklayınca müşteri ayrıntısı açılır" :flush="state === 'ready'">
       <BoPanelState
+        v-if="state !== 'ready'"
         :state="state"
         skeleton="table"
         :rows="8"
@@ -49,40 +39,36 @@
         :retrying="loading"
         @retry="load"
       />
-    </div>
-    <div v-else class="bo-table-wrap" tabindex="0" role="region" aria-label="Müşteriler tablosu" :aria-busy="loading || undefined">
-      <table class="bo-table">
-        <caption class="ek-sr-only">Müşteriler — {{ visible.length }} kayıt</caption>
-        <thead>
+      <BoTableFrame v-else label="Müşteriler" :aria-busy="loading || undefined">
+        <template #head>
           <tr>
-            <th scope="col" :aria-sort="ariaSort('magaza')">
-              <button type="button" class="bo-tenants__sort" data-sort="magaza" @click="toggleSort('magaza')">Mağaza<v-icon :icon="sortIcon('magaza')" aria-hidden="true" /></button>
-            </th>
-            <th scope="col">Durum</th>
-            <th scope="col" class="bo-hide-sm">Plan ve abonelik</th>
-            <th scope="col" class="bo-hide-sm">Kanallar</th>
-            <th scope="col" class="is-num" :aria-sort="ariaSort('acikSorun')">
-              <button type="button" class="bo-tenants__sort" data-sort="acikSorun" title="Açık sorun grubu sayısı; yaklaşıktır" @click="toggleSort('acikSorun')">Açık sorun <span aria-hidden="true">~</span><span class="ek-sr-only">(yaklaşık)</span><v-icon :icon="sortIcon('acikSorun')" aria-hidden="true" /></button>
-            </th>
-            <th scope="col" class="is-num" :aria-sort="ariaSort('basarisizIs')">
-              <button type="button" class="bo-tenants__sort" data-sort="basarisizIs" @click="toggleSort('basarisizIs')">
-                <span class="bo-hide-sm">Başarısız iş (24 sa)</span><span class="bo-show-sm">Başarısız iş</span><v-icon :icon="sortIcon('basarisizIs')" aria-hidden="true" />
-              </button>
-            </th>
-            <th scope="col" class="is-num bo-hide-sm" :aria-sort="ariaSort('sonHata')">
-              <button type="button" class="bo-tenants__sort" data-sort="sonHata" @click="toggleSort('sonHata')">Son hata<v-icon :icon="sortIcon('sonHata')" aria-hidden="true" /></button>
-            </th>
-            <th scope="col" class="is-num" :aria-sort="ariaSort('sonEsitleme')">
-              <button type="button" class="bo-tenants__sort" data-sort="sonEsitleme" @click="toggleSort('sonEsitleme')">
-                <span class="bo-hide-sm">Son sipariş eşitleme</span><span class="bo-show-sm">Son eşitleme</span><v-icon :icon="sortIcon('sonEsitleme')" aria-hidden="true" />
-              </button>
-            </th>
-            <th scope="col" class="is-num bo-hide-sm" :aria-sort="ariaSort('kayit')">
-              <button type="button" class="bo-tenants__sort" data-sort="kayit" @click="toggleSort('kayit')">Kayıt<v-icon :icon="sortIcon('kayit')" aria-hidden="true" /></button>
-            </th>
+              <th scope="col" :aria-sort="ariaSort('magaza')">
+                <button type="button" class="bo-tenants__sort" data-sort="magaza" @click="toggleSort('magaza')">Mağaza<v-icon :icon="sortIcon('magaza')" aria-hidden="true" /></button>
+              </th>
+              <th scope="col">Durum</th>
+              <th scope="col" class="bo-hide-sm">Plan ve abonelik</th>
+              <th scope="col" class="bo-hide-sm">Kanallar</th>
+              <th scope="col" class="is-num" :aria-sort="ariaSort('acikSorun')">
+                <button type="button" class="bo-tenants__sort" data-sort="acikSorun" title="Açık sorun grubu sayısı; yaklaşıktır" @click="toggleSort('acikSorun')">Açık sorun <span aria-hidden="true">~</span><span class="ek-sr-only">(yaklaşık)</span><v-icon :icon="sortIcon('acikSorun')" aria-hidden="true" /></button>
+              </th>
+              <th scope="col" class="is-num" :aria-sort="ariaSort('basarisizIs')">
+                <button type="button" class="bo-tenants__sort" data-sort="basarisizIs" @click="toggleSort('basarisizIs')">
+                  <span class="bo-hide-sm">Başarısız iş (24 sa)</span><span class="bo-show-sm">Başarısız iş</span><v-icon :icon="sortIcon('basarisizIs')" aria-hidden="true" />
+                </button>
+              </th>
+              <th scope="col" class="is-num bo-hide-sm" :aria-sort="ariaSort('sonHata')">
+                <button type="button" class="bo-tenants__sort" data-sort="sonHata" @click="toggleSort('sonHata')">Son hata<v-icon :icon="sortIcon('sonHata')" aria-hidden="true" /></button>
+              </th>
+              <th scope="col" class="is-num" :aria-sort="ariaSort('sonEsitleme')">
+                <button type="button" class="bo-tenants__sort" data-sort="sonEsitleme" @click="toggleSort('sonEsitleme')">
+                  <span class="bo-hide-sm">Son sipariş eşitleme</span><span class="bo-show-sm">Son eşitleme</span><v-icon :icon="sortIcon('sonEsitleme')" aria-hidden="true" />
+                </button>
+              </th>
+              <th scope="col" class="is-num bo-hide-sm" :aria-sort="ariaSort('kayit')">
+                <button type="button" class="bo-tenants__sort" data-sort="kayit" @click="toggleSort('kayit')">Kayıt<v-icon :icon="sortIcon('kayit')" aria-hidden="true" /></button>
+              </th>
           </tr>
-        </thead>
-        <tbody>
+        </template>
           <!-- Satırın tamamı tıklanır (fare); klavye erişimi satırdaki birincil bağlantıyla (tek sekme durağı). -->
           <tr v-for="c in visible" :key="c.clientId" class="is-link" @click="open(c.clientId, $event)">
             <th scope="row">
@@ -103,7 +89,7 @@
             <td class="bo-hide-sm">
               <span v-if="c.integrations?.length" class="bo-tenants__channels" :aria-label="c.integrations.map((i) => CHANNEL[i.integrationCode] ?? i.integrationCode).join(', ')">
                 <EkChannelDot v-for="i in c.integrations" :key="i.integrationCode" :code="i.integrationCode" :name="CHANNEL[i.integrationCode] ?? i.integrationCode" :show-name="false" />
-                <span class="bo-tenants__channel-names">{{ c.integrations.map((i) => CHANNEL[i.integrationCode] ?? i.integrationCode).join(', ') }}</span>
+                
               </span>
               <span v-else class="bo-muted">Bağlantı yok</span>
             </td>
@@ -129,13 +115,12 @@
             </td>
             <td class="is-num is-muted bo-hide-sm">{{ formatDate(c.createdAt) }}</td>
           </tr>
-        </tbody>
-      </table>
-    </div>
-    <p v-if="state === 'ready'" class="bo-table-foot">
-      <span><span class="ek-num">{{ visible.length }}</span> / <span class="ek-num">{{ total }}</span> müşteri · kaynak: AdminService/getClients + BackofficeTenantService/listTenants</span>
-      <span class="bo-inline-note"><v-icon icon="mdi-alert" aria-hidden="true" />24 saattir eşitleme yoksa uyarı · açık sorun sayısı yaklaşıktır (~)</span>
-    </p>
+      </BoTableFrame>
+      <template v-if="state === 'ready'" #footer>
+        <BoPagination :count="visible.length" :total="total" :has-more="false" source="AdminService/getClients + BackofficeTenantService/listTenants" />
+        <p class="bo-inline-note bo-tenants__note"><v-icon icon="mdi-alert" aria-hidden="true" />24 saattir eşitleme yoksa uyarı · açık sorun sayısı yaklaşıktır (~)</p>
+      </template>
+    </BoSection>
   </div>
 </template>
 
@@ -147,6 +132,11 @@ import { formatDate } from '@entegrasyonik/ui/format'
 import CopyViewLink from '@bo/components/CopyViewLink.vue'
 import BoPageHeader from '@bo/components/shell/BoPageHeader.vue'
 import BoAction from '@bo/components/r2/BoAction.vue'
+import BoFilterBar from '@bo/components/r2/BoFilterBar.vue'
+import BoPagination from '@bo/components/r2/BoPagination.vue'
+import BoSection from '@bo/components/r2/BoSection.vue'
+import BoSegmented from '@bo/components/r2/BoSegmented.vue'
+import BoTableFrame from '@bo/components/r2/BoTableFrame.vue'
 import PageVerdict from '@bo/components/verdict/PageVerdict.vue'
 import BoPanelState, { type PanelState } from '@bo/components/shell/BoPanelState.vue'
 import { api } from '@bo/api'
@@ -301,6 +291,12 @@ const visible = computed(() => {
   const at = new Map(order.map((tid, i) => [tid, i] as const))
   return [...list].sort((a, b) => (at.get(a.clientId) ?? 1e9) - (at.get(b.clientId) ?? 1e9))
 })
+const segmentOptions = computed(() => STATUS_OPTIONS.map((o) => ({ value: o.value as TenantSegment, label: o.label, count: countOf(o.value) })))
+const activeFilters = computed(() => (search.value?.trim() ? 1 : 0) + (status.value !== 'all' ? 1 : 0))
+function clearFilters() {
+  search.value = ''
+  setQuery({ q: undefined, durum: undefined, hasIssues: undefined })
+}
 const filtered = computed(() => !!search.value?.trim() || status.value !== 'all')
 const loaded = computed(() => all.value !== null)
 // Sorunlu segmentte operasyon özeti okunamadıysa boş liste "sorun yok" demek olur — hata göster.
@@ -329,6 +325,11 @@ const verdict = computed(() =>
 .bo-tenants__search {
   flex: 1 1 280px;
   max-width: 420px;
+}
+
+.bo-tenants__note {
+  margin: var(--ek-space-2) 0 0;
+  font-size: var(--ek-type-caption-size);
 }
 
 .bo-tenants__sort {
@@ -361,14 +362,8 @@ th[aria-sort='descending'] .bo-tenants__sort .v-icon {
   box-shadow: var(--ek-focus-ring);
 }
 
-.bo-tenants__panel {
-  border: 1px solid var(--ek-color-border-default);
-  border-radius: var(--ek-radius-card);
-  background: var(--ek-color-surface);
-  padding: var(--ek-space-4);
-}
-
 .bo-tenants__name-cell {
+  min-width: 200px;
   display: inline-flex;
   flex-wrap: wrap;
   align-items: center;
@@ -403,15 +398,6 @@ tr:hover .bo-tenants__name {
   align-items: center;
   gap: var(--ek-space-1);
   max-width: 280px;
-}
-
-.bo-tenants__channel-names {
-  overflow: hidden;
-  margin-left: var(--ek-space-1);
-  color: var(--ek-color-content-muted);
-  font-size: var(--ek-type-caption-size);
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .bo-tenants__plan {

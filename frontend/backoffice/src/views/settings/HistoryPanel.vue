@@ -1,14 +1,6 @@
 <template>
-  <section class="bo-panel" aria-labelledby="bo-hist-title">
-    <header class="bo-panel__bar">
-      <div>
-        <h2 id="bo-hist-title" class="bo-panel__title">Yayın geçmişi</h2>
-        <p class="bo-panel__hint">Son 20 sürüm. Geri alma, eski sürümün içeriğini yeni bir sürüm olarak yayınlar.</p>
-      </div>
-    </header>
-    <EkCard flush>
-      <StateBlock :phase="rows.length ? 'ready' : 'empty'" empty-title="Henüz yayın yok" empty-message="İlk yayın yapıldığında sürümler burada listelenir; şu an varsayılan değerler geçerli.">
-        <EkDataTable :items="rows" :columns="COLUMNS" row-key="version">
+  <BoSection id="bo-hist" flush title="Yayın geçmişi" description="Son 20 sürüm. Geri alma, eski sürümün içeriğini yeni bir sürüm olarak yayınlar.">
+    <BoDataTable :items="rows" :columns="COLUMNS" row-key="version" label="Yayınlanan sürümler" :phase="rows.length ? 'ready' : 'empty'" empty-title="Henüz yayın yok" empty-message="İlk yayın yapıldığında sürümler burada listelenir; şu an varsayılan değerler geçerli.">
           <template #cell-version="{ item }">
             <span class="bo-cell-stack"><span class="ek-num">v{{ (item as Row).version }}</span><EkStatusChip v-if="(item as Row).status === 'published'" tone="success" label="Yayında" dot /></span>
           </template>
@@ -22,17 +14,16 @@
           <template #cell-actions="{ item }">
             <EkButton v-if="(item as Row).status !== 'published'" size="sm" tone="secondary" icon="mdi-undo-variant" :disabled="cfg.hasDraft" :title="cfg.hasDraft ? 'Açık taslak varken geri alınamaz; önce taslağı yayınlayın ya da vazgeçin.' : undefined" :aria-label="`v${(item as Row).version} sürümüne geri al`" data-testid="rollback" @click="cfg.rollback.open(item as Row)">Bu sürüme geri al</EkButton>
           </template>
-        </EkDataTable>
-      </StateBlock>
-    </EkCard>
-  </section>
+    </BoDataTable>
+  </BoSection>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { EkButton, EkCard, EkDataTable, EkStatusChip, type EkTableColumn } from '@entegrasyonik/ui/components'
+import { EkButton, EkStatusChip, type EkTableColumn } from '@entegrasyonik/ui/components'
+import BoSection from '@bo/components/r2/BoSection.vue'
+import BoDataTable from '@bo/components/r2/BoDataTable.vue'
 import type { ConfigDiffEntry, ConfigRevision } from '@bo/api/contract'
-import StateBlock from '@bo/components/kit/StateBlock.vue'
 import { formatDateTime, formatRelative } from '@bo/utils/format'
 import type { PlatformConfig } from './usePlatformConfig'
 import '@bo/styles/kit.css'

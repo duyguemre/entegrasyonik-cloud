@@ -52,6 +52,7 @@ for (const cfg of CONFIGS) {
     await page.getByTestId('discard-draft').click()
     await expect(page.getByTestId('draft-bar')).toHaveCount(0)
 
+    await page.getByRole('tab', { name: /Yayın geçmişi/ }).click()
     await page.getByRole('region', { name: 'Yayın geçmişi' }).getByTestId('rollback').first().click()
     await expect(page.getByRole('dialog', { name: /geri alınsın mı\?/ })).toBeVisible()
     await shot(page, '04-sistem-ayarlari-geri-alma', cfg, false)

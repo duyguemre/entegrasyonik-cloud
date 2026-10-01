@@ -17,25 +17,25 @@ test.describe('başarısız işler: süzgeç + toplu yeniden deneme', () => {
   test.beforeEach(async ({ page }) => signInFully(page))
 
   test('süzgeç URL ile gelir, "N iş (süzgeçli)" gösterir; sözleşme adları da okunur; axe 0', async ({ page }) => {
-    await page.goto('/motor?sekme=basarisiz&integrationCode=trendyol&errorCode=UNAVAILABLE')
+    await page.goto('/motor?sekme=basarisiz&gorunum=ayrinti&integrationCode=trendyol&errorCode=UNAVAILABLE')
     await settle(page)
     await expect(page.getByTestId('filtered-total')).toHaveText('4 iş (süzgeçli)')
     await expect(page.locator('tbody tr')).toHaveCount(4)
     await expectNoA11yViolations(page)
-    await page.getByTestId('f-clear').click()
+    await page.getByTestId('filters-clear').click()
     await settle(page)
     await expect(page).not.toHaveURL(/kod=|errorCode=/)
     await expect(page.getByTestId('filtered-total')).toHaveCount(0)
   })
 
   test('süzgece uyan iş yoksa açıklayıcı boş durum', async ({ page }) => {
-    await page.goto('/motor?sekme=basarisiz&tid=999')
+    await page.goto('/motor?sekme=basarisiz&gorunum=ayrinti&tid=999')
     await settle(page)
     await expect(page.getByText('Süzgece uyan iş yok')).toBeVisible()
   })
 
   test('toplu: seç → gerekçe + step-up → başarılılar düşer, atlanan seçili kalır ve nedeni görünür', async ({ page }) => {
-    await page.goto('/motor?sekme=basarisiz&entegrasyon=trendyol&kod=UNAVAILABLE')
+    await page.goto('/motor?sekme=basarisiz&gorunum=ayrinti&entegrasyon=trendyol&kod=UNAVAILABLE')
     await settle(page)
     await expect(page.getByTestId('bulk-retry')).toBeDisabled()
     await page.getByTestId('select-all').locator('input').check()
@@ -54,7 +54,7 @@ test.describe('başarısız işler: süzgeç + toplu yeniden deneme', () => {
   })
 
   test('tek satır seçimi klavye ile; iz bağlantısı reqId ile loglara gider', async ({ page }) => {
-    await page.goto('/motor?sekme=basarisiz')
+    await page.goto('/motor?sekme=basarisiz&gorunum=ayrinti')
     await settle(page)
     const first = page.getByTestId('row-select').first().locator('input')
     await first.focus()

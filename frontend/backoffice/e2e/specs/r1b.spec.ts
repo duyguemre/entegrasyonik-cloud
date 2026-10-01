@@ -76,7 +76,7 @@ test.describe('BO-R1b NEXT_TASKS', () => {
     await page.getByLabel('Doğrulama kodu').fill('123456')
     await page.getByRole('button', { name: 'Doğrula', exact: true }).click()
     await expect(page).toHaveURL(/\/genel-bakis/)
-    await page.goto('/motor?sekme=basarisiz&env=production')
+    await page.goto('/motor?sekme=basarisiz&gorunum=ayrinti&env=production')
     await settle(page)
     await page.getByRole('button', { name: /sil/i }).first().click()
     const dialog = page.getByRole('dialog')
@@ -93,7 +93,7 @@ test.describe('BO-R1b NEXT_TASKS', () => {
 
   test('NT-02: örnek veri ortamında hedef kimliği istenmez', async ({ page }) => {
     await signInFully(page)
-    await page.goto('/motor?sekme=basarisiz')
+    await page.goto('/motor?sekme=basarisiz&gorunum=ayrinti')
     await settle(page)
     await page.getByRole('button', { name: /sil/i }).first().click()
     await expect(page.getByRole('dialog').getByTestId('danger-confirm-text')).toHaveCount(0)

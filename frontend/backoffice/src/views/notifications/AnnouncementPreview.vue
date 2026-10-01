@@ -3,13 +3,11 @@
   Dil seçimi: `en` yoksa sunucu `tr`'ye düşer (bant da aynı kuralı izler).
 -->
 <template>
-  <section class="bo-annp" aria-labelledby="bo-annp-title">
-    <header class="bo-annp__bar">
-      <h2 id="bo-annp-title" class="bo-panel__title">Müşteri ne görecek?</h2>
-      <div class="bo-seg" role="radiogroup" aria-label="Önizleme dili">
-        <button v-for="l in LOCALES" :key="l.value" type="button" role="radio" class="bo-seg__opt" :aria-checked="locale === l.value" @click="locale = l.value">{{ l.label }}</button>
-      </div>
-    </header>
+  <BoSection id="bo-annp" title="Müşteri ne görecek?" description="Gönderim yapılmaz; yalnız önizleme." icon="mdi-eye-outline">
+    <template #actions>
+      <BoSegmented v-model="locale" label="Önizleme dili" :options="LOCALES" />
+    </template>
+    <div class="bo-annp">
     <EkPageTabs v-model="tab" :tabs="tabs" label="Önizleme kanalı" dense />
 
     <StateBlock v-if="!preview" :phase="phase === 'ready' ? 'loading' : phase" :error="error" skeleton="detail" :rows="3" size="compact" @retry="emit('retry')" />
@@ -39,7 +37,9 @@
         <EmailFrame :subject="preview.email[locale].subject" :html="preview.email[locale].html" :text="preview.email[locale].text" />
       </template>
     </div>
-  </section>
+    <slot />
+    </div>
+  </BoSection>
 </template>
 
 <script setup lang="ts">
@@ -47,6 +47,8 @@ import { computed, ref } from 'vue'
 import { EkAlert, EkPageTabs, type EkPageTab } from '@entegrasyonik/ui/components'
 import type { AnnouncementChannels, AnnouncementPreview, AnnouncementText } from '@bo/api/contract'
 import type { DescribedError } from '@bo/utils/errors'
+import BoSection from '@bo/components/r2/BoSection.vue'
+import BoSegmented, { type BoSegmentOption } from '@bo/components/r2/BoSegmented.vue'
 import StateBlock from '@bo/components/kit/StateBlock.vue'
 import { ANN_KIND, ANN_SEVERITY } from '@bo/utils/labels'
 import EmailFrame from './EmailFrame.vue'
@@ -62,10 +64,10 @@ defineProps<{
 }>()
 const emit = defineEmits<{ retry: [] }>()
 
-const LOCALES = [
+const LOCALES: Array<BoSegmentOption<'tr' | 'en'>> = [
   { value: 'tr', label: 'Türkçe' },
   { value: 'en', label: 'English' },
-] as const
+]
 const locale = ref<'tr' | 'en'>('tr')
 const tab = ref<'bant' | 'uygulama' | 'eposta'>('bant')
 const tabs = computed<EkPageTab[]>(() => [
@@ -82,13 +84,6 @@ const pick = (t: AnnouncementText) => (locale.value === 'en' && t.en) || t.tr
   flex-direction: column;
   gap: var(--ek-space-3);
   min-width: 0;
-}
-.bo-annp__bar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--ek-space-2);
 }
 .bo-annp__body {
   display: flex;
