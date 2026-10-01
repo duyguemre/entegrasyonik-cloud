@@ -370,8 +370,14 @@ async function copyRecord() {
   min-width: 0;
 }
 
+/* fe-polish: alt sınır başlığın kendisinde değil, başlık halkasında — kısa başlıklar ("ERP", "Kargo") 4em'e
+   genişleyip (?) düğmesini sağa itiyordu. Halka yine en az ~4 başlık harfi + (?) kadar yer tutar. */
 .ek-page-bar__title {
-  min-width: 4em;
+  min-width: 0;
+}
+
+.ek-crumbs__item--current {
+  min-width: calc(var(--ek-type-title-size) * 4 + 32px);
 }
 
 .ek-crumbs__item--current > .ek-crumbs__sep {
@@ -597,6 +603,17 @@ async function copyRecord() {
   color: var(--ek-color-content-muted);
   font-size: var(--ek-type-caption-size);
   line-height: var(--ek-type-caption-line);
+}
+
+/* fe-polish: dar kapta meta (ör. "Son güncelleme …") başlığın yanında değil altında — 390px'te başlığı "Genel …"e
+   kısaltıyordu. */
+.is-narrow .ek-page-bar__titles {
+  flex-wrap: wrap;
+  row-gap: var(--ek-space-1);
+}
+
+.is-narrow .ek-page-bar__meta {
+  flex: 1 1 100%;
 }
 
 /* Dar kap: iki satır — üstte [← ebeveyn] (ya da kök), altta başlık + kayıt + (i). Başlık her zaman görünür. */
