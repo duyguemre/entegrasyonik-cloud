@@ -95,10 +95,11 @@ export const useOtopilotStore = defineStore('otopilot', () => {
     writePrefs(storageKey.value, { open: panelOpen.value, width: width.value })
   }
 
-  function replaceController() {
+  /** Yeni denetleyici; `load` false iken `info()` çağrılmaz (çıkışta giriş ekranından 401 → yönlendirme döngüsü olmasın). */
+  function replaceController(load = true) {
     controller.value.dispose()
     controller.value = build()
-    void controller.value.ensureLoaded()
+    if (load) void controller.value.ensureLoaded()
   }
 
   // Tenant değişimi / impersonation / farklı kullanıcı: konuşma sıfırlanır, tercihler yeni kapsamdan okunur.
@@ -207,9 +208,10 @@ export const useOtopilotStore = defineStore('otopilot', () => {
     void controller.value.ensureLoaded()
   }
 
+  // Çıkış: konuşma bırakılır, yeni denetleyici yüklenmeden bekler (kabuk yeniden açılınca `init()` yükler).
   registerStoreReset('otopilot', () => {
     void controller.value.reset()
-    replaceController()
+    replaceController(false)
     panelOpen.value = false
   })
 

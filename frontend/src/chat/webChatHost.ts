@@ -62,6 +62,7 @@ export function createWebChatHost(deps: WebChatHostDeps): ChatHost {
     },
     onUnauthenticated() {
       const current = deps.router.currentRoute.value.fullPath
+      if (deps.router.currentRoute.value.meta?.requiresAuth !== true) return // giriş/kimliksiz sayfada yönlendirme yok
       void deps.router.replace({ path: '/login', query: { redirect: current } }).catch(() => undefined)
     },
   }
