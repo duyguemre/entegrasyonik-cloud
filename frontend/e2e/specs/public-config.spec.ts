@@ -5,28 +5,10 @@ import { test, expect, type Page } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
 import { installApiMocks, mockError } from '../fixtures/mockApi'
 import { gotoAuthed } from '../fixtures/nav'
+import { publicConfigFixture } from '../fixtures/publicConfig'
 
 const AXE_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']
 const NO_SESSION = { checkAuthentication: false, userContext: mockError(401, {}) }
-
-export function publicConfigFixture(settings: Record<string, unknown> = {}) {
-  return {
-    version: 7,
-    env: { images: { productBaseUrl: 'https://cdn.example.test/products/', uploadMaxBytes: 10485760 } },
-    settings: {
-      'support.email': '',
-      'support.phone': '',
-      'announcement.enabled': false,
-      'announcement.level': 'info',
-      'announcement.text': '',
-      'maintenance.enabled': false,
-      'maintenance.message': '',
-      'ui.listPageSize': 25,
-      'ui.reportPollMs': 5000,
-      ...settings,
-    },
-  }
-}
 
 const FULL = publicConfigFixture({
   'support.email': 'destek@example.test',
