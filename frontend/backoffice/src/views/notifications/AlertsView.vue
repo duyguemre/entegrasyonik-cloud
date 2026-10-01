@@ -1,13 +1,16 @@
 <template>
   <div class="bo-page">
-    <BoPageHeader :updated-at="loadedAt ?? undefined">
+    <BoPageHeader :updated-at="loadedAt ?? undefined" :stale="stale">
       <template #meta>
         <span>Sekme açıkken 30 saniyede bir kendiliğinden yenilenir.</span>
       </template>
       <template #actions>
-        <EkRefreshButton :loading="list.refreshing.value || list.phase.value === 'loading'" @refresh="list.reload({ keep: true })" />
+        <CopyViewLink />
+        <EkButton tone="secondary" icon="mdi-refresh" :loading="list.refreshing.value || list.phase.value === 'loading' || firingSrc.refreshing.value" data-page-refresh @click="refresh">Yenile</EkButton>
       </template>
     </BoPageHeader>
+
+    <PageVerdict :verdict="verdict" />
 
     <EkAlert
       v-if="hasShadow"
@@ -45,11 +48,17 @@
             </span>
           </template>
           <template #cell-state="{ item }">
-            <span class="bo-al__chips">
-              <EkStatusChip :tone="ALERT_LEVEL[(item as AlertRow).level].tone" :label="ALERT_LEVEL[(item as AlertRow).level].label" dot />
-              <EkStatusChip v-if="item.status === 'resolved'" tone="success" label="Çözüldü" />
-              <EkStatusChip v-if="item.shadow" tone="neutral" label="Gölge" icon="mdi-eye-off-outline" />
-              <EkStatusChip v-if="isMuted(item as AlertRow)" tone="neutral" icon="mdi-bell-off-outline" :label="`Susturuldu · ${formatDateTime((item as AlertRow).mutedUntil!)}`" data-testid="muted-chip" />
+            <span class="bo-cell-stack">
+              <span class="bo-al__chips">
+                <EkStatusChip :tone="ALERT_LEVEL[(item as AlertRow).level].tone" :label="ALERT_LEVEL[(item as AlertRow).level].label" dot />
+                <EkStatusChip v-if="item.status === 'resolved'" tone="success" label="Çözüldü" />
+              </span>
+              <!-- NT-08: gölge/susturma rozet değil, ikinci satır metin (satır 2 satırı geçmez). -->
+              <span v-if="item.shadow || isMuted(item as AlertRow)" class="bo-muted bo-al__sub">
+                <span v-if="item.shadow" data-testid="shadow-note">Gölge</span>
+                <span v-if="item.shadow && isMuted(item as AlertRow)" aria-hidden="true"> · </span>
+                <span v-if="isMuted(item as AlertRow)" data-testid="muted-chip">Susturuldu · {{ muteUntilText((item as AlertRow).mutedUntil!) }}</span>
+              </span>
             </span>
           </template>
           <template #cell-detail="{ item }">
@@ -101,13 +110,17 @@
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
-import { EkAlert, EkButton, EkCard, EkDataTable, EkRefreshButton, EkRelativeTime, EkStatusChip, type EkTableColumn } from '@entegrasyonik/ui/components'
+import { useRoute, useRouter } from 'vue-router'
+import { EkAlert, EkButton, EkCard, EkDataTable, EkRelativeTime, EkStatusChip, type EkTableColumn } from '@entegrasyonik/ui/components'
 import { api } from '@bo/api'
 import type { AlertLevel, AlertRow, AlertStatus } from '@bo/api/contract'
 import { useCursorList } from '@bo/composables/useCursorList'
 import { useGuardedAction } from '@bo/composables/useGuardedAction'
 import BoPageHeader from '@bo/components/shell/BoPageHeader.vue'
+import PageVerdict from '@bo/components/verdict/PageVerdict.vue'
+import CopyViewLink from '@bo/components/CopyViewLink.vue'
+import { useVerdictSources } from '@bo/composables/useVerdictSources'
+import { alertsVerdict, muteUntilText } from './notificationsVerdict'
 import StateBlock from '@bo/components/kit/StateBlock.vue'
 import LoadMore from '@bo/components/kit/LoadMore.vue'
 import GuardedDialog from '@bo/components/kit/GuardedDialog.vue'
@@ -145,10 +158,33 @@ const COLUMNS: EkTableColumn[] = [
 ]
 
 const router = useRouter()
-const status = ref<AlertStatus | 'all'>('firing')
-const level = ref<AlertLevel | 'all'>('all')
-const rule = ref<string | null>(null)
+const route = useRoute()
+// NT-03: süzgeçler URL'de (?durum=, ?onem=, ?kural=); varsayılan "Etkin" yazılmaz.
+const qs = (k: string) => (typeof route.query[k] === 'string' ? (route.query[k] as string) : '')
+const status = ref<AlertStatus | 'all'>(['firing', 'resolved', 'all'].includes(qs('durum')) ? (qs('durum') as AlertStatus | 'all') : 'firing')
+const level = ref<AlertLevel | 'all'>(['critical', 'warning'].includes(qs('onem')) ? (qs('onem') as AlertLevel) : 'all')
+const rule = ref<string | null>(qs('kural') in ALERT_RULE ? qs('kural') : null)
 const loadedAt = ref<number | null>(null)
+
+// Hüküm: süzgeçten bağımsız etkin uyarılar (liste süzgeçliyse hüküm yanlış olmasın).
+const firingSrc = useVerdictSources({ firing: () => api.call('BackofficeNotificationService/listAlerts', { status: 'firing', limit: 100 }) })
+const stale = computed(() => firingSrc.stale.value)
+const verdict = computed(() =>
+  firingSrc.settled.value
+    ? alertsVerdict({
+        firing: firingSrc.sources.firing.data.value?.items ?? null,
+        failed: firingSrc.failed('firing'),
+        stale: firingSrc.stale.value,
+        now: Date.now(),
+        retry: () => void firingSrc.load(),
+        mute: (a) => openMute(a, 4),
+      })
+    : null,
+)
+function refresh() {
+  void firingSrc.load()
+  list.reload({ keep: true })
+}
 
 const list = useCursorList<AlertRow>(async (cursor) => {
   const res = await api.call('BackofficeNotificationService/listAlerts', {
@@ -196,16 +232,42 @@ const mute = useGuardedAction(
   (r) => {
     notifyAudited(r.mutedUntil ? `Uyarı ${formatDateTime(r.mutedUntil)} tarihine kadar susturuldu.` : 'Susturma kaldırıldı.', () => router.push({ path: '/denetim', query: { event: 'backoffice.write' } }))
     list.reload({ keep: true })
+    void firingSrc.load()
   },
 )
 
 // ---------------------------------------------------------------- 30 sn yoklama (SSE yok; sekme gizliyken durur)
 let poll: ReturnType<typeof setInterval> | undefined
 function tick() {
-  if (document.visibilityState === 'visible' && !mute.isOpen.value && list.phase.value !== 'loading') list.reload({ keep: true })
+  if (document.visibilityState === 'visible' && !mute.isOpen.value && list.phase.value !== 'loading') {
+    list.reload({ keep: true })
+    void firingSrc.load()
+  }
 }
-watch([status, level, rule], () => list.reload())
+// Hüküm bağlantıları aynı sayfada yalnız sorgu değiştirir: sorgu → süzgeç (tarayıcı geri/ileri dahil).
+watch(
+  () => [qs('durum'), qs('onem'), qs('kural')],
+  ([d, o, k]) => {
+    const ns = ['firing', 'resolved', 'all'].includes(d) ? (d as AlertStatus | 'all') : 'firing'
+    const nl = ['critical', 'warning'].includes(o) ? (o as AlertLevel) : 'all'
+    const nr = k in ALERT_RULE ? k : null
+    if (ns !== status.value) status.value = ns
+    if (nl !== level.value) level.value = nl
+    if (nr !== rule.value) rule.value = nr
+  },
+)
+watch([status, level, rule], () => {
+  router.replace({
+    query: {
+      ...(status.value !== 'firing' ? { durum: status.value } : {}),
+      ...(level.value !== 'all' ? { onem: level.value } : {}),
+      ...(rule.value ? { kural: rule.value } : {}),
+    },
+  })
+  list.reload()
+})
 onMounted(() => {
+  void firingSrc.load()
   list.reload()
   poll = setInterval(tick, POLL_MS)
 })
@@ -224,6 +286,10 @@ onBeforeUnmount(() => clearInterval(poll))
   display: inline-flex;
   flex-wrap: wrap;
   gap: var(--ek-space-1);
+}
+.bo-al__sub {
+  white-space: nowrap;
+  font-size: var(--ek-type-caption-size);
 }
 .bo-al__detail {
   margin-right: var(--ek-space-2);

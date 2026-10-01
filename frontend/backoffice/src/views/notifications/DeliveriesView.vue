@@ -1,10 +1,13 @@
 <template>
   <div class="bo-page">
-    <BoPageHeader :updated-at="stats.loadedAt.value ?? undefined">
+    <BoPageHeader :updated-at="stats.loadedAt.value ?? undefined" :stale="stats.stale.value">
       <template #actions>
-        <EkRefreshButton :loading="stats.refreshing.value || list.refreshing.value" @refresh="refresh" />
+        <CopyViewLink />
+        <EkButton tone="secondary" icon="mdi-refresh" :loading="stats.refreshing.value || list.refreshing.value" data-page-refresh @click="refresh">Yenile</EkButton>
       </template>
     </BoPageHeader>
+
+    <PageVerdict :verdict="verdict" />
 
     <section class="bo-panel" aria-labelledby="bo-dlv-stats">
       <header class="bo-panel__bar">
@@ -131,6 +134,7 @@
       :description="discard.context.value ? `${discard.context.value.code} · ${discard.context.value.id}` : ''"
       :tenant="discard.context.value?.tid ? { tid: discard.context.value.tid, name: `Müşteri #${discard.context.value.tid}` } : undefined"
       :items="['Teslim bastırılır ve bir daha denenmez.', 'Gönderim sırasındaki teslim atılamaz. Gerekçe denetim kaydına yazılır.']"
+      :confirm-text="discard.context.value?.id"
       confirm-label="Teslimi at"
       confirm-icon="mdi-delete-outline"
     />
@@ -140,13 +144,16 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { EkAlert, EkButton, EkCard, EkDataTable, EkEmptyState, EkRefreshButton, EkStatusChip, type EkTableColumn } from '@entegrasyonik/ui/components'
+import { EkAlert, EkButton, EkCard, EkDataTable, EkEmptyState, EkStatusChip, type EkTableColumn } from '@entegrasyonik/ui/components'
 import { api } from '@bo/api'
 import type { DeliveryRow, DeliveryStats, DeliveryStatus, DeliveryWindow } from '@bo/api/contract'
 import { useCursorList } from '@bo/composables/useCursorList'
 import { useResource } from '@bo/composables/useResource'
 import { useGuardedAction } from '@bo/composables/useGuardedAction'
 import BoPageHeader from '@bo/components/shell/BoPageHeader.vue'
+import PageVerdict from '@bo/components/verdict/PageVerdict.vue'
+import CopyViewLink from '@bo/components/CopyViewLink.vue'
+import { deliveriesVerdict } from './notificationsVerdict'
 import StateBlock from '@bo/components/kit/StateBlock.vue'
 import LoadMore from '@bo/components/kit/LoadMore.vue'
 import GuardedDialog from '@bo/components/kit/GuardedDialog.vue'
@@ -264,11 +271,35 @@ const discard = useGuardedAction(
   },
 )
 
+const verdict = computed(() =>
+  stats.data.value || stats.phase.value !== 'loading'
+    ? deliveriesVerdict({
+        stats: stats.data.value,
+        failed: !stats.data.value,
+        stale: stats.stale.value,
+        rows: list.items.value,
+        retry: () => stats.load(),
+        retryDelivery: (d) => retry.open(d),
+      })
+    : null,
+)
+
 function refresh() {
   stats.load()
   list.reload({ keep: true })
 }
 
+// Hüküm bağlantıları aynı sayfada yalnız sorgu değiştirir: sorgu → süzgeç.
+watch(
+  () => [q('durum'), q('kod'), q('tid'), q('olay')],
+  ([d, k, t, o]) => {
+    status.value = (STATUS_OPTS.some((x) => x.value === d) ? d : 'all') as DeliveryStatus | 'all'
+    code.value = k
+    tid.value = Number(t) > 0 ? Number(t) : null
+    tidInput.value = tid.value ? String(tid.value) : ''
+    eventId.value = /^[a-f0-9]{24}$/i.test(o) ? o : ''
+  },
+)
 watch([status, code, tid, eventId], () => {
   codeInput.value = code.value
   router.replace({

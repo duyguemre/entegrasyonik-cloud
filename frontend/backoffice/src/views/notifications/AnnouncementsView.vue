@@ -1,11 +1,13 @@
 <template>
   <div class="bo-page">
-    <BoPageHeader :updated-at="loadedAt ?? undefined">
+    <BoPageHeader :updated-at="loadedAt ?? undefined" :stale="summary.stale.value">
       <template #actions>
         <EkButton tone="primary" icon="mdi-plus" data-testid="new-announcement" @click="router.push('/sistem/duyurular/yeni')">Yeni duyuru</EkButton>
-        <EkRefreshButton :loading="list.refreshing.value || list.phase.value === 'loading'" @refresh="list.reload({ keep: true })" />
+        <EkButton tone="secondary" icon="mdi-refresh" :loading="list.refreshing.value || list.phase.value === 'loading' || summary.refreshing.value" data-page-refresh @click="refresh">Yenile</EkButton>
       </template>
     </BoPageHeader>
+
+    <PageVerdict :verdict="verdict" />
 
     <EkAlert
       v-if="live.length"
@@ -71,12 +73,15 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
-import { EkAlert, EkButton, EkCard, EkDataTable, EkRefreshButton, EkStatusChip, type EkTableColumn } from '@entegrasyonik/ui/components'
+import { useRoute, useRouter } from 'vue-router'
+import { EkAlert, EkButton, EkCard, EkDataTable, EkStatusChip, type EkTableColumn } from '@entegrasyonik/ui/components'
 import { api } from '@bo/api'
 import type { Announcement, AnnouncementKind, AnnouncementStatus } from '@bo/api/contract'
 import { useCursorList } from '@bo/composables/useCursorList'
 import BoPageHeader from '@bo/components/shell/BoPageHeader.vue'
+import PageVerdict from '@bo/components/verdict/PageVerdict.vue'
+import { useVerdictSources } from '@bo/composables/useVerdictSources'
+import { announcementsVerdict } from './notificationsVerdict'
 import StateBlock from '@bo/components/kit/StateBlock.vue'
 import LoadMore from '@bo/components/kit/LoadMore.vue'
 import { ANN_KIND, ANN_SEVERITY, ANN_STATUS } from '@bo/utils/labels'
@@ -102,7 +107,10 @@ const COLUMNS: EkTableColumn[] = [
   { key: 'window', label: 'Başlangıç' },
 ]
 
-const status = ref<AnnouncementStatus | 'all'>('all')
+const route = useRoute()
+// Hüküm bağlantıları `?durum=` ile açar; paylaşılabilir görünüm.
+const qDurum = () => (typeof route.query.durum === 'string' && STATUS_OPTS.some((o) => o.value === route.query.durum) ? (route.query.durum as AnnouncementStatus) : 'all')
+const status = ref<AnnouncementStatus | 'all'>(qDurum())
 const kind = ref<AnnouncementKind | null>(null)
 const filtered = computed(() => status.value !== 'all' || !!kind.value)
 const loadedAt = ref<number | null>(null)
@@ -120,8 +128,35 @@ const list = useCursorList<Announcement>(async (cursor) => {
 const rows = computed(() => list.items.value as unknown as Array<Record<string, unknown>>)
 const live = computed(() => list.items.value.filter((a) => a.status === 'active'))
 
-watch([status, kind], () => list.reload())
-onMounted(() => list.reload())
+// Hüküm: süzgeçten bağımsız, süzgeçsiz ilk sayfa (liste süzgeçliyken hüküm eksik kalmasın).
+const summary = useVerdictSources({ all: () => api.call('BackofficeNotificationService/listAnnouncements', { limit: 50 }) })
+const verdict = computed(() =>
+  summary.settled.value
+    ? announcementsVerdict({
+        items: summary.sources.all.data.value?.items ?? null,
+        failed: summary.failed('all'),
+        stale: summary.stale.value,
+        now: Date.now(),
+        retry: () => void summary.load(),
+      })
+    : null,
+)
+function refresh() {
+  void summary.load()
+  list.reload({ keep: true })
+}
+
+watch(qDurum, (v) => {
+  status.value = v
+})
+watch([status, kind], () => {
+  router.replace({ query: status.value !== 'all' ? { durum: status.value } : {} })
+  list.reload()
+})
+onMounted(() => {
+  void summary.load()
+  list.reload()
+})
 </script>
 
 <style scoped>

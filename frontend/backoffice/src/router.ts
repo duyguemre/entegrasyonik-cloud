@@ -8,6 +8,13 @@ const PlannedView = () => import('./views/PlannedView.vue')
 // Rotalar YALNIZ ekran kaydından üretilir (navigation/screens.ts): planlı ekran kalıcı yolunda "yakında" durumuyla açılır.
 export const router = createRouter({
   history: createWebHistory(),
+  // K51 hüküm bağlantıları sayfa içi bölüme (`#bo-cache-families`, `#bakim`) gidebilir. Davet bileti `#t=` biçimindedir —
+  // yalnız düz kimlik biçimli parçaya kaydırılır. Geri/ileride eski konum korunur.
+  scrollBehavior(to, _from, saved) {
+    if (saved) return saved
+    if (to.hash && /^#[A-Za-z][\w-]*$/.test(to.hash) && document.querySelector(to.hash)) return { el: to.hash, top: 72 }
+    return undefined
+  },
   routes: [
     { path: '/giris', name: 'login', component: () => import('./views/LoginView.vue'), meta: { public: true, title: 'Giriş' } },
     // Davet kabulü (B12): kimliksiz, kabuksuz; bilet `#t=` parçasında (sunucu günlüğü/Referer görmez).
