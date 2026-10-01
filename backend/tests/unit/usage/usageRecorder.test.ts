@@ -1,7 +1,7 @@
 // MOB-08 / K55: günlük aktif kullanım kaydı -- tekilleştirme, takma kimlik, fail-open, kim sayılmaz.
 import { describe, it, expect, afterEach } from '@jest/globals';
 import { UsageRecorder, pseudonymOf } from '../../../src/operations/usage/usageRecorder';
-import { recordUsageActivity, setUsageRecorderForTests } from '@api/usageActivity';
+import { recordUsageActivity, setUsageRecorderForTests } from '@api/rpc/usageActivity';
 import { AuditLogger } from '@services/audit/AuditLogger';
 import { withTestContext } from '@platform/core/context';
 

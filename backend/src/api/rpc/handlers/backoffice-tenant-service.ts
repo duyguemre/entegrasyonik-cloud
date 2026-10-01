@@ -6,7 +6,7 @@ import { getTenantLifecycle } from '../../../operations/backoffice/tenantLifecyc
 import { listTenants, getHealthSummary, type TenantOpsDeps } from '../../../operations/backoffice/tenantOps'
 import { productionFailedBullJobs } from './backoffice-attention-support'
 import { auditSensitiveRead } from './backoffice-support'
-import { tenantUsage } from '../../operations/backoffice/usageOps'
+import { tenantUsage } from '../../../operations/backoffice/usageOps'
 
 /**
  * B2 (plan §2.2) -- müşteri (tenant) yaşam döngüsü paneli. Yalnız platformAdmin (`/admin-api`). `getLifecycle` salt okunur ve `backoffice.sensitive_read`

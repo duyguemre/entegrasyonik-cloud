@@ -3,7 +3,7 @@
 import type { SessionPrincipal } from '@platform/core/security/Security';
 import { isClientPlatform } from '@platform/core/context';
 import { config } from '@config';
-import { UsageRecorder } from '../operations/usage/usageRecorder';
+import { UsageRecorder } from '../../operations/usage/usageRecorder';
 
 let recorder: UsageRecorder | undefined;
 let injected = false;

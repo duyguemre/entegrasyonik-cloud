@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "sha256": "110d6cf1a3bf088ce08ecdf8bf2c13964bfb829a9b7ca356c8b341ddbb684ce8",
-  "generatedAt": "2026-10-01T13:24:57.851Z",
+  "sha256": "5208c53c43505a5e78c0c6c5f87d4597e3c1a8d18fc65011c83c92cb92f6f073",
+  "generatedAt": "2026-10-01T14:00:49.647Z",
   "stage": "A",
-  "totalCapabilities": 286,
-  "totalBindings": 322,
+  "totalCapabilities": 287,
+  "totalBindings": 323,
   "capabilities": [
     {
       "id": "account.email_verification.resend",
@@ -4387,6 +4387,24 @@
       "scope": "platform",
       "rpc": [
         "BackofficeTenantService/listTenants"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.tenants.usage",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "read",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "BackofficeTenantService/getUsage"
       ],
       "mcp": {
         "exposed": false,
