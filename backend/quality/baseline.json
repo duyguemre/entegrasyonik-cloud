@@ -44,7 +44,7 @@
       "src/platform/core/logger/consoleBridge.ts": 10,
       "src/services/audit/AuditLogger.ts": 2,
       "src/services/billing/MockPaymentProvider.ts": 1,
-      "src/services/image/image-operations.ts": 2,
+      "src/operations/catalog/images/image-operations.ts": 2,
       "src/services/mail/MailService.ts": 2,
       "src/services/metrics/QueueMetricsCollector.ts": 3,
       "src/services/notification/NotificationService.ts": 2,
