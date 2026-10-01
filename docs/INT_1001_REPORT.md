@@ -77,7 +77,12 @@ Dalların çoğu üst üste kurulmuştu (ör. mob-usage; mob-push, bo-mob ve fe-
 - **Site kanıt metni:** fe-r3d "Bu Plana Geç" düğmesini cümle düzenine çevirdi ("Bu plana geç"). `site/src/data/faq.ts` ve `pricing.ts` güncellendi.
 - **MOB-06 push uçları:** `BackofficePrefsService/{getPushConfig,subscribePush,unsubscribePush}` FE envanteri testinin "yalnız /admin-api" listesine eklendi. Bu, dalda kalmış bir eksikti.
 
+### bo-mob ↔ bo-r1a/b uyarlaması (Playwright'ta yakalandı)
+- `frontend/backoffice/src/styles/mobile.css` (bo-mob dokunma katmanı, yalnız `pointer: coarse`): bo-r1a/b'nin yeni yönlendirme bileşenleri ≥ 44 px görünmez dokunma alanı (`::after`) listesine eklendi. Eklenen sınıflar: `.bo-sh__fact.is-link`, `.bo-act-link`, `.bo-al__more`, `.bo-al__secondary`, `.bo-al__tenant`, `.bo-ts__more`, `.bo-verdict-more__link`, `.bo-us__link`, `.bo-trace-cell__link`, `.bo-tenants__sort`, `.bo-subs__link`. Önce 360 ve 430 px'te 76 ve 57 küçük hedef vardı; şimdi 0. Masaüstü yerleşimi ve görsel tabanlar değişmedi.
+- `e2e/specs/saved-views.spec.ts` (bo-r1b): telefonda log süzgeçleri `facets-toggle` arkasında katlı (bo-mob). Test artık süzgeci önce açıyor.
+
 ### Tabanda (main) zaten kırmızı olup burada düzeltilenler
+- `frontend/backoffice/e2e/specs/engine-tenant.spec.ts`: impersonate sekmesi için sahte rota hâlâ `localhost:3000`'i tutuyordu, oysa uygulama 3020'ye taşınmış (sahte sunucu 3020 kullanıyor). Rota 3020 yapıldı; 3 proje yeşil.
 - `docs/ERROR_CODES.md` belgede `VIEW_LIMIT` vardı ama `codes.ts` kataloğunda yoktu. Kod (`viewsAdmin.ts`) bu kodu kullanıyor; kataloğa eklendi.
 - `NoRawRegex`: `api/admin/engineOps.ts:201` üzerindeki `$regex` artık `escapeRegex` kullanıyor. Davranış aynı; kod şeması `^[A-Z_]{2,32}$`.
 - `oauth/flow`: test donanımı sabit `2026-10-01T12:00Z` saatini kullanıyordu, `jwt.verify` ise gerçek saati. 12:15 UTC'den sonra token'lar "süresi dolmuş" sayıldığı için bu bir saatli bombaydı. `tests/helpers/oauthHarness.ts` artık gerçek saatten başlıyor. 1388 oauth/mcp testi yeşil.
@@ -99,8 +104,8 @@ Dalların çoğu üst üste kurulmuştu (ör. mob-usage; mob-push, bo-mob ve fe-
 | site `build` | ✅ 49 sayfa |
 | site vitest | 23 dosya: **836/838**. 2 kırmızı ortam kaynaklı: kökteki `INTEGRATIONS_REGISTRY.md` bulut kopyasında yok. |
 | site Playwright (tam, `--update-snapshots=missing`) | **402 geçti, 46 atlandı.** 47 ekran görüntüsü testi linux tabanı olmadığı için ilk koşuda "yazıldı" olarak düştü. Tekrar koşuda 47/47 yeşil. `*-linux.png` commit'lenmedi. |
-| frontend Playwright (tam) | PW_FE |
-| backoffice Playwright (tam) | PW_BO |
+| frontend Playwright (`chromium-desktop`, 131 spec / 1019 test) | **606 geçti, 332 atlandı, 81 düştü.** Düşenlerin 70'i linux tabanı olmadığı için "yazıldı" kaydı. Kalan 11 (brand-definitions, dark-mode, ds-overlays, legacy-definition-placeholders, logs-characterization, settings, session-isolation) 4 işçili yük altında zaman aşımıydı; aynı 7 spec tek başına koşulunca **57/57 yeşil**. Karşılaştırma için aynı 7 spec `origin/main` üzerinde de koşuldu: **18 kırmızı.** Tam 4 viewport koşusu (3129 test) bu ortamda yaklaşık 9 saat sürecekti; CLAUDE.md kural 7'deki token tasarrufu kuralı gereği tek viewport koşuldu. Mobil, tablet ve koyu tema yerelde koşulmalı. |
+| backoffice Playwright (tam, 3 proje, 507 test) | İlk koşu: **337 geçti, 149 atlandı, 21 düştü.** Dağılım: 8 linux tabanı yazıldı; 6 yük kaynaklı (billing, competition; tekrar koşuda yeşil); 7 gerçek hata. Gerçek hatalar düzeltildi, ayrıntı aşağıda. Düzeltme sonrası `chromium-mobile` projesi tam koşuldu: **118 geçti, 51 atlandı, 0 düştü.** engine-tenant, mobile ve saved-views 3 projede yeniden koşuldu: **36 geçti.** |
 
 Ortam notları: Playwright 1.63, chromium-1243 indiremedi (CDN 403). Önceden kurulu chromium-1194 ile koşuldu; tarayıcı yolu sembolik bağla verildi. Rollup, oxc-parser ve oxc-resolver'ın Linux ikilileri `npm i --no-save` ile kuruldu; lockfile değişmedi. `frontend` token CSS'i (`npm run tokens`) git-ignored üretilmiş dosyadır, testlerden önce üretilmesi gerekir.
 
@@ -150,7 +155,7 @@ Veri doldurma (backfill) gerektiren göç yok.
 
 ## 5. Yeni/değişen önemli dosyalar (birleşimde dokunulan)
 - Backend: `migrations/0023-usage-daily-app.js` (yeniden adlandırıldı), `src/api/admin/engineOps.ts`, `src/platform/core/errors/codes.ts`, `src/capabilities/capability-baseline.json`, `generated/capabilities.manifest.json`, `tests/characterization/auth/*`, `tests/helpers/oauthHarness.ts`, `tests/unit/alerts/alertNb8Remaining.test.ts`.
-- Backoffice: `src/api/contract.ts`, `src/api/contracts/{attention,usage}.ts`, `src/api/mock/{server.ts,ops/index.ts,ops/attention.ts}`, `src/views/notifications/AlertsView.vue`, `docs/BO_UI_PATTERNS.md`, `tests/{p2-states,attention}.test.ts`.
+- Backoffice: `src/styles/mobile.css`, `e2e/specs/{saved-views,engine-tenant}.spec.ts`, `src/api/contract.ts`, `src/api/contracts/{attention,usage}.ts`, `src/api/mock/{server.ts,ops/index.ts,ops/attention.ts}`, `src/views/notifications/AlertsView.vue`, `docs/BO_UI_PATTERNS.md`, `tests/{p2-states,attention}.test.ts`.
 - Site: `src/data/{fair-play,faq,pricing}.ts`.
 - Docs: `CAPABILITIES.md`, `CAPABILITIES_CHANGELOG.md`, `MIGRATIONS.md`, `API_BACKOFFICE_USAGE.md`.
 
@@ -223,6 +228,7 @@ Veri doldurma (backfill) gerektiren göç yok.
 ## 8. Bilinen kırmızılar
 
 **Hepsi ortam ya da taban kaynaklı; birleşimden doğan açık kırmızı yok.**
+- **frontend Playwright mobil, tablet ve koyu tema projeleri bulutta koşulmadı** (süre). Yerelde tam koşu ve Windows tabanları gerekli.
 - **backend mongo-semantics: 20 suite, ~302 test.** `mongodb-memory-server` ikilisi indirilemedi (fastdl.mongodb.org 403, ağ politikası). Yerelde `npm run test:integration:mocked` ile koşulmalı.
 - **backend `operation-policy` FE envanteri (5 test):** main'de de aynı biçimde kırmızı. Farklar:
   - FE `IntegrationService/retrieveCategories` çağırıyor;
