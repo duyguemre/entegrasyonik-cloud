@@ -77,9 +77,9 @@
       <template #empty-action><HelpStartLink article="gs-first-product-transfer" /></template>
       <!-- MOB-03: telefonda barkod okut → aynı arama (barkod/stok kodu/ad); tek sonuçta ürün açılır. -->
       <template #search-append><BarcodeScanButton target="product" @code="onScannedCode" /></template>
+      <!-- PRC-R0: maliyet kapsamı (kâr hesabının girdisi) — başlık ile filtre paneli arasında sakin tek satır; %100 değilse ipucu yanında. -->
+      <template #summary><CostCoverageChip /></template>
       <template #header-actions>
-        <!-- PRC-R0: maliyet kapsamı (kâr hesabının girdisi); %100 değilse ipucu yanında. -->
-        <CostCoverageChip />
         <EkButton icon="mdi-plus" @click="openProductDefinition()">Yeni ürün</EkButton>
       </template>
 

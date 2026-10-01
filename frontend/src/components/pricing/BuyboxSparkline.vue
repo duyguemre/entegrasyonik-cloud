@@ -41,7 +41,7 @@ const summary = computed(() => t('pricing.chart.summary', { days: props.days, mi
 </script>
 
 <style scoped>
-.bsp { margin: 0; display: flex; flex-direction: column; gap: var(--ek-space-2); }
+.bsp { margin: 0; display: flex; flex-direction: column; gap: var(--ek-space-2); max-width: 560px; }
 .bsp__svg { width: 100%; height: auto; display: block; }
 .bsp__line { fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
 .bsp__line--buybox { stroke: var(--ek-color-warning-emphasis); stroke-dasharray: 5 3; }
