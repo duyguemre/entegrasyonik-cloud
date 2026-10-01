@@ -37,27 +37,36 @@
         <li v-for="it in visible" :key="it.id" class="bo-al__item" :class="`is-${it.severity}`" :data-severity="it.severity">
           <span class="bo-al__sev" aria-hidden="true"><v-icon :icon="SEVERITY[it.severity].icon" /></span>
           <div class="bo-al__body">
-            <component :is="`h${headingLevel}`" class="bo-al__title">
-              <span class="ek-sr-only">{{ SEVERITY[it.severity].label }}: </span>{{ it.title }}
-            </component>
+            <component :is="`h${headingLevel}`" class="bo-al__title">{{ it.title }}</component>
             <p class="bo-al__meta">
-              <EkStatusChip class="bo-al__chip" :tone="SEVERITY[it.severity].tone" :label="SEVERITY[it.severity].label" />
-              <RouterLink v-if="it.tenant" class="bo-al__tenant" :to="{ name: 'tenant', params: { tid: String(it.tenant.tid) } }">
-                <span class="bo-id">#{{ it.tenant.tid }}</span><span v-if="it.tenant.name" class="bo-al__tenant-name">{{ it.tenant.name }}</span>
-              </RouterLink>
+              <span class="bo-al__sevtext">{{ SEVERITY[it.severity].label }}</span>
+              <span v-if="it.count" class="bo-al__count ek-num">{{ it.count }}</span>
               <span v-if="it.since" class="bo-al__since"><EkRelativeTime :value="it.since" /> başladı</span>
             </p>
-            <p class="bo-al__impact">{{ it.impact }}</p>
-            <p class="bo-al__advice"><span class="bo-al__advice-k">Ne yapmalı</span>{{ it.advice }}</p>
-            <div class="bo-al__actions">
-              <RouterLink :to="it.action.to" class="bo-act-link" :class="{ 'is-primary': it.severity === 'critical' }" data-testid="attention-action">
+            <p v-if="it.why" class="bo-al__why">{{ it.why }}<template v-if="it.impact"> {{ it.impact }}</template></p>
+            <p v-else-if="it.impact" class="bo-al__why">{{ it.impact }}</p>
+            <ul v-if="it.subjects?.length" class="bo-al__subjects" :aria-label="`Etkilenen müşteriler: ${it.title}`">
+              <li v-for="s in it.subjects.slice(0, 3)" :key="s.tid">
+                <RouterLink class="bo-al__tenant" :to="{ name: 'tenant', params: { tid: String(s.tid) } }">
+                  <span class="bo-id">#{{ s.tid }}</span><span v-if="s.name" class="bo-al__tenant-name">{{ s.name }}</span>
+                </RouterLink>
+              </li>
+              <li v-if="it.subjects.length > 3" class="bo-al__subjects-more">+{{ it.subjects.length - 3 }} müşteri</li>
+            </ul>
+            <p v-if="it.advice" class="bo-al__advice"><span class="bo-al__advice-k">Ne yapmalı</span>{{ it.advice }}</p>
+            <div v-if="it.action || it.secondary || it.capabilities?.length" class="bo-al__actions">
+              <RouterLink v-if="it.action" :to="it.action.to" class="bo-act-link" :class="{ 'is-primary': it.severity === 'critical' }" data-testid="attention-action">
                 {{ it.action.label }}<v-icon icon="mdi-arrow-right" aria-hidden="true" />
               </RouterLink>
               <RouterLink v-if="it.secondary" :to="it.secondary.to" class="bo-al__secondary">{{ it.secondary.label }}</RouterLink>
+              <span v-for="c in it.capabilities ?? []" :key="c.capabilityId" class="bo-al__cap" :title="`${c.label}: ilgili ekranda kimlik doğrulama ve gerekçeyle yapılır`">
+                <v-icon icon="mdi-shield-lock-outline" aria-hidden="true" />{{ c.label }} — ekranda, gerekçeyle
+              </span>
             </div>
           </div>
         </li>
       </ol>
+      <p v-if="total > items.length" class="bo-al__truncated">Toplam {{ total }} maddenin en önemli {{ items.length }} tanesi gösteriliyor.</p>
       <button v-if="hiddenCount > 0" type="button" class="bo-al__more" :aria-expanded="expanded" @click="expanded = true">
         {{ hiddenCount }} madde daha göster <span class="bo-al__more-hint">({{ hiddenText }})</span>
       </button>
@@ -67,7 +76,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { EkRelativeTime, EkStatusChip } from '@entegrasyonik/ui/components'
+import { EkRelativeTime } from '@entegrasyonik/ui/components'
 import BoPanelState from '@bo/components/shell/BoPanelState.vue'
 import '@bo/styles/kit.css'
 import { SEVERITY, countText, type AttentionEntry } from './triage'
@@ -77,6 +86,8 @@ export type AttentionState = 'loading' | 'ready' | 'error' | 'unsupported'
 const props = withDefaults(
   defineProps<{
     items: AttentionEntry[]
+    /** Sunucudaki toplam (kesmeden önce); `items`'tan büyükse "en önemli N" notu. */
+    total?: number
     state: AttentionState
     error?: unknown
     errorText?: string
@@ -95,6 +106,7 @@ const props = withDefaults(
     headingLevel?: 3 | 4
   }>(),
   {
+    total: 0,
     limit: 5,
     listLabel: 'Dikkat isteyen maddeler',
     okTitle: 'Müdahale gereken bir şey yok',
@@ -174,6 +186,11 @@ const hiddenText = computed(() => countText(props.items.slice(shown.value)))
   font-size: var(--ek-type-caption-size);
 }
 
+.bo-al__sevtext {
+  color: var(--bo-al-accent);
+  font-weight: var(--ek-font-weight-semibold);
+}
+
 .bo-al__tenant {
   display: inline-flex;
   align-items: baseline;
@@ -199,11 +216,6 @@ const hiddenText = computed(() => countText(props.items.slice(shown.value)))
   white-space: nowrap;
 }
 
-.bo-al__impact {
-  margin: 0;
-  color: var(--ek-color-content-default);
-  font-size: var(--ek-type-label-size);
-}
 
 .bo-al__advice {
   margin: 0;
@@ -318,5 +330,47 @@ const hiddenText = computed(() => countText(props.items.slice(shown.value)))
 .bo-al__more-hint {
   color: var(--ek-color-content-muted);
   font-weight: var(--ek-font-weight-regular);
+}
+.bo-al__why {
+  margin: 0;
+  color: var(--ek-color-content-default);
+  font-size: var(--ek-type-label-size);
+}
+
+.bo-al__count {
+  color: var(--ek-color-content-strong);
+  font-weight: var(--ek-font-weight-semibold);
+}
+
+.bo-al__subjects {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ek-space-1) var(--ek-space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--ek-type-caption-size);
+}
+
+.bo-al__subjects-more {
+  color: var(--ek-color-content-muted);
+}
+
+.bo-al__cap {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ek-space-1);
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-caption-size);
+}
+
+.bo-al__cap .v-icon {
+  font-size: var(--ek-icon-sm);
+}
+
+.bo-al__truncated {
+  margin: var(--ek-space-2) 0 0;
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-caption-size);
 }
 </style>

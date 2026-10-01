@@ -1,7 +1,7 @@
 <!--
   BoTriageSection — soru-cevap bölümü (BO_UI_PATTERNS §11.5). Başlık bir SORUDUR ("Müşterilerimde müdahale gereken var
   mı?"), hemen yanında tek kelimelik/kısa CEVAP rozeti ("Evet · 2 kritik" / "Hayır"). Gövde: cevabın kanıtı
-  (dikkat listesi, sakin trend). Bölümler sayfada sorulma sırasıyla dizilir; numara okuma sırasını gösterir.
+  (dikkat listesi, sakin trend). `#tools` yuvası başlığın sağında (ör. aralık seçimi). Bölümler sayfada sorulma sırasıyla dizilir; numara okuma sırasını gösterir.
 
     <BoTriageSection id="sistem" :index="1" question="Sistemde müdahale gereken var mı?" :health="h" answer="Evet · 1 kritik">
       <BoAttentionList … />
@@ -14,6 +14,7 @@
       <component :is="`h${headingLevel}`" :id="`${id}-q`" class="bo-ts__q">{{ question }}</component>
       <EkStatusChip v-if="answer" class="bo-ts__a" :tone="tone" :label="answer" dot data-testid="triage-answer" />
       <span class="bo-ts__spacer"></span>
+      <slot name="tools" />
       <RouterLink v-if="more" :to="more.to" class="bo-ts__more">{{ more.label }}<v-icon icon="mdi-arrow-right" aria-hidden="true" /></RouterLink>
     </header>
     <p v-if="lede" class="bo-ts__lede">{{ lede }}</p>
