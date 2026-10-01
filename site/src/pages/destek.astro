@@ -210,7 +210,7 @@ const supportAnswer = getPublicFaq().find((f) => f.id === 'destek')?.answer
 </script>
 
 <style>
-  .tight-section:global(.section) {
+  :global(.section.tight-section) {
     padding-block: calc(var(--site-section-y) * 0.72);
   }
 
@@ -443,7 +443,7 @@ const supportAnswer = getPublicFaq().find((f) => f.id === 'destek')?.answer
   .channel :global(.btn) {
     margin-top: auto;
   }
-  .contact-band:global(.section) {
+  :global(.section.contact-band) {
     padding-block: calc(var(--site-section-y) * 0.6);
   }
   .band {
