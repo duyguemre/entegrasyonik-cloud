@@ -78,6 +78,16 @@ for (const cfg of CONFIGS) {
       await page.keyboard.press('Escape')
     }
 
+    // Kısayol yardımı (?).
+    if (want('52-kisayollar')) {
+      await page.goto('/genel-bakis')
+      await expect(page.getByRole('heading', { level: 1 })).toBeVisible({ timeout: 20_000 })
+      await page.keyboard.press('Shift+?')
+      await expect(page.getByRole('dialog', { name: 'Klavye kısayolları' })).toBeVisible()
+      await shot(page, '52-kisayollar', cfg, false)
+      await page.keyboard.press('Escape')
+    }
+
     // Kısmi bozulma (Redis düşük) — genel bakış ve motor.
     if (want('60-bozulma')) {
       await page.goto('/genel-bakis')

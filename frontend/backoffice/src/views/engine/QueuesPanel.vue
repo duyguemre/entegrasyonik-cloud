@@ -28,7 +28,7 @@
               icon="mdi-alert-circle-outline"
               :tone="q.counts!.failed ? 'error' : 'success'"
             />
-            <EkMetricCard label="Ölü mektup (inceleme)" :value="q.dlq.pendingReview === null ? '—' : formatCount(q.dlq.pendingReview)" description="PENDING_MANUAL_REVIEW" icon="mdi-email-alert-outline" :tone="q.dlq.pendingReview ? 'warning' : 'success'" />
+            <EkMetricCard label="Ölü mektup (inceleme)" :value="q.dlq.pendingReview === null ? '—' : formatCount(q.dlq.pendingReview)" description="Elle inceleme bekliyor" icon="mdi-email-alert-outline" :tone="q.dlq.pendingReview ? 'warning' : 'success'" />
           </div>
           <div v-if="q.available && q.counts!.failed" class="bo-queues__cta">
             <EkButton tone="secondary" size="sm" icon="mdi-arrow-right" @click="emit('open-failed')">Başarısız işleri incele</EkButton>

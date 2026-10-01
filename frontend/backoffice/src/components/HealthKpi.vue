@@ -244,6 +244,12 @@ const chipState = computed<HealthState>(() => (props.state === 'section-degraded
     line-height: var(--ek-type-heading-line);
   }
 
+  /* Dar ekranda etiket kesilmez, iki satıra sarılır ("Hata oranı (5xx)" "…" olmaz). */
+  .bo-kpi__label {
+    overflow: visible;
+    white-space: normal;
+  }
+
   /* Terim açıklaması masaüstünde; dar ekranda önce sayılar. */
   .bo-kpi__help {
     display: none;

@@ -74,6 +74,18 @@ test.describe('BO-ELEV', () => {
     await expect(page.getByTestId('tid-scope')).toHaveCount(0)
   })
 
+  test('genel bakış: yenileme başarısızsa son iyi görüntü kalır ve "Yenilenemedi" denir', async ({ page }) => {
+    await settle(page)
+    await expect(page.getByTestId('page-updated')).toContainText('Güncellendi')
+    await page.evaluate(`window.__boMock.failOps('BackofficeOverviewService/')`)
+    await page.getByRole('button', { name: 'Yenile', exact: true }).click()
+    await expect(page.getByTestId('page-updated')).toContainText('Yenilenemedi')
+    await expect(page.getByTestId('overall-status')).toBeVisible()
+    await page.evaluate(`window.__boMock.failOps(null)`)
+    await page.getByRole('button', { name: 'Yenile', exact: true }).click()
+    await expect(page.getByTestId('page-updated')).toContainText('Güncellendi')
+  })
+
   test('tehlikeli işlem diyaloğu ilk satırda ortamı söyler', async ({ page }) => {
     await page.goto('/motor?sekme=basarisiz')
     await settle(page)

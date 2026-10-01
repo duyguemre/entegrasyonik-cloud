@@ -157,6 +157,8 @@ export class MockAdminServer {
   }
 
   private rpc(op: AdminOp, body: Record<string, unknown>): unknown {
+    // failOps her operasyona uygulanır (BO-ELEV: genel bakış yenileme hatası da denenebilsin); oturum uçları hariç.
+    if (this.failPrefix && op.startsWith(this.failPrefix) && !op.startsWith('BackofficeAuthService/')) throw new MockHttpError(500, 'INTERNAL', 'Beklenmeyen bir hata oluştu.')
     switch (op) {
       case 'BackofficeAuthService/login':
         return this.login(String(body.email ?? ''), String(body.password ?? ''))
@@ -250,7 +252,6 @@ export class MockAdminServer {
       case 'BackofficeAuditService/search':
         return this.searchAudit(body as unknown as SearchAuditRequest)
     }
-    if (this.failPrefix && op.startsWith(this.failPrefix)) throw new MockHttpError(500, 'INTERNAL', 'Beklenmeyen bir hata oluştu.')
     const handled = this.p2.handle(op, body, this.ctx())
     if (handled !== UNHANDLED) return handled
     throw new MockHttpError(404, 'NOT_FOUND', `Bilinmeyen operasyon: ${op}`)

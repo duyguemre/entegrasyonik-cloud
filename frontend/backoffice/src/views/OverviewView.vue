@@ -1,6 +1,6 @@
 <template>
   <div class="bo-page">
-    <BoPageHeader :updated-at="checkedAt">
+    <BoPageHeader :updated-at="checkedAt" :stale="stale">
       <template #meta>
         <span class="bo-inline-note"><v-icon icon="mdi-autorenew" aria-hidden="true" />Sekme açıkken 30 sn'de bir yenilenir</span>
       </template>
@@ -254,6 +254,7 @@ const REFRESH_MS = 30_000
 
 const loading = ref(false)
 const checkedAt = ref<number>()
+const stale = ref(false)
 const health = ref<OverviewHealthResponse | null>(null)
 const healthError = ref<unknown>(null)
 const issues = ref<IssueGroup[] | null>(null)
@@ -273,12 +274,15 @@ async function load() {
   if (h.status === 'fulfilled') {
     health.value = h.value
     healthError.value = null
+    // "Güncellendi" yalnız sağlık okuması başarılıysa ilerler; başarısız yenilemede son iyi görüntü "bayat" işaretlenir.
+    checkedAt.value = Date.now()
+    stale.value = false
   } else if (!health.value) healthError.value = h.reason
+  else stale.value = true
   issuesFailed.value = i.status === 'rejected'
   if (i.status === 'fulfilled') issues.value = i.value.items
   auditFailed.value = a.status === 'rejected'
   if (a.status === 'fulfilled') audit.value = a.value.items.filter((x) => /^(backoffice\.|impersonation\.)/.test(x.event) && x.event !== 'backoffice.reauth').slice(0, 6)
-  checkedAt.value = Date.now()
   loading.value = false
 }
 

@@ -29,8 +29,10 @@
         <p v-if="lede ?? screen?.lede" class="bo-ph__lede">{{ lede ?? screen?.lede }}</p>
         <div v-if="$slots.meta || updatedAt" class="bo-ph__meta">
           <slot name="meta" />
-          <span v-if="updatedAt" class="bo-ph__updated">
-            <v-icon icon="mdi-clock-outline" aria-hidden="true" />Güncellendi <EkRelativeTime :value="updatedAt" />
+          <span v-if="updatedAt" class="bo-ph__updated" :class="{ 'is-stale': stale }" data-testid="page-updated">
+            <v-icon :icon="stale ? 'mdi-alert-circle-outline' : 'mdi-clock-outline'" aria-hidden="true" />
+            <template v-if="stale">Yenilenemedi — gösterilen veri <EkRelativeTime :value="updatedAt" /> alındı</template>
+            <template v-else>Güncellendi <EkRelativeTime :value="updatedAt" /></template>
           </span>
         </div>
       </div>
@@ -53,6 +55,8 @@ const props = defineProps<{
   /** Detay sayfaları: ekranın altına eklenen breadcrumb düzeyleri (son düzey = bu sayfa). */
   extraCrumbs?: Crumb[]
   updatedAt?: number | string
+  /** Son yenileme başarısız; ekrandaki veri `updatedAt` anından (BO-ELEV DG-3: bozulma dürüsttür). */
+  stale?: boolean
 }>()
 
 const route = useRoute()
@@ -172,6 +176,11 @@ const badge = computed(() => (screen.value && !props.extraCrumbs?.length ? STATU
   display: inline-flex;
   align-items: center;
   gap: var(--ek-space-1);
+}
+
+.bo-ph__updated.is-stale {
+  color: var(--ek-color-warning-emphasis);
+  font-weight: var(--ek-font-weight-medium);
 }
 
 .bo-ph__updated .v-icon {
