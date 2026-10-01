@@ -13,6 +13,7 @@ import { buildSite, siteRoot } from '../scripts/lib/build.mjs'
 import { getPublicIntegrations, integrations, AVAILABLE_INTEGRATION_CODES, getEcosystemNodes, ecosystemPromises } from '../src/data/integrations'
 import { getPublicPlans, getPlanSourceNotice, getPublicTrial } from '../src/data/plans'
 import { getPublicCapabilities } from '../src/data/capabilities'
+import { getPlanNotice } from '../src/data/plan-cards'
 import { getPublicFaq } from '../src/data/faq'
 
 const APP_URL = 'https://app.example.test'
@@ -82,18 +83,15 @@ describe('sahne kancaları (S2a yer tutucuları + S3 sahneleri + S7 sahneleri)',
     'hero-mock',
     'hero-bg',
     'stat-counters',
-    'marquee',
     'problem-solution',
     'stock-single-winner',
     'orders-merge',
     'integration-status',
-    'secret-encryption',
-    'tenant-isolation',
     'request-guard',
     'ecosystem',
   ]
   /** Birden çok öğede kullanılan sahneler: en az bu kadar. */
-  const REPEATED: Record<string, number> = { 'section-head': 8, reveal: 3, tile: 5, 'story-step': 5, 'how-progress': 3 }
+  const REPEATED: Record<string, number> = { 'section-head': 8, reveal: 3, tile: 3, 'story-step': 5, 'how-progress': 3 }
 
   it('sahneler: tekil sahneler bir kez, tekrarlayanlar beklenen sayıda; fiyat vurgusu ve kapanış dahil', () => {
     const found = attrValues(/data-scene="([^"]+)"/g)
@@ -107,7 +105,7 @@ describe('sahne kancaları (S2a yer tutucuları + S3 sahneleri + S7 sahneleri)',
   })
 
   it('görsel sahneler aria-hidden (anlam çevredeki metindedir); içerik taşıyan sahneler gerçek DOM (ol / kart + aria-hidden şemalar)', () => {
-    for (const scene of ['hero-mock', 'hero-bg', 'stock-single-winner', 'orders-merge', 'integration-status', 'secret-encryption', 'tenant-isolation', 'request-guard']) {
+    for (const scene of ['hero-mock', 'hero-bg', 'stock-single-winner', 'orders-merge', 'integration-status', 'request-guard']) {
       const tag = html.match(new RegExp(`<[a-z]+[^>]*data-scene="${scene}"[^>]*>`))![0]
       expect(tag, scene).toContain('aria-hidden="true"')
     }
@@ -172,18 +170,9 @@ describe('entegrasyon ekosistemi (S12: vizyon dili; kanal adı ve durum dili ana
     const proofText = textOf(proof)
     for (const i of available) expect(proofText, i.name).not.toContain(i.name)
     expect(proofText.toLocaleLowerCase('tr-TR')).not.toMatch(/uygulanan|bugün bağlanabilen|aes-256/)
-    // S15: görünür şerit başlığı ("Tek panelde yönettikleriniz") kaldırıldı; grup erişilebilir adını aria-label ile taşır
-    expect(proofText).not.toMatch(/Tek panelde|yönettikleriniz/)
-    expect(proof).toMatch(/data-scene="marquee" role="group" aria-label="[^"]+"/)
-    // S15: kartlar koyu sahnenin devamı (beyaz blok değil) — bölüm koyu yüzey işaretli, vurgu açık teal varyantına döner
-    expect(proof).toMatch(/^<section class="proof"[^>]*data-surface="dark"/)
-    // şerit: erişilebilir birinci küme + aria-hidden kopya küme
-    const marquee = html.match(/data-testid="marquee"[\s\S]*?<\/section>/)![0]
-    const sets = [...marquee.matchAll(/<ul class="marquee__set[^"]*"[^>]*>[\s\S]*?<\/ul>/g)].map((m) => m[0])
-    expect(sets).toHaveLength(2)
-    expect([...sets[0].matchAll(/<li class="marquee__item/g)].length).toBeGreaterThanOrEqual(6)
-    expect(sets[0].match(/^<ul[^>]*>/)![0]).not.toContain('aria-hidden') // erişilebilir liste birinci kümedir
-    expect(sets[1].match(/^<ul[^>]*>/)![0]).toContain('aria-hidden="true"') // ikinci küme yalnızca kesintisiz döngü için kopya
+    // S27a: kayan şerit kaldırıldı; güven şeridi açık zeminde (koyu yüzey işareti yok)
+    expect(html).not.toContain('data-scene="marquee"')
+    expect(proof).not.toContain('data-surface="dark"')
   })
 
   it('ekosistem düğümleri seçiciden (dayanağı olan dört düğüm) ve vizyon cümleleri görünür; kapsam matrisi ana sayfada YOK', () => {
@@ -259,9 +248,14 @@ describe('içerik kayıttan gelir', () => {
       expect(text(), p.name).toContain(p.name)
       expect(text(), `${p.name} fiyat`).toContain(p.priceLabel)
     }
+    // N4 (S27b varsayılanı, kullanıcı kararı bekliyor — site/docs/s27b-review/DECISIONS_PENDING.md): görünür metin
+    // ziyaretçi dili; iç kayıt (PROPOSAL_NOTICE) DEĞİŞMEDEN data-proposal-notice özniteliğinde (fiyat sayfasıyla aynı kayıt).
     const notice = getPlanSourceNotice()
     expect(notice).toBeDefined()
-    expect(text()).toContain(notice!)
+    const n = getPlanNotice()!
+    expect(n.internal).toBe(notice)
+    expect(text()).toContain(n.visitor)
+    expect(html).toContain(`data-proposal-notice="${notice}"`)
     expect(text()).toContain('KDV hariç')
     const quote = plans.find((p) => p.priceKind === 'quote')!
     expect(text()).toContain('Özel teklif')
@@ -324,7 +318,9 @@ describe('içerik kayıttan gelir', () => {
     expect(ps).toContain('data-scroll-progress')
     expect(ps).not.toContain('ps__compare')
     const t = textOf(ps)
-    for (const g of ['Merkezi stok yönetimi', 'Aşırı satışa karşı rezervasyon', 'Tek sipariş akışı', 'Kurumsal düzeyde güvenlik']) expect(t, g).toContain(g)
+    for (const g of ['Merkezi stok yönetimi', 'Aşırı satışa karşı rezervasyon', 'Tek sipariş akışı', 'Otopilot takipte']) expect(t, g).toContain(g)
+    // S27a (SR4 madde 5): güvenlik anlatısı yalnız Güvenlik bölümünde — sorun–çözüm kartında tekrar yok
+    expect(t).not.toMatch(/Kurumsal düzeyde güvenlik|şifreli saklanır|izole bir alanda/)
     for (const i of getPublicIntegrations()) expect(t, i.name).not.toContain(i.name)
   })
 
@@ -378,17 +374,35 @@ describe('içerik kayıttan gelir', () => {
     expect(heroText.toLocaleLowerCase('tr-TR')).not.toMatch(/uygulanan|bugün bağlanabilen/)
   })
 
-  it('fayda rayı (S24: hero\'daki ayrı liste yerine hero\'nun alt kenarındaki tek ray) üst seviye ve kayıtlara dayanır', () => {
+  // S27a (SR4 madde 1, K50): hero KARŞILAMA ekranıdır; dört fayda hero'dan çıktı ve hero bittikten sonra açık zeminde.
+  // N5: her öğe bir kayda bağlı (data-source = yetenek kimlikleri ya da deneme kaydı) ve o kayıt yayımlanmış.
+  it('güven şeridi: hero DIŞINDA, hemen ardından; dört öğe kayıtlara dayanır (N5)', () => {
     expect(html).not.toContain('data-testid="hero-benefits"')
     const list = html.match(/<ul[^>]*data-testid="stat-list"[\s\S]*?<\/ul>/)![0]
     const labels = [...list.matchAll(/<p class="stat__label"[^>]*>([\s\S]*?)<\/p>/g)].map((m) => textOf(m[1]))
     expect(labels).toEqual(['Tek merkez', 'Eşzamanlı stok', `${getPublicTrial().days} gün ücretsiz`, 'Kurumsal güvenlik'])
-    // hero ve ray tek koyu sahnede (ortak zemin); ray ayrı bir zemin bandı değil
-    expect(html).toMatch(/<div class="stage-top"[^>]*>\s*<section class="hero"[\s\S]*?<\/section>\s*<section class="proof"/)
-    const ids = getPublicCapabilities().map((c) => c.id)
-    for (const id of ['stock-reservation', 'multi-channel-products', 'unified-orders', 'secrets-encryption', 'tenant-database', 'role-based-access']) {
-      expect(ids, id).toContain(id)
+    expect(html).toMatch(/<div class="stage-top"[^>]*>\s*<section class="hero"[\s\S]*?<\/section>\s*<\/div>\s*<section class="proof"/)
+    const hero = html.match(/<section class="hero"[\s\S]*?<\/section>/)![0]
+    expect(hero).not.toContain('data-testid="stat-list"')
+    const ids = new Set(getPublicCapabilities().map((c) => c.id))
+    const sources = [...list.matchAll(/data-source="([^"]+)"/g)].map((m) => m[1])
+    expect(sources).toHaveLength(4)
+    for (const src of sources) {
+      if (src === 'trial') continue
+      for (const id of src.split(' ')) expect(ids.has(id), id).toBe(true)
     }
+    expect(sources).toContain('trial')
+  })
+
+  // S27a (SR4 madde 3): vitrinin 4. sahnesi Otopilot anı — öneri → onay → uygulama; cümle vaat kaydından.
+  it('hero vitrini: 4. sahne Otopilot anı (öneri + onay düğmesi + sonuç), güvenlik sahnesi yok', () => {
+    const mock = html.match(/data-testid="hero-mock"[\s\S]*?<\/section>/)![0]
+    expect([...mock.matchAll(/data-part="show-scene"/g)]).toHaveLength(4)
+    const auto = mock.match(/show__scene--auto[\s\S]*?data-part="ap-done"[^>]*>[\s\S]*?<\/p>/)![0]
+    for (const part of ['ap-rise', 'ap-press', 'ap-out', 'ap-in', 'ap-tick', 'ap-done']) expect(auto, part).toContain(`data-part="${part}"`)
+    expect(textOf(auto)).toContain('Sorunu fark eder, öneriyi hazırlar; siz onaylayınca uygular.')
+    expect(textOf(auto)).toContain('Onaylandı')
+    expect(mock).not.toContain('show__scene--secure')
   })
 })
 
@@ -464,7 +478,7 @@ describe('animasyon sahneleri: betik, durdurma kontrolü, CSP (ADR-0014 S3)', ()
       .join('\n')
     expect(css).toMatch(/prefers-reduced-motion:\s*no-preference/)
     expect(css).toMatch(/data-motion[=\]]/)
-    for (const scene of ['hero-mock', 'hero-bg', 'marquee', 'problem-solution', 'stock-single-winner', 'orders-merge', 'integration-status', 'secret-encryption', 'tenant-isolation', 'story-step', 'how-progress', 'request-guard', 'price-emphasis']) {
+    for (const scene of ['hero-mock', 'hero-bg', 'problem-solution', 'stock-single-winner', 'orders-merge', 'integration-status', 'story-step', 'how-progress', 'request-guard', 'price-emphasis']) {
       expect(css, scene).toContain(scene)
     }
     // döngüsel hareket yalnızca oynatma durumunda ve görünürken çalışır

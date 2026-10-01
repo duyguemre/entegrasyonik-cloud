@@ -69,7 +69,7 @@ const steps = [
     nav: 'Yönetim',
     app: 'Panel',
     beats: 5,
-    title: 'Tek panelden yönetin',
+    title: 'Satışa odaklanın',
     text: `${homeLine('unified-orders')} Merkezi stok rezervasyonu aşırı satış riskini kontrol altında tutar.`,
   },
 ]
@@ -90,12 +90,11 @@ const chartBars = Array.from({ length: 8 })
 const catalog = Array.from({ length: 3 })
 ---
 
-<Section tone="stage" id="nasil-calisir" labelledby="nasil-baslik">
+<Section tone="muted" id="nasil-calisir" labelledby="nasil-baslik" class="how-section">
   <div class="hw">
     <div class="hw__aside">
       <SectionHeading
         id="nasil-baslik"
-        tone="dark"
         eyebrow="Nasıl çalışır"
         title="Dört adımda hazırsınız"
         lead="Hesabınızı açın, kanallarınızı bağlayın, ürünlerinizi aktarın. Kurulum için kod yazmanız gerekmez."
@@ -111,7 +110,7 @@ const catalog = Array.from({ length: 3 })
         }
       </ul>
       <div class="how__cta">
-        <Button href={appUrls.register()} variant="inverse" size="lg" data-testid="how-cta">Ücretsiz dene</Button>
+        <Button href={appUrls.register()} variant="primary" size="lg" data-testid="how-cta">Ücretsiz deneyin</Button>
       </div>
     </div>
 
@@ -433,6 +432,7 @@ const catalog = Array.from({ length: 3 })
   :global(.section--stage:has(.hw__aside)) {
     overflow: visible;
   }
+  /* S27a (BRAND §4, N3): bölüm AÇIK zemine alındı — sayfada koyu sahneler hero, Otopilot vitrini ve kapanış. */
   .hw {
     display: grid;
     gap: var(--ek-space-12);
@@ -452,7 +452,7 @@ const catalog = Array.from({ length: 3 })
     display: flex;
     align-items: center;
     gap: var(--ek-space-3);
-    color: var(--site-color-on-primary-muted);
+    color: var(--site-text-meta);
     font-size: var(--ek-font-size-lg);
     font-weight: var(--ek-font-weight-semibold);
     transition: color var(--ek-duration-base) var(--ek-easing-standard);
@@ -463,10 +463,10 @@ const catalog = Array.from({ length: 3 })
     justify-content: center;
     width: var(--ek-space-8);
     height: var(--ek-space-8);
-    border: var(--site-border-width) solid var(--site-glass-border);
+    border: var(--site-border-width) solid var(--ek-color-border-default);
     border-radius: var(--ek-radius-full);
-    background: var(--site-glass-bg);
-    color: var(--site-color-on-primary);
+    background: var(--ek-color-background);
+    color: var(--site-text-heading);
     font-size: var(--ek-font-size-md);
     transition:
       background-color var(--ek-duration-base) var(--ek-easing-standard),
@@ -474,7 +474,7 @@ const catalog = Array.from({ length: 3 })
       color var(--ek-duration-base) var(--ek-easing-standard);
   }
   .hw__nav-item[data-active='true'] {
-    color: var(--site-color-on-primary);
+    color: var(--site-text-heading);
   }
   .hw__nav-item[data-active='true'] .hw__nav-dot {
     border-color: var(--ek-color-secondary);
@@ -511,7 +511,7 @@ const catalog = Array.from({ length: 3 })
     height: var(--ek-space-12);
     border-radius: var(--ek-radius-full);
     background: linear-gradient(140deg, var(--ek-color-primary-darken-1), var(--ek-color-primary));
-    box-shadow: 0 0 0 var(--ek-space-2) var(--site-stage-base);
+    box-shadow: 0 0 0 var(--ek-space-2) var(--ek-color-surface-muted);
     color: var(--site-color-on-primary);
     font-size: var(--ek-font-size-xl);
     font-weight: var(--site-font-display-weight);
@@ -524,7 +524,7 @@ const catalog = Array.from({ length: 3 })
     inset-block-end: calc(var(--ek-space-8) * -1);
     inset-inline-start: calc(var(--ek-space-6) - var(--site-border-width));
     width: calc(var(--site-border-width) * 2);
-    background: linear-gradient(180deg, var(--ek-color-secondary), var(--site-glass-border));
+    background: linear-gradient(180deg, var(--ek-color-secondary), var(--ek-color-border-default));
   }
   .how__body {
     display: flex;
@@ -535,6 +535,7 @@ const catalog = Array.from({ length: 3 })
     padding-top: var(--ek-space-2);
   }
   .how__title {
+    color: var(--site-text-heading);
     font-size: var(--ek-font-size-2xl);
     font-weight: var(--ek-font-weight-bold);
     letter-spacing: -0.01em;

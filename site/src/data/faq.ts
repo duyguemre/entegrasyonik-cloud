@@ -170,7 +170,7 @@ export const faq: FaqItem[] = [
   {
     id: 'iade-soru',
     category: 'kanallar',
-    question: 'İade taleplerini ve müşteri sorularını da yönetebilir miyim?',
+    question: 'İade taleplerini ve alıcı sorularını da yönetebilir miyim?',
     answer: `Evet. ${capability('returns').summary} ${capability('questions').summary} Kapsam kanala göre değişir; ayrıntılar entegrasyon sayfalarındadır.`,
     evidence: [registry('§2.1', '### 2.1 Trendyol'), registry('§2.4', '### 2.4 Pazarama')],
   },
@@ -256,6 +256,18 @@ export const faq: FaqItem[] = [
       evidence('CLAUDE.md', 'CLAUDE.md mimari: platform geneli veri ApplicationDB', 'platform-wide metadata (users, configs, logs)'),
       evidence(PATHS.adr0004, 'ADR-0004: stok kiracı veritabanında', 'Stokun tek doğruluk kaynağı tenant ClientDB'),
     ],
+  },
+  {
+    id: 'fiyat-karari',
+    category: 'guvenlik-veri',
+    question: 'Entegrasyonik fiyatlarıma karar verir mi, verilerim başka işletmelerin kararında kullanılır mı?',
+    answer:
+      'Hayır. Kanallarınıza giden fiyatı siz belirlersiniz; Entegrasyonik sizin yerinize fiyat koymaz. Fiyat, maliyet ve satış verileriniz kendi hesabınızda kalır; başka bir işletmenin kararında kullanılmaz, başka işletmelerle paylaşılmaz.',
+    evidence: [
+      evidence('backend/src/database/client/models/Variant.ts', 'Fiyat alanları satıcının girdiği değerlerdir', 'isPlatformBasedPrice'),
+      evidence(PATHS.adr0003, 'ADR-0003 kiracı DB adlandırma', 'entegrasyonikClient_1'),
+    ],
+    internalNotes: ['PRC-MKT (K58): adil rekabet ilkesi; metin src/data/fair-play.ts ile aynı tutum. Fiyatlama özelliği vaat edilmez (K43).'],
   },
   {
     id: 'ekip-yetki',
@@ -349,7 +361,7 @@ export const faq: FaqItem[] = [
     category: 'destek-olcek',
     question: 'Satış hacmim arttıkça Entegrasyonik benimle birlikte ölçeklenir mi?',
     answer:
-      'Entegrasyonik çok kanallı operasyonları büyütmek için tasarlandı. Kanallarla iletişim zaman aşımı, kontrollü yeniden deneme ve devre kesici içeren bir dayanıklılık katmanından geçer; geçici hatalar kontrollü biçimde yönetilir. Kanal, ürün veya kullanıcı kapasitesine ihtiyaç duyduğunuzda planınızı yükseltmeniz yeterlidir.',
+      'Entegrasyonik çok kanallı operasyonları büyütmek için tasarlandı. Pazaryerlerinde yaşanan geçici aksaklıklar kontrollü biçimde yönetilir; işlemler bağlantı toparlandığında yeniden denenir. Kanal, ürün veya kullanıcı kapasitesine ihtiyaç duyduğunuzda planınızı yükseltmeniz yeterlidir.',
     evidence: [
       evidence('backend/src/integration/modules/common/http/ResilientHttpClient.ts', 'ResilientHttpClient devre kesici', 'circuitBreaker'),
       evidence('docs/adr/0006-dayaniklilik-katmani-ve-surec-topolojisi.md', 'ADR-0006 dayanıklılık katmanı', 'Dayanıklılık katmanı'),
@@ -360,7 +372,8 @@ export const faq: FaqItem[] = [
     id: 'pazaryeri-kesinti',
     category: 'destek-olcek',
     question: 'Pazaryeri tarafında bir kesinti olursa ne olur?',
-    answer: `${capability('integration-resilience').summary} ${capability('integration-resilience').caveat ?? ''}`.trim(),
+    // S27c (K44): SSS'de fayda dili; teknik özet (zaman aşımı, devre kesici) yalnız /guvenlik "Ayrıntı" panelinde.
+    answer: `Geçici bir aksaklıkta işlemler kontrollü biçimde yeniden denenir; art arda hata veren bir bağlantı kısa süre bekletilir, ardından tekrar denenir. Bu yaklaşım geçici hataları yönetir; pazaryeri tarafındaki kesintiyi ortadan kaldırmaz.`,
     evidence: [
       evidence('backend/src/integration/modules/common/http/ResilientHttpClient.ts', 'ResilientHttpClient devre kesici', 'circuitBreaker'),
       evidence('docs/adr/0006-dayaniklilik-katmani-ve-surec-topolojisi.md', 'ADR-0006 dayanıklılık katmanı', 'Dayanıklılık katmanı'),
@@ -460,7 +473,7 @@ export const SUPPORT_CATEGORIES: SupportCategory[] = [
     label: 'Hesap ve güvenlik',
     lead: 'API anahtarlarınızın, verilerinizin ve ekip yetkilerinizin nasıl korunduğu.',
     icon: 'shield',
-    faqIds: ['anahtar-saklama', 'veri-ayrimi', 'ekip-yetki', 'kart-bilgisi', 'secim-kriterleri'],
+    faqIds: ['anahtar-saklama', 'veri-ayrimi', 'fiyat-karari', 'ekip-yetki', 'kart-bilgisi', 'secim-kriterleri'],
     links: [{ label: 'Güvenlik yaklaşımımız', href: '/guvenlik' }],
   },
   {

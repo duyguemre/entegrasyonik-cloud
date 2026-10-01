@@ -86,7 +86,7 @@ const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'obj
  */
 const PLAN_TAGLINES: Record<string, string> = {
   starter: 'İlk pazaryeri kanallarını tek panelde toplamak isteyen küçük ekipler için.',
-  growth: 'Birden fazla kanalda büyüyen ve daha fazla ürün yöneten satıcılar için.',
+  growth: 'Birden fazla kanalda büyüyen ve daha fazla ürün yöneten işletmeler için.',
   enterprise: 'Özel limitler ve ihtiyaçlar için size özel teklif hazırlıyoruz.',
 }
 

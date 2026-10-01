@@ -53,7 +53,7 @@ const PUBLISH_NODES = ['a', 'b', 'c', 'd'] as const
   <PageHero title="Aşırı satış (overselling) nasıl önlenir?" lead={capability.summary} crumbs={crumbs} eyebrow="Stok rezervasyonu">
     <HeroActions
       actions={[
-        { label: 'Ücretsiz dene', href: appUrls.register() },
+        { label: 'Ücretsiz deneyin', href: appUrls.register() },
         { label: 'Nasıl çalışır', href: '#nasil-calisir' },
       ]}
     />
@@ -263,9 +263,9 @@ const PUBLISH_NODES = ['a', 'b', 'c', 'd'] as const
 
   <CtaBand
     id="stok-cta"
-    title="Stoğunuzu tek merkezden yönetmeye başlayın"
+    title="Eşzamanlı siparişte stoğunuzu koruyun"
     text="Kanallarınızı bağlayın; siparişleriniz rezervasyondan geçsin, aşırı satış görünür olsun."
-    primary={{ label: 'Ücretsiz dene', href: appUrls.register() }}
+    primary={{ label: 'Ücretsiz deneyin', href: appUrls.register() }}
     secondary={{ label: 'Tüm özellikler', href: '/ozellikler' }}
   />
 </BaseLayout>
@@ -275,7 +275,7 @@ const PUBLISH_NODES = ['a', 'b', 'c', 'd'] as const
 </script>
 
 <style>
-  .tight-section:global(.section) {
+  :global(.section.tight-section) {
     padding-block: calc(var(--site-section-y) * 0.72);
   }
 

@@ -17,17 +17,23 @@ interface Props {
   eyebrow?: string
   /** S17: görsel panel yalnızca >=1024 px'te gösterilir (dar ekranda içerik zaten hemen aşağıdaysa, ör. /sss). */
   visualDesktopOnly?: boolean
+  /** S27b: ortalı hero (görselsiz sayfalarda, ör. fiyatlandırma). */
+  align?: 'start' | 'center'
+  /** S27b: sonraki bölüm hero'nun alt kenarına taşar (fiyat kartları) — hero altına ek boşluk bırakır. */
+  overlap?: boolean
 }
 
-const { title, lead, crumbs, eyebrow, visualDesktopOnly = false } = Astro.props
+import Eyebrow from '../Eyebrow.astro'
+
+const { title, lead, crumbs, eyebrow, visualDesktopOnly = false, align = 'start', overlap = false } = Astro.props
 const hasVisual = Astro.slots.has('visual')
 ---
 
-<Section tone="stage" labelledby="page-title" class="page-hero">
+<Section tone="stage" labelledby="page-title" class={['page-hero', align === 'center' ? 'page-hero--center' : '', overlap ? 'page-hero--overlap' : ''].filter(Boolean).join(' ')}>
   <Breadcrumb items={crumbs} inverse />
   <div class:list={['page-hero__grid', { 'page-hero__grid--split': hasVisual }]}>
     <div class="page-hero__body">
-      {eyebrow && <p class="page-hero__eyebrow">{eyebrow}</p>}
+      {eyebrow && <Eyebrow>{eyebrow}</Eyebrow>}
       <h1 id="page-title">{title}</h1>
       {lead && <p class="page-hero__lead">{lead}</p>}
       <div class="page-hero__extra"><slot /></div>
@@ -42,8 +48,23 @@ const hasVisual = Astro.slots.has('visual')
 
 <style>
   /* Bölüm ritmini iç sayfa için kısaltır (ana sayfa hero'su kadar geniş boşluk gerekmez). */
-  .page-hero:global(.section) {
+  :global(.section.page-hero) {
     padding-block: var(--ek-space-8) calc(var(--site-section-y) * 0.6);
+  }
+  /* Taşan bölüm (S27b): hero altında kartların yarısı kadar ek boşluk; sonraki bölüm negatif üst boşlukla yukarı çıkar. */
+  :global(.section.page-hero--overlap) {
+    padding-bottom: calc(var(--site-section-y) * 0.6 + var(--site-hero-overlap));
+  }
+  :global(.page-hero--center) .page-hero__body {
+    align-items: center;
+    margin-inline: auto;
+    text-align: center;
+  }
+  :global(.page-hero--center) .page-hero__body h1 {
+    max-width: 22ch;
+  }
+  :global(.page-hero--center) .page-hero__extra {
+    justify-content: center;
   }
   .page-hero__grid {
     display: grid;
@@ -56,15 +77,6 @@ const hasVisual = Astro.slots.has('visual')
     gap: var(--ek-space-4);
     max-width: calc(var(--site-container-narrow) + var(--ek-space-16));
     min-width: 0;
-  }
-  /* ELEV (A8/A14): eyebrow = sayfa adı, ana sayfa bölüm etiketleriyle aynı dil (küçük, büyük harf, koyu zeminde teal). */
-  /* Seçici, Section'ın `.section--stage p` kuralından güçlü olmalı (aksi hâlde soluk beyaza döner). */
-  .page-hero__body .page-hero__eyebrow {
-    color: var(--site-accent-on-dark);
-    font-size: var(--ek-font-size-sm);
-    font-weight: var(--ek-font-weight-semibold);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
   }
   /* ELEV: önceki `.page-hero h1` seçicisi kapsam dışı kalıyordu (sınıf alt bileşen Section'da) → H1 genel 36/700'e
      düşüyordu. H1 artık bir değer cümlesidir; display ölçeği bileşenin kendi öğesine bağlanır. */

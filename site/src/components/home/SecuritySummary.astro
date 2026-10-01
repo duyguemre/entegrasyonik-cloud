@@ -1,5 +1,11 @@
 ---
 /**
+ * S27a (SR4 madde 5 + N3, K50): güvenlik anlatısının ana sayfadaki TEK yeri. Yetenekler bölümündeki iki güvenlik karosu
+ * (şifreli anahtar, izole veri) ve sorun–çözüm kartındaki güvenlik maddesi buraya taşındı (tekrar yok). Bölüm AÇIK
+ * zemine alındı (sayfa sonunda tek koyu sahne kapanış kalsın — BRAND §4); kalkan illüstrasyonu tek koyu vitrin
+ * panelinde durur. Dört sütun kartı + mini illüstrasyonlar kompakt sütun satırlarına indi (sayfa kısalır); her iddia
+ * yine tam bir kez görünür. Halka/kadran dönüş döngüleri kaldırıldı (N9); yalnız tarama ışını (tek döngü) kalır.
+ *
  * Güvenlik özeti (ADR-0014 Karar 2 bölüm 6 + Karar 5 "izinli iddialar"; S12 PARÇA C üst perde yenileme).
  *
  * Anlatı üst perdeden kurulur: dört sütun (Veri izolasyonu, Şifreli anahtar kasası, Yetki ve erişim kontrolü,
@@ -22,6 +28,7 @@ import Icon from './Icon.astro'
 import { getPublicCapabilities } from '../../data/capabilities'
 import { getPublicFaq } from '../../data/faq'
 import { pageHref } from './links'
+import { fairPledge, fairSection } from '../../data/fair-play'
 
 const items = getPublicCapabilities('security')
 const byId = new Map(items.map((i) => [i.id, i]))
@@ -98,24 +105,39 @@ const guards = GUARDS.filter((g) => byId.has(g.id))
 
 // Kasa kadranı çentikleri (dekoratif): 24 çentik, her 6'da bir uzun.
 const ticks = Array.from({ length: 24 }, (_, i) => ({ a: i * 15, long: i % 6 === 0 }))
-// İzole hücre ızgarası (mini illüstrasyon): 3 satır x 8 sütun, biri "sizin" hücreniz.
-const cells = Array.from({ length: 24 }, (_, i) => ({ x: (i % 8) * 29 + 4, y: Math.floor(i / 8) * 29 + 6, own: i === 13 }))
 ---
 
-<Section tone="stage" id="guvenlik" labelledby="guvenlik-baslik">
+<Section tone="muted" id="guvenlik" labelledby="guvenlik-baslik" class="sec-section">
   <div class="sec">
     <div class="sec__intro">
       <SectionHeading
         id="guvenlik-baslik"
-        tone="dark"
         eyebrow="Güvenlik ve KVKK"
         title="Verileriniz yalnızca size ait"
         lead="Operasyon verileriniz izole ve şifreli bir ortamda, pazaryeri anahtarlarınız şifreli bir kasada korunur; ekibinizin her işlemi yetki denetiminden geçer."
       />
-      <ul class="sec__specs" aria-label="Öne çıkan güvenlik katmanları">
-        {byId.has('secrets-encryption') && <li><Icon name="lock" size="sm" />Şifreli anahtar kasası</li>}
-        {byId.has('tenant-database') && <li><Icon name="database" size="sm" />İzole veri alanı</li>}
-        {byId.has('role-based-access') && <li><Icon name="users" size="sm" />Rol tabanlı erişim</li>}
+      <ul class="sec__grid" data-scene="reveal" data-testid="security-grid">
+        {
+          pillars.map((p) => (
+            <li class="pillar" data-part="security-item" data-id={p.key} data-reveal>
+              <span class="pillar__icon" aria-hidden="true"><Icon name={p.icon} size="sm" /></span>
+              <div class="pillar__body">
+                <p class="pillar__eyebrow">{p.eyebrow}</p>
+                <h3 class="pillar__title">{p.title}</h3>
+                <p class="pillar__lead">{p.lead}</p>
+                <ul class="pillar__proof">
+                  {p.claims.map((c) => (
+                    <li data-claim={c.id}>
+                      <Icon name="check" size="sm" />
+                      <span>{c.title}</span>
+                    </li>
+                  ))}
+                </ul>
+                {p.claims.some((c) => c.status === 'partial') && partialNote && <p class="pillar__note">{partialNote}</p>}
+              </div>
+            </li>
+          ))
+        }
       </ul>
       {detailHref && <a class="link sec__link" href={detailHref}>Güvenlik yaklaşımımızı inceleyin <Icon name="arrow" size="sm" /></a>}
     </div>
@@ -176,80 +198,15 @@ const cells = Array.from({ length: 24 }, (_, i) => ({ x: (i % 8) * 29 + 4, y: Ma
     </div>
   </div>
 
-  <ul class="sec__grid" data-scene="reveal" data-testid="security-grid">
-    {
-      pillars.map((p) => (
-        <li class="pillar" data-part="security-item" data-id={p.key} data-reveal data-tilt>
-          <div class:list={['pillar__ill', `pillar__ill--${p.key}`]} aria-hidden="true">
-            {p.key === 'cells' && (
-              <svg viewBox="0 0 240 96" aria-hidden="true" focusable="false">
-                {cells.map((c) => (
-                  <rect class:list={['ill-cell', { 'ill-cell--own': c.own }]} x={c.x} y={c.y} width="20" height="20" rx="5" />
-                ))}
-                <rect class="ill-own-glow" x={cells[13].x - 6} y={cells[13].y - 6} width="32" height="32" rx="9" />
-                <path class="ill-own-lock" d={`M${cells[13].x + 7} ${cells[13].y + 10} v-2.5 a3 3 0 0 1 6 0 v2.5 M${cells[13].x + 5.5} ${cells[13].y + 10} h9 v6 h-9 z`} />
-              </svg>
-            )}
-            {p.key === 'vault' && (
-              <svg viewBox="0 0 240 96" aria-hidden="true" focusable="false">
-                <rect class="ill-field" x="8" y="28" width="224" height="40" rx="12" />
-                <rect class="ill-badge" x="16" y="36" width="24" height="24" rx="7" />
-                <path class="ill-badge-lock" d="M24.5 47 v-3 a3.5 3.5 0 0 1 7 0 v3 M22.5 47 h11 v7 h-11 z" />
-                {Array.from({ length: 12 }, (_, i) => (
-                  <circle class="ill-dot" cx={56 + i * 14} cy="48" r="3.5" />
-                ))}
-                <g class="ill-scan">
-                  <rect x="50" y="30" width="26" height="36" rx="8" />
-                </g>
-              </svg>
-            )}
-            {p.key === 'tiers' && (
-              <svg viewBox="0 0 240 96" aria-hidden="true" focusable="false">
-                <line class="ill-gate" x1="176" y1="6" x2="176" y2="90" />
-                <g class="ill-tier">
-                  <circle cx="16" cy="20" r="7" />
-                  <rect x="30" y="15" width="84" height="10" rx="5" />
-                </g>
-                <g class="ill-tier">
-                  <circle cx="16" cy="48" r="7" />
-                  <rect x="30" y="43" width="124" height="10" rx="5" />
-                </g>
-                <g class="ill-tier ill-tier--top">
-                  <circle cx="16" cy="76" r="7" />
-                  <rect x="30" y="71" width="172" height="10" rx="5" />
-                </g>
-                <circle class="ill-pass" cx="220" cy="76" r="9" />
-                <path class="ill-pass-mark" d="M215.5 76 l3 3 l6 -6" />
-                <path class="ill-block-mark" d="M186 18 l6 6 m0 -6 l-6 6" />
-              </svg>
-            )}
-            {p.key === 'circuit' && (
-              <svg viewBox="0 0 240 96" aria-hidden="true" focusable="false">
-                <line class="ill-wire" x1="20" y1="48" x2="220" y2="48" />
-                <circle class="ill-end" cx="20" cy="48" r="8" />
-                <circle class="ill-end" cx="220" cy="48" r="8" />
-                <rect class="ill-breaker" x="104" y="32" width="32" height="32" rx="9" />
-                <path class="ill-breaker-mark" d="M114 48 h12 M120 42 v12" />
-                <circle class="ill-packet" cx="20" cy="48" r="4.5" />
-              </svg>
-            )}
-          </div>
-          <p class="pillar__eyebrow"><Icon name={p.icon} size="sm" />{p.eyebrow}</p>
-          <h3 class="pillar__title">{p.title}</h3>
-          <p class="pillar__lead">{p.lead}</p>
-          <ul class="pillar__proof">
-            {p.claims.map((c) => (
-              <li data-claim={c.id}>
-                <Icon name="check" size="sm" />
-                <span>{c.title}</span>
-              </li>
-            ))}
-          </ul>
-          {p.claims.some((c) => c.status === 'partial') && partialNote && <p class="pillar__note">{partialNote}</p>}
-        </li>
-      ))
-    }
-  </ul>
+  <!-- PRC-MKT (K58): adil rekabet ilkesinin ana sayfadaki tek satırı; ilkeler /guvenlik#adil-rekabet -->
+  <div class="pledge" data-testid="fair-pledge">
+    <span class="pledge__icon" aria-hidden="true"><Icon name="finance" size="sm" /></span>
+    <p class="pledge__body">
+      <span class="pledge__label">{fairPledge.label}</span>
+      <span class="pledge__text">{fairPledge.text}</span>
+    </p>
+    {detailHref && <a class="link pledge__link" href={`${detailHref}#${fairSection.id}`}>{fairPledge.linkLabel} <Icon name="arrow" size="sm" /></a>}
+  </div>
 
   <p class="sec__stamp">
     <Icon name="info" size="sm" />
@@ -268,37 +225,14 @@ const cells = Array.from({ length: 24 }, (_, i) => ({ x: (i % 8) * 29 + 4, y: Ma
     flex-direction: column;
     gap: var(--ek-space-6);
   }
-  .sec__specs {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--ek-space-2);
-  }
-  .sec__specs li {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--ek-space-2);
-    padding: var(--ek-space-1) var(--ek-space-3);
-    border: var(--site-border-width) solid var(--site-glass-border);
-    border-radius: var(--ek-radius-full);
-    background: var(--site-glass-bg);
-    color: var(--site-color-on-primary);
-    font-size: var(--ek-font-size-sm);
-    font-weight: var(--ek-font-weight-semibold);
-  }
-  .sec__specs :global(.icon) {
-    color: var(--ek-color-secondary);
-  }
   .sec__link {
     display: inline-flex;
     align-items: center;
     align-self: flex-start;
     gap: var(--ek-space-2);
     min-height: var(--site-tap-target);
-    color: var(--site-color-on-primary);
+    color: var(--site-link-accent);
     font-weight: var(--ek-font-weight-semibold);
-  }
-  .sec__link:focus-visible {
-    outline-color: var(--site-color-on-primary);
   }
 
   /* --- Kalkan / kasa illüstrasyonu --- */
@@ -314,11 +248,12 @@ const cells = Array.from({ length: 24 }, (_, i) => ({ x: (i % 8) * 29 + 4, y: Ma
     padding: var(--ek-space-5);
     border: var(--site-border-width) solid var(--site-glass-border);
     border-radius: var(--site-radius-panel);
+    /* S27a: bölüm açık zeminde; kalkan illüstrasyonu tek koyu vitrin panelinde (sahne zemini + ışıma). */
     background:
       var(--site-glow-secondary) no-repeat 50% 40% / 90% 80%,
-      var(--site-glass-bg);
-    backdrop-filter: blur(var(--site-glass-blur));
+      var(--site-stage-mesh);
     box-shadow: var(--site-shadow-panel);
+    color: var(--site-text-on-dark-body);
   }
   .guard__art {
     grid-area: art;
@@ -470,189 +405,150 @@ const cells = Array.from({ length: 24 }, (_, i) => ({ x: (i % 8) * 29 + 4, y: Ma
     pointer-events: none;
   }
 
-  /* --- Sütun kartları --- */
+  /* --- Sütun satırları (S27a: kart + illüstrasyon yerine kompakt satır: ikon, etiket, başlık, fayda, kanıt) --- */
   .sec__grid {
     display: grid;
-    gap: var(--ek-space-5);
-    margin-top: var(--ek-space-16);
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
+    margin: 0;
+    padding: 0;
+    list-style: none;
   }
   .pillar {
-    position: relative;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: var(--ek-space-4);
+    padding-block: var(--ek-space-5);
+    border-top: var(--site-border-width) solid var(--ek-color-border-default);
+  }
+  .pillar__icon {
+    display: inline-grid;
+    place-items: center;
+    width: var(--ek-icon-tile-md);
+    height: var(--ek-icon-tile-md);
+    border-radius: var(--ek-radius-tile);
+    background: var(--site-accent-soft);
+    color: var(--site-accent);
+  }
+  .pillar__body {
     display: flex;
     flex-direction: column;
-    gap: var(--ek-space-3);
-    padding: var(--ek-space-6);
-    border: var(--site-border-width) solid var(--site-glass-border);
-    border-radius: var(--site-radius-panel);
-    background: var(--site-glass-bg);
-    /* Cam his: yarı saydam zemin + üstte ince iç kenar ışığı (yalnızca token renkleri). */
-    box-shadow: inset 0 var(--site-border-width) 0 color-mix(in srgb, var(--ek-color-background) 18%, transparent);
-    /* `transform` (eğim) buraya da eklenir (bkz. PricingSummary.astro aynı not: kısayol birleşmez). */
-    transition:
-      border-color var(--ek-duration-base) var(--ek-easing-standard),
-      background-color var(--ek-duration-base) var(--ek-easing-standard),
-      box-shadow var(--ek-duration-base) var(--ek-easing-standard),
-      translate var(--ek-duration-base) var(--ek-easing-standard),
-      transform var(--tilt-transition-duration, var(--ek-duration-fast)) var(--ek-easing-standard);
-  }
-  .pillar:hover {
-    translate: 0 calc(var(--ek-space-1) * -1);
-    border-color: color-mix(in srgb, var(--ek-color-secondary) 60%, transparent);
-    background: color-mix(in srgb, var(--ek-color-background) 10%, transparent);
-  }
-  .pillar__ill {
-    overflow: hidden;
-    margin-bottom: var(--ek-space-2);
-    padding: var(--ek-space-3);
-    border: var(--site-border-width) solid var(--site-glass-border);
-    border-radius: var(--ek-radius-lg);
-    background: color-mix(in srgb, var(--ek-color-content-strong) 55%, transparent);
-  }
-  .pillar__ill svg {
-    display: block;
-    width: 100%;
-    max-width: 20rem;
-    margin-inline: auto;
-    height: auto;
+    gap: var(--ek-space-1);
+    min-width: 0;
   }
   .pillar__eyebrow {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--ek-space-2);
-    color: var(--ek-color-secondary);
+    margin: 0;
+    color: var(--site-accent);
     font-size: var(--site-card-eyebrow-size);
     font-weight: var(--site-card-eyebrow-weight);
     letter-spacing: var(--site-card-eyebrow-tracking);
     text-transform: uppercase;
   }
-  /* Sektör anahtar sözcüğü başlık: sayfanın en güçlü kart başlığı (gradyan vurgu). */
   .pillar__title {
-    font-size: var(--ek-font-size-2xl);
-    font-weight: var(--site-font-display-weight);
-    letter-spacing: var(--site-font-display-tracking);
-    line-height: var(--ek-line-height-tight);
+    margin: 0;
+    color: var(--site-text-heading);
+    font-size: var(--ek-font-size-lg);
+    font-weight: var(--ek-font-weight-bold);
   }
   .pillar__lead {
-    color: var(--site-color-on-primary);
-    font-size: var(--site-card-value-size);
-    font-weight: var(--site-card-value-weight);
+    margin: 0;
+    color: var(--site-text-body);
+    font-size: var(--ek-font-size-sm);
+    line-height: var(--ek-line-height-normal);
   }
   .pillar__proof {
     display: flex;
-    flex-direction: column;
-    gap: var(--ek-space-2);
-    margin-top: auto;
-    padding-top: var(--ek-space-4);
-    border-top: var(--site-border-width) solid var(--site-glass-border);
-    color: var(--site-color-on-primary-muted);
-    font-size: var(--site-card-desc-size);
-    font-weight: var(--site-card-desc-weight);
+    flex-wrap: wrap;
+    gap: var(--ek-space-1) var(--ek-space-4);
+    margin: var(--ek-space-1) 0 0;
+    padding: 0;
+    list-style: none;
+    color: var(--site-text-meta);
+    font-size: var(--ek-font-size-xs);
   }
   .pillar__proof li {
-    display: flex;
-    align-items: flex-start;
-    gap: var(--ek-space-2);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ek-space-1);
   }
   .pillar__proof :global(.icon) {
-    flex: none;
-    margin-top: var(--ek-space-1);
-    color: var(--ek-color-secondary);
+    color: var(--site-accent);
   }
   .pillar__note {
-    color: var(--site-color-on-primary-muted);
-    font-size: var(--ek-font-size-sm);
+    margin: 0;
+    color: var(--site-text-meta);
+    font-size: var(--ek-font-size-xs);
+    font-style: italic;
   }
-
-  /* Mini illüstrasyon parçaları */
-  .ill-cell {
-    fill: color-mix(in srgb, var(--ek-color-background) 6%, transparent);
-    stroke: color-mix(in srgb, var(--ek-color-background) 18%, transparent);
-    stroke-width: 1;
+  /* PRC-MKT: adil rekabet ilkesi — bölümün altında tek satırlık sakin bant (koyu vitrin değil; vurgu yalnız ikon). */
+  .pledge {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: var(--ek-space-3) var(--ek-space-4);
+    align-items: start;
+    margin-top: var(--ek-space-10);
+    padding: var(--ek-space-5) var(--ek-space-6);
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--site-radius-panel);
+    background: var(--ek-color-surface);
+    box-shadow: var(--site-shadow-card);
   }
-  .ill-cell--own {
-    fill: var(--ek-color-secondary);
-    stroke: none;
+  .pledge__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--ek-space-10);
+    height: var(--ek-space-10);
+    border: var(--site-border-width) solid var(--site-accent-line);
+    border-radius: var(--ek-radius-lg);
+    color: var(--site-accent);
   }
-  .ill-own-glow {
-    fill: none;
-    stroke: color-mix(in srgb, var(--ek-color-secondary) 70%, transparent);
-    stroke-width: 1.5;
+  .pledge__body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-1);
+    margin: 0;
   }
-  .ill-own-lock,
-  .ill-badge-lock,
-  .ill-pass-mark,
-  .ill-block-mark,
-  .ill-breaker-mark {
-    fill: none;
-    stroke: var(--ek-color-content-strong);
-    stroke-width: 1.6;
-    stroke-linecap: round;
-    stroke-linejoin: round;
+  .pledge__label {
+    color: var(--site-text-heading);
+    font-size: var(--ek-font-size-md);
+    font-weight: var(--ek-font-weight-bold);
   }
-  .ill-field {
-    fill: color-mix(in srgb, var(--ek-color-background) 6%, transparent);
-    stroke: var(--site-glass-border);
+  .pledge__text {
+    color: var(--site-text-body);
+    font-size: var(--ek-font-size-md);
+    line-height: var(--site-font-body-line-height);
   }
-  .ill-badge {
-    fill: var(--ek-color-secondary);
+  .pledge__link {
+    display: inline-flex;
+    grid-column: 1 / -1;
+    align-items: center;
+    justify-self: start;
+    gap: var(--ek-space-2);
+    min-height: var(--site-tap-target);
+    color: var(--site-link-accent);
+    font-weight: var(--ek-font-weight-semibold);
+    white-space: nowrap;
   }
-  .ill-dot {
-    fill: color-mix(in srgb, var(--ek-color-background) 70%, transparent);
-  }
-  .ill-scan rect {
-    fill: color-mix(in srgb, var(--ek-color-secondary) 26%, transparent);
-    stroke: color-mix(in srgb, var(--ek-color-secondary) 70%, transparent);
-  }
-  .ill-gate {
-    stroke: color-mix(in srgb, var(--ek-color-secondary) 55%, transparent);
-    stroke-width: 1.5;
-    stroke-dasharray: 4 5;
-  }
-  .ill-tier circle {
-    fill: color-mix(in srgb, var(--ek-color-background) 30%, transparent);
-  }
-  .ill-tier rect {
-    fill: color-mix(in srgb, var(--ek-color-background) 14%, transparent);
-  }
-  .ill-tier--top circle,
-  .ill-tier--top rect {
-    fill: var(--ek-color-secondary);
-  }
-  .ill-pass {
-    fill: var(--ek-color-secondary);
-  }
-  .ill-block-mark {
-    stroke: color-mix(in srgb, var(--ek-color-background) 55%, transparent);
-  }
-  .ill-wire {
-    stroke: color-mix(in srgb, var(--ek-color-background) 26%, transparent);
-    stroke-width: 2;
-    stroke-dasharray: 3 5;
-  }
-  .ill-end {
-    fill: color-mix(in srgb, var(--ek-color-background) 12%, transparent);
-    stroke: color-mix(in srgb, var(--ek-color-background) 40%, transparent);
-  }
-  .ill-breaker {
-    fill: var(--ek-color-secondary);
-  }
-  .ill-packet {
-    fill: var(--site-color-on-primary);
+  @media (min-width: 768px) {
+    .pledge {
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      align-items: center;
+    }
+    .pledge__link {
+      grid-column: auto;
+    }
   }
 
   .sec__stamp {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     gap: var(--ek-space-2);
-    max-width: none;
     margin-top: var(--ek-space-8);
-    color: var(--site-color-on-primary-muted);
-    font-size: var(--ek-font-size-sm);
+    color: var(--site-text-meta);
+    font-size: var(--ek-font-size-xs);
   }
   .sec__stamp :global(.icon) {
-    flex: none;
-    margin-top: var(--ek-space-1);
+    color: var(--site-accent);
   }
 
   @media (min-width: 560px) {
@@ -663,12 +559,22 @@ const cells = Array.from({ length: 24 }, (_, i) => ({ x: (i % 8) * 29 + 4, y: Ma
   @media (min-width: 768px) {
     .sec__grid {
       grid-template-columns: repeat(2, minmax(0, 1fr));
+      column-gap: var(--ek-space-8);
     }
   }
   @media (min-width: 1024px) {
     .sec {
-      grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+      grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.75fr);
       gap: var(--ek-space-12);
+      align-items: start;
+    }
+    /* Dar vitrin sütununda çipler tek sütun (iki sütunda etiketler üç satıra kırılıyordu). */
+    .guard__list {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .guard {
+      position: sticky;
+      top: calc(var(--site-header-height) + var(--ek-space-6));
     }
     .guard {
       grid-template-areas:
@@ -677,101 +583,4 @@ const cells = Array.from({ length: 24 }, (_, i) => ({ x: (i % 8) * 29 + 4, y: Ma
     }
   }
 
-  /*
-   * Döngüler (yalnızca transform/opacity): halkalar ve kadran çok yavaş döner; izole hücre nefes alır; maskeli
-   * anahtar üzerinde tarama; en üst yetki kademesi parlar; paket devre kesiciden geçer. Hepsi `paused` başlar,
-   * yalnızca sahne görünürken çalışır; sekme gizliyken genel kural (scenes.css) durdurur.
-   */
-  @media (prefers-reduced-motion: no-preference) {
-    @keyframes sec-spin {
-      to {
-        rotate: 360deg;
-      }
-    }
-    @keyframes sec-spin-back {
-      to {
-        rotate: -360deg;
-      }
-    }
-    @keyframes sec-breathe {
-      0%,
-      100% {
-        opacity: 0.35;
-        scale: 0.94;
-      }
-      50% {
-        opacity: 1;
-        scale: 1.06;
-      }
-    }
-    @keyframes sec-scan {
-      0% {
-        translate: 0 0;
-        opacity: 0;
-      }
-      10%,
-      80% {
-        opacity: 1;
-      }
-      100% {
-        translate: calc(var(--site-scene-unit) * 140) 0;
-        opacity: 0;
-      }
-    }
-    @keyframes sec-glow {
-      0%,
-      100% {
-        opacity: 0.55;
-      }
-      50% {
-        opacity: 1;
-      }
-    }
-    @keyframes sec-packet {
-      0% {
-        translate: 0 0;
-        opacity: 0;
-      }
-      8%,
-      88% {
-        opacity: 1;
-      }
-      100% {
-        translate: calc(var(--site-scene-unit) * 200) 0;
-        opacity: 0;
-      }
-    }
-    .ill-own-glow,
-    .ill-tier--top {
-      transform-box: fill-box;
-      transform-origin: center;
-    }
-    :global(html[data-motion='play']) [data-scene='request-guard'][data-state='play'] .art-ring--outer {
-      animation: sec-spin var(--site-motion-ambient-slow) var(--site-motion-ease-linear) infinite paused;
-    }
-    :global(html[data-motion='play']) [data-scene='request-guard'][data-state='play'] .art-ring--mid {
-      animation: sec-spin-back var(--site-motion-loop-scene) var(--site-motion-ease-linear) infinite paused;
-    }
-    :global(html[data-motion='play']) [data-scene='request-guard'][data-state='play'] .art-dial {
-      animation: sec-spin var(--site-motion-ambient-slow) var(--site-motion-ease-loop) infinite paused;
-    }
-    :global(html[data-motion='play']) [data-scene='request-guard'][data-state='play'][data-visible='true'] :is(.art-ring, .art-dial) {
-      animation-play-state: running;
-    }
-    :global(html[data-motion='play']) [data-scene='reveal'][data-state='play'] .ill-own-glow {
-      animation: sec-breathe var(--site-motion-ambient-fast) var(--site-motion-ease-loop) infinite paused;
-    }
-    :global(html[data-motion='play']) [data-scene='reveal'][data-state='play'] .ill-scan {
-      animation: sec-scan var(--site-motion-ambient-fast) var(--site-motion-ease-loop) infinite paused;
-    }
-    :global(html[data-motion='play']) [data-scene='reveal'][data-state='play'] .ill-tier--top {
-      animation: sec-glow var(--site-motion-ambient-fast) var(--site-motion-ease-loop) infinite paused;
-    }
-    :global(html[data-motion='play']) [data-scene='reveal'][data-state='play'] .ill-packet {
-      animation: sec-packet var(--site-motion-ambient-fast) var(--site-motion-ease-loop) infinite paused;
-    }
-    :global(html[data-motion='play']) [data-scene='reveal'][data-state='play'][data-visible='true'] :is(.ill-own-glow, .ill-scan, .ill-tier--top, .ill-packet) {
-      animation-play-state: running;
-    }
-  }
 </style>

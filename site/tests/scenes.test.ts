@@ -33,8 +33,6 @@ const ENTER_SCENES: Record<string, string> = {
   'stock-single-winner': 'components/home/Capabilities.astro',
   'orders-merge': 'components/home/Capabilities.astro',
   'integration-status': 'components/home/Capabilities.astro',
-  'secret-encryption': 'components/home/Capabilities.astro',
-  'tenant-isolation': 'components/home/Capabilities.astro',
   'story-step': 'components/home/OrderStory.astro',
   'how-progress': 'components/home/HowItWorks.astro',
   'request-guard': 'components/home/SecuritySummary.astro',
@@ -51,7 +49,6 @@ const GENERIC_SCENES: Record<string, string> = {
 /** Yalnızca döngüsel (ambient) sahneler. */
 const LOOP_SCENES: Record<string, string> = {
   'hero-bg': 'components/home/Hero.astro',
-  marquee: 'components/home/Proof.astro',
   // S18: /asistan hero'su — örnek senaryo sohbeti (30 sn tek zaman çizelgesi; statik hâl = tüm diyalog + onay bekliyor)
   'assistant-chat': 'components/assistant/ChatScene.astro',
   // S22: ajan sayfası — konsol durum ışıması + tarama ışığı; ajan döngüsü iz ışığı + düğüm vurgusu
@@ -278,7 +275,8 @@ describe('sahne süreleri bağlayıcı sınırlar içinde (ADR-0014 Karar 3)', (
     // S13: hero show merkezi 30 sn'de dört sahne (dilim başına 7,5 sn); 12 sn senaryo token'ı diğer sahnelerde sürer
     expect(loops.body).toMatch(/animation-duration:\s*var\(--site-motion-loop-marquee\)/)
     expect(loops.body).toMatch(/var\(--site-motion-loop-scene\)/)
-    expect(loops.body).toMatch(/animation:\s*loop-marquee var\(--site-motion-loop-marquee\)/)
+    // S27a: kayan yetenek şeridi kaldırıldı (hero sade karşılama + N9 hareket ekonomisi) — döngüsü de yok
+    expect(loops.body).not.toMatch(/@keyframes loop-marquee|animation:\s*loop-marquee/)
   })
 })
 

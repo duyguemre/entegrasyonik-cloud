@@ -9,6 +9,7 @@
  * maddeleri (kanıt: tests/pages.test.ts). Sertifika/uyumluluk, veri konumu, SLA ve süre iddiası YOKTUR.
  * KVKK bağlantısı yalnızca ilgili yasal sayfa `published` ise verilir (S5).
  */
+import Eyebrow from '../components/Eyebrow.astro'
 import BaseLayout from '../layouts/BaseLayout.astro'
 import { crumbsFor } from '../data/seo'
 import Section from '../components/Section.astro'
@@ -20,6 +21,7 @@ import PageHero from '../components/pages/PageHero.astro'
 import CtaBand from '../components/pages/CtaBand.astro'
 import { getPublicCapabilities, type PublicProductCapability } from '../data/capabilities'
 import { securityPrinciples } from '../data/security-principles'
+import { fairSection, fairPrinciples } from '../data/fair-play'
 import { legalNav, published } from '../data/navigation'
 
 const crumbs = crumbsFor('/guvenlik')
@@ -49,12 +51,13 @@ const legalCards = [kvkk, privacy, subscription].filter((x): x is NonNullable<ty
   <PageHero
     title="Verileriniz sizin, kontrol sizde"
     eyebrow="Güvenlik"
-    lead="Pazaryeri anahtarlarınızdan operasyon verinize kadar her katman, platformda uygulanmış korumalara dayanır. Aşağıda bunları yönetici düzeyinde özetliyoruz; ayrıntısını merak ettiğiniz her ilkeyi açabilirsiniz."
+    lead="Pazaryeri anahtarlarınızdan operasyon verinize kadar her şey korunur ve yalnızca size aittir. Korumaları aşağıda yönetici düzeyinde özetliyoruz; merak ettiğiniz ilkenin ayrıntısını açabilirsiniz."
     crumbs={crumbs}
   >
     <HeroActions
       actions={[
         { label: 'Güvence ilkeleri', href: '#ilkeler' },
+        { label: 'Adil rekabet', href: `#${fairSection.id}` },
         { label: 'Kapsam ve KVKK', href: '#kapsam' },
       ]}
     />
@@ -128,10 +131,34 @@ const legalCards = [kvkk, privacy, subscription].filter((x): x is NonNullable<ty
     </ol>
   </Section>
 
-  <Section id="kapsam" labelledby="kapsam-title" tone="muted" class="tight-section">
+  <!-- PRC-MKT (K58): adil rekabet ilkesi — üst tutum; metin `src/data/fair-play.ts`, seçenekler docs/site-fair/COPY.md -->
+  <Section id={fairSection.id} labelledby="adil-rekabet-title" tone="muted" class="tight-section">
+    <div class="fair" data-testid="fair-play">
+      <div class="head head--compact fair__head">
+        <Eyebrow>{fairSection.eyebrow}</Eyebrow>
+        <h2 id="adil-rekabet-title">{fairSection.title}</h2>
+        <p>{fairSection.lead}</p>
+      </div>
+      <ol class="fair__list" role="list">
+        {
+          fairPrinciples.map((f) => (
+            <li class="fair__item" data-fair={f.id}>
+              <span class="fair__icon" aria-hidden="true"><Icon name={f.icon} size="sm" /></span>
+              <div>
+                <h3 class="fair__title">{f.title}</h3>
+                <p class="fair__text">{f.value}</p>
+              </div>
+            </li>
+          ))
+        }
+      </ol>
+    </div>
+  </Section>
+
+  <Section id="kapsam" labelledby="kapsam-title" class="tight-section">
     <div class="scope">
       <div class="head head--compact">
-        <p class="eyebrow">Şeffaflık</p>
+        <Eyebrow>Şeffaflık</Eyebrow>
         <h2 id="kapsam-title">Kapsam ve KVKK</h2>
         <p>
           Bu sayfa bir sertifikasyon veya bağımsız denetim belgesi değildir; yalnızca ürünün uyguladığı teknik önlemleri özetler.
@@ -175,7 +202,7 @@ const legalCards = [kvkk, privacy, subscription].filter((x): x is NonNullable<ty
 
   <CtaBand
     id="guvenlik-cta"
-    title="Sorularınız için bize yazın"
+    title="Güvenlik sorularınızı birlikte yanıtlayalım"
     text="Güvenlik yaklaşımımıza dair ek bilgi istiyorsanız iletişim sayfasından bize ulaşabilirsiniz."
     primary={{ label: 'İletişim', href: '/iletisim' }}
     secondary={{ label: 'Sık sorulan sorular', href: '/sss' }}
@@ -187,7 +214,7 @@ const legalCards = [kvkk, privacy, subscription].filter((x): x is NonNullable<ty
 </script>
 
 <style>
-  .tight-section:global(.section) {
+  :global(.section.tight-section) {
     padding-block: calc(var(--site-section-y) * 0.72);
   }
   .head {
@@ -199,13 +226,6 @@ const legalCards = [kvkk, privacy, subscription].filter((x): x is NonNullable<ty
   }
   .head--compact {
     margin-bottom: 0;
-  }
-  .eyebrow {
-    color: var(--site-link-accent);
-    font-size: var(--site-card-eyebrow-size);
-    font-weight: var(--ek-font-weight-semibold);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
   }
   .head h2 {
     color: var(--site-text-heading);
@@ -265,8 +285,63 @@ const legalCards = [kvkk, privacy, subscription].filter((x): x is NonNullable<ty
     font-weight: var(--ek-font-weight-medium);
     text-decoration: none;
   }
-  .hero-list a:hover {
-    text-decoration: underline;
+
+  /* --- Adil rekabet (PRC-MKT) --- sakin, sayfanın güvence kartlarından hafif: ince çizgili liste, kontur ikon karosu */
+  .fair {
+    display: grid;
+    gap: var(--ek-space-8);
+    scroll-margin-top: calc(var(--site-header-height) + var(--ek-space-6));
+  }
+  .fair__list {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0 var(--ek-space-8);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .fair__item {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: var(--ek-space-4);
+    align-items: start;
+    padding-block: var(--ek-space-5);
+    border-top: var(--site-border-width) solid var(--ek-color-border-default);
+  }
+  .fair__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--ek-space-10);
+    height: var(--ek-space-10);
+    border: var(--site-border-width) solid var(--site-accent-line);
+    border-radius: var(--ek-radius-lg);
+    background: var(--ek-color-surface);
+    color: var(--site-accent);
+  }
+  .fair__title {
+    margin-bottom: var(--ek-space-1);
+    color: var(--site-text-heading);
+    font-size: var(--ek-font-size-lg);
+    font-weight: var(--ek-font-weight-bold);
+    letter-spacing: -0.01em;
+  }
+  .fair__text {
+    color: var(--site-text-body);
+    font-size: var(--ek-font-size-md);
+    line-height: var(--site-font-body-line-height);
+  }
+  @media (min-width: 768px) {
+    .fair__list {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @media (min-width: 1024px) {
+    .fair {
+      grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+      gap: var(--ek-space-12);
+      align-items: start;
+    }
   }
 
   /* --- İlkeler --- */

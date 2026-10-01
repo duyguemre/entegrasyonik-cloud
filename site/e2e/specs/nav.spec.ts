@@ -202,7 +202,7 @@ test.describe('S23 üst menü — masaüstü', () => {
     await expect(cozum).toHaveAttribute('aria-expanded', 'false')
   })
 
-  test('S25 kaydırma: cam zemin kısalır (akış yüksekliği sabit), aktif sayfa alt çizgili', async ({ page }) => {
+  test('S25 kaydırma: cam zemin kısalır (akış yüksekliği sabit), aktif sayfa nokta işaretli (S27b: alt çizgi yok)', async ({ page }) => {
     await page.goto('/fiyatlandirma')
     const header = page.locator('.site-header')
     const h0 = (await header.boundingBox())!.height
@@ -216,8 +216,35 @@ test.describe('S23 üst menü — masaüstü', () => {
     expect(scale).not.toBe('none')
     const link = nav(page).getByRole('link', { name: 'Fiyatlar', exact: true })
     await expect(link).toHaveAttribute('aria-current', 'page')
-    const underline = await link.evaluate((el) => getComputedStyle(el, '::after').content)
-    expect(underline).not.toBe('none')
+    const mark = await link.evaluate((el) => {
+      const a = getComputedStyle(el, '::after')
+      return { content: a.content, w: parseFloat(a.width), h: parseFloat(a.height), deco: getComputedStyle(el).textDecorationLine }
+    })
+    expect(mark.content).not.toBe('none')
+    expect(mark.w).toBe(mark.h) // nokta: kare/daire, çizgi değil
+    expect(mark.deco).toBe('none')
+  })
+
+  test('S27b premium panel: editoryal başlık, hover\'da dolgun ikon karosu + ok, alt çizgi yok; ajan döngüsü kayıttan', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 })
+    await page.goto('/')
+    await trigger(page, 'Ürün').click()
+    const panel = page.locator('#mega-product')
+    await expect(panel.locator('.mega__head .mega__lead')).toBeVisible()
+    const item = panel.locator('.mega-item').first()
+    const arrow = item.locator('.mega-item__arrow')
+    await expect(arrow).toHaveCSS('opacity', '0')
+    await item.hover()
+    await expect(arrow).toHaveCSS('opacity', '1')
+    const link = item.locator('.nav-link')
+    await expect(link).toHaveCSS('text-decoration-line', 'none')
+    const tile = await item.locator('.mega-item__icon').evaluate((el) => getComputedStyle(el).backgroundImage)
+    expect(tile).toBe('none') // hover: degrade yerine dolgun zemin
+    await expect(panel.getByTestId('nav-feature-agent').locator('.mega-feature__flow li')).toHaveText(['Gözle', 'Öner', 'Onayla', 'Uygula', 'Raporla'])
+    // alt şerit bağlantısı: hap zemini, alt çizgi yok
+    const more = panel.locator('.mega__foot .mega-more')
+    await more.hover()
+    await expect(more).toHaveCSS('text-decoration-line', 'none')
   })
 
   test('axe WCAG 2.1 AA: her panel açıkken 0 ihlal', async ({ page }) => {

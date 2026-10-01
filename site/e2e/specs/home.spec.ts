@@ -82,7 +82,11 @@ test.describe('Ana sayfa bölümleri', () => {
 
   test('fiyat kartları: plan bağlantıları ve taslak uyarısı', async ({ page }) => {
     await page.goto('/')
-    await expect(page.getByTestId('plan-notice')).toContainText('ÖNERİ')
+    // N4 (S27b varsayılanı): görünür not ziyaretçi dilinde; iç kayıt ("ÖNERİ …") öznitelikte aynen durur
+    await expect(page.getByTestId('plan-notice')).toContainText('yayın öncesi kesinleşir')
+    await expect(page.getByTestId('plan-notice')).toHaveAttribute('data-proposal-notice', /^ÖNERİ/)
+    // S27a (K46): her plan kartında Otopilot bloğu
+    for (const code of ['starter', 'growth', 'enterprise']) await expect(page.getByTestId(`plan-agent-${code}`)).toBeVisible()
     await expect(page.locator('[data-part="plan"]')).toHaveCount(3)
     await expect(page.getByTestId('plan-cta-starter')).toHaveAttribute('href', `${APP_URL}/login?mode=register&plan=starter&interval=month`)
   })
@@ -147,7 +151,8 @@ test.describe('Ana sayfa bölümleri', () => {
   test('prefers-reduced-motion: içerik statik ve tam görünür', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' })
     await page.goto('/')
-    for (const scene of ['hero-mock', 'stock-single-winner', 'orders-merge', 'integration-status', 'secret-encryption', 'tenant-isolation', 'request-guard']) {
+    // S27a: şifreli anahtar / izole veri karoları Güvenlik bölümüne taşındı (request-guard o anlatıyı taşır)
+    for (const scene of ['hero-mock', 'stock-single-winner', 'orders-merge', 'integration-status', 'request-guard']) {
       await expect(page.locator(`[data-scene="${scene}"]`)).toBeVisible()
     }
     await expect(page.locator(`li[data-scene="how-progress"]`)).toHaveCount(4)

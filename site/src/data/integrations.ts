@@ -160,7 +160,7 @@ export const integrations: Integration[] = [
       cap(
         'questions',
         'supported',
-        'Müşteri soruları listelenir ve cevaplanır.',
+        'Alıcı soruları listelenir ve cevaplanır.',
         registry('§2.1', '### 2.1 Trendyol'),
         code('marketplace/trendyol/index.ts', 'trendyol/index.ts answerMessage', 'answerMessage'),
       ),
@@ -428,7 +428,7 @@ export const integrations: Integration[] = [
       cap(
         'questions',
         'supported',
-        'Müşteri mesajları listelenir ve cevaplanır.',
+        'Alıcı mesajları listelenir ve cevaplanır.',
         registry('§2.4', '### 2.4 Pazarama'),
         code('marketplace/pazarama/index.ts', 'pazarama/index.ts answerMessage', 'answerMessage'),
       ),
@@ -834,17 +834,17 @@ export function getEcosystemNodes(): PublicEcosystemNode[] {
 export const ecosystemPromises: Array<{ id: string; title: string; line: string }> = [
   {
     id: 'single-source',
-    title: 'Tek doğruluk kaynağı',
-    line: 'Ürün, stok ve fiyat tek merkezde tutulur; kanallar aynı kaynaktan beslenir.',
+    title: 'Her kanal aynı bilgiyle',
+    line: 'Ürün, stok ve fiyat bilgisi tek kaynaktan gelir; her kanal aynı bilgiyle çalışır.',
   },
   {
     id: 'one-flow',
-    title: 'Tek sipariş akışı',
-    line: 'Her kanaldan gelen sipariş aynı listede, aynı iş akışıyla ilerler.',
+    title: 'Siparişler aynı listede',
+    line: 'Hangi kanaldan gelirse gelsin sipariş aynı listede, aynı adımlarla ilerler.',
   },
   {
     id: 'one-standard',
-    title: 'Tek çalışma biçimi',
-    line: 'Her kanal aynı merkeze bağlanır; ekibiniz her kanalı aynı ekranda, aynı adımlarla yönetir.',
+    title: 'Ekibiniz aynı düzende çalışır',
+    line: 'Her kanal aynı ekrana bağlanır; ekibiniz kanal başına ayrı bir panel öğrenmez.',
   },
 ]
