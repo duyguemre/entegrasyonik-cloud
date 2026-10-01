@@ -35,15 +35,18 @@
       <thead role="rowgroup">
         <tr role="row">
           <th v-if="selectable" class="ek-grid__th ek-grid__th--select" scope="col" role="columnheader">
-            <input
-              ref="allRef"
-              type="checkbox"
-              class="ek-grid__check"
-              :checked="allSelected"
-              :disabled="loading || !rows.length"
-              aria-label="Tüm satırları seç"
-              @change="toggleAll"
-            />
+            <!-- MOB-00: etiket dokunma alanını büyütür (dokunmatikte 44×44, touch.css); görünen kutu aynı. -->
+            <label class="ek-grid__check-hit">
+              <input
+                ref="allRef"
+                type="checkbox"
+                class="ek-grid__check"
+                :checked="allSelected"
+                :disabled="loading || !rows.length"
+                aria-label="Tüm satırları seç"
+                @change="toggleAll"
+              />
+            </label>
           </th>
           <th
             v-for="(col, ci) in columns"
@@ -92,14 +95,16 @@
           @click="emit('row-click', row)"
         >
           <td v-if="selectable" class="ek-grid__td ek-grid__td--select" role="cell" @click.stop>
-            <input
-              type="checkbox"
-              class="ek-grid__check"
-              :checked="isSelected(row)"
-              :indeterminate.prop="indeterminateSet.has(row[rowKey])"
-              :aria-label="`${row[labelKey] ?? row[rowKey]} satırını seç`"
-              @change="toggleRow(row)"
-            />
+            <label class="ek-grid__check-hit">
+              <input
+                type="checkbox"
+                class="ek-grid__check"
+                :checked="isSelected(row)"
+                :indeterminate.prop="indeterminateSet.has(row[rowKey])"
+                :aria-label="`${row[labelKey] ?? row[rowKey]} satırını seç`"
+                @change="toggleRow(row)"
+              />
+            </label>
           </td>
           <td
             v-for="(col, ci) in columns"
@@ -576,6 +581,14 @@ function toggleSort(key: string) {
 /* Koyu temada koyu marka tonları (Pazarama/Ideasoft/Bizimhesap) koyu zeminde kaybolmasın: ince açık halka (K13 + FR2-DARK). */
 :root[data-theme='dark'] .ek-grid__row.has-channel > .ek-grid__td:first-child::before {
   box-shadow: 0 0 0 1px var(--ek-channel-ring, transparent);
+}
+
+.ek-grid__check-hit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+  cursor: pointer;
 }
 
 .ek-grid__check {

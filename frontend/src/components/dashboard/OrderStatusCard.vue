@@ -292,4 +292,11 @@ const option = computed(() => ({
     width: 100%;
   }
 }
+
+/* MOB-00: dokunmatikte satır/bağlantı hedefi en az 44 px (--ek-control-h-touch). */
+@media (pointer: coarse) {
+  .dash-status__row {
+    min-height: var(--ek-control-h-touch);
+  }
+}
 </style>

@@ -131,6 +131,8 @@ export const controlHeight = {
   lg: 40,
   /** Metin/seçim/tarih alanı (FR2-SHELL madde 5: 40 → 36, düğme `md` ile aynı hiza). */
   field: 36,
+  /** MOB-00: dokunmatik (pointer: coarse) asgari hedef — WCAG 2.5.5 (44×44). Masaüstü yoğunluğu değişmez. */
+  touch: 44,
 } as const
 
 /**

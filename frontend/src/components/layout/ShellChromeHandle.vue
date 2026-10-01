@@ -174,4 +174,22 @@ const focusLabel = computed(() => (props.focusMode ? 'Odak modundan çık' : 'Ta
     opacity: 0;
   }
 }
+
+/* MOB-00: dokunmatikte düğme 44 px genişlikte, yükseklik görünmez genişletmeyle 44 px (--ek-control-h-touch).
+   Sekme şeridi bu genişliği SecureLayout'ta ayırır (tutamak "Tüm sekmeler" düğmesinin üstüne binmez). */
+@media (pointer: coarse) {
+  .ek-chrome-handle__btn {
+    position: relative;
+    min-width: var(--ek-control-h-touch);
+  }
+  .ek-chrome-handle__btn::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: max(100%, var(--ek-control-h-touch));
+    height: max(100%, var(--ek-control-h-touch));
+    transform: translate(-50%, -50%);
+  }
+}
 </style>

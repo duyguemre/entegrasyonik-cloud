@@ -562,4 +562,12 @@ function remove(view: SavedView) {
     max-width: 160px;
   }
 }
+
+/* MOB-00: dokunmatikte hedef en az 44×44 (--ek-control-h-touch). */
+@media (pointer: coarse) {
+  .ek-views__trigger {
+    min-width: var(--ek-control-h-touch);
+    min-height: var(--ek-control-h-touch);
+  }
+}
 </style>

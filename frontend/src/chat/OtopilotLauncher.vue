@@ -66,4 +66,12 @@ const label = computed(() => `${otopilot.getController().t(otopilot.panelOpen ? 
   outline: 2px solid var(--ek-color-chrome-text);
   outline-offset: 2px;
 }
+
+/* MOB-00: dokunmatikte hedef en az 44×44 (--ek-control-h-touch). */
+@media (pointer: coarse) {
+  .ek-otopilot-launcher {
+    min-width: var(--ek-control-h-touch);
+    min-height: var(--ek-control-h-touch);
+  }
+}
 </style>

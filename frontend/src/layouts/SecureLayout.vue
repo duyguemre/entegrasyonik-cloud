@@ -484,6 +484,14 @@ const closeTemporaryMenu = () => {
   transition: top var(--ek-motion-reveal);
 }
 
+/* MOB-00: dokunmatikte tutamak hep açık (ShellChromeHandle) → sekme şeridi sağda onun genişliğini ayırır; aksi hâlde
+   tutamak şeridin "Tüm sekmeler" düğmesinin üstüne biniyordu (360–430 px ölçümü). Genişlik = 2 dokunma hedefi + boşluk. */
+@media (hover: none) {
+  .ek-shell__tabs {
+    right: calc(var(--v-layout-right, 0px) + 2 * var(--ek-control-h-touch) + var(--ek-space-3));
+  }
+}
+
 /* FR2-SHELL madde 3 (fe-r2a): çalışma alanı KAYDIRMA KABIDIR. Önceden `overflow: visible` idi → kendi iç kaydırıcısı
    olmayan uzun sayfalar (Yardım merkezi, ürün formu …) BELGEYİ kaydırıyor, mutlak konumlu sekme şeridi ve başlık
    sayfayla birlikte yukarı kayıyordu (ölçüm: /help belge 1793px / pencere 800px). Artık belge kaymaz; ana sekmeler

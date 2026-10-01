@@ -759,4 +759,11 @@ defineExpose({
 .ek-bulk-danger {
   color: var(--ek-color-error);
 }
+
+/* MOB-00: dokunmatikte satır/bağlantı hedefi en az 44 px (--ek-control-h-touch). */
+@media (pointer: coarse) {
+  .ek-order-items {
+    min-height: var(--ek-control-h-touch);
+  }
+}
 </style>

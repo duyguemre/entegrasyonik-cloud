@@ -364,4 +364,20 @@ function onReorder(sectionId: string, keys: string[]) {
     opacity: 1;
   }
 }
+
+/* MOB-00: dokunmatikte görünüm aynı, dokunma alanı 44×44 (görünmez genişletme; --ek-control-h-touch). */
+@media (pointer: coarse) {
+  .ek-shell-nav__fav {
+    position: relative;
+  }
+  .ek-shell-nav__fav::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: max(100%, var(--ek-control-h-touch));
+    height: max(100%, var(--ek-control-h-touch));
+    transform: translate(-50%, -50%);
+  }
+}
 </style>

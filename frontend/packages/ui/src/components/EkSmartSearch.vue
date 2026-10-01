@@ -670,4 +670,11 @@ defineExpose({ focus: () => inputRef.value?.focus(), blur: () => inputRef.value?
     max-height: calc(100vh - var(--ek-app-topbar-height) - var(--ek-space-4));
   }
 }
+
+/* MOB-00: iOS Safari 16 px altı alana odaklanınca sayfayı yakınlaştırır → dokunmatikte 16 px (touch.css ile aynı kural). */
+@media (pointer: coarse) {
+  .ek-search__input {
+    font-size: 1rem;
+  }
+}
 </style>
