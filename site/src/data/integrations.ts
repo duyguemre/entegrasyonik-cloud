@@ -834,8 +834,8 @@ export function getEcosystemNodes(): PublicEcosystemNode[] {
 export const ecosystemPromises: Array<{ id: string; title: string; line: string }> = [
   {
     id: 'single-source',
-    title: 'Bilgi bir kez girilir',
-    line: 'Ürün, stok ve fiyatı bir kez güncellersiniz; bağlı kanallarınız aynı bilgiyle beslenir.',
+    title: 'Her kanal aynı bilgiyle',
+    line: 'Ürün, stok ve fiyat bilgisi tek kaynaktan gelir; her kanal aynı bilgiyle çalışır.',
   },
   {
     id: 'one-flow',
