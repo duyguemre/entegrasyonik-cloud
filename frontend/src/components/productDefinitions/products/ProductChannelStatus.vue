@@ -84,8 +84,17 @@ const statuses = computed<ProductChannelStatus[]>(() => props.channels.map((c) =
 const titleOf = (code: string) => props.channels.find((c) => c.code === code)?.title ?? channelName(code)
 const summaryText = computed(() => statuses.value.map((s) => channelStatusText(s, titleOf(s.code))).join('; ') || 'Kanal bağlı değil')
 const summary = computed(() => channelStatusSummary(statuses.value))
-/** Hücrede rozetiyle görünen kanallar: ürünün bulunduğu ya da gönderime hazır işaretli olanlar. */
-const present = computed(() => statuses.value.filter((s) => s.key !== 'none' || s.ready))
+/** Hücrede rozetiyle görünen kanallar: ürünün bulunduğu ya da gönderime hazır işaretli olanlar — en kritik önce,
+ *  satır en fazla 3 öğe (tek satır, ~160px): ya 3 rozet ya da 2 rozet + "+n" hapı (kalanlar ve gönderilmemişler;
+ *  ayrıntı ipucu + panelde). */
+const SEVERITY: Record<string, number> = { failed: 0, waiting: 1, offsale: 2, live: 3, none: 4 }
+const MAX_SLOTS = 3
+const withPresence = computed(() => statuses.value.filter((s) => s.key !== 'none' || s.ready)
+  .sort((a, b) => SEVERITY[a.key] - SEVERITY[b.key]))
+const present = computed(() => {
+  const all = withPresence.value
+  return all.length === statuses.value.length && all.length <= MAX_SLOTS ? all : all.slice(0, MAX_SLOTS - 1)
+})
 const absentCount = computed(() => statuses.value.length - present.value.length)
 /** İpucu: kanal başına bir satır (panelle aynı dil). */
 const titleText = computed(() => statuses.value.map((s) => channelStatusText(s, titleOf(s.code))).join('\n') || 'Kanal bağlı değil')
@@ -153,11 +162,16 @@ function countsText(s: ProductChannelStatus): string {
 .pcs__summary.is-action { color: var(--ek-color-action); }
 .pcs__summary.is-neutral { color: var(--ek-color-content-muted); font-weight: var(--ek-font-weight-medium); }
 
+/* Masaüstünde rozet satırı tek satır (satır yüksekliği sabit); dar kart görünümünde sarar. */
 .pcs__channels {
   display: inline-flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
-  gap: 4px 8px;
+  gap: 4px 6px;
+}
+
+@media (max-width: 599px) {
+  .pcs__channels { flex-wrap: wrap; }
 }
 
 .pcs__absent {

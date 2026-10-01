@@ -37,7 +37,7 @@ const glyph = computed(() => GLYPHS[props.status.key] ?? (props.status.ready ? {
   display: inline-flex;
   flex: none;
   align-items: center;
-  gap: 2px;
+  gap: 1px;
 }
 
 .cst :deep(.ek-chb) {
