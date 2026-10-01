@@ -95,7 +95,7 @@ test.describe('ADR-0018 — Entegrasyon uyum konsolu', () => {
     const probe = view.locator('.compliance-summary__probe')
     await expect(probe).toHaveCount(1)
     await expect(probe.getByText('Başarılı')).toBeVisible()
-    await expect(probe.getByText('6 probe işlendi · 0 başarısız')).toBeVisible()
+    await expect(probe.getByText('6 kontrol işlendi · 0 başarısız')).toBeVisible()
     await expect(probe.getByText('tek bir platform turu', { exact: false })).toBeVisible()
 
     // Tablo: 6 satır, kritik en üstte (backend lastSeenAt sırası şiddet içinde korunur).
@@ -245,7 +245,7 @@ test.describe('ADR-0018 — Entegrasyon uyum konsolu', () => {
     const drawer = page.locator('.v-navigation-drawer.soft-nav')
     const group = drawer.locator('.v-list-group').filter({ has: page.locator('.v-list-group__header .mdi-shield-account-outline') })
     await group.locator('.v-list-group__header').click()
-    await expect(group.getByText('Entegrasyon Uyum', { exact: true })).toBeVisible()
+    await expect(group.getByText('Entegrasyon uyumu', { exact: true })).toBeVisible()
   })
 
   test('rol (olumsuz): platformAdmin OLMAYAN — menüde yok, derin bağlantı açılmaz, uyum RPC çağrılmaz', async ({ page }) => {
@@ -258,7 +258,7 @@ test.describe('ADR-0018 — Entegrasyon uyum konsolu', () => {
     await openDrawer(page)
     const drawer = page.locator('.v-navigation-drawer.soft-nav')
     await expect(drawer.locator(`.${COMPLIANCE_MENU_ICON}`)).toHaveCount(0)
-    await expect(drawer.getByText('Entegrasyon Uyum', { exact: true })).toHaveCount(0)
+    await expect(drawer.getByText('Entegrasyon uyumu', { exact: true })).toHaveCount(0)
     expect(calls.list.length + calls.summary.length + calls.getDetail.length + calls.transition.length).toBe(0)
   })
 
