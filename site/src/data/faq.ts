@@ -349,7 +349,7 @@ export const faq: FaqItem[] = [
     category: 'destek-olcek',
     question: 'Satış hacmim arttıkça Entegrasyonik benimle birlikte ölçeklenir mi?',
     answer:
-      'Entegrasyonik çok kanallı operasyonları büyütmek için tasarlandı. Kanallarla iletişim zaman aşımı, kontrollü yeniden deneme ve devre kesici içeren bir dayanıklılık katmanından geçer; geçici hatalar kontrollü biçimde yönetilir. Kanal, ürün veya kullanıcı kapasitesine ihtiyaç duyduğunuzda planınızı yükseltmeniz yeterlidir.',
+      'Entegrasyonik çok kanallı operasyonları büyütmek için tasarlandı. Pazaryerlerinde yaşanan geçici aksaklıklar kontrollü biçimde yönetilir; işlemler bağlantı toparlandığında yeniden denenir. Kanal, ürün veya kullanıcı kapasitesine ihtiyaç duyduğunuzda planınızı yükseltmeniz yeterlidir.',
     evidence: [
       evidence('backend/src/integration/modules/common/http/ResilientHttpClient.ts', 'ResilientHttpClient devre kesici', 'circuitBreaker'),
       evidence('docs/adr/0006-dayaniklilik-katmani-ve-surec-topolojisi.md', 'ADR-0006 dayanıklılık katmanı', 'Dayanıklılık katmanı'),
@@ -360,7 +360,8 @@ export const faq: FaqItem[] = [
     id: 'pazaryeri-kesinti',
     category: 'destek-olcek',
     question: 'Pazaryeri tarafında bir kesinti olursa ne olur?',
-    answer: `${capability('integration-resilience').summary} ${capability('integration-resilience').caveat ?? ''}`.trim(),
+    // S27c (K44): SSS'de fayda dili; teknik özet (zaman aşımı, devre kesici) yalnız /guvenlik "Ayrıntı" panelinde.
+    answer: `Geçici bir aksaklıkta işlemler kontrollü biçimde yeniden denenir; art arda hata veren bir bağlantı kısa süre bekletilir, ardından tekrar denenir. Bu yaklaşım geçici hataları yönetir; pazaryeri tarafındaki kesintiyi ortadan kaldırmaz.`,
     evidence: [
       evidence('backend/src/integration/modules/common/http/ResilientHttpClient.ts', 'ResilientHttpClient devre kesici', 'circuitBreaker'),
       evidence('docs/adr/0006-dayaniklilik-katmani-ve-surec-topolojisi.md', 'ADR-0006 dayanıklılık katmanı', 'Dayanıklılık katmanı'),
