@@ -6,6 +6,7 @@
  *    ya da `localStorage['ek-chat-mock'] = '<config>'` (elle inceleme) mock'u yapılandırır. Üretim derlemesinde bu dal elenir.
  */
 import { createSseTransport } from '@entegrasyonik/chat/transports/sse'
+import { clientPlatformHeaders } from '@entegrasyonik/ui/platform'
 import type { MockConfigId } from '@entegrasyonik/chat/transports/mock'
 import type { ChatTransport } from '@entegrasyonik/chat'
 import { apiBaseUrl } from '@/config/env'
@@ -64,5 +65,5 @@ function devMockFlag(): ChatMockFlag | null {
 export function createAppChatTransport(locale: () => 'tr' | 'en'): ChatTransport {
   const flag = devMockFlag()
   if (flag || import.meta.env.VITE_CHAT_TRANSPORT === 'mock' || import.meta.env.VITE_CHAT_MOCK === '1') return lazyMockTransport(flag ?? {})
-  return createSseTransport({ baseUrl: `${apiBaseUrl.replace(/\/+$/, '')}/agent`, locale })
+  return createSseTransport({ baseUrl: `${apiBaseUrl.replace(/\/+$/, '')}/agent`, locale, headers: clientPlatformHeaders() })   // MOB-08
 }

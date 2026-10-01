@@ -118,3 +118,16 @@ describe('admin-api istemcisi', () => {
     await expect(api.call('BackofficeAuthService/verifyTotp', { code: '123456' })).rejects.toMatchObject({ status: 429, code: 'RATE_LIMITED' })
   })
 })
+
+describe('MOB-08 X-Client-Platform', () => {
+  it('admin-api isteklerinde yalnız platform sınıfı başlığı gider (ham UA yok)', async () => {
+    const seen: Array<Record<string, unknown>> = []
+    const api = createAdminApi({
+      baseURL: '/admin-api',
+      adapter: async (config) => { seen.push({ ...(config.headers as any).toJSON?.() ?? config.headers }); return { data: { ok: true }, status: 200, statusText: 'OK', headers: {}, config } as any },
+    })
+    await api.call('BackofficeAuthService/logout', {})
+    expect(['desktop_web', 'electron', 'mobile_web', 'pwa', 'android_app', 'unknown']).toContain(seen[0]!['X-Client-Platform'])
+    expect(Object.keys(seen[0]!).some((k) => /user-agent/i.test(k))).toBe(false)
+  })
+})

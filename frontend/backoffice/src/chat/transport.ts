@@ -6,6 +6,7 @@
  * Mock tembel yüklenir: üretim paketine girmez.
  */
 import { createSseTransport } from '@entegrasyonik/chat/transports/sse'
+import { clientPlatformHeaders } from '@entegrasyonik/ui/platform'
 import type { MockConfigId } from '@entegrasyonik/chat/transports/mock'
 import type { ChatTransport } from '@entegrasyonik/chat'
 import type { AgentInfo } from '@entegrasyonik/chat/protocol'
@@ -70,5 +71,5 @@ function devFlag(): BoChatMockFlag | null {
 export function createBoChatTransport(locale: () => 'tr' | 'en'): ChatTransport {
   const flag = devFlag()
   if (flag || USE_MOCK || import.meta.env.VITE_CHAT_TRANSPORT === 'mock' || import.meta.env.VITE_CHAT_MOCK === '1') return withReadOnly(lazyMock(flag ?? {}))
-  return withReadOnly(createSseTransport({ baseUrl: agentBaseUrl(), locale, setupWriteExtras: takeReasonForSetup, reauth: requestReauth }))
+  return withReadOnly(createSseTransport({ baseUrl: agentBaseUrl(), locale, headers: clientPlatformHeaders(), setupWriteExtras: takeReasonForSetup, reauth: requestReauth }))
 }
