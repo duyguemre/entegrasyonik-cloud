@@ -27,6 +27,29 @@
       </div>
     </DsSpecimen>
   </div>
+  <DsSpecimen title="Kanal ve kargo rozeti (EkChannelBadge)" note="K13: kenarlık marka renginin koyusu, iç zemin açığı, metin koyu marka tonu (site ile aynı oranlar). Uzun form ad, kısa form tek kayıttan kısaltma; kargo firmaları aynı biçim (renkleri ölçülene kadar nötr).">
+    <div class="ds-row">
+      <EkChannelBadge v-for="c in channels" :key="c" :code="c" />
+    </div>
+    <div class="ds-row">
+      <EkChannelBadge v-for="c in channels" :key="`s-${c}`" :code="c" form="short" />
+      <EkChannelBadge code="amazon" name="Amazon" form="short" />
+    </div>
+    <div class="ds-row">
+      <EkChannelBadge code="trendyol" size="xs" />
+      <EkChannelBadge code="trendyol" size="sm" />
+      <EkChannelBadge code="trendyol" size="md" />
+      <EkChannelBadge code="pazarama" form="short" size="xs" />
+      <EkChannelBadge code="pazarama" form="short" size="md" />
+    </div>
+    <div class="ds-row">
+      <EkChannelBadge v-for="c in carriers" :key="c" kind="carrier" :code="c" />
+    </div>
+    <div class="ds-row ds-row--selects">
+      <EkSelect v-model="demoChannels" kind="channel" :items="channelItems" label="Kanal" multiple clearable hide-details />
+      <EkSelect v-model="demoCarrier" kind="carrier" :items="carrierItems" label="Kargo firması" hide-details />
+    </div>
+  </DsSpecimen>
   <DsSpecimen title="Tooltip (EkTooltip)" note="Ters yüzey, caption; kısayol varsa içinde gösterilir. 400 ms gecikme, altta. Yalnız-ikon düğmenin aria-label'ının YERİNE geçmez.">
     <div class="ds-row ds-row--tips">
       <EkTooltip text="Menüyü daralt" :shortcut="['Ctrl', 'B']" inline>
@@ -47,8 +70,17 @@
 
 <script setup lang="ts">
 import DsSpecimen from './DsSpecimen.vue'
-import { EkStatusChip, EkBadge, EkKbd, EkTooltip, EkButton } from '@entegrasyonik/ui/components'
+import { ref } from 'vue'
+import { EkStatusChip, EkBadge, EkKbd, EkTooltip, EkButton, EkChannelBadge, EkSelect } from '@entegrasyonik/ui/components'
+import { CARRIERS, CHANNEL_NAMES, carrierOptions } from '@entegrasyonik/ui/tokens'
 import type { StatusTone } from '@/design/status-map'
+
+const channels = Object.keys(CHANNEL_NAMES)
+const carriers = Object.keys(CARRIERS)
+const channelItems = channels.map((code) => ({ value: code, title: CHANNEL_NAMES[code as keyof typeof CHANNEL_NAMES] }))
+const carrierItems = carrierOptions()
+const demoChannels = ref(['trendyol', 'hepsiburada'])
+const demoCarrier = ref('Yurtiçi Kargo')
 
 const statuses: Array<{ tone: StatusTone; label: string }> = [
   { tone: 'neutral', label: 'Kuyrukta' },
@@ -75,6 +107,11 @@ const statuses: Array<{ tone: StatusTone; label: string }> = [
 
 .ds-row + .ds-row {
   margin-top: var(--ek-space-4);
+}
+
+.ds-row--selects > * {
+  flex: 1 1 240px;
+  max-width: 320px;
 }
 
 .ds-row--tips {

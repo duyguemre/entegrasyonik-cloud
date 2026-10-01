@@ -11,8 +11,10 @@ export interface EkSelectOption {
   title: string
   subtitle?: string
   icon?: string
-  /** Kanal kodu → kanal renginde nokta. */
+  /** Kanal kodu → kısa kanal rozeti (K13). */
   channel?: string
+  /** Kargo firması (kod ya da ad) → kısa kargo rozeti (K13, FR2 madde 13). */
+  carrier?: string
   /** Durum tonu → ton renginde nokta. */
   tone?: EkOptionTone
   group?: string
@@ -23,7 +25,7 @@ export interface EkMenuRow extends EkSelectOption {
   __header?: boolean
 }
 
-export function normalizeOptions(items: any[], itemTitle = 'title', itemValue = 'value', kind: 'default' | 'channel' | 'status' = 'default'): EkSelectOption[] {
+export function normalizeOptions(items: any[], itemTitle = 'title', itemValue = 'value', kind: 'default' | 'channel' | 'carrier' | 'status' = 'default'): EkSelectOption[] {
   return (items ?? []).map((it: any) => {
     if (it === null || typeof it !== 'object') return { value: it, title: String(it) }
     const value = it[itemValue] ?? it.value ?? it.id ?? it.code
@@ -36,6 +38,12 @@ export function normalizeOptions(items: any[], itemTitle = 'title', itemValue = 
       group: it.group,
       disabled: it.disabled,
       channel: it.channel ?? (kind === 'channel' ? String(it.code ?? value ?? '') : undefined),
+    }
+    if (kind === 'carrier' || it.carrier !== undefined) {
+      // Kayıtta olmayan seçenek ("Diğer"): rozet yerine nötr ikon (uydurma kısaltma gösterilmez).
+      const carrier = String(it.carrier ?? it.code ?? '')
+      if (carrier) opt.carrier = carrier
+      else opt.icon ??= 'mdi-truck-outline'
     }
     return opt
   })
