@@ -76,7 +76,10 @@ const meterLabel =
   limitedCount > 0
     ? `Yetenek matrisinde bir kısmı destekleniyor, bir kısmı kısmi kapsamlı; ayrıntı aşağıdadır.`
     : `Yetenek matrisindeki tüm işlemler destekleniyor; ayrıntı aşağıdadır.`
-const previewCapabilities = i.capabilities.slice(0, 4)
+// N2 (S27b, ELEV A9): hero'da güç önce — önizleme desteklenen işlemlerle başlar; kısmi kapsam rozeti ve oran çubuğu
+// hero'da yalnız geniş kapsamda görünür. Kapsam şeffaflığı aynen aşağıda: "Bir bakışta" (Kapsam), matris ve sınırlamalar.
+const previewCapabilities = [...i.capabilities].sort((a, b) => (a.level === 'supported' ? 0 : 1) - (b.level === 'supported' ? 0 : 1)).slice(0, 4)
+const showMeter = i.coverage === 'broad'
 ---
 
 <BaseLayout>
@@ -86,7 +89,7 @@ const previewCapabilities = i.capabilities.slice(0, 4)
       <span class="hero-status__dot" aria-hidden="true"></span>
       {i.statusLabel}
     </span>
-    <Badge tone={coverageTone[i.coverage]}>{i.coverageLabel}</Badge>
+    {i.coverage === 'broad' && <Badge tone={coverageTone[i.coverage]}>{i.coverageLabel}</Badge>}
     {guide && <a class="hero-guide-link" href="#baglanti-rehberi">Bağlantı rehberi</a>}
     <Fragment slot="visual">
       <div class="hero-visual" data-code={i.code}>
@@ -94,13 +97,15 @@ const previewCapabilities = i.capabilities.slice(0, 4)
           <ChannelMono code={i.code} name={i.name} size="lg" />
           <p class="hero-visual__kind">{i.kindLabel}</p>
         </div>
-        <div class="hero-meter" role="img" aria-label={meterLabel}>
-          {
-            Array.from({ length: METER_SEGMENTS }).map((_, idx) => (
-              <span class:list={['hero-meter__seg', { 'hero-meter__seg--on': idx < filledSegments }]} />
-            ))
-          }
-        </div>
+        {showMeter && (
+          <div class="hero-meter" role="img" aria-label={meterLabel}>
+            {
+              Array.from({ length: METER_SEGMENTS }).map((_, idx) => (
+                <span class:list={['hero-meter__seg', { 'hero-meter__seg--on': idx < filledSegments }]} />
+              ))
+            }
+          </div>
+        )}
         <ul class="hero-preview">
           {
             previewCapabilities.map((c) => (
@@ -285,7 +290,7 @@ const previewCapabilities = i.capabilities.slice(0, 4)
   <CtaBand
     id="detay-cta"
     title={`${i.name} kanalınızı bağlayın`}
-    text="Hesabınızı oluşturun ve kimlik bilgilerinizi girerek başlayın."
+    text="Hesabınızı oluşturun, kanal bilgilerinizi girin; stok ve siparişleriniz ilk günden aynı akışta ilerlesin."
     primary={{ label: 'Ücretsiz dene', href: appUrls.register() }}
     secondary={{ label: 'İletişime geçin', href: '/iletisim' }}
   />
