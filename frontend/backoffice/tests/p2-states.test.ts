@@ -189,8 +189,8 @@ describe('REAUTH_OPS ↔ backend REAUTH_RPCS', () => {
     for (const op of REAUTH_OPS) expect(backend, op).toContain(op)
     const unused = backend.filter((op) => !(REAUTH_OPS as readonly string[]).includes(op))
     // Önyüzde kullanılmayanlar (bilinçli): setIntake (entegrasyon ayar ekranı Aşama 3), TenantDataService/cancelDeletion (eski yol),
-    // BackofficeEngineService/retryJobs (toplu yeniden deneme; önyüzde tek iş retryJob kullanılır).
-    expect(unused.sort()).toEqual(['BackofficeEngineService/retryJobs', 'IntegrationConfigService/setIntake', 'TenantDataService/cancelDeletion'])
+    // (BackofficeEngineService/retryJobs bo-r1b'de başarısız işler ekranında toplu yeniden denemeyle kullanılıyor.)
+    expect(unused.sort()).toEqual(['IntegrationConfigService/setIntake', 'TenantDataService/cancelDeletion'])
   })
 })
 

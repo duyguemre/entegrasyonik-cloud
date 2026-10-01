@@ -43,6 +43,10 @@ export interface ListFailedJobsRequest {
   source?: FailedJobSource
   cursor?: string
   limit?: number
+  /** BE-03 süzgeçleri (opsiyonel; API_BACKOFFICE_ATTENTION.md). `errorCode` `^[A-Z_]{2,32}$`; UNKNOWN = öneksiz. */
+  tid?: number
+  integrationCode?: string
+  errorCode?: string
 }
 export interface FailedBullJob {
   id: string
@@ -55,6 +59,9 @@ export interface FailedBullJob {
   maxAttempts: number
   failedAt: string
   enqueuedAt: string
+  /** BE-04: işi kuyruğa alan akışın korelasyon kimliği → BackofficeLogService/trace|list { correlationId }. */
+  reqId?: string | null
+  traceId?: string | null
 }
 export interface DlqRecord {
   id: string
@@ -65,13 +72,34 @@ export interface DlqRecord {
   dlqType: 'FATAL_ERROR' | 'MAX_RETRIES_EXCEEDED'
   status: string
   failedAt: string
+  /** BE-04 */
+  reqId?: string | null
+  traceId?: string | null
 }
 export interface ListFailedJobsResponse<T = FailedBullJob | DlqRecord> {
   source: FailedJobSource
   queue: QueueName
   items: T[]
   nextCursor: string | null
+  /** BE-03: uygulanan süzgeçler. */
+  filter?: { tid?: number | null; integrationCode?: string | null; errorCode?: string | null }
+  /** BE-03: yalnız `bullmq` + süzgeç varken; kesin sayı. */
+  total?: number
 }
+/** BE-03 toplu yeniden deneme: 1..50 iş, step-up + gerekçe, idempotent (iş başına sonuç; çağrı 200). */
+export interface RetryJobsRequest {
+  queue: QueueName
+  jobIds: string[]
+  reason: string
+}
+export interface RetryJobsResponse {
+  queue: QueueName
+  requested: number
+  succeeded: number
+  failed: number
+  results: Array<{ jobId: string; ok: boolean; error?: 'JOB_NOT_FAILED' | 'JOB_NOT_FOUND' | 'RETRY_FAILED' | string }>
+}
+export const RETRY_JOBS_MAX = 50
 export interface JobActionRequest {
   queue: QueueName
   jobId: string
@@ -161,6 +189,7 @@ declare module '../contract' {
     'BackofficeEngineService/getQueues': [Record<string, never>, GetQueuesResponse]
     'BackofficeEngineService/listFailedJobs': [ListFailedJobsRequest, ListFailedJobsResponse]
     'BackofficeEngineService/retryJob': [JobActionRequest, { queue: QueueName; jobId: string; retried: true }]
+    'BackofficeEngineService/retryJobs': [RetryJobsRequest, RetryJobsResponse]
     'BackofficeEngineService/discardJob': [JobActionRequest, { queue: QueueName; jobId: string; discarded: true }]
     'BackofficeEngineService/getStateMachineJobs': [Record<string, never>, GetStateMachineJobsResponse]
     'BackofficeEngineService/releaseStuckLease': [ReleaseStuckLeaseRequest, { kind: LeaseKind; id: string; released: true; previousOwner: string }]

@@ -2,9 +2,9 @@
   <div class="bo-page">
     <EkEmptyState v-if="notFound" variant="no-results" title="Müşteri bulunamadı" :message="`#${tid} numaralı kayıt yok ya da kaldırılmış.`" />
     <template v-else>
-      <BoPageHeader :title="title" lede="" :extra-crumbs="[{ label: title }]" :updated-at="life.loadedAt.value ?? undefined">
+      <BoPageHeader :title="title" lede="" :extra-crumbs="[{ label: title }]" :updated-at="life.loadedAt.value ?? undefined" :stale="life.stale.value">
         <template #status>
-          <EkStatusChip v-if="life.data.value" :tone="TENANT_STATUS[life.data.value.status].tone" :label="TENANT_STATUS[life.data.value.status].label" dot />
+          <EkStatusChip v-if="life.data.value" :tone="TENANT_STATUS[life.data.value.status].tone" :label="life.data.value.status === 'DELETION_PENDING' ? 'Silme talebi bekliyor' : TENANT_STATUS[life.data.value.status].label" dot />
           <EkStatusChip v-if="life.data.value?.trial" :tone="SUB_STATUS[life.data.value.trial.subscriptionStatus].tone" :label="`Abonelik: ${planLabel(life.data.value.trial.planCode)} · ${SUB_STATUS[life.data.value.trial.subscriptionStatus].label}`" />
           <EkStatusChip v-if="life.data.value?.trial?.billingExempt" tone="neutral" label="Faturalamadan muaf" />
           <EkStatusChip v-if="session.active.value" tone="warning" icon="mdi-account-eye-outline" :label="`Destek oturumu açık · ~${session.text.value}`" data-testid="imp-session-chip" />
@@ -14,11 +14,16 @@
           <EkCopyButton :value="String(tid)" label="Mağaza numarası" />
         </template>
         <template #actions>
+          <EkButton v-if="life.data.value?.deletion?.canCancel" tone="secondary" icon="mdi-undo-variant" data-testid="cancel-deletion" @click="undo.open(tid)">Silme talebini geri al</EkButton>
           <EkButton tone="secondary" icon="mdi-shield-search" @click="router.push({ path: '/denetim', query: { tid: String(tid) } })">Denetim kaydı</EkButton>
           <EkButton tone="secondary" icon="mdi-card-account-details-outline" :disabled="!life.data.value?.trial" @click="router.push(`/abonelikler/${tid}`)">Abonelik</EkButton>
+          <CopyViewLink />
+          <EkButton tone="secondary" icon="mdi-refresh" :loading="life.refreshing.value" data-page-refresh @click="refresh">Yenile</EkButton>
           <EkButton tone="primary" icon="mdi-account-eye-outline" :disabled="!canImpersonate" data-testid="impersonate" @click="imp.open(tid)">Müşterinin gözünden aç</EkButton>
         </template>
       </BoPageHeader>
+      <PageVerdict :verdict="verdict" />
+
       <p v-if="life.data.value && !canImpersonate" class="bo-tenant__why bo-muted">
         <v-icon icon="mdi-information-outline" aria-hidden="true" />Destek oturumu yalnız aktif mağazada açılabilir (şu an: {{ TENANT_STATUS[life.data.value.status].label.toLocaleLowerCase('tr') }}).
       </p>
@@ -31,21 +36,82 @@
         data-testid="imp-ticket"
       />
 
-      <EkAlert
-        v-if="life.data.value?.deletion?.canCancel"
-        tone="warning"
-        title="Silme talebi bekliyor"
-        :text="deletionText"
-      >
-        <template #actions>
-          <EkButton tone="secondary" size="sm" icon="mdi-undo-variant" data-testid="cancel-deletion" @click="undo.open(tid)">Silme talebini geri al</EkButton>
-        </template>
-      </EkAlert>
-
       <EkPageTabs v-model="tab" :tabs="TABS" label="Müşteri bölümleri" />
 
       <template v-if="tab === 'ozet'">
         <div class="bo-grid bo-tenant__grid bo-tenant__grid--summary">
+          <!-- BE-02: "bu müşteride şu an ne var?" — açık sorun, başarısız iş, eşitleme ve etkin uyarılar (İz sür'ün üstünde). -->
+          <EkCard title="Şu an" subtitle="Sağlık özeti · sorun sayıları yaklaşıktır (~)" icon="mdi-heart-pulse" class="bo-tenant__now" data-testid="tenant-now">
+            <StateBlock :phase="health.phase.value" :error="health.error.value" skeleton="detail" :rows="3" @retry="health.load()">
+              <div v-if="health.data.value" class="bo-now">
+                <section class="bo-now__sec" aria-labelledby="now-issues">
+                  <h3 id="now-issues" class="bo-now__h">Açık sorunlar <span v-if="!isBad('openIssues')" class="bo-now__n ek-num">~{{ health.data.value.openIssues.items.length }}</span></h3>
+                  <p v-if="isBad('openIssues')" class="bo-muted bo-now__unread">okunamadı</p>
+                  <p v-else-if="!health.data.value.openIssues.items.length" class="bo-muted">Açık sorun grubu yok.</p>
+                  <ul v-else class="bo-now__list" data-testid="now-issues">
+                    <li v-for="g in shownIssues" :key="g.fp">
+                      <RouterLink :to="{ path: '/loglar', query: { tid: String(tid), fp: g.fp } }" class="bo-now__row">
+                        <span class="bo-now__main">{{ issueLabel(g) }}</span>
+                        <span class="bo-muted bo-now__meta"><span class="ek-num">{{ g.count }}</span> olay · {{ formatRelative(g.lastSeen) }}</span>
+                      </RouterLink>
+                    </li>
+                  </ul>
+                  <RouterLink v-if="!isBad('openIssues') && health.data.value.openIssues.items.length > NOW_ISSUES_LIMIT" :to="{ path: '/loglar', query: { tid: String(tid), sekme: 'sorunlar' } }" class="bo-tenant__more">
+                    {{ health.data.value.openIssues.items.length - NOW_ISSUES_LIMIT }} sorun grubu daha <v-icon icon="mdi-arrow-right" aria-hidden="true" />
+                  </RouterLink>
+                </section>
+
+                <section class="bo-now__sec" aria-labelledby="now-jobs">
+                  <h3 id="now-jobs" class="bo-now__h">Başarısız işler</h3>
+                  <p v-if="isBad('failedJobs')" class="bo-muted bo-now__unread">okunamadı</p>
+                  <ul v-else class="bo-now__list" data-testid="now-jobs">
+                    <li>
+                      <RouterLink :to="{ path: '/motor', query: { sekme: 'basarisiz', tid: String(tid) } }" class="bo-now__row">
+                        <span class="bo-now__main">Kuyruk (BullMQ)</span>
+                        <span class="bo-muted bo-now__meta"><template v-if="health.data.value.failedJobs.bullmq === null">okunamadı</template><template v-else><span class="ek-num">{{ health.data.value.failedJobs.bullmq }}</span> başarısız</template></span>
+                      </RouterLink>
+                    </li>
+                    <li>
+                      <RouterLink :to="{ path: '/motor', query: { sekme: 'basarisiz', kaynak: 'dlq', tid: String(tid) } }" class="bo-now__row">
+                        <span class="bo-now__main">Elle inceleme (ölü mektup)</span>
+                        <span class="bo-muted bo-now__meta"><template v-if="health.data.value.failedJobs.dlq === null">okunamadı</template><template v-else><span class="ek-num">{{ health.data.value.failedJobs.dlq }}</span> bekliyor</template></span>
+                      </RouterLink>
+                    </li>
+                  </ul>
+                </section>
+
+                <section class="bo-now__sec" aria-labelledby="now-sync">
+                  <h3 id="now-sync" class="bo-now__h">Son başarılı eşitleme</h3>
+                  <p v-if="isBad('lastSyncAt')" class="bo-muted bo-now__unread">okunamadı</p>
+                  <ul v-else class="bo-now__list" data-testid="now-sync">
+                    <li v-for="(at, code) in health.data.value.lastSyncAt" :key="code" class="bo-now__row bo-now__row--static">
+                      <span class="bo-now__main">{{ CHANNEL[code] ?? code }}</span>
+                      <span class="bo-muted bo-now__meta">{{ at ? formatRelative(at) : 'başarılı çağrı yok' }}</span>
+                    </li>
+                    <li class="bo-now__row bo-now__row--static">
+                      <span class="bo-now__main">Siparişler</span>
+                      <span class="bo-muted bo-now__meta">{{ health.data.value.lastOrderSyncAt ? formatRelative(health.data.value.lastOrderSyncAt) : 'henüz yok' }}</span>
+                    </li>
+                  </ul>
+                </section>
+
+                <section class="bo-now__sec" aria-labelledby="now-alerts">
+                  <h3 id="now-alerts" class="bo-now__h">Etkin uyarılar</h3>
+                  <p v-if="isBad('alerts')" class="bo-muted bo-now__unread">okunamadı</p>
+                  <p v-else-if="!health.data.value.alerts.length" class="bo-muted">Etkin uyarı yok.</p>
+                  <ul v-else class="bo-now__list" data-testid="now-alerts">
+                    <li v-for="a in health.data.value.alerts" :key="a.ruleId + a.scopeKey">
+                      <RouterLink :to="{ path: '/bildirimler/uyarilar', query: { durum: 'firing' } }" class="bo-now__row">
+                        <span class="bo-now__main">{{ a.ruleId }} · {{ a.scopeKey }}</span>
+                        <span class="bo-muted bo-now__meta">{{ a.level === 'critical' ? 'Kritik' : 'Uyarı' }} · {{ formatRelative(a.firstFiredAt) }}<template v-if="a.mutedUntil"> · susturulmuş</template></span>
+                      </RouterLink>
+                    </li>
+                  </ul>
+                </section>
+              </div>
+            </StateBlock>
+          </EkCard>
+
           <EkCard title="Hesap" icon="mdi-storefront-outline">
             <EkDescriptionList v-if="client && life.data.value" :items="accountItems" />
             <StateBlock v-else :phase="life.phase.value === 'ready' ? 'loading' : life.phase.value" :error="life.error.value" skeleton="detail" :rows="3" @retry="life.load()" />
@@ -144,7 +210,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   EkAlert,
@@ -168,12 +234,16 @@ import { useResource } from '@bo/composables/useResource'
 import { useGuardedAction } from '@bo/composables/useGuardedAction'
 import { useTabQuery } from '@bo/composables/useTabQuery'
 import BoPageHeader from '@bo/components/shell/BoPageHeader.vue'
+import PageVerdict from '@bo/components/verdict/PageVerdict.vue'
+import CopyViewLink from '@bo/components/CopyViewLink.vue'
+import { tenantDetailVerdict } from './tenantDetailVerdict'
+import type { HealthIssueRef, TenantHealthSummary } from '@bo/api/contracts/ops'
 import StateBlock from '@bo/components/kit/StateBlock.vue'
 import GuardedDialog from '@bo/components/kit/GuardedDialog.vue'
 import TenantUsagePanel from '@bo/views/usage/TenantUsagePanel.vue'
 import { CHANNEL, SUB_STATUS, TENANT_STATUS, channelTypeLabel, planLabel } from '@bo/utils/labels'
 import { formatDate, formatDateTime, formatRelative } from '@bo/utils/format'
-import { notifyAudited } from '@bo/utils/toast'
+import { notify, notifyAudited } from '@bo/utils/toast'
 import '@bo/styles/kit.css'
 
 const route = useRoute()
@@ -219,9 +289,30 @@ const IMP_RULES = [
 ]
 
 const life = useResource<TenantLifecycle>(() => api.call('BackofficeTenantService/getLifecycle', { tid }))
+// BE-02 sağlık özeti (açık sorun, başarısız iş, eşitleme, uyarı). Bölüm okunamazsa `degradedSections` dolar.
+const health = useResource<TenantHealthSummary>(() => api.call('BackofficeTenantService/getHealthSummary', { tid }))
+const isBad = (section: string) => !!health.data.value?.degradedSections.some((d) => d.section === section)
+/** "Şu an" kartında en çok bu kadar sorun grubu (kalanı loglara bağlantı). */
+const NOW_ISSUES_LIMIT = 5
+const shownIssues = computed(() => (health.data.value?.openIssues.items ?? []).slice(0, NOW_ISSUES_LIMIT))
+const issueLabel = (g: HealthIssueRef) => `${g.integrationCode ? (CHANNEL[g.integrationCode] ?? g.integrationCode) : g.module} · ${g.code}`
 const notFound = computed(() => life.phase.value === 'notFound' || (clientLoaded.value && !client.value && life.phase.value !== 'loading' && life.phase.value !== 'ready'))
 const title = computed(() => client.value?.title ?? life.data.value?.name ?? `#${tid}`)
 const canImpersonate = computed(() => life.data.value?.status === 'ACTIVE')
+
+// NT-01: komut paletindeki "Destek oturumu aç" → `?eylem=destek`. Yaşam döngüsü okununca güvenli akış (step-up + gerekçe)
+// açılır; sorgu tek kullanımlıktır (yenilemede diyalog yeniden açılmaz).
+watch(
+  [() => route.query.eylem, () => life.data.value],
+  ([eylem, data]) => {
+    if (eylem !== 'destek' || !data) return
+    const { eylem: _e, ...rest } = route.query
+    void router.replace({ query: rest })
+    if (canImpersonate.value) imp.open(tid)
+    else notify('info', 'Destek oturumu yalnız aktif mağazada açılabilir.')
+  },
+  { immediate: true },
+)
 
 // K41: bilet ömrü sunucu yanıtından (expiresInSeconds); oturum bitişi = başlangıç (impersonation.redeem) + 30 dk (sözleşme §5).
 // Backoffice'e oturum `expiresAt` alanı gelmez; son olaylardan türetilen değer "yaklaşık" (~) gösterilir.
@@ -236,11 +327,33 @@ const sessionExpiresAt = computed(() => {
 })
 const session = useCountdown(sessionExpiresAt)
 
-onMounted(async () => {
-  const [list] = await Promise.allSettled([api.call('AdminService/getClients', { search: String(tid), limit: 50 }), life.load()])
-  client.value = list.status === 'fulfilled' ? (list.value.clients.find((c) => c.clientId === tid) ?? null) : null
+async function refresh() {
+  const [list] = await Promise.allSettled([api.call('AdminService/getClients', { search: String(tid), limit: 50 }), life.load(), health.load()])
+  // Yenilemede liste okunamazsa son iyi satır korunur.
+  if (list.status === 'fulfilled') client.value = list.value.clients.find((c) => c.clientId === tid) ?? null
   clientLoaded.value = true
-})
+}
+onMounted(refresh)
+
+// Hüküm (Durum → Karar → Eylem): yaşam döngüsü + liste satırı + BE-02 sağlık özeti.
+const verdict = computed(() =>
+  (life.data.value || (life.phase.value !== 'loading' && life.phase.value !== 'notFound')) && (health.data.value || health.phase.value !== 'loading')
+    ? tenantDetailVerdict({
+        tid,
+        life: life.data.value,
+        client: client.value,
+        failed: life.data.value === null,
+        stale: life.stale.value,
+        retry: () => void life.load(),
+        health: health.data.value,
+        healthFailed: health.data.value === null,
+        retryHealth: () => void health.load(),
+        tabTo: (t) => ({ query: { ...route.query, sekme: t === 'ozet' ? undefined : t } }),
+        impersonate: canImpersonate.value ? () => imp.open(tid) : undefined,
+        undoDeletion: () => undo.open(tid),
+      })
+    : null,
+)
 
 const accountItems = computed(() => {
   const c = client.value!
@@ -289,13 +402,6 @@ const deletionItems = computed(() => {
     ...(d.purgeFailedStep ? [{ label: 'Silme hatası', value: d.purgeFailedStep }] : []),
   ]
 })
-const deletionText = computed(() => {
-  const d = life.data.value?.deletion
-  if (!d) return ''
-  const when = d.scheduledAt ? formatDate(d.scheduledAt) : '—'
-  return `Mağaza verileri ${when} tarihinde kalıcı olarak silinecek${d.daysUntilPurge !== null ? ` (${d.daysUntilPurge} gün kaldı)` : ''}. Müşteri vazgeçtiyse talebi geri alabilirsiniz.`
-})
-
 const imp = useGuardedAction(
   (id: number, reason) => api.call('BackofficeTenantService/startImpersonation', { tid: id, reason }),
   ({ url, expiresInSeconds }) => {
@@ -331,8 +437,68 @@ const undo = useGuardedAction(
   grid-template-columns: repeat(2, minmax(0, 1fr));
   align-items: start;
 }
-.bo-tenant__grid--summary > :first-child {
+.bo-tenant__grid--summary > :nth-child(2) {
   grid-row: span 2;
+}
+.bo-tenant__now {
+  grid-column: 1 / -1;
+}
+.bo-now {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ek-space-5) var(--ek-space-6);
+}
+.bo-now__h {
+  display: flex;
+  align-items: baseline;
+  gap: var(--ek-space-2);
+  margin: 0 0 var(--ek-space-2);
+  color: var(--ek-color-content-strong);
+  font-size: var(--ek-type-label-size);
+  font-weight: var(--ek-font-weight-semibold);
+}
+.bo-now__n {
+  color: var(--ek-color-content-muted);
+  font-weight: var(--ek-font-weight-regular);
+}
+.bo-now__sec p {
+  margin: 0;
+  font-size: var(--ek-type-label-size);
+}
+.bo-now__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.bo-now__list li + li {
+  border-top: 1px solid var(--ek-color-border-subtle);
+}
+.bo-now__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--ek-space-1) var(--ek-space-3);
+  padding: var(--ek-space-2);
+  border-radius: var(--ek-radius-md);
+  color: var(--ek-color-content-default);
+  font-size: var(--ek-type-label-size);
+  text-decoration: none;
+  transition: var(--ek-transition-colors);
+}
+a.bo-now__row:hover {
+  background: var(--ek-color-surface-muted);
+}
+a.bo-now__row:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--ek-color-border-focus);
+}
+.bo-now__main {
+  color: var(--ek-color-content-strong);
+  font-weight: var(--ek-font-weight-medium);
+}
+.bo-now__meta {
+  font-size: var(--ek-type-caption-size);
 }
 .bo-trace {
   margin: 0;
@@ -437,8 +603,11 @@ const undo = useGuardedAction(
   .bo-tenant__grid {
     grid-template-columns: 1fr;
   }
-  .bo-tenant__grid--summary > :first-child {
+  .bo-tenant__grid--summary > :nth-child(2) {
     grid-row: auto;
+  }
+  .bo-now {
+    grid-template-columns: 1fr;
   }
 }
 </style>

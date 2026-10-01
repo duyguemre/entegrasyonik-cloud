@@ -5,7 +5,7 @@
         <h2 id="bo-redis-title" class="bo-panel__title">Redis</h2>
         <p class="bo-panel__hint">Yalnız INFO, SCAN ve SLOWLOG okunur. Anahtar aileleri örneklemeyle bulunur; ham anahtar adı gösterilmez.</p>
       </div>
-      <EkRefreshButton :loading="res.refreshing.value || res.phase.value === 'loading'" :last-updated="res.loadedAt.value" :error="res.stale.value ? res.error.value?.title : null" @refresh="res.load()" />
+      <EkRefreshButton quiet-success :loading="res.refreshing.value || res.phase.value === 'loading'" :last-updated="res.loadedAt.value" :error="res.stale.value ? res.error.value?.title : null" @refresh="res.load()" />
     </header>
 
     <StateBlock :phase="res.phase.value" :error="res.error.value" skeleton="cards" :rows="3" degraded-title="Redis okunamıyor" @retry="res.load()">

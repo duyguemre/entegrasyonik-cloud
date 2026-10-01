@@ -6,6 +6,8 @@ import { createEngineMock } from './engine'
 import { createInfraMock } from './infra'
 import { createNotificationsMock } from './notifications'
 import { createPlatformMock, setMockFeatureFlags } from './platform'
+import { createTenantOpsMock } from './tenantOps'
+import { createPrefsMock } from './prefs'
 import { createUsageMock } from './usage'
 
 export { UNHANDLED, type MockCtx }
@@ -20,7 +22,7 @@ export function createP2Domains(t0: number, selfEmail: string) {
   const usage = createUsageMock(t0)
   // Sıra önemli: `_platform` hedefli yapılandırma çağrıları önce platform'a, diğer hedefler infra'ya düşer.
   const competition = createCompetitionMock(t0, billing, platform)
-  const domains: MockDomain[] = [createEngineMock(t0), billing, competition, platform, notifications, createInfraMock(t0), usage]
+  const domains: MockDomain[] = [createEngineMock(t0), billing, competition, platform, notifications, createInfraMock(t0), createTenantOpsMock(t0), createPrefsMock(t0), usage]
   return {
     billing,
     platform,

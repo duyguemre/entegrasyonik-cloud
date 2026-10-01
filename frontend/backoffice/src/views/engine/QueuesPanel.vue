@@ -2,7 +2,7 @@
   <section class="bo-panel" aria-labelledby="bo-queues-title">
     <header class="bo-panel__bar">
       <h2 id="bo-queues-title" class="bo-panel__title">Kuyruk durumu</h2>
-      <EkRefreshButton :loading="res.refreshing.value || res.phase.value === 'loading'" :last-updated="res.loadedAt.value" :error="res.stale.value ? res.error.value?.title : null" @refresh="res.load()" />
+      <EkRefreshButton quiet-success :loading="res.refreshing.value || res.phase.value === 'loading'" :last-updated="res.loadedAt.value" :error="res.stale.value ? res.error.value?.title : null" @refresh="res.load()" />
     </header>
 
     <StateBlock :phase="res.phase.value" :error="res.error.value" skeleton="cards" :rows="2" empty-title="Kuyruk yok" @retry="res.load()">

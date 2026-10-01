@@ -5,9 +5,11 @@
         <span><v-icon icon="mdi-shield-lock-outline" size="small" aria-hidden="true" /> Her görüntüleme hassas okuma olarak denetime yazılır.</span>
       </template>
       <template #actions>
-        <EkRefreshButton v-if="tid" :loading="list.refreshing.value || list.phase.value === 'loading'" @refresh="list.reload({ keep: true })" />
+        <EkButton v-if="tid" tone="secondary" icon="mdi-refresh" :loading="list.refreshing.value || list.phase.value === 'loading'" data-page-refresh @click="list.reload({ keep: true })">Yenile</EkButton>
       </template>
     </BoPageHeader>
+
+    <PageVerdict :verdict="verdict" />
 
     <form class="bo-toolbar bo-nh__search" role="search" aria-label="Müşteri seç" @submit.prevent="apply">
       <v-text-field
@@ -84,11 +86,13 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { EkButton, EkCard, EkDataTable, EkEmptyState, EkRefreshButton, EkStatusChip, type EkTableColumn } from '@entegrasyonik/ui/components'
+import { EkButton, EkCard, EkDataTable, EkEmptyState, EkStatusChip, type EkTableColumn } from '@entegrasyonik/ui/components'
 import { api } from '@bo/api'
 import type { DeliveryStatus, TenantHistoryRow } from '@bo/api/contract'
 import { useCursorList } from '@bo/composables/useCursorList'
 import BoPageHeader from '@bo/components/shell/BoPageHeader.vue'
+import PageVerdict from '@bo/components/verdict/PageVerdict.vue'
+import { tenantHistoryVerdict } from './notificationsVerdict'
 import StateBlock from '@bo/components/kit/StateBlock.vue'
 import LoadMore from '@bo/components/kit/LoadMore.vue'
 import { DELIVERY_STATUS, NOTIFY_CATEGORY, NOTIFY_SEVERITY } from '@bo/utils/labels'
@@ -130,6 +134,11 @@ const list = useCursorList<TenantHistoryRow>(async (cursor) => {
   return res
 })
 const rows = computed(() => list.items.value as unknown as Array<Record<string, unknown>>)
+const verdict = computed(() =>
+  !tid.value || list.phase.value !== 'loading'
+    ? tenantHistoryVerdict({ tid: tid.value, rows: list.phase.value === 'error' || list.phase.value === 'degraded' ? null : (list.items.value as TenantHistoryRow[]), failed: list.phase.value === 'error' || list.phase.value === 'degraded', retry: () => list.reload() })
+    : null,
+)
 const sev = (r: TenantHistoryRow) => NOTIFY_SEVERITY[r.severity] ?? { label: r.severity, tone: 'neutral' as const }
 const emailPairs = (r: TenantHistoryRow) => Object.entries(r.emailStatus).filter(([, n]) => (n ?? 0) > 0) as Array<[DeliveryStatus, number]>
 

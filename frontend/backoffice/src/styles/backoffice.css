@@ -289,3 +289,13 @@ body {
 .bo-page .v-input--density-compact .v-field-label:not(.v-field-label--floating) {
   font-size: var(--ek-type-label-size);
 }
+
+/* NT-10: j/k ile seçili tablo satırı (navigation/rowNav.ts). Odak halkası birincil bağlantıda; satır sakin zeminle belli. */
+#bo-main [data-kb-row] {
+  background: var(--ek-color-surface-muted);
+  box-shadow: inset 3px 0 0 var(--ek-color-border-focus);
+}
+
+#bo-main [data-kb-row]:focus {
+  outline: none;
+}

@@ -5,7 +5,7 @@
         <h2 id="bo-slow-title" class="bo-panel__title">Yavaş sorgular</h2>
         <p class="bo-panel__hint">Uygulama tarafında ölçülen, eşiği aşan sorgular. Sorgu değeri ve filtre kaydedilmez; yalnız veritabanı türü, koleksiyon ve işlem görünür.</p>
       </div>
-      <EkRefreshButton :loading="res.refreshing.value || res.phase.value === 'loading'" :last-updated="res.loadedAt.value" :error="res.stale.value ? res.error.value?.title : null" @refresh="res.load()" />
+      <EkRefreshButton quiet-success :loading="res.refreshing.value || res.phase.value === 'loading'" :last-updated="res.loadedAt.value" :error="res.stale.value ? res.error.value?.title : null" @refresh="res.load()" />
     </header>
 
     <div class="bo-toolbar">

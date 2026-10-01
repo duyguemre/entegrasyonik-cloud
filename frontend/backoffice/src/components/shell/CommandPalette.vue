@@ -66,7 +66,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, useId, watch } fro
 import { useRoute, useRouter } from 'vue-router'
 import { EkKbd, EkStatusChip } from '@entegrasyonik/ui/components'
 import type { StatusTone } from '@entegrasyonik/ui/components'
-import { GROUPS, SCREENS, STATUS_BADGE } from '@bo/navigation/screens'
+import { GROUPS, SCREENS, STATUS_BADGE, contextActionsFor } from '@bo/navigation/screens'
 import { setThemePreference } from '@bo/theme'
 import { requestReauth } from '@bo/auth/reauth'
 import { session } from '@bo/auth/session'
@@ -206,6 +206,11 @@ const jumpCmds = computed<Cmd[]>(() => {
   return out
 })
 
+// NT-01: "Bu ekranda" — bulunulan ekranın 1–3 bağlam eylemi; boş sorguda en üstte, sorguda etikete göre süzülür.
+const contextCmds = computed<Cmd[]>(() =>
+  contextActionsFor(route).map((a) => ({ id: `ctx:${a.id}`, group: 'Bu ekranda', label: a.label, icon: a.icon, terms: norm(a.label), primary: norm(a.label), run: () => router.push(a.to) })),
+)
+
 // Sıra: etiket başı eşleşme → etiket/grup/anahtar sözcük → yalnız açıklama. Eşitlikte kayıt sırası korunur.
 function rank(c: Cmd, q: string): number {
   const label = norm(c.label)
@@ -231,7 +236,7 @@ const results = computed(() => {
     raw.length >= 2 && otopilot.available.value
       ? [{ id: 'otopilot:ask', group: CHAT_PRODUCT.name, label: `${CHAT_PRODUCT.name}'a sor: «${raw.slice(0, 120)}»`, icon: 'mdi-creation-outline', hint: 'salt okuma', terms: '', run: () => otopilot.open({ via: 'palette', text: raw.slice(0, 4000) }) }]
       : []
-  return [...ask, ...jumpCmds.value, ...(q ? [] : recentCmds.value), ...tenantNameCmds.value, ...pick(screenCmds.value), ...pick(actionCmds)]
+  return [...ask, ...jumpCmds.value, ...pick(contextCmds.value), ...(q ? [] : recentCmds.value), ...tenantNameCmds.value, ...pick(screenCmds.value), ...pick(actionCmds)]
 })
 
 const flat = computed(() => results.value.map((c, index) => ({ ...c, index })))

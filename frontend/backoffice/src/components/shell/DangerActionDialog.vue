@@ -91,6 +91,19 @@
         autofocus
       />
       <p v-else-if="error" class="bo-danger__error" role="alert">{{ error }}</p>
+
+      <!-- NT-02 (BO-ELEV DA-3): üretimde yıkıcı işlem hedef kimliğinin elle yazılmasını ister (kopyala-yapıştır değil, okuma). -->
+      <v-text-field
+        v-if="typedRequired"
+        v-model="typed"
+        class="bo-danger__typed"
+        :label="`Onay için ${confirmText} yazın`"
+        :hint="typedOk ? 'Kimlik eşleşti.' : 'Üretimde yıkıcı işlem: hedefin kimliğini aynen yazın.'"
+        persistent-hint
+        autocomplete="off"
+        spellcheck="false"
+        data-testid="danger-confirm-text"
+      />
     </div>
   </EkDialog>
 </template>
@@ -130,6 +143,8 @@ const props = withDefaults(
     /** bo-p2 (ekleyici): işleme özgü ek alan geçersizken onayı kapatır. */
     blocked?: boolean
     error?: string
+    /** NT-02: üretimde (`currentEnv.key === 'production'`) ve `destructive` iken onay için aynen yazılması gereken hedef kimliği. */
+    confirmText?: string
   }>(),
   {
     icon: 'mdi-shield-alert-outline',
@@ -145,18 +160,22 @@ const props = withDefaults(
 const emit = defineEmits<{ 'update:modelValue': [value: boolean]; confirm: [reason: string] }>()
 
 const reason = ref('')
+const typed = ref('')
+const typedRequired = computed(() => !!props.destructive && currentEnv.key === 'production' && !!props.confirmText)
+const typedOk = computed(() => !typedRequired.value || typed.value.trim() === props.confirmText)
 watch(
   () => props.modelValue,
   (open) => {
     if (!open) return
     reason.value = ''
+    typed.value = ''
     // Doğrulama penceresi sunucuda dolmuş olabilir: "Kimlik doğrulama" satırı güncel `reauthAt`'i göstersin.
     void session.refresh()
   },
 )
 
 const length = computed(() => reason.value.trim().length)
-const canConfirm = computed(() => !props.busy && !props.blocked && (!props.requireReason || length.value >= REASON_MIN))
+const canConfirm = computed(() => !props.busy && !props.blocked && typedOk.value && (!props.requireReason || length.value >= REASON_MIN))
 const reasonHint = computed(() =>
   length.value < REASON_MIN ? `En az ${REASON_MIN} karakter (${length.value}/${REASON_MIN}). Denetim kaydına yazılır.` : 'Bu metin denetim kaydına işlemle birlikte yazılır.',
 )

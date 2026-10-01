@@ -1,7 +1,6 @@
 /**
  * MOB-08 / K55 — kullanım izlemede platform ayrımı. Sözleşme: docs/API_BACKOFFICE_USAGE.md (alan adları birebir).
- * `getPulse` burada yalnız MOB-08'in okuduğu `activeUsers` bloğuyla tiplenir; diğer bloklar (K51 nabız kartları) bu
- * ekranın konusu değil → `unknown`. (bo-r1b nabız tipi gelince `activeUsers` alanı o tipe eklenir; tek AdminRpc kaydı.)
+ * `getPulse` tek AdminRpc kaydıyla `./attention` içinde tiplenir (BO-R1 nabız kartları + bu dosyadaki `activeUsers`).
  */
 import type { ClientPlatform, PlatformClass, PlatformFilter } from '@entegrasyonik/ui/platform'
 
@@ -42,11 +41,7 @@ export type PulseActiveUsers =
     }
   | DegradedBlock
 
-export interface PulseResponse {
-  generatedAt: string
-  activeUsers: PulseActiveUsers
-  [block: string]: unknown
-}
+export type { GetPulseResponse as PulseResponse } from './attention'
 
 export type UsageDays = 7 | 30 | 90
 
@@ -67,7 +62,6 @@ export interface TenantUsage {
 
 declare module '../contract' {
   interface AdminRpc {
-    'BackofficeOverviewService/getPulse': [{ platform?: PlatformFilter }, PulseResponse]
     'BackofficeTenantService/getUsage': [{ tid: number; days?: UsageDays; platform?: PlatformFilter }, TenantUsage]
   }
 }
