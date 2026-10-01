@@ -1,4 +1,4 @@
-import { IService } from '@interfaces/index'
+import { IService, PLATFORM_PROCESS } from '@interfaces/index'
 import { BaseApi } from '../BaseApi'
 import { ApplicationError } from '@platform/core/security/Security'
 import { listVariantCosts, setVariantCosts } from '@operations/pricing/variantCost'
@@ -6,7 +6,8 @@ import { buyboxHistory, listBuybox, previewMargin } from '@operations/pricing/pr
 import {
     applySuggestions, deleteRule, dismissSuggestions, getRulesState, listPriceHistory, listSuggestions, saveRule, setPricingSettings,
 } from '@operations/pricing/priceRules'
-import { createPricingEnv } from '@operations/pricing/createPricingEnv'
+import { createPricingEnv, type PricePublisher } from '@operations/pricing/createPricingEnv'
+import { ExportBatchService } from '@integration/engine/catalog/export/ExportBatchService'
 
 /** RunOperation'ın eklediği sunucu alanları (kimlik/bağlam) — iş gövdesi `.strict()` şemalarına girmeden ayrılır. */
 const SERVER_FIELDS = ['userContext', 'principal', 'requestMeta', 'ctx'] as const
@@ -33,8 +34,14 @@ export default class PricingService extends BaseApi implements IService {
         return sub === undefined || sub === null ? null : String(sub)
     }
 
-    private env() {
-        return createPricingEnv(this.applicationDB, this.request)
+    /** Mevcut fiyat yayın hattı (ADR-0024 D6 ExportBatchService, UPDATE_PRICE, yalnız Trendyol). YALNIZ onaylı uygulamada kullanılır. */
+    private readonly publisher: PricePublisher = async (clientDB, tid, barcodes) => {
+        await new ExportBatchService({ clientDB, applicationDB: this.applicationDB, clientId: tid })
+            .process({ mode: PLATFORM_PROCESS.UPDATE_PRICE, selectedIntegrations: ['trendyol'], barcodeList: barcodes, scope: 1 })
+    }
+
+    private env(withPublisher = false) {
+        return createPricingEnv(this.applicationDB, this.request, withPublisher ? this.publisher : undefined)
     }
 
     private tid(): number {
@@ -113,7 +120,7 @@ export default class PricingService extends BaseApi implements IService {
     /** İNSAN ONAYLI uygulama (sigorta yeniden çalışır; mevcut fiyat yayın hattı). */
     async applySuggestions(): Promise<any> {
         const tid = this.tid()
-        return applySuggestions(this.clientDB, tid, this.actor(), this.body(), this.env())
+        return applySuggestions(this.clientDB, tid, this.actor(), this.body(), this.env(true))
     }
 
     async dismissSuggestions(): Promise<any> {

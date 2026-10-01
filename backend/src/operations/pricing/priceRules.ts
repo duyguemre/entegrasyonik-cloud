@@ -278,6 +278,9 @@ export async function generateSuggestions(clientDB: any, tid: number, env: Prici
                 break;
             }
             ops.push(suggestionOp(rule, v, r, now));
+            // Varyant bu koşuda bu kurala düştü: başka kuralın güncel kaydı kapanır (tek varyant = tek güncel öneri).
+            ops.push({ updateMany: { filter: { variantId: v._id, ruleId: { $ne: rule._id }, current: true },
+                update: { $set: { status: 'expired', closedReason: 'covered_by_other_rule', updatedAt: now }, $unset: { current: 1 } } } });
             if (r.kind === 'suggest') res.suggested++; else if (VISIBLE_BLOCK_REASONS.has(r.reason)) res.blocked++;
         }
         if (pause) {

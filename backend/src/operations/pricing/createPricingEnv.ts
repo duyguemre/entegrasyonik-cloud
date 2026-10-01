@@ -1,13 +1,12 @@
 // PRC-R2: `PricingEnv` üretim bağlantısı (PricingService ve buybox işi kullanır). Tenant verisi yalnız verilen ClientDB'den okunur (K2);
-// kâr bağlamı COM-07 net gelir önizlemesiyle aynı kaynaktan. Yayın: mevcut fiyat hattı `ExportBatchService` (UPDATE_PRICE).
+// kâr bağlamı COM-07 net gelir önizlemesiyle aynı kaynaktan. Yayın (mevcut fiyat hattı, UPDATE_PRICE) DIŞARIDAN enjekte edilir:
+// yalnız onaylı RPC kabuğu (api katmanı) gerçek yayıncıyı verir; zamanlanmış iş YAYINLAYAMAZ (`NO_PUBLISH`, otomatik uygulama yolu yok).
 import { isFeatureEnabled } from '@integration/config/featureFlags';
 import { resolveDeductionRules } from '@integration/config/financeDeductionRules';
-import { ExportBatchService } from '@integration/engine/catalog/export/ExportBatchService';
 import { DatabaseManagerInstance } from '@database/DatabaseManager';
 import { getNetRevenuePreview, MAX_NET_PREVIEW_ITEMS } from '@operations/finance/commissionQueries';
 import { createNotifier } from '@operations/notifications/createNotifier';
 import { AuditLogger } from '@services/audit/AuditLogger';
-import { PLATFORM_PROCESS } from '@interfaces/index';
 import { loadCompetitionSettings } from './competitionSettings';
 import { BUYBOX_CHANNEL } from './BuyboxRefreshJob';
 import type { MarginContext } from './margin';
@@ -35,7 +34,12 @@ export async function marginContextsFor(clientDB: any, tid: number, variants: an
     return out;
 }
 
-export function createPricingEnv(applicationDB?: any, request?: any): PricingEnv {
+export type PricePublisher = PricingEnv['publish'];
+
+/** Zamanlanmış iş/arka plan için yayıncı: HER ZAMAN reddeder (PRC-R3 yok; fiyat yalnız insan onayıyla yayınlanır). */
+export const NO_PUBLISH: PricePublisher = async () => { throw new Error('price publish is only allowed from the approved apply RPC'); };
+
+export function createPricingEnv(applicationDB?: any, request?: any, publish: PricePublisher = NO_PUBLISH): PricingEnv {
     const notifier = createNotifier();
     return {
         now: () => new Date(),
@@ -46,11 +50,7 @@ export function createPricingEnv(applicationDB?: any, request?: any): PricingEnv
             return (await loadCompetitionSettings(app, tid)).freshnessMin;
         },
         marginContexts: marginContextsFor,
-        async publish(clientDB, tid, barcodes) {
-            const app = applicationDB ?? await DatabaseManagerInstance.getApplicationDB();
-            await new ExportBatchService({ clientDB, applicationDB: app, clientId: tid })
-                .process({ mode: PLATFORM_PROCESS.UPDATE_PRICE, selectedIntegrations: [BUYBOX_CHANNEL], barcodeList: barcodes, scope: 1 });
-        },
+        publish,
         async notifyPaused(tid, params) {
             await notifier.notify('PRICE_RULE_PAUSED', tid, params, { idempotencyKey: `price-rule-paused:${tid}:${params.ruleId}:${params.day}`, module: 'pricing.rules' });
         },

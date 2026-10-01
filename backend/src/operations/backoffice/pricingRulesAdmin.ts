@@ -3,6 +3,8 @@
 // girmez (K2/K5: tenant'lar arası veri motora taşınmaz; bu fonksiyon motor tarafından çağrılmaz). Kill-switch (`features.pricingRules`)
 // MEVCUT `_platform` taslak → yayın akışıyla değişir (ADR-0031; gerekçe/geçmiş/geri alma oradan) — burada yeni yazma yolu YOK.
 import { getSettingDef } from '@integration/config/catalog';
+import { isFeatureEnabled } from '@integration/config/featureFlags';
+import { DatabaseManagerInstance } from '@database/DatabaseManager';
 
 export interface PricingRulesAdminDeps {
     /** Aktif tenant'ların ClientDB tutamakları (tenant kimliği DÖNÜŞE GİRMEZ). */
@@ -64,5 +66,21 @@ export async function getPricingRulesOverview(d: PricingRulesAdminDeps) {
         autoApply: { available: false, reason: 'PRC-R3' },
         at: now.toISOString(),
         ...t,
+    };
+}
+
+/** Üretim bağımlılıkları: aktif tenant'ların ClientDB'leri sırayla açılır (kimlik dönüşe girmez). */
+export function pricingRulesOverviewDeps(applicationDB: any): PricingRulesAdminDeps {
+    return {
+        flagEnabled: () => isFeatureEnabled('pricingRules'),
+        async *tenantDbs() {
+            const rows: any[] = await applicationDB.getClientModel().find({ status: 'ACTIVE' }, { order: 1 }).limit(OVERVIEW_TENANT_LIMIT + 1).maxTimeMS(5000).lean();
+            for (const r of rows) {
+                const n = Number(r.order);
+                if (!Number.isInteger(n) || n <= 0) continue;
+                const db = await DatabaseManagerInstance.getClientDB(n).catch(() => undefined);
+                if (db) yield db;
+            }
+        },
     };
 }
