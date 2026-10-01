@@ -60,9 +60,20 @@ describe('plan kartı kaydı', () => {
     }
   })
 
-  it.todo('fiyat sayfası kartları bu kayıttan çizer — S27b fiyat sayfası commit\'iyle etkin')
-  it.skip('fiyat sayfası kartları bu kayıttan çizer (anasayfa planlar bölümü S27a ile aynı kayda bağlanır)', () => {
+  it('fiyat sayfası kartları bu kayıttan çizer (anasayfa planlar bölümü S27a ile aynı kayda bağlanır)', () => {
     expect(read('src/pages/fiyatlandirma.astro')).toMatch(/getPlanCards\(/)
+  })
+})
+
+describe('taslak fiyat notu (N4): ziyaretçi dili + iç kayıt ayrı', () => {
+  it('görünür metin iç süreç adı içermez; iç kayıt PROPOSAL_NOTICE ile birebir', async () => {
+    const { getPlanNotice, PROPOSAL_VISITOR_NOTICE } = await import('../src/data/plan-cards')
+    const { PROPOSAL_NOTICE, defaultPlanSource } = await import('../src/data/plans')
+    const n = getPlanNotice()
+    if (!defaultPlanSource.proposal) return expect(n).toBeUndefined()
+    expect(n!.internal).toBe(PROPOSAL_NOTICE)
+    expect(n!.visitor.startsWith(PROPOSAL_VISITOR_NOTICE)).toBe(true)
+    expect(n!.visitor).not.toMatch(/ADR|insan kararı|ÖNERİ|Açık Soru/)
   })
 })
 

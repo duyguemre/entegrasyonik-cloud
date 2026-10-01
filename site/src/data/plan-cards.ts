@@ -20,7 +20,7 @@ import { appUrls } from '../lib/site-config'
 import { AGENT_BRAND } from './agent-brand'
 import { primaryNav, published } from './navigation'
 import { getPublicIntegrations } from './integrations'
-import { getPublicPlans, getPublicTrial, getTrialPlanCode, type BillingInterval, type PublicPlan } from './plans'
+import { defaultPlanSource, getPlanSourceNotice, getPublicPlans, getPublicTrial, getTrialPlanCode, type BillingInterval, type PlanSource, type PublicPlan } from './plans'
 import { getPlanAgentSummary, getPlanCommonFeatures, getPlanPitch } from './pricing'
 
 export const RECOMMENDED_PLAN_CODE = 'growth'
@@ -114,7 +114,7 @@ export function getPlanCards(plans: PublicPlan[] = getPublicPlans()): PlanCard[]
             ariaLabel: `${p.name} planı: ${isTrial ? 'ücretsiz deneyin' : 'bu planla başlayın'}`,
             note: isTrial
               ? `${fmt(trial.days)} gün ücretsiz${trial.cardRequired ? '' : ', kart bilgisi gerekmez'}`
-              : 'Ücretsiz denemeyle başlayın, planı uygulamada seçin',
+              : 'Kaydolun, planı uygulamadan etkinleştirin',
           }
         : {
             kind: 'contact',
@@ -184,4 +184,22 @@ export function getPlanTrustPoints(): PlanTrustPoint[] {
   out.push({ id: 'switch', icon: 'refresh', label: 'Planınızı uygulamadan değiştirin', source: 'pricing.faq.plan-degisikligi' })
   out.push({ id: 'payment', icon: 'lock', label: 'Kart verisi sistemlerimizden geçmez', source: 'faq.kart-bilgisi' })
   return out
+}
+
+// ---------------------------------------------------------------------------- Taslak fiyat notu (N4, ELEV A12)
+
+/**
+ * Ziyaretçi dili (N4 — KULLANICI KARARI BEKLİYOR, varsayılan uygulandı: `site/docs/s27b-review/DECISIONS_PENDING.md`).
+ * İç süreç adı ("ADR-0014 Açık Soru 1") ziyaretçiye gösterilmez; yönetişim kaydı (`PROPOSAL_NOTICE`, `plans.ts`)
+ * DEĞİŞMEDEN `internal` alanında kalır ve sayfada görünmez bir `data-proposal-notice` özniteliği olarak taşınır
+ * (testler hem görünür metni hem iç kaydı ayrı ayrı doğrular). Seed ÖNERİ olmaktan çıkınca not kendiliğinden kalkar.
+ */
+export const PROPOSAL_VISITOR_NOTICE = 'Fiyatlar ve plan içerikleri yayın öncesi kesinleşir.'
+
+export function getPlanNotice(source: PlanSource = defaultPlanSource): { visitor: string; internal: string } | undefined {
+  const internal = getPlanSourceNotice(source)
+  if (!internal) return undefined
+  const paid = getPublicPlans(source).find((p) => p.priceKind === 'fixed')
+  const vat = paid?.vatLabel === 'KDV hariç' ? ' Gösterilen tutarlara KDV dahil değildir.' : ''
+  return { visitor: `${PROPOSAL_VISITOR_NOTICE}${vat}`, internal }
 }
