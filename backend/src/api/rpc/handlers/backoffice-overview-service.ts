@@ -38,12 +38,12 @@ export default class BackofficeOverviewService extends BaseApi implements IServi
         return new AttentionOps({ sources: productionAttentionSources(this.applicationDB) }).getAttention(this.request?.limit)
     }
 
-    /** K51 (BO1): büyük resim kullanım özeti; olmayan veri `computable:false` ('hesaplanamadı'). */
+    /** K51 (BO1): büyük resim kullanım özeti; olmayan veri `computable:false` ('hesaplanamadı'). MOB-08: `activeUsers` bloğu + isteğe bağlı `platform` süzgeci. */
     async getPulse(): Promise<any> {
         const db = this.applicationDB
         return new PulseOps({
-            clientModel: db.getClientModel(), metricRollupModel: db.getMetricRollupModel(), callMetricModel: db.getIntegrationCallMetricModel(),
+            clientModel: db.getClientModel(), metricRollupModel: db.getMetricRollupModel(), callMetricModel: db.getIntegrationCallMetricModel(), usageModel: db.getUsageDailyModel(),
             revenue: () => computeRevenueMetrics({ subscriptionModel: db.getSubscriptionModel(), planModel: db.getPlanModel(), billingEventModel: db.getBillingEventModel() }, '30d'),
-        }).getPulse()
+        }).getPulse(this.request?.platform)
     }
 }

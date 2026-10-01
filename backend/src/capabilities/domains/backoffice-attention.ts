@@ -12,7 +12,7 @@ export const BACKOFFICE_ATTENTION_CAPABILITIES = [
         effect: 'read', minTier: 'platformAdmin', permission: PLATFORM_ONLY, bindings: [{ rpc: 'BackofficeOverviewService/getAttention' }], ui: UI, mcp: PA, agent: NO_AGENT,
     }),
     c({
-        id: 'platform.overview.pulse', domain: 'platform', summary: { tr: 'Büyük resim kullanım özeti (aktif müşteri, sipariş/çağrı hacmi, hata oranı trendi, MRR)', en: 'Big-picture usage summary (active tenants, order/call volume, error-rate trend, MRR)' },
+        id: 'platform.overview.pulse', domain: 'platform', summary: { tr: 'Büyük resim kullanım özeti (aktif müşteri, aktif kullanıcı masaüstü/mobil kırılımı, sipariş/çağrı hacmi, hata oranı trendi, MRR); isteğe bağlı platform süzgeci', en: 'Big-picture usage summary (active tenants, active users by desktop/mobile, order/call volume, error-rate trend, MRR); optional platform filter' },
         effect: 'read', minTier: 'platformAdmin', permission: PLATFORM_ONLY, bindings: [{ rpc: 'BackofficeOverviewService/getPulse' }], ui: UI, mcp: PA, agent: NO_AGENT,
     }),
     c({
@@ -22,6 +22,10 @@ export const BACKOFFICE_ATTENTION_CAPABILITIES = [
     c({
         id: 'platform.tenants.health_summary', domain: 'platform', summary: { tr: 'Müşteri sağlık özeti (açık sorunlar, başarısız iş sayaçları, son senkron, uyarılar; iş verisi yok)', en: 'Tenant health summary (open issues, failed-job counters, last sync, alerts; no business data)' },
         effect: 'read', minTier: 'platformAdmin', permission: PLATFORM_ONLY, bindings: [{ rpc: 'BackofficeTenantService/getHealthSummary' }], ui: UI, mcp: PA, agent: NO_AGENT,
+    }),
+    c({
+        id: 'platform.tenants.usage', domain: 'platform', summary: { tr: 'Müşteri kullanımı: aktif kullanıcı ve giriş sayıları, masaüstü/mobil (+ alt tür) kırılımı; isteğe bağlı platform süzgeci (yalnız sayaç)', en: 'Tenant usage: active users and logins by desktop/mobile (+ subtype); optional platform filter (counts only)' },
+        effect: 'read', minTier: 'platformAdmin', permission: PLATFORM_ONLY, bindings: [{ rpc: 'BackofficeTenantService/getUsage' }], ui: UI, mcp: PA, agent: NO_AGENT,
     }),
     c({
         id: 'platform.prefs.list_views', domain: 'platform', summary: { tr: 'Yöneticinin kayıtlı görünümlerini listele', en: 'List the saved views of the calling admin' },

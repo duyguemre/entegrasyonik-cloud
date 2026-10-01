@@ -99,7 +99,7 @@ export const OPERATION_POLICY_SNAPSHOT: SnapshotPolicy = {
     BackofficeAdminUserService: { list: P, invite: P, disable: P, enable: P, resetMfa: P },
     // B2/B4: abonelik + gelir + tenant yaşam döngüsü (yazmalar step-up ister)
     BackofficeBillingService: { listSubscriptions: P, getSubscription: P, extendTrial: P, cancelSubscription: P, changePlan: P, getRevenueMetrics: P },
-    BackofficeTenantService: { getLifecycle: P, cancelDeletion: P, listTenants: P, getHealthSummary: P },
+    BackofficeTenantService: { getLifecycle: P, cancelDeletion: P, listTenants: P, getHealthSummary: P, getUsage: P },
     // K51 (BO1) + BE-05: kayıtlı görünümler (yönetici başına)
     BackofficePrefsService: { listViews: P, saveView: P, deleteView: P, getPushConfig: P, subscribePush: P, unsubscribePush: P },
     // B5/B6/B8/B9: entegrasyon sağlığı + altyapı gözlemi + cache (flushCacheFamily step-up ister)

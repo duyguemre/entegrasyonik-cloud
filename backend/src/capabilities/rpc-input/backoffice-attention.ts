@@ -4,10 +4,13 @@ import { z } from 'zod';
 import { strictBody } from './common';
 import { PUSH_SUBSCRIBE_BODY, PUSH_UNSUBSCRIBE_BODY } from './notification';
 import type { RpcRef } from '../types';
+import { PLATFORM_FILTERS } from '@platform/core/context';
 
 const tid = z.number().int().positive().max(2_000_000_000);
 const cursor = z.string().min(1).max(100);
 const limit = z.number().int().min(1).max(200);
+/** MOB-08: platform süzgeci -- ana sınıf (`desktop`/`mobile`) ya da alt tür (`desktop_web`…`unknown`). */
+const platformFilter = z.enum(PLATFORM_FILTERS as unknown as [string, ...string[]]);
 const SUB_STATUS = z.enum(['trialing', 'active', 'past_due', 'suspended', 'canceled', 'expired']);
 
 /** NT-03 URL süzgeç modeli: ≤ 20 anahtar, değer string ya da ≤ 20 string; `$`/`.` içeren anahtar yok. */
@@ -18,7 +21,7 @@ export const viewQuery = z.record(viewKey, z.union([viewVal, z.array(viewVal).ma
 
 export const BACKOFFICE_ATTENTION_RPC_INPUT: Partial<Record<RpcRef, z.ZodType<any>>> = {
     'BackofficeOverviewService/getAttention': strictBody({ limit: z.number().int().min(1).max(50).optional() }),
-    'BackofficeOverviewService/getPulse': strictBody({}),
+    'BackofficeOverviewService/getPulse': strictBody({ platform: platformFilter.optional() }),
     'BackofficeTenantService/listTenants': strictBody({
         hasIssues: z.boolean().optional(), subscriptionStatus: z.array(SUB_STATUS).min(1).max(6).optional(),
         status: z.array(z.string().regex(/^[A-Z_]{2,40}$/)).min(1).max(10).optional(), q: z.string().min(1).max(60).optional(),
@@ -26,6 +29,7 @@ export const BACKOFFICE_ATTENTION_RPC_INPUT: Partial<Record<RpcRef, z.ZodType<an
         cursor: cursor.optional(), limit: limit.optional(),
     }),
     'BackofficeTenantService/getHealthSummary': strictBody({ tid }),
+    'BackofficeTenantService/getUsage': strictBody({ tid, days: z.union([z.literal(7), z.literal(30), z.literal(90)]).optional(), platform: platformFilter.optional() }),
     'BackofficePrefsService/listViews': strictBody({ screen: z.string().regex(/^[a-z][a-z0-9-]{0,39}$/).optional() }),
     'BackofficePrefsService/saveView': strictBody({ screen: z.string().regex(/^[a-z][a-z0-9-]{0,39}$/), name: z.string().trim().min(1).max(60), query: viewQuery }),
     'BackofficePrefsService/deleteView': strictBody({ id: z.string().regex(/^[a-f0-9]{24}$/i) }),
