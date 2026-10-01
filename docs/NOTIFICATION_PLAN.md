@@ -306,6 +306,12 @@ Test komutları `docs/TESTING.md`'den alınır:
 - Alıcı: gönderim anında `Users.isGlobalAdmin===true` ve `isActive!==false`; değilse abonelik silinir. 404/410 → silinir. `Urgency: high`, TTL 12 sa.
 - Önyüz: `frontend/backoffice/src/pwa/{webPush.ts,PushCard.vue}` (Platform uyarıları ekranında kart; izin yalnız "Bu cihazda aç" ile), SW `push`/`notificationclick` (yalnız panel içi göreli yol). Testler: backend `tests/unit/notifications/platformAttentionPush.test.ts`; backoffice `tests/web-push.test.ts`, `tests/pwa-sw-push.test.ts`.
 
+**MOB-07 Android kabuğu yerel push (FCM HTTP v1; 2026-10-01, bulut `cloud/mob-android`)**
+- Android WebView'de Web Push API yok → kabukta bildirim FCM cihaz belirteciyle. Aynı kanal: aynı `PushSubscriptions` (`sub` = şifreli `{fcm}`, tekillik `sha256('fcm:'+token)`), aynı outbox/dağıtıcılar (tenant `notifications.push-dispatch`, backoffice `notifications.platform-attention-push`), aynı içerik kuralları. Gönderici hedef türüne göre yönlendirir (`createPushDispatcher.ts` → `fcm.ts`).
+- RPC: `subscribePush { subscription } | { fcmToken }` ve `unsubscribePush { endpoint } | { id } | { fcmToken }` (tenant + backoffice; yalnız biri, aksi 400 `VALIDATION`; kanal türü kapalı → 409 `PUSH_DISABLED`; bozuk belirteç 400 `PUSH_TOKEN_INVALID`). `getPushConfig` yanıtına `fcm: boolean`; `enabled` = VAPID **ya da** FCM açık, `publicKey` yalnız VAPID açıkken.
+- Yapılandırma: `FCM_SERVICE_ACCOUNT_JSON` (Firebase hizmet hesabı JSON'u, ham ya da base64; SIR, yalnız `.env`). Yoksa/bozuksa FCM kapalı, süreç başlar. OAuth2 erişim belirteci (JWT-bearer, RS256) bellekte; 401 → yenilenir. FCM 404 (UNREGISTERED) → abonelik silinir; 400 → `dead`; 429/5xx → yeniden dene. Egress guard: `EGRESS_ALLOW_WEBPUSH=1` `oauth2.googleapis.com`'u da açar. Yeni bağımlılık yok (`jsonwebtoken` + `fetch`).
+- İstemci: `@entegrasyonik/ui/native` (kabuk tespiti, `registerNativePush`, bildirime dokunma → uygulama içi yol). Derleme/kurulum: `docs/MOBILE_ANDROID_BUILD.md`. Testler: `tests/unit/notifications/fcmPush.test.ts`.
+
 ## 4. Bulut görev brifleri — müşteri uygulaması (yapıştırmaya hazır)
 
 Ortak ek (her brifin sonuna):

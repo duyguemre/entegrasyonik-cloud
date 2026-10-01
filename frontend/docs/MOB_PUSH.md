@@ -53,3 +53,10 @@ Backend ve kanal kuralları: `docs/NOTIFICATION_PLAN.md` §NB9. Bu belge yalnız
 3. Masaüstü Chrome/Edge/Firefox: aç/kapat; uygulama kapalıyken bildirim; tıklama mevcut pencereyi odaklar.
 4. Electron: tercih ekranında Telefon sütunu ve kart yok.
 5. Cihazdan uygulama verisini silme / bildirimi sistem ayarından kapatma → sonraki gönderimde 404/410 ve abonelik temizliği.
+
+## Android kabuğu (MOB-07)
+
+Android WebView'de Web Push yoktur. Kabukta (`EntegrasyonikShell/... fcm=1`) aynı kart FCM yolunu kullanır: "Bu cihazda aç" →
+Android bildirim izni → FCM belirteci → `subscribePush { fcmToken }`; belirteç yalnız bu cihazda (`ek-native-push-token`) tutulur,
+"Bu cihazda kapat" belirteçle siler. FCM'siz derlemede ya da sunucuda FCM kapalıyken kart "desteklenmiyor" der. Bildirime dokunma
+yalnız uygulama içi yolu açar (`src/main.ts` → `onNativePushOpen`). Köprü: `packages/ui/src/native/shell.ts`; ayrıntı `docs/MOBILE_ANDROID_BUILD.md`.
