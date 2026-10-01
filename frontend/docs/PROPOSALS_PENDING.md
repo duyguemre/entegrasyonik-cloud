@@ -24,6 +24,9 @@ Her madde: **Ekran · Sorun · Öneri · Alternatif · Etki · Risk**. Onay içi
 | P11 | Menüde Ayarlar/Çıktılar "Finans ve raporlar" altında | Grup düzeni | IA (backend menü verisi) |
 | P12 | E-Fatura sağlayıcılarının kısa adı yok ("E-", "Gİ") | Kısa ad kaydına ekle | Küçük (K13 kayıt) |
 | P13 | Giriş ekranında "Şifremi unuttum" iki kez | Tek giriş noktası | Küçük (akış) |
+| P14 | Tur teklifi kartı birincil eylemleri örtüyor (e2e onarımı) | Açık çekmece/diyalog/menüde gizle, z-index düşür, yapışık alt çubuğa yer ayır | Küçük-orta |
+| P15 | Açık filtre paneliyle liste alanı ~0 yüksekliğe iniyor (e2e onarımı) | Liste çerçevesine asgari yükseklik | Küçük |
+| P16 | Menü 500'de üç ayrı "Bir şeyler ters gitti" bildirimi (e2e onarımı) | Aynı hatayı tek bildirimde topla | Küçük |
 
 ---
 
@@ -135,3 +138,37 @@ Her madde: **Ekran · Sorun · Öneri · Alternatif · Etki · Risk**. Onay içi
 - **Öneri:** Üç sekme → iki sekme (Giriş · Kayıt); sıfırlama yalnız alan altındaki bağlantıdan.
 - **Alternatif:** Sekme kalır, bağlantı kalkar.
 - **Etki/Risk:** `AuthShell`/giriş akışı; login spec'leri. Düşük-orta (akış değişikliği).
+
+---
+
+## e2e onarımı (cloud/e2e-repair, 2026-10-01) — testlerin bulduğu, onay gerektiren maddeler
+Bu maddeler için test GEVŞETİLMEDİ; testler yalnız ilgili ekranda kartı bastırarak (`e2e/fixtures/appDialog.ts`
+`suppressTourOffer`) veya paneli kapatarak asıl davranışı doğrular.
+
+### P14 — Tur teklifi kartı birincil eylemleri örtüyor
+- **Ekran:** Kabuk geneli, ilk ziyaretteki "Uygulamayı tanıyın" kartı (`HelpTour`, `.ek-tour-offer`; sağ alt sabit, mobilde tam genişlik, z-toast).
+- **Sorun:** Kart açık menü/seçim listelerinin ve şunların üstünde kalıp tıklamayı engelliyor: Mağaza Ayarları'nın yapışık "Ayarları Kaydet" çubuğu,
+  bildirim çekmecesindeki "Tümünü gör", mobil gezinme çekmecesinin alt öğeleri (Destek Kayıtları), mobilde ürün listesi toplu işlem
+  menüsünün alt öğeleri, varyant satır eylemleri, sayfalama ve onay kutuları. `--ek-tour-offer-space` dolgusu yapışık çubuk ve çekmecede işe yaramıyor.
+- **Öneri:** Gezinme çekmecesi, diyalog veya menü açıkken kartı gizle; z-index'i çekmece/menü katmanının altına indir; yapışık alt çubuklu ekranlarda kartı çubuğun üstüne konumla.
+- **Alternatif:** Kartı sağ alttan üst bar altındaki ince bir bilgi şeridine taşı.
+- **Etki:** `HelpTour` + kabuk katman tokenları; tur teklifi spec'leri ve görsel tabanlar.
+- **Risk:** Düşük (yalnız konum/katman). Kullanıcının ilk ziyaret deneyimini değiştirdiği için onaylı.
+
+### P15 — Açık filtre paneliyle liste alanı ~0 yüksekliğe iniyor
+- **Ekran:** Denetim günlüğü (uyarı bandıyla), Bildirim merkezi — 1280×800'de filtre paneli açıkken (masaüstü varsayılanı).
+- **Sorun:** `EkListFrame` tablo alanı ~0–100px'e iniyor; satırlar sayfalamanın altında kalıyor, tıklanamıyor. (Bildirim merkezinin hata
+  kartı için bariz kısmı düzeltildi: kart kaydırılabilir oldu — commit `5759633c`.)
+- **Öneri:** `.ek-list-frame__scroll` için asgari yükseklik (ör. 240px); sığmazsa sayfa kayar.
+- **Alternatif:** Dar yükseklikte filtre paneli varsayılan kapalı açılır.
+- **Etki:** Ortak `EkListFrame` (tüm liste ekranları); görsel tabanlar.
+- **Risk:** Düşük-orta (ortak bileşen düzeni).
+
+### P16 — Menü 500'de üç ayrı "Bir şeyler ters gitti" bildirimi
+- **Ekran:** Kabuk açılışı, `MenuService` 500 döndüğünde.
+- **Sorun:** Aynı kök hata için üç ayrı "Bir şeyler ters gitti. Destek kodu: c-…" bildirimi yığılıyor (eski davranış sessizdi).
+  Ayrıca rastgele destek kodu "500"/"401" gibi rakam dizileri içerebildiği için tüm sayfada `not.toContainText('500')` arayan testler nadiren kırılabilir (shell spec'inde kelime sınırıyla düzeltildi).
+- **Öneri:** Aynı istekten doğan hataları kısa pencerede tek bildirimde topla (tek destek kodu).
+- **Alternatif:** Menü hatasında bildirim yerine kenar menüde satır içi hata durumu + Tekrar dene.
+- **Etki:** `reportUnexpectedError` / bildirim kuyruğu.
+- **Risk:** Düşük.
