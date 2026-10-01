@@ -79,7 +79,7 @@ test.describe('gezinme', () => {
     }
     await (await revealNavLink(page, 'Çözümler', 'Tüm entegrasyonlar')).click()
     await expect(page).toHaveURL(/\/entegrasyonlar\/?$/)
-    await expect(page.getByRole('heading', { level: 1, name: 'Entegrasyonlar' })).toBeVisible()
+    await expect(page.getByRole('heading', { level: 1, name: 'Sattığınız her yer, aynı merkezde' })).toBeVisible()
   })
 
   test('entegrasyonlar: 6 kart, karttan detay sayfasına, breadcrumb ile geri', async ({ page }) => {
@@ -189,7 +189,7 @@ test.describe('S14 — destek merkezi ve bağlantı rehberi', () => {
   test('destek: soru bağlantısı SSS\'te hedef soruyu açar', async ({ page }) => {
     await page.goto('/destek')
     await expect(page.getByTestId('support-category')).toHaveCount(5)
-    await page.locator('#stok-siparis').getByRole('link', { name: /Overselling/ }).click()
+    await page.locator('#stok-siparis').getByRole('link', { name: /Aşırı satışı nasıl/ }).click()
     await expect(page).toHaveURL(/\/sss\/?#asiri-satis$/)
     await expect(page.locator('details#asiri-satis')).toHaveAttribute('open', '')
     await expect(page.locator('details#asiri-satis .acc__body')).toBeVisible()

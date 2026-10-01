@@ -94,11 +94,12 @@ const clusters = [
 /*
  * "Bir bakışta" sayaçları — YALNIZCA kayıttan hesaplanır (tests/pages.test.ts EXPECTED_STATS aynı hesabı yapar).
  */
+// ELEV (A9): ilk ekranda güç sayıları; kapsam şeffaflığı (kısmi/temel düzey) özellik kartlarında ve kapsam matrisinde kalır.
 const stats = [
   { id: 'features', value: capabilities.length, label: 'temel özellik' },
-  { id: 'features-available', value: capabilities.filter((c) => c.status === 'available').length, label: 'mevcut özellik' },
-  { id: 'features-partial', value: capabilities.filter((c) => c.status === 'partial').length, label: 'kısmi, kanala göre değişen' },
-  { id: 'integrations', value: channels.length, label: 'kullanılabilir entegrasyon' },
+  { id: 'integrations', value: channels.length, label: 'bağlanabilen kanal' },
+  { id: 'marketplaces', value: channels.filter((c) => c.kind === 'marketplace').length, label: 'pazaryeri' },
+  { id: 'kinds', value: new Set(channels.map((c) => c.kind)).size, label: 'kanal türü' },
 ]
 
 const LEVEL_STATE: Record<CapabilityLevel, 'yes' | 'limited'> = { supported: 'yes', limited: 'limited' }
@@ -107,8 +108,8 @@ const LEVEL_STATE: Record<CapabilityLevel, 'yes' | 'limited'> = { supported: 'ye
 <BaseLayout>
 
   <PageHero
-    title="Özellikler"
-    eyebrow="Ürün"
+    title="Satışın her adımı, aynı ekranda"
+    eyebrow="Özellikler"
     lead="Eşzamanlı siparişte stok rezerve edilir; siz iadeyi onaylar, müşteri sorusunu yanıtlar, fiyat ve stoğu tek yerden güncellersiniz. Her özelliğin hangi kanallarda ve hangi kapsamda çalıştığı yazılıdır."
     crumbs={crumbs}
   >

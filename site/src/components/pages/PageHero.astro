@@ -57,14 +57,21 @@ const hasVisual = Astro.slots.has('visual')
     max-width: calc(var(--site-container-narrow) + var(--ek-space-16));
     min-width: 0;
   }
-  .page-hero__eyebrow {
-    font-size: var(--ek-font-size-md);
+  /* ELEV (A8/A14): eyebrow = sayfa adı, ana sayfa bölüm etiketleriyle aynı dil (küçük, büyük harf, koyu zeminde teal). */
+  /* Seçici, Section'ın `.section--stage p` kuralından güçlü olmalı (aksi hâlde soluk beyaza döner). */
+  .page-hero__body .page-hero__eyebrow {
+    color: var(--site-accent-on-dark);
+    font-size: var(--ek-font-size-sm);
     font-weight: var(--ek-font-weight-semibold);
     letter-spacing: 0.08em;
     text-transform: uppercase;
   }
-  .page-hero h1 {
-    font-size: var(--site-font-display-lg);
+  /* ELEV: önceki `.page-hero h1` seçicisi kapsam dışı kalıyordu (sınıf alt bileşen Section'da) → H1 genel 36/700'e
+     düşüyordu. H1 artık bir değer cümlesidir; display ölçeği bileşenin kendi öğesine bağlanır. */
+  .page-hero__body h1 {
+    max-width: 20ch;
+    text-wrap: balance;
+    font-size: var(--site-font-display-md);
     font-weight: var(--site-font-display-weight);
     line-height: var(--site-font-display-line-height);
     letter-spacing: var(--site-font-display-tracking);
