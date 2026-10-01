@@ -51,6 +51,10 @@ export const BUYBOX_LOST_COOLDOWN_HOURS = 24;
 
 export const budgetKey = (channel: string) => `pricing.buybox.budget.${channel}.perMin`;
 
+/** PRC-R2 / PRC-OPEN S6: toplu öneri onayının günlük eylem kotası sayımı. */
+export const SUGGESTION_BULK_QUOTA_KEY = 'pricing.suggestions.bulkApplyQuota';
+export const SUGGESTION_BULK_QUOTA_MODES = ['per_approval', 'per_item'] as const;
+
 function planSettings(plan: CompetitionPlan): SettingDef<any>[] {
     const d = COMPETITION_PLAN_DEFAULTS[plan];
     const L = PLAN_LABEL[plan];
@@ -76,6 +80,11 @@ export const PRICING_SETTINGS: SettingDef<any>[] = [
         label: { tr: 'Trendyol buybox çağrı bütçesi (dakika)', en: 'Trendyol buybox call budget (per minute)' },
         help: { tr: 'Tüm tenant\'lar için dakikada en fazla buybox isteği (istek başına ≤10 barkod). Trendyol sınırı ~1000/dk ve satıcı hesabındaki diğer çağrılarla paylaşılır; güvenli düşük başlangıç 60. Bütçe dolunca tazeleme ertelenir, tenant\'lar arasında sırayla paylaştırılır.', en: 'Maximum buybox requests per minute across all tenants (≤10 barcodes each). Trendyol\'s ~1000/min limit is shared with other calls; safe low start is 60. When exhausted, refreshes are deferred and shared round-robin across tenants.' },
         impact: { tr: 'Yüksek değer pazaryeri kotasını tüketip sipariş/stok çağrılarını yavaşlatabilir.', en: 'A high value can consume the marketplace quota and slow order/stock calls.' } },
+    // PRC-R2 / PRC-OPEN S6 (AÇIK KARAR): Otopilot/MCP'de TOPLU öneri onayı günlük eylem kotasından kaç eylem düşer. Varsayılan `per_approval`
+    // (toplu onay = 1 eylem); `per_item` = onaylanan öneri sayısı kadar. Karar kullanıcıyla verilince yalnız bu değer değişir.
+    { ...base, key: SUGGESTION_BULK_QUOTA_KEY, type: 'enum', schema: z.enum(SUGGESTION_BULK_QUOTA_MODES), default: 'per_approval',
+        label: { tr: 'Toplu fiyat önerisi onayının kota sayımı', en: 'Quota count of a bulk price suggestion approval' },
+        help: { tr: 'per_approval: Otopilot\'ta tek onayla uygulanan öneriler günlük eylem kotasından 1 eylem düşer. per_item: her öneri ayrı eylem sayılır. (Açık karar PRC-OPEN S6.)', en: 'per_approval: suggestions applied in one Autopilot approval count as 1 action against the daily quota. per_item: each suggestion counts separately. (Open decision PRC-OPEN S6.)' } },
     { ...base, key: 'pricing.buybox.notify.shadow', type: 'bool', schema: z.boolean(), default: true,
         label: { tr: '"Buybox kaybedildi" bildirimi gölge modda', en: '"Buybox lost" notification in shadow mode' },
         help: { tr: 'Açıkken olay yalnız deftere yazılır (kullanıcıya gitmez). Gerçek veriyle doğrulama bitince kapatın.', en: 'When on, the event is only written to the ledger (not delivered). Turn off after validation with real data.' } },

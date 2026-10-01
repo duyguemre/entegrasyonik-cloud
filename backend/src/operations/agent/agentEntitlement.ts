@@ -9,6 +9,8 @@ import { AppError } from '@platform/core/errors';
 import { logger } from '@platform/core/logger';
 import { EntitlementService } from '@services/billing/EntitlementService';
 import { dayKeyInZone } from '@utils/timeZone';
+import { getPlatformSetting } from '@integration/config/platformSettings';
+import { SUGGESTION_BULK_QUOTA_KEY } from '@integration/config/catalog/pricing';
 import type { AgentKv } from './kv';
 
 const log = logger.child({ module: 'agent.entitlement' });
@@ -52,9 +54,23 @@ export interface QuotaResult { allowed: boolean; used: number; limit: number }
  * Bir onayli yazma eylemi icin gunluk sayaci artirir (Europe/Istanbul gunu; 48 sa TTL). `allowed=false` -> yurutme reddedilir.
  * SOHBET (`/agent/confirm`) ve MCP (`/mcp/approvals/:id`) AYNI sayaci (`agent:quota:{tid}:{gun}`) kullanir.
  */
-export async function consumeActionQuota(kv: AgentKv, tid: number, ent: AgentEntitlement, now: Date = new Date()): Promise<QuotaResult> {
-    const used = await kv.incr(`agent:quota:${tid}:${dayKeyInZone(now)}`, 48 * 3600);
+export async function consumeActionQuota(kv: AgentKv, tid: number, ent: AgentEntitlement, now: Date = new Date(), cost = 1): Promise<QuotaResult> {
+    const key = `agent:quota:${tid}:${dayKeyInZone(now)}`;
+    const used = cost === 1 ? await kv.incr(key, 48 * 3600) : await kv.incrBy(key, Math.max(1, Math.trunc(cost)), 48 * 3600);
     return { allowed: used <= ent.dailyActionQuota, used, limit: ent.dailyActionQuota };
+}
+
+/**
+ * Bir onayin kotadan kac eylem dusurdugu. Varsayilan 1. PRC-R2 / PRC-OPEN S6 (ACIK KARAR): `pricing.suggestions.apply` toplu onayi
+ * `pricing.suggestions.bulkApplyQuota` ayarina gore 1 (`per_approval`, varsayilan) ya da oneri sayisi (`per_item`).
+ */
+export function actionQuotaCost(capId: string, input: unknown, read: (key: string) => unknown = readSetting): number {
+    if (capId !== 'pricing.suggestions.apply') return 1;
+    const n = Array.isArray((input as any)?.suggestionIds) ? (input as any).suggestionIds.length : 1;
+    return read(SUGGESTION_BULK_QUOTA_KEY) === 'per_item' ? Math.max(1, n) : 1;
+}
+function readSetting(key: string): unknown {
+    try { return getPlatformSetting(key); } catch { return undefined; }
 }
 
 /** Sayaci ARTIRMADAN kalan hakka bakar (MCP: yazma araci cagrisinda kota doluysa onay kaydi acmadan erken ve anlasilir hata). */

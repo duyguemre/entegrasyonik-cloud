@@ -17,6 +17,7 @@ export const EN: Record<string, { title: string; body: string }> = {
     CATALOG_BATCH_SUBMITTED: { title: 'Batch submitted', body: '{itemCount} records were submitted to {integ} (job: {batchId}).' },
     CATALOG_BATCH_FAILED: { title: 'Batch failed', body: 'The {integ} batch could not be completed (error code: {errorCode}). Support code: {corrId}.' },
     BUYBOX_LOST: { title: 'Buybox lost', body: 'On {integ}, the buybox for barcode {barcode} moved to another seller (rank: {buyboxOrder}, buybox price: {buyboxPrice} TRY).' },
+    PRICE_RULE_PAUSED: { title: 'Pricing rule paused', body: 'A competition pricing rule on {integ} was paused (reason: {reason}). Review and save the rule again.' },
     CATALOG_IMPORT_COMPLETED: { title: 'Import completed', body: 'The {integ} import completed ({itemCount} records).' },
     CATALOG_IMPORT_FAILED: { title: 'Import failed', body: 'The {integ} import failed (error code: {errorCode}). Support code: {corrId}.' },
     CATALOG_EXPORT_ERRORS_DIGEST: { title: 'Transfer errors', body: '{failedCount} transfers to {integ} failed.' },

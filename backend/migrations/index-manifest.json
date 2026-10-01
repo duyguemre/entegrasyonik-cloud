@@ -2272,6 +2272,70 @@
           "expireAfterSeconds": 7776000
         }
       }
-    ]
+    ],
+    "PriceRules": [
+      {
+        "name": "type_integ_enabled",
+        "fields": {
+          "type": 1,
+          "integrationCode": 1,
+          "enabled": 1
+        },
+        "options": {}
+      }
+    ],
+    "PriceSuggestions": [
+      {
+        "name": "ruleId_variantId_current",
+        "fields": {
+          "ruleId": 1,
+          "variantId": 1
+        },
+        "options": {
+          "unique": true,
+          "partialFilterExpression": {
+            "current": true
+          }
+        }
+      },
+      {
+        "name": "status_updatedAt",
+        "fields": {
+          "status": 1,
+          "updatedAt": -1
+        },
+        "options": {}
+      },
+      {
+        "name": "ttl_createdAt_90d",
+        "fields": {
+          "createdAt": 1
+        },
+        "options": {
+          "expireAfterSeconds": 7776000
+        }
+      }
+    ],
+    "PriceHistory": [
+      {
+        "name": "integ_variant_at",
+        "fields": {
+          "integrationCode": 1,
+          "variantId": 1,
+          "at": -1
+        },
+        "options": {}
+      },
+      {
+        "name": "ttl_at_90d",
+        "fields": {
+          "at": 1
+        },
+        "options": {
+          "expireAfterSeconds": 7776000
+        }
+      }
+    ],
+    "PricingSettings": []
   }
 }

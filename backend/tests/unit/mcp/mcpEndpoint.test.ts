@@ -23,7 +23,7 @@ const flush = async () => { await new Promise((r) => setImmediate(r)); await new
 
 const READ_TOOLS = ['integrations_health_get', 'orders_list', 'products_search', 'reports_sales_summary', 'stock_low_list'];
 /** tools/list'te görünen tüm okuma araçları: core + PRC-R0/R1 `catalog` toolset okumaları (çağrı testleri yalnız READ_TOOLS üzerinden). */
-const LISTED_READ = [...READ_TOOLS, 'pricing_buybox_list', 'pricing_cost_list', 'pricing_margin_preview'].sort();
+const LISTED_READ = [...READ_TOOLS, 'pricing_buybox_list', 'pricing_cost_list', 'pricing_margin_preview', 'pricing_rules_list', 'pricing_suggestions_list'].sort();
 const ARGS: Record<string, unknown> = { products_search: { query: 'x' } };
 
 beforeEach(async () => {

@@ -41,6 +41,12 @@ export const BACKOFFICE_BILLING_CAPABILITIES = [
         id: 'platform.competition.override.set', domain: 'platform', summary: { tr: 'Tenant için rekabet ayarı istisnası yaz/kaldır (SKU tavanı, tazeleme, tazelik, öncelik; gerekçe)', en: 'Set/clear a tenant competition override (SKU cap, refresh, freshness, priority; reason)' },
         effect: 'write', minTier: 'platformAdmin', permission: PLATFORM_ONLY, bindings: [{ rpc: 'BackofficeBillingService/setCompetitionOverride' }], ui: UI, mcp: PA, agent: NO_AGENT,
     }),
+    // PRC-R2 (K19): fiyat kuralları kill-switch durumu + kural/öneri TOPLAM istatistikleri (tenant verisi yok). Kill-switch yazımı mevcut
+    // `_platform` taslak/yayın akışıyla (`features.pricingRules`, IntegrationConfigService) — ayrı yazma yeteneği YOK.
+    c({
+        id: 'platform.pricing_rules.overview', domain: 'platform', summary: { tr: 'Fiyat kuralları: platform kill-switch durumu + kural/öneri toplam istatistikleri (tenant verisi yok)', en: 'Pricing rules: platform kill-switch state + rule/suggestion totals (no tenant data)' },
+        effect: 'read', minTier: 'platformAdmin', permission: PLATFORM_ONLY, bindings: [{ rpc: 'BackofficeBillingService/getPricingRulesOverview' }], ui: UI, mcp: PA, agent: NO_AGENT,
+    }),
     c({
         id: 'platform.tenant.lifecycle', domain: 'platform', summary: { tr: 'Tenant yaşam döngüsü: durum, deneme, silme talebi, provisioning adımları, son etkinlik', en: 'Tenant lifecycle: status, trial, deletion request, provisioning steps, recent activity' },
         effect: 'read', minTier: 'platformAdmin', permission: PLATFORM_ONLY, bindings: [{ rpc: 'BackofficeTenantService/getLifecycle' }], ui: UI, mcp: PA, agent: NO_AGENT,

@@ -66,6 +66,8 @@ export interface McpExposed {
     confirm: 'none' | 'confirm' | 'typed';
     present: Presentation;
     deepLink?: DeepLinkSpec;
+    /** Onay kartı risk düzeyi geçersiz kılma (yoksa türetilir: destructive=high, dış yazma=medium, yerel=low). PRC-R2 fiyat uygulaması: high. */
+    risk?: 'high';
 }
 
 /**

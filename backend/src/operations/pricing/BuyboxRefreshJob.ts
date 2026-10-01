@@ -47,6 +47,8 @@ export interface BuyboxJobDeps {
     apply(tid: number, items: ApplyItem[]): Promise<void>;
     notifyLost(tid: number, params: { integ: string; barcode: string; buyboxOrder: number; buyboxPrice: number; day: string }, opts: { shadow: boolean; idempotencyKey: string }): Promise<void>;
     markNotified(tid: number, variantIds: string[], at: Date): Promise<void>;
+    /** PRC-R2: taze gözlem alan tenant için rekabet kurallarını KURU değerlendirir (yalnız öneri yazar; fiyat DEĞİŞMEZ). */
+    evaluateRules?(tid: number): Promise<void>;
 }
 
 export interface BuyboxRunResult {
@@ -58,6 +60,8 @@ export interface BuyboxRunResult {
     notified: number;
     deferred: number;
     failedTenants: number;
+    /** PRC-R2: kuralları değerlendirilen tenant sayısı. */
+    rulesEvaluated?: number;
 }
 
 const istanbulDay = (d: Date) => new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Istanbul', year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
@@ -98,6 +102,7 @@ export class BuyboxRefreshJob {
         const shadow = this.d.shadow();
         const cooldown = this.d.cooldownMs();
         const failed = new Set<number>();
+        const observedTenants = new Set<number>();
         for (const call of plan.calls) {
             if (failed.has(call.tid)) { res.deferred += call.barcodes.length; continue; }
             let obs: IBuyboxObservation[];
@@ -124,6 +129,7 @@ export class BuyboxRefreshJob {
             }
             try {
                 await this.d.apply(call.tid, items);
+                if (items.length) observedTenants.add(call.tid);
             } catch {
                 failed.add(call.tid);
                 res.failedTenants++;
@@ -141,6 +147,13 @@ export class BuyboxRefreshJob {
             if (notifiedIds.length) {
                 res.notified += notifiedIds.length;
                 try { await this.d.markNotified(call.tid, notifiedIds, now); } catch { /* sonraki kayıpta soğuma yeniden değerlendirilir */ }
+            }
+        }
+        if (this.d.evaluateRules) {
+            res.rulesEvaluated = 0;
+            for (const tid of observedTenants) {
+                if (failed.has(tid)) continue;
+                try { await this.d.evaluateRules(tid); res.rulesEvaluated++; } catch { /* kural değerlendirme hatası okumayı düşürmez */ }
             }
         }
         return res;

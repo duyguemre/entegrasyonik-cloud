@@ -131,6 +131,35 @@ export const PRESENT_SPECS: Readonly<Record<string, PresentSpec>> = {
         cells: (v) => ({ sku: ref('variant', v.variantId, v.sku ?? v.barcode ?? v.variantId) }),
         openIn: (i) => ({ screen: 'productDefinitions/ProductListView', ...(i?.status ? { params: { buybox: String(i.status) } } : {}) }),
     },
+    // PRC-R2: kural listesi ve öneriler. Fiyatı KOD hesaplar (K15); tablo sunucu verisidir, model rakamları değiştiremez.
+    'pricing.rules.list': {
+        kind: 'table', title: { tr: 'Rekabet fiyat kuralları', en: 'Competition pricing rules' }, itemsKey: 'rules', rowKey: 'id',
+        columns: [
+            { key: 'name', label: { tr: 'Kural', en: 'Rule' }, type: 'text', untrusted: true },
+            { key: 'enabled', label: { tr: 'Açık', en: 'On' }, type: 'boolean' },
+            { key: 'mode', label: { tr: 'Yön', en: 'Mode' }, type: 'text' },
+            { key: 'pausedReason', label: { tr: 'Duraklatma nedeni', en: 'Pause reason' }, type: 'text' },
+            { key: 'open', label: { tr: 'Açık öneri', en: 'Open suggestions' }, type: 'number' },
+            { key: 'version', label: { tr: 'Sürüm', en: 'Version' }, type: 'number' },
+        ],
+        cells: (r) => ({ mode: r.competition.mode === 'below' ? 'below / altında' : 'above / üstünde', open: r.suggestions.open }),
+        openIn: () => ({ screen: 'pricing/PricingRulesView' }),
+    },
+    'pricing.suggestions.list': {
+        kind: 'table', title: { tr: 'Fiyat önerileri (Trendyol)', en: 'Price suggestions (Trendyol)' }, itemsKey: 'items', rowKey: 'id',
+        columns: [
+            { key: 'sku', label: { tr: 'Stok kodu', en: 'SKU' }, type: 'entity', untrusted: true },
+            { key: 'barcode', label: { tr: 'Barkod', en: 'Barcode' }, type: 'text', untrusted: true },
+            { key: 'beforePrice', label: { tr: 'Şimdiki fiyat', en: 'Current price' }, type: 'money' },
+            { key: 'afterPrice', label: { tr: 'Önerilen fiyat', en: 'Suggested price' }, type: 'money' },
+            { key: 'buyboxPrice', label: { tr: 'Buybox fiyatı', en: 'Buybox price' }, type: 'money' },
+            { key: 'profitAfter', label: { tr: 'Tahmini kâr', en: 'Est. profit' }, type: 'money' },
+            { key: 'floor', label: { tr: 'Taban', en: 'Floor' }, type: 'money' },
+            { key: 'status', label: { tr: 'Durum', en: 'Status' }, type: 'text' },
+        ],
+        cells: (v) => ({ sku: ref('variant', v.variantId, v.sku ?? v.barcode ?? v.variantId), status: v.blockedReason ? `${v.status}: ${v.blockedReason}` : v.status }),
+        openIn: () => ({ screen: 'pricing/PricingRulesView' }),
+    },
     'pricing.margin.preview': {
         kind: 'table', title: { tr: 'Kâr önizlemesi (Trendyol)', en: 'Profit preview (Trendyol)' }, itemsKey: 'items', rowKey: 'variantId',
         columns: [
@@ -261,6 +290,23 @@ export const CONFIRM_SPECS: Readonly<Record<string, ConfirmSpec>> = {
         }),
         openIn: { screen: 'productDefinitions/ProductListView' },
         confirmLabel: (i, loc) => (loc === 'tr' ? `${i.items.length} maliyeti kaydet` : `Save ${i.items.length} cost(s)`),
+    },
+    // PRC-R2: onay kartı. Önizleme (önce/sonra) yürütme anında sunucuda TAZE veriyle sigortadan yeniden geçer; geçmeyen uygulanmaz.
+    // Dil "fiyat güncellendi"dir; "indirim" ifadesi kullanılmaz (K11).
+    'pricing.suggestions.apply': {
+        summary: (i, loc) => (loc === 'tr'
+            ? `${i.suggestionIds.length} fiyat önerisi onaylanırsa Trendyol satış fiyatı güncellenecek. Uygulamadan hemen önce taban, tavan, eşitleme yasağı, artış ve sıklık sınırları taze veriyle yeniden denetlenir; geçmeyen öneri uygulanmaz. Liste (üstü çizili) fiyat değişmez.`
+            : `If approved, ${i.suggestionIds.length} price suggestion(s) will update the Trendyol sale price. Right before applying, floor, ceiling, no-equalize, increase and frequency limits are re-checked with fresh data; failing suggestions are not applied. The list (strikethrough) price does not change.`),
+        // Örnek kayıtlar yerine sunucu önizlemesi (önce → sonra, `previewChanges`) gösterilir.
+        affected: (i) => ({ count: i.suggestionIds.length, sample: [] }),
+        result: (o, loc) => ({
+            ok: o.applied.length > 0,
+            message: loc === 'tr'
+                ? `${o.applied.length} ürünün fiyatı güncellendi, ${o.rejected.length} öneri sigortadan geçmedi ve uygulanmadı.`
+                : `${o.applied.length} price(s) updated, ${o.rejected.length} suggestion(s) failed the price fuse and were not applied.`,
+        }),
+        openIn: { screen: 'pricing/PricingRulesView' },
+        confirmLabel: (i, loc) => (loc === 'tr' ? `${i.suggestionIds.length} fiyatı güncelle` : `Update ${i.suggestionIds.length} price(s)`),
     },
     'orders.approve': {
         summary: (i, loc) => (loc === 'tr'

@@ -19,9 +19,9 @@ describe('WP-A1 parite: 174 operasyon, bugünkü kademe kararı == izin modeli k
   const pairs: Array<[string, string, string]> = [];
   for (const [svc, ops] of Object.entries(OPERATION_POLICY_SNAPSHOT)) for (const [op, tier] of Object.entries(ops)) pairs.push([svc, op, tier as string]);
 
-  it('298 operasyon = 199 tenant + 99 platformAdmin (hepsi aynı karar testinden geçer)', () => {
-    expect(pairs.filter(([, , t]) => t !== 'platformAdmin')).toHaveLength(199); // MOB-04: +3 web push (member); PRC-R0/R1: +5 PricingService (member)
-    expect(pairs).toHaveLength(298); // PRC-CFG: +3 BackofficeBillingService rekabet ayarı (platformAdmin)
+  it('307 operasyon = 207 tenant + 100 platformAdmin (hepsi aynı karar testinden geçer)', () => {
+    expect(pairs.filter(([, , t]) => t !== 'platformAdmin')).toHaveLength(207); // MOB-04: +3 web push (member); PRC-R0/R1: +5 PricingService (member); PRC-R2: +8 PricingService (3 member + 5 admin)
+    expect(pairs).toHaveLength(307); // PRC-CFG: +3 BackofficeBillingService rekabet ayarı (platformAdmin); PRC-R2: +1 fiyat kuralları özeti (platformAdmin)
   });
 
   it('her operasyon ve her aktör için karar birebir aynı (fark listelenir)', () => {

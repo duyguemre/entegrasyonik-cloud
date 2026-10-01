@@ -12,6 +12,8 @@ import { logger } from '@platform/core/logger';
 import { BuyboxRefreshJob, BUYBOX_CHANNEL, ELIGIBLE_FILTER, type BuyboxJobDeps, type TenantCandidateRow } from './BuyboxRefreshJob';
 import { channelBudgetPerMin, notifyCooldownMs, notifyShadow, settingsFromSubscription, SUBSCRIPTION_COMPETITION_PROJECTION } from './competitionSettings';
 import { ownChannelPrice } from './buyboxState';
+import { createPricingEnv } from './createPricingEnv';
+import { generateSuggestions } from './priceRules';
 
 const log = logger.child({ module: 'pricing.buyboxRefresh' });
 /** Tenant başına aday tarama üst sınırı (tavanın en büyüğüyle aynı ölçek). */
@@ -22,6 +24,7 @@ export function createBuyboxRefreshDeps(): BuyboxJobDeps {
     const factories = new Map<number, IntegrationFactory>();
     const factory = (tid: number) => { let f = factories.get(tid); if (!f) { f = new IntegrationFactory(tid); factories.set(tid, f); } return f; };
     const notifier = createNotifier();
+    const pricingEnv = createPricingEnv();
     const clientDB = async (tid: number) => {
         const db = await DatabaseManagerInstance.getClientDB(tid);
         if (!db) throw new Error('tenant_db_unavailable');
@@ -88,6 +91,12 @@ export function createBuyboxRefreshDeps(): BuyboxJobDeps {
         },
         async notifyLost(tid, params, opts) {
             await notifier.notify('BUYBOX_LOST', tid, params, { shadow: opts.shadow, idempotencyKey: opts.idempotencyKey, module: 'pricing.buyboxRefresh' });
+        },
+        async evaluateRules(tid) {
+            // PRC-R2: KURU koşu — yalnız `PriceSuggestions` yazar. Anahtarlar (platform/tenant/metin kabulü) fonksiyonun içinde denetlenir.
+            if (!pricingEnv.platformEnabled()) return;
+            const r = await generateSuggestions(await clientDB(tid), tid, pricingEnv);
+            if (r.paused) log.info({ tid, paused: r.paused }, 'fiyat kuralı duraklatıldı (dış değişiklik/salınım)');
         },
         async markNotified(tid, variantIds, at) {
             const db = await clientDB(tid);

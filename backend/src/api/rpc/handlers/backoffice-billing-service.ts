@@ -10,6 +10,9 @@ import { auditSensitiveRead } from './backoffice-support'
 import { extendTrial, cancelSubscription, changePlan, type SubscriptionAdminDeps } from '../../../operations/backoffice/subscriptionAdmin'
 import { computeRevenueMetrics } from '../../../operations/backoffice/revenueMetrics'
 import { getCompetitionSettings, getTenantCompetition, setCompetitionOverride, type CompetitionAdminDeps } from '../../../operations/backoffice/competitionAdmin'
+import { getPricingRulesOverview } from '../../../operations/backoffice/pricingRulesAdmin'
+import { DatabaseManagerInstance } from '@database/DatabaseManager'
+import { isFeatureEnabled } from '@integration/config/featureFlags'
 
 const DEFAULT_LIMIT = 50
 const MAX_LIMIT = 200
@@ -102,6 +105,23 @@ export default class BackofficeBillingService extends BaseApi implements IServic
     async getTenantCompetition(): Promise<any> { return getTenantCompetition(this.competitionDeps(), { tid: this.request?.tid }) }
     async setCompetitionOverride(): Promise<any> {
         return setCompetitionOverride(this.competitionDeps(), { tid: this.request?.tid, override: this.request?.override, note: this.request?.note }, this.actorCtx())
+    }
+
+    /** PRC-R2: fiyat kuralları kill-switch durumu + TOPLAM istatistik (tenant verisi gösterilmez). */
+    async getPricingRulesOverview(): Promise<any> {
+        const clientModel = this.applicationDB.getClientModel()
+        return getPricingRulesOverview({
+            flagEnabled: () => isFeatureEnabled('pricingRules'),
+            async *tenantDbs() {
+                const rows: any[] = await clientModel.find({ status: 'ACTIVE' }, { order: 1 }).limit(1001).maxTimeMS(QUERY_MAX_TIME_MS).lean()
+                for (const r of rows) {
+                    const tid = Number(r.order)
+                    if (!Number.isInteger(tid) || tid <= 0) continue
+                    const db = await DatabaseManagerInstance.getClientDB(tid).catch(() => undefined)
+                    if (db) yield db
+                }
+            },
+        })
     }
 
     async getRevenueMetrics(): Promise<any> {

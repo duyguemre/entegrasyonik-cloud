@@ -23,6 +23,10 @@ export const FEATURE_FLAGS: readonly FeatureFlagDef[] = [
     // PRC-R1 (K57): buybox okuma işinin kill-switch'i. Varsayılan KAPALI (Trendyol yanıt alanları yerelde doğrulanana kadar); tenant listesi = pilot.
     { name: 'competition', tenantScoped: true, label: { tr: 'Rekabet (buybox görünürlüğü)', en: 'Competition (buybox visibility)' },
         help: { tr: 'Açıkken Trendyol buybox bilgisi zamanlanmış olarak okunur (salt okuma). Tenant listesi doluysa yalnız o tenant\'lar (pilot).', en: 'When on, Trendyol buybox information is read on a schedule (read-only). If the tenant list is filled, only those tenants (pilot).' } },
+    // PRC-R2 (K19, AUTO_PRICING_LEGAL): fiyat kuralları + öneri + İNSAN ONAYLI uygulama için PLATFORM kill-switch'i. Varsayılan KAPALI (K3).
+    // Kapatınca öneri üretimi ve onaylı uygulama anında durur (tenant/kural anahtarlarından bağımsız). Otomatik uygulama yolu YOKTUR (PRC-R3).
+    { name: 'pricingRules', label: { tr: 'Fiyat kuralları (onaylı öneri)', en: 'Pricing rules (approved suggestions)' },
+        help: { tr: 'Açıkken tenant\'lar rekabet fiyat kuralı tanımlayıp öneri alabilir ve öneriyi onaylayarak uygulayabilir. Kapatınca öneri üretimi ve uygulama tüm tenant\'larda anında durur. Mevzuat değişikliğinde kapatın.', en: 'When on, tenants can define competition pricing rules, receive suggestions and apply them by approval. Turning it off stops suggestion generation and applying for all tenants immediately. Turn off on regulatory change.' } },
 ];
 
 const NAME = /^[a-z][a-zA-Z0-9]{1,39}$/;

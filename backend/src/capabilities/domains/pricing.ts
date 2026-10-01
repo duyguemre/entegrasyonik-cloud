@@ -2,9 +2,11 @@
 // (ADR-0019, K20): okuma `read` + MCP exposed (can() filtreli); maliyet yazımı `write` + onay kartı (confirm). Fiyat eşitleme /
 // pazaryerine otomatik yazma YOK (R2/R3 ayrı). Rakip/buybox verisi yalnız tenant'ın kendi ClientDB'sindedir.
 import { z } from 'zod';
-import { defineCapability as c, NO_AGENT, onScreens } from '../define';
+import { defineCapability as c, deferred, nx, NO_AGENT, onScreens } from '../define';
 
 const PRODUCTS = 'productDefinitions/ProductListView';
+/** PRC-R2 ekranı: kural listesi/formu, öneri listesi + onay kartı, denetim geçmişi (frontend `views/secure/pricing/PricingRulesView.vue`). */
+const PRICING = 'pricing/PricingRulesView';
 const PRODUCT_EDIT = ['definitions/ProductDefinitionView', 'definitions/ProductUpdateView'];
 const OID = z.string().regex(/^[0-9a-fA-F]{24}$/);
 const BARCODE = z.string().min(1).max(128);
@@ -142,6 +144,121 @@ export const PRICING_CAPABILITIES = [
                 + 'would mean selling below it. Unknown components are never treated as zero; if cost, VAT rate or commission is missing, profit is not calculated and pricing rules stay off. '
                 + 'You may pass a hypothetical price. Read-only; it does not change any price.',
             examples: ['Bu ürünü buybox fiyatına satarsam ne kadar kazanırım?', '8690001 için başa baş fiyat kaç?', '199 TL\'ye satsam kârım ne olur?'],
+        },
+        agent: NO_AGENT,
+    }),
+];
+
+// ---- PRC-R2: rekabet fiyat kuralı (B-10 `competition` tipi) + KURU öneri + İNSAN ONAYLI uygulama ----------------------------------
+// Hukuk (AUTO_PRICING_LEGAL K1-K20, K58): eşitleme yok (fark > 0, sunucuda), rakip/mağaza alanı yok, öneriyi KOD hesaplar (yapay zekâ
+// yalnız açıklar, K15), uygulama yalnız onayla (PendingAction kartı; ekranda onay penceresi). OTOMATİK UYGULAMA YOLU YOKTUR (PRC-R3).
+const compParams = z.object({
+    mode: z.enum(['below', 'above']), deltaAmount: money, deltaPercent: money, floorMarginPercent: z.number(), ceiling: z.number(), step: z.number(),
+    maxChangesPerDay: z.number().int(), cooldownMin: z.number().int(), maxIncreasePercentPerDay: z.number(), excludeIfOutOfStock: z.boolean(),
+});
+const ruleOut = z.object({
+    id: z.string(), type: z.string(), name: z.string(), enabled: z.boolean(), version: z.number().int(), integrationCode: z.string(),
+    scope: z.object({ productIds: z.array(z.string()), barcodes: z.array(z.string()) }), competition: compParams,
+    pausedReason: z.string().nullable(), pausedAt: z.string().nullable(), updatedAt: z.string().nullable(),
+    suggestions: z.object({ open: z.number().int(), blocked: z.number().int() }),
+});
+const suggestionOut = z.object({
+    id: z.string(), ruleId: z.string(), ruleVersion: z.number().int(), integrationCode: z.string(), variantId: z.string(), productId: z.string().nullable(),
+    barcode: z.string(), sku: z.string().nullable(), status: z.string(), beforePrice: z.number(), afterPrice: money, listPrice: money, floor: money, ceiling: money,
+    profitBefore: money, profitAfter: money, buyboxPrice: money, buyboxOrder: money, buyboxObservedAt: z.string().nullable(),
+    reasons: z.array(z.string()), warnings: z.array(z.string()), blockedReason: z.string().nullable(), closedReason: z.string().nullable(),
+    createdAt: z.string().nullable(), updatedAt: z.string().nullable(), appliedAt: z.string().nullable(), lowestPrice10d: money,
+});
+const RULE_WRITE_NOTE = 'K4 (AUTO_PRICING_LEGAL): fark/taban/tavan/sıklık değerlerini satıcı ekranda kendisi girer; sohbetle kural yazımı (değer önerme riski) PRC-R3 avukat yanıtından sonra değerlendirilir.';
+
+export const PRICING_R2_CAPABILITIES = [
+    c({
+        id: 'pricing.rules.list', domain: 'catalog', summary: { tr: 'Rekabet fiyat kuralları + açık/kapalı durumu (platform/tenant/kural)', en: 'Competition pricing rules + on/off state (platform/tenant/rule)' },
+        effect: 'read', minTier: 'member', permission: 'catalog:read', pii: 'none', untrustedPaths: ['rules[].name'],
+        input: z.object({}).strict(),
+        output: z.object({
+            channel: z.string(), platformEnabled: z.boolean(), competitionEnabled: z.boolean(), active: z.boolean(), inactiveReason: z.string().nullable(),
+            settings: z.object({ enabled: z.boolean(), consent: z.object({ acceptedVersion: z.string().nullable(), acceptedAt: z.string().nullable() }), dualEngineAcknowledgedAt: z.string().nullable() }),
+            consent: z.object({ version: z.string(), draft: z.boolean(), text: z.object({ tr: z.string(), en: z.string() }) }),
+            dualEngineWarning: z.object({ tr: z.string(), en: z.string() }),
+            limits: z.object({ maxIncreasePercentPerDay: z.number(), maxIncreasePercent30d: z.number(), maxChangesPerDay: z.number(), minCooldownMin: z.number(), maxDropPercent: z.number() }),
+            rules: z.array(ruleOut),
+        }),
+        bindings: [{ rpc: 'PricingService/getRules' }],
+        ui: onScreens(PRICING),
+        mcp: { exposed: { toolset: 'catalog', confirm: 'none', present: 'table', deepLink: { screen: PRICING } } },
+        llm: {
+            description: 'Lists the tenant\'s competition pricing rules (Trendyol only): stay below or above the buybox price by a seller-chosen positive gap, '
+                + 'between a floor (break-even plus target margin) and a ceiling, with change frequency and cooldown limits. Also shows whether rules are active '
+                + '(platform switch, tenant switch and accepted responsibility text) and why a rule is paused. Read-only. Rules never match (equalize) the buybox price '
+                + 'and never target a specific seller. Do not invent or recommend gap/floor/ceiling values; the seller enters them on the pricing screen.',
+            examples: ['Fiyat kurallarım neler?', 'Hangi fiyat kuralı duraklatıldı?', 'Fiyat kuralları açık mı?'],
+        },
+        agent: NO_AGENT,
+    }),
+    c({
+        id: 'pricing.rules.save', domain: 'catalog', summary: { tr: 'Rekabet fiyat kuralı oluştur/güncelle/sil (eşitleme yok, fark > 0)', en: 'Create/update/delete a competition pricing rule (no equalize, gap > 0)' },
+        effect: 'write', minTier: 'admin', permission: 'pricing:manage', idempotency: 'natural', audit: 'always', pii: 'none',
+        bindings: [{ rpc: 'PricingService/saveRule' }, { rpc: 'PricingService/deleteRule' }],
+        ui: onScreens([PRICING, 'saveRule'], [PRICING, 'deleteRule']),
+        mcp: deferred('later', RULE_WRITE_NOTE),
+        agent: NO_AGENT,
+    }),
+    c({
+        id: 'pricing.rules.settings', domain: 'catalog', summary: { tr: 'Fiyat kurallarını tenant için aç/kapat (sorumluluk metni kabulü, kill-switch)', en: 'Turn pricing rules on/off for the tenant (responsibility text acceptance, kill-switch)' },
+        effect: 'write', minTier: 'admin', permission: 'pricing:manage', idempotency: 'natural', audit: 'always', pii: 'none',
+        bindings: [{ rpc: 'PricingService/setPricingSettings' }],
+        ui: onScreens([PRICING, 'setPricingSettings']),
+        mcp: nx('irreversible', 'K3: açarken satıcı sürümlü sorumluluk metnini EKRANDA kendisi onaylar (hukuki kabul); sohbet/MCP kanalından yapılmaz. Kapatma da ekrandan (anında).'),
+        agent: NO_AGENT,
+    }),
+    c({
+        id: 'pricing.suggestions.list', domain: 'catalog', summary: { tr: 'Fiyat önerileri (önce/sonra, kâr, gerekçe, kural sürümü) + fiyat değişiklik geçmişi', en: 'Price suggestions (before/after, profit, reasons, rule version) + price change history' },
+        effect: 'read', minTier: 'member', permission: 'catalog:read', pii: 'none', untrustedPaths: ['items[].sku', 'items[].barcode'],
+        input: z.object({
+            status: z.enum(['open', 'blocked', 'applied', 'dismissed', 'expired']).optional(),
+            ruleId: OID.optional(),
+            barcodes: z.array(BARCODE).max(100).optional(),
+            buyboxLostOnly: z.boolean().optional(),
+            limit: z.number().int().min(1).max(50).optional(),
+            cursor: OID.optional(),
+        }).strict(),
+        output: z.object({
+            channel: z.string(), active: z.boolean(), inactiveReason: z.string().nullable(), summary: z.object({ open: z.number().int(), blocked: z.number().int() }),
+            applyMax: z.number().int(), items: z.array(suggestionOut), nextCursor: z.string().nullable(),
+        }),
+        bindings: [{ rpc: 'PricingService/listSuggestions', map: (i: any) => ({ ...i, limit: i.limit ?? 25 }) }, { rpc: 'PricingService/getPriceHistory' }],
+        ui: onScreens(PRICING),
+        mcp: { exposed: { toolset: 'catalog', confirm: 'none', present: 'table', deepLink: { screen: PRICING } } },
+        llm: {
+            description: 'Lists price suggestions produced by the seller\'s own competition pricing rules for Trendyol products where another seller holds the buybox: '
+                + 'current price, suggested price, estimated profit before/after, floor and ceiling, the observed buybox price and time, rule version, reason codes and warnings, '
+                + 'and the lowest sale price of the last 10 days. Status "blocked" rows explain why no price can be suggested (e.g. below floor, cost missing). '
+                + 'Prices are computed by code; never recalculate or change them, only explain them. Use buyboxLostOnly for "products where I lost the buybox". '
+                + 'Read-only; to apply suggestions use the apply tool, which always asks the user for approval.',
+            examples: ['Buybox\'ı kaybettiğim ürünler ve öneriler', 'Açık fiyat önerilerim neler?', 'Hangi öneriler tabana takıldı?'],
+        },
+        agent: NO_AGENT,
+    }),
+    c({
+        id: 'pricing.suggestions.apply', domain: 'catalog', summary: { tr: 'Fiyat önerilerini ONAYLA ve uygula (tek/toplu ≤50; sigorta yeniden çalışır) ya da reddet', en: 'APPROVE and apply price suggestions (single/bulk ≤50; price fuse re-runs) or dismiss' },
+        effect: 'write', minTier: 'admin', permission: 'pricing:manage', idempotency: 'key', external: true, audit: 'always', pii: 'none',
+        input: z.object({ suggestionIds: z.array(OID).min(1).max(50) }).strict(),
+        output: z.object({
+            applied: z.array(z.object({ suggestionId: z.string(), barcode: z.string(), before: z.number(), after: z.number() })),
+            rejected: z.array(z.object({ suggestionId: z.string(), barcode: z.string().nullable(), reason: z.string() })),
+            published: z.number().int(),
+        }),
+        bindings: [{ rpc: 'PricingService/applySuggestions', map: (i: any) => i }, { rpc: 'PricingService/dismissSuggestions' }],
+        undo: { kind: 'none' },
+        ui: onScreens([PRICING, 'applySuggestions'], [PRICING, 'dismissSuggestions']),
+        mcp: { exposed: { toolset: 'catalog', confirm: 'confirm', present: 'text', deepLink: { screen: PRICING }, risk: 'high' } },
+        llm: {
+            description: 'Applies open price suggestions (by suggestion id, up to 50) to the Trendyol sale price after the user approves a confirmation card that previews '
+                + 'every before/after price. Before writing, the server re-runs the price fuse with fresh data (floor, ceiling, no equalizing, increase and frequency limits, '
+                + 'data freshness, unchanged rule version); any suggestion that no longer passes is rejected and reported, not applied. Only the sale price changes; the list '
+                + '(strikethrough) price is never raised. Use ids from the suggestion list tool; never invent prices or ids. Describe the result as "price updated", not as a discount.',
+            examples: ['Bu önerileri uygula', 'Açık önerilerin hepsini onayla', '8690001 için öneriyi uygula'],
         },
         agent: NO_AGENT,
     }),
