@@ -11,7 +11,8 @@
  *   1) Tek merkez      — isimsiz kanal noktalarından siparişler merkeze akar, stok 12 -> 9 düşer, senkron dalgası yayılır
  *   2) Rezervasyon     — son adet için eşzamanlı iki sipariş: biri rezerve edilir, diğeri aşırı satış olarak işaretlenir
  *   3) Kanallara yayın — tek güncelleme tüm kanallara sırayla iletilir
- *   4) Güvenlik        — kalkan + şifreli anahtar + izolasyon/rol maddeleri
+ *   4) Otopilot        — (S27a, SR4 madde 3) stok farkı fark edilir → öneri kartı → "Onayla" → uygulandı; güvenlik
+ *                        sahnesi kalktı (güvenlik anlatısı Güvenlik bölümünde, SR4 madde 5)
  * Her sahne kanıtlı bir yetenek kaydına dayanır (kayıt yoksa derleme durur — sahne kanıtsız gösterilmez). Kanal ADI yok:
  * isimsiz renkli noktalar (`--site-channel-*`, `[data-code]` eşlemesi) ve genel etiketler ("Pazaryeri siparişi").
  * Statik hâl (reduced-motion / "Hareket" durdurulmuş / JS'siz): YALNIZCA 1. sahnenin son durumu — üç sipariş
@@ -26,6 +27,9 @@
  * `heroAgentEntry` kaydından (src/data/assistant.ts); İSTİSNA DEĞİLDİR (claims.test.ts katı taraması; "yolda" dili yok),
  * aşama etiketi ("Erken erişim") görünür. Operasyon merkezi penceresinin canlı noktasıyla aynı görsel dil.
  * Ana mesaj (başlık, açıklama, CTA'lar) değişmedi.
+ *
+ * S27a (SR4 madde 1, K50): hero bir KARŞILAMA ekranıdır — fayda kutuları ve kayan şerit hero'dan çıktı (açık zeminde
+ * `Proof.astro`); açıklama tek cümle. Dar ekranda (N8) vitrinin sahne göstergesi ve sipariş satırları gizlenir.
  */
 import Button from '../Button.astro'
 import Icon from './Icon.astro'
@@ -34,6 +38,7 @@ import { getPublicIntegrations } from '../../data/integrations'
 import { getPublicCapabilities } from '../../data/capabilities'
 import { getPublicTrial } from '../../data/plans'
 import { ASSISTANT_PATH, heroAgentEntry as agent } from '../../data/assistant'
+import { AGENT_BRAND } from '../../data/agent-brand'
 
 const trial = getPublicTrial()
 // Kanal noktaları: yalnızca mevcut entegrasyonların RENGİ (ad DOM'a yazılmaz; sahne aria-hidden'dır).
@@ -50,7 +55,7 @@ const scenes = [
   { key: 'hub', label: 'Tek merkez', short: 'Merkez', requires: ['unified-orders', 'stock-reservation'] },
   { key: 'race', label: 'Rezervasyon', short: 'Rezerve', requires: ['stock-reservation'] },
   { key: 'publish', label: 'Kanallara yayın', short: 'Yayın', requires: ['multi-channel-products'] },
-  { key: 'secure', label: 'Güvenlik', short: 'Güvenlik', requires: ['secrets-encryption', 'tenant-database'] },
+  { key: 'autopilot', label: AGENT_BRAND, short: AGENT_BRAND, requires: ['stock-reservation', 'multi-channel-products'] },
 ]
 for (const s of scenes) {
   for (const id of s.requires) if (!capIds.has(id)) throw new Error(`Hero show sahnesi "${s.key}" için yetenek kaydı yok: ${id}`)
@@ -73,12 +78,10 @@ orders.forEach((o, k) => {
 const raceA = marketplaces[0]?.code
 const raceB = marketplaces[1]?.code ?? storefront?.code
 
-// Sahne 4: güvenlik maddeleri (her biri kayda bağlı).
-const secureItems = [
-  { label: 'Şifreli anahtarlar', requires: 'secrets-encryption' },
-  { label: 'Veri izolasyonu', requires: 'tenant-database' },
-  { label: 'Rol tabanlı erişim', requires: 'role-based-access' },
-].filter((i) => capIds.has(i.requires))
+// Sahne 4 (S27a): Otopilot anı — kanallar arası stok farkı fark edilir, öneri gelir, onayla uygulanır. Fark örneği
+// ilk üç kanalın rengiyle (ad yok); metinler `heroAgentEntry.moment` (vaat kaydı) üzerinden.
+const moment = agent.moment
+const diffRows = channels.slice(0, 3)
 ---
 
 <section class="hero" aria-labelledby="hero-title" data-testid="hero" data-surface="dark">
@@ -102,8 +105,8 @@ const secureItems = [
         Tüm pazaryerleriniz, <span class="hero__accent">tek stok</span>, tek panel.
       </h1>
       <p class="hero__lead" data-testid="hero-lead">
-        Ürün, stok, sipariş ve iadeleriniz tek merkezde. Satış hangi kanalda olursa olsun stok tek merkezden düşer ve
-        tüm kanallara iletilir; ekibiniz panel panel dolaşmak yerine satışa odaklanır.
+        Satış hangi kanalda olursa olsun stok tek merkezden düşer ve tüm kanallara iletilir; ekibiniz panel panel
+        dolaşmak yerine satışa odaklanır.
       </p>
       <div class="hero__actions">
         <Button href={appUrls.register()} variant="inverse" size="lg" data-testid="hero-cta-primary">Ücretsiz dene</Button>
@@ -254,40 +257,46 @@ const secureItems = [
             </div>
           </div>
 
-          {/* 4) Güvenlik: kalkan + şifreli anahtar + izolasyon / rol maddeleri */}
-          <div class="show__scene show__scene--secure" data-part="show-scene">
+          {/* 4) Otopilot anı (S27a): fark edilir -> öneri gelir -> onaylanır -> uygulanır (stok hikâyesinin devamı) */}
+          <div class="show__scene show__scene--auto" data-part="show-scene">
             <p class="show__cap">
-              <span class="show__kicker">Kurumsal güvenlik</span>
-              <span class="show__headline">Anahtarlar şifreli saklanır, veriniz hesabınıza ayrılır</span>
+              <span class="show__kicker">{AGENT_BRAND}</span>
+              <span class="show__headline">{moment.text}</span>
             </p>
-            <div class="sec">
-              <div class="sec__emblem">
-                <span class="sec__wave" data-part="sec-wave"></span>
-                <span class="sec__wave" data-part="sec-wave"></span>
-                <span class="sec__wave" data-part="sec-wave"></span>
-                <span class="sec__core"><Icon name="shield" size="lg" /></span>
+            <div class="ap">
+              <div class="ap__signal" data-part="ap-rise">
+                <span class="ap__glyph"><Icon name="sparkle" size="sm" /></span>
+                <span class="ap__stext">
+                  <b>{moment.signal}</b>
+                  <span class="ap__smeta">{moment.signalMeta}</span>
+                </span>
+                <span class="ap__dots">{diffRows.map((c) => <i class="show__rdot" data-code={c.code} />)}</span>
               </div>
-              <div class="sec__side">
-                <div class="sec__key">
-                  <span class="sec__klabel"><Icon name="key" size="sm" />API anahtarı</span>
-                  <span class="sec__kval">
-                    <span class="sec__mask">••••••••••••</span>
-                    <span class="sec__scan" data-part="sec-scan"></span>
-                  </span>
-                  <span class="sec__lock" data-part="sec-lock"><Icon name="lock" size="sm" />Şifreli</span>
-                </div>
-                <ul class="sec__list">
+              <div class="ap__card" data-part="ap-rise">
+                <p class="ap__ptitle"><span class="ap__plabel">{moment.proposalLabel}</span>{moment.proposal}</p>
+                <ul class="ap__diff">
                   {
-                    secureItems.map((i) => (
-                      <li class="sec__item" data-part="sec-item">
-                        <span class="sec__tick"><Icon name="check" size="sm" /></span>
-                        {i.label}
+                    diffRows.map((c) => (
+                      <li class="ap__row" data-code={c.code}>
+                        <span class="show__rdot" />
+                        <span class="ap__old" />
+                        <span class="ap__arrow"><Icon name="arrow" size="sm" /></span>
+                        <span class="ap__new" />
+                        <span class="ap__tick" data-part="ap-tick"><Icon name="check" size="sm" /></span>
                       </li>
                     ))
                   }
                 </ul>
+                <div class="ap__actions">
+                  <span class="ap__btn ap__btn--ghost">{moment.reject}</span>
+                  <span class="ap__btn ap__btn--primary" data-part="ap-press">
+                    <span class="ap__blabel" data-part="ap-out">{moment.approve}</span>
+                    <span class="ap__blabel" data-part="ap-in"><Icon name="check" size="sm" />{moment.approved}</span>
+                  </span>
+                </div>
               </div>
             </div>
+            <p class="show__result" data-part="ap-done"><Icon name="check" size="sm" />{moment.done}</p>
           </div>
         </div>
 
@@ -1133,7 +1142,6 @@ const secureItems = [
     line-height: 1.05;
   }
   .race__lock,
-  .sec__lock,
   .pub__flag {
     display: inline-flex;
     align-items: center;
@@ -1262,8 +1270,7 @@ const secureItems = [
     border-radius: var(--ek-radius-full);
     background: linear-gradient(90deg, var(--show-line-strong), var(--show-line));
   }
-  .pub__check,
-  .sec__tick {
+  .pub__check {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -1274,118 +1281,169 @@ const secureItems = [
     color: var(--site-accent);
   }
 
-  /* 4) Güvenlik: kalkan amblemi (yayılan halkalar) + şifreli anahtar + maddeler */
-  .sec {
+  /* 4) Otopilot anı (S27a): sinyal satırı -> öneri kartı (fark önizlemesi + onay düğmesi) -> sonuç hapı.
+   *    Statik hâlde (sahne görünmez ama DOM'da) son durum: düğme "Onaylandı", satırlarda onay işareti. */
+  .ap {
     flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: var(--ek-space-3);
+  }
+  .ap__signal {
     display: grid;
-    grid-template-columns: auto minmax(0, 1fr);
-    align-content: center;
+    grid-template-columns: auto minmax(0, 1fr) auto;
     align-items: center;
-    gap: var(--ek-space-6);
+    gap: var(--ek-space-3);
+    padding: var(--ek-space-2) var(--ek-space-3);
+    border: var(--site-border-width) solid var(--site-accent-line);
+    border-radius: var(--ek-radius-lg);
+    background: color-mix(in srgb, var(--ek-color-secondary) 10%, transparent);
   }
-  .sec__emblem {
-    position: relative;
-    display: grid;
+  .ap__glyph {
+    display: inline-grid;
     place-items: center;
-    width: 10rem;
-    aspect-ratio: 1 / 1;
-  }
-  .sec__emblem::before {
-    content: '';
-    position: absolute;
-    inset: 12%;
-    border: var(--site-border-width) dashed var(--show-line-strong);
-    border-radius: var(--ek-radius-full);
-  }
-  .sec__wave {
-    position: absolute;
-    inset: 18%;
-    border: var(--site-border-width) solid var(--site-accent);
-    border-radius: var(--ek-radius-full);
-    opacity: 0;
-  }
-  .sec__wave:nth-child(2) {
-    --k: 1;
-  }
-  .sec__wave:nth-child(3) {
-    --k: 2;
-  }
-  .sec__core {
-    position: relative;
-    display: grid;
-    place-items: center;
-    width: 58%;
-    aspect-ratio: 1 / 1;
-    border: var(--site-border-width) solid color-mix(in srgb, var(--ek-color-secondary) 55%, transparent);
-    border-radius: var(--ek-radius-full);
-    background:
-      radial-gradient(circle at 50% 30%, color-mix(in srgb, var(--ek-color-secondary) 30%, transparent), transparent 70%),
-      var(--show-solid);
-    box-shadow: 0 0 3rem -0.25rem color-mix(in srgb, var(--ek-color-secondary) 50%, transparent);
+    width: var(--ek-space-8);
+    height: var(--ek-space-8);
+    border-radius: var(--ek-radius-md);
+    background: color-mix(in srgb, var(--ek-color-secondary) 24%, transparent);
     color: var(--site-accent);
   }
-  .sec__side {
+  .ap__stext {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    color: var(--site-text-on-dark-heading);
+    font-size: var(--ek-font-size-sm);
+  }
+  .ap__smeta {
+    color: var(--site-text-on-dark-meta);
+    font-size: var(--ek-font-size-xs);
+  }
+  .ap__dots {
+    display: inline-flex;
+    gap: var(--ek-space-1);
+  }
+  .ap__card {
+    --k: 1;
     display: flex;
     flex-direction: column;
     gap: var(--ek-space-3);
-    min-width: 0;
-  }
-  .sec__key {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: center;
-    gap: var(--ek-space-2) var(--ek-space-3);
-    padding: var(--ek-space-3);
-    border: var(--site-border-width) solid var(--show-line);
+    padding: var(--ek-space-3) var(--ek-space-4);
+    border: var(--site-border-width) solid var(--show-line-strong);
     border-radius: var(--ek-radius-lg);
-    background: var(--show-glass);
+    background: var(--show-glass-strong);
+    box-shadow: 0 var(--ek-space-3) var(--ek-space-8) calc(var(--ek-space-4) * -1) color-mix(in srgb, var(--ek-color-content-strong) 70%, transparent);
   }
-  .sec__klabel {
-    grid-column: 1 / -1;
-    display: inline-flex;
+  .ap__ptitle {
+    display: flex;
     align-items: center;
+    flex-wrap: wrap;
     gap: var(--ek-space-2);
-    color: var(--site-text-on-dark-meta);
-    font-size: var(--ek-font-size-xs);
+    margin: 0;
+    color: var(--site-text-on-dark-heading);
+    font-size: var(--ek-font-size-sm);
     font-weight: var(--ek-font-weight-semibold);
   }
-  .sec__kval {
-    position: relative;
-    overflow: hidden;
-    min-width: 0;
+  .ap__plabel {
     padding: calc(var(--ek-space-1) / 2) var(--ek-space-2);
-    border-radius: var(--ek-radius-md);
-    background: color-mix(in srgb, var(--ek-color-content-strong) 50%, transparent);
-    color: var(--site-text-on-dark-body);
-    font-family: var(--ek-font-mono, monospace);
-    letter-spacing: 0.12em;
-    white-space: nowrap;
+    border-radius: var(--ek-radius-full);
+    background: color-mix(in srgb, var(--ek-color-secondary) 22%, transparent);
+    color: var(--site-accent);
+    font-size: var(--ek-font-size-2xs);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
   }
-  .sec__scan {
-    position: absolute;
-    inset-block: 0;
-    inset-inline-start: 0;
-    width: 40%;
-    background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--ek-color-secondary) 45%, transparent), transparent);
-    opacity: 0;
-  }
-  .sec__list {
+  .ap__diff {
     display: flex;
     flex-direction: column;
     gap: var(--ek-space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
   }
-  .sec__item {
-    display: flex;
+  .ap__row {
+    --k: 0;
+    display: grid;
+    grid-template-columns: auto minmax(0, 0.7fr) auto minmax(0, 1fr) auto;
     align-items: center;
     gap: var(--ek-space-2);
-    color: var(--site-text-on-dark-heading);
-    font-weight: var(--ek-font-weight-medium);
+    color: var(--site-text-on-dark-meta);
   }
-  .sec__item:nth-child(2) {
+  .ap__row:nth-child(2) {
     --k: 1;
   }
-  .sec__item:nth-child(3) {
+  .ap__row:nth-child(3) {
     --k: 2;
+  }
+  .ap__old,
+  .ap__new {
+    height: calc(var(--ek-space-1) * 1.5);
+    border-radius: var(--ek-radius-full);
+  }
+  /* Eski değerler kanaldan kanala farklı (fark), yeni değerler eşit (eşitlendi) — sayı yazmadan anlatılır. */
+  .ap__old {
+    justify-self: start;
+    width: 90%;
+    background: var(--show-line-strong);
+    opacity: 0.8;
+  }
+  .ap__row:nth-child(2) .ap__old {
+    width: 45%;
+    background: color-mix(in srgb, var(--ek-color-warning) 70%, transparent);
+  }
+  .ap__row:nth-child(3) .ap__old {
+    width: 68%;
+  }
+  .ap__new {
+    background: linear-gradient(90deg, color-mix(in srgb, var(--ek-color-secondary) 70%, transparent), var(--site-accent));
+  }
+  .ap__arrow {
+    display: inline-flex;
+    opacity: 0.6;
+  }
+  .ap__tick {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--ek-space-5);
+    height: var(--ek-space-5);
+    border-radius: var(--ek-radius-full);
+    background: color-mix(in srgb, var(--ek-color-secondary) 22%, transparent);
+    color: var(--site-accent);
+  }
+  .ap__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--ek-space-2);
+  }
+  .ap__btn {
+    display: inline-grid;
+    padding: calc(var(--ek-space-1) * 1.5) var(--ek-space-4);
+    border-radius: var(--ek-radius-control);
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--ek-font-weight-semibold);
+    white-space: nowrap;
+  }
+  .ap__btn--ghost {
+    border: var(--site-border-width) solid var(--show-line-strong);
+    color: var(--site-text-on-dark-meta);
+  }
+  .ap__btn--primary {
+    background: var(--site-accent);
+    color: var(--site-stage-deep);
+    box-shadow: 0 0 var(--ek-space-4) color-mix(in srgb, var(--ek-color-secondary) 45%, transparent);
+  }
+  .ap__blabel {
+    grid-area: 1 / 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--ek-space-1);
+  }
+  /* Statik son durum: "Onaylandı" görünür, "Onayla" gizli (döngüde sırayla değişir). */
+  .ap__blabel[data-part='ap-out'] {
+    opacity: 0;
   }
 
   /* Sahne göstergesi: etkin sahnenin çubuğu dolar; statik hâlde 1. sahne etkin */
@@ -1474,20 +1532,17 @@ const secureItems = [
     .race {
       grid-template-columns: minmax(0, 1fr) var(--ek-space-5) minmax(0, 0.8fr);
     }
-    .sec {
-      gap: var(--ek-space-4);
-    }
-    .sec__emblem {
-      width: 6rem;
-    }
     .show__nav {
       gap: var(--ek-space-2);
     }
-    .show__slabel-long {
+    /* N8 (S27a): dar ekranda vitrin sadeleşir — sahne göstergesi ve alt sipariş satırları gizli (ilk içerik bölümüne
+       ≤ 1,5 ekran). Otopilot sahnesinde fark önizlemesi gizlenir (sahne yüksekliği = en uzun sahne; boş alan kalmaz).
+       Sahneler ve anlamları (başlık + merkez + öneri/onay) korunur. */
+    .show__nav,
+    .feed,
+    .ap__diff,
+    .ap__smeta {
       display: none;
-    }
-    .show__slabel-short {
-      display: inline;
     }
   }
 

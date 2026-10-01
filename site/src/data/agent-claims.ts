@@ -59,6 +59,11 @@ export const AGENT_CLAIMS = {
     readiness: planned('core-lead ile aynı koşul.'),
   },
 
+  'hero-moment': {
+    text: 'Sorunu fark eder, öneriyi hazırlar; siz onaylayınca uygular.',
+    readiness: planned('core-lead ile aynı koşul; ana sayfa vitrinindeki öneri → onay → uygulama anı (stok farkı örneği) üründe gösterilebilir olmalı.'),
+  },
+
   // ---------------------------------------------------------------- ajan döngüsü
   'loop-lead': {
     text: 'Her ajan aynı beş adımlı döngüyle çalışır. Dört adımı ajan üstlenir; karar adımı yalnızca sizindir.',

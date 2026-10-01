@@ -276,6 +276,21 @@ export const heroAgentEntry = {
   name: AGENT_NAME,
   value: claim('core-title'),
   cta: 'Keşfedin',
+  /**
+   * S27a (SR4-HOME madde 3): hero "Operasyon merkezi" vitrinindeki Otopilot anı — öneri → onay → uygulama. Sahne
+   * dekoratiftir (aria-hidden); cümle vaat kaydından, kısa etiketler yönlendirme metnidir (rakam yok).
+   */
+  moment: {
+    text: claim('hero-moment'),
+    signal: 'Stok farkı bulundu',
+    signalMeta: 'Kanallar arası',
+    proposalLabel: 'Öneri',
+    proposal: 'Stoğu tüm kanallarda eşitle',
+    reject: 'Reddet',
+    approve: 'Onayla',
+    approved: 'Onaylandı',
+    done: 'Uygulandı · tüm kanallar güncel',
+  },
 }
 
 /** Özellikler sayfası köprüsü (claims.test.ts katı taramasından geçer). */
