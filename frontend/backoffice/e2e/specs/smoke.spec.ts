@@ -193,8 +193,7 @@ test.describe('kabuk ve ekranlar', () => {
       await expect(page).toHaveURL(/fp=/, { timeout: 1000 })
     }).toPass()
     const drawer = page.getByRole('dialog').locator('.bo-drawer')
-    // Grafik adı `role="img"` alanının erişilebilir adında (bo-r2a: metin değil aria-label).
-    await expect(drawer.getByTestId('chart-summary')).toHaveAttribute('aria-label', /eğilimi/)
+    await expect(drawer.getByRole('img', { name: /eğilimi/ })).toBeVisible()
     // Kanıtlar ikinci planda: "Son istekler" açılınca iz bağlantıları görünür.
     await drawer.getByRole('button', { name: /Son istekler/ }).click()
     await drawer.getByRole('button', { name: 'İzi aç' }).first().click()

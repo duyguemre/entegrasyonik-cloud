@@ -104,7 +104,7 @@ const verdict = computed(() => {
   return { ...v, attention: v.attention.map((a) => ({ ...a, to: keepQuery(a.to) })) }
 })
 const SERIES: SeriesDef[] = [
-  { key: 'desktop', label: PLATFORM_CLASS.desktop.label, tone: 'action' },
+  { key: 'desktop', label: PLATFORM_CLASS.desktop.label, tone: 'info' },
   { key: 'mobile', label: PLATFORM_CLASS.mobile.label, tone: 'success' },
   { key: 'unknown', label: PLATFORM_CLASS.unknown.label, tone: 'neutral' },
 ]
