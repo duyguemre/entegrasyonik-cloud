@@ -5,7 +5,7 @@
   awaiting-confirm/error). Canlı bölgeler: thread `role=log`; tur sonu özeti + durum için ayrı görünmez `role=status`.
 -->
 <template>
-  <section class="ek-chat" :class="[`is-${mode}`, `is-${chat.status.value}`]" :aria-labelledby="titleId">
+  <section class="ek-chat" :class="[`is-${mode}`, `is-${chat.status.value}`, { 'is-wide': wide }]" :aria-labelledby="titleId">
     <header class="ek-chat__head">
       <span class="ek-chat__mark" aria-hidden="true"><v-icon :icon="CHAT_ICON" size="small" /></span>
       <h2 :id="titleId" class="ek-chat__title">{{ CHAT_PRODUCT.name }}</h2>
@@ -85,12 +85,27 @@ import ChatUnavailable from './ChatUnavailable.vue'
 import { CHAT_ICON } from './icons'
 import '../styles/chat.css'
 
-const props = withDefaults(defineProps<{ controller: ChatController; mode?: 'side' | 'page'; showClose?: boolean; showExpand?: boolean; autofocus?: boolean }>(), {
+const props = withDefaults(
+  defineProps<{
+    controller: ChatController
+    mode?: 'side' | 'page'
+    showClose?: boolean
+    showExpand?: boolean
+    autofocus?: boolean
+    /**
+     * Geniş yerleşim (isteğe bağlı; varsayılan KAPALI → web uygulaması değişmez): tam sayfada okunur sınır 760 → 1180 px
+     * (metin yine ≤ 80ch), dar kapta (< 560 px) tablolar yatay kaydırma yerine etiketli kart satırlara iner.
+     */
+    wide?: boolean
+  }>(),
+  {
   mode: 'side',
   showClose: true,
   showExpand: true,
   autofocus: true,
-})
+  wide: false,
+  },
+)
 const emit = defineEmits<{ close: []; expand: []; collapse: [] }>()
 
 const chat = provideChat(props.controller)

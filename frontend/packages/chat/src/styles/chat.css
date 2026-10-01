@@ -119,6 +119,96 @@
   margin-right: auto;
 }
 
+/*
+ * Geniş yerleşim (`wide`, isteğe bağlı — backoffice tam sayfa ve yan panel). Varsayılan yerleşim (web) bu bloktan etkilenmez.
+ *  - Tam sayfada okunur sınır 1180 px: tablo/KPI gibi UI parçaları alanı kullanır, düz metin yine ≤ 80ch.
+ *  - Gövde bir kap (container): dar kapta (< 560 px) tablo satırları etiketli kart satırlara iner → yatay kaydırma yok.
+ */
+.ek-chat.is-wide {
+  --ek-chat-measure: 1180px;
+}
+
+.ek-chat.is-wide .ek-chat__body {
+  container-name: ek-chat-scroll;
+  container-type: inline-size;
+}
+
+.ek-chat.is-wide .ek-chat-text {
+  max-width: 80ch;
+}
+
+.ek-chat.is-wide .ek-chat-kpi__grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 8.5rem), 1fr));
+}
+
+@container ek-chat-scroll (max-width: 560px) {
+  .ek-chat.is-wide .ek-chat-grid {
+    overflow-x: hidden;
+  }
+
+  .ek-chat.is-wide .ek-chat-grid__table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  .ek-chat.is-wide .ek-chat-grid__table,
+  .ek-chat.is-wide .ek-chat-grid__table tbody,
+  .ek-chat.is-wide .ek-chat-grid__table tr {
+    display: block;
+    width: 100%;
+  }
+
+  .ek-chat.is-wide .ek-chat-grid__table tbody tr {
+    display: grid;
+    gap: var(--ek-space-1);
+    padding: var(--ek-space-3);
+    border-bottom: 1px solid var(--ek-color-border-subtle);
+  }
+
+  .ek-chat.is-wide .ek-chat-grid__table tbody tr:last-child {
+    border-bottom: 0;
+  }
+
+  .ek-chat.is-wide .ek-chat-grid__table td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--ek-space-3);
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    text-align: right;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .ek-chat.is-wide .ek-chat-grid__table td::before {
+    content: attr(data-label);
+    flex: none;
+    color: var(--ek-color-content-muted);
+    font-size: var(--ek-type-caption-size);
+    line-height: var(--ek-type-caption-line);
+    text-align: left;
+  }
+
+  .ek-chat.is-wide .ek-chat-grid__table td:first-child {
+    color: var(--ek-color-content-strong);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+
+  .ek-chat.is-wide .ek-chat-grid__table td.ek-chat-grid__empty::before {
+    content: none;
+  }
+
+  .ek-chat.is-wide .ek-chat-grid__table tbody tr:hover td {
+    background: transparent;
+  }
+}
+
 /* ---------- Durum ekranları (yükleniyor, kullanılamıyor, kurulum mesajları) ---------- */
 
 .ek-chat-state {
