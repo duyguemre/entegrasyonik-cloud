@@ -23,6 +23,23 @@ export class TicketRepository {
         ])
     }
 
+    /** Backoffice listesi: filtre + sıralama + skip/limit (lean). */
+    async findPage(query: any, sort: any, skip: number, limit: number): Promise<any[]> {
+        return await this.model.find(query).sort(sort).skip(skip).limit(limit).lean()
+    }
+
+    async count(query: any): Promise<number> {
+        return await this.model.countDocuments(query)
+    }
+
+    async deleteById(ticketId: unknown): Promise<any> {
+        return await this.model.findByIdAndDelete(ticketId)
+    }
+
+    async updateById(ticketId: unknown, update: any): Promise<any> {
+        return await this.model.findByIdAndUpdate(ticketId, update)
+    }
+
     async create(ticket: any): Promise<any> {
         return await this.model.create(ticket)
     }

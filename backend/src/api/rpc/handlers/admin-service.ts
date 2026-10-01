@@ -7,7 +7,8 @@ import { TenantProvisioningService } from '@operations/tenant/TenantProvisioning
 import { createTenantLifecycleService } from '../tenantLifecycleFactory';
 import { toClientDto, CLIENT_SAFE_PROJECTION, CLIENT_SORT_FIELDS } from '../dto/clientDto';
 import { maskIntegrationItem } from '@platform/core/security/integrationSecrets';
-import { nextSequence } from '@utils/sequence';
+import { CounterRepository } from '@database/repositories/app/CounterRepository';
+import { TicketRepository } from '@database/repositories/app/TicketRepository';
 import { containsRegex, clampPage, clampLimit, pickSortField } from '@utils/search';
 import { TICKET_SORT_FIELDS } from '../listSortFields';
 import { getTenantRegistry } from '@database/TenantRegistry';
@@ -29,6 +30,7 @@ export default class AdminService extends BaseApi implements IService {
     private get clients() { return new ClientRepository(this.applicationDB) }
     private get exportSignals() { return new ExportSignalRepository(this.applicationDB) }
     private get importJobs() { return new ImportJobRepository(this.applicationDB) }
+    private get tickets() { return new TicketRepository(this.applicationDB) }
 
     async get() { }
 
@@ -193,8 +195,8 @@ export default class AdminService extends BaseApi implements IService {
             sort[pickSortField(sortField, TICKET_SORT_FIELDS, 'lastMessageAt').field] = Number(sortOrder) === 1 ? 1 : -1;
 
             const [tickets, total] = await Promise.all([
-                this.applicationDB.getTicketModel().find(query).sort(sort).skip(skip).limit(Number(limit)).lean(),
-                this.applicationDB.getTicketModel().countDocuments(query)
+                this.tickets.findPage(query, sort, skip, Number(limit)),
+                this.tickets.count(query)
             ]);
 
             return {
@@ -218,7 +220,7 @@ export default class AdminService extends BaseApi implements IService {
             // [ADR-0021 D5] Math.random 6 hane çakışabilirdi (ticketNumber unique -> E11000). Atomik `Counters` sayacı
             // ('ticket_number', TicketService ile ortak): sıralı, tekrarsız. Biçim değişmez: 6 haneli sayı
             // (admin FE `TKT-${ticketNumber}` gösterir; tenant tarafı `TKT-<1000+seq>` biçimindedir, iki desen çakışmaz).
-            const ticketNumber = String(100000 + await nextSequence(this.applicationDB.getCounterModel(), 'ticket_number'));
+            const ticketNumber = String(100000 + await new CounterRepository(this.applicationDB).next('ticket_number'));
 
             const ticketPayload = {
                 ticketNumber,
@@ -240,7 +242,7 @@ export default class AdminService extends BaseApi implements IService {
                 }]
             };
 
-            const res = await this.applicationDB.getTicketModel().create(ticketPayload);
+            const res = await this.tickets.create(ticketPayload);
 
             return { success: true, ticket: res };
         } catch (error) {
@@ -254,7 +256,7 @@ export default class AdminService extends BaseApi implements IService {
             const { ticketId } = this.request;
             if (!ticketId) throw new Error('ticketId gereklidir.');
 
-            await this.applicationDB.getTicketModel().findByIdAndDelete(ticketId);
+            await this.tickets.deleteById(ticketId);
 
             return { success: true, message: 'Talep başarıyla silindi.' };
         } catch (error) {
@@ -290,7 +292,7 @@ export default class AdminService extends BaseApi implements IService {
                 date: Date.now()
             };
 
-            await this.applicationDB.getTicketModel().findByIdAndUpdate(ticketId, {
+            await this.tickets.updateById(ticketId, {
                 $push: { messages: newMessage },
                 $set: {
                     lastMessageAt: Date.now(),

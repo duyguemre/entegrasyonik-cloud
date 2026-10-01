@@ -30,6 +30,19 @@ export class UserRepository {
         return await this.model.updateOne({ email, clientId }, update)
     }
 
+    /** Kimlikle belge (mongoose belgesi; parola karşılaştırması için). */
+    async findById(id: unknown): Promise<any> {
+        return await this.model.findById(id)
+    }
+
+    async findByIdLean(id: unknown): Promise<any> {
+        return await this.model.findById(id).lean()
+    }
+
+    async updateById(id: unknown, update: any): Promise<any> {
+        return await this.model.updateOne({ _id: id }, update)
+    }
+
     async deleteByEmail(email: string, clientId: number | string): Promise<any> {
         return await this.model.deleteOne({ email, clientId })
     }

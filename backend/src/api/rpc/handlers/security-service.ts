@@ -1,4 +1,5 @@
 import { IService } from '@interfaces/index'
+import { UserRepository } from '@database/repositories/app/UserRepository'
 import { getIdentityCache } from '@platform/core/security/identityCache'
 import { BaseApi } from '../BaseApi'
 import Security, { ApplicationError, SessionClaimsInput } from '@platform/core/security/Security'
@@ -68,10 +69,10 @@ export default class SecurityService extends BaseApi implements IService {
             throw new ApplicationError('Geçersiz istek.', 400);
         }
 
-        const userModel = this.applicationDB.getUserModel();
+        const users = new UserRepository(this.applicationDB);
 
         // 1. Kullanıcıyı bul (Sadece Central DB'den, Registry mantığıyla)
-        const user = await userModel.findOne({ email: username });
+        const user = await users.findByEmail(username);
 
         // Kullanıcı yok / pasif / kilitli: parola bakılmadan reddedilir ama zamanlamayı yaklaştırmak için sahte bcrypt
         // karşılaştırması yapılır ve AYNI generik hata döner (hangi durumun olduğu istemciye sızmaz)
@@ -89,7 +90,7 @@ export default class SecurityService extends BaseApi implements IService {
 
         if (isMatch) {
             // Başarılı giriş: Hatalı deneme sayısını sıfırla
-            await userModel.updateOne({ _id: user._id }, {
+            await users.updateById(user._id, {
                 $set: { failedLoginAttempts: 0 },
                 $unset: { lockUntil: 1 }
             });
@@ -123,7 +124,7 @@ export default class SecurityService extends BaseApi implements IService {
                 update.$set.lockUntil = new Date(Date.now() + 15 * 60 * 1000);
             }
 
-            await userModel.updateOne({ _id: user._id }, update);
+            await users.updateById(user._id, update);
             if (attempts >= 5) getIdentityCache().invalidateUser(user._id); // ADR-0024 P1-CORE: kilit, açık oturumlara anında yansır
 
             throw new ApplicationError(GENERIC_LOGIN_ERROR, 401);
@@ -201,7 +202,7 @@ export default class SecurityService extends BaseApi implements IService {
         const payload = await redeemImpersonationTicket(defaultTicketRedis(), this.request.ticket);
         if (!payload) throw deny('ticket_invalid');
 
-        const user: any = await this.applicationDB.getUserModel().findById(payload.sub).lean();
+        const user: any = await new UserRepository(this.applicationDB).findByIdLean(payload.sub);
         const tvNow = Number.isInteger(user?.tokenVersion) ? user.tokenVersion : 0;
         if (!user || user.isGlobalAdmin !== true || user.isActive === false || tvNow !== payload.tv
             || (user.lockUntil && new Date(user.lockUntil) > new Date())) {

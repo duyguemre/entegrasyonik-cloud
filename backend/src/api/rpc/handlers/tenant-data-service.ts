@@ -1,4 +1,5 @@
 import archiver from 'archiver';
+import { UserRepository } from '@database/repositories/app/UserRepository'
 import { IService } from '@interfaces/index';
 import { BaseApi } from '../BaseApi';
 import { ApplicationError } from '@platform/core/security/Security';
@@ -35,7 +36,7 @@ export default class TenantDataService extends BaseApi implements IService {
 
         const security = Security.getInstance();
         const sub = this.request.principal?.sub;
-        const userDoc: any = sub ? await this.applicationDB.getUserModel().findById(sub) : undefined;
+        const userDoc: any = sub ? await new UserRepository(this.applicationDB).findById(sub) : undefined;
         const passwordOk = !!userDoc && typeof userDoc.password === 'string' && (await security.comparePassword(password, userDoc.password));
         if (!passwordOk) throw new ApplicationError('Parola doğrulanamadı.', 401);
 
