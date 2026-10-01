@@ -73,7 +73,7 @@
           <dt class="dna-flow__label">{{ f.label }}</dt>
           <dd class="dna-flow__value">
             <v-icon v-if="!f.count" icon="mdi-check" class="dna-flow__check" aria-hidden="true" />
-            <span class="ek-num">{{ f.count.toLocaleString('tr-TR') }}</span>
+            <span class="ek-num">{{ formatNumber(f.count) }}</span>
           </dd>
         </div>
       </dl>
@@ -128,6 +128,7 @@
 import { computed } from 'vue'
 import { EkButton, EkErrorState, EkIconTile, EkStatusChip, type EkTone } from '@entegrasyonik/ui/components'
 import { channelName } from '@entegrasyonik/ui/tokens'
+import { formatNumber } from '@entegrasyonik/ui/format'
 import useUser from '@/composables/user'
 import { useDashboardNavigation } from './useDashboardNavigation'
 import { buildNextActions, greeting, type NextAction, type NextActionLevel } from './nextActions'

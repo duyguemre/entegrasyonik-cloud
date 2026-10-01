@@ -18,6 +18,7 @@ import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import router from './router'
 import { onNativePushOpen } from '@entegrasyonik/ui/native'
+import { hasUnsavedChanges } from '@/composables/useUnsavedChanges'
 import { usePublicConfigStore } from '@/stores/publicConfig'
 
 import HorizontalScrollComponent from '@/components/HorizontalScrollComponent.vue';
@@ -108,6 +109,12 @@ publicConfig.refresh().finally(() => {
 
 window.onbeforeunload = function (ev) {
   var e = ev || window.event;
+  // FE R4 C1: kaydedilmemiş değişiklik varsa tarayıcı onayı iste ve uygulamayı UNMOUNT ETME (kullanıcı "Kal" diyebilir).
+  if (hasUnsavedChanges()) {
+    e?.preventDefault?.();
+    if (e) (e as BeforeUnloadEvent).returnValue = '';
+    return '';
+  }
   logger.debug("destroy vue", { event: e });
   app.unmount();
 

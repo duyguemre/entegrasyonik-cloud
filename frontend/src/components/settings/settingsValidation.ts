@@ -52,7 +52,7 @@ export interface ValidationContext {
 
 /** Ayar anahtarı (SettingListView `ROWS`) → doğrulayıcı. `null` = geçerli. */
 const RULES: Record<string, (s: SettingsLike, ctx: ValidationContext) => string | null> = {
-  brandColor: (s) => (isBlank(s.brandColor) || isValidHexColor(s.brandColor) ? null : 'Renk kodu tanınmadı — #RRGGBB biçiminde girin (ör. #2E55D4).'),
+  brandColor: (s) => (isBlank(s.brandColor) || isValidHexColor(s.brandColor) ? null : 'Renk kodu tanınmadı — altı haneli renk kodunu başında diyez işaretiyle girin.'),
   logo: (s, ctx) => (!ctx.useLogoUrl || isBlank(s.logo) || isValidHttpUrl(s.logo) ? null : 'Bağlantı geçerli değil — https:// ile başlayan bir görsel adresi yapıştırın.'),
   tckn: (s) => (isBlank(s.invoice?.tckn) || isValidTckn(s.invoice?.tckn) ? null : 'T.C. Kimlik No geçerli değil — 11 haneli numarayı kontrol edin.'),
   invoicePhone: (s) => (isBlank(s.invoice?.phone) || isValidPhone(s.invoice?.phone) ? null : 'Telefon numarası eksik ya da hatalı — alan koduyla 10–13 rakam girin.'),
