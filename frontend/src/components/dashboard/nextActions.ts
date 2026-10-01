@@ -108,7 +108,7 @@ export function buildNextActions(input: NextActionsInput): { actions: NextAction
   const publishPending = stock?.variants?.publishPending ?? 0
   if (publishPending > 0) {
     actions.push({
-      key: 'publish', level: 'hygiene', tone: 'info', icon: 'mdi-cloud-upload-outline', count: publishPending,
+      key: 'publish', level: 'hygiene', tone: 'info', icon: 'mdi-upload-outline', count: publishPending,
       title: `${nf(publishPending)} varyantın stoğu kanallara iletilmeyi bekliyor`,
       text: 'Stok değişikliği henüz kanallara yansımadı; yayın sırası ilerledikçe sayı düşer.',
       actionLabel: 'Stok sağlığını aç', screen: 'StockHealthView',

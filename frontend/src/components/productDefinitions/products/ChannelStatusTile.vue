@@ -23,13 +23,13 @@ import type { ProductChannelStatus } from './channelStatus'
 const props = withDefaults(defineProps<{ status: ProductChannelStatus; name?: string; size?: 'xs' | 'sm' | 'md' }>(), { size: 'xs' })
 
 const GLYPHS: Record<string, { tone: string; icon: string }> = {
-  live: { tone: 'success', icon: 'mdi-check-circle' },
-  failed: { tone: 'danger', icon: 'mdi-alert-circle' },
+  live: { tone: 'success', icon: 'mdi-check-circle-outline' },
+  failed: { tone: 'danger', icon: 'mdi-alert-circle-outline' },
   waiting: { tone: 'info', icon: 'mdi-clock-outline' },
-  offsale: { tone: 'warning', icon: 'mdi-pause-circle' },
+  offsale: { tone: 'warning', icon: 'mdi-pause-circle-outline' },
 }
 
-const glyph = computed(() => GLYPHS[props.status.key] ?? (props.status.ready ? { tone: 'action', icon: 'mdi-arrow-up-circle' } : null))
+const glyph = computed(() => GLYPHS[props.status.key] ?? (props.status.ready ? { tone: 'action', icon: 'mdi-arrow-up-circle-outline' } : null))
 </script>
 
 <style scoped>

@@ -107,7 +107,7 @@ import {
 } from '@/types/TicketTypes'
 import { TICKET_STATUS_TONE } from '@/design/status-map'
 import { TICKET_PRIORITY_TONE } from './composables/ticketPriorityTone'
-import { TICKET_TYPE_META, buildTimeline, isSubmitShortcut, withDaySeparators } from './composables/ticketRules'
+import { buildTimeline, isSubmitShortcut, withDaySeparators } from './composables/ticketRules'
 import { useTicketReply } from './composables/useTicketReply'
 import type { TicketActionResult } from './composables/useTicketActions'
 
