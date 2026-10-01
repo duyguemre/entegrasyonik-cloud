@@ -281,16 +281,25 @@ const legalCards = [kvkk, privacy, subscription].filter((x): x is NonNullable<ty
     color: var(--site-accent-on-dark);
   }
   .hero-list a {
+    /* site-wdg W12: 44 px dokunma hedefi + hover (sss.astro hero listesiyle aynı desen). */
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--site-tap-target);
     color: var(--site-text-on-dark-heading);
     font-weight: var(--ek-font-weight-medium);
+    line-height: var(--ek-line-height-tight);
     text-decoration: none;
+  }
+  .hero-list a:hover {
+    color: var(--site-accent-on-dark);
   }
 
   /* --- Adil rekabet (PRC-MKT) --- sakin, sayfanın güvence kartlarından hafif: ince çizgili liste, kontur ikon karosu */
   .fair {
     display: grid;
     gap: var(--ek-space-8);
-    scroll-margin-top: calc(var(--site-header-height) + var(--ek-space-6));
+    /* site-wdg W14: üst bar payı html scroll-padding-top’ta; burada yalnız ek boşluk. */
+    scroll-margin-top: var(--ek-space-2);
   }
   .fair__list {
     display: grid;
@@ -366,7 +375,8 @@ const legalCards = [kvkk, privacy, subscription].filter((x): x is NonNullable<ty
       radial-gradient(80% 60% at 0% 0%, color-mix(in srgb, var(--ek-color-secondary) 6%, transparent), transparent 70%),
       var(--ek-color-surface);
     box-shadow: var(--site-shadow-card);
-    scroll-margin-top: calc(var(--site-header-height) + var(--ek-space-6));
+    /* site-wdg W14: üst bar payı html scroll-padding-top’ta; burada yalnız ek boşluk. */
+    scroll-margin-top: var(--ek-space-2);
     transition:
       border-color var(--ek-duration-base) var(--ek-easing-standard),
       box-shadow var(--ek-duration-base) var(--ek-easing-standard);
@@ -419,6 +429,10 @@ const legalCards = [kvkk, privacy, subscription].filter((x): x is NonNullable<ty
   }
   .principle__more summary::-webkit-details-marker {
     display: none;
+  }
+  /* site-wdg W18: "Ayrıntı" açıcısına hover geri bildirimi (renk; alt çizgi yok — BRAND §5). */
+  .principle__more summary:hover {
+    color: var(--site-color-link-hover);
   }
   .principle__more summary:focus-visible {
     outline: var(--site-focus-ring-width) solid var(--site-color-focus-ring);

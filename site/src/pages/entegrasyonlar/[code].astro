@@ -669,7 +669,8 @@ const showMeter = i.coverage === 'broad'
     position: relative;
     padding: 0 0 var(--ek-space-5) var(--ek-space-12);
     counter-increment: guide;
-    scroll-margin-top: calc(var(--site-header-height) + var(--ek-space-6));
+    /* site-wdg W14: üst bar payı html scroll-padding-top’ta; burada yalnız ek boşluk. */
+    scroll-margin-top: var(--ek-space-2);
   }
   .guide-step:last-child {
     padding-bottom: 0;

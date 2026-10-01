@@ -280,6 +280,25 @@ const cta = getGuideCta('stock')
     font-weight: var(--ek-font-weight-bold);
   }
 
+  /* site-wdg W09: dar ekranda dizin ~3 satıra kırılıp üst barla birlikte odaklanan terimi örtüyordu → tek satır,
+     yatay kaydırmalı şerit; çapa payı yalnız şerit yüksekliği (üst bar payı html scroll-padding-top'ta). */
+  @media (max-width: 767.98px) {
+    .gloss-index ul {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      overscroll-behavior-x: contain;
+      scrollbar-width: none;
+      padding-inline: calc(var(--site-focus-ring-width) + var(--site-focus-ring-offset));
+    }
+    .gloss-index li {
+      flex: none;
+    }
+    .gloss-group,
+    .gloss-term {
+      scroll-margin-top: var(--ek-space-16);
+    }
+  }
+
   @media (min-width: 768px) {
     .gloss-group {
       grid-template-columns: var(--ek-space-16) minmax(0, 1fr);

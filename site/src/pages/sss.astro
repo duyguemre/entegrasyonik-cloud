@@ -201,6 +201,10 @@ const CATEGORY_ICONS: Record<FaqCategoryId, 'bolt' | 'plug' | 'stock' | 'shield'
     line-height: var(--ek-line-height-tight);
     text-decoration: none;
   }
+  /* site-wdg W18: beyazdan beyaza hover geri bildirim vermiyordu → açık teal. */
+  .hero-list a:hover {
+    color: var(--site-accent-on-dark);
+  }
   .hero-list a:focus-visible {
     outline-color: var(--site-color-on-primary);
   }
@@ -255,7 +259,10 @@ const CATEGORY_ICONS: Record<FaqCategoryId, 'bolt' | 'plug' | 'stock' | 'shield'
     display: flex;
     gap: var(--ek-space-2);
     margin: 0;
-    padding: 0 0 var(--ek-space-2);
+    /* site-wdg W20: kaydırma kabı odak halkasını kırpmasın (halka payı üst/yanlarda). */
+    padding: calc(var(--site-focus-ring-width) + var(--site-focus-ring-offset));
+    padding-bottom: var(--ek-space-2);
+    margin-inline: calc((var(--site-focus-ring-width) + var(--site-focus-ring-offset)) * -1);
     overflow-x: auto;
     list-style: none;
     scrollbar-width: thin;
@@ -314,7 +321,8 @@ const CATEGORY_ICONS: Record<FaqCategoryId, 'bolt' | 'plug' | 'stock' | 'shield'
     padding: 0 var(--ek-space-2);
     border-radius: var(--ek-radius-full);
     background: var(--ek-color-surface-sunken);
-    color: var(--site-text-meta);
+    /* site-wdg W05: meta tonu sunken zeminde 4,34:1 → gövde tonu (AA). */
+    color: var(--site-text-body);
     font-size: var(--ek-font-size-xs);
     font-weight: var(--ek-font-weight-semibold);
     font-variant-numeric: tabular-nums;
@@ -348,7 +356,8 @@ const CATEGORY_ICONS: Record<FaqCategoryId, 'bolt' | 'plug' | 'stock' | 'shield'
     display: flex;
     flex-direction: column;
     gap: var(--ek-space-5);
-    scroll-margin-top: calc(var(--site-header-height) + var(--ek-space-6));
+    /* site-wdg W14: üst bar payı html scroll-padding-top’ta; burada yalnız ek boşluk. */
+    scroll-margin-top: var(--ek-space-2);
   }
   .faq-group[hidden] {
     display: none;

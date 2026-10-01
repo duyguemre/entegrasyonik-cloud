@@ -426,7 +426,8 @@ const LEVEL_STATE: Record<CapabilityLevel, 'yes' | 'limited'> = { supported: 'ye
       radial-gradient(70% 90% at 0% 0%, color-mix(in srgb, var(--ek-color-secondary) 10%, transparent), transparent 70%),
       var(--ek-color-surface);
     box-shadow: var(--site-shadow-card-hover);
-    scroll-margin-top: calc(var(--site-header-height) + var(--ek-space-6));
+    /* site-wdg W14: üst bar payı html scroll-padding-top’ta; burada yalnız ek boşluk. */
+    scroll-margin-top: var(--ek-space-2);
   }
   .featured__body {
     display: flex;
@@ -620,6 +621,10 @@ const LEVEL_STATE: Record<CapabilityLevel, 'yes' | 'limited'> = { supported: 'ye
   .cluster-nav a:hover {
     background: color-mix(in srgb, var(--ek-color-secondary) 6%, var(--ek-color-surface));
   }
+  /* site-wdg W08: kap `overflow: hidden` dış halkayı kırpar → halka içe çizilir. */
+  .cluster-nav a:focus-visible {
+    outline-offset: calc(var(--site-focus-ring-width) * -1);
+  }
   .cluster-nav__num::before {
     counter-increment: cnav;
     content: counter(cnav, decimal-leading-zero);
@@ -646,7 +651,8 @@ const LEVEL_STATE: Record<CapabilityLevel, 'yes' | 'limited'> = { supported: 'ye
     gap: var(--ek-space-6);
     padding-block: var(--ek-space-10);
     border-top: var(--site-border-width) solid var(--ek-color-border-default);
-    scroll-margin-top: calc(var(--site-header-height) + var(--ek-space-6));
+    /* site-wdg W14: üst bar payı html scroll-padding-top’ta; burada yalnız ek boşluk. */
+    scroll-margin-top: var(--ek-space-2);
   }
   .cluster:first-child {
     padding-top: 0;
@@ -711,7 +717,8 @@ const LEVEL_STATE: Record<CapabilityLevel, 'yes' | 'limited'> = { supported: 'ye
       radial-gradient(80% 60% at 0% 0%, color-mix(in srgb, var(--ek-color-secondary) 6%, transparent), transparent 70%),
       var(--ek-color-surface);
     box-shadow: var(--site-shadow-card);
-    scroll-margin-top: calc(var(--site-header-height) + var(--ek-space-6));
+    /* site-wdg W14: üst bar payı html scroll-padding-top’ta; burada yalnız ek boşluk. */
+    scroll-margin-top: var(--ek-space-2);
     transition:
       border-color var(--ek-duration-base) var(--ek-easing-standard),
       box-shadow var(--ek-duration-base) var(--ek-easing-standard);
@@ -814,6 +821,10 @@ const LEVEL_STATE: Record<CapabilityLevel, 'yes' | 'limited'> = { supported: 'ye
   }
   .cap-card__more summary::-webkit-details-marker {
     display: none;
+  }
+  /* site-wdg W18: "Ayrıntı" açıcısına hover geri bildirimi (renk; alt çizgi yok — BRAND §5). */
+  .cap-card__more summary:hover {
+    color: var(--site-color-link-hover);
   }
   .cap-card__more summary:focus-visible {
     outline: var(--site-focus-ring-width) solid var(--site-color-focus-ring);

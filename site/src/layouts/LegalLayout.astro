@@ -447,7 +447,8 @@ const updated = new Date(`${doc.updatedAt}T00:00:00Z`).toLocaleDateString('tr-TR
     display: flex;
     flex-direction: column;
     gap: var(--ek-space-4);
-    scroll-margin-top: calc(var(--site-header-height) + var(--ek-space-6));
+    /* site-wdg W14: üst bar payı html scroll-padding-top’ta; burada yalnız ek boşluk. */
+    scroll-margin-top: var(--ek-space-2);
   }
   .legal-section > :global(p) {
     max-width: var(--site-measure);
@@ -598,7 +599,8 @@ const updated = new Date(`${doc.updatedAt}T00:00:00Z`).toLocaleDateString('tr-TR
     border: var(--site-border-width) solid color-mix(in srgb, var(--ek-color-warning) 40%, var(--ek-color-border-default));
     border-radius: var(--site-radius-panel);
     background: var(--ek-color-surface-muted);
-    scroll-margin-top: calc(var(--site-header-height) + var(--ek-space-6));
+    /* site-wdg W14: üst bar payı html scroll-padding-top’ta; burada yalnız ek boşluk. */
+    scroll-margin-top: var(--ek-space-2);
   }
   .legal-fields > p {
     max-width: var(--site-measure);

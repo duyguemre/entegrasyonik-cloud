@@ -349,7 +349,8 @@ const toc = [
     border-radius: var(--site-radius-panel);
     background: color-mix(in srgb, var(--ek-color-secondary) 6%, var(--ek-color-surface));
     box-shadow: var(--site-shadow-card);
-    scroll-margin-top: calc(var(--site-header-height) + var(--ek-space-6));
+    /* site-wdg W14: üst bar payı html scroll-padding-top’ta; burada yalnız ek boşluk. */
+    scroll-margin-top: var(--ek-space-2);
   }
   .answer::before {
     content: '';
@@ -434,7 +435,8 @@ const toc = [
     display: flex;
     flex-direction: column;
     gap: var(--ek-space-4);
-    scroll-margin-top: calc(var(--site-header-height) + var(--ek-space-6));
+    /* site-wdg W14: üst bar payı html scroll-padding-top’ta; burada yalnız ek boşluk. */
+    scroll-margin-top: var(--ek-space-2);
   }
   .guide-section > h2,
   .guide-cta h2,
@@ -532,8 +534,10 @@ const toc = [
     height: 100%;
     padding: var(--ek-space-4) var(--ek-space-10) var(--ek-space-4) var(--ek-space-4);
     border: var(--site-border-width) solid var(--ek-color-border-default);
-    border-radius: var(--ek-radius-lg);
+    /* site-wdg W19: bağımsız kart = panel yarıçapı + kart gölgesi (site geneli tek kart dili). */
+    border-radius: var(--site-radius-panel);
     background: var(--ek-color-surface);
+    box-shadow: var(--site-shadow-card);
     color: var(--site-text-body);
     text-decoration: none;
     transition:

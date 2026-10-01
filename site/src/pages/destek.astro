@@ -516,7 +516,8 @@ const supportAnswer = getPublicFaq().find((f) => f.id === 'destek')?.answer
     border-radius: var(--site-radius-panel);
     background: var(--ek-color-surface);
     box-shadow: var(--site-shadow-card);
-    scroll-margin-top: calc(var(--site-header-height) + var(--ek-space-6));
+    /* site-wdg W14: üst bar payı html scroll-padding-top’ta; burada yalnız ek boşluk. */
+    scroll-margin-top: var(--ek-space-2);
     transition:
       border-color var(--ek-duration-base) var(--ek-easing-standard),
       box-shadow var(--ek-duration-base) var(--ek-easing-standard);
