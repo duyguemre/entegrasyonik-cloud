@@ -9,8 +9,9 @@
 //  · Hücre doğrulaması ve değişiklik özeti
 // Veri modeli değişmez: kaydetme mevcut ürün kaydet/güncelle uçlarıyla (variants dizisi) yapılır.
 
-export type CellKind = 'text' | 'money' | 'int'
-export type BaseField = 'stockcode' | 'barcode' | 'salePrice' | 'marketPrice' | 'stock' | 'shelf'
+/** `moneyOpt`: isteğe bağlı para (ör. maliyet) — boş = değer YOK (null), 0 değil. */
+export type CellKind = 'text' | 'money' | 'moneyOpt' | 'int'
+export type BaseField = 'stockcode' | 'barcode' | 'salePrice' | 'marketPrice' | 'stock' | 'shelf' | 'costPrice'
 /** Kanal fiyatı anahtarı: `ch:<kanalKodu>:salePrice|marketPrice` */
 export type ColumnKey = BaseField | `ch:${string}:${'salePrice' | 'marketPrice'}`
 export type CellValue = string | number | null | undefined
@@ -34,7 +35,13 @@ export const BASE_COLUMNS: SheetColumn[] = [
   { key: 'marketPrice', label: 'Piyasa fiyatı', kind: 'money' },
   { key: 'stock', label: 'Stok', kind: 'int' },
   { key: 'shelf', label: 'Raf', kind: 'text' },
+  // PRC-R0: birim alış maliyeti (KDV hariç). Kolon SONDA: klavye sırası = görsel sıra; kayıt genel varyant kaydıyla DEĞİL
+  // `PricingService/setVariantCosts` ile yapılır (backend genel kayıtta bu alanı süzer).
+  { key: 'costPrice', label: 'Maliyet (KDV hariç)', kind: 'moneyOpt' },
 ]
+
+/** Maliyet üst sınırı (backend `setVariantCosts` ile aynı). */
+export const COST_MAX = 10_000_000
 
 export function channelColumns(channels: Array<{ code: string; title?: string }>): SheetColumn[] {
   const out: SheetColumn[] = []
@@ -115,9 +122,10 @@ export const roundMoney = (n: number) => Math.round(n * 100) / 100
 export function coerce(kind: CellKind, raw: CellValue): { value: CellValue } | { error: string } {
   if (kind === 'text') return { value: raw === null || raw === undefined ? '' : String(raw).trim() }
   const n = parseNumber(raw)
-  if (n === null) return kind === 'int' ? { value: 0 } : { value: 0 }
+  if (n === null) return kind === 'moneyOpt' ? { value: null } : { value: 0 }
   if (Number.isNaN(n)) return { error: 'Sayı bekleniyor' }
   if (n < 0) return { error: 'Negatif olamaz' }
+  if (kind === 'moneyOpt' && n > COST_MAX) return { error: 'Çok büyük bir tutar' }
   if (kind === 'int') {
     if (!Number.isInteger(n)) return { error: 'Tam sayı olmalı' }
     return { value: n }
@@ -135,11 +143,13 @@ export interface BulkOp { mode: BulkMode; value: CellValue }
  * (ör. -10 = %10 indirim). Sonuç 0'ın altına düşmez (fiyat/stok negatif olamaz), para 2 haneye yuvarlanır.
  */
 export function applyBulk(kind: CellKind, current: CellValue, op: BulkOp): { value: CellValue } | { error: string } {
-  if (op.mode === 'clear') return { value: kind === 'text' ? '' : 0 }
+  if (op.mode === 'clear') return { value: kind === 'text' ? '' : kind === 'moneyOpt' ? null : 0 }
   if (op.mode === 'set') return coerce(kind, op.value)
   if (kind === 'text') return { error: 'Metin kolonunda yalnız sabit değer' }
   const delta = parseNumber(op.value)
   if (delta === null || Number.isNaN(delta)) return { error: 'Sayı bekleniyor' }
+  // Boş maliyetin yüzdesi/farkı anlamsız: bilinmeyen değerden sayı üretilmez (0 uydurulmaz).
+  if (kind === 'moneyOpt' && (parseNumber(current) ?? null) === null) return { error: 'Önce maliyet girin' }
   const base = Number(parseNumber(current) ?? 0) || 0
   let next = op.mode === 'percent' ? base * (1 + delta / 100) : base + delta
   if (next < 0) next = 0
@@ -375,6 +385,7 @@ export function validateCell(v: any, col: SheetColumn, dup: { barcode: Set<strin
   const n = parseNumber(value as CellValue)
   if (n !== null && Number.isNaN(n)) return { level: 'error', message: 'Sayı bekleniyor' }
   if (n !== null && n < 0) return { level: 'error', message: 'Negatif olamaz' }
+  if (col.kind === 'moneyOpt' && n !== null && n > COST_MAX) return { level: 'error', message: 'Çok büyük bir tutar' }
   if (col.kind === 'int' && n !== null && !Number.isInteger(n)) return { level: 'error', message: 'Tam sayı olmalı' }
   if (col.key.endsWith('salePrice')) {
     const market = parseNumber(getCell(v, col.key.replace('salePrice', 'marketPrice') as ColumnKey))

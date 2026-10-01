@@ -4,8 +4,26 @@
  */
 import { describe, it, expect } from '@jest/globals';
 import { ObjectId } from 'mongodb';
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const sift = require('sift').default ?? require('sift');
+
+/** Testin kullandığı Mongo filtre alt kümesi (eşitlik, $in, $exists, $type:number, $not, $gt, $lt, $or, noktalı yol). */
+const get = (d: any, path: string) => path.split('.').reduce((o, k) => (o == null ? undefined : o[k]), d);
+const eq = (a: any, b: any) => (a instanceof ObjectId || b instanceof ObjectId ? String(a) === String(b) : a === b);
+const cmp = (a: any, b: any) => (a instanceof Date ? a.getTime() : String(a)) < (b instanceof Date ? b.getTime() : String(b));
+function opMatch(v: any, cond: any): boolean {
+    if (cond === null || typeof cond !== 'object' || cond instanceof ObjectId || cond instanceof Date) return eq(v, cond);
+    return Object.entries(cond).every(([op, arg]: [string, any]) => {
+        switch (op) {
+            case '$in': return arg.some((x: any) => eq(v, x));
+            case '$exists': return (v !== undefined) === arg;
+            case '$type': return arg === 'number' ? typeof v === 'number' : false;
+            case '$not': return !opMatch(v, arg);
+            case '$gt': return v !== undefined && cmp(arg, v);
+            case '$lt': return v !== undefined && cmp(v, arg);
+            default: throw new Error('desteklenmeyen operatör ' + op);
+        }
+    });
+}
+const sift = (f: any) => (d: any): boolean => Object.entries(f).every(([k, c]: [string, any]) => (k === '$or' ? c.some((x: any) => sift(x)(d)) : opMatch(get(d, k), c)));
 import { listVariantCosts, setVariantCosts, coveragePercent, COST_STALE_DAYS } from '@operations/pricing/variantCost';
 import { stripEngineOwnedVariantFields, PRICING_OWNED_VARIANT_FIELDS } from '../../../src/api/rpc/handlers/product-service';
 import { getCompetitionSettings, setCompetitionOverride } from '@operations/backoffice/competitionAdmin';

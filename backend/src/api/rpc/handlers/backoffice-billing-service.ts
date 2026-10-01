@@ -97,7 +97,7 @@ export default class BackofficeBillingService extends BaseApi implements IServic
 
     // PRC-CFG (K57-S5): rekabet modülü ayarları. Plan varsayılanı/bütçe `IntegrationConfigService` (`_platform`) ile; burada okuma + tenant istisnası.
     private competitionDeps(): CompetitionAdminDeps {
-        return { subscriptionModel: this.applicationDB.getSubscriptionModel(), clientModel: this.applicationDB.getClientModel(), billingEventModel: this.applicationDB.getBillingEventModel() }
+        return { applicationDB: this.applicationDB }
     }
     async getCompetitionSettings(): Promise<any> { return getCompetitionSettings(this.competitionDeps()) }
     async getTenantCompetition(): Promise<any> { return getTenantCompetition(this.competitionDeps(), { tid: this.request?.tid }) }

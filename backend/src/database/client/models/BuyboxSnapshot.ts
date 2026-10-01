@@ -7,7 +7,6 @@ import { Schema } from "mongoose";
  * Saklama: `observedAt` + 90 gün (TTL). `autoIndex:false` — indeksler YALNIZ göçle (`migrations/0021-pricing-competition-tenant.js`, ÇALIŞTIRILMADI).
  */
 export const BUYBOX_STATUSES = ['winning', 'losing', 'not_found'] as const;
-export type BuyboxStatus = typeof BUYBOX_STATUSES[number];
 export const BUYBOX_SNAPSHOT_TTL_SECONDS = 90 * 24 * 3600;
 
 export const BuyboxSnapshotSchema = new Schema({

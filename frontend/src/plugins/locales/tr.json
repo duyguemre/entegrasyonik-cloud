@@ -2388,6 +2388,124 @@
       "expired": "Abonelik sona erdi · stok senkronu kapalı"
     }
   },
+  "pricing": {
+    "retry": "Yeniden dene",
+    "cost": {
+      "label": "Maliyet (KDV hariç)",
+      "hint": "Birim alış maliyeti, KDV hariç. Kâr hesabı için gerekir; boş bırakırsanız bu varyantta kâr hesaplanmaz.",
+      "saved": "Maliyetler kaydedildi ({count} varyant)",
+      "partial": "Maliyetlerin bir kısmı kaydedilemedi: {count} varyant bulunamadı — ürünü yenileyip tekrar deneyin.",
+      "failed": "Ürün kaydedildi, ancak maliyetler kaydedilemedi — girdiğiniz maliyetler formda duruyor; Güncelle'ye tekrar basın.",
+      "failedCreate": "Ürün eklendi, ancak maliyetler kaydedilemedi — maliyetleri ürünü düzenleyerek yeniden girin.",
+      "failedUnauthorized": "Ürün kaydedildi, ancak maliyet kaydetme yetkiniz yok — hesap yöneticinizden katalog yazma yetkisi isteyin.",
+      "noBarcode": "{count} varyantın maliyeti kaydedilemedi çünkü barkodu yok — barkod ekleyip ürünü düzenleyerek maliyeti girin."
+    },
+    "coverage": {
+      "label": "Maliyet kapsamı %{percent}",
+      "hint": "Maliyeti girilmemiş ürünlerde kâr hesaplanmaz.",
+      "loading": "Maliyet kapsamı yükleniyor",
+      "error": "Maliyet kapsamı alınamadı"
+    },
+    "badge": {
+      "losing": "Buybox kaybedildi",
+      "winning": "Buybox sizde",
+      "losingDetail": "{total} varyantın {losing} tanesinde buybox kaybedildi"
+    },
+    "filter": {
+      "label": "Buybox (Trendyol)",
+      "winning": "Kazanılan",
+      "losing": "Kaybedilen",
+      "not_found": "Bulunamadı",
+      "unchecked": "Okunmadı"
+    },
+    "status": {
+      "winning": "Buybox sizde",
+      "losing": "Buybox kaybedildi",
+      "not_found": "Trendyol'da bulunamadı",
+      "unchecked": "Henüz okunmadı"
+    },
+    "panel": {
+      "title": "Rekabet ve kâr",
+      "subtitle": "Trendyol buybox durumu ve tahmini kâr. Yalnızca görüntüleme: fiyatlarınız otomatik değişmez.",
+      "reload": "Yenile",
+      "variant": "Varyant",
+      "variantFallback": "Varyant",
+      "truncated": "İlk {count} varyant gösteriliyor.",
+      "disabled": "Buybox izleme bu hesapta kapalı. Kâr, mevcut fiyatınız üzerinden hesaplanır; buybox alanları okunmaz.",
+      "belowFloorTitle": "Buybox'a ulaşmak başa baş fiyatın altında",
+      "belowFloor": "Buybox fiyatı ({price}) başa baş fiyatınızın ({floor}) altında; bu fiyata inmek zarar ettirir.",
+      "ineligibleTitle": "Öneri ve kurallar kapalı",
+      "ineligible": "Şu bilgiler eksik olduğu için bu üründe fiyat önerisi ve kural çalışmaz: {reasons}.",
+      "enterCost": "Maliyet girin",
+      "costHint": "Maliyet girilmediği için kâr hesaplanamıyor.",
+      "missing": "Kâr hesabında eksik bileşenler: {list}. Kâr kısmi (tahmini) hesaplandı.",
+      "stale": "Bayat veri",
+      "freshness": "Güncellik",
+      "error": "Rekabet bilgisi yüklenemedi — bağlantınızı kontrol edip yeniden deneyin.",
+      "unauthorizedTitle": "Bu bölümü görme yetkiniz yok",
+      "unauthorized": "Rekabet ve kâr bilgisi katalog ve finans okuma yetkisi gerektirir; hesap yöneticinizden yetki isteyin.",
+      "emptyTitle": "Gösterilecek varyant yok",
+      "empty": "Ürün kaydedilip varyantları oluştuğunda buybox ve kâr bilgisi burada görünür."
+    },
+    "field": {
+      "status": "Buybox durumu",
+      "order": "{order}. sıra",
+      "buyboxPrice": "Buybox fiyatı",
+      "ownPrice": "Fiyatım",
+      "gap": "Fark",
+      "profitNow": "Mevcut fiyatta kâr",
+      "profitAtBuybox": "Buybox fiyatında kâr",
+      "breakEven": "Başa baş fiyat",
+      "commission": "Komisyon",
+      "lastUpdate": "Son güncelleme",
+      "nextRefresh": "Bir sonraki tazeleme"
+    },
+    "commission": {
+      "override": "sözleşme",
+      "actual": "gerçekleşen",
+      "estimated": "tahmini",
+      "unknown": "bilinmiyor"
+    },
+    "missing": {
+      "cost": "maliyet",
+      "vat": "KDV oranı",
+      "commission": "komisyon",
+      "commissionVat": "komisyon KDV'si",
+      "serviceFee": "hizmet bedeli",
+      "shipping": "kargo katkısı",
+      "withholding": "stopaj"
+    },
+    "ineligible": {
+      "cost_missing": "maliyet",
+      "vat_missing": "KDV oranı",
+      "commission_unknown": "komisyon oranı"
+    },
+    "refresh": {
+      "off": "Tazeleme kapalı",
+      "pending": "Henüz okunmadı",
+      "never": "Henüz okunmadı",
+      "overdue": "Yoğunluk nedeniyle gecikti (planlanan: {when})"
+    },
+    "chart": {
+      "title": "Son {days} gün",
+      "loading": "Fiyat geçmişi yükleniyor…",
+      "error": "Fiyat geçmişi yüklenemedi.",
+      "empty": "Bu aralıkta kayıtlı fiyat geçmişi yok. Okuma yapıldıkça burada görünür.",
+      "noBarcode": "Barkodu olmayan varyant için geçmiş tutulmaz.",
+      "buybox": "Buybox fiyatı",
+      "own": "Fiyatım",
+      "summary": "Son {days} günde {count} kayıt; fiyat aralığı {min} ile {max} arasında."
+    },
+    "channels": {
+      "title": "Kanal desteği"
+    },
+    "level": {
+      "supported": "Destekleniyor",
+      "limited": "Sınırlı destek",
+      "platform_auto": "Pazaryeri otomatik yönetiyor",
+      "not_supported": "Desteklenmiyor"
+    }
+  },
   "help": {
     "center": {
       "title": "Yardım merkezi"

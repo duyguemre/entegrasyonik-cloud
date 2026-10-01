@@ -32,7 +32,7 @@
       inputmode="numeric"
       :min="item.safeRange?.min"
       :max="item.safeRange?.max"
-      :suffix="item.unit ?? undefined"
+      :suffix="item.unit === 'perMin' ? 'istek/dk' : (item.unit ?? undefined)"
       :label="item.label.tr"
       density="compact"
       :hint="item.safeRange ? `${item.safeRange.min}–${item.safeRange.max}` : undefined"

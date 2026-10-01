@@ -293,7 +293,7 @@ const canApplyOp = computed(() => mode.value === 'clear' || String(opValue.value
 function applyOp() {
   if (!canApplyOp.value) return
   const onlyNumeric = mode.value === 'percent' || mode.value === 'amount'
-  const r = sheet.applyToSelection({ mode: mode.value, value: opValue.value }, onlyNumeric ? ['money', 'int'] : undefined)
+  const r = sheet.applyToSelection({ mode: mode.value, value: opValue.value }, onlyNumeric ? ['money', 'moneyOpt', 'int'] : undefined)
   live.value = `${r.changed} hücre değişti${r.skipped ? `, ${r.skipped} hücre atlandı` : ''}`
 }
 
@@ -305,9 +305,9 @@ const isEmpty = (v: any, key: ColumnKey) => { const x = getCell(v, key); return 
 function display(v: any, c: SheetColumn) {
   const x = getCell(v, c.key)
   if (x === undefined || x === null || x === '') return '—'
-  return c.kind === 'money' ? formatMoney(Number(x)) : String(x)
+  return c.kind === 'money' || c.kind === 'moneyOpt' ? formatMoney(Number(x)) : String(x)
 }
-const fmt = (c: SheetColumn | undefined, x: CellValue) => (x === undefined || x === null || x === '' ? '—' : c?.kind === 'money' ? formatMoney(Number(x)) : String(x))
+const fmt = (c: SheetColumn | undefined, x: CellValue) => (x === undefined || x === null || x === '' ? '—' : c?.kind === 'money' || c?.kind === 'moneyOpt' ? formatMoney(Number(x)) : String(x))
 const dupes = computed(() => {
   // Taslakta olmayan (kapsam dışı) varyantların kodları da tekrarlama denetimine girer.
   const inScope = new Set(draft.value.map(rowId))

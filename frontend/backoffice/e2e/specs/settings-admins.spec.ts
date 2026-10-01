@@ -30,7 +30,9 @@ test.describe('sistem ayarları', () => {
     await page.goto('/sistem/bayraklar')
     await expect(page.getByRole('heading', { level: 1, name: 'Platform ayarları' })).toBeVisible()
     await settle(page)
-    await expect(page.getByTestId('flags-empty')).toContainText('FEATURE_FLAGS')
+    // Backend kataloğunda gerçek bayrak var (features.competition, PRC-CFG); `platform.pricing` grubu burada ÇİFT görünmez.
+    await expect(page.getByText('features.competition', { exact: true })).toBeVisible()
+    await expect(page.getByText('pricing.buybox')).toHaveCount(0)
     await expect(page.locator('[data-env="upload-max"]')).toContainText('10 MB')
     await expect(page.locator('[data-env="image-base"]')).toContainText("env'den gelir")
     await expectNoA11yViolations(page)
@@ -41,7 +43,7 @@ test.describe('sistem ayarları', () => {
     await openFromMenu(page, 'Sistem ayarları', 'Platform ayarları')
     await settle(page)
     await expect(page.getByText('features.aiListing', { exact: true })).toBeVisible()
-    await expect(page.getByText('Yalnız yönetici')).toBeVisible()
+    await expect(page.getByText('Yalnız yönetici').first()).toBeVisible()
   })
 
   test('bakım modu: taslak → fark → gerekçe + step-up → yayın; geçmişte yeni sürüm', async ({ page }) => {
