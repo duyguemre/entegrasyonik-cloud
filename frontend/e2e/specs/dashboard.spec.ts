@@ -74,7 +74,7 @@ test.describe('P1 — Dashboard', () => {
 
     const catalog = card(page, 'Katalog ve kanal aktarımı')
     await expect(catalog).toContainText('48')
-    await expect(catalog.locator('[data-channel="trendyol"]')).toContainText('88')
+    await expect(catalog.locator('tr[data-channel="trendyol"]')).toContainText('88')
 
     const jobs = card(page, 'Son işlemler')
     await expect(jobs).toContainText('Tamamlandı')
