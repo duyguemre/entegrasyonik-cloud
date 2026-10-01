@@ -88,6 +88,20 @@ describe('egress-guard (Protokol 7: loopback dışına çıkış yok)', () => {
         expect(fakeNetwork).toHaveBeenCalledTimes(1);
     });
 
+    it("web push host'lari VARSAYILAN ENGELLI; yalniz EGRESS_ALLOW_WEBPUSH=1 ile acilir ve liste pushHosts ile AYNIDIR (MOB-04)", () => {
+        const { PUSH_SERVICE_HOSTS } = require('../../src/operations/notifications/push/pushHosts');
+        expect([...guard.PUSH_HOSTS].sort()).toEqual([...PUSH_SERVICE_HOSTS].sort());
+        const samples = ['fcm.googleapis.com', 'updates.push.services.mozilla.com', 'web.push.apple.com', 'wns2-db5p.notify.windows.com'];
+        delete process.env.EGRESS_ALLOW_WEBPUSH;
+        for (const h of samples) expect(guard.isAllowedHost(h)).toBe(false);
+        process.env.EGRESS_ALLOW_WEBPUSH = '1';
+        for (const h of samples) expect(guard.isAllowedHost(h)).toBe(true);
+        expect(guard.isAllowedHost('notify.windows.com')).toBe(false); // joker yalniz alt alan
+        expect(guard.isAllowedHost('evilnotify.windows.com')).toBe(false);
+        expect(guard.isAllowedHost('api.trendyol.com')).toBe(false);
+        expect(guard.isAllowedHost('api.anthropic.com')).toBe(false); // push bayragi LLM'i acmaz
+        delete process.env.EGRESS_ALLOW_WEBPUSH;
+    });
     it("LLM saglayici host'lari VARSAYILAN ENGELLI; yalniz EGRESS_ALLOW_LLM=1 ile acilir ve liste katalogla AYNIDIR (ADR-0034 BR-5)", () => {
         // eslint-disable-next-line @typescript-eslint/no-require-imports
         const { LLM_HOSTS } = require('../../src/platform/llm/catalog');

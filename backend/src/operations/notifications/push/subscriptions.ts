@@ -41,7 +41,7 @@ export function validateSubscription(s: PushSubscriptionInput): void {
 /** Cihaz adi: yalniz yazdirilabilir, <= 60 karakter (FE "Android · Chrome" gibi turetir; PII beklenmez). */
 export function cleanDeviceLabel(v: unknown): string | undefined {
     if (typeof v !== 'string') return undefined;
-    const s = v.replace(/[\u0000-\u001f\u007f<>]/g, '').trim().slice(0, 60);
+    const s = [...v].filter((ch) => ch.charCodeAt(0) >= 0x20 && ch.charCodeAt(0) !== 0x7f && ch !== '<' && ch !== '>').join('').trim().slice(0, 60);
     return s || undefined;
 }
 

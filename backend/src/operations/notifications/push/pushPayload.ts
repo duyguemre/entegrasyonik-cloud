@@ -37,7 +37,7 @@ const BODY: Record<NotificationLocale, string> = {
 /** Uygulama ici goreli yol mu (acik yonlendirme / protokol yok). */
 export function safeInternalPath(p: unknown): string | undefined {
     if (typeof p !== 'string' || !p.startsWith('/') || p.startsWith('//') || p.includes('\\') || p.length > 300) return undefined;
-    if (/[\u0000-\u001f]/.test(p)) return undefined;
+    if ([...p].some((ch) => ch.charCodeAt(0) < 0x20)) return undefined; // denetim karakteri
     return p;
 }
 

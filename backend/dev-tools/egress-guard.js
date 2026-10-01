@@ -10,6 +10,7 @@
  * Kullanım:   node -r ./dev-tools/egress-guard.js dist/entegrasyonik.js      (bkz. `npm run start:local`)
  * İzinli ek host'lar (ör. docker ağındaki servis adı):  EGRESS_ALLOW=redis,mongo
  * Sohbet LLM sağlayıcıları (Anthropic/OpenAI/Google; yalnız insan, gerçek anahtarla):  EGRESS_ALLOW_LLM=1
+ * Web push servisleri (FCM/Mozilla/Apple/WNS; MOB-04, yalnız insan gerçek cihazla dener):  EGRESS_ALLOW_WEBPUSH=1
  * Kapsam dışı: UDP/DNS sorguları (yalnızca ad çözümleme; veri taşınmaz).
  */
 const net = require('net');
@@ -31,10 +32,16 @@ function extraAllowed() {
 const LLM_HOSTS = ['api.anthropic.com', 'api.openai.com', 'generativelanguage.googleapis.com'];
 const llmAllowed = () => ['1', 'true'].includes(String(process.env.EGRESS_ALLOW_LLM || '').toLowerCase());
 
+// MOB-04: web push servisleri. VARSAYILAN KAPALI; yalniz `EGRESS_ALLOW_WEBPUSH=1`. Liste src/operations/notifications/push/pushHosts.ts::PUSH_SERVICE_HOSTS
+// ile AYNI (tests/dev/egress-guard.test.ts dogrular). `*.` = yalniz alt alan adi.
+const PUSH_HOSTS = ['fcm.googleapis.com', 'updates.push.services.mozilla.com', 'web.push.apple.com', '*.notify.windows.com'];
+const pushAllowed = () => ['1', 'true'].includes(String(process.env.EGRESS_ALLOW_WEBPUSH || '').toLowerCase());
+const isPushHost = (h) => PUSH_HOSTS.some((p) => (p.startsWith('*.') ? h.endsWith(p.slice(1)) && h.length > p.length - 1 : h === p));
+
 function isAllowedHost(host) {
     if (host === undefined || host === null || host === '') return true; // Node host'suz bağlantıda localhost kullanır
     const h = String(host).toLowerCase().replace(/^\[|\]$/g, '');
-    return LOOPBACK.has(h) || extraAllowed().includes(h) || (llmAllowed() && LLM_HOSTS.includes(h)) || (extraPredicate !== null && extraPredicate(h) === true);
+    return LOOPBACK.has(h) || extraAllowed().includes(h) || (llmAllowed() && LLM_HOSTS.includes(h)) || (pushAllowed() && isPushHost(h)) || (extraPredicate !== null && extraPredicate(h) === true);
 }
 
 function install() {
@@ -67,7 +74,7 @@ function uninstall() {
     warned.clear();
 }
 
-module.exports = { install, uninstall, isAllowedHost, setHostPredicate, LLM_HOSTS };
+module.exports = { install, uninstall, isAllowedHost, setHostPredicate, LLM_HOSTS, PUSH_HOSTS };
 
 // `node -r` ile yüklendiğinde otomatik devreye girer (test ortamı EGRESS_GUARD_NO_AUTOINSTALL=1 ile kapatır).
 if (!process.env.EGRESS_GUARD_NO_AUTOINSTALL) install();
