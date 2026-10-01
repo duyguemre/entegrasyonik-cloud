@@ -105,3 +105,53 @@ Tarih sütunu olan ve backend'i aralık kabul eden HER liste `EkDateRange` kulla
 Etkin filtre çipi tek "Tarih" çipi: `formatDateRange(start, end)` (`@entegrasyonik/ui/components/dateRange`). Listede ayrı
 "Başlangıç/Bitiş" `EkDateField` çifti açılmaz (bekçi `tests/date-range-filter.test.ts`). Backend parametresi olmayanlar:
 `PROPOSALS_PENDING.md` P-R3A-1…4.
+
+## 8. Kayıt detayı diyaloğu (fe-r3b — madde 12–13)
+
+Sipariş, iade, müşteri, fatura ve destek talebi detayları TEK desende: `EkRecordSheet` (yan sayfa) + `EkDetailPanel` (bölüm kartı).
+`EkDetailSheet` kaldırılmadı (admin/uyumluluk ekranları kullanıyor); yeni kayıt detayları `EkRecordSheet` kullanır.
+
+```vue
+<EkRecordSheet v-model="open" size="lg" kind="Sipariş" :identity="order.orderNumber">
+  <template #status><EkStatusChip :tone="…" :label="…" /></template>
+  <template #header-actions>…sessiz: Düzenle, ⋯ …</template>
+  <template #summary><EkRecordSummary … /><EkNextStep … /></template>
+  <EkDetailPanel title="Ürünler" icon="mdi-package-variant-closed" :description="'3 kalem · 4 adet'" flush>…</EkDetailPanel>
+  <EkDetailPanel title="Kargo" icon="mdi-truck-outline" :rows="[{ label: 'Takip kodu', value: '…', numeric: true }]" />
+  <template #footer-start><EkActionButton action="cancel" show-label … /></template>
+  <template #actions><EkButton tone="secondary">…</EkButton><EkButton tone="primary">Sıradaki iş</EkButton></template>
+</EkRecordSheet>
+```
+
+| Kural | Değer |
+|---|---|
+| Zemin | Gövde `app-bg` (sayfa tuvali); bölüm kartları `surface` + `border-default` + `shadow-card` → kutular öne çıkar. Üst/alt çubuk `surface` |
+| Üst çubuk | Tür etiketi (mikro) · kimlik (H2) · durum çipi; sağda yalnız sessiz başlık eylemleri (`#header-actions`) + kapat |
+| Özet | `#summary` her zaman en üstte: `EkRecordSummary` (kanalı olmayan kayıtta `icon`), ardından "sıradaki adım" / durum kartı |
+| Bölüm | Gövdede çıplak içerik yok — her bölüm `EkDetailPanel` (ikon karosu nötr, başlık H3, kısa açıklama/sayaç aynı satırda). Liste/zaman çizgisi `flush` + kendi çerçevesini kaldırır (`RecordLineList plain`) |
+| Öne çıkan kutu | Tutar dökümü / toplam: kartın altında `surface-muted` bant (sipariş + iade aynı) |
+| Eylemler | İş akışı eylemleri **sabit alt çubukta**: yıkıcı/ikincil solda (`#footer-start`), birincil en sağda (tek primary). "Sıradaki adım" kartı eylemi tekrarlamaz; yalnız dış bağlantı (kargo takibi) taşır. Destek talebinde alt çubuk yanıt alanıdır (`#footer`) |
+| Dar ekran | Tam ekran; kart iç boşlukları 12px; alt çubuk sarılır |
+
+## 9. Ayar ekranı satırı (fe-r3b — madde 14)
+
+`SettingRow` (`src/components/settings`): solda etiket (`<label for>` → alanın erişilebilir adı) + tek cümle açıklama, sağda
+denetim; geniş denetimler `stacked`. Satırlar `EkDetailPanel flush` kartında. Ekran: solda arama + dikey bölüm listesi
+(değişen bölümde nokta, aramada eşleşme sayısı), altta yapışkan kaydetme durumu çubuğu ("Kaydedilmemiş değişiklik var · …"
++ Vazgeç + Kaydet; temizken sakin). Değişen satırda "Değişti" işareti. Arama yalnız kayıt defterindeki etiket/açıklama/anahtar
+kelimelerde çalışır (`SettingListView` `ROWS`).
+
+## 10. Ürün listesi kanal hücresi (fe-r3b — madde 11)
+
+İki satır: (1) en kritik durum sade cümleyle ve durum tonunda ("1 kanalda hata", "Tüm kanallarda yayında", "Gönderime hazır")
+— `channelStatusSummary` (saf, testli); (2) ürünün bulunduğu kanalların K13 kısa rozeti + **yanında** durum glifi (rozetin
+üstüne binen nokta değil), gönderilmemişler tek "+n" hapı. İpucu kanal başına satır; panel çipleri aynı ikonları kullanır.
+
+## 11. Ana sayfa — aksiyon önce (fe-r3b — madde 16)
+
+Sıra: **Bugün sırada** (`DashboardNextActions`) → İşletme performansı (KPI) → Sipariş ve kanal durumu → Stok ve katalog.
+"Bugün sırada": kişisel selamlama + iş sayısı; sıradaki iş öne çıkan kutuda (sol tonlu şerit, `surface-muted`, tek primary);
+"Sonra" listesi (en fazla 5, satır = ekranı açan düğme); "Bekleyen yok" satırı. Liste `nextActions.ts`'ten (saf, testli):
+Acil (aşırı satış, erişilemeyen bağlantı) → Bugün (kargo → fatura → iade → soru) → Fırsat buldukça (sorunlu bağlantı,
+eşleşmeyen kalem, kanala iletilmeyi bekleyen stok, eksik kurulum). Rakamlar yalnız backend yanıtından; menüde olmayan
+ekranın eylemi çizilmez.
