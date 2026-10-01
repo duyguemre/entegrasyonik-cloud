@@ -488,6 +488,8 @@ const closeTemporaryMenu = () => {
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
+  /* Sağ alttaki tur teklif kartı açıkken (HelpTour) en alttaki içerik kartın üstüne kaydırılabilsin. */
+  padding-bottom: var(--ek-tour-offer-space, 0px);
   border: none;
   border-radius: 0;
   background-color: var(--ek-color-background);
