@@ -150,7 +150,8 @@
         <span v-else class="ek-order-alloc__none">—</span>
       </template>
       <template #cell-orderDate="{ row }">
-        <span class="ek-num">{{ formatDateTime(row.dates?.orderDate) }}</span>
+        <!-- P04 (K49): listede yalnız gün; saat ipucunda (1440'ta yatay kaydırma kalmaz). -->
+        <time class="ek-num" :datetime="row.dates?.orderDate" :title="formatDateTime(row.dates?.orderDate)">{{ formatDate(row.dates?.orderDate) }}</time>
       </template>
       <template #cell-total="{ row }">
         <span class="ek-order-total">
@@ -192,7 +193,7 @@ import { isOrderLocked, countBulkEligible, bulkTargetIds } from '@/components/or
 import { useOrderActions } from '@/components/order/composables/useOrderActions'
 import { useOrderCancel } from '@/components/order/composables/useOrderCancel'
 import { useLifecycle } from '@/composables/useLifecycle'
-import { formatMoney, formatDateTime } from '@entegrasyonik/ui/format'
+import { formatMoney, formatDate, formatDateTime } from '@entegrasyonik/ui/format'
 import { formatDateRange } from '@entegrasyonik/ui/components/dateRange'
 import { ORDER_STATUS_TONE, ALLOCATION_STATE_TONE, ALLOCATION_STATES } from '@/design/status-map'
 import { orderStatusOptions, ORDER_STATUS_GUIDE } from '@/design/status-map'

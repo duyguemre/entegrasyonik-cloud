@@ -100,7 +100,7 @@
           <span class="ek-claim-status__hint">{{ statusHint(row.internalStatus) }}</span>
         </span>
       </template>
-      <template #cell-claimedAt="{ row }"><span class="ek-num">{{ formatDateTime(row.claimedAt) }}</span></template>
+      <template #cell-claimedAt="{ row }"><time class="ek-num" :datetime="row.claimedAt" :title="formatDateTime(row.claimedAt)">{{ formatDate(row.claimedAt) }}</time></template>
       <template #cell-actions="{ row }">
         <EkRowActions :label="`${row.externalClaimId} işlemleri`" :items="[
           { key: 'view', action: 'view', label: 'Talep detayını görüntüle', onClick: () => openDetailedReport(row) },
@@ -129,7 +129,7 @@ import { useIntegrationStore } from '@/stores/integrationStore'
 import { useListQuery, listPayload } from '@/composables/useListQuery'
 import { useClaimActions } from '@/components/claim/composables/useClaimActions'
 import { useLifecycle } from '@/composables/useLifecycle'
-import { formatMoney, formatDateTime } from '@entegrasyonik/ui/format'
+import { formatMoney, formatDate, formatDateTime } from '@entegrasyonik/ui/format'
 import { CLAIM_STATUS_TONE } from '@/design/status-map'
 import { claimStatusOptions, claimTypeLabel, CLAIM_STATUS_GUIDE } from '@/design/status-map'
 
