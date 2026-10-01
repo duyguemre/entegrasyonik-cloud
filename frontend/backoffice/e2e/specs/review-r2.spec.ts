@@ -7,7 +7,10 @@ import { fileURLToPath } from 'node:url'
 import { mkdirSync } from 'node:fs'
 import { ACCOUNT } from '../support/session'
 
-const OUT = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'docs', 'bo-r2-review', process.env.BO_R2_OUT === 'once' ? 'once' : 'sonra')
+// BO_REVIEW_DIR: kare kökü (varsayılan docs/bo-r2-review; bo-wdg denetimi aynı rotaları kendi klasörüne alır).
+const OUT = process.env.BO_REVIEW_DIR
+  ? join(process.env.BO_REVIEW_DIR, process.env.BO_R2_OUT === 'once' ? 'once' : 'sonra')
+  : join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'docs', 'bo-r2-review', process.env.BO_R2_OUT === 'once' ? 'once' : 'sonra')
 const CONFIGS = [
   { theme: 'light', width: 1440 },
   { theme: 'dark', width: 1440 },
