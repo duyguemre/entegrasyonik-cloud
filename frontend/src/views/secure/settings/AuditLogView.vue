@@ -416,7 +416,10 @@ onMounted(async () => {
   flex-direction: column;
   gap: var(--ek-space-4);
   padding: var(--ek-space-6);
-  overflow: hidden;
+  /* P15: bu ekranlar EkListFrame'i EkListScreen dışında kullanır — liste kartı asgari yüksekliğe (340px)
+     ulaşınca ekran kökü kendi içinde kayar (kırpılıp sayfalama erişilemez olmasın). */
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 .ek-audit-view__frame {
