@@ -20,8 +20,9 @@ const INVOICE_SORT_FIELDS: readonly string[] = ['createdAt', 'invoiceNumber', 'i
 const DEFAULT_INVOICE_SORT_FIELD = 'createdAt';
 
 /** Manuel fatura kaydı; sipariş numarası eşleşirse sipariş "faturası kesildi" işaretlenir. Hata yanıtta `{success:false}` döner. */
-export async function createManualInvoice(clientDB: IClientDB, data: any) {
+export async function createManualInvoice(clientDB: IClientDB, request: any) {
     try {
+        const data = request.data;
         if (!data) return { success: false, message: 'Fatura verisi boş olamaz.' };
         const ettn = data.ettn?.trim() || `SYS-MANUAL-${Date.now()}`;
         const invoicePayload: any = {

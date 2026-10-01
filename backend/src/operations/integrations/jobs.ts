@@ -168,8 +168,9 @@ export async function getImportJobs(deps: JobDeps, body: any) {
 }
 
 /** jobId ile içe aktarım işi (QA-FAZ2 kritik-1 / BACKLOG C4 L-04 IDOR: clientId filtresi). */
-export async function getImportJobByJobId(deps: JobDeps, jobId: unknown) {
+export async function getImportJobByJobId(deps: JobDeps, request: any) {
     try {
+        const { jobId } = request;
         if (!jobId) return { success: false, message: 'jobId parametresi eksik.' };
         const job = await new ImportJobRepository(deps.applicationDB).findByJobId(jobId, deps.clientId);
         if (!job) return { success: false, message: 'Belirtilen ID ile eşleşen bir işlem bulunamadı.' };
@@ -181,8 +182,9 @@ export async function getImportJobByJobId(deps: JobDeps, jobId: unknown) {
 }
 
 /** Yalnız COMPLETED/FAILED içe aktarım işleri arşivlenir (L-04 IDOR: clientId filtresi). */
-export async function archiveImportJobs(deps: JobDeps, ids: unknown) {
+export async function archiveImportJobs(deps: JobDeps, request: any) {
     try {
+        const { ids } = request;
         if (!ids || !Array.isArray(ids) || ids.length === 0) return { success: false, message: 'Geçerli ID listesi gerekli.' };
         const result = await new ImportJobRepository(deps.applicationDB).archiveFinished(ids, deps.clientId);
         if (result.matchedCount === 0) return { success: false, message: 'Arşivlenebilir (tamamlanmış) kayıt bulunamadı.' };

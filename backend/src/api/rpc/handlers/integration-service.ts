@@ -183,12 +183,12 @@ export default class IntegrationService extends BaseApi implements IService {
     }
 
     async getImportJobByJobId() {
-        return jobs.getImportJobByJobId(this.jobDeps, this.request?.jobId)
+        return jobs.getImportJobByJobId(this.jobDeps, this.request)
     }
 
     /** Yalnız COMPLETED/FAILED içe aktarım işleri arşivlenir. */
     async archiveImportJobs() {
-        return jobs.archiveImportJobs(this.jobDeps, this.request?.ids)
+        return jobs.archiveImportJobs(this.jobDeps, this.request)
     }
 
     async getJobReport() {

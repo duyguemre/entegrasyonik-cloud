@@ -16,7 +16,7 @@ export default class InvoiceService extends BaseApi implements IService {
     }
 
     async createManualInvoice(): Promise<any> {
-        return invoices.createManualInvoice(this.clientDB, this.request.data)
+        return invoices.createManualInvoice(this.clientDB, this.request)
     }
 
     async getInvoices(): Promise<any> {
