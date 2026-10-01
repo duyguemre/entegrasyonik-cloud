@@ -61,6 +61,11 @@
     min-height: 44px;
   }
 
+  /* Telefonda fiziksel klavye yok: "Hızlı geçiş" kalır, Ctrl+K ipucu gizlenir. */
+  #app .bo-shell__hint .ek-kbd {
+    display: none;
+  }
+
   /* 2) Satır içi küçük hedefler (kimlik bağlantıları, kopyala, aç/kapa, “tümü →” bağlantıları):
      yerleşimi büyütmeden dokunma alanı 44 × 44'e genişletilir (görünmez ::after). Komşu hedefle çakışırsa
      DOM'da sonraki kazanır; bu yüzden yalnız tek başına duran hedeflere uygulanır. */

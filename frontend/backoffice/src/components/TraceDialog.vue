@@ -16,7 +16,7 @@
       <div class="bo-trace__summary">
         <span><strong class="ek-num">{{ trace.durationMs }} ms</strong> toplam</span>
         <span>{{ trace.events.length }} olay</span>
-        <span v-if="trace.tid">müşteri <RouterLink :to="`/musteriler/${trace.tid}`" @click="$emit('close')">#{{ trace.tid }}</RouterLink></span>
+        <span v-if="trace.tid">müşteri <RouterLink :to="`/musteriler/${trace.tid}`" class="bo-hit" @click="$emit('close')">#{{ trace.tid }}</RouterLink></span>
         <span class="bo-muted">{{ formatDateTime(trace.startedAt) }}</span>
       </div>
       <ol class="bo-trace__list">

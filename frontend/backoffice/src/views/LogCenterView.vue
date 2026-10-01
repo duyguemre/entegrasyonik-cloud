@@ -84,7 +84,7 @@
         <p v-if="tid" class="bo-logs__scope" data-testid="tid-scope">
           <span class="bo-logs__scope-chip">
             <v-icon icon="mdi-storefront-outline" aria-hidden="true" />
-            Müşteri <RouterLink :to="`/musteriler/${tid}`" class="ek-num">#{{ tid }}</RouterLink>
+            Müşteri <RouterLink :to="`/musteriler/${tid}`" class="ek-num bo-hit">#{{ tid }}</RouterLink>
             <button type="button" class="bo-logs__scope-x" :aria-label="`Müşteri #${tid} süzgecini kaldır`" @click="tid = undefined">
               <v-icon icon="mdi-close" aria-hidden="true" />
             </button>
@@ -222,7 +222,7 @@
         <section v-if="trend?.tenants.length" class="bo-drawer__section">
           <h3>Etkilenen müşteriler</h3>
           <div class="bo-drawer__tenants">
-            <RouterLink v-for="t in trend.tenants" :key="t" :to="`/musteriler/${t}`" class="bo-drawer__tenant ek-num">#{{ t }}</RouterLink>
+            <RouterLink v-for="t in trend.tenants" :key="t" :to="`/musteriler/${t}`" class="bo-drawer__tenant ek-num bo-hit">#{{ t }}</RouterLink>
           </div>
         </section>
         <section v-if="trend?.reqIds.length" class="bo-drawer__section">
