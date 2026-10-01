@@ -10,11 +10,13 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import BoChart from '../charts/BoChart.vue'
+import type { ChartTone } from '../charts/chartTheme'
 
 export interface SeriesDef {
   key: string
   label: string
-  tone: 'action' | 'error' | 'warning' | 'neutral' | 'success'
+  /** Grafik temasının tonları (bo-r2b: masaüstü serisi `info`). */
+  tone: ChartTone
 }
 export interface SeriesPoint {
   t: string
