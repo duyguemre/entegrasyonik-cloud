@@ -2,7 +2,7 @@
   <div class="bo-page">
     <BoPageHeader :updated-at="summary.updatedAt.value" :stale="summary.stale.value">
       <template #actions>
-        <EkButton tone="secondary" icon="mdi-refresh" :loading="summary.refreshing.value" data-page-refresh @click="refresh">Yenile</EkButton>
+        <BoAction kind="refresh" :loading="summary.refreshing.value" data-page-refresh @click="refresh" />
       </template>
     </BoPageHeader>
 
@@ -18,8 +18,9 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import BoPageHeader from '@bo/components/shell/BoPageHeader.vue'
+import BoAction from '@bo/components/r2/BoAction.vue'
 import PageVerdict from '@bo/components/verdict/PageVerdict.vue'
-import { EkButton, EkPageTabs } from '@entegrasyonik/ui/components'
+import { EkPageTabs } from '@entegrasyonik/ui/components'
 import { api } from '@bo/api'
 import { useTabQuery } from '@bo/composables/useTabQuery'
 import { useVerdictSources } from '@bo/composables/useVerdictSources'

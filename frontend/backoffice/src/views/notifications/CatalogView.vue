@@ -3,7 +3,7 @@
     <BoPageHeader :updated-at="cat.loadedAt.value ?? undefined" :stale="cat.stale.value">
       <template #actions>
         <EkButton tone="secondary" icon="mdi-email-check-outline" data-testid="test-email" @click="testMail.open('self')">Test e-postası gönder</EkButton>
-        <EkButton tone="secondary" icon="mdi-refresh" :loading="cat.refreshing.value" data-page-refresh @click="cat.load()">Yenile</EkButton>
+        <BoAction kind="refresh" :loading="cat.refreshing.value" data-page-refresh @click="cat.load()" />
       </template>
     </BoPageHeader>
 
@@ -126,6 +126,7 @@ import type { NotificationCatalogItem, TemplatePreview } from '@bo/api/contract'
 import { useResource } from '@bo/composables/useResource'
 import { useGuardedAction } from '@bo/composables/useGuardedAction'
 import BoPageHeader from '@bo/components/shell/BoPageHeader.vue'
+import BoAction from '@bo/components/r2/BoAction.vue'
 import PageVerdict from '@bo/components/verdict/PageVerdict.vue'
 import { catalogVerdict } from './notificationsVerdict'
 import StateBlock from '@bo/components/kit/StateBlock.vue'

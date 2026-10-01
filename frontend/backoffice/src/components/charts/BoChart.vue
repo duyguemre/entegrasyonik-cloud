@@ -57,7 +57,7 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import VChart from 'vue-echarts'
 import { themeMode } from '@bo/theme'
 import { registerCharts } from './register'
-import { CHART_THEME_NAME, type ChartMode } from './chartTheme'
+import { CHART_THEME_NAME, type ChartMode, type ChartTone } from './chartTheme'
 import { buildOption, describeSeries, seriesColor, type ChartKind, type ChartSeries } from './options'
 
 registerCharts()
@@ -76,6 +76,7 @@ const props = withDefaults(
     errorText?: string
     format?: (v: number) => string
     threshold?: { value: number; label: string }
+    categoryTones?: ChartTone[]
     /** Lejant (HTML, erişilebilir metin) — çok serili grafiklerde varsayılan açık. */
     legend?: boolean
     /** "Tablo olarak göster" — sparkline dışında varsayılan açık. */
@@ -112,7 +113,7 @@ onBeforeUnmount(() => mq?.removeEventListener?.('change', onMq))
 
 const hasData = computed(() => props.series.some((s) => s.data.some((v) => v !== 0)))
 const option = computed(() =>
-  buildOption({ kind: props.kind, series: props.series, categories: props.categories, format: props.format, threshold: props.threshold, mode: mode.value, animate: !reduced.value }),
+  buildOption({ kind: props.kind, series: props.series, categories: props.categories, format: props.format, threshold: props.threshold, categoryTones: props.categoryTones, mode: mode.value, animate: !reduced.value }),
 )
 const summaryText = computed(() => {
   const detail = describeSeries(props.series, props.categories, fmt)

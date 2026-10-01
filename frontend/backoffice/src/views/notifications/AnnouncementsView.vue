@@ -3,7 +3,7 @@
     <BoPageHeader :updated-at="loadedAt ?? undefined" :stale="summary.stale.value">
       <template #actions>
         <EkButton tone="primary" icon="mdi-plus" data-testid="new-announcement" @click="router.push('/sistem/duyurular/yeni')">Yeni duyuru</EkButton>
-        <EkButton tone="secondary" icon="mdi-refresh" :loading="list.refreshing.value || list.phase.value === 'loading' || summary.refreshing.value" data-page-refresh @click="refresh">Yenile</EkButton>
+        <BoAction kind="refresh" :loading="list.refreshing.value || list.phase.value === 'loading' || summary.refreshing.value" data-page-refresh @click="refresh" />
       </template>
     </BoPageHeader>
 
@@ -79,6 +79,7 @@ import { api } from '@bo/api'
 import type { Announcement, AnnouncementKind, AnnouncementStatus } from '@bo/api/contract'
 import { useCursorList } from '@bo/composables/useCursorList'
 import BoPageHeader from '@bo/components/shell/BoPageHeader.vue'
+import BoAction from '@bo/components/r2/BoAction.vue'
 import PageVerdict from '@bo/components/verdict/PageVerdict.vue'
 import { useVerdictSources } from '@bo/composables/useVerdictSources'
 import { announcementsVerdict } from './notificationsVerdict'

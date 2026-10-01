@@ -2,7 +2,7 @@
   <div class="bo-page">
     <BoPageHeader :updated-at="summary.updatedAt.value" :stale="summary.stale.value">
       <template #actions>
-        <EkButton tone="secondary" icon="mdi-refresh" :loading="summary.refreshing.value" data-page-refresh @click="refresh">Yenile</EkButton>
+        <BoAction kind="refresh" :loading="summary.refreshing.value" data-page-refresh @click="refresh" />
       </template>
     </BoPageHeader>
 
@@ -125,6 +125,7 @@ import { EkButton, EkCopyButton, EkRelativeTime, EkStatusChip, type StatusTone }
 import BoPanelState, { type PanelState } from '@bo/components/shell/BoPanelState.vue'
 import TraceDialog from '@bo/components/TraceDialog.vue'
 import BoPageHeader from '@bo/components/shell/BoPageHeader.vue'
+import BoAction from '@bo/components/r2/BoAction.vue'
 import PageVerdict from '@bo/components/verdict/PageVerdict.vue'
 import { useVerdictSources } from '@bo/composables/useVerdictSources'
 import { auditVerdict } from './auditVerdict'

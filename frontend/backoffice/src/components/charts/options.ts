@@ -20,6 +20,8 @@ export interface ChartInput {
   format?: (v: number) => string
   /** Yatay eşik çizgisi (ör. hata oranı eşiği) — ince, kesikli, uyarı tonunda. */
   threshold?: { value: number; label: string }
+  /** Halka grafikte dilim tonları (anlamlı: Aktif = success, başarısız = error); yoksa kategorik sıra. */
+  categoryTones?: ChartTone[]
   mode: ChartMode
   animate: boolean
 }
@@ -46,7 +48,7 @@ export function buildOption(input: ChartInput): EChartsCoreOption {
           radius: ['62%', '88%'],
           avoidLabelOverlap: true,
           label: { show: false },
-          data: (input.categories ?? []).map((name, i) => ({ name, value: s?.data[i] ?? 0, itemStyle: { color: toneColor(CATEGORICAL[i % CATEGORICAL.length], mode) } })),
+          data: (input.categories ?? []).map((name, i) => ({ name, value: s?.data[i] ?? 0, itemStyle: { color: toneColor(input.categoryTones?.[i] ?? CATEGORICAL[i % CATEGORICAL.length], mode) } })),
         },
       ],
     }

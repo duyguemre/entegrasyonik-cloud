@@ -1,7 +1,8 @@
 <!--
   BoStat — ÖNEMLİ METRİK KUTUSU (BO2-P1, BO2-12). Tek sayı + etiket + kısa bağlam; isteğe bağlı küçük trend çizgisi
   (BoChart sparkline) ve ayrıntı bağlantısı. Renk yalnız durum taşır (`tone`: sol şerit + değer rengi; nötr varsayılan).
-  Uzun açıklama kutuya YAZILMAZ: `hint` tek satır, ayrıntı `info` ipucunda (ⓘ) ya da `to` bağlantısında.
+  Uzun açıklama kutuya YAZILMAZ: `hint` tek satır, ayrıntı `info`da (ⓘ işareti + üzerine gelince ipucu + ekran okuyucu
+  metni; kutu bağlantıysa iç içe etkileşimli öğe olmaz) ya da `to` bağlantısında.
 
     <BoTileGrid :min="180" dense>
       <BoStat label="Kritik konu" :value="2" tone="critical" hint="Sistem 1 · müşteri 1" to="#sistem" />
@@ -15,16 +16,12 @@
     :class="[`is-${tone}`, { 'is-link': !!to }]"
     v-bind="to ? (isHash ? { href: to } : { to }) : {}"
     :aria-label="to ? `${label}: ${value}${hint ? ` — ${hint}` : ''}` : undefined"
+    :title="info"
     data-bo-stat
   >
     <span class="bo-stat__label">
-      {{ label }}
-      <v-tooltip v-if="info" location="top" max-width="320">
-        <template #activator="{ props: tip }">
-          <v-icon v-bind="tip" class="bo-stat__info" icon="mdi-information-outline" :aria-label="`${label} hakkında`" role="img" tabindex="0" />
-        </template>
-        {{ info }}
-      </v-tooltip>
+      <span class="bo-stat__label-text">{{ label }}</span>
+      <v-icon v-if="info" class="bo-stat__info" icon="mdi-information-outline" aria-hidden="true" />
     </span>
     <span class="bo-stat__value-row">
       <span v-if="loading" class="bo-stat__skel" aria-hidden="true"></span>
@@ -34,6 +31,7 @@
       </span>
     </span>
     <span v-if="hint" class="bo-stat__hint">{{ hint }}</span>
+    <span v-if="info" class="ek-sr-only">{{ info }}</span>
     <BoChart
       v-if="series && series.length > 1"
       class="bo-stat__spark"
@@ -121,9 +119,11 @@ const sparkTone = computed(() => (props.tone === 'critical' ? 'error' : props.to
 }
 
 .bo-stat__label {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: var(--ek-space-1);
+  overflow: hidden;
+  white-space: nowrap;
   color: var(--ek-color-content-muted);
   font-size: var(--ek-type-micro-size);
   line-height: var(--ek-type-micro-line);
@@ -132,16 +132,15 @@ const sparkTone = computed(() => (props.tone === 'critical' ? 'error' : props.to
   text-transform: uppercase;
 }
 
-.bo-stat__info {
-  color: var(--ek-color-content-subtle);
-  font-size: var(--ek-icon-xs);
-  cursor: help;
+.bo-stat__label-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.bo-stat__info:focus-visible {
-  outline: none;
-  border-radius: var(--ek-radius-full);
-  box-shadow: var(--ek-focus-ring);
+.bo-stat__info {
+  flex: none;
+  color: var(--ek-color-content-subtle);
+  font-size: var(--ek-icon-xs);
 }
 
 .bo-stat__value-row {

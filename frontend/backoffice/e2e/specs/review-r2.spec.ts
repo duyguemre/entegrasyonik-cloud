@@ -1,5 +1,5 @@
 // cloud/bo-r2a inceleme kareleri (docs/bo-r2-review/{once,sonra}/) — yalnız BO_REVIEW=1 ile koşar; görsel taban DEĞİLDİR.
-// BO_R2_OUT=once|sonra (varsayılan sonra). Tüm hazır ekranlar 1440 açık + koyu ve 390 açık.
+// BO_R2_OUT=once|sonra (varsayılan sonra); BO_R2_ONLY=<düzenli ifade> yalnız eşleşen kareler. Tüm hazır ekranlar 1440 açık + koyu ve 390 açık.
 // cd frontend/backoffice && PW_CHROMIUM_PATH=/opt/pw-browsers/chromium BO_REVIEW=1 BO_R2_OUT=sonra npx playwright test e2e/specs/review-r2.spec.ts --project=chromium-desktop
 import { test, expect, type Page } from '@playwright/test'
 import { dirname, join } from 'node:path'
@@ -62,9 +62,10 @@ for (const cfg of CONFIGS) {
     await page.getByLabel('Doğrulama kodu').fill('123456')
     await page.getByRole('button', { name: 'Doğrula', exact: true }).click()
     await expect(page).toHaveURL(/\/genel-bakis$/)
-    for (const [name, path] of ROUTES) {
+    const only = process.env.BO_R2_ONLY ? new RegExp(process.env.BO_R2_ONLY) : null
+    for (const [name, path] of ROUTES.filter(([n]) => !only || only.test(n))) {
       await page.goto(path)
-      await expect(page.locator('h1').first()).toBeVisible()
+      await expect(page.locator('h1').first()).toBeVisible({ timeout: 20_000 })
       await shot(page, name, cfg)
     }
     await ctx.close()

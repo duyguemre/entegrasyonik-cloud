@@ -10,7 +10,7 @@
       </template>
       <template #actions>
         <PlatformFilter v-model="platform" label="Platform süzgeci" />
-        <EkButton tone="secondary" icon="mdi-refresh" :loading="res.refreshing.value || res.phase.value === 'loading'" data-page-refresh @click="res.load()">Yenile</EkButton>
+        <BoAction kind="refresh" :loading="res.refreshing.value || res.phase.value === 'loading'" data-page-refresh @click="res.load()" />
       </template>
     </BoPageHeader>
 
@@ -48,12 +48,13 @@
 <script setup lang="ts">
 import { computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { EkButton, EkCard, EkMetricCard } from '@entegrasyonik/ui/components'
+import { EkCard, EkMetricCard } from '@entegrasyonik/ui/components'
 import type { PlatformFilter as Filter } from '@entegrasyonik/ui/platform'
 import { api } from '@bo/api'
 import type { PulseResponse } from '@bo/api/contract'
 import { useResource } from '@bo/composables/useResource'
 import BoPageHeader from '@bo/components/shell/BoPageHeader.vue'
+import BoAction from '@bo/components/r2/BoAction.vue'
 import StateBlock from '@bo/components/kit/StateBlock.vue'
 import SeriesBars, { type SeriesDef } from '@bo/components/kit/SeriesBars.vue'
 import { CLIENT_PLATFORM, PLATFORM_CLASS } from '@bo/utils/labels'

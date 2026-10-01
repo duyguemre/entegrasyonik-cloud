@@ -3,7 +3,7 @@
     <BoPageHeader :updated-at="stats.loadedAt.value ?? undefined" :stale="stats.stale.value">
       <template #actions>
         <CopyViewLink />
-        <EkButton tone="secondary" icon="mdi-refresh" :loading="stats.refreshing.value || list.refreshing.value" data-page-refresh @click="refresh">Yenile</EkButton>
+        <BoAction kind="refresh" :loading="stats.refreshing.value || list.refreshing.value" data-page-refresh @click="refresh" />
       </template>
     </BoPageHeader>
 
@@ -151,6 +151,7 @@ import { useCursorList } from '@bo/composables/useCursorList'
 import { useResource } from '@bo/composables/useResource'
 import { useGuardedAction } from '@bo/composables/useGuardedAction'
 import BoPageHeader from '@bo/components/shell/BoPageHeader.vue'
+import BoAction from '@bo/components/r2/BoAction.vue'
 import PageVerdict from '@bo/components/verdict/PageVerdict.vue'
 import CopyViewLink from '@bo/components/CopyViewLink.vue'
 import { deliveriesVerdict } from './notificationsVerdict'

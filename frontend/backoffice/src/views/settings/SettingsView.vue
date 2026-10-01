@@ -2,7 +2,7 @@
   <div class="bo-page">
     <BoPageHeader :updated-at="cfg.loadedAt ?? undefined" :stale="cfg.stale">
       <template #actions>
-        <EkButton tone="secondary" icon="mdi-refresh" :loading="cfg.refreshing || cfg.phase === 'loading'" data-page-refresh @click="cfg.load()">Yenile</EkButton>
+        <BoAction kind="refresh" :loading="cfg.refreshing || cfg.phase === 'loading'" data-page-refresh @click="cfg.load()" />
       </template>
     </BoPageHeader>
 
@@ -33,6 +33,7 @@
 
 <script setup lang="ts">
 import BoPageHeader from '@bo/components/shell/BoPageHeader.vue'
+import BoAction from '@bo/components/r2/BoAction.vue'
 import { computed, nextTick, onMounted, reactive, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import PageVerdict from '@bo/components/verdict/PageVerdict.vue'

@@ -13,7 +13,7 @@
           <RouterLink :to="`/musteriler/${tid}`" class="bo-sd__tid ek-num" data-testid="tenant-link">Müşteri #{{ tid }}</RouterLink>
         </template>
         <template #actions>
-          <EkButton tone="secondary" icon="mdi-refresh" :loading="res.refreshing.value" data-page-refresh @click="res.load()">Yenile</EkButton>
+          <BoAction kind="refresh" :loading="res.refreshing.value" data-page-refresh @click="res.load()" />
         </template>
       </BoPageHeader>
 
@@ -142,6 +142,7 @@
 
 <script setup lang="ts">
 import BoPageHeader from '@bo/components/shell/BoPageHeader.vue'
+import BoAction from '@bo/components/r2/BoAction.vue'
 import PageVerdict from '@bo/components/verdict/PageVerdict.vue'
 import { CANCEL_HASH, subscriptionDetailVerdict } from './billingVerdict'
 import { computed, nextTick, onMounted, ref, watch } from 'vue'

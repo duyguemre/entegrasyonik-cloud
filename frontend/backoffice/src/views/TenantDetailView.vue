@@ -18,7 +18,7 @@
           <EkButton tone="secondary" icon="mdi-shield-search" @click="router.push({ path: '/denetim', query: { tid: String(tid) } })">Denetim kaydı</EkButton>
           <EkButton tone="secondary" icon="mdi-card-account-details-outline" :disabled="!life.data.value?.trial" @click="router.push(`/abonelikler/${tid}`)">Abonelik</EkButton>
           <CopyViewLink />
-          <EkButton tone="secondary" icon="mdi-refresh" :loading="life.refreshing.value" data-page-refresh @click="refresh">Yenile</EkButton>
+          <BoAction kind="refresh" :loading="life.refreshing.value" data-page-refresh @click="refresh" />
           <EkButton tone="primary" icon="mdi-account-eye-outline" :disabled="!canImpersonate" data-testid="impersonate" @click="imp.open(tid)">Müşterinin gözünden aç</EkButton>
         </template>
       </BoPageHeader>
@@ -234,6 +234,7 @@ import { useResource } from '@bo/composables/useResource'
 import { useGuardedAction } from '@bo/composables/useGuardedAction'
 import { useTabQuery } from '@bo/composables/useTabQuery'
 import BoPageHeader from '@bo/components/shell/BoPageHeader.vue'
+import BoAction from '@bo/components/r2/BoAction.vue'
 import PageVerdict from '@bo/components/verdict/PageVerdict.vue'
 import CopyViewLink from '@bo/components/CopyViewLink.vue'
 import { tenantDetailVerdict } from './tenantDetailVerdict'

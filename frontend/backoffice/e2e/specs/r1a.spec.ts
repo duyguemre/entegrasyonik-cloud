@@ -81,12 +81,12 @@ test.describe('BO-R1a genel bakış', () => {
 
   test('teknik ayrıntı katlanır, açılınca yüklenir ve ?ayrinti=teknik ile paylaşılır', async ({ page }) => {
     await settle(page)
-    await expect(page.getByRole('heading', { name: 'Bağımlılıklar ve podlar', exact: true })).toHaveCount(0)
+    await expect(page.getByRole('heading', { name: 'Bağımlılıklar', exact: true })).toHaveCount(0)
     await page.getByTestId('detail-toggle').click()
     await expect(page).toHaveURL(/ayrinti=teknik/)
-    await expect(page.getByRole('heading', { name: 'Bağımlılıklar ve podlar', exact: true })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Bağımlılıklar', exact: true })).toBeVisible()
     await page.reload()
-    await expect(page.getByRole('heading', { name: 'Bağımlılıklar ve podlar', exact: true })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Bağımlılıklar', exact: true })).toBeVisible()
     await expect(page.getByTestId('detail-toggle')).toHaveAttribute('aria-expanded', 'true')
   })
 })

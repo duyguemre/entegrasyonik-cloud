@@ -2,7 +2,7 @@
   <div class="bo-page">
     <BoPageHeader :updated-at="res.loadedAt.value ?? undefined" :stale="res.stale.value">
       <template #actions>
-        <EkButton tone="secondary" icon="mdi-refresh" :loading="res.refreshing.value || res.phase.value === 'loading'" data-page-refresh @click="res.load()">Yenile</EkButton>
+        <BoAction kind="refresh" :loading="res.refreshing.value || res.phase.value === 'loading'" data-page-refresh @click="res.load()" />
       </template>
     </BoPageHeader>
 
@@ -61,6 +61,7 @@
 
 <script setup lang="ts">
 import BoPageHeader from '@bo/components/shell/BoPageHeader.vue'
+import BoAction from '@bo/components/r2/BoAction.vue'
 import PageVerdict from '@bo/components/verdict/PageVerdict.vue'
 import { cacheVerdict } from './cacheVerdict'
 import { computed, onMounted } from 'vue'

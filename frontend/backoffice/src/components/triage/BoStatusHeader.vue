@@ -143,7 +143,7 @@ const badge = computed(() => HEALTH_BADGE[props.health])
 .bo-sh__verdict {
   margin: 0;
   color: var(--ek-color-content-strong);
-  font-size: var(--ek-type-title-size, var(--ek-type-body-size));
+  font-size: var(--ek-type-title-size);
   font-weight: var(--ek-font-weight-semibold);
   line-height: 1.35;
 }

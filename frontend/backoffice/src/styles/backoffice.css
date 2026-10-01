@@ -9,12 +9,14 @@ body {
 /* Tema geçişi kuralı (ek-theme-switching) ortak pakette: @entegrasyonik/ui/styles app.css. */
 
 .bo-page {
+  /* BO2-10 (R2): dar yan boşluk — içerik ekran alanını kullanır. Yan boşluk 16 px (≤ 600 px: 12 px), üst 20 px; çok geniş
+     ekranlarda okunabilirlik için 1760 px tavan. Bölümler arası tek ritim: 20 px (mobil 16 px). */
   display: flex;
   flex-direction: column;
   gap: var(--ek-space-5);
-  max-width: 1440px;
+  max-width: 1760px;
   margin: 0 auto;
-  padding: var(--ek-space-6) var(--ek-space-6) var(--ek-space-8);
+  padding: var(--ek-space-5) var(--ek-space-4) var(--ek-space-8);
 }
 
 .bo-page__head {
@@ -62,7 +64,7 @@ body {
 
 @media (max-width: 767px) {
   .bo-page {
-    padding: var(--ek-space-4) var(--ek-space-4) var(--ek-space-6);
+    padding: var(--ek-space-4) var(--ek-space-3) var(--ek-space-6);
     gap: var(--ek-space-4);
   }
 }

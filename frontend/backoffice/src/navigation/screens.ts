@@ -109,7 +109,7 @@ export const SCREENS: BoScreen[] = [
     key: 'overview',
     hotkey: 'o',
     label: 'Genel bakış',
-    lede: 'Önce müdahale gerekenler, sonra büyük resim: sistem ve müşteri sorunları öncelik sırasıyla, her birinde ne yapmalı.',
+    lede: 'Önce müdahale gerekenler, sonra sistemin ve müşterilerin büyük resmi.',
     icon: 'mdi-view-dashboard-outline',
     group: 'overview',
     status: 'ready',

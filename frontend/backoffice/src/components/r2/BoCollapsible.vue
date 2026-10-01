@@ -1,12 +1,13 @@
 <!--
   BoCollapsible — DARALTILABİLİR BÖLÜM (BO2-70, BO2-P1). İkinci plandaki ayrıntı (açıklama, kanıt, teknik not) kapalı
   başlar; başlık düğmesi `aria-expanded` + `aria-controls`. İçerik ilk açılışta çizilir (`lazy`), sonra korunur.
-  Sayfa düzeyinde paylaşılabilir ayrıntı için `BoDetailSection` (`?ayrinti=`) kullanılır; bu bileşen kart/madde içidir.
+  `inline`: düğme bulunduğu satıra (ör. eylem satırı) katılır, açılan içerik alt satıra tam genişlikte iner (kapsayıcı
+  `display: flex; flex-wrap: wrap` olmalı). Sayfa düzeyinde paylaşılabilir ayrıntı için `BoDetailSection` (`?ayrinti=`) kullanılır; bu bileşen kart/madde içidir.
 
     <BoCollapsible label="Neden ve ne yapmalı">…</BoCollapsible>
 -->
 <template>
-  <div class="bo-collapse" :class="{ 'is-open': open }" data-bo-collapsible>
+  <div class="bo-collapse" :class="{ 'is-open': open, 'is-inline': inline }" data-bo-collapsible>
     <button type="button" class="bo-collapse__toggle" :aria-expanded="open" :aria-controls="bodyId" @click="toggle">
       <v-icon class="bo-collapse__chev" icon="mdi-chevron-right" aria-hidden="true" />
       <span>{{ open && openLabel ? openLabel : label }}</span>
@@ -21,7 +22,7 @@
 <script setup lang="ts">
 import { ref, useId } from 'vue'
 
-const props = withDefaults(defineProps<{ label: string; openLabel?: string; hint?: string; defaultOpen?: boolean; lazy?: boolean }>(), { lazy: true })
+const props = withDefaults(defineProps<{ label: string; openLabel?: string; hint?: string; defaultOpen?: boolean; lazy?: boolean; inline?: boolean }>(), { lazy: true })
 const emit = defineEmits<{ toggle: [open: boolean] }>()
 const bodyId = `${useId()}-body`
 const open = ref(props.defaultOpen)
@@ -77,6 +78,15 @@ function toggle() {
 
 .bo-collapse__body {
   padding-top: var(--ek-space-2);
+}
+
+.bo-collapse.is-inline {
+  display: contents;
+}
+
+.bo-collapse.is-inline .bo-collapse__body {
+  flex: 1 1 100%;
+  padding-top: 0;
 }
 
 @media (pointer: coarse) {

@@ -9,7 +9,7 @@
           <button v-for="r in RANGES" :key="r.value" type="button" role="radio" class="bo-seg__opt" :aria-checked="range === r.value" @click="range = r.value">{{ r.label }}</button>
         </div>
         <CopyViewLink />
-        <EkButton tone="secondary" icon="mdi-refresh" :loading="loading || summary.refreshing.value" data-page-refresh @click="refresh">Yenile</EkButton>
+        <BoAction kind="refresh" :loading="loading || summary.refreshing.value" data-page-refresh @click="refresh" />
       </template>
     </BoPageHeader>
 
@@ -256,6 +256,7 @@ import BarTrend from '@bo/components/BarTrend.vue'
 import Sparkline from '@bo/components/Sparkline.vue'
 import TraceDialog from '@bo/components/TraceDialog.vue'
 import BoPageHeader from '@bo/components/shell/BoPageHeader.vue'
+import BoAction from '@bo/components/r2/BoAction.vue'
 import CopyViewLink from '@bo/components/CopyViewLink.vue'
 import PageVerdict from '@bo/components/verdict/PageVerdict.vue'
 import { useVerdictSources } from '@bo/composables/useVerdictSources'

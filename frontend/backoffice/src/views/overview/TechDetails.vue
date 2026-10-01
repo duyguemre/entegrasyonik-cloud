@@ -5,75 +5,42 @@
 -->
 <template>
   <div class="bo-td">
-    <div class="bo-td__grid">
-      <EkCard title="Bağımlılıklar ve podlar" subtitle="Hazırlık denetimi ve son 15 dk içinde iş yapan podlar" icon="mdi-server-network" icon-tone="info" :heading-level="3">
-        <BoPanelState v-if="!health" :state="healthError ? 'error' : 'loading'" :error="healthError" :rows="4" @retry="load" />
-        <template v-else>
-          <BoPanelState v-if="health.dependencies.status === 'degraded'" state="degraded" degraded-title="Bağımlılık durumu okunamadı" :degraded-reason="health.dependencies.error" @retry="load" />
-          <ul v-else class="bo-ov-deps">
-            <li v-for="d in deps" :key="d.label">
-              <span class="bo-ov-deps__label">{{ d.label }}</span>
-              <span class="bo-ov-deps__hint">{{ d.hint }}</span>
-              <EkStatusChip :tone="HEALTH[d.state].tone" :label="d.stateLabel ?? HEALTH[d.state].label" dot />
-            </li>
-          </ul>
-          <h4 class="bo-ov-sub">Podlar</h4>
-          <BoPanelState v-if="health.pods.status === 'degraded'" state="degraded" degraded-title="Pod listesi okunamadı" :degraded-reason="health.pods.error" @retry="load" />
-          <BoPanelState v-else-if="!health.pods.items.length" state="empty" empty-title="İş yapan pod yok" empty-text="Son 15 dakikada kira tutan ya da zamanlayıcı çalıştıran pod görülmedi." />
-          <div v-else class="bo-table-wrap bo-table-wrap--flat" tabindex="0" role="region" aria-label="Podlar tablosu">
-            <table class="bo-table" data-density="compact">
-              <caption class="ek-sr-only">Podlar</caption>
-              <thead>
-                <tr><th scope="col">Pod</th><th scope="col" class="is-num">Kira</th><th scope="col" class="is-num">Çalışan iş</th><th scope="col" class="is-num">Görüldü</th></tr>
-              </thead>
-              <tbody>
-                <tr v-for="p in health.pods.items" :key="p.pod">
-                  <th scope="row" class="is-id">
-                    <span class="bo-ov-pod"><span class="bo-ov-pod__dot" aria-hidden="true"></span>{{ p.pod }}</span>
-                    <span v-if="p.self" class="bo-ov-pod__self">bu pod</span>
-                  </th>
-                  <td class="is-num ek-num">{{ p.activeLeases }}</td>
-                  <td class="is-num ek-num">{{ p.runningJobs }}</td>
-                  <td class="is-num is-muted"><EkRelativeTime :value="p.lastSeenAt" /></td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </template>
-      </EkCard>
-      <EkCard title="Kuyruklar" subtitle="BullMQ kuyrukları · DLQ: elle inceleme bekleyen kalıcı hatalar" icon="mdi-tray-full" :heading-level="3">
+    <!-- BO2-P2: üç sakin özet aynı satırda, eş yükseklik ve kenarlardan hizalı (BoTileGrid) -->
+    <BoTileGrid :cols="3" data-testid="tech-row-1">
+      <BoSection title="Bağımlılıklar" description="Hazırlık denetimi (/ready)" icon="mdi-server-network" :heading-level="3">
+        <BoPanelState v-if="!health" :state="healthError ? 'error' : 'loading'" :error="healthError" :rows="3" @retry="load" />
+        <BoPanelState v-else-if="health.dependencies.status === 'degraded'" state="degraded" degraded-title="Bağımlılık durumu okunamadı" :degraded-reason="health.dependencies.error" @retry="load" />
+        <ul v-else class="bo-ov-deps">
+          <li v-for="d in deps" :key="d.label">
+            <span class="bo-ov-deps__label">{{ d.label }}</span>
+            <span class="bo-ov-deps__hint">{{ d.hint }}</span>
+            <EkStatusChip :tone="HEALTH[d.state].tone" :label="d.stateLabel ?? HEALTH[d.state].label" dot />
+          </li>
+        </ul>
+      </BoSection>
+
+      <BoSection title="Kuyruklar" description="BullMQ · DLQ: elle inceleme bekleyen kalıcı hatalar" icon="mdi-tray-full" :heading-level="3">
         <BoPanelState v-if="!health" :state="healthError ? 'error' : 'loading'" :error="healthError" skeleton="table" :rows="2" @retry="load" />
         <BoPanelState v-else-if="health.queues.status === 'degraded'" state="degraded" degraded-title="Kuyruk sayaçları okunamadı" :degraded-reason="health.queues.error" @retry="load" />
-        <div v-else class="bo-table-wrap bo-table-wrap--flat" tabindex="0" role="region" aria-label="Kuyruk sayaçları tablosu">
-          <table class="bo-table" data-density="compact">
-            <caption class="ek-sr-only">Kuyruk sayaçları</caption>
-            <thead>
-              <tr>
-                <th scope="col">Kuyruk</th><th scope="col" class="is-num">Bekleyen</th><th scope="col" class="is-num">İşleniyor</th>
-                <th scope="col" class="is-num">Başarısız</th><th scope="col" class="is-num">DLQ</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="q in health.queues.items" :key="q.name">
-                <th scope="row">
-                  <span class="bo-ov-queue">{{ QUEUE_LABEL[q.name] ?? q.name }}</span>
-                  <span class="bo-ov-queue__code is-id">{{ q.name }}</span>
-                </th>
-                <template v-if="q.available">
-                  <td class="is-num ek-num">{{ formatNumber(q.backlog) }}</td>
-                  <td class="is-num ek-num">{{ formatNumber(q.active) }}</td>
-                  <td class="is-num ek-num" :class="{ 'bo-ov-bad': (q.failed ?? 0) > 0 }">{{ formatNumber(q.failed) }}</td>
-                </template>
-                <td v-else colspan="3" class="is-muted"><v-icon icon="mdi-lan-disconnect" size="14" aria-hidden="true" /> Redis hazır değil — sayaçlar okunamıyor</td>
-                <td class="is-num ek-num" :class="{ 'bo-ov-bad': (q.dlqPending ?? 0) > 0 }">{{ formatNumber(q.dlqPending) }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <RouterLink to="/motor" class="bo-link-more">Motor ve kuyruklar <v-icon icon="mdi-arrow-right" aria-hidden="true" /></RouterLink>
-      </EkCard>
+        <!-- Üçte bir genişlikte tablo yatay kayardı (BO2-71): kuyruk başına dört sayı kutusu. -->
+        <ul v-else class="bo-ov-queues" aria-label="Kuyruk sayaçları">
+          <li v-for="q in health.queues.items" :key="q.name">
+            <p class="bo-ov-queue"><span>{{ QUEUE_LABEL[q.name] ?? q.name }}</span><span class="bo-ov-queue__code bo-id">{{ q.name }}</span></p>
+            <p v-if="!q.available" class="bo-ov-queue__na"><v-icon icon="mdi-lan-disconnect" aria-hidden="true" /> Redis hazır değil — sayaçlar okunamıyor</p>
+            <dl class="bo-ov-qstats">
+              <template v-if="q.available">
+                <div><dt>Bekleyen</dt><dd class="ek-num">{{ formatNumber(q.backlog) }}</dd></div>
+                <div><dt>İşleniyor</dt><dd class="ek-num">{{ formatNumber(q.active) }}</dd></div>
+                <div :class="{ 'bo-ov-bad': (q.failed ?? 0) > 0 }"><dt>Başarısız</dt><dd class="ek-num">{{ formatNumber(q.failed) }}</dd></div>
+              </template>
+              <div :class="{ 'bo-ov-bad': (q.dlqPending ?? 0) > 0 }"><dt>DLQ</dt><dd class="ek-num">{{ formatNumber(q.dlqPending) }}</dd></div>
+            </dl>
+          </li>
+        </ul>
+        <template #footer><RouterLink to="/motor" class="bo-link-more">Motor ve kuyruklar <v-icon icon="mdi-arrow-right" aria-hidden="true" /></RouterLink></template>
+      </BoSection>
 
-      <EkCard title="Veri alımı" subtitle="Kanal başına yeni iş kabulü (intake) — süreç anlık görüntüsü" icon="mdi-valve" :heading-level="3">
+      <BoSection title="Veri alımı" description="Kanal başına yeni iş kabulü (intake)" icon="mdi-valve" :heading-level="3">
         <BoPanelState v-if="!health" :state="healthError ? 'error' : 'loading'" :error="healthError" :rows="2" @retry="load" />
         <BoPanelState v-else-if="health.intake.status === 'degraded'" state="degraded" degraded-title="Alım durumu okunamadı" :degraded-reason="health.intake.error" @retry="load" />
         <div v-else-if="health.intake.allOpen" class="bo-ov-intake-ok">
@@ -87,33 +54,58 @@
             <EkStatusChip :tone="INTAKE[r.intake]?.tone ?? 'neutral'" :label="INTAKE[r.intake]?.label ?? r.intake" dot />
           </li>
         </ul>
-        <p class="bo-ov-foot">Kısıtlı olmayan kanallar normal çalışır. Değişiklik: Entegrasyonlar › dayanıklılık (gerekçe + kimlik doğrulama).</p>
-      </EkCard>
-    </div>
+        <template #footer><p class="bo-ov-foot">Kısıtlı olmayan kanallar normal çalışır. Değişiklik: Entegrasyonlar › dayanıklılık (gerekçe + kimlik doğrulama).</p></template>
+      </BoSection>
+    </BoTileGrid>
 
-    <EkCard title="Son yönetim işlemleri" subtitle="Yönetim yazmaları ve geçici erişimler · son 7 gün" icon="mdi-clipboard-text-clock-outline" :heading-level="3">
-      <BoPanelState v-if="auditState !== 'ready'" :state="auditState" skeleton="table" :rows="4" empty-title="Son 7 günde yönetim işlemi yok" @retry="load" />
-      <ul v-else class="bo-ov-audit">
-        <li v-for="a in audit" :key="a.id">
-          <span class="bo-ov-audit__time"><EkRelativeTime :value="a.at" /></span>
-          <span class="bo-ov-audit__main">
-            <span class="bo-ov-audit__op">{{ a.meta?.op ?? a.event }}</span>
-            <span v-if="a.meta?.reason" class="bo-ov-audit__reason">“{{ a.meta.reason }}”</span>
-          </span>
-          <code class="bo-ov-audit__event">{{ a.event }}</code>
-          <RouterLink v-if="a.reqId" class="bo-ov-audit__open" :to="{ path: '/denetim', query: { reqId: a.reqId } }" :aria-label="`Denetim kaydını aç: ${a.meta?.op ?? a.event}`">
-            <v-icon icon="mdi-arrow-top-right" aria-hidden="true" />
-          </RouterLink>
-        </li>
-      </ul>
-      <RouterLink to="/denetim" class="bo-link-more">Tüm denetim kayıtları <v-icon icon="mdi-arrow-right" aria-hidden="true" /></RouterLink>
-    </EkCard>
+    <!-- Ayrıntı listeleri: iki geniş kutu, eş yükseklik -->
+    <BoTileGrid :cols="2" data-testid="tech-row-2">
+      <BoSection title="Podlar" description="Son 15 dk içinde kira tutan ya da iş çalıştıran süreçler" icon="mdi-server" :heading-level="3">
+        <BoPanelState v-if="!health" :state="healthError ? 'error' : 'loading'" :error="healthError" skeleton="table" :rows="3" @retry="load" />
+        <BoPanelState v-else-if="health.pods.status === 'degraded'" state="degraded" degraded-title="Pod listesi okunamadı" :degraded-reason="health.pods.error" @retry="load" />
+        <BoPanelState v-else-if="!health.pods.items.length" state="empty" empty-title="İş yapan pod yok" empty-text="Son 15 dakikada kira tutan ya da zamanlayıcı çalıştıran pod görülmedi." />
+        <BoTableFrame v-else label="Podlar" flat>
+          <template #head>
+            <tr><th scope="col">Pod</th><th scope="col" class="is-num">Kira</th><th scope="col" class="is-num">Çalışan iş</th><th scope="col" class="is-num">Görüldü</th></tr>
+          </template>
+          <tr v-for="p in health.pods.items" :key="p.pod">
+            <th scope="row" class="is-id">
+              <span class="bo-ov-pod"><span class="bo-ov-pod__dot" aria-hidden="true"></span>{{ p.pod }}</span>
+              <span v-if="p.self" class="bo-ov-pod__self">bu pod</span>
+            </th>
+            <td class="is-num ek-num">{{ p.activeLeases }}</td>
+            <td class="is-num ek-num">{{ p.runningJobs }}</td>
+            <td class="is-num is-muted"><EkRelativeTime :value="p.lastSeenAt" /></td>
+          </tr>
+        </BoTableFrame>
+      </BoSection>
+
+      <BoSection title="Son yönetim işlemleri" description="Yönetim yazmaları ve geçici erişimler · son 7 gün" icon="mdi-clipboard-text-clock-outline" :heading-level="3">
+        <BoPanelState v-if="auditState !== 'ready'" :state="auditState" skeleton="table" :rows="4" empty-title="Son 7 günde yönetim işlemi yok" @retry="load" />
+        <ul v-else class="bo-ov-audit">
+          <li v-for="a in audit" :key="a.id">
+            <span class="bo-ov-audit__time"><EkRelativeTime :value="a.at" /></span>
+            <span class="bo-ov-audit__main">
+              <span class="bo-ov-audit__op">{{ a.meta?.op ?? a.event }}</span>
+              <span v-if="a.meta?.reason" class="bo-ov-audit__reason" :title="String(a.meta.reason)">“{{ a.meta.reason }}”</span>
+            </span>
+            <RouterLink v-if="a.reqId" class="bo-ov-audit__open" :to="{ path: '/denetim', query: { reqId: a.reqId } }" :aria-label="`Denetim kaydını aç: ${a.meta?.op ?? a.event}`" :title="a.event">
+              <v-icon icon="mdi-arrow-top-right" aria-hidden="true" />
+            </RouterLink>
+          </li>
+        </ul>
+        <template #footer><RouterLink to="/denetim" class="bo-link-more">Tüm denetim kayıtları <v-icon icon="mdi-arrow-right" aria-hidden="true" /></RouterLink></template>
+      </BoSection>
+    </BoTileGrid>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
-import { EkCard, EkRelativeTime, EkStatusChip, type StatusTone } from '@entegrasyonik/ui/components'
+import { EkRelativeTime, EkStatusChip, type StatusTone } from '@entegrasyonik/ui/components'
+import BoSection from '@bo/components/r2/BoSection.vue'
+import BoTileGrid from '@bo/components/r2/BoTileGrid.vue'
+import BoTableFrame from '@bo/components/r2/BoTableFrame.vue'
 import { formatNumber } from '@entegrasyonik/ui/format'
 import BoPanelState, { type PanelState } from '@bo/components/shell/BoPanelState.vue'
 import { api } from '@bo/api'
@@ -187,18 +179,10 @@ const auditState = computed<PanelState>(() => (audit.value === null ? (auditFail
   gap: var(--ek-space-4);
 }
 
-.bo-td__grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--ek-space-4);
-  align-items: start;
-}
-
 .bo-link-more {
   display: inline-flex;
   align-items: center;
   gap: var(--ek-space-1);
-  margin-top: var(--ek-space-3);
   border-radius: var(--ek-radius-sm);
   color: var(--ek-color-action-emphasis);
   font-size: var(--ek-type-label-size);
@@ -250,15 +234,6 @@ const auditState = computed<PanelState>(() => (audit.value === null ? (auditFail
   grid-area: chip;
 }
 
-.bo-ov-sub {
-  margin: var(--ek-space-4) 0 var(--ek-space-2);
-  color: var(--ek-color-content-muted);
-  font-size: var(--ek-type-micro-size);
-  font-weight: var(--ek-type-micro-weight);
-  letter-spacing: var(--ek-type-micro-tracking);
-  text-transform: uppercase;
-}
-
 .bo-table-wrap--flat {
   border-radius: var(--ek-radius-lg);
   box-shadow: none;
@@ -290,8 +265,7 @@ const auditState = computed<PanelState>(() => (audit.value === null ? (auditFail
   font-size: var(--ek-type-caption-size);
 }
 
-.bo-ov-queue {
-  display: block;
+.bo-ov-queue > span:first-child {
   color: var(--ek-color-content-strong);
   font-weight: var(--ek-font-weight-medium);
 }
@@ -315,14 +289,20 @@ const auditState = computed<PanelState>(() => (audit.value === null ? (auditFail
 }
 
 .bo-ov-foot {
-  margin: var(--ek-space-3) 0 0;
+  margin: 0;
   color: var(--ek-color-content-muted);
   font-size: var(--ek-type-caption-size);
 }
 
+.bo-ov-audit {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
 .bo-ov-audit li {
   display: grid;
-  grid-template-columns: 110px minmax(0, 1fr) auto 28px;
+  grid-template-columns: 96px minmax(0, 1fr) 28px;
   align-items: center;
   gap: var(--ek-space-3);
   min-height: 44px;
@@ -357,15 +337,6 @@ const auditState = computed<PanelState>(() => (audit.value === null ? (auditFail
   white-space: nowrap;
 }
 
-.bo-ov-audit__event {
-  padding: 2px var(--ek-space-2);
-  border-radius: var(--ek-radius-sm);
-  background: var(--ek-color-surface-muted);
-  color: var(--ek-color-content-default);
-  font-family: var(--ek-font-mono);
-  font-size: var(--ek-type-caption-size);
-}
-
 .bo-ov-audit__open {
   display: inline-flex;
   align-items: center;
@@ -390,7 +361,7 @@ const auditState = computed<PanelState>(() => (audit.value === null ? (auditFail
 
   .bo-ov-audit li {
     grid-template-columns: minmax(0, 1fr) 28px;
-    grid-template-areas: 'time open' 'main open' 'event open';
+    grid-template-areas: 'time open' 'main open';
     gap: var(--ek-space-1) var(--ek-space-3);
     padding: var(--ek-space-2) 0;
   }
@@ -403,11 +374,6 @@ const auditState = computed<PanelState>(() => (audit.value === null ? (auditFail
     grid-area: main;
   }
 
-  .bo-ov-audit__event {
-    grid-area: event;
-    justify-self: start;
-  }
-
   .bo-ov-audit__open {
     grid-area: open;
   }
@@ -417,9 +383,68 @@ const auditState = computed<PanelState>(() => (audit.value === null ? (auditFail
   }
 }
 
-@media (max-width: 1099px) {
-  .bo-td__grid {
-    grid-template-columns: 1fr;
-  }
+.bo-ov-queues {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ek-space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.bo-ov-queue {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--ek-space-2);
+  margin: 0 0 var(--ek-space-2);
+}
+
+.bo-ov-queue__na {
+  display: flex;
+  align-items: center;
+  gap: var(--ek-space-1);
+  margin: 0 0 var(--ek-space-2);
+  color: var(--ek-color-warning-emphasis);
+  font-size: var(--ek-type-caption-size);
+  line-height: var(--ek-type-caption-line);
+}
+
+.bo-ov-qstats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ek-space-2);
+  margin: 0;
+}
+
+.bo-ov-qstats > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--ek-space-2) var(--ek-space-3);
+  border: 1px solid var(--ek-color-border-subtle);
+  border-radius: var(--ek-radius-md);
+  background: var(--ek-color-surface-muted);
+}
+
+.bo-ov-qstats dt {
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-micro-size);
+  line-height: var(--ek-type-micro-line);
+  font-weight: var(--ek-type-micro-weight);
+  letter-spacing: var(--ek-type-micro-tracking);
+  text-transform: uppercase;
+}
+
+.bo-ov-qstats dd {
+  margin: 0;
+  color: var(--ek-color-content-strong);
+  font-size: var(--ek-type-heading-size);
+  line-height: var(--ek-type-heading-line);
+  font-weight: var(--ek-type-heading-weight);
+}
+
+.bo-ov-qstats .bo-ov-bad dd {
+  color: var(--ek-color-error-emphasis);
 }
 </style>

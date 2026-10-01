@@ -3,7 +3,7 @@
     <BoPageHeader :updated-at="updatedAt" :stale="stale">
       <template #actions>
         <CopyViewLink />
-        <EkButton tone="secondary" icon="mdi-refresh" :loading="loading" data-page-refresh @click="load">Yenile</EkButton>
+        <BoAction kind="refresh" :loading="loading" data-page-refresh @click="load" />
       </template>
     </BoPageHeader>
 
@@ -142,10 +142,11 @@
 <script setup lang="ts">
 import { computed, onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { EkButton, EkChannelDot, EkCopyButton, EkRelativeTime, EkStatusChip } from '@entegrasyonik/ui/components'
+import { EkChannelDot, EkCopyButton, EkRelativeTime, EkStatusChip } from '@entegrasyonik/ui/components'
 import { formatDate } from '@entegrasyonik/ui/format'
 import CopyViewLink from '@bo/components/CopyViewLink.vue'
 import BoPageHeader from '@bo/components/shell/BoPageHeader.vue'
+import BoAction from '@bo/components/r2/BoAction.vue'
 import PageVerdict from '@bo/components/verdict/PageVerdict.vue'
 import BoPanelState, { type PanelState } from '@bo/components/shell/BoPanelState.vue'
 import { api } from '@bo/api'

@@ -5,7 +5,7 @@
         <span><v-icon icon="mdi-shield-lock-outline" size="small" aria-hidden="true" /> Her görüntüleme hassas okuma olarak denetime yazılır.</span>
       </template>
       <template #actions>
-        <EkButton v-if="tid" tone="secondary" icon="mdi-refresh" :loading="list.refreshing.value || list.phase.value === 'loading'" data-page-refresh @click="list.reload({ keep: true })">Yenile</EkButton>
+        <BoAction v-if="tid" kind="refresh" :loading="list.refreshing.value || list.phase.value === 'loading'" data-page-refresh @click="list.reload({ keep: true })" />
       </template>
     </BoPageHeader>
 
@@ -91,6 +91,7 @@ import { api } from '@bo/api'
 import type { DeliveryStatus, TenantHistoryRow } from '@bo/api/contract'
 import { useCursorList } from '@bo/composables/useCursorList'
 import BoPageHeader from '@bo/components/shell/BoPageHeader.vue'
+import BoAction from '@bo/components/r2/BoAction.vue'
 import PageVerdict from '@bo/components/verdict/PageVerdict.vue'
 import { tenantHistoryVerdict } from './notificationsVerdict'
 import StateBlock from '@bo/components/kit/StateBlock.vue'

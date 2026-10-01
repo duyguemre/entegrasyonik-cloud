@@ -3,7 +3,7 @@
     <BoPageHeader :updated-at="loadedAt ?? undefined" :stale="stale" :auto-refresh="30">
       <template #actions>
         <CopyViewLink />
-        <EkButton tone="secondary" icon="mdi-refresh" :loading="list.refreshing.value || list.phase.value === 'loading' || firingSrc.refreshing.value" data-page-refresh @click="refresh">Yenile</EkButton>
+        <BoAction kind="refresh" :loading="list.refreshing.value || list.phase.value === 'loading' || firingSrc.refreshing.value" data-page-refresh @click="refresh" />
       </template>
     </BoPageHeader>
 
@@ -116,6 +116,7 @@ import type { AlertLevel, AlertRow, AlertStatus } from '@bo/api/contract'
 import { useCursorList } from '@bo/composables/useCursorList'
 import { useGuardedAction } from '@bo/composables/useGuardedAction'
 import BoPageHeader from '@bo/components/shell/BoPageHeader.vue'
+import BoAction from '@bo/components/r2/BoAction.vue'
 import PageVerdict from '@bo/components/verdict/PageVerdict.vue'
 import CopyViewLink from '@bo/components/CopyViewLink.vue'
 import { useVerdictSources } from '@bo/composables/useVerdictSources'
