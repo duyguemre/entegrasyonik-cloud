@@ -61,6 +61,15 @@ export class VariantRepository {
         return await this.model.updateMany(filter, { $set: set })
     }
 
+    /** Aynı `maincode`'lu varyantların `images` dizisinden tek görsel URL'sini çeker. */
+    async pullImageUrl(maincode: any, url: any): Promise<any> {
+        return await this.model.updateMany({ maincode }, { $pull: { images: url } })
+    }
+
+    async pullImageUrls(maincode: any, urls: any[]): Promise<any> {
+        return await this.model.updateMany({ maincode }, { $pull: { images: { $in: urls } } })
+    }
+
     async deleteMany(filter: any): Promise<any> {
         return await this.model.deleteMany(filter)
     }
