@@ -414,7 +414,7 @@ Sözleşme `docs/API_BACKOFFICE_USAGE.md`; karar K55. K51 sayfa hiyerarşisi (Du
 | Yapı taşı | Yer | Kural |
 |---|---|---|
 | `usageVerdict.ts` | `views/usage/` | SAF hüküm: `{tone, title, sentence, decisions[], actions[]}`. Eşikler yalnız burada (`UNKNOWN_SHARE_WARN` %20, `MOBILE_MAJORITY` %50, `INACTIVE_DAYS_WARN` 7). Okunamayan (degraded) ≠ "kullanım yok"; hesaplanamayan ayrı hüküm. Eylem ≤ 3, hepsi bağlantı. |
-| `UsageVerdictBlock` | `views/usage/` | Durum (h2 + tek cümle, `role=status`) → "Müdahale gerekir mi?" → "Ne yapılabilir?". < 768 px tek sütun. Ton sol kenar + ikon + metin (renk tek başına anlam taşımaz). |
+| ~~`UsageVerdictBlock`~~ | — | bo-wdg: kaldırıldı; müşteri detayı Kullanım sekmesi de ortak `PageVerdict` (`toPageVerdict`) kullanır. |
 | `PlatformBreakdown` | `views/usage/` | Ana kırılım Masaüstü / Mobil (+ varsa Belirlenemedi) her zaman görünür; alt türler `<details>` içinde. `MeterList` (değer metin). |
 | `PlatformFilter` | `views/usage/` | `.bo-seg` Tümü/Masaüstü/Mobil + "Alt tür" seçimi; değer URL'de `?platform=` (`platformFromQuery`). Alt tür seçiliyken segmentte işaret yok. |
 | Etiketler | `utils/labels.ts` `PLATFORM_CLASS`, `CLIENT_PLATFORM` | Ekranda satır içi platform adı yazılmaz. Değer listesi `@entegrasyonik/ui/platform` (tek kaynak). |
@@ -528,3 +528,23 @@ kullanır; yerel kopya yazılmaz** — mandal `tests/r2-system.test.ts` (azalan 
 | Yerel sayfalama | `pagination` | 6 |
 | Yerel bölüm başlığı | `section-head` | 24 |
 Taban **yalnız azalır**: bir sayfa taşındığında test "tabanı düşürün" der → `R2_BASELINE_WRITE=1 npx vitest run tests/r2-system.test.ts`.
+
+## 13. Web arayüz kuralları katmanı (BO-WDG, K60) — **yeni ekran yazanlar için**
+Denetim: `docs/bo-wdg/AUDIT.md`, rapor: `docs/bo-wdg/REPORT.md`. Aşağıdakiler ortak katmanda çözüldü; sayfa yeniden yazmaz.
+- **Yıkıcı eylem:** sunucu yazması → `GuardedDialog`/`DangerActionDialog` (§6) + `tenant`/`scope` (Etkilenen satırı) +
+  başarıda `notifyAuditedAt(metin, { tid })` (`utils/toast.ts`, "Denetim kaydını aç"). Yerel kayıt silme (görünüm, cihaz,
+  taslak, sohbet) → `EkConfirmDialog` tone danger ya da toast'ta "Geri al". Onaysız silme yok.
+- **Kaydedilmemiş değişiklik:** `useLeaveGuard(isDirty)` (`composables/`) — yönlendirici ayrılışında onay + `beforeunload`;
+  sayfa `EkConfirmDialog`'u `leave.open` ile bağlar, kayıttan sonra `leave.allow()`. Yenile düzenlemeyi silmez (ayarlar korur).
+- **Form hataları:** sunucu alan hatası alanın `:error-messages`'ına (aria-invalid + açıklama), odak ilk hatalı alana; Kaydet
+  istek başlayana dek etkin (duyuru editörü). Kod/e-posta alanlarında `spellcheck="false" autocapitalize="off"`.
+- **Odak:** gezinmeden sonra odak `#bo-main` (girişten ilk geçiş hariç); kendini kaldıran düğmeler (Filtreleri temizle,
+  "N madde daha") odağı bir sonraki mantıklı öğeye verir; `forced-colors` kipinde genel odak çizgisi (`packages/ui` app.css).
+- **Canlı bölgeler:** `aria-live` öğesi `v-if` içinde olmaz (kalıcı, yalnız metin değişir): `BoFilterBar` sayaç,
+  `BoPanelState`/`StateBlock` hata, `BoPageHeader` "yenilenemedi".
+- **Taşma:** kullanıcı metni ve uzun kimlikler `overflow-wrap: anywhere` + esnek çocukta `min-width: 0`; sayfa düzeyinde
+  `nowrap` yaması yazılmaz. `BoDataTable` kaydırma bölgesi kendiliğinden odaklanır (sayfada `tabindex` yazılmaz).
+- **Sayılar:** ekranda her sayı `formatCount`/`formatPercent` + `ek-num`; göreli zaman `@bo/utils/format`.
+- **Ad = görünen metin:** `aria-label` görünen etiketi içerir ("İşleri göster — KOD"); satır düğmeleri benzersiz ad taşır
+  (`BoAction :object`).
+
