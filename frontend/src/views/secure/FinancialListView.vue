@@ -228,13 +228,11 @@
       </template>
       <template #cell-channel="{ row }"><EkChannelDot :code="row.integrationCode" /></template>
       <template #cell-transactionType="{ row }">
-        <v-tooltip :text="row.platformType" location="top">
-          <template v-slot:activator="{ props }">
-            <span v-bind="props" tabindex="0">
-              <EkStatusChip :tone="typeTone(row.transactionType)" :label="translateTransactionType(row.transactionType)" />
-            </span>
-          </template>
-        </v-tooltip>
+        <EkTooltip :text="row.platformType" location="top">
+          <span tabindex="0">
+            <EkStatusChip :tone="typeTone(row.transactionType)" :label="translateTransactionType(row.transactionType)" />
+          </span>
+        </EkTooltip>
       </template>
       <template #cell-amount="{ row }">
         <!-- FR2-FIN 38: alacak ve kesinti ayrı, etiketli; sıfır kalem "—" (gürültü yok). -->
@@ -268,7 +266,7 @@
 </template>
 
 <script setup lang="ts">
-import { EkSelect, EkRowActions, EkButton, EkDateField, EkChannelDot, EkStatusChip, EkPageTabs, type EkPageTab } from '@entegrasyonik/ui/components'
+import { EkSelect, EkRowActions, EkButton, EkDateField, EkChannelDot, EkStatusChip, EkPageTabs, EkTooltip, type EkPageTab } from '@entegrasyonik/ui/components'
 import type { EkGridColumn, EkGridSort, EkActiveFilterChip } from '@entegrasyonik/ui/components'
 import { channelOptionsFrom } from '@entegrasyonik/ui/components/selectOptions'
 import { ref, reactive, computed, watch } from 'vue';

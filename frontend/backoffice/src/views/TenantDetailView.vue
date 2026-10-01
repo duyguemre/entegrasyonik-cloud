@@ -187,7 +187,7 @@ async function startImpersonation() {
   display: flex;
   align-items: center;
   gap: var(--ek-space-2);
-  color: var(--ek-color-content-subtle);
+  color: var(--ek-color-content-muted);
   font-size: var(--ek-type-label-size);
 }
 

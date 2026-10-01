@@ -245,7 +245,7 @@ defineExpose({ init })
 }
 
 .cpe-disc.is-none {
-  color: var(--ek-color-content-subtle);
+  color: var(--ek-color-content-muted);
 }
 
 /* 2) kanal tablosu */
@@ -382,7 +382,7 @@ defineExpose({ init })
 }
 
 .cpe-diff.is-same {
-  color: var(--ek-color-content-subtle);
+  color: var(--ek-color-content-muted);
 }
 
 .cpe-diff__ref {

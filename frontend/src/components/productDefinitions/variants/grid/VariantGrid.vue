@@ -681,7 +681,7 @@ const CellBody = defineComponent({
 
 :deep(.vg-val) { display: inline-flex; align-items: center; gap: var(--ek-space-1); max-width: 100%; }
 :deep(.vg-val.is-strong) { color: var(--ek-color-content-strong); font-weight: 600; }
-:deep(.vg-val.is-empty) { color: var(--ek-color-content-subtle); }
+:deep(.vg-val.is-empty) { color: var(--ek-color-content-muted); }
 :deep(.vg-issue) { display: inline-flex; flex: 0 0 auto; }
 :deep(.vg-issue__icon) { font-size: var(--ek-icon-sm); line-height: 1; }
 :deep(.vg-issue--error) { color: var(--ek-color-error); }

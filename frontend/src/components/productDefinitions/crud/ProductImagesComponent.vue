@@ -1054,7 +1054,7 @@ kbd {
 
 .pig-tile__dim {
   flex: none;
-  color: var(--ek-color-content-subtle);
+  color: var(--ek-color-content-muted);
 }
 
 .pig-tile__open {

@@ -82,7 +82,8 @@
             color="error" class="ek-printout__delete">{{ $t("printouts.printout.delete") }}</v-btn>
         </div>
 
-        <div class="ek-printout__canvas-scroll">
+        <!-- fe-polish (axe scrollable-region-focusable): dar ekranda yatay kayan kâğıt alanı klavyeyle de kaydırılabilir. -->
+        <div class="ek-printout__canvas-scroll" tabindex="0" role="region" aria-label="Şablon kâğıdı">
           <v-card id="a4" :height="selectedPaperSize.height" :width="selectedPaperSize.width" @drop="drop"
             class="ek-printout__canvas" elevation="0" @dragover="allowDrop" @dragend="dragLeave">
           </v-card>
@@ -766,6 +767,12 @@ var openUpdate = (id: number) => {
 .ek-printout__canvas-scroll {
   overflow: auto;
   max-width: 100%;
+}
+
+.ek-printout__canvas-scroll:focus-visible {
+  outline: none;
+  border-radius: var(--ek-radius-sm);
+  box-shadow: var(--ek-focus-ring);
 }
 
 .ek-printout__canvas {

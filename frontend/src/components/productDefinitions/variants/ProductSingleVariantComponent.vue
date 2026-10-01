@@ -221,7 +221,7 @@ const channelPriceRows = computed(() => channelRows(
 }
 
 .psvc-cp__src {
-  color: var(--ek-color-content-subtle);
+  color: var(--ek-color-content-muted);
   font-size: var(--ek-type-caption-size);
 }
 
