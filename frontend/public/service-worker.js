@@ -75,3 +75,62 @@ self.addEventListener('fetch', (event) => {
     )
   )
 })
+
+// MOB-04 — web push (ADR-0029 Karar 4). İçerik sunucuda hassas veri içermez (başlık + kısa metin + uygulama içi yol).
+// Gösterim her zaman yapılır (`userVisibleOnly`); bozuk/bilinmeyen yükte genel metin. Yalnız uygulama içi göreli yol açılır.
+const PUSH_FALLBACK = { title: 'Entegrasyonik', body: 'Yeni bir bildiriminiz var.', url: '/notifications', tag: 'ek-push' }
+
+/** Uygulama içi göreli yol mu ('/' ile başlar; '//' , '\\' ve denetim karakteri yok). Değilse bildirim merkezi. */
+function safePushPath(p) {
+  if (typeof p !== 'string' || p.charAt(0) !== '/' || p.charAt(1) === '/' || p.indexOf('\\') !== -1 || p.length > 300) return PUSH_FALLBACK.url
+  for (let i = 0; i < p.length; i++) if (p.charCodeAt(i) < 0x20) return PUSH_FALLBACK.url
+  return p
+}
+
+function pushContent(data) {
+  let d = null
+  try {
+    d = data ? data.json() : null
+  } catch (e) {
+    d = null
+  }
+  if (!d || d.v !== 1) return PUSH_FALLBACK
+  const text = (v, max, dflt) => (typeof v === 'string' && v.trim() ? v.trim().slice(0, max) : dflt)
+  return {
+    title: text(d.title, 80, PUSH_FALLBACK.title),
+    body: text(d.body, 160, PUSH_FALLBACK.body),
+    url: safePushPath(d.url),
+    tag: text(d.tag, 64, PUSH_FALLBACK.tag),
+    urgent: d.severity === 'critical' || d.severity === 'error',
+  }
+}
+
+self.addEventListener('push', (event) => {
+  const c = pushContent(event.data)
+  event.waitUntil(
+    self.registration.showNotification(c.title, {
+      body: c.body,
+      tag: c.tag,
+      renotify: !!c.urgent,
+      icon: '/icons/icon-192.png',
+      badge: '/icons/icon-192.png',
+      data: { url: c.url },
+    })
+  )
+})
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close()
+  const path = safePushPath(event.notification.data && event.notification.data.url)
+  const target = new URL(path, self.location.origin).href
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
+      for (const client of list) {
+        if (new URL(client.url).origin === self.location.origin && 'focus' in client) {
+          return client.focus().then((c) => (c && 'navigate' in c ? c.navigate(target) : c))
+        }
+      }
+      return self.clients.openWindow ? self.clients.openWindow(target) : undefined
+    })
+  )
+})

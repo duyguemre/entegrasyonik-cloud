@@ -69,6 +69,7 @@ export const OPERATION_POLICY_SNAPSHOT: SnapshotPolicy = {
         get: M, markAsRead: M, delete: M, getUnreadCount: M /* §6: hafif rozet sorgusu (salt-okunur sayım) */,
         // ADR-0029 NB4: kişisel (M) + tenant varsayılanı (A, settings:manage)
         archive: M, unarchive: M, getCatalog: M, getPreferences: M, updatePreferences: M, getTenantDefaults: A, updateTenantDefaults: A,
+        getPushConfig: M, subscribePush: M, unsubscribePush: M, // MOB-04 web push (self:manage)
     },
     MessageService: { getMessages: M, replyMessage: M, markAsRead: M, deleteMessage: M, bulkDeleteMessages: M },
     TicketService: { getTickets: M, openTicket: M, sendTicketMessage: M, closeTicket: M },
