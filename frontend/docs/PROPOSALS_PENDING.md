@@ -234,3 +234,18 @@ sözleşmesinin DIŞINA çıkan ya da akış değiştiren maddelerdir; HİÇBİR
   (menü verisi backend'de — P11 ile birlikte değerlendirilir).
 - **C09 — Doğrudan termal yazdırma (ZPL) ve 203/300 dpi barkod modül yuvarlama:** bugün tarayıcı yazdırma + vektör
   SVG barkod (ölçekte bulanıklık yok). Termal yazıcı dağılımı netleşince (araştırma Q2) değerlendirilir.
+
+## Mobil + PWA + masaüstü kabuğu (cloud/fe-mobdesk, 2026-10-01) — MOB-00, MOB-01, DESK-00
+
+Uygulanan bariz düzeltmeler ve ölçümler: `docs/fe-mobdesk-review/README.md`. Aşağıdakiler akış, bilgi mimarisi veya
+dağıtım kararı içerdiği için UYGULANMADI.
+
+| # | Tarih | Kaynak | Öneri | Neden onay gerekiyor | Durum |
+|---|---|---|---|---|---|
+| P-MD-1 | 2026-10-01 | cloud/fe-mobdesk | **Kart görünümünde sıralama.** 360–430 px'te liste satırları karta dönüşüyor ama kolon başlığı satırı (SİPARİŞ NO · KANAL · DURUM …) yerinde kalıyor ve sağda kırpılıyor (ızgaranın kendi içinde kayıyor; sayfa kaymıyor). Öneri: kart görünümünde başlık satırı yerine tek "Sırala" seçimi (alan + yön) ve "Tümünü seç" onay kutusu. | Sıralama etkileşimi değişir (EkDataGrid, tüm listeler) | BEKLİYOR |
+| P-MD-2 | 2026-10-01 | cloud/fe-mobdesk | **Telefonda sekme şeridi ve tutamak.** Dokunmatikte tutamak (üst bölümü daralt / odak modu) hep açık; çakışma giderildi ama şerit ~100 px daralıyor ve 360 px'te 1,5 sekme görünüyor. Öneri: <600 px'te sekme şeridi yerine tek "Açık sekmeler (n)" seçici; daralt/odak modu hesap menüsüne. | Bilgi mimarisi (kabuk) | BEKLİYOR |
+| P-MD-3 | 2026-10-01 | cloud/fe-mobdesk | **Kurulum kartının zamanı.** Kart mobilde (Android istemi varsa / iOS Safari) ilk ziyarette altta çıkıyor, kapatılınca bir daha çıkmıyor. Öneri: yalnız oturum açıkken ve ikinci ziyaretten sonra göster (kullanıcı ürünü tanımadan istem yok). | Davranış/zamanlama tercihi | BEKLİYOR |
+| P-MD-4 | 2026-10-01 | cloud/fe-mobdesk | **Manifest ekran görüntüleri ve kısayolları.** Android'in zengin kurulum penceresi için `screenshots` (dar + geniş) ve uzun basış kısayolları (Siparişler, Ürünler, Otopilot). Eski görüntü (eski giriş ekranı) kaldırıldı; yenisi onaylı görsellerden üretilmeli. | İçerik/görsel onayı | BEKLİYOR |
+| P-MD-5 | 2026-10-01 | cloud/fe-mobdesk | **Masaüstü kabuğunun hedef adresi.** Paketli uygulama yalnız `https://app.entegrasyonik.com`'u açıyor (geliştirmede `localhost:3020`). Staging için çalışma zamanı değişkeni bilerek YOK (kabuk yabancı bir origin'e yönlendirilemesin). Öneri: gerekiyorsa derleme kanalı (prod/staging) paketlemede sabitlenir. | Dağıtım kararı (DESK-05 ile) | BEKLİYOR |
+| P-MD-6 | 2026-10-01 | cloud/fe-mobdesk | **Çevrimdışı bant.** Çevrimdışı ekranı yalnız sayfa yüklenirken (gezinme) çıkıyor; uygulama açıkken bağlantı koparsa istekler tek tek "bağlantı" hatası veriyor. Öneri: kabukta `offline` olayıyla sakin üst bant ("Bağlantı yok — değişiklikler kaydedilmez") ve yazma düğmelerinin geçici devre dışı kalması. | Kabuk davranışı | BEKLİYOR |
+| P-MD-7 | 2026-10-01 | cloud/fe-mobdesk | **Masaüstünde tek örnek ve pencere durumu.** İkinci kez açılınca yeni pencere açılıyor; pencere boyutu/konumu hatırlanmıyor. Öneri: `requestSingleInstanceLock` + son pencere durumunu saklama. | Masaüstü davranışı | BEKLİYOR |
