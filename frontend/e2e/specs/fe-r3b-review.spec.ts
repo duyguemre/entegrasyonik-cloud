@@ -9,6 +9,7 @@ import { installApiMocks } from '../fixtures/mockApi'
 import { gotoAuthed, openScreen, waitForWorkplaceReady } from '../fixtures/nav'
 import { r2dMocks } from '../fixtures/r2dReview'
 import { reviewMocks, reviewPath } from '../fixtures/reviewScreens'
+import { r3bProductPage } from '../fixtures/r3bReview'
 
 const ENABLED = process.env.R3B_REVIEW === '1'
 const WIDTH = Number(process.env.R3B_WIDTH) || 1440
@@ -56,8 +57,8 @@ const listDetail = (name: string, slug: string, root: string, anchor: string): C
 })
 
 const CASES: Case[] = [
-  { name: 'anasayfa', run: async (p) => { await installApiMocks(p, mocks()); await p.goto(reviewPath('DashboardView')); await waitForWorkplaceReady(p); await settle(p) } },
-  { name: 'urun-liste', run: async (p) => { await installApiMocks(p, mocks()); await p.goto(reviewPath('productDefinitions/ProductListView')); await waitForWorkplaceReady(p); await p.locator('.workplace-area table:visible, .workplace-area .ek-grid-card:visible').first().waitFor({ timeout: 10000 }).catch(() => undefined); await settle(p) } },
+  { name: 'anasayfa', run: async (p) => { await installApiMocks(p, mocks()); await gotoAuthed(p); await p.getByText('İŞLETME PERFORMANSI').first().waitFor({ timeout: 15000 }).catch(() => undefined); await settle(p) } },
+  { name: 'urun-liste', run: async (p) => { await installApiMocks(p, { ...mocks(), 'ProductService/getProducts': r3bProductPage }); await p.goto(reviewPath('productDefinitions/ProductListView')); await waitForWorkplaceReady(p); await p.locator('.workplace-area table:visible, .workplace-area .ek-grid-card:visible').first().waitFor({ timeout: 10000 }).catch(() => undefined); await settle(p) } },
   listDetail('siparis-detay', 'orders', '.orderListView', 'E2E-100001'),
   listDetail('iade-detay', 'claims', '.claimListView', 'CLM-E2E-0001'),
   listDetail('musteri-detay', 'customers', '.customerListView', 'Ayşe Yılmaz'),

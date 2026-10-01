@@ -91,3 +91,31 @@ export function channelStatusOverview(list: ProductChannelStatus[]): { live: num
     none: list.filter((s) => s.key === 'none' || s.key === 'offsale').length,
   }
 }
+
+/**
+ * FR3 madde 11 — hücrenin "bir bakış" cümlesi: en kritik durum önce, sade dille ("2 kanalda hata · 1 kanalda yayında").
+ * Ton cümlenin rengidir (EkStatusChip ton dili). Gönderilmemiş kanallar cümleye girmez (hücrede "+n" olarak sayılır).
+ */
+export interface ChannelStatusSummary {
+  tone: StatusTone | 'action'
+  icon: string
+  text: string
+  detail?: string
+}
+
+export function channelStatusSummary(list: ProductChannelStatus[]): ChannelStatusSummary {
+  const n = (k: ProductChannelKey) => list.filter((s) => s.key === k).length
+  const failed = n('failed')
+  const waiting = n('waiting')
+  const live = n('live')
+  const offsale = n('offsale')
+  const ready = list.filter((s) => s.key === 'none' && s.ready).length
+  if (!list.length) return { tone: 'neutral', icon: 'mdi-link-variant-off', text: 'Kanal bağlı değil' }
+  const rest = (parts: Array<[number, string]>) => parts.filter(([c]) => c > 0).map(([c, t]) => `${c} ${t}`).join(' · ') || undefined
+  if (failed) return { tone: 'danger', icon: META.failed.icon, text: `${failed} kanalda hata`, detail: rest([[waiting, 'bekliyor'], [live, 'yayında']]) }
+  if (waiting) return { tone: 'info', icon: META.waiting.icon, text: `${waiting} kanalda onay bekliyor`, detail: rest([[live, 'yayında']]) }
+  if (live) return { tone: 'success', icon: META.live.icon, text: live === list.length ? 'Tüm kanallarda yayında' : `${live} kanalda yayında`, detail: rest([[offsale, 'satışa kapalı']]) }
+  if (offsale) return { tone: 'warning', icon: META.offsale.icon, text: `${offsale} kanalda satışa kapalı` }
+  if (ready) return { tone: 'action', icon: 'mdi-arrow-up-circle-outline', text: 'Gönderime hazır', detail: `${ready} kanal işaretli` }
+  return { tone: 'neutral', icon: META.none.icon, text: 'Henüz gönderilmedi' }
+}

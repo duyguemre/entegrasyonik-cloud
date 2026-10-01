@@ -612,7 +612,7 @@ const columns: EkGridColumn[] = [
   { key: 'price', label: 'Fiyat', type: 'num', sortable: true },
   { key: 'stock', label: 'Stok', type: 'num', sortable: true },
   { key: 'brandCategory', label: 'Marka / kategori' },
-  { key: 'platforms', label: 'Kanallar', width: '200px' },
+  { key: 'platforms', label: 'Kanallar', width: '232px' },
   { key: 'actions', label: 'İşlemler', align: 'end', hideLabel: true, pin: 'end' },
 ]
 
