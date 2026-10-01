@@ -1,6 +1,6 @@
 <!--
   MOB-08 / K55 — platform geneli kullanım: masaüstü / mobil ana kırılım, alt türler ayrıntıda, platform süzgeci (`?platform=`).
-  K51: Durum → Karar → Eylem (UsageVerdictBlock) → Ayrıntı (göstergeler, günlük seri, kırılım). Kaynak getPulse.activeUsers.
+  K51: Durum → Karar → Eylem (ortak PageVerdict; INT-1001 §8 uyarlaması, model `toPageVerdict`) → Ayrıntı (göstergeler, günlük seri, kırılım). Kaynak getPulse.activeUsers.
 -->
 <template>
   <div class="bo-page">
@@ -16,13 +16,15 @@
 
     <StateBlock :phase="res.phase.value" :error="res.error.value" skeleton="cards" :rows="3" degraded-title="Kullanım verisi şu an okunamıyor" @retry="res.load()">
       <template v-if="a">
-        <UsageVerdictBlock :verdict="verdict!" id-base="bo-usage" />
+        <div class="bo-usage__verdict" data-testid="usage-verdict">
+          <PageVerdict :verdict="verdict" />
+        </div>
 
         <template v-if="a.status === 'ok' && a.computable">
           <p v-if="platform" class="bo-muted bo-usage__filter" data-testid="usage-filter-note">
             Süzgeç: <strong>{{ filterLabel }}</strong> — sayılar yalnız bu platformdan gelen kullanıcıları kapsar.
           </p>
-          <section class="bo-grid-3" aria-label="Aktif kullanıcı göstergeleri">
+          <section id="kullanim-ayrinti" class="bo-grid-3" aria-label="Aktif kullanıcı göstergeleri" tabindex="-1">
             <EkMetricCard label="Bugün" :value="formatCount(a.today.users)" :description="`${formatCount(a.today.tenants)} müşteri`" icon="mdi-account-clock-outline" data-testid="usage-today" />
             <EkMetricCard label="Son 7 gün" :value="formatCount(a.last7d.users)" :description="`${formatCount(a.last7d.tenants)} müşteri`" icon="mdi-account-multiple-outline" data-testid="usage-7d" />
             <EkMetricCard label="Son 30 gün" :value="formatCount(a.last30d.users)" :description="`${formatCount(a.last30d.tenants)} müşteri`" icon="mdi-calendar-month-outline" />
@@ -58,9 +60,9 @@ import { CLIENT_PLATFORM, PLATFORM_CLASS } from '@bo/utils/labels'
 import { formatCount } from '@bo/utils/units'
 import PlatformFilter from './PlatformFilter.vue'
 import PlatformBreakdown from './PlatformBreakdown.vue'
-import UsageVerdictBlock from './UsageVerdictBlock.vue'
+import PageVerdict from '@bo/components/verdict/PageVerdict.vue'
 import { platformFromQuery } from './platformOrder'
-import { pulseUsageVerdict } from './usageVerdict'
+import { pulseUsageVerdict, toPageVerdict } from './usageVerdict'
 import '@bo/styles/kit.css'
 
 const route = useRoute()
@@ -71,7 +73,7 @@ const platform = computed<Filter | null>({
 })
 const res = useResource<PulseResponse>(() => api.call('BackofficeOverviewService/getPulse', platform.value ? { platform: platform.value } : {}))
 const a = computed(() => res.data.value?.activeUsers ?? null)
-const verdict = computed(() => (a.value ? pulseUsageVerdict(a.value) : null))
+const verdict = computed(() => (a.value ? toPageVerdict(pulseUsageVerdict(a.value)) : null))
 const filterLabel = computed(() => {
   const p = platform.value
   if (!p) return ''
@@ -94,6 +96,12 @@ onMounted(() => res.load())
 </script>
 
 <style scoped>
+.bo-usage__verdict {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ek-space-5);
+  margin-bottom: var(--ek-space-5);
+}
 .bo-usage__filter,
 .bo-usage__src {
   margin: 0;

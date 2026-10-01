@@ -84,6 +84,48 @@ test.describe('sistem ayarları', () => {
   })
 })
 
+test.describe('sistem ayarları — duyuru ve geri alma (BO-CFG-1)', () => {
+  test.beforeEach(async ({ page }) => signInFully(page))
+
+  test('duyuru şeridi: alanlar → taslak → gerekçeli yayın; geçmişte "Yayında" yeni sürüm', async ({ page }) => {
+    await page.goto('/sistem/bayraklar')
+    await settle(page)
+    await call(page, '(m) => m.expireReauth()')
+    await page.locator('[data-setting="announcement.text"] input, [data-setting="announcement.text"] textarea').first().fill('Pazar 02:00 planlı bakım')
+    await page.getByTestId('settings-save').click()
+    const dlg = page.getByRole('dialog', { name: 'Değişiklikler yayınlansın mı?' })
+    await expect(dlg.getByRole('table')).toContainText('announcement.text')
+    await dlg.getByLabel('Gerekçe').fill('Hafta sonu bakım duyurusu')
+    await dlg.getByRole('button', { name: 'Yayınla' }).click()
+    await reauth(page)
+    await expect(page.getByText(/yayınlandı; değerler/)).toBeVisible()
+    await expect(page.getByTestId('draft-bar')).toHaveCount(0)
+    const hist = page.getByRole('region', { name: 'Yayın geçmişi' })
+    await expect(hist.getByRole('row').nth(1)).toContainText('Yayında')
+  })
+
+  test('geçmişten geri alma: fark + gerekçe + step-up → yeni sürüm "Geri alma" kökenli', async ({ page }) => {
+    await page.goto('/sistem/bayraklar')
+    await settle(page)
+    await call(page, '(m) => m.expireReauth()')
+    const hist = page.getByRole('region', { name: 'Yayın geçmişi' })
+    const btn = hist.getByTestId('rollback').first()
+    const label = (await btn.getAttribute('aria-label')) ?? ''
+    const version = label.match(/v(\d+)/)?.[1]
+    expect(version).toBeTruthy()
+    await btn.click()
+    const dlg = page.getByRole('dialog', { name: `Sürüm ${version} geri alınsın mı?` })
+    await expect(dlg).toBeVisible()
+    await expect(dlg.getByRole('button', { name: 'Geri al' })).toBeDisabled()
+    await dlg.getByLabel('Gerekçe').fill('Yanlış duyuru metni yayına çıktı')
+    await dlg.getByRole('button', { name: 'Geri al' }).click()
+    await reauth(page)
+    await expect(page.getByText(new RegExp(`Sürüm ${version} içeriği yeni sürüm \\d+ olarak yayınlandı`))).toBeVisible()
+    await expect(hist.getByRole('row').nth(1)).toContainText('Yayında')
+    await expect(hist.getByRole('row').nth(1)).toContainText(/Geri alma/)
+  })
+})
+
 test.describe('yöneticiler', () => {
   test.beforeEach(async ({ page }) => signInFully(page))
 
