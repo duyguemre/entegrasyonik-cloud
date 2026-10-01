@@ -183,10 +183,10 @@ html[data-theme='dark'] {
     color var(--ek-duration-fast) var(--ek-easing-standard);
 }
 
+/* Oturum kararı: hover'da alt çizgi YOK — yalnız renk bir kademe koyulaşır (+ varsa ok 2px kayar). */
 .ek-link:hover,
 :where(.v-application) a:not([class]):hover {
   color: var(--ek-link-fg-hover);
-  background-size: 100% 1px;
   text-decoration: none;
 }
 

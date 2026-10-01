@@ -78,16 +78,10 @@
       </template>
 
       <template v-slot:item.actions="{ item, index }">
-        <div class="text-center justify-center align-center">
-          <v-btn-group class="pa-0" density="comfortable">
-            <v-btn class="" min-width=0 variant="text" aria-label="Düzenle">
-              <v-icon>mdi-pencil-outline</v-icon>
-            </v-btn>
-            <v-btn class="" min-width=0 variant="text" color="error" aria-label="Sil">
-              <v-icon>mdi-trash-can-outline</v-icon>
-            </v-btn>
-          </v-btn-group>
-        </div>
+        <EkRowActions label="Satır işlemleri" :items="[
+          { key: 'edit', action: 'edit', label: 'Düzenle', onClick: () => {} },
+          { key: 'delete', action: 'delete', label: 'Sil', onClick: () => {} },
+        ]" />
       </template>
     </v-data-table>
     <ScrollComponent id=".scroll-element .v-table__wrapper" :is-expandable="false"/>
@@ -99,6 +93,7 @@
 
 <script setup lang="ts">
 import EkPageHeader from '@/components/page/EkPageHeader.vue'
+import { EkRowActions } from '@entegrasyonik/ui/components'
 import { useI18n } from 'vue-i18n';
 import { ref, onMounted, watch } from 'vue'
 

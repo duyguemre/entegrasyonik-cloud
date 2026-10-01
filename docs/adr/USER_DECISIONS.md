@@ -38,6 +38,7 @@ Durum: `GEÇERLİ` · `UYGULANIYOR` · `DEĞİŞTİ → Kxx` · `KALDIRILDI`
 | K17 | 2026-09-30 | "Asistan" adı chatbot kıvamında; agentic, orijinal bir ad | Ad tek sabitten gelir; varsayılan **Otopilot** (kullanıcı başka ad seçene kadar); üçüncü taraf marka adı yok | SITE_FEEDBACK_R2 madde 2 | DEĞİŞTİ → K39 |
 | K18 | 2026-10-01 | Backoffice tasarımı ve içeriği premium, UX yüksek | Operasyon konsolu dili; tehlikeli işlem diyaloğu standardı; ortak yükleme ekranı | frontend/backoffice/docs/BO_UI_PATTERNS.md (bulut BO-P1) | UYGULANIYOR |
 | K19 | 2026-09-30 | Backoffice gezilebilir olunca haber ver | Kabuk + bir ekran çalışır olunca URL ile bildirim | — | GEÇERLİ |
+| K61 | 2026-10-02 | FE R4: ürün ekleme (varyant rowspan korunur), uygulama ayarları baştan, dashboard "Bugün sırada" + kart ızgarası, üst bar açık ton + profil koyu blok kaldır, bildirim/Otopilot pencereleri premium, akıllı arama context menüsü; bulut toplu, yerel kredi harcanmaz | 4 paralel bulut şeridi (A kabuk, B ürün formu, C ayarlar+dashboard, D bekleyen borçlar) + bulutta birleştirme; yerelde tek pull+doğrulama | docs/cloud-contracts/FE_FEEDBACK_R4_2026-10-02.md | UYGULANIYOR |
 
 ## Sohbet arayüzü (chat-as-UI), MCP ve ajanlar
 

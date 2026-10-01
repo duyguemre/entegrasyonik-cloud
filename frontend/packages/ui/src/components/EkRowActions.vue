@@ -102,7 +102,25 @@ function onSelect(item: EkMenuItem) {
   display: inline-flex;
   align-items: center;
   justify-content: flex-start;
-  gap: var(--ek-space-1);
+  gap: 2px;
   white-space: nowrap;
+}
+
+/* ⋯ düğmesi eylem düğmeleriyle aynı görünüm (EkActionButton): sakin nötr → hover'da açık mavi zemin + mavi ikon. */
+.ek-row-actions :deep([data-action='more']) {
+  --ek-btn-fg: var(--ek-color-content-muted);
+  --ek-btn-bg-hover: color-mix(in srgb, var(--ek-color-action) 10%, transparent);
+  --ek-btn-bg-active: color-mix(in srgb, var(--ek-color-action) 18%, transparent);
+  --ek-btn-border-hover: transparent;
+  border-radius: 8px;
+}
+
+.ek-row-actions :deep([data-action='more']:hover:not(:disabled)),
+.ek-row-actions :deep([data-action='more'][aria-expanded='true']) {
+  color: var(--ek-color-action);
+}
+
+.ek-row-actions :deep([data-action='more'][aria-expanded='true']) {
+  background: color-mix(in srgb, var(--ek-color-action) 10%, transparent);
 }
 </style>

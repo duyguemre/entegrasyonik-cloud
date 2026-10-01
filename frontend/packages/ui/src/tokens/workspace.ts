@@ -40,7 +40,7 @@ import {
  */
 export const WORKSPACE_OVERRIDES_LIGHT: Partial<Record<SemanticColorKey, string>> = {
   // Yüzeyler — "ağırlıklı beyazı azalt": zemin tonlu, kart beyaz.
-  background: ink[100],
+  background: '#F9FAFD', // app-bg ile aynı (içerik çerçevesi)
   'surface-light': ink[100],
   'surface-variant': ink[800], // Vuetify: tooltip zemini (ters yüzey)
   'surface-muted': ink[50],

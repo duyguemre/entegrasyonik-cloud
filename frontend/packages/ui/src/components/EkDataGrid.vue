@@ -91,7 +91,7 @@
         <tr
           class="ek-grid__row"
           role="row"
-          :class="[{ 'is-selected': isSelected(row), 'is-hover': forceHoverIndex === ri }, channelKey ? ['has-channel', channelClass(row[channelKey])] : undefined, rowClass?.(row)]"
+          :class="[{ 'is-selected': isSelected(row), 'is-hover': forceHoverIndex === ri, 'is-alt': ri % 2 === 1 }, channelKey ? ['has-channel', channelClass(row[channelKey])] : undefined, rowClass?.(row)]"
           @click="emit('row-click', row)"
         >
           <td v-if="selectable" class="ek-grid__td ek-grid__td--select" role="cell" @click.stop>
@@ -347,10 +347,11 @@ function toggleSort(key: string) {
   padding: 0 var(--ek-space-3);
   border-bottom: 1px solid var(--ek-color-border-default);
   background: var(--ek-color-surface-muted);
-  color: var(--ek-color-content-muted);
+  /* Başlık bir kademe güçlü: kalın (700) + koyu nötr — 11px büyük harf etiket soluk/ince okunuyordu. */
+  color: var(--ek-color-content-default);
   font-size: var(--ek-type-micro-size);
   line-height: var(--ek-type-micro-line);
-  font-weight: var(--ek-type-micro-weight);
+  font-weight: var(--ek-font-weight-bold);
   letter-spacing: var(--ek-type-micro-tracking);
   text-transform: uppercase;
   text-align: left;
@@ -536,9 +537,17 @@ function toggleSort(key: string) {
   color: var(--ek-color-content-muted);
 }
 
+/* Zebra: her ikinci VERİ satırı çok hafif ton (açılan varyant satırları sırayı bozmasın diye sınıf veri sırasından —
+   `is-alt`). Hover ve seçili satır zebranın önünde (daha yüksek özgüllük / sonra gelir). Yapışık eylem kolonu da aynı ton. */
+.ek-grid__row.is-alt > .ek-grid__td,
+.ek-grid__row.is-alt > .ek-grid__pin-end {
+  background: color-mix(in srgb, var(--ek-color-content-strong) 1.5%, var(--ek-color-surface));
+}
+
+/* Hover: zebradan ayrışan çok açık site mavisi (gri zebra ↔ gri hover karışıyordu). */
 .ek-grid__row:not(.ek-grid__row--skeleton):hover > .ek-grid__td,
 .ek-grid__row.is-hover > .ek-grid__td {
-  background: var(--ek-color-surface-muted);
+  background: color-mix(in srgb, var(--ek-color-action) 5%, var(--ek-color-surface));
 }
 
 .ek-grid__row.is-selected > .ek-grid__td {

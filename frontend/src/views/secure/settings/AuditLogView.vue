@@ -506,7 +506,7 @@ onMounted(async () => {
 
 .ek-audit-view__event-btn:hover .ek-audit-view__event-label {
   color: var(--ek-color-action-emphasis);
-  text-decoration: underline;
+  text-decoration: none;
 }
 
 .ek-audit-view__event-icon {

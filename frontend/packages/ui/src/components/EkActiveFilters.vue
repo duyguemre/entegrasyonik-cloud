@@ -257,7 +257,7 @@ watch(
 
 .ek-active-filters__clear:hover {
   background: var(--ek-color-action-subtle);
-  text-decoration: underline;
+  text-decoration: none;
 }
 
 /* ── compact (filtre paneli başlığı) ───────────────────────────────────────── */

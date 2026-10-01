@@ -531,7 +531,7 @@ defineExpose({ initialize, activate, destroy: () => {} })
 
 .sh-order--link:hover {
   color: var(--ek-color-action-hover);
-  text-decoration: underline;
+  text-decoration: none;
 }
 
 .sh-order--link:focus-visible {

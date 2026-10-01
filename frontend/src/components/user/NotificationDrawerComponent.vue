@@ -102,10 +102,8 @@
                     <EkButton tone="ghost" size="sm" icon="mdi-check" icon-only :aria-label="`Okundu işaretle: ${view(item).title}`"
                       @click="notificationStore.markAsRead(item._id)" />
                   </EkTooltip>
-                  <EkTooltip text="Sil">
-                    <EkButton tone="ghost" size="sm" icon="mdi-trash-can-outline" icon-only :aria-label="`Sil: ${view(item).title}`"
-                      @click="notificationStore.deleteNotification(item._id)" />
-                  </EkTooltip>
+                  <EkActionButton action="delete" :label="`Sil: ${view(item).title}`"
+                    @click="notificationStore.deleteNotification(item._id)" />
               </div>
               <span v-if="!item.isRead" class="ek-nd-item__dot" aria-hidden="true"></span>
               <span v-if="!item.isRead" class="ek-sr-only">Okunmamış</span>
@@ -132,7 +130,7 @@ import { useI18n } from 'vue-i18n'
 import { useNotificationDrawerStore } from '@/stores/notificationDrawer'
 import { labelsFor, notificationTitle, useNotificationCatalogStore } from '@/stores/notificationCatalog'
 import { PLATFORM_PROCESS_LABELS, PLATFORM_PROCESS } from '@/types/PlatformProcess'
-import { EkEmptyState, EkStatusChip, EkPlatformMark, EkButton, EkBadge, EkIconTile, EkTooltip, EkPageTabs, EkContextMenu, EkDialog } from '@entegrasyonik/ui/components'
+import { EkEmptyState, EkStatusChip, EkPlatformMark, EkButton, EkBadge, EkIconTile, EkTooltip, EkPageTabs, EkContextMenu, EkDialog, EkActionButton } from '@entegrasyonik/ui/components'
 import type { EkMenuGroup, EkMenuItem } from '@entegrasyonik/ui/components'
 import { formatNumber, formatRelative } from '@entegrasyonik/ui/format'
 import {

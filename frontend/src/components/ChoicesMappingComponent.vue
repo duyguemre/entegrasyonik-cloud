@@ -2,7 +2,7 @@
   <EkDialogCard title="Seçenek Eşleştirme" icon="mdi-checkbox-multiple-marked-outline" width="custom"
     :description="integrationCategoryId ? `${integrationStore.getIntegrationTitle(integrationCode)} · ${integrationStore.getIntegrationCategory2(integrationCode, integrationCategoryId)?.title ?? ''}` : undefined"
     class="cm-card" @close="emits('close')">
-    <LoadingComponent attach=".categoryDefinition" ref="loadingComponentRef"></LoadingComponent>
+    <LoadingComponent attach=".cat-manager" ref="loadingComponentRef"></LoadingComponent>
 
     <p v-if="!integrationCategoryId" class="cm-note">
       <v-icon icon="mdi-information-outline" size="16" aria-hidden="true" />

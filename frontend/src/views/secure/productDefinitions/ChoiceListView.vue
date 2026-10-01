@@ -20,13 +20,13 @@
       :error="loadError"
       error-title="Varyant grupları yüklenemedi"
       v-model:search="searchText"
-      :search-placeholder="$t('products.product.searchlabel')"
+      search-placeholder="Grup veya seçenek ara"
       :sort="gridSort"
       :page="pagination.page"
       :page-size="pagination.limit"
       :total="pagination.totalNumberOfRecords"
       empty-title="Grup Bulunamadı"
-      empty-text="Arama kriterlerinize uygun herhangi bir varyant grubu bulunamadı."
+      empty-text="Renk, beden gibi varyant gruplarını oluşturun veya hazır şablonlardan başlayın."
       filtered-empty-title="Grup Bulunamadı"
       filtered-empty-text="Arama kriterlerinize uygun herhangi bir varyant grubu bulunamadı."
       empty-icon="mdi-palette-swatch-outline"
@@ -36,25 +36,11 @@
       @update:page-size="(n) => { pagination.limit = n; pagination.page = 1 }"
       @refresh="retrieveChoices()"
     >
-      <template #header-actions>
-        <v-form v-model="newChoiceForm" @submit.prevent="addChoice" class="new-choice-form">
-          <v-text-field v-model="newChoiceTitle" variant="outlined" density="compact" hide-details :rules="newChoiceRules"
-            class="customTextField" :placeholder="$t('productDefinitions.choice.name')">
-            <template v-slot:label>
-              <span class="font-weight-light new-field-label">{{ $t('productDefinitions.choice.name') }}</span>
-            </template>
-            <template v-slot:append-inner>
-              <v-btn icon="mdi-plus" size="x-small" color="neutral" variant="tonal" class="rounded-lg"
-                :aria-label="$t('productDefinitions.choice.new.title')" :disabled="!newChoiceForm || !newChoiceTitle"
-                @click="addChoice">
-              </v-btn>
-            </template>
-          </v-text-field>
-        </v-form>
-
+      <!-- Araç şeridi (sağ): hazır şablon + satır içi yeni grup — arama solda (EkListScreen standart şeridi). -->
+      <template #create>
         <v-menu offset="5">
           <template v-slot:activator="{ props }">
-            <EkButton v-bind="props" tone="secondary" icon="mdi-folder-multiple-plus-outline">Şablonlar</EkButton>
+            <EkButton v-bind="props" tone="ghost" icon="mdi-folder-multiple-plus-outline" trailing-icon="mdi-chevron-down">Şablondan ekle</EkButton>
           </template>
           <v-list density="compact" nav width="240">
             <v-list-item prepend-icon="mdi-palette-outline" title="Renk Şablonu"
@@ -65,92 +51,78 @@
               @click="addPreparedChoice('number')"></v-list-item>
           </v-list>
         </v-menu>
+        <v-form v-model="newChoiceForm" @submit.prevent="addChoice" class="def-new-form">
+          <v-text-field v-model="newChoiceTitle" variant="outlined" density="compact" hide-details :rules="newChoiceRules"
+            class="def-new-input" :placeholder="$t('productDefinitions.choice.name')"
+            :aria-label="$t('productDefinitions.choice.name')" />
+          <EkButton tone="primary" icon="mdi-plus" class="def-new" :disabled="!newChoiceForm || !newChoiceTitle"
+            @click="addChoice">Grup ekle</EkButton>
+        </v-form>
       </template>
 
+
       <template #cell-title="{ row: item }">
-        <div class="d-flex align-center py-2 choice-title-cell">
-          <v-menu v-model="item.showEditMenu" :close-on-content-click="false" location="bottom start"
-            transition="scale-transition">
+        <div class="def-title-row">
+        <!-- Grup kutucuğu (Etiketler ekranıyla aynı dil): site mavisi tonlu seçenek ikonu. -->
+        <span class="def-group-tile" style="--grp: var(--ek-color-action)" aria-hidden="true"><v-icon icon="mdi-shape-outline" /></span>
+        <div class="def-title-cell">
+          <v-menu v-model="item.showEditMenu" :close-on-content-click="false" location="bottom start">
             <template v-slot:activator="{ props }">
-              <button v-bind="props" type="button" class="cursor-pointer font-weight-bold d-flex align-center group-title"
-                @click="item.tempTitle = item.title">
-                {{ item.title }}
-                <v-icon size="14" class="ml-2 group-title__icon" aria-hidden="true">mdi-pencil-outline</v-icon>
+              <button v-bind="props" type="button" class="def-title" @click="item.tempTitle = item.title">
+                <span class="def-title__text">
+                  <span class="def-title__name">{{ item.title }}<v-icon size="14" class="def-title__icon" aria-hidden="true">mdi-pencil-outline</v-icon></span>
+                  <span class="def-title__meta">{{ (item.values?.length ?? 0) }} seçenek</span>
+                </span>
               </button>
             </template>
-            <v-card min-width="300" class="d-flex pa-4 rounded-lg shadow-xl border">
+            <v-card class="def-pop" width="280">
               <v-text-field v-model="item.tempTitle" label="Grup Adını Düzenle" variant="outlined" density="compact"
-                hide-details
-                @keyup.enter="item.title = item.tempTitle; updateChoice(item); item.showEditMenu = false;"
-                class="mb-3 customTextField"></v-text-field>
-              <v-btn block color="success" size="40" min-width="0" icon="mdi-check" variant="flat"
-                class="premium-cube-btn flex-grow-0 ml-2" aria-label="Kaydet"
-                @click="item.title = item.tempTitle; updateChoice(item); item.showEditMenu = false;"></v-btn>
+                hide-details autofocus class="mb-3" @keyup.enter="saveRename(item)" />
+              <div class="def-pop__row">
+                <EkButton tone="secondary" size="sm" @click="item.showEditMenu = false">İptal</EkButton>
+                <EkButton tone="primary" size="sm" icon="mdi-check" @click="saveRename(item)">Kaydet</EkButton>
+              </div>
             </v-card>
           </v-menu>
-
-          <v-spacer></v-spacer>
-
-          <button type="button" class="choice-flag mr-2" :class="{ 'choice-flag--on-success': item.isSlicer }"
-            :aria-pressed="!!item.isSlicer" @click="item.isSlicer = !item.isSlicer; updateChoice(item)">
-            <v-icon size="12" class="choice-flag__icon">mdi-filter-variant</v-icon> GRUP (SLICER)
-          </button>
-          <button type="button" class="choice-flag" :class="{ 'choice-flag--on-neutral': item.isVarianter }"
-            :aria-pressed="!!item.isVarianter" @click="item.isVarianter = !item.isVarianter; updateChoice(item)">
-            <v-icon size="12" class="choice-flag__icon">mdi-layers-triple-outline</v-icon> VARYANT
-          </button>
+          <div class="def-flags">
+            <button type="button" class="def-flag" :class="{ 'is-on': item.isSlicer }" :aria-pressed="!!item.isSlicer"
+              @click="toggleFlag(item, 'isSlicer')">
+              <v-icon size="14" aria-hidden="true">mdi-filter-variant</v-icon>GRUP (SLICER)
+            </button>
+            <button type="button" class="def-flag" :class="{ 'is-on': item.isVarianter }" :aria-pressed="!!item.isVarianter"
+              @click="toggleFlag(item, 'isVarianter')">
+              <v-icon size="14" aria-hidden="true">mdi-layers-triple-outline</v-icon>VARYANT
+            </button>
+          </div>
+        </div>
         </div>
       </template>
 
       <template #cell-choices="{ row: item }">
-          <div class="d-flex flex-wrap gap-2 py-2 align-center min-h-60">
-            <button v-for="val in item.values" :key="val._id" type="button" class="choice-chip-item">
-              <span class="mr-2 font-weight-medium choice-chip-item__text">{{ val.title }}</span>
-              <v-menu v-model="val.showValueMenu" activator="parent" :close-on-content-click="false"
-                transition="fade-transition"
-                @update:model-value="(state) => state ? item.editingChoiceValue = copy(val) : null">
-                <v-card width="220" class="pa-3 rounded-lg border shadow-lg">
-                  <v-text-field v-model="item.editingChoiceValue.title" density="compact" variant="outlined"
-                    label="Değer Adı" hide-details class="mb-3 customTextField"></v-text-field>
-                  <div class="d-flex justify-space-between align-center">
-                    <v-menu v-model="val.showValueDeleteConfirm" :close-on-content-click="false" location="top center">
-                      <template v-slot:activator="{ props }">
-                        <v-btn v-bind="props" icon="mdi-trash-can-outline" size="30" color="error" variant="flat"
-                          class="premium-cube-btn" aria-label="Değeri sil"></v-btn>
-                      </template>
-                      <v-card class="pa-3 border shadow-xl rounded-lg" min-width="200">
-                        <div class="text-caption mb-2 text-center font-weight-bold confirm-title">Değeri Sil?</div>
-                        <div class="d-flex justify-center gap-2">
-                          <EkButton tone="secondary" size="sm" @click="val.showValueDeleteConfirm = false">İPTAL</EkButton>
-                          <EkButton tone="danger" size="sm"
-                            @click="deleteChoiceValue(item._id, val._id); val.showValueDeleteConfirm = false;">SİL</EkButton>
-                        </div>
-                      </v-card>
-                    </v-menu>
-                    <v-btn color="success" size="30" variant="flat" icon="mdi-check" class="premium-cube-btn"
-                      aria-label="Kaydet" @click="updateChoiceValue(item); val.showValueMenu = false;"></v-btn>
-                  </div>
-                </v-card>
-              </v-menu>
-            </button>
-
-            <v-text-field v-if="item.showAddInput" v-model="item.tempValueTitle" density="compact" variant="outlined"
-              hide-details autofocus class="add-val-input customTextField" aria-label="Yeni değer"
-              @keyup.enter="item.editingChoiceValue = { title: item.tempValueTitle }; addChoiceValue(item); item.showAddInput = false; item.tempValueTitle = ''"
-              @blur="!item.tempValueTitle ? item.showAddInput = false : null">
-              <template v-slot:append-inner>
-                <v-icon color="success" size="22" class="opacity-100 font-weight-black mr-1" aria-label="Değer ekle"
-                  @click="item.editingChoiceValue = { title: item.tempValueTitle }; addChoiceValue(item); item.showAddInput = false; item.tempValueTitle = ''">mdi-plus</v-icon>
-              </template>
-            </v-text-field>
-
-            <v-btn v-else icon="mdi-plus" size="x-small" color="neutral" variant="tonal" class="rounded-lg"
-              :aria-label="$t('productDefinitions.choice.newChoiceValue')" @click="item.showAddInput = true"></v-btn>
-          </div>
+        <div class="def-values">
+          <DefinitionValueChip v-for="val in item.values" :key="val._id" :label="val.title"
+            :remove-label="`${val.title} değerini sil`" remove-title="Değeri Sil?"
+            @open="item.editingChoiceValue = copy(val)" @remove="deleteChoiceValue(item._id, val._id)">
+            <template #edit="{ close }">
+              <v-text-field v-model="item.editingChoiceValue.title" density="compact" variant="outlined"
+                label="Değer Adı" hide-details autofocus class="mb-3"
+                @keyup.enter="updateChoiceValue(item); close()" />
+              <div class="def-pop__row">
+                <EkButton tone="secondary" size="sm" @click="close()">İptal</EkButton>
+                <EkButton tone="primary" size="sm" icon="mdi-check" @click="updateChoiceValue(item); close()">Kaydet</EkButton>
+              </div>
+            </template>
+          </DefinitionValueChip>
+          <DefinitionValueAdd :add-label="$t('productDefinitions.choice.newChoiceValue')" input-label="Yeni değer"
+            trigger-text="Değer ekle" @add="(title: string) => addValue(item, title)" />
+        </div>
       </template>
 
       <template #cell-actions="{ row }">
-        <EkRowActions :label="`${row.title} işlemleri`" :items="[{ key: 'delete', action: 'delete', label: 'Grubu sil', onClick: () => openDeleteConfirm(row) }]" />
+        <EkRowActions :label="`${row.title} işlemleri`" :items="[
+          { key: 'edit', action: 'edit', label: 'Grup adını düzenle', onClick: () => openRename(row) },
+          { key: 'delete', action: 'delete', label: 'Grubu sil', onClick: () => openDeleteConfirm(row) },
+        ]" />
       </template>
     </EkListScreen>
   </div>
@@ -168,9 +140,10 @@ import useRestApi from '@/composables/restapi';
 import LoadingComponent from '@/components/LoadingComponent.vue';
 import ConfirmationDialogComponent from '@/components/layout/ConfirmationDialogComponent.vue';
 import EkListScreen from '@/components/page/templates/EkListScreen.vue';
-;
-;
+import DefinitionValueChip from '@/components/productDefinitions/definitions/DefinitionValueChip.vue';
+import DefinitionValueAdd from '@/components/productDefinitions/definitions/DefinitionValueAdd.vue';
 import { isRequestError, sortRows } from '@entegrasyonik/ui/components/listStandard';
+import './definitionLists.css'
 
 const { t } = useI18n()
 const choicesStore = useChoicesStore()
@@ -202,6 +175,11 @@ onBeforeMount(() => retrieveChoices())
 watch(searchText, () => { pagination.page = 1 })
 
 const copy = (obj: any) => obj ? JSON.parse(JSON.stringify(obj)) : null
+
+const openRename = (item: any) => { item.tempTitle = item.title; item.showEditMenu = true }
+const saveRename = (item: any) => { item.title = item.tempTitle; updateChoice(item); item.showEditMenu = false }
+const toggleFlag = (item: any, key: 'isSlicer' | 'isVarianter') => { item[key] = !item[key]; updateChoice(item) }
+const addValue = (item: any, title: string) => { item.editingChoiceValue = { title }; addChoiceValue(item) }
 
 const retrieveChoices = async () => {
   loading.value = true
@@ -326,138 +304,4 @@ const columns: EkGridColumn[] = [
 ]
 </script>
 
-<style scoped>
-.choiceListView {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  padding: var(--ek-space-5) var(--ek-space-6);
-}
 
-@media (max-width: 767px) {
-  .choiceListView {
-    overflow-y: auto;
-    padding: var(--ek-space-4);
-  }
-}
-
-.new-choice-form {
-  width: 320px;
-  max-width: 100%;
-}
-
-.new-field-label {
-  color: var(--ek-color-content-muted);
-}
-
-/* Global `.customTextField .v-label` (site.css, opacity .8 !important) kontrastı AA altına düşürüyor
-   (axe color-contrast) — yalnızca bu alanda yerel olarak düzeltilir. */
-.new-choice-form :deep(.v-field .v-field-label) {
-  color: var(--ek-color-content-muted) !important;
-  opacity: 1 !important;
-}
-
-.choice-title-cell {
-  min-width: 360px;
-}
-
-.choice-danger {
-  color: var(--ek-color-error);
-}
-
-.group-title {
-  color: var(--ek-color-content-default);
-  font-size: var(--ek-font-size-sm);
-  background: none;
-  border: 0;
-  padding: 0;
-  text-align: start;
-}
-
-.group-title__icon {
-  color: var(--ek-color-content-subtle);
-}
-
-.group-title:focus-visible,
-.choice-chip-item:focus-visible {
-  outline: 2px solid var(--ek-color-primary);
-  outline-offset: 2px;
-}
-
-.choice-chip-item {
-  display: inline-flex;
-  align-items: center;
-  height: 28px;
-  padding: 0 var(--ek-space-3);
-  transition: border-color var(--ek-motion-feedback);
-  cursor: pointer;
-  border: 1px solid var(--ek-color-border-strong);
-  border-radius: var(--ek-radius-sm);
-  background: var(--ek-color-surface);
-}
-
-.choice-chip-item:hover {
-  border-color: var(--ek-color-primary);
-}
-
-.choice-chip-item__text {
-  color: var(--ek-color-content-strong);
-  font-size: var(--ek-font-size-xs);
-}
-
-.confirm-title {
-  color: var(--ek-color-content-strong);
-}
-
-/* Aç/kapa bayrakları (slicer/varyant): eski `v-chip` yerine erişilebilir `aria-pressed` düğmesi. */
-.choice-flag {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--ek-space-1);
-  height: 22px;
-  padding: 0 var(--ek-space-3);
-  border-radius: var(--ek-radius-full);
-  border: 1px solid var(--ek-color-border-default);
-  background: var(--ek-color-neutral-subtle);
-  color: var(--ek-color-content-muted);
-  font-size: var(--ek-type-micro-size);
-  font-weight: var(--ek-font-weight-bold);
-  cursor: pointer;
-  transition: var(--ek-transition-colors);
-}
-
-.choice-flag--on-success {
-  background: var(--ek-color-success-subtle);
-  border-color: var(--ek-color-success-border);
-  color: var(--ek-color-success-emphasis);
-}
-
-.choice-flag--on-neutral {
-  background: var(--ek-color-neutral);
-  border-color: var(--ek-color-neutral);
-  color: var(--ek-color-neutral-contrast);
-}
-
-.choice-flag:focus-visible {
-  outline: 2px solid var(--ek-color-primary);
-  outline-offset: 2px;
-}
-
-.add-val-input {
-  max-width: 160px;
-}
-
-.cursor-pointer {
-  cursor: pointer;
-}
-
-.min-h-60 {
-  min-height: 60px;
-}
-
-.gap-2 {
-  gap: var(--ek-space-2);
-}
-</style>

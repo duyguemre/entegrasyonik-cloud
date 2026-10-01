@@ -64,9 +64,43 @@ const isDanger = computed(() => !!def.value.danger)
 </script>
 
 <style scoped>
+/* Satır/kart eylem düğmesi — TEK görünüm, iki ton:
+   durağan: tüm eylemler aynı sakin nötr ikon (satır kalabalık görünmez; tehlikeli olan da sakin);
+   hover/odak: nötr eylem → site mavisinin açık tonunda yuvarlatılmış zemin + mavi ikon; tehlikeli → açık kırmızı zemin
+   + kırmızı ikon; basılıyken bir kademe koyu. Gölge/kenarlık yok, yalnız renk; ikon hafifçe büyür (geometri sabit). */
+.ek-action-btn {
+  --ek-act-tint: var(--ek-color-action);
+  --ek-btn-fg: var(--ek-color-content-muted);
+  --ek-btn-bg-hover: color-mix(in srgb, var(--ek-act-tint) 10%, transparent);
+  --ek-btn-bg-active: color-mix(in srgb, var(--ek-act-tint) 18%, transparent);
+  --ek-btn-border-hover: transparent;
+  border-radius: 8px;
+  transition:
+    background-color var(--ek-motion-feedback),
+    color var(--ek-motion-feedback);
+}
+
 .ek-action-btn--danger {
-  --ek-btn-fg: var(--ek-color-error);
-  --ek-btn-bg-hover: var(--ek-color-error-subtle);
-  --ek-btn-bg-active: var(--ek-color-error-subtle);
+  --ek-act-tint: var(--ek-color-error);
+}
+
+.ek-action-btn:hover:not(:disabled),
+.ek-action-btn:focus-visible,
+.ek-action-btn:active:not(:disabled) {
+  color: var(--ek-act-tint);
+}
+
+.ek-action-btn :deep(.v-icon) {
+  transition: transform var(--ek-motion-feedback);
+}
+
+.ek-action-btn:hover:not(:disabled) :deep(.v-icon) {
+  transform: scale(1.08);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ek-action-btn:hover:not(:disabled) :deep(.v-icon) {
+    transform: none;
+  }
 }
 </style>

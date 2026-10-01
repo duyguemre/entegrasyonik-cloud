@@ -115,6 +115,10 @@ function onClick(e: MouseEvent) {
 }
 
 .pth__img {
+  /* Çerçeveye mutlak sabit: grid hücresinde `height:100%` çözülmüyor, dikey fotoğraf kendi oranıyla uzayıp ALTTAN
+     kesiliyordu. `inset:0` + `contain` → her oran çerçevenin içinde ortalanır. */
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   padding: 2px;
@@ -224,6 +228,9 @@ function onClick(e: MouseEvent) {
 }
 
 .pth-pop__img {
+  /* Küçük görseldeki gibi çerçeveye mutlak sabit (dikey fotoğraf alttan kesilmesin). */
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   object-fit: contain;

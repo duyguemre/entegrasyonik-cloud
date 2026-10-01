@@ -282,14 +282,14 @@ export const PAGE_HELP: Record<string, PageHelp> = {
   },
 
   // Kanıt: views/secure/productDefinitions/CategoryListView.vue,
-  //        components/CategoryListComponent.vue, CategorySyncComponent.vue
+  //        components/categories/CategoryManager.vue, CategoryTree.vue, CategoryDetail.vue, CategoryChannelRow.vue
   'productDefinitions/CategoryListView': {
     purpose:
       'Kategori ağacınızı yönetir ve her kategoriyi pazaryeri ile e-ticaret platformu kategorileriyle eşleştirirsiniz.',
     tips: [
-      'Soldaki ağaçtan bir kategorinin ayar düğmesine basınca sağda düzenleme ve eşleştirme panelleri açılır.',
-      'Platform kategori eşleştirmesi yalnızca alt kategorisi olmayan (uç) kategorilerde yapılır.',
-      'Kategori bağlantısını kaydettikten sonra platform seçeneklerini Seçenek Eşleştir ile eşleştirin.',
+      'Soldaki ağaçtan bir kategori seçince sağda adı, yolu ve bağlı kanallardaki eşlemeleri görünür; ağaçta ↑/↓ ile gezinip → ile dalı açabilirsiniz.',
+      'Kanal eşlemesi yalnızca alt kategorisi olmayan (uç) kategorilerde yapılır; kanal satırındaki Eşle ile kanal kategorisini arayıp seçin.',
+      '“Eksik eşlemeli” süzgeci, en az bir kanalda eşlemesi olmayan uç kategorileri gösterir.',
       'Otomatik eşleştirme boş uç kategorileri yapay zekâ desteğiyle doldurur; manuel eşleşmeler korunur, sonucu kontrol edin.',
     ],
     shortcuts: ['search', 'tabClose', 'tabNext'],
@@ -301,9 +301,10 @@ export const PAGE_HELP: Record<string, PageHelp> = {
     purpose:
       'Markalarınızı tanımlar ve her markayı platformlardaki karşılığıyla eşleştirirsiniz.',
     tips: [
-      'Marka adı yazıp ekle düğmesiyle yeni marka tanımlayın.',
-      'Listeden bir markanın ayar düğmesine basınca adını düzenleyebilir ve platform markasıyla eşleştirebilirsiniz.',
-      'Bazı platformlar marka eşleştirme sunmaz; bu durumda ekran bunu belirtir.',
+      '"Yeni marka" ile listenin başında bir satır açılır; adı yazıp Enter ile ekleyin (Esc vazgeçer).',
+      'Bir markaya tıklayınca (veya ↑/↓ ile gezinip Enter) ayrıntı paneli açılır: adı kalemle düzenleyin, ⋯ menüsünden silin.',
+      'Panelde bağlı her kanal için Eşle/Değiştir ile kanaldaki markayı arayın; alan yerel marka adıyla önden aranır ve en yakın sonuç Önerilen olarak sunulur.',
+      '"Eksik eşlemeli" filtresi en az bir kanalda eşlenmemiş markaları gösterir; bazı kanallar marka eşleştirme sunmaz, panel bunu belirtir.',
     ],
     shortcuts: ['search', 'tabClose', 'tabNext'],
     article: 'cat-mapping',
@@ -414,14 +415,14 @@ export const PAGE_HELP: Record<string, PageHelp> = {
     article: 'gs-first-product-transfer',
   },
 
-  // Kanıt: views/secure/definitions/CategoryDefinitionView.vue, components/CategorySyncComponent.vue
+  // Kanıt: views/secure/definitions/CategoryDefinitionView.vue, components/categories/CategoryManager.vue
   'definitions/CategoryDefinitionView': {
     purpose:
       'Kategorilerinizi pazaryeri kategorileriyle eşleştirin.',
     tips: [
-      'Soldaki ağaçtan bir kategorinin ayar düğmesine basınca sağda eşleştirme paneli açılır.',
-      'Platform kategori eşleştirmesi yalnızca alt kategorisi olmayan (uç) kategorilerde yapılır.',
-      'Kategori bağlantısını kaydettikten sonra platform seçeneklerini Seçenek Eşleştir ile eşleştirin.',
+      'Soldaki ağaçtan bir kategori seçince sağda kanal eşlemeleri açılır.',
+      'Kanal eşlemesi yalnızca alt kategorisi olmayan (uç) kategorilerde yapılır.',
+      'Kanal kategorisini bağladıktan sonra aynı satırdaki Özellikler bölümünden seçenekleri eşleştirin.',
       'Otomatik eşleştirme yalnızca boş eşleşmeleri doldurur; sonucu kontrol etmeniz önerilir.',
     ],
     shortcuts: ['search', 'tabClose', 'tabNext'],

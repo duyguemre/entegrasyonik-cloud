@@ -91,7 +91,7 @@
                   {
                     'is-muted': item.muted,
                     'is-active': isActive(item),
-                    'is-hover': forceHoverKey === item.key,
+                    'is-hover': !!forceHoverKey && forceHoverKey === item.key,
                     'is-parent-active': !!item.children && isAncestor(item),
                   },
                 ]"
@@ -100,19 +100,18 @@
                 :aria-expanded="item.children && !collapsed ? isOpen(item.key) : undefined"
                 :aria-label="collapsed ? item.label : undefined"
                 :aria-keyshortcuts="section.reorderable ? 'Alt+ArrowUp Alt+ArrowDown' : undefined"
-                @click="onItem(item)"
+                @click="onItem(item, $event)"
                 @keydown="onItemKeydown($event, section, iIndex)"
               >
                 <v-icon class="ek-side__icon" :icon="outlineIcon(item.icon) ?? 'mdi-circle-small'" aria-hidden="true" />
                 <span class="ek-side__label ek-side__fade">{{ item.label }}</span>
                 <EkBadge v-if="item.badge" class="ek-side__fade" :variant="item.badgeVariant ?? 'count'" :tone="item.badgeTone ?? 'action'" :text="item.badge" />
-                <v-icon
-                  v-if="item.children"
-                  class="ek-side__chevron ek-side__fade"
-                  :class="{ 'is-open': isOpen(item.key) }"
-                  icon="mdi-chevron-down"
-                  aria-hidden="true"
-                />
+                <!-- Grup işareti: alt ekran sayısı + belirgin ok (yalnız grupta; yaprakta sağda hiçbir şey yok) —
+                     "açılır klasör mü, ekran mı" ilk bakışta okunur. -->
+                <span v-if="item.children" class="ek-side__group-meta ek-side__fade" aria-hidden="true">
+                  <span class="ek-side__group-count ek-num">{{ item.children.length }}</span>
+                  <v-icon class="ek-side__chevron" :class="{ 'is-open': isOpen(item.key) }" icon="mdi-chevron-down" />
+                </span>
               </button>
             </template>
           </v-tooltip>
@@ -141,11 +140,12 @@
                   <button
                     type="button"
                     class="ek-side__subitem"
-                    :class="[hookClasses?.subItem, { 'is-muted': child.muted, 'is-active': child.key === activeKey, 'is-hover': forceHoverKey === child.key }]"
+                    :class="[hookClasses?.subItem, { 'is-muted': child.muted, 'is-active': child.key === activeKey, 'is-hover': !!forceHoverKey && forceHoverKey === child.key }]"
                     :data-key="child.key"
                     :aria-current="child.key === activeKey ? 'page' : undefined"
                     @click="emit('select', child.key)"
                   >
+                    <v-icon v-if="child.icon" class="ek-side__subicon" :icon="outlineIcon(child.icon) ?? child.icon" aria-hidden="true" />
                     <span class="ek-side__label">{{ child.label }}</span>
                     <EkBadge v-if="child.badge" :variant="child.badgeVariant ?? 'count'" :tone="child.badgeTone ?? 'neutral'" :text="child.badge" />
                   </button>
@@ -277,13 +277,19 @@ function onItemKeydown(event: KeyboardEvent, section: EkSideSection, index: numb
   requestAnimationFrame(() => root?.querySelector<HTMLElement>(`.ek-side__item[data-key="${key}"]`)?.focus())
 }
 
-function onItem(item: EkSideItem) {
+function onItem(item: EkSideItem, event?: MouseEvent) {
   if (!item.children) return emit('select', item.key)
   if (props.collapsed) return emit('expand-request', item.key)
   const next = new Set(open.value)
-  if (next.has(item.key)) next.delete(item.key)
-  else next.add(item.key)
+  const opening = !next.has(item.key)
+  if (opening) next.add(item.key)
+  else next.delete(item.key)
   open.value = next
+  // Açılan grup görünür alanın altına taşarsa, açılma bittikten sonra yumuşakça görünür alana getir (zıplama yok).
+  if (opening && event?.currentTarget) {
+    const entry = (event.currentTarget as HTMLElement).closest('.ek-side__entry') as HTMLElement | null
+    window.setTimeout(() => entry?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 260)
+  }
 }
 </script>
 
@@ -307,7 +313,7 @@ function onItem(item: EkSideItem) {
   display: flex;
   flex-direction: column;
   padding: var(--ek-space-3) var(--ek-side-pad) var(--ek-space-4);
-  background: var(--ek-color-sidebar-bg);
+  background: transparent;
   color: var(--ek-color-sidebar-text);
 }
 
@@ -433,11 +439,11 @@ function onItem(item: EkSideItem) {
   margin: 0;
   padding: 0 var(--ek-space-3) var(--ek-space-1);
   overflow: hidden;
-  color: var(--ek-color-content-muted);
-  font-size: var(--ek-type-micro-size);
-  line-height: var(--ek-type-micro-line);
-  font-weight: var(--ek-type-micro-weight);
-  letter-spacing: var(--ek-type-micro-tracking);
+  color: var(--ek-color-content-subtle, var(--ek-color-content-muted));
+  font-size: 11px;
+  line-height: 16px;
+  font-weight: var(--ek-font-weight-semibold, 600);
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   white-space: nowrap;
 }
@@ -453,8 +459,10 @@ function onItem(item: EkSideItem) {
   gap: var(--ek-space-2);
   margin: var(--ek-space-1) 0 0;
   padding: var(--ek-space-2) var(--ek-space-1) var(--ek-space-2) var(--ek-space-3);
-  border: 1px dashed var(--ek-color-border-default);
+  border: 0;
   border-radius: var(--ek-radius-control);
+  background: var(--ek-color-sidebar-hover);
+  background: color-mix(in srgb, var(--ek-color-sidebar-hover) 60%, transparent);
   color: var(--ek-color-content-muted);
 }
 
@@ -695,6 +703,20 @@ function onItem(item: EkSideItem) {
   --ek-side-ink: var(--ek-color-content-strong);
 }
 
+/* Açık grup başlığı ASLA dolgu almaz (yalnız hover'da) — gruplar "farklı renkte" görünmez; açık olduğunu ok + koyu
+   metin anlatır. Rayda üst öğe etkinliği taşıyabilir (yukarıdaki ray kuralı), tam menüde değil. */
+.ek-side:not(.ek-side--collapsed) .ek-side__item[aria-expanded]:not(:hover):not(.is-hover):not(.is-active) {
+  --ek-side-fill: transparent;
+}
+
+.ek-side__item[aria-expanded='true'] {
+  --ek-side-ink: var(--ek-color-content-strong);
+}
+
+.ek-side__item[aria-expanded='true'] .ek-side__icon {
+  color: var(--ek-color-content-default);
+}
+
 .ek-side__icon {
   flex: none;
   font-size: var(--ek-icon-md);
@@ -755,15 +777,17 @@ function onItem(item: EkSideItem) {
 }
 
 /* Alt liste: yükseklik 0fr↔1fr + opaklık (EkCollapse deseni); kapalıyken görünmez/odaklanamaz. */
+/* Tek, sakin eğri (hızlı başlar, yumuşak durur): yükseklik ve opaklık AYNI süre/eğride — kademeli "zıplama" yok. */
 .ek-side__subwrap {
+  --ek-side-acc: 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
   display: grid;
   grid-template-rows: 0fr;
   opacity: 0;
   visibility: hidden;
   transition:
-    grid-template-rows var(--ek-motion-reveal),
-    opacity var(--ek-motion-feedback),
-    visibility 0ms var(--ek-motion-reveal-duration);
+    grid-template-rows var(--ek-side-acc),
+    opacity 160ms ease-out,
+    visibility 0ms 240ms;
 }
 
 .ek-side__subwrap.is-open {
@@ -771,10 +795,29 @@ function onItem(item: EkSideItem) {
   opacity: 1;
   visibility: visible;
   transition:
-    grid-template-rows var(--ek-motion-reveal),
-    opacity var(--ek-motion-reveal),
+    grid-template-rows var(--ek-side-acc),
+    opacity var(--ek-side-acc),
     visibility 0ms 0ms;
 }
+
+/* Alt öğeler hafifçe yerine oturur (yalnız transform/opaklık — yerleşimi etkilemez). */
+.ek-side__subwrap .ek-side__subentry {
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: opacity 120ms ease-out, transform 120ms ease-out;
+}
+
+.ek-side__subwrap.is-open .ek-side__subentry {
+  opacity: 1;
+  transform: none;
+  transition: opacity 220ms ease-out, transform 260ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.ek-side__subwrap.is-open .ek-side__subentry:nth-child(2) { transition-delay: 20ms; }
+.ek-side__subwrap.is-open .ek-side__subentry:nth-child(3) { transition-delay: 40ms; }
+.ek-side__subwrap.is-open .ek-side__subentry:nth-child(4) { transition-delay: 60ms; }
+.ek-side__subwrap.is-open .ek-side__subentry:nth-child(5) { transition-delay: 80ms; }
+.ek-side__subwrap.is-open .ek-side__subentry:nth-child(n + 6) { transition-delay: 100ms; }
 
 /* Ray'a geçerken alt liste önce solar, sonra katlanır (genişlikle aynı gecikme). */
 .ek-side--collapsed .ek-side__subwrap {
@@ -832,6 +875,263 @@ function onItem(item: EkSideItem) {
   background: var(--ek-color-action);
 }
 
+
+/* ---- Premium ikon kutucukları (oturum düzenlemesi) ----
+   Üst düzey öğe ikonu 28px yuvarlatılmış kutucukta; hover'da kutucuk yüzey rengi + ince hat, ETKİN öğede kutucuk
+   vurgu renginde dolu (beyaz ikon) — tek, net vurgu; soldaki 3px çizgi tam menüde kalkar. İkon merkezi ray merkeziyle
+   aynı (pad 6 + 14 = 20 = 40/2), metin başlangıcı alt öğe metniyle aynı x (44px). */
+.ek-side {
+  --ek-side-tile: 28px;
+}
+
+.ek-side__item {
+  gap: 10px;
+  min-height: 36px;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: calc((var(--ek-side-rail-item) - var(--ek-side-tile)) / 2);
+}
+
+.ek-side__icon {
+  width: var(--ek-side-tile);
+  height: var(--ek-side-tile);
+  border-radius: 8px;
+  font-size: 18px;
+  transition:
+    color var(--ek-motion-feedback),
+    background-color var(--ek-motion-feedback),
+    box-shadow var(--ek-motion-feedback);
+}
+
+.ek-side__item.is-active .ek-side__icon {
+  background: var(--ek-color-action);
+  color: var(--ek-color-action-contrast);
+}
+
+/* Tam menüde etkin satır: hafif zemin + kutucuk yeter; yan çizgi yok. Satır hover'da zemin sakin kalır. */
+.ek-side:not(.ek-side--collapsed) .ek-side__item.is-active::before {
+  display: none;
+}
+
+/* Hover: zeminden bağımsız nötr örtü (tonlu menü zemininde de seçilir; iki temada aynı davranış). */
+.ek-side__item:hover,
+.ek-side__item.is-hover,
+.ek-side__subitem:hover,
+.ek-side__subitem.is-hover {
+  --ek-side-fill: color-mix(in srgb, var(--ek-color-content-strong) 6%, transparent);
+}
+
+/* Alt öğe ikonu: küçük, sakin; etkin/hover'da koyulaşır. */
+.ek-side__subitem {
+  gap: 8px;
+}
+
+.ek-side__subicon {
+  flex: none;
+  font-size: 16px;
+  color: var(--ek-color-content-muted);
+  transition: color var(--ek-motion-feedback);
+}
+
+.ek-side__subitem:hover .ek-side__subicon {
+  color: var(--ek-color-content-default);
+}
+
+.ek-side__subitem.is-active .ek-side__subicon {
+  color: var(--ek-color-action);
+}
+
+/* Rayda zemin hapı yerine yalnız kutucuk konuşur. */
+.ek-side--collapsed .ek-side__item.is-active,
+.ek-side--collapsed .ek-side__item.is-parent-active {
+  --ek-side-fill: transparent;
+}
+
+.ek-side--collapsed .ek-side__item.is-parent-active .ek-side__icon {
+  background: var(--ek-color-action);
+  color: var(--ek-color-action-contrast);
+}
+
+.ek-side--collapsed .ek-side__item.is-active::before,
+.ek-side--collapsed .ek-side__item.is-parent-active::before {
+  display: none;
+}
+
+/* Favoriler satırında etkin öğe kutucuğu nötr (asıl vurgu ağaçtaki yerinde). */
+.ek-side__section.is-pinned .ek-side__item.is-active .ek-side__icon {
+  background: transparent;
+  color: var(--ek-color-action);
+  box-shadow: none;
+}
+
+/* Alt liste kılavuzu kutucuk merkezinden iner; alt öğe metni üst öğe metniyle aynı x. */
+.ek-side__sublist {
+  padding-left: 11px;
+}
+
+.ek-side__subitem.is-active::before {
+  left: -12.5px;
+}
+
+
+/* Tek tipografi: üst öğe, grup başlığı ve alt öğe AYNI boyut/ağırlık/mürekkep — hiyerarşi yalnız girinti + ikonla.
+   Açık grup / etkin öğenin grubu metni koyulaşmaz; yalnız etkin ekran vurgu renginde. */
+.ek-side__item,
+.ek-side__subitem {
+  --ek-side-ink: var(--ek-color-content-default);
+  font-size: var(--ek-type-label-size);
+  line-height: var(--ek-type-label-line);
+  font-weight: var(--ek-font-weight-medium);
+}
+
+/* Grup başlıkları (alt öğesi olanlar) yapraklardan bir kademe SOLUK: aynı boyut/ağırlık, ayrım yalnız ton — "bu bir
+   klasör, ekran değil". Hover'da tam renge döner; etkin öğenin grubu da soluk kalır (vurgu yalnız etkin yaprakta). */
+.ek-side__item[aria-expanded],
+.ek-side__item.is-parent-active:not(.is-active) {
+  --ek-side-ink: color-mix(in srgb, var(--ek-color-content-default) 55%, var(--ek-color-content-muted));
+}
+
+.ek-side__item[aria-expanded] .ek-side__icon {
+  color: color-mix(in srgb, var(--ek-color-content-muted) 85%, transparent);
+}
+
+.ek-side__item[aria-expanded]:hover,
+.ek-side__item[aria-expanded].is-hover {
+  --ek-side-ink: var(--ek-color-content-strong);
+}
+
+.ek-side__item[aria-expanded]:hover .ek-side__icon {
+  color: var(--ek-color-content-default);
+}
+
+.ek-side__item.is-active,
+.ek-side__subitem.is-active {
+  --ek-side-ink: var(--ek-color-action-emphasis);
+}
+
+
+/* Etkin öğe — yumuşak ton: parlak mavi dolgu yerine menü zemininden beyaz yüzeyle ayrılan satır (ince hat, gölge
+   yok), kutucuk kimlik lacivertinin açık tonu, metin koyu nötr. Alt öğede gösterge lacivert. */
+.ek-side__item.is-active,
+.ek-side__subitem.is-active {
+  --ek-side-fill: color-mix(in srgb, var(--ek-color-action) 15%, var(--ek-color-surface));
+  --ek-side-ink: var(--ek-color-chrome);
+}
+
+.ek-side__item.is-active .ek-side__icon,
+.ek-side--collapsed .ek-side__item.is-parent-active .ek-side__icon {
+  background: color-mix(in srgb, var(--ek-color-action) 22%, var(--ek-color-surface));
+  /* Etkin sekme ikonuyla aynı renk (EkWorkspaceTabs `.ek-tab.is-active .ek-tab__icon`). */
+  color: var(--ek-color-action);
+}
+
+.ek-side__subitem.is-active .ek-side__subicon {
+  color: var(--ek-color-action);
+}
+
+.ek-side__subitem.is-active::before {
+  background: var(--ek-color-chrome);
+}
+
+/* Favoriler satırında etkin öğe nötr kalır (asıl vurgu ağaçtaki yerinde). */
+.ek-side__section.is-pinned .ek-side__item.is-active {
+  --ek-side-ink: var(--ek-color-content-default);
+}
+
+.ek-side__section.is-pinned .ek-side__item.is-active:not(:hover) {
+  --ek-side-fill: transparent;
+}
+
+.ek-side__section.is-pinned .ek-side__item.is-active .ek-side__icon {
+  background: transparent;
+  color: var(--ek-color-content-muted);
+}
+
+
+/* Etkin gösterge (sol): aktif sekmenin üst göstergesiyle AYNI dil — 1.5px, site mavisi %55, uçlarda solan dikey
+   gradyan; ortadan yumuşakça açılır. Üst öğede satırın solunda, alt öğede kılavuz çizgisinin üstünde. */
+.ek-side:not(.ek-side--collapsed) .ek-side__item.is-active::before,
+.ek-side__subitem.is-active::before {
+  content: '';
+  display: block;
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  width: 1.5px;
+  border-radius: 2px;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    color-mix(in srgb, var(--ek-color-action) 55%, transparent) 18%,
+    color-mix(in srgb, var(--ek-color-action) 55%, transparent) 82%,
+    transparent 100%
+  );
+  transform-origin: center;
+  animation: ek-side-indicator 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.ek-side:not(.ek-side--collapsed) .ek-side__item.is-active::before {
+  left: 0;
+}
+
+.ek-side__subitem.is-active::before {
+  left: -12.25px;
+}
+
+/* Favoriler satırında gösterge yok (asıl vurgu ağaçtaki yerinde). */
+.ek-side__section.is-pinned .ek-side__item.is-active::before {
+  display: none;
+}
+
+@keyframes ek-side-indicator {
+  from {
+    opacity: 0;
+    transform: scaleY(0.2);
+  }
+  40% {
+    opacity: 0.6;
+  }
+}
+
+
+/* Grup işareti (sayı + ok): sağda küçük nötr hap — kapalıyken sayı görünür, açıkken yalnız ok. */
+.ek-side__group-meta {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 2px;
+  height: 20px;
+  padding: 0 2px 0 6px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ek-color-content-strong) 6%, transparent);
+  color: var(--ek-color-content-muted);
+  transition: background-color var(--ek-motion-feedback), padding var(--ek-motion-feedback);
+}
+
+.ek-side__group-count {
+  font-size: 11px;
+  line-height: 1;
+  font-weight: var(--ek-font-weight-semibold);
+}
+
+.ek-side__group-meta .ek-side__chevron {
+  font-size: 16px;
+  color: var(--ek-color-content-default);
+}
+
+.ek-side__item[aria-expanded='true'] .ek-side__group-meta {
+  padding: 0 2px;
+  background: transparent;
+}
+
+.ek-side__item[aria-expanded='true'] .ek-side__group-count {
+  display: none;
+}
+
+.ek-side__item[aria-expanded]:hover .ek-side__group-meta {
+  background: color-mix(in srgb, var(--ek-color-content-strong) 10%, transparent);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .ek-side__chevron,
   .ek-side__subwrap,
@@ -845,11 +1145,27 @@ function onItem(item: EkSideItem) {
 }
 
 :root[data-motion='reduced'] .ek-side__chevron,
-:root[data-motion='reduced'] .ek-side__subwrap {
+:root[data-motion='reduced'] .ek-side__subwrap,
+:root[data-motion='reduced'] .ek-side__subwrap .ek-side__subentry {
   transition: none;
 }
 
-:root[data-motion='reduced'] .ek-side__item::before {
+@media (prefers-reduced-motion: reduce) {
+  .ek-side__subwrap .ek-side__subentry {
+    transition: none;
+    transform: none;
+  }
+}
+
+:root[data-motion='reduced'] .ek-side__item::before,
+:root[data-motion='reduced'] .ek-side__subitem::before {
   animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ek-side__item::before,
+  .ek-side__subitem::before {
+    animation: none;
+  }
 }
 </style>

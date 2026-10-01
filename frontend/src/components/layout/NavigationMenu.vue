@@ -66,7 +66,7 @@
       </div>
 
       <div v-if="!temporary" class="ek-shell-nav__footer">
-        <v-tooltip :eager="false" transition="fade-transition" location="end" :open-delay="300" :disabled="!isRail">
+        <v-tooltip :eager="false" transition="fade-transition" location="end" :open-delay="400">
           <template #activator="{ props: tip }">
             <button
               v-bind="tip"
@@ -77,12 +77,13 @@
               :aria-expanded="!isRail"
               @click="isRail ? $emit('expand-request') : $emit('collapse-request')"
             >
-              <v-icon class="ek-shell-nav__toggle-icon" icon="mdi-chevron-double-left" aria-hidden="true" />
-              <span class="ek-shell-nav__toggle-label ek-shell-nav__fade">Daralt</span>
-              <EkKbd class="ek-shell-nav__fade" :keys="shortcutKeys('sidebarToggle')" />
+              <span class="ek-shell-nav__toggle-tile" aria-hidden="true">
+                <v-icon class="ek-shell-nav__toggle-icon" icon="mdi-chevron-left" />
+              </span>
+              <span class="ek-shell-nav__toggle-label ek-shell-nav__fade">Menüyü gizle</span>
             </button>
           </template>
-          <span class="ek-shell-nav__tip">Menüyü genişlet <EkKbd :keys="shortcutKeys('sidebarToggle')" tone="inverse" /></span>
+          <span class="ek-shell-nav__tip">{{ isRail ? 'Menüyü genişlet' : 'Menüyü gizle' }} <EkKbd :keys="shortcutKeys('sidebarToggle')" tone="inverse" /></span>
         </v-tooltip>
       </div>
     </div>
@@ -167,8 +168,15 @@ function onReorder(sectionId: string, keys: string[]) {
 <style scoped>
 /* Çekmece genişliği Vuetify'dan (rail ↔ width); süre/eğri/gecikme B4 koreografisinden (app.css --ek-app-nav-*):
    ray'a giderken içerik solduktan sonra (`lag`) daralır, açılırken hemen genişler. */
+/* Menü zemini: üst barın kimlik lacivertinin (`chrome`) çok açık tonu — üstte biraz daha açık, aşağı doğru bir tık
+   koyulaşan yumuşak geçiş. Koyu temada aynı karışım menü yüzeyine hafif lacivert verir. */
 .ek-shell-nav {
-  background: var(--ek-color-sidebar-bg) !important;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ek-color-action) 5%, var(--ek-color-sidebar-bg)) 0%,
+      color-mix(in srgb, var(--ek-color-action) 8%, var(--ek-color-sidebar-bg)) 100%
+    ) !important;
   border-right: 1px solid var(--ek-color-sidebar-border) !important;
   transition-duration: var(--ek-app-nav-move) !important;
   transition-timing-function: var(--ek-motion-layout-easing) !important;
@@ -192,6 +200,9 @@ function onReorder(sectionId: string, keys: string[]) {
   min-height: 0;
   overflow-x: hidden;
   overflow-y: auto;
+  /* Grup açılıp kapanırken tarayıcının kaydırma çapası scrollTop'u oynatıp menüyü aşağı/yukarı "zıplatıyordu". */
+  overflow-anchor: none;
+  overscroll-behavior: contain;
   scrollbar-gutter: stable;
   scrollbar-width: thin;
   scrollbar-color: var(--ek-color-border-strong) transparent;
@@ -283,9 +294,28 @@ function onReorder(sectionId: string, keys: string[]) {
   color: var(--ek-color-content-muted);
   font-family: inherit;
   font-size: var(--ek-type-label-size);
-  font-weight: var(--ek-type-label-weight);
+  font-weight: var(--ek-font-weight-medium);
   cursor: pointer;
   transition: color var(--ek-motion-feedback);
+}
+
+/* İkon küçük çerçeveli kutucukta (premium "panel" düğmesi); ikon merkezi menü ikon sütunuyla aynı x'te. */
+.ek-shell-nav__toggle-tile {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  margin-left: calc((var(--ek-icon-md) - 24px) / 2);
+  border: 1px solid var(--ek-color-sidebar-border);
+  border-radius: var(--ek-radius-sm);
+  background: var(--ek-color-sidebar-bg);
+  transition: border-color var(--ek-motion-feedback), background-color var(--ek-motion-feedback);
+}
+
+.ek-shell-nav__toggle:hover .ek-shell-nav__toggle-tile {
+  border-color: var(--ek-color-border-strong);
 }
 
 .ek-shell-nav__toggle::after {
@@ -327,7 +357,7 @@ function onReorder(sectionId: string, keys: string[]) {
 
 .ek-shell-nav__toggle-icon {
   flex: none;
-  font-size: var(--ek-icon-md);
+  font-size: var(--ek-icon-sm);
   transition: transform var(--ek-app-nav-move) var(--ek-motion-layout-easing) 0ms;
 }
 

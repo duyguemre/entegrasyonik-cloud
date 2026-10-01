@@ -92,9 +92,11 @@ export function useShellMenu() {
       // FR2-SHELL madde 7/8: Eğitim Merkezi gösterilmez; Uygulama Ayarları "Ayarlar" grubundan üst seviyeye çıkar.
       for (const link of shapeGroupLinks<any>(group.links)) {
         if (!isVisible(link)) continue
-        const key = screenKeyForLink(link)
-        byKey.set(key, link)
         const title = titleOf(link)
+        // Grup başlıklarının (Admin Paneli, Entegrasyonlar…) `code`'u boş olabilir → hepsi aynı anahtarı (`undefined`)
+        // paylaşıyor, biri açılıp kapanınca hepsi birlikte açılıp kapanıyordu. Kodsuz gruba benzersiz anahtar ver.
+        const key = link.code ? screenKeyForLink(link) : `group:${label}:${title}`
+        byKey.set(key, link)
         const visibleChildren = (link.children || []).filter(isVisible)
         if (link.children && link.children.length > 0) {
           items.push({
@@ -106,7 +108,8 @@ export function useShellMenu() {
               byKey.set(childKey, child)
               iconByKey.set(childKey, child.icon ?? link.icon)
               entries.push({ key: childKey, link: child, title: titleOf(child), icon: child.icon ?? link.icon, parentTitle: title, sectionLabel: label })
-              return { key: childKey, label: titleOf(child) }
+              const childIcon = child.icon ?? inheritedIcon(child) ?? resolveScreenByKey(childKey)?.icon ?? link.icon
+              return { key: childKey, label: titleOf(child), icon: childIcon }
             }),
           })
         } else {

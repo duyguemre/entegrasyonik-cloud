@@ -525,7 +525,7 @@ export const ARTICLES_TR: HelpArticle[] = [
     related: ['cat-products-variants', 'app-bulk-actions', 'stock-single'],
   },
 
-  // Kanıt: frontend/src/components/CategorySyncComponent.vue ("Platform Kategori Eşleştirme", "Otomatik eşleştirmeyi başlat", yapay zekâ uyarısı, seçenek eşleştirme),
+  // Kanıt: frontend/src/components/categories/CategoryChannelRow.vue (kanal eşleme satırı, Özellikler), CategoryManager.vue ("Otomatik eşleştir", yapay zekâ uyarısı),
   //        frontend/src/components/BrandSyncComponent.vue ("Platform Marka Eşleştirme"), frontend/src/components/ChoicesMappingComponent.vue ("Seçenek Eşleştirme"),
   //        backend/src/capabilities/domains/catalog.ts (mappings.category.save/auto_match, brands.integration_mapping.save, mappings.attribute.save),
   //        frontend/src/components/logListView/DetailedImportLogReportMissingCategory.vue, frontend/src/components/logListView/DetailedImportLogReportMissingAttribute.vue
@@ -542,12 +542,12 @@ export const ARTICLES_TR: HelpArticle[] = [
       {
         type: 'steps',
         items: [
-          '**Kategoriler** ekranında kategorinizi seçin.',
-          '**Platform Kategori Eşleştirme** bölümünde kanalı seçin ve kanalın kategorisini belirleyip kaydedin.',
-          'Kategori bağlantısı kaydedildikten sonra aynı bölümden kanalın seçenek grubunu (ör. beden, renk) sizin seçenek grubunuzla eşleştirin.',
+          '**Kategoriler** ekranında ağaçtan uç (alt kategorisi olmayan) kategorinizi seçin.',
+          '**Kanal eşlemeleri** bölümünde ilgili kanalın satırında **Eşle**’ye basın, kanalın kategorisini arayıp seçin ve kaydedin.',
+          'Kanal kategorisi kaydedildikten sonra aynı satırdaki **Özellikler** bölümünden kanalın seçenek grubunu (ör. beden, renk) sizin seçenek grubunuzla eşleştirin.',
         ],
       },
-      { type: 'p', text: 'Eşlenmemiş tüm uç (en alt düzey) kategoriler için **Otomatik eşleştirmeyi başlat** düğmesini kullanabilirsiniz. Otomatik eşleştirme yapay zekâ desteğiyle çalışır.' },
+      { type: 'p', text: 'Eşlenmemiş uç (en alt düzey) kategoriler için **Otomatik eşleştir** düğmesini kullanabilirsiniz. Otomatik eşleştirme yapay zekâ desteğiyle çalışır. **Eksik eşlemeli** süzgeci, hangi kategorilerin tamamlanması gerektiğini gösterir.' },
       { type: 'note', tone: 'warning', text: 'Otomatik eşleştirme benzer isimli kategorilerde hatalı sonuç verebilir. İşlemden sonra eşleşmeleri kontrol edin.' },
       { type: 'h', text: 'Marka ve seçenek eşleme' },
       {

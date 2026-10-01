@@ -41,3 +41,11 @@ const defaults = computed(() => ({ VDialog: contained.value, VBottomSheet: conta
   display: none !important;
 }
 </style>
+
+<style>
+/* Alan kazanımı: konum yolu (EkPageBar) taşıyan ekranlarda sekme şeridi ile konum yolu arası 20px → 12px.
+   Ekranlar kök iç boşluğunu kendileri veriyor (ör. `padding: space-5 space-6`); yalnız ÜST boşluk tek yerden ezilir. */
+.ek-tab-host > .wrapper-active-component:has(.ek-page-bar) {
+  padding-top: var(--ek-space-3) !important;
+}
+</style>

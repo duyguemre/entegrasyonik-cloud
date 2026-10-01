@@ -10,6 +10,7 @@ import '../public/assets/css/site.css'
 import '@entegrasyonik/ui/styles'
 // Plugins
 import { registerPlugins } from '@/plugins'
+import { installNoFormHistory } from '@/plugins/noFormHistory'
 // Components
 import App from './App.vue'
 // Composables
@@ -37,6 +38,7 @@ registerChartThemes()
 
 const pinia = createPinia()
 const app = createApp(App)
+installNoFormHistory()
 
 
 registerPlugins(app)
