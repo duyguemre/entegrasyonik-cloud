@@ -1,8 +1,12 @@
 # MCP-6 önyüz (cloud/mcp-fe) — inceleme ve rapor
 
 Kaynaklar: `docs/cloud-contracts/MCP_UI_CONTRACT.md` 1.0.0 (kanonik), ADR-0035, K36–K38 / K47 / K48.
-Dal: `cloud/mcp-fe`. Taban `origin/cloud/fe-r2d` + `origin/main`. fe-r2d bu oturumda henüz bitmemişti (yalnız `before/`
-görüntüleri vardı, dal çalışırken ilerliyordu); iş onun üstünde yapıldı ve son hâli birleştirildi (çakışma yok). Ayar
+Dal: `cloud/mcp-fe`. Taban `origin/cloud/fe-r2d` + `origin/main`. fe-r2d başlangıçta bitmemişti (yalnız `before/`
+görüntüleri vardı); iş onun ara hâli üstünde yapıldı, bekleme döngüsü fe-r2d'nin bittiğini (`fe-r2d-review` sonrası
+görüntüleri) görünce SON hâli (`5c1e216`, fe-r2a dahil) birleştirildi — çakışma yok; tüm kapılar birleşme sonrası
+yeniden koşuldu (vitest 71 dosya / 1468 test, e2e 117 × 2 ardışık yeşil, build ×2). İnceleme görüntüleri yeni kabukla
+yeniden üretildi. Not: bir koşuda mobil "Ekranda aç → /orders" iddiası yük altında bir kez zaman aşımına düştü; sonraki
+iki tam koşuda tekrarlanmadı. Ayar
 dosyalarından yalnız `screens.ts`, `menu.ts` ve `pageHelp.ts`'e kayıt **eklendi**; mevcut ekranlara dokunulmadı.
 Yalnız mock kullanıldı; backend'e bağlanılmadı.
 
