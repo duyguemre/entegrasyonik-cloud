@@ -50,7 +50,24 @@ uyarı girilirse uyarı eşiği esas (yanlış kritik yok). Pencereler (R1/R2 15
 tutarlılığı, ayar değişikliğinin değerlendirmeye yansıması, gölge mod/cooldown, change-notice). Güncellenen:
 `tests/unit/api/publicConfig.test.ts`, `tests/mongo-semantics/platformTarget.mongoSemantics.test.ts`.
 
-**Hâlâ açık (NB8):** R5/R6/R9-R11 kural kaynakları; backoffice ayar panelinde `platform.alerts` grubu
+**Ek (ikinci oturum, `NB8 platform kural kaynakları` commit'i):** R5/R6/R9/R10/R11 eklendi (platform kapsamı, tenant bildirimi yok):
+
+| Kural | Kaynak | Eşik |
+|---|---|---|
+| R5 katalog birikmesi | ApplicationDB `ExportSignals` en eski `PENDING` ve `nextRunAt <= şimdi` (ertelenmiş hariç) | `alerts.r5.pendingMin` (30) |
+| R6 iş sağlığı | `JobState` + `deriveJobHealth` (stale/hung/never-ran) ya da `consecutiveFailures >= 3`; kritik işte kritik. Kritiklik/süre `JobState`'te olmadığından `startJob` tanım özetini tutar (`listStartedJobDefs`): değerlendirici yalnız kendi sürecinde başlatılan işleri görür | kod sabiti (ADR) |
+| R9 süreç/bağımlılık | `MetricRollups` `unhandled_rejections` (son 1 sa, 5m) > 0; Redis hazır değil > 2 dk (süreç içi başlangıç anı) | kod sabiti (ADR) |
+| R10 stok yayın gecikmesi | `getPublishLagSummary(…, '1h')` p95 (taşma = sonsuz), en az 20 gözlem | `alerts.r10.p95Min` (5) |
+| R11 yeni hata türü | `ErrorEvents` `status:'open'`, `firstSeen` son 1 sa, `count >= eşik`; kapsam anahtarı belge id (parmak izi mesaj şablonu içerir, girmez). ADR "bilgi" der; `Alerts` düzeyleri warning/critical olduğundan warning | `alerts.r11.minCount` (5) |
+
+`_platform` anahtar sayısı 25 (ADR-0031 gözden geçirme eşiğinde; test ≤25 korur — sonraki anahtar eşiği aşar, gözden geçirme gerekir).
+Bilinçli dışarıda: R9 olay döngüsü p99 (metrik yok), R11 regresyon (`ErrorEvents` yeniden açılmayı ayrı izlemiyor), R4 "ölçekleme
+eşiği" bilgisi. Ayrıca `attentionOps` düzeltmesi: tenant devre uyarısı (`R2 circuit:*:tid`) "kimlik hatası" diye gösteriliyordu.
+Testler: `tests/unit/alerts/alertNb8Platform.test.ts`. Kapılar aynı (typecheck 0, lint 0 hata, depcruise 0 hata); `test:all` tabandaki
+5 suite + `tests/unit/oauth/flow.test.ts` (18 test, bu dalın P4 başında da aynı şekilde kırmızı; P4/NB8 değişikliğinden bağımsız,
+`verifyOAuthAccessToken` "Token not verified" — saat/tarihe bağlı olabilir, yerelde bakılmalı).
+
+**Hâlâ açık (NB8):** backoffice ayar panelinde `platform.alerts` grubu
 (`frontend/backoffice/src/views/settings/PlatformSettingsPanel.vue` grup listesi + mock) — FE işi.
 
 ## 3. `src/api/**` console temizliği (F-06)
