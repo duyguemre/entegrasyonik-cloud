@@ -107,6 +107,8 @@ export default class ApplicationDB implements IApplicationDB {
     public getAnnouncementModel() { return this.database.getModel('announcement'); }
     public getAlertModel() { return this.database.getModel('alert'); }
     // [ADR-0035 / MCP-1] OAuth yetkilendirme sunucusu.
+    // [BE-05 / K51] backoffice kayitli gorunumler.
+    public getBackofficeViewModel() { return this.database.getModel('backoffice_view'); }
     public getOAuthClientModel() { return this.database.getModel('oauth_client'); }
     public getOAuthAuthCodeModel() { return this.database.getModel('oauth_auth_code'); }
     public getOAuthRefreshTokenModel() { return this.database.getModel('oauth_refresh_token'); }

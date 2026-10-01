@@ -21,9 +21,10 @@ export default class BackofficeLogService extends BaseApi implements IService {
     }
 
     async issueGroups(): Promise<any> {
-        const { from, to, ...rest } = this.request || {}
-        const groups = await asValidation(() => getIssueGroups({ ...pick(rest, ['status', 'source', 'module', 'integrationCode', 'sort', 'limit']), from: dateOf(from), to: dateOf(to) }))
-        return { items: groups.map(truncateLogEntry) }
+        const { from, to, tid, ...rest } = this.request || {}
+        const groups = await asValidation(() => getIssueGroups({ ...pick(rest, ['status', 'source', 'module', 'integrationCode', 'sort', 'limit']), tenantId: tid, from: dateOf(from), to: dateOf(to) }))
+        // BE-06: kova eşleşmesi -> yaklaşık (bkz. docs/API_BACKOFFICE_ATTENTION.md).
+        return { items: groups.map(truncateLogEntry), tenantFilter: tid !== undefined ? { tid, approximate: true } : null }
     }
 
     async issueTrend(): Promise<any> {
