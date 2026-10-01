@@ -77,6 +77,9 @@ window.addEventListener('unhandledrejection', (event: PromiseRejectionEvent) => 
 // (img/script/link) YAKALAMAZ — yalnızca script çalışma zamanı hatalarını (window'a
 // kadar bubble eden) yakalar; broken image gibi durumlar için gürültülü toast riski yok.
 window.addEventListener('error', (event: ErrorEvent) => {
+  // "ResizeObserver loop completed with undelivered notifications." tarayıcının zararsız bir uyarısıdır (hata değil,
+  // işlev etkilenmez); dar ekranda kullanıcıya "Bir şeyler ters gitti" bildirimi olarak çıkması yanlış alarmdı.
+  if (/^ResizeObserver loop (completed with undelivered notifications|limit exceeded)/.test(event.message)) return
   reportUnexpectedError('Yakalanmamış global hata', {
     module: 'errorHandler',
     message: event.message,
