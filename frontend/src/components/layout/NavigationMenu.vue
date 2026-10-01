@@ -27,6 +27,7 @@
     class="ek-shell-nav"
     :class="isRail ? 'soft-rail is-rail' : 'soft-nav'"
     :aria-label="isRail ? 'Daraltılmış gezinme menüsü' : 'Ana gezinme menüsü'"
+    @scroll.capture="pinHorizontal"
   >
     <div class="ek-shell-nav__wrap">
       <div class="ek-shell-nav__scroll">
@@ -56,7 +57,7 @@
                 :aria-label="isFavorite(item.key) ? `${t('shell.favorites.remove')}: ${item.label}` : `${t('shell.favorites.add')}: ${item.label}`"
                 @click.stop="toggleFavorite(item.key, item.label)"
               >
-                <v-icon :icon="isFavorite(item.key) ? 'mdi-star' : 'mdi-star-outline'" aria-hidden="true" />
+                <v-icon :icon="isFavorite(item.key) ? 'mdi-star' : 'mdi-star-outline'" :size="isFavorite(item.key) ? 14 : 16" aria-hidden="true" />
               </button>
             </EkTooltip>
           </template>
@@ -134,6 +135,15 @@ const isFavoritable = (key: string) => {
   return !!link && !link.isConstant && link.code !== 'ExitView'
 }
 const isFavorite = (key: string) => !!linkFor(key)?.isFavorite
+
+/** FR3 madde 1 (fe-r3a) — ray hatası: öğe odak/hover ile görünür alana kaydırılınca (Tab, ipucu) çekmece içeriği yatayda
+ *  ~160px kayıyor, tüm ikonlar ekrandan çıkıyordu (içerik 248px, ray 64px). Menü YALNIZ dikey kayar: yatay kayma kaydırma
+ *  olayında sıfırlanır (olay boyamadan önce işlenir → titreme yok). `overflow: clip` denendi: kaydırmayı engelliyor ama
+ *  rayda düğmenin görünmeyen kısmı tıklama hedefini kesiyordu. */
+function pinHorizontal(event: Event) {
+  const el = event.target as HTMLElement | null
+  if (el && el.scrollLeft) el.scrollLeft = 0
+}
 /** FR3 madde 2: ekle/çıkar iyimser (menü deposu) — Favoriler bölümü anında güncellenir; ekran okuyucuya kısa duyuru. */
 const announce = ref('')
 function toggleFavorite(key: string, label: string) {
@@ -177,17 +187,10 @@ function onReorder(sectionId: string, keys: string[]) {
   height: 100%;
 }
 
-/* FR3 madde 1 (fe-r3a) — ray hatası: öğe odak/hover ile görünür alana kaydırılınca (Tab, ipucu) çekmece içeriği yatayda
-   ~160px kayıyor, tüm ikonlar ekrandan çıkıyordu (`overflow: hidden` programatik kaydırmaya izin verir). `clip` kaydırmaz. */
-.ek-shell-nav :deep(.v-navigation-drawer__content) {
-  /* İki eksen birden `clip` (biri auto olursa clip → hidden'a döner); dikey kaydırma iç `__scroll`'da. */
-  overflow: clip;
-}
-
 .ek-shell-nav__scroll {
   flex: 1;
   min-height: 0;
-  overflow-x: clip;
+  overflow-x: hidden;
   overflow-y: auto;
   scrollbar-gutter: stable;
   scrollbar-width: thin;
@@ -222,7 +225,6 @@ function onReorder(sectionId: string, keys: string[]) {
    favori olduğu bir bakışta), Favoriler bölümündeki satırda yalnız hover/odakta (orada zaten favori olduğu belli). */
 .ek-shell-nav__fav.is-on {
   color: var(--ek-color-content-muted);
-  font-size: var(--ek-icon-xs);
   opacity: 1;
 }
 

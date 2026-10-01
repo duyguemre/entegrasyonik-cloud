@@ -662,12 +662,12 @@ function onItem(item: EkSideItem) {
 }
 
 /* FR3 madde 2: favoriler (sıralanabilir bölüm) satırı etkin sayfayı yalnız metin/ikon tonuyla gösterir — zemin hapı ve
-   gösterge çizgisi menü ağacındaki asıl yerinde kalır (aynı anda iki vurgulu hap görünmez). Rayda ikon hapı korunur. */
-.ek-side:not(.ek-side--collapsed) .ek-side__section.is-pinned .ek-side__item.is-active:not(:hover) {
+   gösterge çizgisi menü ağacındaki asıl yerinde kalır (aynı anda iki vurgulu hap görünmez — rayda da). */
+.ek-side__section.is-pinned .ek-side__item.is-active:not(:hover) {
   --ek-side-fill: transparent;
 }
 
-.ek-side:not(.ek-side--collapsed) .ek-side__section.is-pinned .ek-side__item.is-active::before {
+.ek-side__section.is-pinned .ek-side__item.is-active::before {
   display: none;
 }
 
