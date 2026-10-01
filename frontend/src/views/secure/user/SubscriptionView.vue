@@ -70,10 +70,10 @@
             </div>
 
             <ul class="plan-card-limits">
-              <li><v-icon size="16" color="content-muted">mdi-storefront-outline</v-icon> {{ formatLimit(plan.limits?.channels) }} Kanal (Pazaryeri + E-ticaret)</li>
-              <li><v-icon size="16" color="content-muted">mdi-package-variant-closed</v-icon> {{ formatLimit(plan.limits?.skus) }} Varyant (SKU)</li>
-              <li><v-icon size="16" color="content-muted">mdi-account-group-outline</v-icon> {{ formatLimit(plan.limits?.users) }} Kullanıcı</li>
-              <li><v-icon size="16" color="content-muted">mdi-robot-outline</v-icon> {{ formatLimit(plan.limits?.mcpCallsPerDay) }} MCP Çağrısı / gün</li>
+              <li><v-icon size="16" color="content-muted">mdi-storefront-outline</v-icon> {{ formatLimit(plan.limits?.channels, 'channels') }} Kanal (Pazaryeri + E-ticaret)</li>
+              <li><v-icon size="16" color="content-muted">mdi-package-variant-closed</v-icon> {{ formatLimit(plan.limits?.skus, 'skus') }} Varyant (SKU)</li>
+              <li><v-icon size="16" color="content-muted">mdi-account-group-outline</v-icon> {{ formatLimit(plan.limits?.users, 'users') }} Kullanıcı</li>
+              <li><v-icon size="16" color="content-muted">mdi-robot-outline</v-icon> {{ formatLimit(plan.limits?.mcpCallsPerDay, 'mcpCallsPerDay') }} MCP Çağrısı / gün</li>
             </ul>
 
             <div v-if="plan.features?.length" class="plan-card-features">
@@ -183,8 +183,13 @@ function planActionLabel(plan: Plan): string {
   return 'Bu Plana Geç';
 }
 
-function formatLimit(n?: number): string {
+// P08 (K49): plan kaydındaki tavan değerler "sınırsız" anlamındadır (Kurumsal: 999 kanal/kullanıcı, 999.999 varyant/çağrı).
+// Plan verisi değişmez; yalnız gösterim. Açık `unlimited` bayrağı backend isteği (PROPOSALS_PENDING backend istekleri).
+const UNLIMITED_AT: Record<string, number> = { channels: 999, users: 999, skus: 999_999, mcpCallsPerDay: 999_999 };
+
+function formatLimit(n?: number, key?: keyof typeof UNLIMITED_AT): string {
   if (n === undefined || n === null) return '—';
+  if (!Number.isFinite(n) || (key && n >= UNLIMITED_AT[key])) return 'Sınırsız';
   return formatNumber(n);
 }
 
@@ -195,7 +200,7 @@ function featureLabel(f: string): string {
 function formatPrice(plan: Plan): string {
   if (!plan.priceMinor) return 'Özel Teklif';
   const amount = formatNumber(Math.round(plan.priceMinor / 100));
-  return `${amount} ₺ / ${plan.interval === 'year' ? 'yıl' : 'ay'}`;
+  return `₺${amount} / ${plan.interval === 'year' ? 'yıl' : 'ay'}`;
 }
 
 const fetchPlans = async () => {

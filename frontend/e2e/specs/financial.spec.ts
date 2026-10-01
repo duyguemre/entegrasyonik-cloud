@@ -82,9 +82,9 @@ test.describe('ADR-0015 B5-3 — FinancialListView (finans)', () => {
   test('özet şeridi: res.summary değerleri tr-TR para biçimiyle gösterilir', async ({ page }) => {
     await open(page, { [ENDPOINT]: financialDoluFixture })
 
-    await expect(page.getByText('98.765,40 ₺')).toBeVisible()
-    await expect(page.getByText('12.345,60 ₺')).toBeVisible()
-    await expect(page.getByText('86.419,80 ₺')).toBeVisible()
+    await expect(page.getByText('₺98.765,40')).toBeVisible()
+    await expect(page.getByText('₺12.345,60')).toBeVisible()
+    await expect(page.getByText('₺86.419,80')).toBeVisible()
     await expect(page.getByText('321', { exact: true }).or(page.getByText('321 adet'))).toBeVisible()
   })
 
@@ -98,7 +98,7 @@ test.describe('ADR-0015 B5-3 — FinancialListView (finans)', () => {
       for (const l of ['Brüt alacak', 'Kesintiler', 'Net hakediş', 'Kargo', 'İşlem']) {
         await expect(page.locator('.financialListView').getByText(l, { exact: true })).toBeVisible()
       }
-      await expect(page.getByText('777,50 ₺')).toBeVisible()
+      await expect(page.getByText('₺777,50')).toBeVisible()
       await expect(page.getByText('321 adet')).toBeVisible()
     } else {
       for (const l of ['Brüt alacak', 'Kesintiler', 'Net hakediş', 'İşlem']) {
@@ -212,13 +212,13 @@ test.describe('ADR-0015 B5-3 — FinancialListView (finans)', () => {
     await expect(dialog.getByText('TRX-E2E-0001')).toBeVisible()
     await expect(dialog.getByText('SIP-E2E-1001')).toBeVisible()
     await expect(dialog.getByText('NET HAKEDİŞ')).toBeVisible()
-    await expect(dialog.getByText('1.250,00 ₺')).toBeVisible()
-    await expect(dialog.getByText('1.500,00 ₺')).toBeVisible()
-    // Komisyon 200 => "-200,00 ₺"; diğer kesinti = borç(250) - komisyon(200) = 50
-    await expect(dialog.getByText('-200,00 ₺')).toBeVisible()
-    await expect(dialog.getByText('50,00 ₺', { exact: true })).toBeVisible()
+    await expect(dialog.getByText('₺1.250,00')).toBeVisible()
+    await expect(dialog.getByText('₺1.500,00')).toBeVisible()
+    // Komisyon 200 => "-₺200,00"; diğer kesinti = borç(250) - komisyon(200) = 50
+    await expect(dialog.getByText('-₺200,00')).toBeVisible()
+    await expect(dialog.getByText('₺50,00', { exact: true })).toBeVisible()
     // meta.vatAmount => KDV kesintisi
-    await expect(dialog.getByText('-45,50 ₺')).toBeVisible()
+    await expect(dialog.getByText('-₺45,50')).toBeVisible()
     await expect(dialog.getByText('E2E satış hakedişi')).toBeVisible()
   })
 

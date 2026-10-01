@@ -103,8 +103,7 @@
                 <div class="ek-fin-flow__row">
                   <div class="d-flex flex-column">
                     <span class="ek-fin-label">BRÜT TUTAR</span>
-                    <span class="ek-fin-flow__amount ek-num">{{ formatCurrency(selectedTransaction.credit) }}
-                      ₺</span>
+                    <span class="ek-fin-flow__amount ek-num">{{ formatCurrency(selectedTransaction.credit) }}</span>
                   </div>
                   <v-icon color="success" size="22" aria-hidden="true">mdi-plus-circle-outline</v-icon>
                 </div>
@@ -113,7 +112,7 @@
                   <div class="d-flex flex-column">
                     <span class="ek-fin-label">PAZARYERİ KOMİSYONU</span>
                     <span class="ek-fin-flow__amount ek-fin-negative ek-num">-{{
-                      formatCurrency(selectedTransaction.commissionAmount) }} ₺</span>
+                      formatCurrency(selectedTransaction.commissionAmount) }}</span>
                   </div>
                   <span class="ek-fin-label">{{ selectedTransaction.commissionRate ? '%' +
                     selectedTransaction.commissionRate : '' }}</span>
@@ -123,7 +122,7 @@
                   <div class="d-flex flex-column">
                     <span class="ek-fin-label">DİĞER KESİNTİLER / BORÇ</span>
                     <span class="ek-fin-flow__amount ek-fin-negative ek-num">{{
-                      formatCurrency(selectedTransaction.debt - (selectedTransaction.commissionAmount || 0)) }} ₺</span>
+                      formatCurrency(selectedTransaction.debt - (selectedTransaction.commissionAmount || 0)) }}</span>
                   </div>
                   <v-icon color="error" size="22" aria-hidden="true">mdi-minus-circle-outline</v-icon>
                 </div>
@@ -139,8 +138,7 @@
                       </template>
                     </v-tooltip>
                   </div>
-                  <span class="ek-fin-flow__net ek-num">{{ formatCurrency(selectedTransaction.netAmount) }}
-                    ₺</span>
+                  <span class="ek-fin-flow__net ek-num">{{ formatCurrency(selectedTransaction.netAmount) }}</span>
                 </div>
               </div>
             </v-col>
@@ -153,7 +151,7 @@
                 <v-icon color="error" class="mr-2" aria-hidden="true">mdi-calculator-variant-outline</v-icon>
                 <span class="ek-fin-label">KDV Kesintisi (Meta)</span>
               </div>
-              <span class="ek-fin-negative ek-num">-{{ formatCurrency(getVatFromMeta) }} ₺</span>
+              <span class="ek-fin-negative ek-num">-{{ formatCurrency(getVatFromMeta) }}</span>
             </div>
 
             <v-expansion-panels flat variant="inset">
@@ -241,7 +239,7 @@
           <span v-if="!(row.credit > 0) && !(row.debt > 0)" class="ek-muted">—</span>
         </span>
       </template>
-      <template #cell-netAmount="{ row }"><span class="ek-fin-net ek-num" :class="{ 'ek-fin-net--in': row.netAmount > 0 }">{{ row.netAmount > 0 ? '+' : '' }}{{ formatCurrency(row.netAmount) }} ₺</span></template>
+      <template #cell-netAmount="{ row }"><span class="ek-fin-net ek-num" :class="{ 'ek-fin-net--in': row.netAmount > 0 }">{{ row.netAmount > 0 ? '+' : '' }}{{ formatCurrency(row.netAmount) }}</span></template>
       <template #cell-transactionDate="{ row }">
         <span class="ek-fin-id">
           <span class="ek-num">{{ formatDate(row.transactionDate) }}</span>
@@ -285,7 +283,7 @@ import EkListScreen from '@/components/page/templates/EkListScreen.vue';
 ;
 ;
 import { isRequestError } from '@entegrasyonik/ui/components/listStandard';
-import { formatDate as formatDay, formatDateTime } from '@entegrasyonik/ui/format';
+import { formatDate as formatDay, formatDateTime, formatMoney } from '@entegrasyonik/ui/format';
 import FinancialSummaryBar from '@/components/financial/FinancialSummaryBar.vue';
 import FinancialSummaryTab from '@/components/financial/FinancialSummaryTab.vue';
 import FinancialCargoInvoicesTab from '@/components/financial/FinancialCargoInvoicesTab.vue';
@@ -468,7 +466,7 @@ const TYPE_TONE: Record<string, StatusTone> = {
 };
 const typeTone = (type: string): StatusTone => TYPE_TONE[type] || 'neutral';
 
-const formatCurrency = (val: any) => parseFloat(val || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2 });
+const formatCurrency = (val: any) => formatMoney(Number(val || 0));
 // Aşama 3: diğer listelerle aynı biçim (GG.AA.YYYY SS:dd — saniye yok), `composables/format`.
 const formatDate = (d: any) => d ? formatDateTime(d) : '—';
 
