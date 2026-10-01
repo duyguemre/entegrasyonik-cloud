@@ -12,7 +12,7 @@ Belgeler: `../AUDIT.md` (20 bulgu, öncelikli) · `../BRAND.md` (kimlik kılavuz
 | E1 | A2, A11 | Jargon temizliği: overselling, omnichannel, SKU, AES-256-GCM, `enc:v1:`, "mimari", "varsayılan red", sandbox, "Durağan veride şifreleme", "Hata toleransı", "API yanıtları" → fayda dili. Teknik ayrıntı yalnız `/guvenlik` "Ayrıntı" panellerinde. Kalıcı koruma: `src/data/brand.ts` `VOICE_BANNED` + `tests/brand-voice.test.ts` (derlenmiş tüm pazarlama sayfaları; rehber/yasal hariç) | `sonra/anasayfa-1440-sonra-p3`, `-p8` |
 | E2 | A3 | Kapanış ikincil CTA "Giriş yap" → **"Demo talep edin"** (mailto, konu hazır) | `sonra/anasayfa-1440-sonra-p10` |
 | E3 | A4, A5 | Hero: ikinci rozet ("Çok kanallı satış yönetimi") kalktı, gövde tek vaat cümlesi; özellik şeridi reduced-motion'da dengeli 4×2 ızgara (yetim çip yok) | `once/anasayfa-1440-once-p0` → `sonra/anasayfa-1440-sonra-p0`; 390: `once/…390-once-p0` → `sonra/…390-sonra-p0` |
-| E4 | A6, A7 | Dört mesaj sütunu (Kontrol · Doğruluk · Zaman · Güven) — bölüm başlıkları yeniden yazıldı: "Her kanal ayrı panel, ayrı stok, ayrı mesai", "Sipariş bir kanalda, stok her kanalda doğru", "Siparişten iadeye, operasyonunuzun tamamı", "Kanallarınız bağlanır, iş akışınız sadeleşir", "Dört adımda hazırsınız", "Verileriniz yalnızca size ait". İki renkli vurgu yalnız hero/kapanış (+ tek koyu vitrin kartı) | `sonra/anasayfa-1440-sonra-p1`, `-p2` |
+| E4 | A6, A7 | Dört mesaj sütunu (Kontrol · Doğruluk · Zaman · Güven) — bölüm başlıkları yeniden yazıldı: "Her kanal ayrı panel, ayrı stok, ayrı mesai", "Sipariş bir kanalda, stok her kanalda doğru", "Siparişten iadeye, işinizin tamamı", "Kanallarınız bağlanır, iş akışınız sadeleşir", "Dört adımda hazırsınız", "Verileriniz yalnızca size ait". İki renkli vurgu yalnız hero/kapanış (+ tek koyu vitrin kartı) | `sonra/anasayfa-1440-sonra-p1`, `-p2` |
 | E5 | A16 | Slogan **"Çok kanal. Tek kontrol."** + vaat cümlesi footer'da ve kapanış eyebrow'unda (tek kaynak `brand.ts`) | `sonra/anasayfa-1440-sonra-p10` |
 | E6 | A8, A9, A14 | İç sayfa H1 = değer cümlesi, sayfa adı teal eyebrow (`/ozellikler`, `/guvenlik`, `/entegrasyonlar`, `/iletisim`). **Hata düzeltmesi:** `PageHero`'nun `.page-hero h1` kuralı kapsam dışı kalıyordu (sınıf alt bileşen Section'da) → tüm iç sayfa H1'leri genel 36/700'e düşüyordu; artık display ölçeği. `/ozellikler` hero sayaçları güç sayıları (kısmi sayısı karta/matrise) | `once/ozellikler-1440-once-p0` → `sonra/ozellikler-1440-sonra`; `sonra/guvenlik-*`, `entegrasyonlar-*`, `iletisim-*` |
 | E7 | A10 | Yetenekler bölümündeki koyu "dört değer sütunu" bandı (hemen altındaki bentoyu tekrar ediyordu) ve kaydı kaldırıldı; sayfa ~460 px kısaldı | `sonra/anasayfa-1440-sonra-p2`, `-p3` |
@@ -47,4 +47,13 @@ Bilinçli olarak değiştirilmeyenler: örnek künye bilgileri (kullanıcı kara
 
 ## Test sonuçları
 
-Bkz. sonraki bölüm (son koşu).
+- `vitest run`: **792 geçti, 2 başarısız** — ikisi de `claims.test.ts` içinde, bulut kopyasında olmayan kök
+  `INTEGRATIONS_REGISTRY.md` yüzünden (ortam; S26 tabanında da aynı 2 hata vardı).
+- `astro build`: 49 sayfa, hatasız.
+- Playwright (`--update-snapshots=missing`, 3 viewport; home, home-premium, inner-pages, pricing, nav, site, a11y/axe):
+  ilk koşu 330 geçti / 46 başarısız → 44'ü eksik Linux tabanının yazılması (beklenen), **2'si gerçek**: 320 px'te 10 px
+  yatay taşma. Kök neden: yeni Yetenekler başlığındaki "operasyonunuzun" kelimesi 320 px kapsayıcıdan genişti (S26 tabanında
+  taşma 0 — karşılaştırmalı ölçüldü). → Başlık "Siparişten iadeye, işinizin tamamı". İkinci koşu: **376 geçti, 44 atlandı,
+  0 başarısız**. `*-linux.png` tabanları commit'lenmedi.
+- Bulut notu: Playwright 1.63'ün istediği Chromium indirilemiyor (ağ politikası); koşular önceden kurulu
+  `/opt/pw-browsers/chromium` ile, commit'lenmeyen yerel bir config sarmalayıcısıyla yapıldı.
