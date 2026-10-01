@@ -2,9 +2,6 @@ import { IService } from '@interfaces/index'
 import { BaseApi } from '../BaseApi'
 import * as customers from '@operations/orders/customers'
 
-/** [DB-02] Sıralama alanı izin listesi (kaynak: operations/orders/customers). */
-export const CUSTOMER_SORT_FIELDS = customers.CUSTOMER_SORT_FIELDS
-
 /**
  * CustomerService — müşteri yönetimi ve CRM analitiği RPC cephesi (ADR-0024 P3-ORD). İş akışları `operations/orders/customers`,
  * sorgular `database/repositories/tenant/*Repository` (RPC adları ve yanıt biçimleri değişmez).

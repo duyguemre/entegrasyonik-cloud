@@ -12,9 +12,6 @@ import { IntegrationCatalogLinkRepository } from '@database/repositories/tenant/
 import { ClientIntegrationRepository } from '@database/repositories/tenant/ClientIntegrationRepository'
 import { PlatformIntegrationRepository } from '@database/repositories/app/PlatformIntegrationRepository'
 
-/** [DB-02] ImportJobs sıralama alanı izin listesi (kaynak: operations/integrations/jobs). */
-export const IMPORT_JOB_SORT_FIELDS = jobs.IMPORT_JOB_SORT_FIELDS
-
 /**
  * ADR-0024 D6 / P3-INT: entegrasyon RPC cephesi. RPC adları ve yanıt biçimleri değişmez; iş kuralları
  * `operations/integrations/{settings,stockPolicy,health,jobs,platformLookup}`, sorgular `database/repositories/{app,tenant}`,
