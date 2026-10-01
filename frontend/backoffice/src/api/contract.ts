@@ -293,9 +293,13 @@ export interface GetIssueGroupsRequest {
   category?: LogCategory[]
   src?: LogSource[]
   sort?: 'lastSeen' | 'count' | 'tenantCount' | 'new'
+  /** BE-06: müşteri süzgeci (kova eşleşmesi — YAKLAŞIK; başka müşterinin grubu da gelebilir, eksik gelmez). */
+  tid?: number
 }
 export interface GetIssueGroupsResponse {
   items: IssueGroup[]
+  /** BE-06: süzgeç uygulandıysa. */
+  tenantFilter?: { tid: number; approximate: true } | null
 }
 export interface GetIssueTrendRequest {
   fp: string
@@ -417,6 +421,7 @@ export const REAUTH_OPS: readonly AdminOp[] = [
   'BackofficeAdminUserService/resetMfa',
   'BackofficeInfraService/flushCacheFamily',
   'BackofficeEngineService/retryJob',
+  'BackofficeEngineService/retryJobs',
   'BackofficeEngineService/discardJob',
   'BackofficeEngineService/releaseStuckLease',
   // ADR-0029 NB7/NB8: yazan bildirim/duyuru/uyarı uçları (toplu e-posta dahil)
@@ -453,3 +458,4 @@ export * from './contracts/infra'
 export * from './contracts/platform'
 export * from './contracts/notifications'
 export * from './contracts/attention'
+export * from './contracts/ops'
