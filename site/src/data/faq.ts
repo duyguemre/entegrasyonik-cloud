@@ -258,6 +258,18 @@ export const faq: FaqItem[] = [
     ],
   },
   {
+    id: 'fiyat-karari',
+    category: 'guvenlik-veri',
+    question: 'Entegrasyonik fiyatlarıma karar verir mi, verilerim başka işletmelerin kararında kullanılır mı?',
+    answer:
+      'Hayır. Kanallarınıza giden fiyatı siz belirlersiniz; Entegrasyonik sizin yerinize fiyat koymaz. Fiyat, maliyet ve satış verileriniz kendi hesabınızda kalır; başka bir işletmenin kararında kullanılmaz, başka işletmelerle paylaşılmaz.',
+    evidence: [
+      evidence('backend/src/database/client/models/Variant.ts', 'Fiyat alanları satıcının girdiği değerlerdir', 'isPlatformBasedPrice'),
+      evidence(PATHS.adr0003, 'ADR-0003 kiracı DB adlandırma', 'entegrasyonikClient_1'),
+    ],
+    internalNotes: ['PRC-MKT (K58): adil rekabet ilkesi; metin src/data/fair-play.ts ile aynı tutum. Fiyatlama özelliği vaat edilmez (K43).'],
+  },
+  {
     id: 'ekip-yetki',
     category: 'guvenlik-veri',
     question: 'Ekibime farklı yetkiler verebilir miyim?',
@@ -461,7 +473,7 @@ export const SUPPORT_CATEGORIES: SupportCategory[] = [
     label: 'Hesap ve güvenlik',
     lead: 'API anahtarlarınızın, verilerinizin ve ekip yetkilerinizin nasıl korunduğu.',
     icon: 'shield',
-    faqIds: ['anahtar-saklama', 'veri-ayrimi', 'ekip-yetki', 'kart-bilgisi', 'secim-kriterleri'],
+    faqIds: ['anahtar-saklama', 'veri-ayrimi', 'fiyat-karari', 'ekip-yetki', 'kart-bilgisi', 'secim-kriterleri'],
     links: [{ label: 'Güvenlik yaklaşımımız', href: '/guvenlik' }],
   },
   {

@@ -147,6 +147,14 @@ export const AGENT_CLAIMS = {
       evidence('backend/src/services/audit/AuditLogger.ts', 'AuditLogger asgari denetim kaydı', 'asgari denetim kaydı'),
     ]),
   },
+  // PRC-MKT (K58): adil rekabet ilkesinin Otopilot karşılığı — yalnız İLKE dili; fiyatlama özelliği vaat edilmez (K43).
+  'trust-price': {
+    text: 'Ajanlar fiyat kararını sizin yerinize vermez: fiyata dokunan bir öneri yalnızca sizin kurallarınıza ve sizin verinize dayanır; başka bir işletmenin verisi hesaba katılmaz.',
+    readiness: building('Fiyat önerisi yapan ajan yok; yayına girdiğinde AUTO_PRICING_LEGAL §c K2 (işletmeler arası veri yok) ve K4 (satıcının kendi kuralı, dayatılan değer yok) korunmalı.', [
+      evidence(PATHS.adr0003, 'ADR-0003 hesap başına veri alanı', 'entegrasyonikClient_1'),
+      adr18('Model veya ajan onay kanalına erişemez'),
+    ]),
+  },
   'trust-data': {
     text: 'Verileriniz yalnızca size aittir ve izole bir alanda korunur; ajanlar yalnızca sizin hesabınızın verisiyle çalışır.',
     readiness: live('Hesap başına ayrı veri alanı ve şifreli anahtarlar kodda; ajan erişiminin oturumdaki hesapla sınırlı kaldığı doğrulanmalı.', [

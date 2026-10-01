@@ -28,6 +28,7 @@ import Icon from './Icon.astro'
 import { getPublicCapabilities } from '../../data/capabilities'
 import { getPublicFaq } from '../../data/faq'
 import { pageHref } from './links'
+import { fairPledge, fairSection } from '../../data/fair-play'
 
 const items = getPublicCapabilities('security')
 const byId = new Map(items.map((i) => [i.id, i]))
@@ -195,6 +196,16 @@ const ticks = Array.from({ length: 24 }, (_, i) => ({ a: i * 15, long: i % 6 ===
         }
       </ol>
     </div>
+  </div>
+
+  <!-- PRC-MKT (K58): adil rekabet ilkesinin ana sayfadaki tek satırı; ilkeler /guvenlik#adil-rekabet -->
+  <div class="pledge" data-testid="fair-pledge">
+    <span class="pledge__icon" aria-hidden="true"><Icon name="finance" size="sm" /></span>
+    <p class="pledge__body">
+      <span class="pledge__label">{fairPledge.label}</span>
+      <span class="pledge__text">{fairPledge.text}</span>
+    </p>
+    {detailHref && <a class="link pledge__link" href={`${detailHref}#${fairSection.id}`}>{fairPledge.linkLabel} <Icon name="arrow" size="sm" /></a>}
   </div>
 
   <p class="sec__stamp">
@@ -468,6 +479,65 @@ const ticks = Array.from({ length: 24 }, (_, i) => ({ a: i * 15, long: i % 6 ===
     font-size: var(--ek-font-size-xs);
     font-style: italic;
   }
+  /* PRC-MKT: adil rekabet ilkesi — bölümün altında tek satırlık sakin bant (koyu vitrin değil; vurgu yalnız ikon). */
+  .pledge {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: var(--ek-space-3) var(--ek-space-4);
+    align-items: center;
+    margin-top: var(--ek-space-10);
+    padding: var(--ek-space-5) var(--ek-space-6);
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--site-radius-panel);
+    background: var(--ek-color-surface);
+    box-shadow: var(--site-shadow-card);
+  }
+  .pledge__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--ek-space-10);
+    height: var(--ek-space-10);
+    border: var(--site-border-width) solid var(--site-accent-line);
+    border-radius: var(--ek-radius-lg);
+    color: var(--site-accent);
+  }
+  .pledge__body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-1);
+    margin: 0;
+  }
+  .pledge__label {
+    color: var(--site-text-heading);
+    font-size: var(--ek-font-size-md);
+    font-weight: var(--ek-font-weight-bold);
+  }
+  .pledge__text {
+    color: var(--site-text-body);
+    font-size: var(--ek-font-size-md);
+    line-height: var(--site-font-body-line-height);
+  }
+  .pledge__link {
+    display: inline-flex;
+    grid-column: 1 / -1;
+    align-items: center;
+    justify-self: start;
+    gap: var(--ek-space-2);
+    min-height: var(--site-tap-target);
+    color: var(--site-link-accent);
+    font-weight: var(--ek-font-weight-semibold);
+    white-space: nowrap;
+  }
+  @media (min-width: 768px) {
+    .pledge {
+      grid-template-columns: auto minmax(0, 1fr) auto;
+    }
+    .pledge__link {
+      grid-column: auto;
+    }
+  }
+
   .sec__stamp {
     display: flex;
     align-items: center;

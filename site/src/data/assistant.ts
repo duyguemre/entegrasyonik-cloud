@@ -159,6 +159,7 @@ export const controlSection = {
     { id: 'denetim-kaydi', icon: 'book', title: 'Her adım kayıt altında', text: claim('control-audit') },
     { id: 'veri', icon: 'lock', title: 'Verileriniz yalnızca size ait', text: claim('trust-data') },
     { id: 'yetki', icon: 'users', title: 'Sizin yetkinizle', text: claim('trust-role') },
+    { id: 'fiyat', icon: 'shield', title: 'Fiyatınız, sizin kuralınız', text: claim('trust-price') },
   ] satisfies FeatureCard[],
 }
 

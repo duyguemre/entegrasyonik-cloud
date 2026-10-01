@@ -713,7 +713,7 @@ const [titleBefore, titleAfter] = hero.title.split(hero.accent)
     padding: 0;
     list-style: none;
   }
-  /* S24: beş güvence maddesi → geniş ekranda üstte üç, altta iki (6 sütunlu ızgara; kenarlar hizalı). */
+  /* S24: güvence maddeleri 6 sütunlu ızgarada; site-fair (PRC-MKT) altıncı madde ile 3 + 3 (kenarlar hizalı). */
   @media (min-width: 768px) {
     .guards {
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -725,9 +725,6 @@ const [titleBefore, titleAfter] = hero.title.split(hero.accent)
     }
     .guard {
       grid-column: span 2;
-    }
-    .guard:nth-child(n + 4) {
-      grid-column: span 3;
     }
   }
   .guard {
