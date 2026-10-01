@@ -1,8 +1,8 @@
 ---
 /**
  * Yetenekler (ADR-0014 Karar 2, bölüm 4) — S12: pazarlama dili, sade kart hiyerarşisi.
- * Üç katman: (1) koyu bantta dört değer sütunu (`getHomePillars()`), (2) beş animasyonlu bento karo,
- * (3) "Günlük işleriniz için" kartları. Metinler kayıttaki `home` alanlarından gelir (capabilities.ts).
+ * İki katman (ELEV A10: koyu "dört değer sütunu" bandı kaldırıldı — aynı dört fikri hemen altındaki bento
+ * karoları gösteriyordu): (1) beş animasyonlu bento karo, (2) "Günlük işleriniz için" kartları. Metinler kayıttaki `home` alanlarından gelir (capabilities.ts).
  * Ana sayfada kanal ADI, durum rozeti (Mevcut/Kısmi) ve kapsam notu YOK (S12 kullanıcı geri bildirimi);
  * kanal ayrımı yalnızca isimsiz renkli noktayla (`data-code` -> `--chan`). Kapsam farkları ve sınır notları
  * alt sayfalarda (/ozellikler, /entegrasyonlar) eksiksiz yazılıdır.
@@ -18,7 +18,7 @@
 import Section from '../Section.astro'
 import SectionHeading from './SectionHeading.astro'
 import Icon from './Icon.astro'
-import { getPublicCapabilities, getHomePillars, type PublicProductCapability } from '../../data/capabilities'
+import { getPublicCapabilities, type PublicProductCapability } from '../../data/capabilities'
 import { getPublicIntegrations, type CapabilityKey } from '../../data/integrations'
 
 const all = getPublicCapabilities('core')
@@ -36,7 +36,6 @@ const secrets = byId(security, 'secrets-encryption')
 const tenant = byId(security, 'tenant-database')
 const spotlightIds = new Set([stock.id, orders.id])
 const rest = all.filter((c) => !spotlightIds.has(c.id))
-const pillars = getHomePillars()
 
 const ICONS: Record<string, 'stock' | 'layers' | 'orders' | 'returns' | 'chat' | 'finance' | 'notice' | 'plug'> = {
   'stock-reservation': 'stock',
@@ -81,28 +80,6 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
     title="Siparişten iadeye, operasyonunuzun tamamı"
     lead="Stoktan siparişe, iadeden hakedişe: ekibiniz her işi aynı ekrandan, aynı adımlarla yürütür."
   />
-
-  <div class="clusters-band">
-    <ul class="clusters" data-scene="reveal" data-testid="capability-clusters">
-      {
-        pillars.map((p) => (
-          <li class="cluster" data-part="cluster" data-reveal data-tilt>
-            <span class="cluster__icon"><Icon name={p.icon} size="md" /></span>
-            <h3 class="cluster__title">{p.title}</h3>
-            <p class="cluster__lead">{p.line}</p>
-            <ul class="cluster__items">
-              {p.points.map((item) => (
-                <li>
-                  <Icon name="check" size="sm" />
-                  <span>{item}</span>
-                </li>
-              ))}
-            </ul>
-          </li>
-        ))
-      }
-    </ul>
-  </div>
 
   <div class="bento" data-testid="bento">
     {/* A: stok rezervasyonu (geniş) */}
@@ -434,116 +411,6 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
    * Renk hiyerarşisi (S12): tek başlık tonu (content-strong) + tek gövde tonu (content-default). Üçüncü bir ton
    * yok; vurgu yalnızca ikon rozetinde ve isimsiz kanal noktalarında. Tipografi `--site-card-*` token setinden.
    */
-
-  /* --- Dört değer sütunu: koyu "sahne" bandı --- */
-  .clusters-band {
-    position: relative;
-    overflow: hidden;
-    isolation: isolate;
-    margin-top: var(--ek-space-12);
-    padding: var(--ek-space-6) var(--ek-space-4);
-    border-radius: var(--site-radius-panel);
-    background: var(--site-stage-mesh);
-    box-shadow: var(--site-shadow-panel);
-  }
-  .clusters-band::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    background-image: var(--site-texture-grid);
-    background-size: var(--site-texture-grid-size);
-    -webkit-mask-image: var(--site-texture-fade);
-    mask-image: var(--site-texture-fade);
-    pointer-events: none;
-  }
-  .clusters {
-    display: grid;
-    gap: var(--ek-space-3);
-    grid-template-columns: minmax(0, 1fr);
-  }
-  .cluster {
-    display: flex;
-    flex-direction: column;
-    gap: var(--ek-space-3);
-    padding: var(--ek-space-6);
-    border: var(--site-border-width) solid var(--site-glass-border);
-    border-radius: var(--ek-radius-xl);
-    background: var(--site-glass-bg);
-    backdrop-filter: blur(var(--site-glass-blur));
-    /* `transform` (eğim) buraya da eklenir (bkz. PricingSummary.astro aynı not: kısayol birleşmez). */
-    transition:
-      box-shadow var(--ek-duration-base) var(--ek-easing-standard),
-      border-color var(--ek-duration-base) var(--ek-easing-standard),
-      transform var(--tilt-transition-duration, var(--ek-duration-fast)) var(--ek-easing-standard);
-  }
-  .cluster:hover {
-    border-color: color-mix(in srgb, var(--ek-color-secondary) 60%, transparent);
-    box-shadow: var(--site-shadow-card-hover);
-  }
-  .cluster__icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: var(--ek-space-10);
-    height: var(--ek-space-10);
-    margin-bottom: var(--ek-space-2);
-    border: var(--site-border-width) solid color-mix(in srgb, var(--ek-color-secondary) 45%, transparent);
-    border-radius: var(--ek-radius-lg);
-    background: color-mix(in srgb, var(--ek-color-secondary) 16%, transparent);
-    color: var(--ek-color-secondary);
-  }
-  .cluster__title {
-    color: var(--site-color-on-primary);
-    font-size: var(--site-card-title-size);
-    font-weight: var(--site-card-title-weight);
-    line-height: var(--ek-line-height-tight);
-    letter-spacing: -0.01em;
-  }
-  .cluster__lead {
-    color: var(--site-color-on-primary-muted);
-    font-size: var(--site-card-desc-size);
-    font-weight: var(--site-card-desc-weight);
-    line-height: var(--ek-line-height-normal);
-  }
-  .cluster__items {
-    display: flex;
-    flex-direction: column;
-    gap: var(--ek-space-2);
-    margin-top: auto;
-    padding-top: var(--ek-space-4);
-    border-top: var(--site-border-width) solid var(--site-glass-border);
-    color: var(--site-color-on-primary);
-    font-size: var(--ek-font-size-sm);
-    font-weight: var(--ek-font-weight-medium);
-  }
-  .cluster__items li {
-    display: flex;
-    align-items: center;
-    gap: var(--ek-space-2);
-  }
-  .cluster__items :global(.icon) {
-    flex: none;
-    color: var(--ek-color-secondary);
-  }
-
-  @media (min-width: 640px) {
-    .clusters-band {
-      padding: var(--ek-space-8);
-    }
-    .clusters {
-      gap: var(--ek-space-4);
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-  }
-  @media (min-width: 1024px) {
-    .clusters-band {
-      padding: var(--ek-space-10);
-    }
-    .clusters {
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-    }
-  }
 
   /* --- Bento ızgarası --- */
   .bento {

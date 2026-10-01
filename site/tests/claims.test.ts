@@ -23,7 +23,7 @@ import {
   ecosystemPromises,
   getEcosystemNodes,
 } from '../src/data/integrations'
-import { productCapabilities, getPublicCapabilities, getHomePillars, homePillars, getStockReservationStory } from '../src/data/capabilities'
+import { productCapabilities, getPublicCapabilities, getStockReservationStory } from '../src/data/capabilities'
 import { faq, getPublicFaq, FAQ_CATEGORIES, getFaqPreview, SUPPORT_CATEGORIES, getSupportCategories } from '../src/data/faq'
 import {
   defaultPlanSource,
@@ -99,7 +99,6 @@ function publicContent() {
     comparison: getComparisonRows(),
     pricingFaq: getPricingFaq(),
     // S12 ana sayfa pazarlama metinleri de aynı yasaklı ifade / sayı taramasından geçer
-    homePillars: getHomePillars(),
     ecosystem: getEcosystemNodes(),
     ecosystemPromises,
     // S12: SSS kategorileri ve plan tanıtım kopyası da görünür metindir (aynı yasaklı ifade/sayı denetimi)
@@ -161,21 +160,11 @@ describe('(1) available entegrasyonlar === IntegrationFactory kodları', () => {
 // ------------------------------------------------------------------------------------------ S12 pazarlama metinleri
 
 describe('S12 ana sayfa pazarlama metinleri kayıtlı gerçek yeteneklere dayanır', () => {
-  const live = productCapabilities.filter((c) => c.status !== 'roadmap').map((c) => c.id)
 
   it('her çekirdek (görünür) yeteneğin ana sayfa başlığı ve tek satırlık fayda cümlesi var', () => {
     for (const c of getPublicCapabilities('core')) {
       expect(c.home?.title, c.id).toBeTruthy()
       expect(c.home?.line, c.id).toBeTruthy()
-    }
-  })
-
-  it('dört değer sütunu yalnızca roadmap OLMAYAN yeteneklere dayanır; en fazla üç kısa madde', () => {
-    expect(homePillars).toHaveLength(4)
-    for (const p of homePillars) {
-      expect(p.basedOn.length, p.id).toBeGreaterThan(0)
-      for (const id of p.basedOn) expect(live, `${p.id} -> ${id}`).toContain(id)
-      expect(p.points.length, p.id).toBeLessThanOrEqual(3)
     }
   })
 

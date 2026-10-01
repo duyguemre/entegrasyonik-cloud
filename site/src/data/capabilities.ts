@@ -389,62 +389,6 @@ export function capabilityState(id: string): FeatureState | undefined {
 
 export { CAPABILITY_LABELS }
 
-// ---------------------------------------------------------------------------- Ana sayfa: dört değer sütunu
-
-/**
- * Ana sayfa "Yetenekler" koyu bandındaki dört değer sütunu (S12 pazarlama dili). Her sütun `basedOn` ile
- * kayıtlı (roadmap olmayan) yeteneklere bağlanır — metin yalnızca o yeteneklerin olgularını pazarlama diliyle
- * anlatır; yeni özellik iddiası yoktur (tests/claims.test.ts `basedOn` bağını ve yasaklı ifadeleri denetler).
- */
-export interface HomePillar {
-  id: string
-  icon: 'stock' | 'orders' | 'database' | 'users'
-  title: string
-  line: string
-  points: string[]
-  basedOn: string[]
-}
-
-export const homePillars: HomePillar[] = [
-  {
-    id: 'oversell',
-    icon: 'stock',
-    title: 'Aşırı satış kontrol altında',
-    line: 'Merkezi stok rezervasyonu, eşzamanlı siparişlerde bile yalnızca mevcut adet kadar rezervasyon yapar.',
-    points: ['Eşzamanlı sipariş koruması', 'Tek merkezden stok ve fiyat', 'Aşırı satışta telafi akışı'],
-    basedOn: ['stock-reservation', 'multi-channel-products'],
-  },
-  {
-    id: 'ops',
-    icon: 'orders',
-    title: 'Tek ekranda operasyon',
-    line: 'Sipariş, iade ve müşteri soruları tek akışta; ekip aynı ekrandan çalışır.',
-    points: ['Birleşik sipariş listesi', 'İade ve talep yönetimi', 'Soru ve mesaj yanıtlama'],
-    basedOn: ['unified-orders', 'returns', 'questions'],
-  },
-  {
-    id: 'isolation',
-    icon: 'database',
-    title: 'Size özel, şifreli veri',
-    line: 'Verileriniz yalnızca size ait, izole bir alanda; entegrasyon anahtarlarınız şifreli saklanır.',
-    points: ['İzole veri alanı', 'Şifreli anahtar saklama', 'Maskeli anahtar gösterimi'],
-    basedOn: ['tenant-database', 'secrets-encryption', 'secrets-masked'],
-  },
-  {
-    id: 'rbac',
-    icon: 'users',
-    title: 'Ekibinize doğru yetki',
-    line: 'Kademeli roller ekibinizi yetkilendirir; hassas işlemler üst kademeye ayrılır.',
-    points: ['Üye, yönetici, ana yönetici', 'Yetkisiz işleme kapalı', 'Korumalı, süreli oturum'],
-    basedOn: ['role-based-access', 'default-deny', 'session-cookie'],
-  },
-]
-
-/** Sayfaların tek girişi (dört değer sütunu). */
-export function getHomePillars(): HomePillar[] {
-  return homePillars.map((p) => ({ ...p, points: [...p.points], basedOn: [...p.basedOn] }))
-}
-
 // ---------------------------------------------------------------------------- S14: stok rezervasyonu sayfası
 
 /**

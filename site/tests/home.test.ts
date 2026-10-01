@@ -12,7 +12,7 @@ import path from 'node:path'
 import { buildSite, siteRoot } from '../scripts/lib/build.mjs'
 import { getPublicIntegrations, integrations, AVAILABLE_INTEGRATION_CODES, getEcosystemNodes, ecosystemPromises } from '../src/data/integrations'
 import { getPublicPlans, getPlanSourceNotice, getPublicTrial } from '../src/data/plans'
-import { getPublicCapabilities, getHomePillars } from '../src/data/capabilities'
+import { getPublicCapabilities } from '../src/data/capabilities'
 import { getPublicFaq } from '../src/data/faq'
 
 const APP_URL = 'https://app.example.test'
@@ -229,13 +229,10 @@ describe('entegrasyon ekosistemi (S12: vizyon dili; kanal adı ve durum dili ana
 describe('içerik kayıttan gelir', () => {
   const text = () => textOf(html)
 
-  it('yetenekler: dört değer sütunu + her çekirdek yeteneğin ana sayfa başlığı/fayda cümlesi görünür; sınır notu ve durum rozeti ana sayfada YOK (alt sayfalarda)', () => {
+  // ELEV A10: koyu "dört değer sütunu" bandı (ve kaydı) kaldırıldı — aynı fikirleri bento karoları gösteriyor.
+  it('yetenekler: koyu değer bandı yok + her çekirdek yeteneğin ana sayfa başlığı/fayda cümlesi görünür; sınır notu ve durum rozeti ana sayfada YOK (alt sayfalarda)', () => {
     const caps = textOf(html.match(/<section[^>]*id="ozellikler"[\s\S]*?<\/section>/)![0])
-    for (const p of getHomePillars()) {
-      expect(caps, p.id).toContain(p.title)
-      expect(caps, p.id).toContain(p.line)
-      for (const item of p.points) expect(caps, `${p.id}: ${item}`).toContain(item)
-    }
+    expect(html).not.toContain('data-testid="capability-clusters"')
     for (const c of getPublicCapabilities('core')) {
       expect(c.home, `${c.id}: home metni`).toBeDefined()
       expect(caps, c.id).toContain(c.home!.title)
