@@ -53,6 +53,9 @@ function capturing(bodies: any[], fixture: any = financialDoluFixture) {
 }
 
 async function open(page: any, overrides: Record<string, any>) {
+  // fe-r2d: özet kartı tabloyu aşağı taşıdı; kabuğun "uygulama turu" teklifi (sağ alt) tablo başlığını örtüp tıklamayı
+  // kesiyordu. Teklif bu dosyanın konusu değil → kapatılmış sayılır (HelpTour `ek.help.v1.tour`).
+  await page.addInitScript(() => { try { localStorage.setItem('ek.help.v1.tour', 'dismissed') } catch { /* depo yok */ } })
   await installApiMocks(page, withMenu(overrides))
   await gotoAuthed(page)
   await openScreen(page, 'FinancialListView')
@@ -70,7 +73,7 @@ test.describe('ADR-0015 B5-3 — FinancialListView (finans)', () => {
     await expect(page.getByText('SIP-E2E-1003')).toBeVisible()
     // Aşama 3: tür çipleri cümle düzeninde (tüm listelerle aynı çip dili; eskiden 'SATIŞ'/'KESİNTİ').
     await expect(page.locator('.financialListView tbody').getByText('Satış', { exact: true }).first()).toBeVisible()
-    await expect(page.locator('.financialListView tbody').getByText('Kesinti', { exact: true })).toBeVisible()
+    await expect(page.locator('.financialListView tbody .ek-status-chip').getByText('Kesinti', { exact: true })).toBeVisible()
     // Karakterizasyon: bilinmeyen tür çevrilmeden ham haliyle gösterilir (translations[type] || type).
     await expect(page.getByText('UNKNOWN_TYPE', { exact: true })).toBeVisible()
   })
@@ -84,17 +87,21 @@ test.describe('ADR-0015 B5-3 — FinancialListView (finans)', () => {
     await expect(page.getByText('321', { exact: true }).or(page.getByText('321 adet'))).toBeVisible()
   })
 
-  test('özet şeridi etiketleri (masaüstü: Toplam Satış/Komisyon/Net Hakediş/Kargo/İşlem; mobil kısa etiketler)', async ({ page }, testInfo) => {
+  // fe-r2d (FR2-FIN 38) — BİLİNÇLİ DEĞİŞİKLİK: özet "Brüt alacak − Kesintiler = Net hakediş" akışı. Eski "Komisyon"
+  // etiketi yanlıştı (summary.totalDebt tüm borç kalemlerinin toplamı; komisyon + diğer kesintiler).
+  test('özet şeridi etiketleri (masaüstü: Brüt alacak/Kesintiler/Net hakediş/Kargo/İşlem; mobil kısa)', async ({ page }, testInfo) => {
     await open(page, { [ENDPOINT]: financialDoluFixture })
+    const flow = page.locator('.financialListView .ek-fin-sum')
+    await expect(flow.getByText('%12,5', { exact: true })).toBeVisible() // 12345,6 / 98765,4 (yalnız backend özetinden)
     if (testInfo.project.name === 'chromium-desktop') {
-      for (const l of ['Toplam Satış', 'Komisyon', 'Net Hakediş', 'Kargo', 'İşlem']) {
+      for (const l of ['Brüt alacak', 'Kesintiler', 'Net hakediş', 'Kargo', 'İşlem']) {
         await expect(page.locator('.financialListView').getByText(l, { exact: true })).toBeVisible()
       }
       await expect(page.getByText('777,50 ₺')).toBeVisible()
       await expect(page.getByText('321 adet')).toBeVisible()
     } else {
-      for (const l of ['Satış', 'Komisyon', 'Net', 'İşlem']) {
-        await expect(page.locator('.financialListView').getByText(l, { exact: true })).toBeVisible()
+      for (const l of ['Brüt alacak', 'Kesintiler', 'Net hakediş', 'İşlem']) {
+        await expect(flow.getByText(l, { exact: true })).toBeVisible()
       }
       // Karakterizasyon: mobil özet şeridi Kargo toplamını GÖSTERMEZ.
       await expect(page.getByText('777,50')).toHaveCount(0)
@@ -198,7 +205,7 @@ test.describe('ADR-0015 B5-3 — FinancialListView (finans)', () => {
     await open(page, { [ENDPOINT]: financialDoluFixture })
     await expect(page.getByText('SIP-E2E-1001')).toBeVisible()
 
-    await page.locator('.financialListView button:has(.mdi-eye)').first().click()
+    await page.locator('.financialListView button:has([class*="mdi-eye"])').first().click()
     const dialog = page.getByRole('dialog').filter({ hasText: 'Finansal işlem detayı' })
     await expect(dialog).toBeVisible()
     await expect(dialog.getByText('TRX-E2E-0001')).toBeVisible()
@@ -219,7 +226,7 @@ test.describe('ADR-0015 B5-3 — FinancialListView (finans)', () => {
     await open(page, { [ENDPOINT]: financialDoluFixture })
     await expect(page.getByText('TRX-E2E-0002')).toBeVisible()
 
-    await page.locator('.financialListView tbody button:has(.mdi-eye)').nth(1).click()
+    await page.locator('.financialListView tbody button:has([class*="mdi-eye"])').nth(1).click()
     const dialog = page.getByRole('dialog').filter({ hasText: 'Finansal işlem detayı' })
     await expect(dialog).toBeVisible()
     await expect(dialog.getByText('MANUEL İŞLEM')).toBeVisible()

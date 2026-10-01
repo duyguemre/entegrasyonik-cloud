@@ -65,7 +65,7 @@
       <template #empty-action><HelpStartLink article="gs-first-integration" /></template>
       <template #filters>
         <EkSelect v-model="searchCustomerForm.data.cities" :items="CITY_OPTIONS" label="Şehir" multiple clearable />
-        <v-select v-model="searchCustomerForm.data.status" :items="STATUS_OPTIONS" label="Müşteri durumu" clearable />
+        <EkSelect v-model="searchCustomerForm.data.status" kind="status" :items="STATUS_OPTIONS" label="Müşteri durumu" clearable />
       </template>
 
       <template #bulk-actions>
@@ -76,13 +76,16 @@
 
       <template #cell-name="{ row }">
         <span class="ek-customer">
-          <CustomerAvatar :first-name="row.firstName" :last-name="row.lastName" :anonymized="isAnonymized(row.firstName)" size="sm" />
-          <span class="ek-customer__name">{{ row.fullName }}</span>
+          <CustomerAvatar :first-name="row.firstName || row.companyName" :last-name="row.lastName" :anonymized="isAnonymized(row.firstName)" size="sm" />
+          <span class="ek-customer__name" :class="{ 'ek-muted': !row.firstName && !row.lastName && !row.companyName }">{{ row.fullName }}</span>
           <EkBadge v-if="row.isCorporate" tone="info">Kurumsal</EkBadge>
         </span>
       </template>
       <template #cell-channel="{ row }">
-        <EkChannelDot v-if="row.externalIdentities?.[0]?.integrationCode" :code="row.externalIdentities[0].integrationCode" />
+        <span v-if="row.channels.length" class="ek-customer-channels">
+          <EkChannelDot :code="row.channels[0]" />
+          <span v-if="row.channels.length > 1" class="ek-customer-channels__more ek-num" :title="row.channels.slice(1).join(', ')">+{{ row.channels.length - 1 }}<span class="ek-sr-only"> kanal daha</span></span>
+        </span>
         <span v-else class="ek-muted">Sistem</span>
       </template>
       <!-- A13 · KVKK: listede iletişim her zaman maskeli; açık değer yalnız müşteri kartında "Göster" ile. -->
@@ -152,7 +155,12 @@ const editDialog = ref({ show: false });
 const actionDialog = ref<any>({ show: false });
 
 const CITY_OPTIONS = ['İstanbul', 'Ankara', 'İzmir', 'Bursa', 'Antalya', 'Kocaeli'];
-const STATUS_OPTIONS = [{ title: 'Aktif', value: 'ACTIVE' }, { title: 'Pasif', value: 'INACTIVE' }, { title: 'Engellenmiş', value: 'BLOCKED' }];
+// FR2-SCREENS 34: durum seçimi diğer filtrelerle aynı standartta (ton noktası + sade açıklama).
+const STATUS_OPTIONS = [
+  { title: 'Aktif', value: 'ACTIVE', tone: 'success', subtitle: 'Sipariş veren müşteri' },
+  { title: 'Pasif', value: 'INACTIVE', tone: 'neutral', subtitle: 'Uzun süredir sipariş yok' },
+  { title: 'Engellenmiş', value: 'BLOCKED', tone: 'danger', subtitle: 'Satış yapılmayan müşteri' },
+];
 
 // DS-v2 liste standardı. CustomerService.getCustomers `sortBy.key` ile SUNUCUDA sıralar
 // (yalnız saklanan alanlar: ad, şehir); ciro/iade oranı sayfada hesaplandığı için sıralanamaz.
@@ -170,7 +178,11 @@ const columns: EkGridColumn[] = [
 
 const SORT_FIELD: Record<string, string> = { name: 'firstName', region: 'addresses.city' };
 
-const rows = computed(() => customers.value.map((c: any) => ({ ...c, fullName: [c.firstName, c.lastName].filter(Boolean).join(' ') || '—' })));
+const rows = computed(() => customers.value.map((c: any) => ({ ...c, fullName: [c.firstName, c.lastName].filter(Boolean).join(' ') || c.companyName || 'Adı iletilmedi', channels: uniqueChannels(c) })));
+/** Müşterinin geldiği kanallar (externalIdentities; tekrarsız, sırası korunur). */
+function uniqueChannels(c: any): string[] {
+  return [...new Set<string>((c?.externalIdentities ?? []).map((e: any) => e?.integrationCode).filter(Boolean))]
+}
 
 const getCustomersInternal = async (resetPage: boolean = false) => {
   if (resetPage) pagination.page = 1;
@@ -366,6 +378,18 @@ defineExpose({
 </script>
 
 <style scoped>
+.ek-customer-channels__more {
+  font-size: var(--ek-type-caption-size);
+  color: var(--ek-color-content-muted);
+}
+
+.ek-customer-channels {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: var(--ek-space-1);
+}
+
 .customerListView {
   position: absolute;
   inset: 0;

@@ -53,7 +53,7 @@ test.describe('ADR-0015 B5-3 — PrintoutListView (çıktı şablonu tasarımcı
     await expect(page.getByRole('button', { name: 'Kaydet' })).toHaveCount(0) // `buttons`/Kaydet tanımlı ama şablonda YOK
 
     for (const group of ['Müşteri Bilgileri', 'Ürün Bilgileri', 'Fatura Bilgileri', 'Toplamlar']) {
-      await expect(page.getByText(group, { exact: true })).toBeAttached()
+      await expect(page.locator('.printoutListView').getByText(group, { exact: true })).toBeAttached()
     }
     await expect(page.locator('#a4')).toBeVisible()
   })
@@ -67,7 +67,7 @@ test.describe('ADR-0015 B5-3 — PrintoutListView (çıktı şablonu tasarımcı
     }
   })
 
-  test('kâğıt boyutu: 4 düğme (a4, a4, a5, a5) — seçim tuval ölçüsünü değiştirir', async ({ page }) => {
+  test('kâğıt boyutu: 4 düğme (A4/A5 × dikey/yatay) — seçim tuval ölçüsünü değiştirir', async ({ page }) => {
     await open(page)
     const canvas = page.locator('#a4')
     // Tuval ölçüsü `v-card`'a `:width/:height` prop'uyla INLINE style olarak yazılır (görsel genişlik
@@ -80,22 +80,21 @@ test.describe('ADR-0015 B5-3 — PrintoutListView (çıktı şablonu tasarımcı
       return { w: Math.round(Number(w)), h: Math.round(Number(h)) }
     }
 
-    // Karakterizasyon: 4 düğmenin adı yalnızca "a4"/"a5" (dikey/yatay ayrımı görünen metinde YOK).
-    await expect(page.getByRole('button', { name: 'a4', exact: true })).toHaveCount(2)
-    await expect(page.getByRole('button', { name: 'a5', exact: true })).toHaveCount(2)
+    // fe-r2d (FR2-SCREENS 37) — BİLİNÇLİ DEĞİŞİKLİK: düğmeler yönü de söyler ("A4 dikey" …); sıra ve ölçüler aynı.
+    for (const n of ['A4 dikey', 'A4 yatay', 'A5 dikey', 'A5 yatay']) await expect(page.getByRole('button', { name: n, exact: true })).toHaveCount(1)
 
     // Varsayılan: A4 dikey 630x891
     await expect.poll(size).toEqual({ w: 630, h: 891 })
-    await page.getByRole('button', { name: 'a4', exact: true }).nth(1).dispatchEvent('click') // yatay 891x630
+    await page.getByRole('button', { name: 'A4 yatay', exact: true }).dispatchEvent('click') // yatay 891x630
     await expect.poll(size).toEqual({ w: 891, h: 630 })
-    await page.getByRole('button', { name: 'a5', exact: true }).nth(0).dispatchEvent('click') // 630/1.414 x 891/1.414
+    await page.getByRole('button', { name: 'A5 dikey', exact: true }).dispatchEvent('click') // 630/1.414 x 891/1.414
     await expect.poll(size).toEqual({ w: 446, h: 630 })
     // Karakterizasyon (DÜZELTİLMEDİ): kâğıt düğmelerinin bir kısmı (özellikle 4.) seçim alanlarının
     // ALTINDA kalıyor (yüzde genişlikli flex yerleşimi) — gerçek tıklama engellenir; bu yüzden tıklama
     // olayı doğrudan gönderilir.
-    await page.getByRole('button', { name: 'a5', exact: true }).nth(1).dispatchEvent('click')
+    await page.getByRole('button', { name: 'A5 yatay', exact: true }).dispatchEvent('click')
     await expect.poll(size).toEqual({ w: 630, h: 446 })
-    await page.getByRole('button', { name: 'a4', exact: true }).nth(0).dispatchEvent('click')
+    await page.getByRole('button', { name: 'A4 dikey', exact: true }).dispatchEvent('click')
     await expect.poll(size).toEqual({ w: 630, h: 891 })
   })
 
@@ -105,7 +104,7 @@ test.describe('ADR-0015 B5-3 — PrintoutListView (çıktı şablonu tasarımcı
     const requests: string[] = []
     page.on('request', (r) => { if (r.url().includes('/api/')) requests.push(r.method() + ' ' + r.url()) })
 
-    await page.getByRole('button', { name: 'a5', exact: true }).first().dispatchEvent('click')
+    await page.getByRole('button', { name: 'A5 dikey', exact: true }).dispatchEvent('click')
     await page.getByRole('button', { name: 'Test Çıktısı' }).dispatchEvent('click')
     await page.getByRole('button', { name: 'Temizle' }).dispatchEvent('click') // karakterizasyon: ölü düğme, hiçbir şey yapmaz
     await page.waitForTimeout(400)

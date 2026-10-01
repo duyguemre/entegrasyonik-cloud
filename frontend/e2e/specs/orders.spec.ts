@@ -51,7 +51,7 @@ test.describe('P1 — Siparişler (OrderListView)', () => {
     await gotoAuthed(page)
     await openScreen(page, 'OrderListView')
 
-    await page.locator('.orderListView tbody tr').first().locator('button:has(.mdi-eye)').click()
+    await page.locator('.orderListView tbody tr').first().locator('button:has([class*="mdi-eye"])').click()
 
     const dialog = page.getByRole('dialog').filter({ hasText: 'E2E-100001' })
     await expect(dialog).toBeVisible()
@@ -89,7 +89,7 @@ test.describe('P1 — Sipariş Detayı (OrderDetailComponent)', () => {
     await installApiMocks(page, { 'OrderService/getOrders': ordersDoluFixture })
     await gotoAuthed(page)
     await openScreen(page, 'OrderListView')
-    await page.locator('.orderListView tbody tr').first().locator('button:has(.mdi-eye)').click()
+    await page.locator('.orderListView tbody tr').first().locator('button:has([class*="mdi-eye"])').click()
     await expect(page.getByRole('dialog').filter({ hasText: 'E2E-100001' })).toBeVisible()
   })
 
@@ -133,7 +133,7 @@ test.describe('C1.1 — Sipariş detayında stok tahsis zaman çizgisi', () => {
     await installApiMocks(page, { 'OrderService/getOrders': { orders: [order], totalNumberOfRecords: 1 } })
     await gotoAuthed(page)
     await openScreen(page, 'OrderListView')
-    await page.locator('.orderListView tbody tr').first().locator('button:has(.mdi-eye)').click()
+    await page.locator('.orderListView tbody tr').first().locator('button:has([class*="mdi-eye"])').click()
     const timeline = page.getByRole('region', { name: 'Stok tahsisi' })
     await expect(timeline).toBeVisible()
     await expect(timeline).toContainText('Aşırı satış')
@@ -145,7 +145,7 @@ test.describe('C1.1 — Sipariş detayında stok tahsis zaman çizgisi', () => {
     await installApiMocks(page, { 'OrderService/getOrders': ordersDoluFixture })
     await gotoAuthed(page)
     await openScreen(page, 'OrderListView')
-    await page.locator('.orderListView tbody tr').first().locator('button:has(.mdi-eye)').click()
+    await page.locator('.orderListView tbody tr').first().locator('button:has([class*="mdi-eye"])').click()
     await expect(page.getByRole('dialog').filter({ hasText: 'E2E-100001' })).toBeVisible()
     await expect(page.getByRole('region', { name: 'Stok tahsisi' })).toHaveCount(0)
   })

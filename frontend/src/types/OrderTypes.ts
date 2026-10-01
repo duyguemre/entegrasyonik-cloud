@@ -13,7 +13,7 @@ export const ORDER_INTERNAL_STATUS_LABELS: Record<OrderInternalStatusEnum, strin
     [OrderInternalStatusEnum.UNAPPROVED]: 'Platform Onayı Bekliyor',
     [OrderInternalStatusEnum.AWAITING_APPROVAL]: 'Satıcı Onayı Bekliyor',
     [OrderInternalStatusEnum.APPROVED]: 'Sipariş Onaylandı',
-    [OrderInternalStatusEnum.SHIPPED]: 'Teslimat Bekleniyor',
+    [OrderInternalStatusEnum.SHIPPED]: 'Kargoda',
     [OrderInternalStatusEnum.DELIVERED]: 'Teslim Edildi',
     [OrderInternalStatusEnum.CANCELLED]: 'İptal Edildi',
     [OrderInternalStatusEnum.RETURNED]: 'İade Edildi'
