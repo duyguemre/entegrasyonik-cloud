@@ -100,3 +100,12 @@ JS yolunda yalnız tarama başlayınca iner. `npm run license-check`: GPL/AGPL y
 - Sipariş araması kalem barkodunu kapsamaz (backend) → P-MOB2-6.
 - Kök `BACKLOG.md` bu oturumda güncellenmedi (yalnız `frontend/` kapsamı): MOB-02 / MOB-03 durumunu yerelde "bulut: yapıldı,
   cihaz doğrulaması bekliyor" yapmak önerilir.
+
+## 6. Tam mobil koşu (`chromium-mobile`, 979 test, `--update-snapshots=missing`)
+
+**522 geçti · 69 başarısız · 388 atlandı** (25 dk).
+- 58 başarısızlık yalnız "Linux tabanı yok" (ilk yazım; tabanlar Windows'ta, `*-linux.png` git-ignored). Görsel onay yerelde.
+- 11 davranış başarısızlığı, bu dalın dokunmadığı ekranlarda: `admin-clients` (3), `dark-mode` (giriş ilk kare), `legacy-definition-placeholders`
+  (2), `logs` (2), `settings` (3). **Taban `cloud/fe-mobdesk`'te aynı spec'ler yeniden koşuldu: aynı testler (ve daha fazlası, 15) orada da
+  başarısız** → bu dalın gerilemesi değil. Ayrı onarım işi önerilir.
+- Yeni spec'ler (mob-02, mob-03) ve `mob-00-mobile` kapısı tam koşuda da yeşil.
