@@ -188,8 +188,9 @@ describe('REAUTH_OPS ↔ backend REAUTH_RPCS', () => {
     expect(backend.length).toBeGreaterThan(10)
     for (const op of REAUTH_OPS) expect(backend, op).toContain(op)
     const unused = backend.filter((op) => !(REAUTH_OPS as readonly string[]).includes(op))
-    // Önyüzde kullanılmayanlar (bilinçli): setIntake (entegrasyon ayar ekranı Aşama 3), TenantDataService/cancelDeletion (eski yol).
-    expect(unused.sort()).toEqual(['IntegrationConfigService/setIntake', 'TenantDataService/cancelDeletion'])
+    // Önyüzde kullanılmayanlar (bilinçli): setIntake (entegrasyon ayar ekranı Aşama 3), TenantDataService/cancelDeletion (eski yol),
+    // BackofficeEngineService/retryJobs (toplu yeniden deneme; backend'de var, backoffice ekranı henüz tekli retryJob kullanır).
+    expect(unused.sort()).toEqual(['BackofficeEngineService/retryJobs', 'IntegrationConfigService/setIntake', 'TenantDataService/cancelDeletion'])
   })
 })
 

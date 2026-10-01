@@ -118,6 +118,11 @@ export class MockAdminServer {
     this.p2.notifications.setEmailEnabled(value)
   }
 
+  /** MOB-06: WEBPUSH_VAPID_* yok → getPushConfig `enabled:false`, subscribePush 409 PUSH_DISABLED. */
+  setPushEnabled(value: boolean) {
+    this.p2.notifications.setPushEnabled(value)
+  }
+
   /** Hata durumu denemesi: öneki eşleşen operasyonlar 500 INTERNAL döner (ör. `failOps('BackofficeBillingService/')`); null kapatır. */
   failOps(prefix: string | null) {
     this.failPrefix = prefix

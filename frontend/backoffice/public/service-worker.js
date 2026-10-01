@@ -78,3 +78,55 @@ self.addEventListener('fetch', (event) => {
     )
   )
 })
+
+// MOB-06 — web push (MOB-04 kanalı): YALNIZ kritik dikkat maddeleri (sunucu `notifications.platform-attention-push`).
+// İçerik sunucuda sabit başlıklardır (tenant adı/PII yok). Gösterim her zaman yapılır (`userVisibleOnly`); bozuk yükte genel metin.
+// Tıklama yalnız panel içi göreli yolu açar (açık yönlendirme yok); açık panel penceresi varsa odaklanır.
+const PUSH_FALLBACK = { title: 'Entegrasyonik Yönetim', body: 'Dikkat gerektiren bir durum var.', url: '/', tag: 'bo-attention' }
+
+function safePushPath(p) {
+  if (typeof p !== 'string' || p.charAt(0) !== '/' || p.charAt(1) === '/' || p.indexOf('\\') !== -1 || p.length > 300) return PUSH_FALLBACK.url
+  for (let i = 0; i < p.length; i++) if (p.charCodeAt(i) < 0x20) return PUSH_FALLBACK.url
+  return p
+}
+
+function pushContent(data) {
+  let d = null
+  try {
+    d = data ? data.json() : null
+  } catch (e) {
+    d = null
+  }
+  if (!d || d.v !== 1) return PUSH_FALLBACK
+  const text = (v, max, dflt) => (typeof v === 'string' && v.trim() ? v.trim().slice(0, max) : dflt)
+  return { title: text(d.title, 80, PUSH_FALLBACK.title), body: text(d.body, 160, PUSH_FALLBACK.body), url: safePushPath(d.url), tag: text(d.tag, 64, PUSH_FALLBACK.tag) }
+}
+
+self.addEventListener('push', (event) => {
+  const c = pushContent(event.data)
+  event.waitUntil(
+    self.registration.showNotification(c.title, {
+      body: c.body,
+      tag: c.tag,
+      renotify: true, // yalnız kritik maddeler gelir
+      icon: '/icons/icon-192.png',
+      badge: '/icons/icon-192.png',
+      data: { url: c.url },
+    })
+  )
+})
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close()
+  const target = new URL(safePushPath(event.notification.data && event.notification.data.url), self.location.origin).href
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
+      for (const client of list) {
+        if (new URL(client.url).origin === self.location.origin && 'focus' in client) {
+          return client.focus().then((c) => (c && 'navigate' in c ? c.navigate(target) : c))
+        }
+      }
+      return self.clients.openWindow ? self.clients.openWindow(target) : undefined
+    })
+  )
+})

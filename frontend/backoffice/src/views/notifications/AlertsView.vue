@@ -17,6 +17,8 @@
       text="Gölge moddaki kurallar kayıt tutar ama e-posta ya da müşteri bildirimi göndermez; eşikler doğrulanana kadar böyle çalışır."
     />
 
+    <PushCard />
+
     <div class="bo-toolbar">
       <div class="bo-seg" role="radiogroup" aria-label="Uyarı durumu">
         <button v-for="o in STATUS_OPTS" :key="o.value" type="button" role="radio" class="bo-seg__opt" :aria-checked="status === o.value" :data-status="o.value" @click="status = o.value">{{ o.label }}</button>
@@ -108,6 +110,7 @@ import type { AlertLevel, AlertRow, AlertStatus } from '@bo/api/contract'
 import { useCursorList } from '@bo/composables/useCursorList'
 import { useGuardedAction } from '@bo/composables/useGuardedAction'
 import BoPageHeader from '@bo/components/shell/BoPageHeader.vue'
+import PushCard from '@bo/pwa/PushCard.vue'
 import StateBlock from '@bo/components/kit/StateBlock.vue'
 import LoadMore from '@bo/components/kit/LoadMore.vue'
 import GuardedDialog from '@bo/components/kit/GuardedDialog.vue'

@@ -76,8 +76,13 @@ function emailHtml(subject: string, text: string, locale: 'tr' | 'en') {
 
 type AnnState = Announcement
 
-export function createNotificationsMock(t0: number): MockDomain & { setEmailEnabled(v: boolean): void } {
+/** MOB-06 sahte API: gerçek biçimli VAPID açık anahtarı (65 bayt P-256; yalnız geliştirme, özel eşi tutulmaz). */
+export const MOCK_VAPID_PUBLIC = 'BFuTE875nh45zRaU0GNt1_kAw1TxLLDoCZtKauNzbRvRE_6s-mMjm-P0t2lVmXKeg5Oe-bqoRQLLqQPOY26WGTM'
+
+export function createNotificationsMock(t0: number): MockDomain & { setEmailEnabled(v: boolean): void; setPushEnabled(v: boolean): void } {
   let emailEnabled = true
+  let pushEnabled = true
+  let pushDevices: Array<{ id: string; endpoint: string; deviceLabel: string | null; createdAt: string; lastSuccessAt: string | null }> = []
   let seq = 0
   const nextId = () => hex24(700_000 + ++seq)
 
@@ -268,6 +273,9 @@ export function createNotificationsMock(t0: number): MockDomain & { setEmailEnab
   }
 
   return {
+    setPushEnabled(v: boolean) {
+      pushEnabled = v
+    },
     setEmailEnabled(v: boolean) {
       emailEnabled = v
     },
@@ -413,6 +421,30 @@ export function createNotificationsMock(t0: number): MockDomain & { setEmailEnab
             .filter((a) => (!body.status || a.status === body.status) && (!body.level || a.level === body.level) && (!body.ruleId || a.ruleId === body.ruleId))
             .sort((a, b) => Date.parse(b.lastSeenAt) - Date.parse(a.lastSeenAt))
           return page(list, body)
+        }
+        // MOB-06: platform yöneticisi web push aboneliği. Açık anahtar gerçek bir P-256 VAPID açık anahtarıdır (sır değil; özel eşi YOK).
+        case 'BackofficePrefsService/getPushConfig':
+          strict(body, [])
+          return { enabled: pushEnabled, publicKey: pushEnabled ? MOCK_VAPID_PUBLIC : null, devices: pushEnabled ? pushDevices.map(({ endpoint: _e, ...d }) => d) : [] }
+        case 'BackofficePrefsService/subscribePush': {
+          strict(body, ['subscription', 'deviceLabel'])
+          if (!pushEnabled) throw new MockHttpError(409, 'PUSH_DISABLED', 'Anlık bildirimler şu an kullanılamıyor.')
+          const sub = body.subscription as { endpoint?: unknown } | undefined
+          const endpoint = typeof sub?.endpoint === 'string' ? sub.endpoint : ''
+          if (!/^https:\/\/(fcm\.googleapis\.com|updates\.push\.services\.mozilla\.com|web\.push\.apple\.com|[a-z0-9-]+\.notify\.windows\.com)\//.test(endpoint)) {
+            throw new MockHttpError(400, 'PUSH_ENDPOINT_NOT_ALLOWED', 'Bu tarayıcının bildirim servisi desteklenmiyor.')
+          }
+          const existing = pushDevices.find((d) => d.endpoint === endpoint)
+          if (existing) existing.deviceLabel = typeof body.deviceLabel === 'string' ? body.deviceLabel : null
+          else pushDevices.unshift({ id: nextId(), endpoint, deviceLabel: typeof body.deviceLabel === 'string' ? body.deviceLabel : null, createdAt: iso(ctx.now), lastSuccessAt: null })
+          return { ok: true }
+        }
+        case 'BackofficePrefsService/unsubscribePush': {
+          strict(body, ['endpoint', 'id'])
+          if (!body.endpoint === !body.id) throw validation('endpoint', 'uç ya da kimlikten yalnız biri')
+          const before = pushDevices.length
+          pushDevices = pushDevices.filter((d) => d.endpoint !== body.endpoint && d.id !== body.id)
+          return { removed: before - pushDevices.length }
         }
         case 'BackofficeNotificationService/muteAlert': {
           strict(body, ['ruleId', 'scopeKey', 'hours', 'reason'])
