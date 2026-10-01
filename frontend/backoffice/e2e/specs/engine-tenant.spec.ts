@@ -23,7 +23,7 @@ test.describe('motor ve kuyruklar', () => {
     await expect(page).toHaveURL(/\/motor$/)
     await expect(page.getByRole('heading', { level: 1, name: 'Motor ve kuyruklar' })).toBeVisible()
     await settle(page)
-    await expect(page.getByText('order-sync-queue')).toBeVisible()
+    await expect(page.getByRole('heading', { level: 2, name: 'order-sync-queue' })).toBeVisible()
     await expectNoA11yViolations(page)
     for (const [tab, heading] of [['Başarısız işler', 'Başarısız işler'], ['Durum makinesi', 'Katalog durum makinesi'], ['Zamanlanmış görevler', 'Zamanlanmış görevler']]) {
       await page.getByRole('tab', { name: new RegExp(tab) }).click()

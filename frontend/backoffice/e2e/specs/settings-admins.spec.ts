@@ -141,8 +141,21 @@ test.describe('yöneticiler', () => {
     await expect(page.getByRole('heading', { level: 1, name: 'Yöneticiler' })).toBeVisible()
     await settle(page)
     await expect(page.getByText('Siz', { exact: true })).toBeVisible()
-    await expect(page.getByText('Kilitli')).toBeVisible()
+    await expect(page.getByRole('row').getByText('Kilitli')).toBeVisible()
     await expectNoA11yViolations(page)
+  })
+
+  test('süzgeç (BoSegmented + BoFilterBar): Kilitli → URL ?filtre=locked, liste daralır; Filtreleri temizle', async ({ page }) => {
+    await page.goto('/yoneticiler')
+    await settle(page)
+    const all = await page.getByRole('row').count()
+    await page.getByRole('radio', { name: /Kilitli/ }).click()
+    await expect(page).toHaveURL(/filtre=locked/)
+    await expect(page.getByText('1 süzgeç etkin')).toBeVisible()
+    expect(await page.getByRole('row').count()).toBeLessThan(all)
+    await page.getByTestId('filters-clear').click()
+    await expect(page).not.toHaveURL(/filtre=/)
+    await expect(page.getByRole('row')).toHaveCount(all)
   })
 
   test('davet: step-up + gerekçe; mevcut kullanıcı 409 iletisi', async ({ page }) => {
