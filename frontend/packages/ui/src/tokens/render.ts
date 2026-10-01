@@ -228,12 +228,14 @@ function renderChannelScopes(): string[] {
 /**
  * K13 — kanal ROZETİ tonları (`palette.ts` `channelBadgeMix`): tüm kanal kapsamlarında (ve nötrde) aynı formül, tek kural.
  * `--ek-ch-badge-{bg,border,fg}` → `EkChannelBadge` ve rozet biçimini kullanan tüm bileşenler. Koyu temada oranlar
- * `.v-theme--dark` üzerinde değişir (yüzey/mürekkep rolleri zaten temayla döner).
+ * `<html data-theme="dark">` ve Vuetify koyu tema sınıfı (`.v-theme--darkTheme`, `THEME_NAMES.dark`) üzerinde değişir
+ * (yüzey/mürekkep rolleri zaten temayla döner). fe-polish: eski `.v-theme--dark` seçicisi hiçbir öğeyle eşleşmiyordu.
  */
 function renderChannelBadgeRules(): string[] {
   const selectors = CHANNEL_SCOPE_CODES.map((code) => `.ek-ch-${code}`).join(',\n')
   return [
-    '.v-theme--dark {',
+    ":root[data-theme='dark'],",
+    '.v-theme--darkTheme {',
     `  --ek-channel-badge-tint: ${channelBadgeMix.dark.tint}%;`,
     `  --ek-channel-badge-shade: ${channelBadgeMix.dark.shade}%;`,
     `  --ek-channel-badge-ink: ${channelBadgeMix.dark.ink}%;`,

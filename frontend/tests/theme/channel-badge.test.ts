@@ -8,6 +8,7 @@ import {
   CARRIERS, CHANNEL_NAMES, CHANNEL_SHORT, appSemanticColorsDark, appSemanticColorsLight, brandName, carrierCode, carrierOptions,
   channelBadgeMix, channelPalette, channelShort, renderTokenCss,
 } from '@entegrasyonik/ui/tokens'
+import { THEME_NAMES } from '@entegrasyonik/ui/theme'
 import { contrastRatio } from './contrastRatio'
 
 /** color-mix(in srgb, A p%, B): gama kodlu sRGB'de doğrusal karışım (tarayıcı davranışı). */
@@ -51,12 +52,17 @@ describe('kanal rozeti — kontrast (AA, iki tema)', () => {
 describe('kanal rozeti — formül tek yerde, marka rengi değişmez', () => {
   const css = renderTokenCss('app')
 
-  it('oranlar :root (açık) ve .v-theme--dark (koyu) üzerinde', () => {
+  it('oranlar :root (açık) ve koyu tema (html[data-theme=dark] + Vuetify koyu tema sınıfı) üzerinde', () => {
     expect(css).toContain(`--ek-channel-badge-tint: ${channelBadgeMix.light.tint}%;`)
     expect(css).toContain(`--ek-channel-badge-shade: ${channelBadgeMix.light.shade}%;`)
     expect(css).toContain(`--ek-channel-badge-ink: ${channelBadgeMix.light.ink}%;`)
-    const dark = css.slice(css.indexOf('.v-theme--dark {'), css.indexOf('}', css.indexOf('.v-theme--dark {')))
+    const head = ":root[data-theme='dark'],\n.v-theme--darkTheme {"
+    expect(css).toContain(head)
+    const dark = css.slice(css.indexOf(head), css.indexOf('}', css.indexOf(head)))
     expect(dark).toContain(`--ek-channel-badge-tint: ${channelBadgeMix.dark.tint}%;`)
+    // fe-polish: Vuetify koyu tema sınıfı tema adından türer; `.v-theme--dark` hiçbir öğeyle eşleşmez
+    expect(`.v-theme--${THEME_NAMES.dark}`).toBe('.v-theme--darkTheme')
+    expect(css).not.toMatch(/\.v-theme--dark\s*\{/)
   })
 
   it('tüm kanal kapsamları + nötr aynı formülü alır (zemin=yüzey, kenarlık/harf=mürekkep)', () => {
