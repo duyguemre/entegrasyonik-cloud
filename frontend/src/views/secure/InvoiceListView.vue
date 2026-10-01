@@ -105,6 +105,7 @@
 </template>
 
 <script setup lang="ts">
+import { defaultListPageSize } from '@/stores/publicConfig'
 import HelpStartLink from '@/components/help/HelpStartLink.vue'
 import { EkDateRange, EkSelect, EkRowActions, EkButton, EkChannelDot, EkStatusChip, EkConfirmDialog } from '@entegrasyonik/ui/components'
 import { formatDateRange } from '@entegrasyonik/ui/components/dateRange'
@@ -156,7 +157,7 @@ const searchInvoiceForm = ref<any>({
 });
 
 const sortBy = ref<any>([]);
-const pagination = ref({ page: 1, limit: 25, totalNumberOfPages: 1, totalNumberOfRecords: 0 });
+const pagination = ref({ page: 1, limit: defaultListPageSize(), totalNumberOfPages: 1, totalNumberOfRecords: 0 });
 
 // DS-v2 liste standardı. Sıralanabilir kolonlar InvoiceService.getInvoices `sortBy.key`
 // izin listesindeki alanlardır (SUNUCU tarafı sıralama).

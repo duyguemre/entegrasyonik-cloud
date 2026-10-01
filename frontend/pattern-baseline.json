@@ -2,8 +2,8 @@
   "_meta": "ADR-0015 Karar 6.4 desen mandalı tabanı. node scripts/check-pattern-baseline.js --write ile üretildi (bkz. scripts/pattern-counts.js). Hiçbir dosyada/kategoride sayı ARTAMAZ; yeni dosyalar 0 ile başlamalı; düşüş serbest ama bu dosyanın güncellenmesi gerekir. patternExceptions BİLGİ AMAÇLIDIR (C'de raporlanır, mandal tarafından zorlanmaz).",
   "date": "2026-10-01",
   "totals": {
-    "total": 13,
-    "rawDataTable": 9,
+    "total": 6,
+    "rawDataTable": 2,
     "rawDialog": 0,
     "rawChip": 1,
     "rawFormat": 2,
@@ -574,6 +574,16 @@
       "total": 0
     },
     "src/components/adminPanel/integrations/SettingField.vue": {
+      "rawDataTable": 0,
+      "rawDialog": 0,
+      "rawChip": 0,
+      "rawFormat": 0,
+      "rawSpinner": 0,
+      "iconBtnNoLabel": 0,
+      "patternExceptions": 0,
+      "total": 0
+    },
+    "src/components/barcode/BarcodeScanButton.vue": {
       "rawDataTable": 0,
       "rawDialog": 0,
       "rawChip": 0,
@@ -1643,6 +1653,46 @@
       "patternExceptions": 0,
       "total": 0
     },
+    "src/components/pricing/BuyboxBadge.vue": {
+      "rawDataTable": 0,
+      "rawDialog": 0,
+      "rawChip": 0,
+      "rawFormat": 0,
+      "rawSpinner": 0,
+      "iconBtnNoLabel": 0,
+      "patternExceptions": 0,
+      "total": 0
+    },
+    "src/components/pricing/BuyboxSparkline.vue": {
+      "rawDataTable": 0,
+      "rawDialog": 0,
+      "rawChip": 0,
+      "rawFormat": 0,
+      "rawSpinner": 0,
+      "iconBtnNoLabel": 0,
+      "patternExceptions": 0,
+      "total": 0
+    },
+    "src/components/pricing/CompetitionPanel.vue": {
+      "rawDataTable": 0,
+      "rawDialog": 0,
+      "rawChip": 0,
+      "rawFormat": 0,
+      "rawSpinner": 0,
+      "iconBtnNoLabel": 0,
+      "patternExceptions": 0,
+      "total": 0
+    },
+    "src/components/pricing/CostCoverageChip.vue": {
+      "rawDataTable": 0,
+      "rawDialog": 0,
+      "rawChip": 0,
+      "rawFormat": 0,
+      "rawSpinner": 0,
+      "iconBtnNoLabel": 0,
+      "patternExceptions": 0,
+      "total": 0
+    },
     "src/components/printouts/TemplateEditor.vue": {
       "rawDataTable": 0,
       "rawDialog": 0,
@@ -2123,6 +2173,16 @@
       "patternExceptions": 0,
       "total": 0
     },
+    "src/components/settings/PushDeviceCard.vue": {
+      "rawDataTable": 0,
+      "rawDialog": 0,
+      "rawChip": 0,
+      "rawFormat": 0,
+      "rawSpinner": 0,
+      "iconBtnNoLabel": 0,
+      "patternExceptions": 0,
+      "total": 0
+    },
     "src/components/settings/SettingRow.vue": {
       "rawDataTable": 0,
       "rawDialog": 0,
@@ -2274,6 +2334,16 @@
       "total": 0
     },
     "src/layouts/UnsecureLayout.vue": {
+      "rawDataTable": 0,
+      "rawDialog": 0,
+      "rawChip": 0,
+      "rawFormat": 0,
+      "rawSpinner": 0,
+      "iconBtnNoLabel": 0,
+      "patternExceptions": 0,
+      "total": 0
+    },
+    "src/pwa/PwaPrompts.vue": {
       "rawDataTable": 0,
       "rawDialog": 0,
       "rawChip": 0,
@@ -2684,14 +2754,14 @@
       "total": 0
     },
     "src/views/secure/definitions/BrandDefinitionView.vue": {
-      "rawDataTable": 1,
+      "rawDataTable": 0,
       "rawDialog": 0,
       "rawChip": 0,
       "rawFormat": 0,
       "rawSpinner": 0,
       "iconBtnNoLabel": 0,
       "patternExceptions": 0,
-      "total": 1
+      "total": 0
     },
     "src/views/secure/definitions/CategoryDefinitionView.vue": {
       "rawDataTable": 0,
@@ -2704,54 +2774,64 @@
       "total": 0
     },
     "src/views/secure/definitions/CustomerDefinitionView.vue": {
-      "rawDataTable": 1,
+      "rawDataTable": 0,
       "rawDialog": 0,
       "rawChip": 0,
       "rawFormat": 0,
       "rawSpinner": 0,
       "iconBtnNoLabel": 0,
       "patternExceptions": 0,
-      "total": 1
+      "total": 0
     },
     "src/views/secure/definitions/HashtagDefinitionView.vue": {
-      "rawDataTable": 1,
+      "rawDataTable": 0,
       "rawDialog": 0,
       "rawChip": 0,
       "rawFormat": 0,
       "rawSpinner": 0,
       "iconBtnNoLabel": 0,
       "patternExceptions": 0,
-      "total": 1
+      "total": 0
     },
     "src/views/secure/definitions/InvoiceDefinitionView.vue": {
-      "rawDataTable": 1,
+      "rawDataTable": 0,
       "rawDialog": 0,
       "rawChip": 0,
       "rawFormat": 0,
       "rawSpinner": 0,
       "iconBtnNoLabel": 0,
       "patternExceptions": 0,
-      "total": 1
+      "total": 0
+    },
+    "src/views/secure/definitions/LegacyDefinitionEmpty.vue": {
+      "rawDataTable": 0,
+      "rawDialog": 0,
+      "rawChip": 0,
+      "rawFormat": 0,
+      "rawSpinner": 0,
+      "iconBtnNoLabel": 0,
+      "patternExceptions": 0,
+      "total": 0
     },
     "src/views/secure/definitions/OptionDefinitionView.vue": {
-      "rawDataTable": 1,
+      "rawDataTable": 0,
       "rawDialog": 0,
       "rawChip": 0,
       "rawFormat": 0,
       "rawSpinner": 0,
       "iconBtnNoLabel": 0,
       "patternExceptions": 0,
-      "total": 1
+      "total": 0
     },
     "src/views/secure/definitions/OrderDefinitionView.vue": {
-      "rawDataTable": 1,
+      "rawDataTable": 0,
       "rawDialog": 0,
       "rawChip": 0,
       "rawFormat": 0,
       "rawSpinner": 0,
       "iconBtnNoLabel": 0,
       "patternExceptions": 0,
-      "total": 1
+      "total": 0
     },
     "src/views/secure/definitions/ProductDefinitionView.vue": {
       "rawDataTable": 0,
@@ -2774,14 +2854,14 @@
       "total": 0
     },
     "src/views/secure/definitions/ReturnDefinitionView.vue": {
-      "rawDataTable": 1,
+      "rawDataTable": 0,
       "rawDialog": 0,
       "rawChip": 0,
       "rawFormat": 0,
       "rawSpinner": 0,
       "iconBtnNoLabel": 0,
       "patternExceptions": 0,
-      "total": 1
+      "total": 0
     },
     "src/views/secure/integrations/ECommerceView.vue": {
       "rawDataTable": 0,
@@ -2844,6 +2924,16 @@
       "total": 0
     },
     "src/views/secure/integrations/StockPolicyView.vue": {
+      "rawDataTable": 0,
+      "rawDialog": 0,
+      "rawChip": 0,
+      "rawFormat": 0,
+      "rawSpinner": 0,
+      "iconBtnNoLabel": 0,
+      "patternExceptions": 0,
+      "total": 0
+    },
+    "src/views/secure/pricing/PricingRulesView.vue": {
       "rawDataTable": 0,
       "rawDialog": 0,
       "rawChip": 0,
@@ -3143,6 +3233,7 @@
     "src/views/secure/definitions/CustomerDefinitionView.vue": 0,
     "src/views/secure/definitions/HashtagDefinitionView.vue": 0,
     "src/views/secure/definitions/InvoiceDefinitionView.vue": 0,
+    "src/views/secure/definitions/LegacyDefinitionEmpty.vue": 0,
     "src/views/secure/definitions/OptionDefinitionView.vue": 0,
     "src/views/secure/definitions/OrderDefinitionView.vue": 0,
     "src/views/secure/definitions/ProductDefinitionView.vue": 0,
@@ -3155,6 +3246,7 @@
     "src/views/secure/integrations/MarketplaceView.vue": 0,
     "src/views/secure/integrations/ShippingView.vue": 0,
     "src/views/secure/integrations/StockPolicyView.vue": 0,
+    "src/views/secure/pricing/PricingRulesView.vue": 0,
     "src/views/secure/productDefinitions/BrandListView.vue": 1,
     "src/views/secure/productDefinitions/CategoryListView.vue": 1,
     "src/views/secure/productDefinitions/ChoiceListView.vue": 0,

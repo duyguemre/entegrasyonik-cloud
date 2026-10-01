@@ -8,6 +8,7 @@
  */
 import { onBeforeUnmount, ref } from 'vue'
 import useRestApi from '@/composables/restapi'
+import { usePublicConfigStore } from '@/stores/publicConfig'
 import { checkFiles, uploadErrorText, type UploadItem } from './galleryModel'
 
 export interface UploadEntry extends UploadItem {
@@ -29,6 +30,8 @@ let seq = 0
 
 export function useImageUploads(opts: UseImageUploadsOptions) {
   const restApi = useRestApi() as any
+  // FE-CFG-1: bayt tavanı tek kaynaktan (backend `env.images.uploadMaxBytes`); aşan dosya kuyruğa girmez.
+  const publicConfig = usePublicConfigStore()
   const items = ref<UploadEntry[]>([])
   const concurrency = opts.concurrency ?? 3
 
@@ -79,9 +82,9 @@ export function useImageUploads(opts: UseImageUploadsOptions) {
     items.value.filter((x) => x.status === 'queued').slice(0, free).forEach((x) => { void start(x) })
   }
 
-  /** Dosyaları kuyruğa ekler; reddedilenleri (tür/adet) döner. */
+  /** Dosyaları kuyruğa ekler; reddedilenleri (tür/adet/boyut) döner. */
   function add(files: readonly File[]) {
-    const { accepted, rejected } = checkFiles(files)
+    const { accepted, rejected } = checkFiles(files, publicConfig.uploadMaxBytes)
     for (const file of accepted) {
       items.value.push({ id: `up-${++seq}`, name: file.name, status: 'queued', progress: 0, file, previewUrl: URL.createObjectURL(file) })
     }

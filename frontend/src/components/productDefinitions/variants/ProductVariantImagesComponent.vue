@@ -96,6 +96,7 @@ import { useChoicesStore } from '@/stores/choicesStore'
 import GalleryThumb from '@/components/productDefinitions/images/GalleryThumb.vue'
 import ImagePicker from '@/components/productDefinitions/images/ImagePicker.vue'
 import { useImageUploads } from '@/components/productDefinitions/images/useImageUploads'
+import { provideGallerySrc } from '@/components/productDefinitions/images/gallerySrc'
 import { motionMs } from '@/components/productDefinitions/images/motion'
 import {
   IMAGE_GUIDE, buildOptionGroups, moveItem, preferredGroup, pruneVariantRefs, variantImageIds, variantKey, variantLabel,
@@ -105,6 +106,8 @@ import {
 defineModel({ default: false })
 const emits = defineEmits(['refreshImages', 'close'])
 const props = defineProps<{ productInfoForm: any; variant: VariantLike }>()
+// FE-CFG-1: görsel adresi tek kuraldan (DB url → public-config tabanı); alt bileşenler (ImagePicker) de aynısını alır.
+const srcOf = provideGallerySrc(() => props.productInfoForm)
 
 const restApi = useRestApi() as any
 const { showToast } = useToast()
@@ -113,7 +116,7 @@ const valueTitle = (id: string) => choicesStore.getDirectChoiceValueTitle(id) as
 
 const gallery = computed<GalleryImage[]>(() => props.productInfoForm.images ?? [])
 const ownIds = computed(() => variantImageIds(props.variant, gallery.value))
-const urlOf = (id: string) => gallery.value.find((x) => x._id === id)?.url
+const urlOf = (id: string) => srcOf(gallery.value.find((x) => x._id === id))
 const headline = computed(() => `${variantLabel(props.variant, valueTitle)}${props.variant.stockcode ? ` · ${props.variant.stockcode}` : ''}`)
 
 const liveMsg = ref('')

@@ -125,6 +125,7 @@
 </template>
 
 <script setup lang="ts">
+import { defaultListPageSize } from '@/stores/publicConfig'
 import { EkSelect, EkButton, EkDateRange, EkChannelDot, EkTooltip } from '@entegrasyonik/ui/components'
 import type { EkGridColumn, EkGridSort, EkActiveFilterChip } from '@entegrasyonik/ui/components'
 import { channelOptionsFrom } from '@entegrasyonik/ui/components/selectOptions'
@@ -152,7 +153,7 @@ const errorStatus = ref<number | null | undefined>(undefined)
 const rows = ref<FinancialTransactionRow[]>([])
 const total = ref(0)
 const page = ref(1)
-const pageSize = ref(25)
+const pageSize = ref(defaultListPageSize())
 const sort = ref<EkGridSort>({ key: 'transactionDate', dir: 'desc' })
 
 const lookupId = ref('')

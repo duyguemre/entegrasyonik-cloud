@@ -6,7 +6,7 @@
  *   2. Uzun kenar `PHOTO_PREP.maxLongEdge`'i aşıyorsa orantılı küçült (büyütme yok).
  *   3. Tuval üzerinden JPEG olarak YENİDEN KODLA → EXIF/GPS/XMP/IPTC tuvale hiç taşınmaz.
  *   4. Güvence: çıktıda kalan meta veri bölütleri (APP1 Exif/XMP, APP13 IPTC, COM) bayt düzeyinde de silinir.
- *   5. Bayt tavanı (`maxBytes`, yükleme sözleşmesindeki 10 MB) aşılırsa kalite, sonra boyut kademeli düşürülür.
+ *   5. Bayt tavanı (`maxBytes`: public-config `env.images.uploadMaxBytes`, yoksa sözleşmedeki 10 MB) aşılırsa kalite, sonra boyut kademeli düşürülür.
  *
  * Sınırlar (docs/IMAGE_UPLOAD_CONTRACT.md): tür izin listesi jpeg/png/webp(/avif), tavan 10 MB, ≤ 50 MP. Sözleşmede
  * uzun kenar piksel sınırı YOK; 2400 px seçildi — önerilen kısa kenar (IMAGE_GUIDE.recommendedPx = 1200) 2:1'e kadar
@@ -19,7 +19,10 @@ import { semanticColorsLight } from '@entegrasyonik/ui/tokens'
 export const PHOTO_PREP = {
   /** Uzun kenar üst sınırı (px). */
   maxLongEdge: 2400,
-  /** Yükleme sözleşmesindeki bayt tavanı (IMAGE_UPLOAD_CONTRACT: varsayılan 10 MB). */
+  /**
+   * Yedek bayt tavanı (IMAGE_UPLOAD_CONTRACT: varsayılan 10 MB). FE-CFG-1: çağıran yer `preparePhoto(..., maxBytes)` ile
+   * backend ortam değerini (`env.images.uploadMaxBytes`, `stores/publicConfig`) geçirir; bu değer yalnız verilmezse kullanılır.
+   */
   maxBytes: 10 * 1024 * 1024,
   /** Girdi dosyası bunun üstündeyse çözümlemeye bile girişilmez (telefon belleği). */
   maxInputBytes: 40 * 1024 * 1024,
@@ -41,7 +44,7 @@ export const PHOTO_PREP_MESSAGES: Record<PhotoPrepErrorCode, string> = {
   'decode-failed': 'Fotoğraf bu tarayıcıda açılamadı — JPG olarak kaydedip "Görsel ekle" ile yükleyin',
   'too-many-pixels': 'Fotoğraf çözünürlüğü çok yüksek (50 MP üstü) — daha düşük çözünürlükle çekin',
   'encode-failed': 'Fotoğraf hazırlanamadı — yeniden çekmeyi deneyin',
-  'too-large-output': 'Fotoğraf küçültüldüğü hâlde 10 MB sınırını aşıyor — daha düşük çözünürlükle çekin',
+  'too-large-output': 'Fotoğraf küçültüldüğü hâlde yükleme sınırını aşıyor — daha düşük çözünürlükle çekin',
 }
 
 export class PhotoPrepError extends Error {
@@ -162,7 +165,12 @@ export function cameraFileName(d = new Date()): string {
   return `kamera-${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}.jpg`
 }
 
-export async function preparePhoto(file: File, deps: PhotoPrepDeps = browserDeps(), name = cameraFileName()): Promise<PreparedPhoto> {
+export async function preparePhoto(
+  file: File,
+  deps: PhotoPrepDeps = browserDeps(),
+  name = cameraFileName(),
+  maxBytes: number = PHOTO_PREP.maxBytes,
+): Promise<PreparedPhoto> {
   // Kamera bazen türü boş verir (bazı Android sürümleri); boşsa çözümlemeye bırakılır.
   if (file.type && !file.type.startsWith('image/')) throw new PhotoPrepError('not-image')
   if (file.size > PHOTO_PREP.maxInputBytes) throw new PhotoPrepError('too-large-input')
@@ -193,7 +201,7 @@ export async function preparePhoto(file: File, deps: PhotoPrepDeps = browserDeps
         if (!blob || !blob.size) throw new PhotoPrepError('encode-failed')
         const bytes = stripJpegMetadata(await blobBytes(blob))
         if (!isJpeg(bytes)) throw new PhotoPrepError('encode-failed')
-        if (bytes.length <= PHOTO_PREP.maxBytes) {
+        if (bytes.length <= maxBytes) {
           return {
             file: new File([bytes as BlobPart], name, { type: PHOTO_PREP.outputType, lastModified: Date.now() }),
             width: size.width,

@@ -157,6 +157,7 @@
 </template>
 
 <script setup lang="ts">
+import { defaultListPageSize } from '@/stores/publicConfig'
 import { EkRowActions, EkButton } from '@entegrasyonik/ui/components'
 import type { EkGridColumn, EkGridSort } from '@entegrasyonik/ui/components'
 import { ref, computed, onBeforeMount, reactive, watch } from 'vue'
@@ -191,7 +192,7 @@ const gridSort = ref<EkGridSort>(null)
 
 const pagination = reactive({
   page: 1,
-  limit: 25,
+  limit: defaultListPageSize(),
   totalNumberOfPages: 1,
   totalNumberOfRecords: 0
 })

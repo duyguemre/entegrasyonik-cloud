@@ -83,6 +83,7 @@
 </template>
 
 <script setup lang="ts">
+import { defaultListPageSize } from '@/stores/publicConfig'
 import { EkSelect, EkDateRange, EkChannelDot, EkStatusChip } from '@entegrasyonik/ui/components'
 import type { EkGridColumn, EkGridSort, EkActiveFilterChip } from '@entegrasyonik/ui/components'
 import { channelOptionsFrom } from '@entegrasyonik/ui/components/selectOptions'
@@ -110,7 +111,7 @@ const errorStatus = ref<number | null | undefined>(undefined)
 const rows = ref<CargoInvoice[]>([])
 const sort = ref<EkGridSort>({ key: 'transactionDate', dir: 'desc' })
 const page = ref(1)
-const pageSize = ref(25)
+const pageSize = ref(defaultListPageSize())
 
 const channelOptions = computed<Array<{ code: string; title: string }>>(() => {
   try {

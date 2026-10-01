@@ -360,11 +360,16 @@ export interface FileCheck<F> {
 }
 
 /** Dosya türü ve adet sınırı (tarayıcı tarafı ön kontrol; asıl doğrulama backend'de). */
-export function checkFiles<F extends { name: string; type: string }>(files: readonly F[]): FileCheck<F> {
+/**
+ * `maxBytes` (FE-CFG-1): yükleme bayt tavanı — backend ortam değeri `env.images.uploadMaxBytes`
+ * (`stores/publicConfig`). Verilmezse boyut denetlenmez (saf model; çağıran yer depodan geçirir).
+ */
+export function checkFiles<F extends { name: string; type: string; size?: number }>(files: readonly F[], maxBytes?: number): FileCheck<F> {
   const accepted: F[] = []
   const rejected: { file: F; reason: string }[] = []
   for (const f of files) {
     if (!IMAGE_GUIDE.accept.includes(f.type)) rejected.push({ file: f, reason: 'Desteklenmeyen tür (JPG, PNG ya da WebP yükleyin)' })
+    else if (maxBytes && maxBytes > 0 && typeof f.size === 'number' && f.size > maxBytes) rejected.push({ file: f, reason: `Dosya çok büyük — görsel başına en çok ${formatBytes(maxBytes)}` })
     else if (accepted.length >= IMAGE_GUIDE.maxFilesPerBatch) rejected.push({ file: f, reason: `Tek seferde en çok ${IMAGE_GUIDE.maxFilesPerBatch} görsel` })
     else accepted.push(f)
   }
