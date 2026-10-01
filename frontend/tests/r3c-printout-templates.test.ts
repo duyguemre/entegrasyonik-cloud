@@ -9,7 +9,13 @@ import {
 } from '../src/components/printouts/templateModel'
 import { TemplateHistory } from '../src/components/printouts/templateHistory'
 import { readTemplates, sanitizeFile, templateStorageKey, writeTemplates } from '../src/components/printouts/templateStore'
-import { buildPrintDocument, escapeHtml, geometryCss, renderPageHtml, TEMPLATE_CSS } from '../src/components/printouts/renderTemplate'
+import { createSSRApp, h } from 'vue'
+import { renderToString } from 'vue/server-renderer'
+import TemplatePage from '../src/components/printouts/TemplatePage'
+import { barcodeModules, geometryCss, printCss, qrModules, TEMPLATE_CSS } from '../src/components/printouts/renderTemplate'
+
+const render = (doc: TemplateDoc, data: ReturnType<typeof sampleData>, design = false) =>
+  renderToString(createSSRApp({ render: () => h(TemplatePage, { doc, data, pageKey: 'p0', design, nameOf: () => 'Öğe' }) }))
 
 const NOW = new Date('2026-10-01T10:00:00.000Z')
 
@@ -164,52 +170,62 @@ describe('saklama (bu tarayıcı, kullanıcı + mağaza kapsamlı)', () => {
   })
 })
 
-describe('render motoru', () => {
+describe('render motoru (TemplatePage — tuval, önizleme ve yazdırma ortak)', () => {
   const label = STARTER_TEMPLATES.find((t) => t.id === 'sys-label-100x150')!
 
-  it('sipariş verisi ve kullanıcı metni HTML olarak yorumlanmaz (XSS)', () => {
-    expect(escapeHtml('<img src=x onerror=alert(1)>"&\'')).toBe('&lt;img src=x onerror=alert(1)&gt;&quot;&amp;&#39;')
+  it('sipariş verisi ve kullanıcı metni HTML olarak yorumlanmaz (XSS): Vue metin düğümü', async () => {
     const d = sampleData('normal', NOW)
     d.values['shipping.name'] = '<script>alert(1)</script>'
-    const doc: TemplateDoc = { ...blankTemplate('packing-slip', 'a4'), elements: [{ ...createElement('field', { x: 10, y: 10 }, { path: 'shipping.name' }) }, { ...createElement('text', { x: 10, y: 20 }), text: '<b>x</b>' } as never] }
-    const html = renderPageHtml(doc, d, 'p0')
+    const doc: TemplateDoc = { ...blankTemplate('packing-slip', 'a4'), elements: [createElement('field', { x: 10, y: 10 }, { path: 'shipping.name' }), { ...createElement('text', { x: 10, y: 20 }), text: '<img src=x onerror=alert(1)>' } as never] }
+    const html = await render(doc, d)
     expect(html).not.toContain('<script>')
-    expect(html).not.toContain('<b>')
+    expect(html).not.toContain('<img')
     expect(html).toContain('&lt;script&gt;')
   })
 
-  it('içerik konumsuzdur; geometri yalnız CSS kuralında (mm/pt); sürükleme içeriği değiştirmez', () => {
+  it('içerik konumsuzdur; geometri yalnız CSS kuralında (mm/pt); taşıma içeriği değiştirmez', async () => {
     const d = sampleData('normal', NOW)
-    const before = renderPageHtml(label, d, 'p0')
+    const before = await render(label, d)
     const moved = { ...label, elements: label.elements.map((e, i) => (i === 0 ? { ...e, x: e.x + 7 } : e)) }
-    expect(renderPageHtml(moved, d, 'p0')).toBe(before)
+    expect(await render(moved, d)).toBe(before)
     expect(geometryCss(moved, 'p0')).toContain('left:12mm')
     expect(geometryCss(label, 'p0')).toContain('.ek-tpl-page[data-page="p0"]{width:100mm;height:150mm}')
-    expect(before).not.toMatch(/style="[^"]*(left|top|width):/)
+    expect(before).not.toMatch(/style=/)
   })
 
-  it('barkod SVG ve QR SVG üretilir; insan-okunur metin basılır', () => {
-    const html = renderPageHtml(label, sampleData('normal', NOW), 'p0')
-    expect(html).toContain('ek-tpl-el--barcode')
-    expect((html.match(/<svg/g) || []).length).toBeGreaterThanOrEqual(2)
+  it('barkod ve QR modülleri DOM gerektirmeden üretilir; SVG rect olarak basılır; okunur metin var', async () => {
+    const b = barcodeModules('7330012345678', 'code128')!
+    expect(b.width).toBeGreaterThan(50)
+    expect(b.runs.length).toBeGreaterThan(10)
+    expect(barcodeModules('8690000000013', 'ean13')).toBeNull() // geçersiz kontrol hanesi
+    expect(barcodeModules('8690000000012', 'ean13')).not.toBeNull()
+    expect(qrModules('https://kargo.example/takip/1')!.size).toBeGreaterThanOrEqual(21)
+    const html = await render(label, sampleData('normal', NOW))
+    expect((html.match(/<svg/g) || []).length).toBe(2)
+    expect(html).toContain('<rect')
     expect(html).toContain('7330012345678')
   })
 
-  it('tasarım modu: boş alanda yer tutucu + odaklanabilir öğe; yazdırmada boş', () => {
+  it('tasarım modu: boş alanda yer tutucu + odaklanabilir öğe; yazdırmada boş', async () => {
     const d = sampleData('sparse', NOW)
-    const design = renderPageHtml(label, d, 'p0', { design: true, nameOf: () => 'Öğe' })
+    const design = await render(label, d, true)
     expect(design).toContain('{Kargo barkodu (pazaryeri)}')
     expect(design).toContain('tabindex="0"')
-    const print = renderPageHtml(label, d, 'p0')
+    expect(design).toContain('aria-label="Öğe"')
+    const print = await render(label, d)
     expect(print).not.toContain('{Kargo')
     expect(print).not.toContain('tabindex')
   })
 
-  it('yazdırma belgesi: @page boyutu, sayfa başına bir sipariş (toplu), taban CSS aynı kaynak', () => {
-    const html = buildPrintDocument(label, [sampleData('normal', NOW), sampleData('stress', NOW)])
-    expect(html).toContain('@page{size:100mm 150mm;margin:0}')
-    expect((html.match(/class="ek-tpl-page"/g) || []).length).toBe(2)
-    expect(html).toContain(TEMPLATE_CSS.trim().slice(0, 40))
+  it('stres verisinde kalem tablosu "+N kalem daha" basar', async () => {
+    expect(await render(label, sampleData('stress', NOW))).toMatch(/\+\d+ kalem daha/)
+  })
+
+  it('yazdırma CSS: @page boyutu ve her sayfa için geometri; taban CSS aynı kaynak', () => {
+    const css = printCss(label, ['p0', 'p1'])
+    expect(css).toContain('@page{size:100mm 150mm;margin:0}')
+    expect(css).toContain('[data-page="p1"]')
+    expect(css).toContain(TEMPLATE_CSS.trim().slice(0, 40))
   })
 
   it('taban CSS literal renk içermez (sistem renkleri Canvas/CanvasText)', () => {

@@ -1,166 +1,218 @@
-// ADR-0015 B5-3 — PrintoutListView.vue (Çıktılar / yazdırma şablonu tasarımcısı).
-// Protokol 13: bu spec önce DEĞİŞMEMİŞ ekrana karşı yazıldı.
+// FR3 madde 15 (fe-r3c) — PrintoutListView: şablon galerisi → düzenleyici → önizleme → yazdır.
 //
-// ÖNEMLİ KARAKTERİZASYON (DÜZELTİLMEDİ): Ekran bir liste sayfası DEĞİL, henüz tamamlanmamış bir
-// şablon tasarımcısı taslağıdır ve HİÇBİR backend çağrısı yapmaz (script'te API/servis çağrısı yok;
-// tablo verisi `items`/`headers` yerel sabitleri şablonda KULLANILMIYOR). Bu yüzden "liste verisi /
-// boş durum / 500 hata" senaryoları uygulanamaz — bunun yerine "ağ isteği ÜRETMEZ" iddiası var.
-// Üst kısımdaki Çıktı Tipi/Yazı Büyüklüğü/Yazı Tipi/Kopya Sayısı seçimleri `items`suz `v-select`,
-// "Test Çıktısı"/"Temizle" düğmelerinin `@click`'i YOK (ölü kontroller).
-//
-// Yerleşim tüm viewport'larda aynıdır (`$vuetify.display` dallanması yok), bu yüzden bütün testler
-// 3 projede de koşar. Seçiciler metin/etiket/`#a4` tabanlıdır (kök sınıf yoktu).
+// BİLİNÇLİ DEĞİŞİKLİK (K49, FE_FEEDBACK_R3 madde 15): ADR-0015 B5-3'ün karakterize ettiği eski ekran backend'e hiç bağlı
+// olmayan bir sürükle-bırak taslağıydı (ölü "Test Çıktısı/Temizle", state'e bağlı olmayan alanlar). Korunacak davranışı
+// yoktu (ADR-0015 "işlevsiz ekranın yerine gerçek ekran" emsali); bu spec yeni ekranın sözleşmesidir:
+//   - Hazır şablonlar salt-okunur → "Kopyasını düzenle"; şablonlar bu tarayıcıda (kullanıcı + mağaza) saklanır.
+//   - Düzenleyici: alan/bileşen ekleme (tıkla veya sürükle), geri al/yinele, klavye, kaydedilmemiş uyarısı.
+//   - Önizleme: örnek/stres/eksik veri + "Siparişlerim" (mevcut OrderService/getOrders), denetim, toplu yazdırma.
+//   - Galeri açılışı backend'e istek ATMAZ (sipariş yalnız "Siparişleri getir" ile istenir).
+// Yerleşim kabın genişliğine göre değişir (dar: Ekle/Tuval/Özellikler sekmeleri) → yardımcılar iki düzende çalışır.
 import { test, expect, type Page } from '@playwright/test'
-import { installApiMocks } from '../fixtures/mockApi'
+import { installApiMocks, mockError } from '../fixtures/mockApi'
+import { ordersDoluFixture } from '../fixtures/apiData'
 import { gotoAuthed, menuFixtureWithAccountSupport, openScreen } from '../fixtures/nav'
 
-async function open(page: Page) {
-  await installApiMocks(page, { MenuService: menuFixtureWithAccountSupport })
+async function open(page: Page, extra: Record<string, unknown> = {}) {
+  await installApiMocks(page, { MenuService: menuFixtureWithAccountSupport, ...extra })
   await gotoAuthed(page)
   await openScreen(page, 'PrintoutListView')
-  await expect(page.locator('#a4')).toBeAttached()
+  await page.addStyleTag({ content: '[data-help-tour-offer]{display:none!important}' }) // tanıtım turu kartı menülerin üstüne biner
+  await expect(page.locator('.printoutListView .ek-tpl-card').first()).toBeVisible()
 }
 
-// Ayar panelindeki "Sil" düğmesi (kabukta başka bir "Sil" adlı düğme daha var — metinle daraltılır).
-const silBtn = (page: Page) => page.locator('button').filter({ hasText: /^\s*Sil\s*$/ })
+const card = (page: Page, name: string) => page.locator('.ek-tpl-card').filter({ has: page.getByRole('heading', { name, exact: true }) })
+const canvasEls = (page: Page) => page.locator('.ek-tpl-canvas [data-el]')
 
-// HTML5 sürükle-bırak SENTETİK olaylarla yürütülür: orijinal yerleşim tablet/mobilde bozuk (tuval
-// ekran dışında/ayar alanlarının altında kalıyor — Karakterizasyon (DÜZELTİLMEDİ)), bu yüzden gerçek
-// fare sürüklemesi yalnızca masaüstünde çalışırdı. Olay akışı gerçek olanla aynıdır:
-// dragstart(kaynak, üst div'deki @dragstart'a kabarır) -> drop(#a4).
-async function dragToCanvas(page: Page, source: import('@playwright/test').Locator, at: { x: number; y: number }) {
-  const handle = await source.elementHandle()
-  await page.evaluate(({ el, at }) => {
-    const canvas = document.getElementById('a4')!
-    const r = canvas.getBoundingClientRect()
-    const dt = new DataTransfer()
-    const sr = (el as HTMLElement).getBoundingClientRect()
-    el!.dispatchEvent(new DragEvent('dragstart', { bubbles: true, cancelable: true, dataTransfer: dt, clientX: sr.left + 5, clientY: sr.top + 5 }))
-    canvas.dispatchEvent(new DragEvent('drop', { bubbles: true, cancelable: true, dataTransfer: dt, clientX: r.left + at.x, clientY: r.top + at.y }))
-  }, { el: handle, at })
+/** Dar düzende ilgili paneli açar (geniş düzende sekme yoktur). */
+async function pane(page: Page, name: 'Ekle' | 'Tuval' | 'Özellikler') {
+  const tabs = page.locator('.ek-tpl-editor__panes')
+  if (await tabs.isVisible().catch(() => false)) await tabs.getByRole('tab', { name: new RegExp(name) }).click()
 }
-const paletteItem = (page: Page, text: string) => page.locator('[draggable="true"]:not(#a4 *)').filter({ hasText: new RegExp(`^${text}$`) })
 
-test.describe('ADR-0015 B5-3 — PrintoutListView (çıktı şablonu tasarımcısı)', () => {
-  test('smoke: seçim alanları, test/temizle düğmeleri, alan paleti ve A4 tuvali render olur', async ({ page }) => {
-    await open(page)
+async function editCopyOf(page: Page, name: string) {
+  await card(page, name).getByRole('button', { name: 'Kopyasını düzenle' }).click()
+  await expect(page.locator('.ek-tpl-editor')).toBeVisible()
+}
 
-    for (const label of ['Çıktı Tipi', 'Yazı Büyüklüğü', 'Yazı Tipi', 'Kopya Sayısı']) {
-      await expect(page.getByText(label, { exact: true }).first()).toBeAttached() // v-select etiketi getByLabel ile bulunmaz
-    }
-    await expect(page.getByRole('button', { name: 'Test Çıktısı' })).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Temizle' })).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Kaydet' })).toHaveCount(0) // `buttons`/Kaydet tanımlı ama şablonda YOK
-
-    for (const group of ['Müşteri Bilgileri', 'Ürün Bilgileri', 'Fatura Bilgileri', 'Toplamlar']) {
-      await expect(page.locator('.printoutListView').getByText(group, { exact: true })).toBeAttached()
-    }
-    await expect(page.locator('#a4')).toBeVisible()
-  })
-
-  test('alan paleti: 4 grupta 27 sürüklenebilir alan (Müşteri 7, Ürün 8, Fatura 9, Toplamlar 3)', async ({ page }) => {
-    await open(page)
-
-    await expect(page.locator('[draggable="true"]')).toHaveCount(27)
-    for (const t of ['Müşteri Adı/Soyadı', 'Vergi Dairesi', 'Ürün Barkodu', 'Ürün Toplam Tutar', 'Sipariş Numarası', 'KDV %18', "KDV'li Toplam"]) {
-      await expect(page.getByText(t, { exact: true })).toBeAttached()
-    }
-  })
-
-  test('kâğıt boyutu: 4 düğme (A4/A5 × dikey/yatay) — seçim tuval ölçüsünü değiştirir', async ({ page }) => {
-    await open(page)
-    const canvas = page.locator('#a4')
-    // Tuval ölçüsü `v-card`'a `:width/:height` prop'uyla INLINE style olarak yazılır (görsel genişlik
-    // flex daralmasıyla farklı olabilir — karakterizasyon: masaüstünde 630 yerine ~516 render olur —
-    // bu yüzden iddia inline style değeri üzerinedir).
-    const size = async () => {
-      const st = (await canvas.getAttribute('style')) ?? ''
-      const w = /width:\s*([\d.]+)px/.exec(st)?.[1]
-      const h = /height:\s*([\d.]+)px/.exec(st)?.[1]
-      return { w: Math.round(Number(w)), h: Math.round(Number(h)) }
-    }
-
-    // fe-r2d (FR2-SCREENS 37) — BİLİNÇLİ DEĞİŞİKLİK: düğmeler yönü de söyler ("A4 dikey" …); sıra ve ölçüler aynı.
-    for (const n of ['A4 dikey', 'A4 yatay', 'A5 dikey', 'A5 yatay']) await expect(page.getByRole('button', { name: n, exact: true })).toHaveCount(1)
-
-    // Varsayılan: A4 dikey 630x891
-    await expect.poll(size).toEqual({ w: 630, h: 891 })
-    await page.getByRole('button', { name: 'A4 yatay', exact: true }).dispatchEvent('click') // yatay 891x630
-    await expect.poll(size).toEqual({ w: 891, h: 630 })
-    await page.getByRole('button', { name: 'A5 dikey', exact: true }).dispatchEvent('click') // 630/1.414 x 891/1.414
-    await expect.poll(size).toEqual({ w: 446, h: 630 })
-    // Karakterizasyon (DÜZELTİLMEDİ): kâğıt düğmelerinin bir kısmı (özellikle 4.) seçim alanlarının
-    // ALTINDA kalıyor (yüzde genişlikli flex yerleşimi) — gerçek tıklama engellenir; bu yüzden tıklama
-    // olayı doğrudan gönderilir.
-    await page.getByRole('button', { name: 'A5 yatay', exact: true }).dispatchEvent('click')
-    await expect.poll(size).toEqual({ w: 630, h: 446 })
-    await page.getByRole('button', { name: 'A4 dikey', exact: true }).dispatchEvent('click')
-    await expect.poll(size).toEqual({ w: 630, h: 891 })
-  })
-
-  test('etkileşimler ağ isteği ÜRETMEZ (API sözleşmesi yok): boyut seçimi, Test Çıktısı, Temizle', async ({ page }) => {
-    await open(page)
-    await page.waitForTimeout(500)
+test.describe('FR3-15 — Çıktılar: şablon galerisi', () => {
+  test('galeri: 6 hazır şablon, tür süzgeci, boş "Şablonlarım" ve açılışta API isteği yok', async ({ page }) => {
     const requests: string[] = []
-    page.on('request', (r) => { if (r.url().includes('/api/')) requests.push(r.method() + ' ' + r.url()) })
+    page.on('request', (r) => { if (/\/api\/(OrderService\/getOrders\b|.*Template)/.test(r.url())) requests.push(r.url()) })
+    await open(page)
 
-    await page.getByRole('button', { name: 'A5 dikey', exact: true }).dispatchEvent('click')
-    await page.getByRole('button', { name: 'Test Çıktısı' }).dispatchEvent('click')
-    await page.getByRole('button', { name: 'Temizle' }).dispatchEvent('click') // karakterizasyon: ölü düğme, hiçbir şey yapmaz
-    await page.waitForTimeout(400)
+    await expect(page.locator('.ek-tpl-card')).toHaveCount(6)
+    for (const n of ['Kargo etiketi — standart', 'Kargo etiketi — kare', 'Sipariş fişi — A4', 'Sipariş fişi — A5', 'İrsaliye taslağı — A4', 'Toplama listesi — A4']) {
+      await expect(card(page, n)).toHaveCount(1)
+    }
+    await expect(page.getByText('Henüz kendi şablonunuz yok', { exact: false })).toBeVisible()
+    await expect(page.getByRole('button', { name: /Boş şablon/ })).toBeVisible()
+    // Küçük resimler gerçek render: kargo etiketinde barkod SVG'si var
+    await expect(card(page, 'Kargo etiketi — standart').locator('.ek-tpl-el--barcode svg')).toHaveCount(1)
+
+    await page.getByRole('tab', { name: /Kargo etiketi/ }).click()
+    await expect(page.locator('.ek-tpl-card')).toHaveCount(2)
     expect(requests).toEqual([])
-    await expect(page.getByRole('button', { name: 'Test Çıktısı' })).toBeVisible()
   })
 
-  test('sürükle-bırak: paletten tuvale bırakılan alan tuvalde yeni bir paragraf olur, palet öğesi yerinde kalır', async ({ page }) => {
+  test('kopyasını düzenle → kaydet → galeride "Şablonlarım"da; sayfa yenilenince korunur', async ({ page }) => {
     await open(page)
-    await dragToCanvas(page, paletteItem(page, 'Ürün Adı'), { x: 300, y: 150 })
+    await editCopyOf(page, 'Kargo etiketi — kare')
+    await expect(page.getByLabel('Şablon adı')).toHaveValue('Kargo etiketi — kare (kopya)')
+    await page.getByLabel('Şablon adı').fill('Depo etiketi')
+    await page.getByRole('button', { name: 'Kaydet' }).click()
+    await expect(page.locator('.ek-tpl-editor__state')).toHaveText(/Kaydedildi/)
+    await page.getByRole('button', { name: 'Şablonlar' }).click()
+    await expect(card(page, 'Depo etiketi')).toHaveCount(1)
+    await expect(page.locator('.ek-tpl-card')).toHaveCount(7)
 
-    const dropped = page.locator('#a4 p')
-    await expect(dropped).toHaveCount(1)
-    await expect(dropped).toHaveText('Ürün Adı')
-    await expect(dropped).toHaveAttribute('type', 'move')
-    await expect(dropped).toHaveAttribute('draggable', 'true')
-    // Palet kopyalanır, taşınmaz (type="move" olmayan kaynak silinmez): palette hâlâ 27 öğe var.
-    await expect(page.locator('[draggable="true"]:not(#a4 *)')).toHaveCount(27)
+    await page.reload()
+    // Çalışma alanı sekmeleri geri yüklenir (Çıktılar sekmesi açık kalır, etkin sekme Anasayfa olur).
+    await page.locator('.workplace-tabs').getByText('Çıktılar', { exact: true }).click()
+    await expect(card(page, 'Depo etiketi')).toHaveCount(1)
   })
 
-  test('tuvaldeki alana tıklama: ayar paneli (Genişlik/Yükseklik/Sil) açılır; tekrar tıklama kapatır', async ({ page }) => {
+  test('sil: onay diyaloğuyla kullanıcı şablonu silinir; hazır şablonda Sil yok', async ({ page }) => {
     await open(page)
-    await dragToCanvas(page, paletteItem(page, 'Tarih'), { x: 300, y: 150 })
-    const dropped = page.locator('#a4 p')
-    await expect(dropped).toHaveCount(1)
+    await card(page, 'Toplama listesi — A4').getByRole('button', { name: /işlemleri|Diğer/ }).last().click()
+    await expect(page.getByRole('menuitem', { name: 'Sil' })).toHaveCount(0)
+    await page.getByRole('menuitem', { name: 'Çoğalt' }).click()
+    await expect(card(page, 'Toplama listesi — A4 (kopya)')).toHaveCount(1)
+    await card(page, 'Toplama listesi — A4 (kopya)').getByRole('button', { name: /işlemleri|Diğer/ }).last().click()
+    await page.getByRole('menuitem', { name: 'Sil' }).click()
+    await page.getByRole('alertdialog').getByRole('button', { name: 'Sil' }).click()
+    await expect(card(page, 'Toplama listesi — A4 (kopya)')).toHaveCount(0)
+  })
+})
 
-    await expect(page.getByLabel('Genişlik', { exact: true })).toHaveCount(0)
-    await dropped.dispatchEvent('click')
-    await expect(page.getByLabel('Genişlik', { exact: true })).toBeVisible()
-    await expect(page.getByLabel('Yükseklik', { exact: true })).toBeVisible()
-    await expect(silBtn(page)).toBeVisible()
-    // Seçili öğe eylem rengiyle (token: --ek-color-action; eski #00f yerine, FR2-DARK) renklenir
-    await expect(dropped).toHaveAttribute('style', /color:\s*var\(--ek-color-action\)/)
+test.describe('FR3-15 — Çıktılar: düzenleyici', () => {
+  test('alan ekle (tıkla) → özellikler; geri al / yinele; Del siler; ok tuşu 1 mm taşır', async ({ page }) => {
+    await open(page)
+    await editCopyOf(page, 'Kargo etiketi — kare')
+    const before = await canvasEls(page).count()
 
-    await dropped.dispatchEvent('click')
-    await expect(page.getByLabel('Genişlik', { exact: true })).toHaveCount(0)
-    await expect(dropped).toHaveAttribute('style', /color:\s*var\(--ek-color-content-default\)/)
+    await pane(page, 'Ekle')
+    await page.getByRole('button', { name: 'Alıcı telefonu alanını ekle' }).click()
+    await pane(page, 'Tuval')
+    await expect(canvasEls(page)).toHaveCount(before + 1)
+    await expect(page.locator('.ek-tpl-editor__state')).toHaveText(/Kaydedilmedi/)
+    await expect(page.locator('.ek-tpl-editor__pos')).toHaveText(/X 5 · Y/)
+
+    // Ok tuşu: odak tuvaldeki yeni öğede
+    await page.keyboard.press('ArrowRight')
+    await expect(page.locator('.ek-tpl-editor__pos')).toHaveText(/X 6 · Y/)
+    await page.keyboard.press('Shift+ArrowRight')
+    await expect(page.locator('.ek-tpl-editor__pos')).toHaveText(/X 11 · Y/)
+
+    await page.keyboard.press('Control+z')
+    await page.keyboard.press('Control+z')
+    await expect(page.locator('.ek-tpl-editor__pos')).toHaveText(/X 5 · Y/)
+    await page.keyboard.press('Control+z')
+    await expect(canvasEls(page)).toHaveCount(before)
+    await page.keyboard.press('Control+Shift+z')
+    await expect(canvasEls(page)).toHaveCount(before + 1)
+
+    await canvasEls(page).last().focus()
+    await page.keyboard.press('Delete')
+    await expect(canvasEls(page)).toHaveCount(before)
   })
 
-  test('Sil: seçili alanı tuvalden kaldırır', async ({ page }) => {
+  test('paletten tuvale sürükle-bırak: öğe bırakılan konumda oluşur', async ({ page }) => {
     await open(page)
-    await dragToCanvas(page, paletteItem(page, 'Açıklama'), { x: 300, y: 150 })
-    const dropped = page.locator('#a4 p')
-    await dropped.dispatchEvent('click')
-    await silBtn(page).dispatchEvent('click')
-    await expect(page.locator('#a4 p')).toHaveCount(0)
-    // Karakterizasyon (DÜZELTİLMEDİ): seçim state'i temizlenmez — silinen alanın paneli açık KALIR.
-    await expect(silBtn(page)).toBeVisible()
+    await editCopyOf(page, 'Sipariş fişi — A4')
+    const before = await canvasEls(page).count()
+    await pane(page, 'Ekle')
+    await page.getByRole('tab', { name: 'Bileşenler' }).click()
+    const handle = await page.getByRole('button', { name: 'QR kod ekle' }).elementHandle()
+    await pane(page, 'Tuval')
+    await page.evaluate((src) => {
+      const frame = document.querySelector('.ek-tpl-canvas__frame') as HTMLElement
+      const r = frame.getBoundingClientRect()
+      const dt = new DataTransfer()
+      src!.dispatchEvent(new DragEvent('dragstart', { bubbles: true, dataTransfer: dt }))
+      frame.dispatchEvent(new DragEvent('drop', { bubbles: true, cancelable: true, dataTransfer: dt, clientX: r.left + r.width / 2, clientY: r.top + r.height / 2 }))
+    }, handle)
+    await expect(canvasEls(page)).toHaveCount(before + 1)
+    await expect(canvasEls(page).last().locator('svg')).toHaveCount(1) // QR örnek veriden çizildi
   })
 
-  test('tuvaldeki alan yeniden sürüklenince (type=move) eskisi kaldırılıp yenisi oluşur; alan sayısı artmaz', async ({ page }) => {
+  test('kâğıt yönü tuvali çevirir; kaydedilmemiş değişiklikte çıkış onay ister', async ({ page }) => {
     await open(page)
-    await dragToCanvas(page, paletteItem(page, 'İl'), { x: 300, y: 150 })
-    await expect(page.locator('#a4 p')).toHaveCount(1)
-    await dragToCanvas(page, page.locator('#a4 p'), { x: 350, y: 300 })
-    await expect(page.locator('#a4 p')).toHaveCount(1)
-    await expect(page.locator('#a4 p')).toHaveText('İl')
+    await editCopyOf(page, 'Sipariş fişi — A5')
+    await page.keyboard.press('Escape')
+    await pane(page, 'Özellikler')
+    const frame = page.locator('.ek-tpl-canvas__frame')
+    const ratio = async () => { const b = await frame.boundingBox(); return b ? b.width / b.height : 0 }
+    await page.getByRole('group', { name: 'Yön' }).getByRole('button', { name: 'Yatay' }).click()
+    await pane(page, 'Tuval')
+    await expect.poll(ratio).toBeGreaterThan(1)
+
+    await page.getByRole('button', { name: 'Şablonlar' }).click()
+    const dlg = page.getByRole('alertdialog')
+    await expect(dlg.getByText('Kaydedilmemiş değişiklikler silinsin mi?')).toBeVisible()
+    await dlg.getByRole('button', { name: 'Vazgeç' }).click()
+    await expect(page.locator('.ek-tpl-editor')).toBeVisible()
+  })
+})
+
+test.describe('FR3-15 — Çıktılar: önizleme ve yazdırma', () => {
+  /** Yazdırma iframe'ini yakalar: print() çağrısında belge HTML'i saklanır (gerçek diyalog açılmaz). */
+  async function capturePrint(page: Page) {
+    await page.evaluate(() => {
+      const w = window as unknown as { __printed?: string[] }
+      w.__printed = []
+      const orig = document.body.appendChild.bind(document.body)
+      document.body.appendChild = <T extends Node>(n: T): T => {
+        const r = orig(n)
+        if (n instanceof HTMLIFrameElement && n.className.includes('ek-tpl-print-frame') && n.contentWindow) {
+          n.contentWindow.print = () => { w.__printed!.push(n.contentDocument!.documentElement.outerHTML) }
+        }
+        return r
+      }
+    })
+  }
+  const printed = (page: Page) => page.evaluate(() => (window as unknown as { __printed?: string[] }).__printed ?? [])
+
+  test('örnek veri: stres verisi denetimde taşma uyarısı; Yazdır @page boyutlu belge üretir', async ({ page }) => {
+    await open(page)
+    await card(page, 'Kargo etiketi — standart').getByRole('button', { name: /önizle/ }).first().click()
+    await expect(page.locator('.ek-tpl-preview')).toBeVisible()
+    await expect(page.getByText('Yazdırmaya hazır.')).toBeVisible()
+    await page.getByText('Uzun içerik', { exact: true }).click()
+    await expect(page.locator('.ek-tpl-preview__issues')).toContainText('sığmadı')
+
+    await capturePrint(page)
+    await page.getByRole('button', { name: /^Yazdır/ }).click()
+    await expect.poll(async () => (await printed(page)).length).toBe(1)
+    const html = (await printed(page))[0]
+    expect(html).toContain('@page{size:100mm 150mm;margin:0}')
+    expect(html.match(/class="ek-tpl-page"/g)?.length).toBe(1)
+  })
+
+  test('Siparişlerim: mevcut OrderService/getOrders ile 2 sipariş → tümünü seç → 2 sayfa yazdırılır', async ({ page }) => {
+    await open(page, { 'OrderService/getOrders': ordersDoluFixture })
+    await card(page, 'Sipariş fişi — A4').getByRole('button', { name: /önizle/ }).first().click()
+    await page.getByRole('tab', { name: /Siparişlerim/ }).click()
+    const req = page.waitForRequest((r) => r.url().includes('OrderService/getOrders'))
+    await page.getByRole('button', { name: 'Siparişleri getir' }).click()
+    expect((await req).postDataJSON()).toMatchObject({ searchOrderForm: { pagination: { page: 1, limit: 20 } } })
+    await expect(page.locator('.ek-tpl-preview__list li')).toHaveCount(2)
+    await page.getByRole('button', { name: 'Tümünü seç' }).click()
+    await expect(page.locator('.ek-tpl-preview__page')).toHaveCount(2)
+    await expect(page.locator('.ek-tpl-preview__page').first()).toContainText('E2E-100001')
+
+    await capturePrint(page)
+    await page.getByRole('button', { name: /Yazdır \(2 sayfa\)/ }).click()
+    await expect.poll(async () => (await printed(page)).length).toBe(1)
+    expect((await printed(page))[0].match(/class="ek-tpl-page"/g)?.length).toBe(2)
+  })
+
+  test('Siparişlerim hata durumu: eyleme dönük mesaj ve yeniden dene', async ({ page }) => {
+    await open(page, { 'OrderService/getOrders': mockError(500) })
+    await card(page, 'Sipariş fişi — A4').getByRole('button', { name: /önizle/ }).first().click()
+    await page.getByRole('tab', { name: /Siparişlerim/ }).click()
+    await page.getByRole('button', { name: 'Siparişleri getir' }).click()
+    await expect(page.getByText(/Siparişler yüklenemedi/)).toBeVisible()
+    await expect(page.getByRole('button', { name: /Tekrar dene/ })).toBeVisible()
   })
 })

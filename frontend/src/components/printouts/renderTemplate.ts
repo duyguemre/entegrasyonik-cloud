@@ -2,28 +2,21 @@
  * frontend/src/components/printouts/renderTemplate.ts
  *
  * FR3 madde 15 (fe-r3c) — TEK render motoru (araştırma 4.6, 12.5): tasarım tuvali, galeri küçük resmi,
- * önizleme ve yazdırma aynı HTML'i ve aynı CSS'i kullanır. "Ekranda başka, kâğıtta başka" olmaz.
+ * önizleme ve yazdırma AYNI Vue bileşenini (`TemplatePage`) ve AYNI CSS'i kullanır. "Ekranda başka, kâğıtta başka" olmaz.
+ *
+ * Güvenlik (R7 / G-01, G-02): HTML dizesi ÜRETİLMEZ, `v-html`/`innerHTML`/`document.write` yoktur. Sipariş verisi ve
+ * kullanıcı metni Vue tarafından metin düğümü olarak basılır (kaçışlı). Barkod ve QR, kodlayıcıların modül dizisinden
+ * SVG `<rect>` olarak çizilir (JsBarcode "nesne" çıktısı, uqr `encode`) — DOM gerektirmez, SSR ile test edilir.
  *
  * Ayrım:
- *  - `renderPageHtml`  → İÇERİK (metin, barkod SVG, tablo). Konum/ölçü içermez; öğe sürüklenirken değişmez,
- *    böylece Vue `v-html`'i yeniden yazmaz (odak ve SVG korunur).
- *  - `geometryCss`     → KONUM/ÖLÇÜ/YAZI kuralları (`[data-page][data-el]` seçicisiyle, mm/pt birimleri).
- *  - `TEMPLATE_CSS`    → yapısal taban kurallar (tek kaynak; uygulamaya ve yazdırma belgesine aynen girer).
- *
- * Güvenlik: sipariş verisi (müşteri adı, adres…) ve kullanıcı metni HER ZAMAN `escapeHtml`'den geçer.
- * Kâğıt her temada beyazdır (`color-scheme: light` + `Canvas/CanvasText` sistem renkleri) — belge önizlemesi
- * kâğıdın gerçek görünümüdür, karanlık modda kararmaz.
+ *  - `TemplatePage` → İÇERİK (metin, barkod, tablo); konum/ölçü içermez.
+ *  - `geometryCss`  → KONUM/ÖLÇÜ/YAZI kuralları (`[data-page][data-el]` seçicisi, mm/pt). Satır içi stil yok (style-ratchet).
+ *  - `TEMPLATE_CSS` → yapısal taban kurallar (uygulamaya ve yazdırma belgesine aynen girer).
+ * Kâğıt her temada beyazdır (`color-scheme: light` + `Canvas/CanvasText` sistem renkleri).
  */
 import JsBarcode from 'jsbarcode'
-import { renderSVG } from 'uqr'
-import {
-  ITEM_COLUMNS, fieldDef, itemsLayout, itemRowHeightMm, paperSize, resolveField, resolveItemCell,
-  type PrintData, type TemplateDoc, type TemplateElement,
-} from './templateModel'
-
-export function escapeHtml(v: unknown): string {
-  return String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] as string)
-}
+import { encode } from 'uqr'
+import { ITEM_COLUMNS, itemRowHeightMm, paperSize, type TemplateDoc } from './templateModel'
 
 /** CSS seçici/öznitelik için güvenli kimlik (yalnız harf, rakam, tire, alt çizgi). */
 export const safeId = (v: string) => v.replace(/[^a-zA-Z0-9_-]/g, '')
@@ -38,8 +31,7 @@ export const TEMPLATE_CSS = `
 .ek-tpl-el--line>i.is-dashed{border-top-style:dashed}
 .ek-tpl-el--box{border-style:solid;border-color:CanvasText}
 .ek-tpl-el--barcode,.ek-tpl-el--qr{display:flex;flex-direction:column;align-items:stretch}
-.ek-tpl-code{flex:1 1 auto;min-height:0;display:block;width:100%;height:100%}
-.ek-tpl-code svg{display:block;width:100%;height:100%}
+.ek-tpl-code{flex:1 1 auto;min-height:0;display:block;width:100%;height:100%;fill:CanvasText}
 .ek-tpl-code-text{flex:none;text-align:center;font-size:8pt;letter-spacing:.08em;font-variant-numeric:tabular-nums}
 .ek-tpl-items{width:100%;border-collapse:collapse;table-layout:fixed}
 .ek-tpl-items th,.ek-tpl-items td{padding:0 1mm;text-align:left;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;
@@ -53,103 +45,60 @@ export const TEMPLATE_CSS = `
 .ek-tpl-missing{opacity:.45;font-style:italic}
 .ek-tpl-codefail{display:flex;align-items:center;justify-content:center;height:100%;font-size:7pt;text-align:center;
   border:0.3mm dashed color-mix(in srgb,CanvasText 45%,Canvas)}
+.ek-tpl-print-frame{position:fixed;right:0;bottom:0;width:0;height:0;border:0}
 `
 
-export interface RenderOptions {
-  /** Tasarım modu: boş alanlarda `{Alan adı}` yer tutucusu; öğeler odaklanabilir (klavye). */
-  design?: boolean
-  /** Erişilebilir ad üreticisi (tasarım modunda `aria-label`). */
-  nameOf?: (el: TemplateElement) => string
+// ─── Barkod / QR modülleri (DOM'suz) ──────────────────────────────────────
+
+/** Ardışık koyu modül dizisi: [başlangıç, uzunluk]. */
+export type Run = [number, number]
+export interface BarcodeModules { width: number; runs: Run[] }
+export interface QrModules { size: number; rows: Run[][] }
+
+const cache = new Map<string, BarcodeModules | QrModules | null>()
+function memo<T extends BarcodeModules | QrModules>(key: string, make: () => T | null): T | null {
+  if (cache.has(key)) return cache.get(key) as T | null
+  if (cache.size > 300) cache.clear()
+  let v: T | null = null
+  try { v = make() } catch { v = null }
+  cache.set(key, v)
+  return v
 }
 
-function barcodeSvg(value: string, symbology: 'code128' | 'ean13'): string | null {
-  if (typeof document === 'undefined') return null
-  try {
-    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
-    JsBarcode(svg, value, { format: symbology === 'ean13' ? 'EAN13' : 'CODE128', displayValue: false, margin: 0, width: 2, height: 60, background: 'transparent' })
-    svg.setAttribute('preserveAspectRatio', 'none')
-    const w = svg.getAttribute('width')?.replace('px', '')
-    const h = svg.getAttribute('height')?.replace('px', '')
-    if (w && h && !svg.getAttribute('viewBox')) svg.setAttribute('viewBox', `0 0 ${w} ${h}`)
-    svg.removeAttribute('width')
-    svg.removeAttribute('height')
-    svg.removeAttribute('style')
-    svg.setAttribute('aria-hidden', 'true')
-    return svg.outerHTML
-  } catch {
-    return null
+function runsOf(bits: ArrayLike<boolean | string>): Run[] {
+  const runs: Run[] = []
+  let start = -1
+  for (let i = 0; i <= bits.length; i++) {
+    const on = i < bits.length && (bits[i] === true || bits[i] === '1')
+    if (on && start < 0) start = i
+    if (!on && start >= 0) { runs.push([start, i - start]); start = -1 }
   }
+  return runs
 }
 
-function qrSvg(value: string): string | null {
-  try {
-    return renderSVG(value, { border: 0, ecc: 'M', whiteColor: 'transparent', blackColor: 'currentColor' })
-      .replace('<svg ', '<svg aria-hidden="true" preserveAspectRatio="xMidYMid meet" ')
-  } catch {
-    return null
-  }
+/** Code128 / EAN-13 çubukları (JsBarcode nesne çıktısı). Geçersiz değerde `null`. */
+export function barcodeModules(value: string, symbology: 'code128' | 'ean13'): BarcodeModules | null {
+  if (!value) return null
+  return memo(`b:${symbology}:${value}`, () => {
+    const out: { encodings?: Array<{ data: string }> } = {}
+    let valid = true
+    JsBarcode(out, value, { format: symbology === 'ean13' ? 'EAN13' : 'CODE128', valid: (ok: boolean) => { valid = ok } })
+    if (!valid || !out.encodings?.length) return null
+    const bits = out.encodings.map((e) => e.data).join('')
+    return { width: bits.length, runs: runsOf(bits) }
+  })
 }
 
-function placeholder(path: string): string {
-  return `<span class="ek-tpl-missing">{${escapeHtml(fieldDef(path)?.label ?? path)}}</span>`
+/** QR modülleri (hata düzeltme M, kenarsız). */
+export function qrModules(value: string): QrModules | null {
+  if (!value) return null
+  return memo(`q:${value}`, () => {
+    const r = encode(value, { ecc: 'M', border: 0 })
+    return { size: r.size, rows: r.data.map((row) => runsOf(row)) }
+  })
 }
 
-function itemsHtml(el: Extract<TemplateElement, { kind: 'items' }>, data: PrintData): string {
-  const cols = el.columns.map((id) => ITEM_COLUMNS.find((c) => c.id === id)).filter((c): c is (typeof ITEM_COLUMNS)[number] => !!c)
-  if (!cols.length) return ''
-  const colgroup = `<colgroup>${cols.map(() => '<col>').join('')}</colgroup>`
-  const cls = (c: (typeof cols)[number]) => [c.numeric ? 'is-num' : '', c.id === 'check' ? 'is-check' : ''].filter(Boolean).join(' ')
-  const head = `<thead><tr>${cols.map((c) => `<th class="${cls(c)}">${escapeHtml(c.label)}</th>`).join('')}</tr></thead>`
-  const { visible, hidden } = itemsLayout(el, data.items.length)
-  const rows = data.items.slice(0, visible).map((item, i) =>
-    `<tr>${cols.map((c) => `<td class="${cls(c)}">${c.id === 'check' ? '<i></i>' : escapeHtml(resolveItemCell(c.id, item, i, data.currency))}</td>`).join('')}</tr>`)
-  if (hidden > 0) rows.push(`<tr class="is-more"><td colspan="${cols.length}">+${hidden} kalem daha</td></tr>`)
-  return `<table class="ek-tpl-items${el.zebra ? ' is-zebra' : ''}">${colgroup}${head}<tbody>${rows.join('')}</tbody></table>`
-}
-
-/** Öğenin İÇ içeriği (konumsuz). */
-export function renderElementInner(el: TemplateElement, data: PrintData, opts: RenderOptions = {}): string {
-  switch (el.kind) {
-    case 'text':
-      return escapeHtml(el.text)
-    case 'field': {
-      const v = resolveField(el.path, data)
-      if (!v) return opts.design ? `${el.prefix ? `${escapeHtml(el.prefix)} ` : ''}${placeholder(el.path)}` : ''
-      return `${el.prefix ? `${escapeHtml(el.prefix)} ` : ''}${escapeHtml(v)}`
-    }
-    case 'barcode': {
-      const raw = String(data.values[el.path] ?? '')
-      if (!raw) return opts.design ? `<span class="ek-tpl-codefail">${placeholder(el.path)}</span>` : ''
-      const svg = barcodeSvg(raw, el.symbology)
-      if (!svg) return `<span class="ek-tpl-codefail">Barkod basılamadı</span>`
-      return `<span class="ek-tpl-code">${svg}</span>${el.showText ? `<span class="ek-tpl-code-text">${escapeHtml(raw)}</span>` : ''}`
-    }
-    case 'qr': {
-      const raw = String(data.values[el.path] ?? '')
-      if (!raw) return opts.design ? `<span class="ek-tpl-codefail">${placeholder(el.path)}</span>` : ''
-      const svg = qrSvg(raw)
-      return svg ? `<span class="ek-tpl-code">${svg}</span>` : `<span class="ek-tpl-codefail">QR basılamadı</span>`
-    }
-    case 'line':
-      return `<i class="${el.dashed ? 'is-dashed' : ''}"></i>`
-    case 'box':
-      return ''
-    case 'items':
-      return itemsHtml(el, data)
-  }
-}
-
-/** Sayfa içeriği (konumsuz). `pageKey` geometri CSS'iyle eşleşir. */
-export function renderPageHtml(doc: TemplateDoc, data: PrintData, pageKey: string, opts: RenderOptions = {}): string {
-  const key = safeId(pageKey)
-  const body = doc.elements.map((el) => {
-    const a11y = opts.design
-      ? ` tabindex="0" role="button" aria-label="${escapeHtml(opts.nameOf ? opts.nameOf(el) : el.kind)}"`
-      : ''
-    return `<div class="ek-tpl-el ek-tpl-el--${el.kind}" data-el="${safeId(el.id)}"${a11y}>${renderElementInner(el, data, opts)}</div>`
-  }).join('')
-  return `<div class="ek-tpl-page" data-page="${key}">${body}</div>`
-}
+// ─── Geometri ─────────────────────────────────────────────────────────────
 
 const n = (v: number) => Math.round(v * 100) / 100
 
@@ -172,7 +121,7 @@ export function geometryCss(doc: TemplateDoc, pageKey: string): string {
     if (el.kind === 'line') rules.push(`${sel}>i{border-top-width:${n(el.thickness)}mm}`)
     if (el.kind === 'items') {
       rules.push(`${sel} tr{height:${n(itemRowHeightMm(el.fontSize))}mm}`)
-      const cols = el.columns.map((id) => ITEM_COLUMNS.find((c) => c.id === id)).filter((c) => !!c)
+      const cols = el.columns.map((id) => ITEM_COLUMNS.find((c) => c.id === id)).filter((c): c is (typeof ITEM_COLUMNS)[number] => !!c)
       const total = cols.reduce((s, c) => s + c.weight, 0)
       cols.forEach((c, i) => rules.push(`${sel} col:nth-child(${i + 1}){width:${n((c.weight / total) * 100)}%}`))
     }
@@ -180,20 +129,16 @@ export function geometryCss(doc: TemplateDoc, pageKey: string): string {
   return rules.join('\n')
 }
 
-/**
- * Yazdırma belgesi: her veri için bir sayfa (toplu yazdırma), `@page` boyutu şablondan, kenar boşluğu 0
- * (konumlar zaten mm). `fontFaceCss`: uygulamanın yüklü yazı tipi tanımları (aynı görünüm için).
- */
-export function buildPrintDocument(doc: TemplateDoc, dataList: PrintData[], opts: { title?: string; fontFaceCss?: string } = {}): string {
+/** Yazdırma belgesinin CSS'i: `@page` boyutu şablondan, kenar 0 (konumlar zaten mm), sayfa başına bir veri. */
+export function printCss(doc: TemplateDoc, pageKeys: string[], fontFaceCss = ''): string {
   const { w, h } = paperSize(doc.paper)
-  const pages = dataList.map((d, i) => renderPageHtml(doc, d, `p${i}`)).join('')
-  const geom = dataList.map((_, i) => geometryCss(doc, `p${i}`)).join('\n')
-  return `<!doctype html><html lang="tr"><head><meta charset="utf-8"><title>${escapeHtml(opts.title ?? doc.name)}</title>
-<style>${opts.fontFaceCss ?? ''}
-@page{size:${n(w)}mm ${n(h)}mm;margin:0}
-html,body{margin:0;padding:0;color-scheme:light;background:Canvas}
-.ek-tpl-page{break-after:page;page-break-after:always}
-.ek-tpl-page:last-child{break-after:auto;page-break-after:auto}
-${TEMPLATE_CSS}
-${geom}</style></head><body>${pages}</body></html>`
+  return [
+    fontFaceCss,
+    `@page{size:${n(w)}mm ${n(h)}mm;margin:0}`,
+    'html,body{margin:0;padding:0;color-scheme:light;background:Canvas}',
+    '.ek-tpl-page{break-after:page;page-break-after:always}',
+    '.ek-tpl-page:last-child{break-after:auto;page-break-after:auto}',
+    TEMPLATE_CSS,
+    ...pageKeys.map((k) => geometryCss(doc, k)),
+  ].join('\n')
 }

@@ -1092,7 +1092,7 @@ export const ARTICLES_TR: HelpArticle[] = [
 
   // Kanıt: frontend/src/views/secure/InvoiceListView.vue ("Yeni fatura ekle", Fatura durumu/Belge tipi filtreleri, toplu silme, "Manuel"),
   //        frontend/src/components/order/ManualInvoiceComponent.vue (Fatura Numarası, Fatura PDF Linki, Belge Türü, Fatura Tarihi), backend/src/api/services/invoice-service.ts (entegre sağlayıcı yok, pazaryerine bildirim),
-  //        frontend/src/components/order/BarcodePrintComponent.vue, frontend/src/views/secure/PrintoutListView.vue (şablon tasarımcısı taslağı; backend'e istek yok),
+  //        frontend/src/components/order/BarcodePrintComponent.vue, frontend/src/views/secure/PrintoutListView.vue + components/printouts/* (şablon galerisi/düzenleyici/önizleme; şablonlar tarayıcıda, siparişler OrderService/getOrders),
   //        frontend/src/components/productDefinitions/products/BatchActions/useBatchActions.ts (EXPORT_EXCEL), backend/src/capabilities/domains/reports.ts, frontend/src/views/secure/DashboardView.vue
   {
     id: 'fin-invoices-reports',
@@ -1115,7 +1115,7 @@ export const ARTICLES_TR: HelpArticle[] = [
       { type: 'p', text: '**Faturalar** ekranında tüm fatura kayıtlarını durum ve belge tipine göre süzebilir, **Yeni fatura ekle** ile siparişe bağlı olmayan bir fatura kaydı girebilir ve seçili kayıtları silebilirsiniz.' },
       { type: 'note', tone: 'warning', text: 'Mali belgeyle ilgili işlemler (fatura bildirimi, silme) geri alınamaz.' },
       { type: 'h', text: 'Çıktılar' },
-      { type: 'p', text: 'Takip kodu olan onaylı veya kargodaki siparişlerde satırın **⋯** menüsünden **Kargo etiketi yazdır**’ı kullanabilirsiniz. **Sipariş çıktı şablonları** ekranı şu an bir tasarım önizlemesidir; burada yaptığınız düzen kaydedilmez ve yazdırmaya bağlı değildir.' },
+      { type: 'p', text: 'Takip kodu olan onaylı veya kargodaki siparişlerde satırın **⋯** menüsünden **Kargo etiketi yazdır**’ı kullanabilirsiniz. **Çıktılar** ekranında kargo etiketi, sipariş fişi, irsaliye taslağı ve toplama listesi şablonları tasarlanır; şablonu gerçek siparişlerinizle önizleyip birden çok siparişi tek seferde yazdırabilir, yazıcı penceresinden PDF olarak kaydedebilirsiniz. Şablonlar şimdilik bu tarayıcıda saklanır; sipariş satırındaki etiket yazdırma standart etiketi kullanmaya devam eder.' },
       { type: 'h', text: 'Raporlar' },
       {
         type: 'list',
