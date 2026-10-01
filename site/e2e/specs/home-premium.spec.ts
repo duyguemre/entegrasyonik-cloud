@@ -137,7 +137,7 @@ test.describe('Hero ürün paneli', () => {
     await page.evaluate(() => window.scrollTo(0, document.querySelector('#sss')!.getBoundingClientRect().top + window.scrollY))
     await expect(page.getByTestId('hero-mock')).toHaveAttribute('data-visible', 'false')
     await page.waitForTimeout(1200) // giriş animasyonları biter
-    expect(await runningAnimations(page, true, '[data-testid="hero-mock"], [data-scene="hero-bg"], [data-scene="marquee"]')).toBe(0)
+    expect(await runningAnimations(page, true, '[data-testid="hero-mock"], [data-scene="hero-bg"]')).toBe(0)
   })
 
   test('prefers-reduced-motion: mock statik son durumda, hiçbir animasyon yok, anahtar kapalı + devre dışı', async ({ page }) => {
@@ -224,22 +224,24 @@ test.describe('S21: hero çerçevesi (uygulama penceresi)', () => {
 })
 
 test.describe('Kayan şerit, sayaçlar, yapışkan öğeler', () => {
-  test('deneme günü sayacı son değere ulaşır (14) ve şerit tam listeyi içerir (S12: durum sayacı yok)', async ({ page }) => {
+  // S27a (SR4 madde 1): fayda kutuları hero'dan çıktı → açık zeminde güven şeridi; kayan şerit kaldırıldı (N9).
+  test('deneme günü sayacı son değere ulaşır (14); güven şeridi hero DIŞINDA, açık zeminde; kayan şerit yok', async ({ page }) => {
     await page.goto('/')
     await readyMotion(page)
     await page.locator('[data-testid="stat-list"]').scrollIntoViewIfNeeded()
     await expect(page.getByTestId('integration-count')).toHaveCount(0)
     await expect(page.locator('[data-testid="trial-stat"] [data-count]')).toHaveText('14', { timeout: 5000 })
-    await expect(page.getByTestId('marquee-list').locator('li')).toHaveCount(8)
+    await expect(page.getByTestId('stat-list').locator('li')).toHaveCount(4)
+    await expect(page.getByTestId('marquee')).toHaveCount(0)
+    expect(await page.getByTestId('hero').locator('[data-testid="stat-list"]').count()).toBe(0)
   })
 
-  test('reduced-motion: şerit sarılan ve tam görünür liste; kopya küme gizli; taşma yok', async ({ page }) => {
+  test('reduced-motion: güven şeridi öğeleri görünür ve taşmasız', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' })
     await page.goto('/')
     await waitForFonts(page)
-    const items = page.getByTestId('marquee-list').locator('li')
-    await expect(items).toHaveCount(8)
-    // tüm öğeler yatayda görünüm alanının içinde (sarılmış; kırpılan/kayan öğe yok)
+    const items = page.getByTestId('stat-list').locator('li')
+    await expect(items).toHaveCount(4)
     const rects = await items.evaluateAll((els) => els.map((el) => el.getBoundingClientRect()).map((r) => ({ x: r.x, right: r.right, w: r.width })))
     const vw = await page.evaluate(() => window.innerWidth)
     for (const r of rects) {
@@ -247,7 +249,6 @@ test.describe('Kayan şerit, sayaçlar, yapışkan öğeler', () => {
       expect(r.x).toBeGreaterThanOrEqual(0)
       expect(r.right).toBeLessThanOrEqual(vw)
     }
-    await expect(page.locator('.marquee__set--copy')).toBeHidden()
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)
     expect(overflow).toBeLessThanOrEqual(0)
   })

@@ -192,11 +192,13 @@ const LEVEL_STATE: Record<CapabilityLevel, 'yes' | 'limited'> = { supported: 'ye
       </ul>
     </div>
 
+    {/* S27a (SR4 madde 7): küme gezinmesi numaralı tek "içindekiler" şeridi (hap bulutu yerine). */}
     <nav class="cluster-nav" aria-label="Yetenek kümeleri">
       {
         clusters.map((cl) => (
           <a href={`#${cl.id}`}>
-            {cl.title}
+            <span class="cluster-nav__num" aria-hidden="true"></span>
+            <span class="cluster-nav__label">{cl.title}</span>
           </a>
         ))
       }
@@ -207,6 +209,7 @@ const LEVEL_STATE: Record<CapabilityLevel, 'yes' | 'limited'> = { supported: 'ye
         clusters.map((cl) => (
           <section class="cluster" id={cl.id} aria-labelledby={`${cl.id}-title`}>
             <div class="cluster__head">
+              <span class="cluster__num" aria-hidden="true"></span>
               <h3 id={`${cl.id}-title`} class="cluster__title">{cl.title}</h3>
               {cl.lead && <p class="cluster__lead">{cl.lead}</p>}
             </div>
@@ -304,7 +307,7 @@ const LEVEL_STATE: Record<CapabilityLevel, 'yes' | 'limited'> = { supported: 'ye
 </BaseLayout>
 
 <style>
-  .tight-section:global(.section) {
+  :global(.section.tight-section) {
     padding-block: calc(var(--site-section-y) * 0.72);
   }
 
@@ -398,10 +401,12 @@ const LEVEL_STATE: Record<CapabilityLevel, 'yes' | 'limited'> = { supported: 'ye
     gap: var(--ek-space-2);
     align-items: flex-start;
     padding: var(--ek-space-3) var(--ek-space-4);
-    border: var(--site-border-width) solid color-mix(in srgb, var(--ek-color-warning) 45%, transparent);
+    /* S27a: sarı kutu yerine sakin not — nötr zemin + solda ince uyarı çizgisi (şeffaflık korunur, görsel ağırlık düşer). */
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-inline-start: calc(var(--site-border-width) * 3) solid var(--ek-color-warning);
     border-radius: var(--ek-radius-md);
-    background: var(--ek-color-warning-subtle);
-    color: var(--site-text-heading);
+    background: var(--ek-color-surface-sunken);
+    color: var(--site-text-body);
     font-size: var(--site-card-desc-size);
     line-height: var(--site-font-body-line-height);
   }
@@ -584,45 +589,89 @@ const LEVEL_STATE: Record<CapabilityLevel, 'yes' | 'limited'> = { supported: 'ye
     background: conic-gradient(var(--ek-color-secondary-darken-1) 0 50%, var(--ek-color-surface) 50% 100%);
   }
 
+  /* --- S27a (SR4 madde 7): küme gezinmesi = numaralı içindekiler şeridi; küme = numaralı panel --- */
+  /* Sıra numaraları dekoratif: CSS sayacıyla çizilir (metinde rakam yok — pages.test sabit rakam kuralı). */
   .cluster-nav {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--ek-space-2);
-    margin-bottom: var(--ek-space-8);
+    counter-reset: cnav;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    margin-bottom: var(--ek-space-10);
+    overflow: hidden;
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--site-radius-panel);
+    background: var(--ek-color-surface);
+    box-shadow: var(--site-shadow-card);
   }
   .cluster-nav a {
-    display: inline-flex;
+    position: relative;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
     align-items: center;
+    gap: var(--ek-space-3);
     min-height: var(--site-tap-target);
-    padding-inline: var(--ek-space-4);
-    border: var(--site-border-width) solid var(--ek-color-border-default);
-    border-radius: var(--ek-radius-full);
-    background: var(--ek-color-surface);
+    padding: var(--ek-space-3) var(--ek-space-5);
     color: var(--site-text-heading);
-    font-size: var(--ek-font-size-md);
-    font-weight: var(--ek-font-weight-medium);
     text-decoration: none;
-    transition: border-color var(--ek-duration-base) var(--ek-easing-standard);
+    transition: background-color var(--ek-duration-base) var(--ek-easing-standard);
+  }
+  .cluster-nav a + a {
+    border-top: var(--site-border-width) solid var(--ek-color-border-default);
   }
   .cluster-nav a:hover {
-    border-color: var(--ek-color-secondary-darken-1);
+    background: color-mix(in srgb, var(--ek-color-secondary) 6%, var(--ek-color-surface));
+  }
+  .cluster-nav__num::before {
+    counter-increment: cnav;
+    content: counter(cnav, decimal-leading-zero);
+  }
+  .cluster-nav__num {
+    color: var(--site-accent);
+    font-size: var(--ek-font-size-sm);
+    font-weight: var(--ek-font-weight-bold);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.06em;
+  }
+  .cluster-nav__label {
+    font-size: var(--ek-font-size-md);
+    font-weight: var(--ek-font-weight-semibold);
   }
 
   .clusters {
+    counter-reset: ccl;
     display: flex;
     flex-direction: column;
-    gap: var(--ek-space-12);
   }
   .cluster {
     display: grid;
-    gap: var(--ek-space-5);
+    gap: var(--ek-space-6);
+    padding-block: var(--ek-space-10);
+    border-top: var(--site-border-width) solid var(--ek-color-border-default);
     scroll-margin-top: calc(var(--site-header-height) + var(--ek-space-6));
+  }
+  .cluster:first-child {
+    padding-top: 0;
+    border-top: 0;
   }
   .cluster__head {
     display: flex;
     flex-direction: column;
     gap: var(--ek-space-2);
     max-width: 40rem;
+  }
+  .cluster__num::before {
+    counter-increment: ccl;
+    content: counter(ccl, decimal-leading-zero);
+  }
+  .cluster__num {
+    color: transparent;
+    font-size: var(--site-font-display-md);
+    font-weight: var(--site-font-display-weight);
+    line-height: 1;
+    letter-spacing: var(--site-font-display-tracking);
+    background: var(--site-gradient-accent);
+    -webkit-background-clip: text;
+    background-clip: text;
+    opacity: 0.85;
   }
   .cluster__title {
     color: var(--site-text-heading);
@@ -649,6 +698,8 @@ const LEVEL_STATE: Record<CapabilityLevel, 'yes' | 'limited'> = { supported: 'ye
     min-width: 0;
   }
   .cap-card {
+    position: relative;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
     gap: var(--ek-space-3);
@@ -664,6 +715,20 @@ const LEVEL_STATE: Record<CapabilityLevel, 'yes' | 'limited'> = { supported: 'ye
     transition:
       border-color var(--ek-duration-base) var(--ek-easing-standard),
       box-shadow var(--ek-duration-base) var(--ek-easing-standard);
+  }
+  /* Üst kenarda ince marka çizgisi: hover/odakta belirir (premium kart dili; yalnız opacity). */
+  .cap-card::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto;
+    height: calc(var(--site-border-width) * 3);
+    background: var(--site-gradient-accent);
+    opacity: 0;
+    transition: opacity var(--ek-duration-base) var(--ek-easing-standard);
+  }
+  .cap-card:hover::before,
+  .cap-card:focus-within::before {
+    opacity: 1;
   }
   .cap-card:hover,
   .cap-card:focus-within,
@@ -802,6 +867,21 @@ const LEVEL_STATE: Record<CapabilityLevel, 'yes' | 'limited'> = { supported: 'ye
     /* Tek kalan kart satırı boş bırakmaz: tam genişliğe yayılır. */
     .cap-grid > li:last-child:nth-child(odd) {
       grid-column: 1 / -1;
+    }
+  }
+  @media (min-width: 768px) {
+    .cluster-nav {
+      grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+    }
+    .cluster-nav a {
+      grid-template-columns: minmax(0, 1fr);
+      align-content: start;
+      gap: var(--ek-space-1);
+      padding: var(--ek-space-4) var(--ek-space-5);
+    }
+    .cluster-nav a + a {
+      border-top: 0;
+      border-inline-start: var(--site-border-width) solid var(--ek-color-border-default);
     }
   }
   @media (min-width: 1024px) {

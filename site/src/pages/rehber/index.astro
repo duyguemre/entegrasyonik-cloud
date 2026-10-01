@@ -243,7 +243,7 @@ const cta = getGuideCta('channels')
   }
 
   /* --- Giriş --- */
-  .hub-intro:global(.section) {
+  :global(.section.hub-intro) {
     padding-block: calc(var(--site-section-y) * 0.6);
   }
   .hub-intro__grid {
@@ -453,8 +453,6 @@ const cta = getGuideCta('channels')
   }
   .cluster__list a:hover .cluster__link-title {
     color: var(--site-color-link);
-    text-decoration: underline;
-    text-underline-offset: 0.2em;
   }
   .cluster__link-summary {
     color: var(--site-text-meta);

@@ -9,13 +9,20 @@
  * (markanın ürün adı vurgulu), tek cümle değer ve iki eylem; altında üç adım (Gözler / Önerir / Onayınızla uygular)
  * ince ayraçlı sütunlar. Sağda dekoratif ajan konsolu parçası (aria-hidden): iki ajan satırı + onay kartı; dar
  * ekranda gizlenmez, sadeleşir. Hareket yok (statik vitrin; ana sayfa zaten animasyonlu sahnelerle dolu).
+ *
+ * S27a (SR4 madde 2, K50 — "Otopilot anasayfada daha albenili"): vitrin büyüdü ve sahnelendi — display ölçeğinde ad
+ * (ürün adı gradyan vurgulu; BRAND §4 "tek koyu vitrin kartı" istisnası), konsol dört ajanın tamamını (ad + ne yaptığı +
+ * durum) gösterir, arkasında yörünge halkaları ve ışıma; onay kapısı konsolun altında öne taşan ayrı bir kart. Üç adım
+ * BAĞLI bir akış: numara + oklu hat, karar adımı ("Onayınızla uygular") vurgulu. Sayfadaki yeri yükseldi (Yetenekler'in
+ * hemen ardından). Hâlâ hareketsiz (döngü bütçesi hero vitrininde).
  */
 import Section from '../Section.astro'
 import Icon from './Icon.astro'
 import { ASSISTANT_PATH, AGENT_BRAND, agentConsole, assistantTeaser as t } from '../../data/assistant'
 
 const [lead, ...restName] = t.title.split(AGENT_BRAND)
-const rows = agentConsole.rows.slice(0, 2)
+// S27a (SR4 madde 2 "daha albenili"): konsol dört ajanın tamamını (durum + ne yaptığı) gösterir; onay kapısı öne çıkar.
+const rows = agentConsole.rows
 ---
 
 <Section id="ajan-bandi" labelledby="ajan-bandi-baslik" class="teaser-section">
@@ -42,6 +49,8 @@ const rows = agentConsole.rows.slice(0, 2)
     </div>
 
     <div class="teaser__visual" aria-hidden="true">
+      <span class="teaser__orbit teaser__orbit--a"></span>
+      <span class="teaser__orbit teaser__orbit--b"></span>
       <div class="deck">
         <div class="deck__bar">
           <span class="deck__glyph"><Icon name="sparkle" size="sm" /></span>
@@ -53,7 +62,10 @@ const rows = agentConsole.rows.slice(0, 2)
             rows.map((r) => (
               <li class="deck__row" data-state-kind={r.state}>
                 <span class="deck__icon"><Icon name={r.icon} size="sm" /></span>
-                <span class="deck__name">{r.name}</span>
+                <span class="deck__id">
+                  <span class="deck__name">{r.name}</span>
+                  <span class="deck__detail">{r.detail}</span>
+                </span>
                 <span class="deck__state"><i></i>{r.stateLabel}</span>
               </li>
             ))
@@ -72,8 +84,8 @@ const rows = agentConsole.rows.slice(0, 2)
 
     <ol class="teaser__steps" role="list">
       {
-        t.points.map((p) => (
-          <li class="step">
+        t.points.map((p, i) => (
+          <li class:list={['step', { 'step--you': i === t.points.length - 1 }]}>
             <span class="step__icon" aria-hidden="true"><Icon name={p.icon} size="sm" /></span>
             <span class="step__body">
               <strong class="step__title">{p.title}</strong>
@@ -88,7 +100,7 @@ const rows = agentConsole.rows.slice(0, 2)
 
 <style>
   .teaser-section:global(.section) {
-    padding-block: calc(var(--site-section-y) * 0.6);
+    padding-block: calc(var(--site-section-y) * 0.75);
   }
   .teaser {
     position: relative;
@@ -181,6 +193,7 @@ const rows = agentConsole.rows.slice(0, 2)
     color: var(--site-stage-deep);
   }
   .teaser h2 {
+    font-size: var(--site-font-display-lg);
     color: var(--site-text-on-dark-heading);
     font-size: var(--site-font-display-md);
     font-weight: var(--site-font-display-weight);
@@ -227,12 +240,6 @@ const rows = agentConsole.rows.slice(0, 2)
     min-height: var(--site-tap-target);
     color: var(--site-text-on-dark-heading);
     font-weight: var(--ek-font-weight-semibold);
-    text-decoration: underline;
-    text-decoration-color: color-mix(in srgb, var(--ek-color-secondary) 70%, transparent);
-    text-underline-offset: 0.3em;
-  }
-  .teaser__link:hover {
-    text-decoration-color: currentColor;
   }
   .teaser__cta:focus-visible,
   .teaser__link:focus-visible {
@@ -313,6 +320,18 @@ const rows = agentConsole.rows.slice(0, 2)
     background: color-mix(in srgb, var(--ek-color-secondary) 14%, transparent);
     color: var(--site-accent-on-dark);
   }
+  .deck__id {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+  .deck__detail {
+    overflow: hidden;
+    color: var(--site-text-on-dark-meta);
+    font-size: var(--ek-font-size-xs);
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
   .deck__name {
     min-width: 0;
     overflow: hidden;
@@ -340,12 +359,25 @@ const rows = agentConsole.rows.slice(0, 2)
     border-radius: 50%;
     background: var(--ek-color-secondary);
   }
+  .deck__row[data-state-kind='wait'] {
+    border-color: color-mix(in srgb, var(--ek-color-amber) 45%, transparent);
+  }
+  .deck__row[data-state-kind='wait'] .deck__state i {
+    background: var(--ek-color-amber);
+  }
+  .deck__row[data-state-kind='report'] .deck__state i {
+    background: var(--ek-color-success);
+  }
   .deck__row[data-state-kind='propose'] .deck__state i {
     background: var(--ek-color-primary-lighten);
     box-shadow: 0 0 0 var(--site-border-width) var(--site-text-on-dark-heading);
   }
   .deck__gate {
+    position: relative;
+    z-index: 1;
     display: flex;
+    box-shadow: 0 var(--ek-space-4) var(--ek-space-10) calc(var(--ek-space-4) * -1) color-mix(in srgb, var(--ek-color-content-strong) 80%, transparent);
+    background-color: color-mix(in srgb, var(--site-stage-deep) 85%, transparent);
     align-items: center;
     gap: var(--ek-space-3);
     padding: var(--ek-space-3);
@@ -388,7 +420,32 @@ const rows = agentConsole.rows.slice(0, 2)
     box-shadow: var(--site-glow-ring);
   }
 
-  /* --- Üç adım: ince ayraçlı sütunlar --- */
+  /* Yörünge halkaları + ışıma: konsolun arkasında derinlik (dekor; hareketsiz). */
+  .teaser__visual {
+    position: relative;
+    isolation: isolate;
+  }
+  .teaser__orbit {
+    position: absolute;
+    z-index: -1;
+    inset: 50% auto auto 50%;
+    aspect-ratio: 1 / 1;
+    border: var(--site-border-width) solid color-mix(in srgb, var(--ek-color-secondary) 22%, transparent);
+    border-radius: var(--ek-radius-full);
+    translate: -50% -50%;
+    pointer-events: none;
+  }
+  .teaser__orbit--a {
+    width: 115%;
+    background: radial-gradient(closest-side, color-mix(in srgb, var(--ek-color-secondary) 16%, transparent), transparent);
+  }
+  .teaser__orbit--b {
+    width: 145%;
+    border-style: dashed;
+    opacity: 0.6;
+  }
+
+  /* --- Üç adım: bağlı akış (oklu hat), karar adımı vurgulu --- */
   .teaser__steps {
     display: grid;
     gap: var(--ek-space-5);
@@ -402,6 +459,15 @@ const rows = agentConsole.rows.slice(0, 2)
     align-items: flex-start;
     gap: var(--ek-space-3);
     min-width: 0;
+  }
+  .step {
+    position: relative;
+  }
+  .step--you .step__icon {
+    border-color: var(--ek-color-secondary);
+    background: var(--site-gradient-accent-on-dark);
+    color: var(--site-stage-deep);
+    box-shadow: var(--site-glow-ring);
   }
   .step__icon {
     display: inline-flex;
@@ -433,7 +499,10 @@ const rows = agentConsole.rows.slice(0, 2)
   /* Dar ekran: panel sadeleşir (mod hapı ve onay metni gizli) */
   @media (max-width: 479.98px) {
     .deck__mode,
-    .deck__gate-text {
+    .deck__gate-text,
+    .deck__detail,
+    .deck__row:nth-child(n + 3),
+    .teaser__orbit--b {
       display: none;
     }
   }
@@ -443,13 +512,33 @@ const rows = agentConsole.rows.slice(0, 2)
       gap: 0;
     }
     .step {
-      padding-inline: var(--ek-space-5);
+      padding-inline: var(--ek-space-5) var(--ek-space-12);
     }
     .step:first-child {
       padding-inline-start: 0;
     }
-    .step + .step {
-      border-inline-start: var(--site-border-width) solid var(--site-glass-border);
+    /* Adımlar arası ok: sütunun sağ kenarında ince hat + uç (sonraki adımın ikonuna bakar). */
+    .step:not(:last-child)::after,
+    .step:not(:last-child)::before {
+      content: '';
+      position: absolute;
+      inset-block-start: calc(var(--ek-space-8) / 2);
+      pointer-events: none;
+    }
+    .step:not(:last-child)::after {
+      inset-inline-end: var(--ek-space-1);
+      width: var(--ek-space-8);
+      height: var(--site-border-width);
+      background: linear-gradient(90deg, transparent, var(--ek-color-secondary));
+    }
+    .step:not(:last-child)::before {
+      inset-inline-end: var(--ek-space-1);
+      width: var(--ek-space-2);
+      height: var(--ek-space-2);
+      margin-block-start: calc(var(--ek-space-1) * -1);
+      border-block-start: var(--site-border-width) solid var(--ek-color-secondary);
+      border-inline-end: var(--site-border-width) solid var(--ek-color-secondary);
+      rotate: 45deg;
     }
   }
   @media (min-width: 1024px) {
@@ -457,7 +546,8 @@ const rows = agentConsole.rows.slice(0, 2)
       grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
       align-items: center;
       column-gap: var(--ek-space-16);
-      padding: var(--ek-space-12) var(--ek-space-12) var(--ek-space-10);
+      row-gap: var(--ek-space-12);
+      padding: var(--site-space-24) var(--ek-space-16) var(--ek-space-12);
     }
     .teaser__steps {
       grid-column: 1 / -1;

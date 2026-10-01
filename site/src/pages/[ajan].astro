@@ -15,6 +15,7 @@
  * Bölüm ritmi: koyu hero (tek başlık + tek cümle + tek CTA; ajan konsolu) -> açık (ajan döngüsü) -> koyu (ajanlar)
  * -> açık (kontrol sizde) -> gri (sohbet) -> açık (SSS) -> koyu (demo).
  */
+import Eyebrow from '../components/Eyebrow.astro'
 import BaseLayout from '../layouts/BaseLayout.astro'
 import Section from '../components/Section.astro'
 import Button from '../components/Button.astro'
@@ -186,7 +187,7 @@ const [titleBefore, titleAfter] = hero.title.split(hero.accent)
   <Section id="demo" labelledby="demo-title" tone="stage" class="ai-section ai-cta">
     <div class="cta">
       <div class="cta__body">
-        <p class="cta__eyebrow">{assistantCta.eyebrow}</p>
+        <Eyebrow>{assistantCta.eyebrow}</Eyebrow>
         <h2 id="demo-title">{assistantCta.title}</h2>
         <p class="cta__text">{assistantCta.text}</p>
         <ul class="cta__points" role="list">
@@ -527,13 +528,6 @@ const [titleBefore, titleAfter] = hero.title.split(hero.accent)
     flex-direction: column;
     gap: var(--ek-space-4);
   }
-  .cta__eyebrow {
-    color: var(--site-accent-on-dark);
-    font-size: var(--site-card-eyebrow-size);
-    font-weight: var(--site-card-eyebrow-weight);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
   .cta h2 {
     color: var(--site-text-on-dark-heading);
     font-size: var(--site-font-display-md);
@@ -594,10 +588,6 @@ const [titleBefore, titleAfter] = hero.title.split(hero.accent)
     font-weight: var(--ek-font-weight-semibold);
     text-decoration: none;
   }
-  .cta__start:hover {
-    text-decoration: underline;
-    text-underline-offset: 0.2em;
-  }
   .cta__start:focus-visible {
     outline: var(--site-focus-ring-width) solid currentColor;
     outline-offset: var(--site-focus-ring-offset);
@@ -610,6 +600,28 @@ const [titleBefore, titleAfter] = hero.title.split(hero.accent)
     border-radius: var(--site-radius-panel);
     background: var(--site-glass-bg);
     box-shadow: var(--site-shadow-panel);
+  }
+  /*
+   * N7 (S27a): kartta TEK birincil eylem (Demo talep edin); "Adresi kopyala" ve "Hemen başlayın" ikincil METİN
+   * bağlantısı ağırlığında. Üç eylem korunur (e-posta istemcisi olmayan ziyaretçi için kopyala), yalnız görsel
+   * hiyerarşi netleşir. Paylaşılan EmailActions bileşenine dokunulmaz; kapsam yalnız bu kart.
+   */
+  .cta__panel :global(.ea .ea__btn.ea__btn--ghost) {
+    border-color: transparent;
+    background: transparent;
+    padding-inline: var(--ek-space-2);
+    color: var(--site-text-on-dark-body);
+    font-weight: var(--ek-font-weight-medium);
+  }
+  .cta__panel :global(.ea .ea__btn.ea__btn--ghost:hover) {
+    color: var(--site-text-on-dark-heading);
+  }
+  .cta__panel .cta__start {
+    margin-top: var(--ek-space-6);
+    padding-top: var(--ek-space-4);
+    border-top: var(--site-border-width) solid var(--site-glass-border);
+    width: 100%;
+    font-size: var(--ek-font-size-sm);
   }
 
   /* ------------------------------------------------------------------ (3) sınırlar */

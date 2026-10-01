@@ -90,7 +90,7 @@ const PATHS: Record<Props['name'], string> = {
 const { name, size = 'md', class: className } = Astro.props
 ---
 
-<svg class:list={['icon', `icon--${size}`, className]} viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+<svg class:list={['icon', `icon--${size}`, className]} data-icon={name} viewBox="0 0 24 24" aria-hidden="true" focusable="false">
   <path d={PATHS[name]}></path>
 </svg>
 

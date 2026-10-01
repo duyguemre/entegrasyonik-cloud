@@ -54,8 +54,10 @@ const FILES = {
   eco: 'components/home/IntegrationShowcase.astro',
   caps: 'components/home/Capabilities.astro',
 } as const
+/** Bileşen içi döngü/animasyon taşıyan dosyalar (S27a N9: bento karoları döngüsüz → caps listede değil). */
+const MOTION_FILES = { how: FILES.how, eco: FILES.eco }
 
-describe.each(Object.entries(FILES))('%s: bileşen içi hareket sözleşmesi', (_key, file) => {
+describe.each(Object.entries(MOTION_FILES))('%s: bileşen içi hareket sözleşmesi', (_key, file) => {
   const css = styleOf(file)
   const { start, body, outside } = split(css)
 
@@ -175,7 +177,9 @@ describe('S15-C: "Örnek görünüm" etiketi yok; görseller aria-hidden (anlam 
 
   it('bento/stok görsellerinin kökleri aria-hidden kalır', () => {
     const html = read(FILES.caps)
-    for (const scene of ['stock-single-winner', 'orders-merge', 'integration-status', 'secret-encryption', 'tenant-isolation']) {
+    // S27a (SR4 madde 5): şifreli anahtar / izole veri karoları Güvenlik bölümüne taşındı (bentoda yok)
+    for (const scene of ['secret-encryption', 'tenant-isolation']) expect(html, scene).not.toContain(`data-scene="${scene}"`)
+    for (const scene of ['stock-single-winner', 'orders-merge', 'integration-status']) {
       expect(html, scene).toMatch(new RegExp(`data-scene="${scene}" aria-hidden="true"`))
     }
   })
@@ -202,11 +206,12 @@ describe('S15-C: stok rezervasyonu anlatısı (eşzamanlı iki sipariş -> biri 
     expect(outside).not.toMatch(/\.stock__zero\s*\{[^}]*opacity:\s*0/)
   })
 
-  it('iki sipariş ışığı AYNI fazda (eşzamanlı); başarı hattı uyarı hattından önce', () => {
-    const phase = (sel: string) => Number(body.match(new RegExp(`${sel}[^{]*\\{\\s*--p:\\s*([\\d.]+)`))![1])
-    expect(body).toMatch(/\.stock__carrier--a,\s*\.stock__carrier--b\s*\{\s*--p:/)
-    expect(phase('\\.stock__carrier--ok')).toBeLessThan(phase('\\.stock__carrier--warn'))
-    expect(phase('\\.stock__result--ok')).toBeLessThan(phase('\\.stock__result--warn'))
+  // S27a (N9 hareket ekonomisi, BRAND §4): bento karolarında SÜREKLİ döngü yok — yalnızca tek seferlik giriş (scenes.css);
+  // sürekli döngü yalnız hero vitrini ve sıfır aşırı satış hikâyesinde. Statik son durum yukarıdaki testte korunur.
+  it('bento döngüsüz (N9): bileşende keyframes / infinite / no-preference bloğu yok', () => {
+    expect(css).not.toMatch(/@keyframes/)
+    expect(css).not.toMatch(/infinite/)
+    expect(body).toBe('')
   })
 })
 
@@ -214,9 +219,11 @@ describe('S15-C: ekosistem düğümlerinin iç hareketi (yörünge korunur)', ()
   const html = read(FILES.eco)
   const { body } = split(styleOf(FILES.eco))
 
-  it('yörünge noktaları ve dönüşü korunur', () => {
+  // S27a (N9 hareket ekonomisi): yörünge halkaları sabit dekor — sürekli dönüş yok; akış paketleri sürer.
+  it('yörünge noktaları korunur; halkalar dönmez (N9)', () => {
     expect(html).toContain('eco__orbit eco__orbit--outer')
-    expect(body).toMatch(/\.eco__orbit--outer\s*\{\s*animation:\s*eco-orbit/)
+    expect(body).not.toMatch(/eco-orbit/)
+    expect(body).toMatch(/\.eco__packet--out\s*\{\s*animation:\s*eco-travel/)
   })
 
   it('düğüm içi: ikon uyanışı, kanal noktası nabzı ve akış çizgisi düğümün çeyrek fazına (--k) bağlı', () => {
@@ -267,16 +274,16 @@ describe('S15-B: tek merkez akışı (sorun -> çözüm) ve sipariş hikâyesi c
     expect(loops).toMatch(/\[data-scene='problem-solution'\]\[data-state='play'\]\[data-visible='true'\] :is\([^{]*\{\s*animation-play-state:\s*running/)
   })
 
-  it('sipariş hikâyesi: kart > sahne > öğe cam katmanları tek renk ailesinde (token), sahne başına etiket yok', () => {
+  // S27a (N3): sipariş hikâyesi kompakt yatay zaman çizgisi — adım başına mini sahne (.viz) yok; kart tonu tek renk ailesinde.
+  it('sipariş hikâyesi: kart tonu tek renk ailesinde (token), mini sahne/etiket yok', () => {
     const file = 'components/home/OrderStory.astro'
     const css = styleOf(file)
-    for (const t of ['--story-card-tint', '--story-scene-bg', '--story-item-bg', '--story-item-edge']) {
-      expect(css, t).toMatch(new RegExp(`${t}:\\s*color-mix\\(in srgb, var\\(--(?:ek-color-secondary|site-stage-deep)\\)`))
+    for (const t of ['--story-card-tint', '--story-card-edge']) {
+      expect(css, t).toMatch(new RegExp(`${t}:\\s*color-mix\\(in srgb, var\\(--ek-color-secondary\\)`))
     }
-    expect(rule(css, '.story__card')).toContain('var(--story-card-tint)')
-    expect(rule(css, '.viz')).toContain('var(--story-scene-bg)')
-    expect(css).toMatch(/\.vret__steps\) \{\s*border: var\(--site-border-width\) solid var\(--story-item-edge\);[^}]*background: var\(--story-item-bg\)/)
+    expect(rule(css, '.story__card')).toBeDefined()
+    expect(css).toContain('var(--story-card-tint)')
     const markup = read(file).split('<style>')[0].replace(/\/\*[\s\S]*?\*\//g, '')
-    expect(markup).not.toMatch(/Örnek görünüm|viz__tag/)
+    expect(markup).not.toMatch(/Örnek görünüm|viz__tag|class="viz"/)
   })
 })

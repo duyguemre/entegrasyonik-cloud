@@ -33,6 +33,7 @@ import {
   assistantCta,
   assistantTeaser,
   heroAgentEntry,
+  homeAgentGain,
   featuresBridge,
   assistantLlms,
 } from '../src/data/assistant'
@@ -129,7 +130,7 @@ const pageContent = {
   faq: assistantFaq,
   cta: assistantCta,
 }
-const surfaceContent = { page: pageContent, teaser: assistantTeaser, heroEntry: heroAgentEntry, bridge: featuresBridge, llms: assistantLlms }
+const surfaceContent = { page: pageContent, teaser: assistantTeaser, heroEntry: heroAgentEntry, agentGain: homeAgentGain, bridge: featuresBridge, llms: assistantLlms }
 const pageLeaves = visibleLeaves(pageContent, '$page')
 const scenarioLeaves = visibleLeaves(assistantScenario, '$scenario')
 const surfaceLeaves = [...visibleLeaves(surfaceContent, '$surface'), ...scenarioLeaves]
@@ -264,13 +265,14 @@ describe('(1) vaatler yalnızca agent-claims kaydından gelir', () => {
         'components/assistant/ChatScene.astro',
         'components/home/AssistantTeaser.astro',
         'components/home/Hero.astro',
+        'components/home/ProblemSolution.astro',
         'pages/[ajan].astro',
         'pages/llms-full.txt.ts',
         'pages/ozellikler.astro',
       ].sort(),
     )
-    const SAFE = new Set(['ASSISTANT_PATH', 'ASSISTANT_NAME', 'featuresBridge', 'assistantLlms', 'heroAgentEntry'])
-    for (const f of ['pages/ozellikler.astro', 'pages/llms-full.txt.ts', 'components/home/Hero.astro']) {
+    const SAFE = new Set(['ASSISTANT_PATH', 'ASSISTANT_NAME', 'featuresBridge', 'assistantLlms', 'heroAgentEntry', 'homeAgentGain'])
+    for (const f of ['pages/ozellikler.astro', 'pages/llms-full.txt.ts', 'components/home/Hero.astro', 'components/home/ProblemSolution.astro']) {
       const m = readFileSync(path.join(srcDir, f), 'utf8').match(/import\s*\{([^}]*)\}\s*from\s*'[^']*data\/assistant'/)!
       const names = m[1].split(',').map((x) => x.trim().split(/\s+as\s+/)[0]).filter(Boolean)
       for (const n of names) expect(SAFE.has(n), `${f}: ${n}`).toBe(true)
@@ -296,6 +298,8 @@ describe('(1) vaatler yalnızca agent-claims kaydından gelir', () => {
     for (const p of assistantTeaser.points) expect(home).toContain(p.text)
     expect(home).toContain(assistantTeaser.lead)
     expect(home).toContain(heroAgentEntry.value)
+    expect(home).toContain(heroAgentEntry.moment.text)
+    expect(home).toContain(homeAgentGain.text)
     expect(features).toContain(featuresBridge.text)
   })
 })

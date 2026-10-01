@@ -151,7 +151,7 @@ const CATEGORY_ICONS: Record<FaqCategoryId, 'bolt' | 'plug' | 'stock' | 'shield'
 </script>
 
 <style>
-  .tight-section:global(.section) {
+  :global(.section.tight-section) {
     padding-block: calc(var(--site-section-y) * 0.72);
   }
 
@@ -200,9 +200,6 @@ const CATEGORY_ICONS: Record<FaqCategoryId, 'bolt' | 'plug' | 'stock' | 'shield'
     font-weight: var(--ek-font-weight-medium);
     line-height: var(--ek-line-height-tight);
     text-decoration: none;
-  }
-  .hero-list a:hover {
-    text-decoration: underline;
   }
   .hero-list a:focus-visible {
     outline-color: var(--site-color-on-primary);

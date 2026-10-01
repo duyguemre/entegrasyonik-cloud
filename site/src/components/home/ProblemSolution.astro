@@ -29,6 +29,7 @@ import SectionHeading from './SectionHeading.astro'
 import Icon from './Icon.astro'
 import ChannelMono from '../pages/ChannelMono.astro'
 import { getPublicIntegrations } from '../../data/integrations'
+import { homeAgentGain as agentGain } from '../../data/assistant'
 import { getPublicCapabilities } from '../../data/capabilities'
 
 // Örnek senaryo: her kanalın kendi panelinde farklı (çelişen) stok sayısı görmesi — sabit görsel örnek.
@@ -75,11 +76,12 @@ const gains = [
     text: 'Farklı kanallardan gelen siparişler tek listede, iade ve sorular tek yerde.',
     requires: ['unified-orders', 'returns', 'questions'],
   },
+  // S27a (SR4 madde 5): güvenlik maddesi Güvenlik bölümüne taşındı (tekrar yok); yerine Otopilot (Zaman sütunu).
   {
-    icon: 'shield' as const,
-    title: 'Kurumsal düzeyde güvenlik',
-    text: 'Entegrasyon anahtarlarınız şifreli saklanır; verileriniz yalnızca size ait, izole bir alanda korunur.',
-    requires: ['secrets-encryption', 'tenant-database'],
+    icon: 'sparkle' as const,
+    title: agentGain.title,
+    text: agentGain.text,
+    requires: ['unified-orders', 'stock-reservation'],
   },
 ].filter((g) => g.requires.every((id) => capIds.has(id)))
 ---

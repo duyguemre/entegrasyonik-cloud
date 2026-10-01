@@ -4,6 +4,7 @@
  * Satın almaya teşvik eden son çağrı: fayda odaklı başlık + üç kazanım (merkezi stok, birleşik sipariş, güvenlik),
  * birincil "ücretsiz başlat", ikincil "Demo talep edin" (ELEV A3; mailto, form yok); altında deneme notu ve kazanım/güvenlik çipleri. Tüm olgular kayıttan
  * (deneme süresi/kart gereksinimi: seed; güvenlik çipleri: yetenek kaydı).
+ * S27a (N3, SR4 madde 5): güvenlik çipleri kaldırıldı — güvenlik iddiaları sayfada yalnız Güvenlik bölümünde (bir kez).
  * Görsel: eş merkezli halkalar (dekoratif, `cta-rings` döngüsü scenes-loops.css) + yavaşça dönen ışık halkası.
  */
 import Section from '../Section.astro'
@@ -19,8 +20,6 @@ import { BRAND_SLOGAN } from '../../data/brand'
 const trial = getPublicTrial()
 const capabilities = getPublicCapabilities()
 const has = (id: string) => capabilities.some((c) => c.id === id)
-const encrypted = has('secrets-encryption')
-const tenant = has('tenant-database')
 const contactHref = pageHref('/iletisim')
 // ELEV (A3): sayfanın en güçlü dönüşüm anı yeni ziyaretçiye konuşur — ikincil eylem "Demo talep edin" (K43); giriş üst barda.
 const demoHref = mailtoHref(contactEmail, 'Entegrasyonik demo talebi')
@@ -51,8 +50,6 @@ const gains = [
     <p class="cta__note" data-reveal><span data-count={trial.days}>{trial.days}</span> gün ücretsiz deneme{!trial.cardRequired && ', kart bilgisi gerekmez'}.{contactHref && <> Kurumsal ihtiyaçlarınız için <a href={contactHref}>bizimle görüşün</a>.</>}</p>
     <ul class="cta__chips" data-reveal aria-label="Kazanımlar">
       {gains.map((g) => <li><Icon name={g.icon} size="sm" />{g.text}</li>)}
-      {encrypted && <li><Icon name="lock" size="sm" />Şifreli anahtar saklama</li>}
-      {tenant && <li><Icon name="database" size="sm" />Verileriniz yalnızca size ait</li>}
     </ul>
   </div>
 </Section>
