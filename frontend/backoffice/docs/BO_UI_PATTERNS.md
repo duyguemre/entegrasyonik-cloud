@@ -421,3 +421,106 @@ Sözleşme `docs/API_BACKOFFICE_USAGE.md`; karar K55. K51 sayfa hiyerarşisi (Du
 | `SeriesBars` `tone:'success'` | `components/kit/` | Kategorik ikinci seri (mobil); alarm anlamı yok. |
 
 **Sahte API kolu (ek):** `__boMock.setUsageEmpty(true)` → `getPulse.activeUsers` ve `getUsage.activeUsers` `computable:false`.
+
+---
+
+## 12. R2 sistem katmanı (BO-R2a, K59) — **tüm sayfalar, bo-r2b bunu izler**
+Kaynak: `docs/cloud-contracts/BO_FEEDBACK_R2_2026-10-01.md` (BO2-*), karar K59. R2, §11 "Durum → Karar → Eylem → Ayrıntı"
+deseninin **görsel/sistem katmanıdır** (K51 geçerli). Envanter: `docs/bo-r2-review/INVENTORY.md`. Rapor: `docs/bo-r2-review/R2A_REPORT.md`.
+Bileşenler `src/components/r2/` (yerleşim, liste, eylem) ve `src/components/charts/` (grafik). **Sayfa yalnız bunları
+kullanır; yerel kopya yazılmaz** — mandal `tests/r2-system.test.ts` (azalan taban `tests/r2-baseline.json`).
+
+### 12.1 Bileşen seti
+
+| İhtiyaç | Bileşen | Kural |
+|---|---|---|
+| Sayfa başlığı (BO2-20) | `BoPageHeader` (shell) | Ekran kaydındaki ikon kapsülde + h1 (`title`) + tek cümle açıklama + meta; altta ayraç; eylemler sağda, **Yenile en sağda** (`BoAction kind="refresh" data-page-refresh`). `:auto-refresh="30"` tek metin. `hide-icon` yalnız istisna. Yerel h1 yasak. |
+| Bölüm (BO2-11) | `BoSection` | Her anlamlı bölüm bir kart: başlık (`heading` 16/600) + açıklama (`caption`) + `#actions` + gövde + `#footer`. `fill` (ızgarada tam yükseklik), `flush` (tablo kenardan kenara), `plain` (kart içi alt bölüm, kartsız), `tone` (yalnız durum: sol şerit). Yerel `.bo-panel__bar` başlık çubuğu yasak. Pano soru kartı `BoTriageSection` aynı ölçüde. |
+| Kutu ızgarası (BO2-12) | `BoTileGrid` | Aynı satırdaki kutular **eş yükseklik + hizalı** (hücre `stretch`, çocuk %100). `:cols="2|3"` sabit (< 1024 px en çok 2, < 600 px `mobile-cols`), `:min="176"` otomatik sütun (KPI şeridi, `dense`). Geniş kutu `data-span="2"`/`"all"`. `bo-grid-2/3` yeni kodda kullanılmaz. |
+| Önemli metrik | `BoStat` | Mikro etiket (tek satır, kesilir) + metrik değer + tek satır `hint`; uzun açıklama `info`'da (ⓘ, `title` + ekran okuyucu metni — kutu bağlantıysa iç içe etkileşim yok); `series` → sparkline; `to` → kutunun tamamı bağlantı. `tone` yalnız durum (critical/warning/success/info). |
+| Standart veri listesi (BO2-40) | `BoDataTable` | `EkDataTable` sütun tipleri + 36 px yoğunluk + `phase` dört durum + `#footer` sayfalama + bölge adı. Doğrudan `EkDataTable` yasak (taban). |
+| Özel satırlı tablo | `BoTableFrame` | `.bo-table` işaretlemesinin tek yeri (odaklanır kaydırma bölgesi, sr başlığı, `density`, `flat`, `max-height`). Hücre sınıfları §3 (`is-num`, `is-id`, `is-link`). |
+| Filtre çubuğu (BO2-41) | `BoFilterBar` + `BoSegmented` | Sıra: arama (`#search`) · alanlar/segmentler · "N süzgeç etkin" + **Filtreleri temizle** (sözlük `clearFilters`, yalnız etkinken) · `#trailing` (Dışa aktar). Süzgeç değişince liste baştan yüklenir ve URL'e yazılır. Tek seçim = `BoSegmented` (radiogroup, ←/→, sayaç); yerel `role="radiogroup"` yasak. |
+| Sayfalama (BO2-41) | `BoPagination` | Uçlar imleçli: "N kayıt gösteriliyor · listenin sonu" (+ `total` → "12 / 40 kayıt") + "Daha fazla" (aynı süzgeçle ekler, liste silinmez, hata satır içi). `BoSection #footer` ya da `BoDataTable #footer` içinde. Yerel "Daha fazla" / `.bo-table-foot` yasak. |
+| Sekme (BO2-70) | `BoTabs` | `EkPageTabs` + `?sekme=` (varsayılan URL'e yazılmaz). Uzun sayfanın ilk bölme aracı: farklı **konular** (Kuyruklar / Başarısız işler). |
+| Görünüm değiştirici | `BoViewSwitch` | Aynı içeriğin iki yoğunluğu (Özet / Ayrıntılı), `?gorunum=`. Örn. BO2-P6 başarısız işler: özet = türe göre gruplu sayılar, ayrıntılı = iş başına tür/durum/neden/zaman tablosu. |
+| Daraltılabilir | `BoCollapsible` (kart/madde içi) · `BoDetailSection` (sayfa, `?ayrinti=`) | İkinci plandaki açıklama/kanıt kapalı başlar; `inline` → düğme eylem satırına katılır, içerik alt satıra iner. Örn. `BoAttentionList compact` "Neden ve ne yapmalı". |
+| Eylem (BO2-50) | `BoAction` + `actions.ts` | Aşağıda §12.3. |
+| Grafik (BO2-60) | `BoChart` | Aşağıda §12.4. |
+| Durumlar | `StateBlock` / `BoPanelState` | Değişmedi (§4, bo-p2). |
+
+### 12.2 Tipografi ölçeği (BO2-30) — TEK kaynak `@entegrasyonik/ui/tokens` `typeRole`
+| Rol | Token | Boyut / satır / ağırlık | Nerede |
+|---|---|---|---|
+| Sayfa başlığı | `--ek-type-title-*` | 22 / 30 / 600 | yalnız `BoPageHeader` h1 ve `BoStatusHeader` hükmü |
+| Metrik | `--ek-type-metric-*` | 28 / 34 / 700 | yalnız `BoStat` değeri (tek sayı) |
+| Bölüm başlığı | `--ek-type-heading-*` | 16 / 24 / 600 | `BoSection`, `BoTriageSection`, `BoDetailSection` başlığı, kutu içi büyük sayı |
+| Alt başlık | `--ek-type-subheading-*` | 14 / 20 / 600 | liste maddesi başlığı, grafik başlığı |
+| Gövde | `--ek-type-body-*` | 14 / 22 / 400 | metin, açıklama |
+| Etiket | `--ek-type-label-*` | 13 / 18 / 500 | düğme, bağlantı, form etiketi, satır adı |
+| Tablo | `--ek-type-table-*` | 13 / 20 / 400 | tablo hücresi |
+| Yardım/meta | `--ek-type-caption-*` | 12 / 16 / 400 | zaman, ipucu, kaynak notu, bölüm açıklaması |
+| Mikro | `--ek-type-micro-*` | 11 / 16 / 600, BÜYÜK HARF, `tracking` | tablo başlığı, KPI etiketi, "NE YAPMALI" |
+- Mandal: `font-size` yalnız `var(--ek-type-<rol>-size)` / `var(--ek-icon-*)` (ikon) / `inherit`; `font-weight` yalnız
+  `var(--ek-type-<rol>-weight)` ya da `var(--ek-font-weight-regular|medium|semibold)` (bold yok); `font:` yalnız `inherit`;
+  şablonda satır içi font stili yok. Taban **0** — ihlal eklenemez.
+- Ağırlık hiyerarşisi: sayfada 700 yalnız metrikte; başlıklar 600; vurgu 500. Bir kutuda en çok iki boyut.
+
+### 12.3 Eylem sözlüğü (BO2-50) — `src/components/r2/actions.ts`
+| `kind` | İkon | Etiket | Varsayılan varyant | Not |
+|---|---|---|---|---|
+| `refresh` | `mdi-refresh` | Yenile | secondary | Sayfa başlığında en sağ, `data-page-refresh` (Alt+R). Panel içi tazeleme `EkRefreshButton quiet-success` (NT-07) |
+| `edit` | `mdi-pencil-outline` | Düzenle | secondary | satırda `icon-only` → ghost |
+| `delete` / `discard` / `cancel` | çöp kutusu / çöp kutusu / `mdi-cancel` | Sil / At / İptal et | danger-quiet | **Yıkıcı**: onay diyaloğu zorunlu (§6); satırda ayraçla ayrık, ikon sakin, üzerine gelince kırmızı |
+| `detail` | `mdi-arrow-right` (sonda) | Ayrıntı | secondary | `:to` ile bağlantı; "Müşteriye git" gibi etiket verilebilir |
+| `view` | `mdi-eye-outline` | Görüntüle | secondary | |
+| `export` / `download` | dosya-dışa-aktar / indir | Dışa aktar / İndir | secondary | `BoFilterBar #trailing` |
+| `retry` | `mdi-replay` | Yeniden dene | secondary | iş yeniden deneme (guarded) |
+| `add` | `mdi-plus` | Ekle | **primary** | ekranın tek ana işi ("Yeni duyuru" → `label`) |
+| `link` | bağlantı | Bağlantı | secondary | `CopyViewLink` ile aynı |
+| `clearFilters` | süzgeç-kaldır | Filtreleri temizle | ghost | yalnız `BoFilterBar` |
+| `copy`, `openExternal`, `more`, `filter`, `save` | paket glifleri | — | — | |
+- Glifler ortak paketin `ACTION_ICONS` kayıt defterinden (müşteri uygulamasıyla aynı iş = aynı ikon). Ekran ikon/ton
+  seçmez; yalnız `kind` (+ gerekirse `label`, `object`, `tone` primary/ghost). İkon düğmede erişilebilir ad
+  `boActionLabel(kind, object)` ("Duyuruyu düzenle").
+- Mandal: sayfada `icon="mdi-refresh"` yasak (taban **0**). Sil/düzenle/dışa aktar sayfa taşımasında (bo-r2b) aynı kurala geçer.
+
+### 12.4 Grafik teması ve sarmalayıcı (BO2-60) — `src/components/charts/`
+- `echarts` ^6 + `vue-echarts` ^8 (uygulamayla aynı sürüm), **tree-shaken** tek kayıt `register.ts`: SVG çizici + Bar/Line/Pie
+  + Grid/Tooltip/MarkLine. Grafik parçası tembel yüklenir (ilk grafikli sayfada).
+- Tema `chartTheme.ts` (saf TS): renkler `@entegrasyonik/ui/tokens` `appSemanticColorsLight/Dark`'tan (literal renk yok —
+  test), `bo-light` / `bo-dark` olarak kayıtlı; `BoChart` etkin temayı `themeMode`'dan seçer. Kategorik sıra: action ·
+  secondary · info · warning · neutral (5'ten fazla seri "Diğer"). Durum serileri `tone` ile (başarısız = `error`).
+  Izgara kesikli `border-subtle`, eksen `border-default`, etiket `caption` + `content-muted`, ipucu `surface` + kenarlık,
+  gradyan/gölge yok, hareket ≤ 250 ms `cubicOut`, reduced-motion'da kapalı.
+- `BoChart :kind="line|area|bar|stacked-bar|sparkline|donut"`: `state` (loading iskelet sabit yükseklik · empty sakin
+  metin · error + Tekrar dene · ready), `summary` (zorunlu anlam; serilerden toplam/en yüksek/son eklenir → ekran okuyucu),
+  HTML lejant, **"Tablo olarak göster"** (sparkline hariç), `threshold` (kesikli eşik çizgisi), `categoryTones` (halka).
+- Mevcut grafik bileşenleri API'si korunarak BoChart'a taşındı: `Sparkline`, `BarTrend`, `kit/SeriesBars`. `MeterList`
+  grafik değildir (oran çubuğu, değer metin) — korunur. Yeni el yazımı `<svg role="img">` grafik yasak (taban 0).
+
+### 12.5 Yerleşim ve kaydırma kuralları (BO2-10, BO2-70, BO2-71)
+- Kabuk: `.bo-page` yan boşluk 16 px (≤ 767 px: 12 px), üst 20 px, tavan 1760 px; bölümler arası tek ritim 20 px (mobil 16).
+- Sayfa iskeleti: `BoPageHeader` → `PageVerdict`/`BoStatusHeader` → (varsa) KPI şeridi `BoTileGrid :min` + `BoStat` →
+  bölümler (`BoSection` / `BoTileGrid :cols`) → ayrıntı (`BoTabs` / `BoDetailSection`).
+- **Dikey**: ilk ekranda (1440 × 900) hüküm + metrikler + ilk karar bölümü görünmeli. Bir sayfa 1440'ta ~3 ekrandan uzunsa
+  böl: farklı konu → `BoTabs`; aynı içerik iki yoğunluk → `BoViewSwitch`; ikincil kanıt → `BoCollapsible`/`BoDetailSection`.
+  Panoda dikkat listesi `compact` + `limit` 3 (mobil 2; kritikler her zaman görünür).
+- **Yatay**: sayfa düzeyinde yatay kaydırma **yok** (`document.scrollWidth ≤ clientWidth`, e2e `r2a.spec.ts`). Dar kutuda
+  tablo yerine sayı kutuları/liste (ör. teknik ayrıntılar "Kuyruklar"); 4+ sütunlu tablo yalnız ≥ ½ genişlikte kutuda; mobilde
+  ikincil sütun `bo-hide-sm`, ana listeler kart satır. Tablo kabı kendi içinde kayabilir (odaklanır bölge) ama sayfa kaymaz.
+- Mobil dokunma katmanı (≥ 44 px, `mobile.css`) değişmedi; yeni bileşenler `(pointer: coarse)` altında 44 px hedef verir.
+
+### 12.6 Mandallar ve taban
+| Mandal | Test | Taban (bo-r2a sonu) |
+|---|---|---|
+| Tipografi ölçeği | `r2-system.test.ts` BO2-30 | 0 |
+| Yerel h1 | `page-title` | 0 (giriş/davet kabuk dışı) |
+| Yerel Yenile | `refresh` | 0 |
+| El yazımı SVG grafik | `chart-svg` | 0 |
+| Yerel `.bo-table` | `raw-table` | 6 |
+| Doğrudan `EkDataTable` | `datatable` | 19 |
+| Yerel segment | `segment` | 22 |
+| Yerel sayfalama | `pagination` | 6 |
+| Yerel bölüm başlığı | `section-head` | 24 |
+Taban **yalnız azalır**: bir sayfa taşındığında test "tabanı düşürün" der → `R2_BASELINE_WRITE=1 npx vitest run tests/r2-system.test.ts`.
