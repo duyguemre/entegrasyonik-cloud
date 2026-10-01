@@ -5,7 +5,7 @@
         <span class="bo-inline-note"><v-icon icon="mdi-autorenew" aria-hidden="true" />Sekme açıkken 30 sn'de bir yenilenir</span>
       </template>
       <template #actions>
-        <EkButton tone="secondary" icon="mdi-refresh" :loading="loading" @click="load">Yenile</EkButton>
+        <EkButton tone="secondary" icon="mdi-refresh" :loading="loading" data-page-refresh @click="load">Yenile</EkButton>
       </template>
     </BoPageHeader>
 

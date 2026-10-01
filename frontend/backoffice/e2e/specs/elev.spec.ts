@@ -1,0 +1,85 @@
+// BO-ELEV: karar şeridi bağlantıları, klavye (g-dizileri, ?, palet son açılanlar / müşteri adı), müşteri iz bağlantıları,
+// log ?tid=, başarısız işler ?kaynak=dlq, tehlikeli işlem diyaloğunda ortam. Sahte /admin-api; görsel taban YOK.
+import { expect, test } from '@playwright/test'
+import { expectNoA11yViolations, settle, signInFully } from '../support/session'
+
+test.describe('BO-ELEV', () => {
+  test.beforeEach(async ({ page }) => signInFully(page))
+
+  test('genel bakış: şerit maddeleri hedef ekrana bağlı; DLQ maddesi ölü mektuplara açılır; axe 0', async ({ page }) => {
+    await settle(page)
+    const strip = page.getByTestId('overall-status')
+    await expect(strip.getByText(/konu dikkat istiyor/)).toBeVisible()
+    await expectNoA11yViolations(page)
+    await strip.getByRole('link', { name: /elle inceleme bekliyor/ }).click()
+    await expect(page).toHaveURL(/\/motor\?.*kaynak=dlq/)
+    await expect(page.getByRole('radio', { name: 'Ölü mektup' })).toHaveAttribute('aria-checked', 'true')
+    await page.goBack()
+    await page.getByTestId('overall-status').getByRole('link', { name: /Hata oranı/ }).click()
+    await expect(page).toHaveURL(/\/loglar\?level=fatal(%2C|,)error/)
+  })
+
+  test('klavye: g → m müşteri listesi, g → d denetim; ? kısayol yardımı (axe 0, Esc kapatır)', async ({ page }, info) => {
+    test.skip(info.project.name === 'chromium-mobile', 'fiziksel klavye senaryosu')
+    await settle(page)
+    await page.keyboard.press('g')
+    await page.keyboard.press('m')
+    await expect(page).toHaveURL(/\/musteriler$/)
+    await page.keyboard.press('g')
+    await page.keyboard.press('d')
+    await expect(page).toHaveURL(/\/denetim$/)
+    await page.keyboard.press('Shift+?')
+    const help = page.getByRole('dialog', { name: 'Klavye kısayolları' })
+    await expect(help).toBeVisible()
+    await expect(help.getByText('Müşteri listesi')).toBeVisible()
+    await expectNoA11yViolations(page, '.bo-keys')
+    await page.keyboard.press('Escape')
+    await expect(help).toBeHidden()
+  })
+
+  test('palet: son açılanlar, mağaza adıyla arama, müşteri numarasıyla iz eylemleri', async ({ page }, info) => {
+    test.skip(info.project.name === 'chromium-mobile', 'fiziksel klavye senaryosu')
+    await page.goto('/musteriler/102')
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
+    await page.goto('/genel-bakis')
+    await settle(page)
+    await page.keyboard.press('Control+k')
+    const palette = page.getByRole('dialog', { name: 'Komut paleti' })
+    await expect(palette.getByText('Son açılanlar')).toBeVisible()
+    await expect(palette.getByRole('option', { name: /Müşteri #102/ })).toBeVisible()
+    await page.keyboard.type('Poyraz')
+    const hit = palette.getByRole('option', { name: /Poyraz Outdoor/ })
+    await expect(hit).toBeVisible()
+    await page.keyboard.press('Control+a')
+    await page.keyboard.type('105')
+    await expect(palette.getByRole('option', { name: /#105 — olay akışı/ })).toBeVisible()
+    await palette.getByRole('option', { name: /#105 — olay akışı/ }).click()
+    await expect(page).toHaveURL(/\/loglar\?tid=105/)
+    await expect(page.getByTestId('tid-scope')).toContainText('#105')
+    await expect(page.getByRole('tab', { name: /Olay akışı/ })).toHaveAttribute('aria-selected', 'true')
+  })
+
+  test('müşteri detayı: İz sür bağlantıları süzgeçle açılır; kanal türü Türkçe; axe 0', async ({ page }) => {
+    await page.goto('/musteriler/102')
+    await settle(page)
+    const trace = page.getByTestId('tenant-trace')
+    await expect(trace).toBeVisible()
+    await expect(page.getByText('MARKETPLACE')).toHaveCount(0)
+    await expect(page.getByText('Pazaryeri').first()).toBeVisible()
+    await expectNoA11yViolations(page)
+    await trace.getByRole('link', { name: /Olay akışı/ }).click()
+    await expect(page).toHaveURL(/\/loglar\?tid=102/)
+    await page.getByRole('button', { name: 'Müşteri #102 süzgecini kaldır' }).click()
+    await expect(page).toHaveURL(/\/loglar$/)
+    await expect(page.getByTestId('tid-scope')).toHaveCount(0)
+  })
+
+  test('tehlikeli işlem diyaloğu ilk satırda ortamı söyler', async ({ page }) => {
+    await page.goto('/motor?sekme=basarisiz')
+    await settle(page)
+    await page.getByTestId('retry').first().click()
+    const env = page.getByRole('dialog').getByTestId('danger-env')
+    await expect(env).toContainText('Ortam')
+    await expect(env).toContainText('Örnek veri')
+  })
+})

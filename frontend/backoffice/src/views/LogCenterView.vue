@@ -8,7 +8,7 @@
         <div class="bo-seg" role="radiogroup" aria-label="Zaman aralığı">
           <button v-for="r in RANGES" :key="r.value" type="button" role="radio" class="bo-seg__opt" :aria-checked="range === r.value" @click="range = r.value">{{ r.label }}</button>
         </div>
-        <EkButton tone="secondary" icon="mdi-refresh" icon-only aria-label="Yenile" :loading="loading" @click="loadAll" />
+        <EkButton tone="secondary" icon="mdi-refresh" icon-only aria-label="Yenile" :loading="loading" data-page-refresh @click="loadAll" />
       </template>
     </BoPageHeader>
 

@@ -2,7 +2,8 @@
   <div class="bo-shell">
     <a class="bo-skip" href="#bo-main">İçeriğe geç</a>
     <TopBar class="bo-shell__top" :menu-open="drawerOpen" :compact="mobile" @toggle-menu="drawerOpen = !drawerOpen" @logout="logout" @open-palette="paletteOpen = true" />
-    <CommandPalette v-model="paletteOpen" @logout="logout" />
+    <CommandPalette v-model="paletteOpen" @logout="logout" @shortcuts="helpOpen = true" />
+    <ShortcutsDialog v-model="helpOpen" />
     <v-navigation-drawer
       v-model="drawerOpen"
       :permanent="!mobile"
@@ -36,6 +37,9 @@ import { useDisplay } from 'vuetify'
 import { EkKbd, EkSidebarNav, type EkSideItem, type EkSideSection } from '@entegrasyonik/ui/components'
 import TopBar from '@bo/components/TopBar.vue'
 import CommandPalette from '@bo/components/shell/CommandPalette.vue'
+import ShortcutsDialog from '@bo/components/shell/ShortcutsDialog.vue'
+import { clickPageRefresh, createHotkeyHandler } from '@bo/navigation/hotkeys'
+import { loadRecents, pushRecent } from '@bo/navigation/recents'
 import OtopilotDock from '@bo/chat/OtopilotDock.vue'
 import { otopilot } from '@bo/chat/otopilot'
 import { session } from '@bo/auth/session'
@@ -49,7 +53,28 @@ const { smAndDown } = useDisplay()
 const mobile = computed(() => smAndDown.value)
 const drawerOpen = ref(!mobile.value)
 const paletteOpen = ref(false)
+const helpOpen = ref(false)
 watch(mobile, (m) => (drawerOpen.value = !m))
+
+// BO-ELEV E2: g + harf, ?, Alt+R (navigation/hotkeys.ts). Açık diyalog/palet varken beklemede.
+const onHotkey = createHotkeyHandler({
+  go: (path) => router.push(path),
+  help: () => (helpOpen.value = true),
+  refresh: () => clickPageRefresh(),
+  blocked: () => paletteOpen.value || helpOpen.value || !!document.querySelector('.v-dialog.v-overlay--active'),
+})
+
+// Son açılanlar (palet): ekran anahtarı ve müşteri numarası; yönetici başına ayrı.
+watch(() => session.state.user?.sub, (sub) => loadRecents(sub), { immediate: true })
+watch(
+  () => route.fullPath,
+  () => {
+    const tid = Number(route.params.tid)
+    if (route.name === 'tenant' && Number.isInteger(tid)) pushRecent({ kind: 'tenant', tid })
+    else if (typeof route.meta.screen === 'string' && route.meta.screen) pushRecent({ kind: 'screen', key: route.meta.screen })
+  },
+  { immediate: true },
+)
 
 // Mobil çekmece Esc ile kapanır; odak menü düğmesine döner.
 function onEsc(e: KeyboardEvent) {
@@ -67,11 +92,13 @@ function onChatKey(e: KeyboardEvent) {
 onMounted(() => {
   window.addEventListener('keydown', onEsc)
   window.addEventListener('keydown', onChatKey)
+  window.addEventListener('keydown', onHotkey)
   otopilot.init()
 })
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', onEsc)
   window.removeEventListener('keydown', onChatKey)
+  window.removeEventListener('keydown', onHotkey)
 })
 
 const leaf = (s: BoScreen, label = s.label): EkSideItem => {

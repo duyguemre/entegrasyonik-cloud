@@ -48,6 +48,8 @@ export interface BoScreen {
   path: string
   /** Komut paleti için ek arama sözcükleri. */
   keywords?: string[]
+  /** `g` + bu harf ile ekrana gidilir (BO-ELEV E2; tekil — `HOTKEYS` testi korur). Planlı ekrana verilmez. */
+  hotkey?: string
   view?: () => Promise<unknown>
   /** Yalnız `planned`: yakında durumunda gösterilen kapsam. */
   plan?: { items: string[]; endpoints: string }
@@ -91,6 +93,7 @@ const planned = (s: PlannedInput): BoScreen => ({ ...s, status: 'planned' })
 export const SCREENS: BoScreen[] = [
   {
     key: 'overview',
+    hotkey: 'o',
     label: 'Genel bakış',
     lede: 'Platformun anlık sağlığı: bağımlılıklar, istek sağlığı, kuyruklar ve dikkat isteyen sorunlar.',
     icon: 'mdi-view-dashboard-outline',
@@ -104,6 +107,7 @@ export const SCREENS: BoScreen[] = [
   // Otopilot (K21, CHAT_UI_CONTRACT §7.2): tam sayfa sohbet; yan panel kabukta (chat/OtopilotDock). Salt okuma (v1).
   {
     key: 'otopilot',
+    hotkey: 'p',
     label: 'Otopilot',
     lede: 'Platform durumunu, kuyrukları ve logları doğal dille sorun. Yalnız okur; işlem önermez ve sohbetler kaydedilmez.',
     icon: 'mdi-creation-outline',
@@ -117,6 +121,7 @@ export const SCREENS: BoScreen[] = [
   // ---------------------------------------------------------------- Müşteri
   {
     key: 'tenants',
+    hotkey: 'm',
     label: 'Müşteri listesi',
     lede: 'Mağaza hesapları ve bağlı kanallar. İş verisi (ürün, sipariş, kişisel veri) burada gösterilmez.',
     icon: 'mdi-storefront-outline',
@@ -155,6 +160,7 @@ export const SCREENS: BoScreen[] = [
   }),
   {
     key: 'subscriptions',
+    hotkey: 'a',
     label: 'Abonelikler',
     lede: 'Planlar, abonelik geçmişi ve gelir metrikleri.',
     icon: 'mdi-card-account-details-outline',
@@ -168,6 +174,7 @@ export const SCREENS: BoScreen[] = [
   // ---------------------------------------------------------------- Platform
   {
     key: 'engine',
+    hotkey: 'k',
     label: 'Motor ve kuyruklar',
     lede: 'Sipariş kuyruğu, başarısız işler, takılı kiralar ve zamanlayıcı koşuları.',
     icon: 'mdi-cog-transfer-outline',
@@ -179,6 +186,7 @@ export const SCREENS: BoScreen[] = [
   },
   {
     key: 'integrations',
+    hotkey: 'e',
     label: 'Entegrasyonlar',
     lede: 'Platform geneli API sağlığı, pod bazında dayanıklılık (devre kesici, hız bütçesi, alım) ve ayar kataloğu ile etkin değerler.',
     icon: 'mdi-transit-connection-variant',
@@ -190,6 +198,7 @@ export const SCREENS: BoScreen[] = [
   },
   {
     key: 'infra',
+    hotkey: 'i',
     label: 'Redis ve MongoDB',
     lede: 'Salt okuma altyapı durumu. Anahtar adı, değer ve belge içeriği asla gösterilmez.',
     icon: 'mdi-database-outline',
@@ -214,6 +223,7 @@ export const SCREENS: BoScreen[] = [
   // ---------------------------------------------------------------- Gözlem
   {
     key: 'logs',
+    hotkey: 'l',
     label: 'Log kontrol merkezi',
     lede: 'Olaylar kategoriye ve parmak izine göre gruplu: önce “ne bozuk”, sonra “hangi istekte”.',
     icon: 'mdi-pulse',
@@ -225,6 +235,7 @@ export const SCREENS: BoScreen[] = [
   },
   {
     key: 'audit',
+    hotkey: 'd',
     label: 'Denetim kayıtları',
     lede: 'Kim, ne zaman, neyi, hangi gerekçeyle değiştirdi. Kayıtlar değiştirilemez; 365 gün saklanır.',
     icon: 'mdi-shield-search',
@@ -238,6 +249,7 @@ export const SCREENS: BoScreen[] = [
   // ---------------------------------------------------------------- Yönetişim
   {
     key: 'admins',
+    hotkey: 'y',
     label: 'Yöneticiler',
     lede: 'Platform yöneticileri, davetler ve iki adımlı doğrulama; her değişiklik gerekçe ve kimlik doğrulaması ister.',
     icon: 'mdi-account-key-outline',
@@ -249,6 +261,7 @@ export const SCREENS: BoScreen[] = [
   },
   {
     key: 'flags',
+    hotkey: 's',
     label: 'Platform ayarları',
     lede: 'Bakım modu, destek ve duyuru ayarları, özellik bayrakları ve salt okunur ortam bilgisi; taslak, gerekçeli yayın ve geri alma.',
     icon: 'mdi-flag-outline',
@@ -273,6 +286,7 @@ export const SCREENS: BoScreen[] = [
   // ---------------------------------------------------------------- Bildirimler ve duyurular (ADR-0029 NB7/NB8)
   {
     key: 'announcements',
+    hotkey: 'b',
     label: 'Duyurular',
     lede: 'Müşterilere bant, uygulama içi bildirim ve e-postayla giden hedefli ve zamanlı duyurular.',
     icon: 'mdi-bullhorn-outline',
@@ -284,6 +298,7 @@ export const SCREENS: BoScreen[] = [
   },
   {
     key: 'deliveries',
+    hotkey: 't',
     label: 'Teslim günlüğü',
     lede: 'E-posta teslimlerinin durumu, başarısızlıklar ve elle yeniden deneme ya da atma. Adres ve ileti metni gösterilmez.',
     icon: 'mdi-email-fast-outline',
@@ -317,6 +332,7 @@ export const SCREENS: BoScreen[] = [
   },
   {
     key: 'alerts',
+    hotkey: 'u',
     label: 'Platform uyarıları',
     lede: 'Hata oranı, kimlik hatası, kuyruk birikimi ve teslim sorunları için tetiklenen uyarılar; süreli susturma.',
     icon: 'mdi-alarm-light-outline',
@@ -337,6 +353,9 @@ export const DETAIL_ROUTES: BoDetailRoute[] = [
 ]
 
 export const DEFAULT_PATH = '/genel-bakis'
+
+/** `g` dizileri: harf → ekran (yalnız hazır/taslak ekranlar). Kısayol yardımı ve palet ipuçları buradan okunur. */
+export const HOTKEYS: Array<{ key: string; screen: BoScreen }> = SCREENS.filter((s) => s.hotkey && s.status !== 'planned').map((s) => ({ key: s.hotkey!, screen: s }))
 
 export function groupOf(screen: BoScreen): BoGroup {
   return GROUPS.find((g) => g.key === screen.group)!
