@@ -50,11 +50,13 @@ test.describe('P1 — Dashboard', () => {
     await installApiMocks(page)
     await gotoAuthed(page)
 
-    const pending = card(page, 'Bekleyen aksiyonlar')
-    await expect(pending.locator('[data-pending="shipping"]')).toContainText('2')
-    await expect(pending.locator('[data-pending="invoice"]')).toContainText('1')
-    await expect(pending.locator('[data-pending="claim"]')).toContainText('Bekleyen yok')
-    await expect(pending).toContainText('3 kayıt işlem bekliyor')
+    // FR3-16: "Bugün sırada" — kritik (aşırı satış) önce, sonra sipariş akışı; sıfır olanlar "Bekleyen yok" satırında.
+    const next = page.locator('.dashboard .dna')
+    await expect(next.locator('.dna-hero')).toHaveAttribute('data-next-action', 'oversold')
+    await expect(next.locator('.dna-hero')).toContainText('2 sipariş kaleminde aşırı satış')
+    await expect(next.locator('[data-next-action="shipping"]')).toContainText('2 sipariş kargoya verilmeyi bekliyor')
+    await expect(next.locator('[data-next-action="invoice"]')).toContainText('1 siparişin faturası kesilmedi')
+    await expect(next.locator('.dna__foot')).toContainText('İade')
 
     const status = card(page, 'Sipariş durumları')
     await expect(status.getByRole('button', { name: /Teslim Edildi: 3 sipariş/ })).toBeVisible()
@@ -108,7 +110,7 @@ test.describe('P1 — Dashboard', () => {
     await expect(page.getByText('Henüz sipariş yok')).toBeVisible()
     await expect(page.getByText('Dikkat gerektiren sipariş yok')).toBeVisible()
     await expect(page.getByText('Henüz aktarım işlemi yok')).toBeVisible()
-    await expect(card(page, 'Bekleyen aksiyonlar')).toContainText('Şu an bekleyen iş yok')
+    await expect(page.locator('.dashboard .dna__foot')).toContainText('Kargo · Fatura · İade · Müşteri sorusu')
     await expect(kpi(page, 'today-count')).not.toContainText('%')
     await expect(page.locator('body')).not.toContainText('NaN')
   })
@@ -131,7 +133,7 @@ test.describe('P1 — Dashboard', () => {
     await expect(page.locator('.dashboard')).not.toContainText('Error')
     await expect(page.locator('.dashboard')).not.toContainText('sentetik')
 
-    await page.locator('.dashboard .dash-section').getByRole('button', { name: 'Tekrar dene' }).click()
+    await page.locator('.dashboard .dash-section').first().getByRole('button', { name: 'Tekrar dene' }).click()
     await expect(kpi(page, 'today-count')).toContainText('2')
   })
 
@@ -159,15 +161,15 @@ test.describe('P1 — Dashboard', () => {
     await expect(kpi(page, 'today-count')).toContainText('2')
     await expect(page.getByRole('button', { name: 'Sipariş listesini aç' })).toHaveCount(0)
     await expect(page.getByRole('button', { name: 'Onaylı siparişleri aç' })).toHaveCount(0)
-    await expect(card(page, 'Bekleyen aksiyonlar').locator('button[data-pending="shipping"]')).toHaveCount(0)
-    await expect(card(page, 'Bekleyen aksiyonlar').locator('button[data-pending="message"]')).toHaveCount(1)
+    await expect(page.locator('.dashboard .dna [data-next-action="shipping"]')).toHaveCount(1)
+    await expect(page.locator('.dashboard .dna button[data-next-action="shipping"]')).toHaveCount(0)
   })
 
   test('etkileşim: kart oku ve satırlar ilgili ekranı sekmede açar', async ({ page }) => {
     await installApiMocks(page)
     await gotoAuthed(page)
 
-    await card(page, 'Bekleyen aksiyonlar').locator('[data-pending="shipping"]').click()
+    await page.locator('.dashboard .dna button[data-next-action="shipping"]').click()
     await expectScreenOpen(page, '.orderListView')
 
     // Kabuğun sekme şeridine bağımlı olmamak için dashboard'a yeni oturumla dönülür.

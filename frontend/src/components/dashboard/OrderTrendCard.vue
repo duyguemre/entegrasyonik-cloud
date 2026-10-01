@@ -8,7 +8,7 @@
     title="Son 7 gün"
     subtitle="Günlük sipariş adedi ve ciro"
     icon="mdi-chart-bar"
-    :heading-level="2"
+    :heading-level="3"
     :to-label="canOpen('orderList') ? 'Sipariş listesini aç' : undefined"
     class="dash-trend"
     @open="open('orderList')"

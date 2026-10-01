@@ -8,7 +8,7 @@
     :subtitle="subtitle"
     icon="mdi-history"
     icon-tone="info"
-    :heading-level="2"
+    :heading-level="3"
     :to-label="canOpen('logList') ? 'İşlem günlüğünü aç' : undefined"
     flush
     class="dash-jobs"

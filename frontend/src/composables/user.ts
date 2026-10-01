@@ -233,6 +233,9 @@ export default function useUser() {
     return resp
   }
 
+  /** FR3-16: ana sayfa selamlaması için kullanıcının adı (userContext.name); yoksa undefined. */
+  const getFirstName = computed<string | undefined>(() => userContext.value?.name || undefined)
+
   const getUsername = computed(() => {
     if (userContext.value)
       return userContext.value.username
@@ -301,6 +304,7 @@ export default function useUser() {
     confirmPasswordReset,
     isAuthenticated,
     getUsername,
+    getFirstName,
     getSessionScope,
     getProductStatistics,
     retrieveProductStatistics

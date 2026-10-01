@@ -8,7 +8,7 @@
     title="Sipariş durumları"
     subtitle="Tüm siparişlerin iç durum dağılımı"
     icon="mdi-chart-donut"
-    :heading-level="2"
+    :heading-level="3"
     :to-label="linkable ? 'Sipariş listesini aç' : undefined"
     class="dash-status"
     @open="open('orderList')"
