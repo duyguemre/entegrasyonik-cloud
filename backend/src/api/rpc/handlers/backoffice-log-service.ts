@@ -1,5 +1,5 @@
 import { IService } from '@interfaces/index'
-import { BaseApi } from '../../BaseApi'
+import { BaseApi } from '../BaseApi'
 import { getIssueGroups, getIssueTrend, getTrace, getVolumeByCategory, listLogs } from '@platform/runtime/logs'
 import { asValidation, auditSensitiveRead, dateOf, truncateLogEntry } from './backoffice-support'
 

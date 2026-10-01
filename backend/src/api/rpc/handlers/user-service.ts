@@ -1,4 +1,4 @@
-import { BaseApi } from '../../BaseApi'
+import { BaseApi } from '../BaseApi'
 import { ObjectId } from 'mongodb'
 import Security, { ApplicationError } from '@platform/core/security/Security'
 import { IService } from '@interfaces/index'

@@ -1,6 +1,6 @@
 import { IService } from '@interfaces/index'
-import { BaseApi } from '../../BaseApi'
-import type { SessionResult } from '../../sessionResult'
+import { BaseApi } from '../BaseApi'
+import type { SessionResult } from '../dto/sessionResult'
 import { AccountLifecycleService, GENERIC_RESET_MESSAGE, runInBackground, defaultMailSender } from '@operations/account/AccountLifecycleService'
 import { InvitationService } from '@operations/users/invitations'
 import { DatabaseManagerInstance } from '@database/DatabaseManager'

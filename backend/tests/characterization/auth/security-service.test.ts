@@ -326,9 +326,9 @@ describe('Uçtan uca (ApiManager + RunOperation + SecurityService + mock DB): lo
   function loadApp() {
     let app: ReturnType<typeof makeFakeApp>;
     jest.isolateModules(() => {
-      jest.dontMock('../../../src/api/RunOperation');
-      jest.doMock('../../../src/api/index', () => ({ __esModule: true, default: { SecurityService } }));
-      const { configureApis } = require('../../../src/api/ApiManager');
+      jest.dontMock('../../../src/api/rpc/RunOperation');
+      jest.doMock('../../../src/api/rpc/index', () => ({ __esModule: true, default: { SecurityService } }));
+      const { configureApis } = require('../../../src/api/rpc/ApiManager');
       app = makeFakeApp();
       configureApis(app, '/api');
     });
@@ -459,9 +459,9 @@ describe('Audit log (ADR-0001 Karar 11): login/selectStore olayları (best-effor
   function loadApp(sink: (r: any) => Promise<void> = async (r: any) => { records.push(r); }) {
     let app: ReturnType<typeof makeFakeApp>;
     jest.isolateModules(() => {
-      jest.dontMock('../../../src/api/RunOperation');
-      jest.doMock('../../../src/api/index', () => ({ __esModule: true, default: { SecurityService } }));
-      const { configureApis } = require('../../../src/api/ApiManager');
+      jest.dontMock('../../../src/api/rpc/RunOperation');
+      jest.doMock('../../../src/api/rpc/index', () => ({ __esModule: true, default: { SecurityService } }));
+      const { configureApis } = require('../../../src/api/rpc/ApiManager');
       // isolateModules ApiManager'a AYRI bir AuditLogger örneği verir; ikisine de aynı sink bağlanır
       require('../../../src/services/audit/AuditLogger').AuditLogger.setSink(sink);
       app = makeFakeApp();

@@ -1,5 +1,5 @@
 import { IService } from '@interfaces/index'
-import { BaseApi } from '../../BaseApi'
+import { BaseApi } from '../BaseApi'
 import { listViews, saveView, deleteView } from '../../../operations/backoffice/viewsAdmin'
 
 /**

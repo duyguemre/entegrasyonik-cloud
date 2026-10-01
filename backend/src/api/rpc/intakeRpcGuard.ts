@@ -4,8 +4,8 @@
 // Durum: kod girdiden (integrationCode/selectedIntegrations), yoksa [X6-c] kayıt kimliğinden (yalnız bir entegrasyon kısıtlıyken tek sorgu) çözülür; çözülemezse yalnız global _engine.
 //  - `off`   : okuma dahil tüm dış çağrılar 503 INTEGRATION_PAUSED.
 //  - `drain` : `effect !== 'read'` (yeni dış etkili yazma) reddedilir; okumalar geçer.
-import { CAPABILITY_BY_RPC } from '../capabilities';
-import type { Domain } from '../capabilities/types';
+import { CAPABILITY_BY_RPC } from '../../capabilities';
+import type { Domain } from '../../capabilities/types';
 import { ApplicationError } from '@platform/core/errors/ApplicationError';
 import { effectiveIntake, recordIntakeSkip } from '@integration/config/intakeGate';
 import { listNonOpenIntakeTargets, type IntakeValue } from '@integration/config/platformOverrideStore';

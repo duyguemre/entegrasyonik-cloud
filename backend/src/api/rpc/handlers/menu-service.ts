@@ -1,5 +1,5 @@
 import { IService } from '@interfaces/index'
-import { BaseApi } from '../../BaseApi'
+import { BaseApi } from '../BaseApi'
 export default class MenuService extends BaseApi implements IService {
 
     async get(): Promise<any> {

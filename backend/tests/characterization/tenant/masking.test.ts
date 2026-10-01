@@ -3,8 +3,8 @@ import { ClientSchema } from '../../../src/database/application/models/Client';
 import { UserSchema } from '../../../src/database/application/models/User';
 import { isSecretField, maskSettings, maskIntegrationItem, maskClientIntegrationsDoc, resolveSecretsForWrite, SENSITIVE_MASK } from '../../../src/platform/core/security/integrationSecrets';
 import { sanitizeResponse } from '../../../src/platform/core/security/responseSanitizer';
-import { toClientDto, CLIENT_SORT_FIELDS } from '../../../src/api/clientDto';
-import { toProfileDto } from '../../../src/api/profileDto';
+import { toClientDto, CLIENT_SORT_FIELDS } from '../../../src/api/rpc/dto/clientDto';
+import { toProfileDto } from '../../../src/api/rpc/dto/profileDto';
 import { captureLogs, LogCapture } from '../../helpers/logCapture';
 import { makeFakeApp, makeReq, makeRes } from '../auth/_helpers';
 
@@ -168,9 +168,9 @@ describe('ApiManager çıkışı: yanıt temizleyici bağlı (jenerik POST/GET)'
   function loadApp(runImpl: (...a: any[]) => any) {
     let app: ReturnType<typeof makeFakeApp>;
     jest.isolateModules(() => {
-      jest.doMock('../../../src/api/RunOperation', () => ({ __esModule: true, default: jest.fn(runImpl as any) }));
+      jest.doMock('../../../src/api/rpc/RunOperation', () => ({ __esModule: true, default: jest.fn(runImpl as any) }));
       jest.doMock('@database/DatabaseManager', () => ({ DatabaseManagerInstance: {} }));
-      const { configureApis } = require('../../../src/api/ApiManager');
+      const { configureApis } = require('../../../src/api/rpc/ApiManager');
       app = makeFakeApp();
       configureApis(app, '/api');
     });

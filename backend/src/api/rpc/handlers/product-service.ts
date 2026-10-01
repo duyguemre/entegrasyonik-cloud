@@ -1,6 +1,6 @@
 import { IService } from '@interfaces/index'
 import { ImageOperations, storageService } from '@services/index'
-import { BaseApi } from '../../BaseApi'
+import { BaseApi } from '../BaseApi'
 import { ObjectId } from 'mongodb'
 import { ApplicationError } from '@platform/core/security/Security'
 import { containsRegex, normalizePagination } from '@utils/search'

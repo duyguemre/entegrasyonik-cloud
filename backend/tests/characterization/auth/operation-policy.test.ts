@@ -8,10 +8,11 @@ import ts from 'typescript';
 // Kimlik bilgisi yok; principal/userContext değerleri sahte, yalnızca test amaçlıdır.
 
 const SRC_API = path.resolve(__dirname, '../../../src/api');
+const SRC_RPC = path.join(SRC_API, 'rpc');
 const FE_SRC = path.resolve(__dirname, '../../../../frontend/src');
 
 // ---------------------------------------------------------------------------------------------------------------------
-// Yardımcı: backend servis kaydı (src/api/index.ts) ve servislerin genel (public) metotları — AST ile, import ETMEDEN
+// Yardımcı: backend servis kaydı (src/api/rpc/index.ts) ve servislerin genel (public) metotları — AST ile, import ETMEDEN
 // ---------------------------------------------------------------------------------------------------------------------
 function parse(file: string): ts.SourceFile {
   return ts.createSourceFile(file, fs.readFileSync(file, 'utf8'), ts.ScriptTarget.Latest, true);
@@ -19,7 +20,7 @@ function parse(file: string): ts.SourceFile {
 
 /** index.ts'teki `export default { ... }` nesnesinin (yorumsuz) servis adları -> servis dosyası. */
 function readServiceRegistry(): Record<string, string> {
-  const sf = parse(path.join(SRC_API, 'index.ts'));
+  const sf = parse(path.join(SRC_RPC, 'index.ts'));
   const importPaths: Record<string, string> = {};
   const registered: string[] = [];
   sf.forEachChild((n) => {
@@ -33,7 +34,7 @@ function readServiceRegistry(): Record<string, string> {
     }
   });
   const out: Record<string, string> = {};
-  for (const name of registered) out[name] = path.join(SRC_API, importPaths[name] + '.ts');
+  for (const name of registered) out[name] = path.join(SRC_RPC, importPaths[name] + '.ts');
   return out;
 }
 
@@ -174,7 +175,7 @@ const BACKEND_ONLY_NOT_YET_IN_FE = [
 // kendi kuralı: "FE'den silinirse kırılır").
 const FE_CALLS_WITHOUT_BACKEND = [
   'SecurityService/getCaptcha', // [WP-A5] backend'de KALDIRILDI (sahte captcha); FE çağrısı yalnız eski requireCaptcha dalında (artık tetiklenmez) — FE temizliği bulut görevi
-  'ECommerceService/retrieveProductsFromIntegration', // ECommerceService kayıtlı değil (api/index.ts'te yorum satırı)
+  'ECommerceService/retrieveProductsFromIntegration', // ECommerceService kayıtlı değil (api/rpc/index.ts'te yorum satırı)
   'IntegrationService/checkProductStatus', 'IntegrationService/processPlatformProduct', 'IntegrationService/retrieveProductsFromClientMarketplace',
   'ProductService/batchProcessUpdate', 'ProductService/batchProcessDelete', // yalnızca VariantService'te var
   'ClaimService/bulkDeleteClaims', 'CustomerService/bulkDeleteCustomers', 'CustomerService/deleteCustomer',
@@ -235,11 +236,11 @@ function fakeService(name: string, methods: string[]) {
 function loadRunWithRealPolicy(apis: Record<string, any>) {
   let mod: any;
   jest.isolateModules(() => {
-    jest.doMock('../../../src/api/index', () => ({ __esModule: true, default: apis }));
-    jest.doMock('../../../src/api/requestValidation', () => ({ validateRpcRequest: (_s: string, _o: string, b: unknown) => b })); // [ADR-0023] yetki testi: gövde şeması ayrı sınanır (tests/unit/api/requestValidation.test.ts)
-    mod = { run: require('../../../src/api/RunOperation').default, runImageApi: require('../../../src/api/RunOperation').runImageApi, policy: require('../../../src/api/operationPolicy') };
+    jest.doMock('../../../src/api/rpc/index', () => ({ __esModule: true, default: apis }));
+    jest.doMock('../../../src/api/rpc/requestValidation', () => ({ validateRpcRequest: (_s: string, _o: string, b: unknown) => b })); // [ADR-0023] yetki testi: gövde şeması ayrı sınanır (tests/unit/api/requestValidation.test.ts)
+    mod = { run: require('../../../src/api/rpc/RunOperation').default, runImageApi: require('../../../src/api/rpc/RunOperation').runImageApi, policy: require('../../../src/api/rpc/operationPolicy') };
   });
-  return mod as { run: any; runImageApi: any; policy: typeof import('../../../src/api/operationPolicy') };
+  return mod as { run: any; runImageApi: any; policy: typeof import('../../../src/api/rpc/operationPolicy') };
 }
 
 // Aktörler (userContext = sunucuda DB'den kurulan bağlam; principal = doğrulanmış token içeriği)
@@ -260,7 +261,7 @@ beforeEach(() => { calls.length = 0; });
 
 // =====================================================================================================================
 describe('resolveTier / isAllowed (kademe modeli)', () => {
-  const { resolveTier, isAllowed } = require('../../../src/api/operationPolicy') as typeof import('../../../src/api/operationPolicy');
+  const { resolveTier, isAllowed } = require('../../../src/api/rpc/operationPolicy') as typeof import('../../../src/api/rpc/operationPolicy');
   const tierOf = (a: keyof typeof ACTORS) => resolveTier(ACTORS[a].uc, ACTORS[a].pr);
 
   it('tenant kullanıcısı kademeleri: OPERATOR/rolsüz/bilinmeyen rol = member; ROLE_ADMIN ve ROLE_OWNER = admin; owner:true = owner', () => {
@@ -328,7 +329,7 @@ describe('resolveTier / isAllowed (kademe modeli)', () => {
 
 // =====================================================================================================================
 describe('getRequiredTier: yalnızca kendi (own) kayıtlar; varsayılan ret', () => {
-  const { getRequiredTier } = require('../../../src/api/operationPolicy') as typeof import('../../../src/api/operationPolicy');
+  const { getRequiredTier } = require('../../../src/api/rpc/operationPolicy') as typeof import('../../../src/api/rpc/operationPolicy');
 
   it('kayıtlı operasyon kademesini döner; kayıtsız/prototip/_önekli/tip hatalı girdi undefined (= ret)', () => {
     expect(getRequiredTier('MenuService', 'retrieveFavorites')).toBe('member');
@@ -344,7 +345,7 @@ describe('getRequiredTier: yalnızca kendi (own) kayıtlar; varsayılan ret', ()
   });
 
   it('bozulmuş kayıt değeri (geçersiz kademe) da reddedilir', () => {
-    const mod: any = require('../../../src/api/operationPolicy');
+    const mod: any = require('../../../src/api/rpc/operationPolicy');
     mod.OPERATION_POLICY.__TmpBroken = { x: 'root' };
     try { expect(mod.getRequiredTier('__TmpBroken', 'x')).toBeUndefined(); } finally { delete mod.OPERATION_POLICY.__TmpBroken; }
   });
@@ -352,16 +353,16 @@ describe('getRequiredTier: yalnızca kendi (own) kayıtlar; varsayılan ret', ()
 
 // =====================================================================================================================
 describe('Kayıt bütünlüğü (ölü kayıt yok)', () => {
-  const { OPERATION_POLICY, IMAGE_API_TARGETS, IMAGE_API_ROUTES_WITHOUT_BACKEND, PSEUDO_SERVICES } = require('../../../src/api/operationPolicy') as typeof import('../../../src/api/operationPolicy');
+  const { OPERATION_POLICY, IMAGE_API_TARGETS, IMAGE_API_ROUTES_WITHOUT_BACKEND, PSEUDO_SERVICES } = require('../../../src/api/rpc/operationPolicy') as typeof import('../../../src/api/rpc/operationPolicy');
 
-  it('servis kaydı (api/index.ts) AST ile okunabildi ve beklenen servisleri içerir', () => {
+  it('servis kaydı (api/rpc/index.ts) AST ile okunabildi ve beklenen servisleri içerir', () => {
     expect(Object.keys(SERVICE_FILES).length).toBeGreaterThanOrEqual(24);
     expect(SERVICE_FILES.AdminService).toBeDefined();
     expect(SERVICE_METHODS.AdminService).toContain('getClients');
     expect(SERVICE_METHODS.SecurityService).toEqual(expect.arrayContaining(['login', 'register', 'selectStore', 'logout']));
   });
 
-  it('kayıttaki her (servis, operasyon) çifti api/index.ts\'te kayıtlı bir servisin GERÇEK bir genel metoduna karşılık gelir', () => {
+  it('kayıttaki her (servis, operasyon) çifti api/rpc/index.ts\'te kayıtlı bir servisin GERÇEK bir genel metoduna karşılık gelir', () => {
     const dead: string[] = [];
     for (const [service, ops] of Object.entries(OPERATION_POLICY)) {
       if (PSEUDO_SERVICES.includes(service)) continue;
@@ -403,7 +404,7 @@ describe('Kayıt bütünlüğü (ölü kayıt yok)', () => {
 
 // =====================================================================================================================
 describeFe('FE envanteri kayıtla uyumlu (statik tarama: frontend/src)', () => {
-  const { OPERATION_POLICY, IMAGE_API_TARGETS } = require('../../../src/api/operationPolicy') as typeof import('../../../src/api/operationPolicy');
+  const { OPERATION_POLICY, IMAGE_API_TARGETS } = require('../../../src/api/rpc/operationPolicy') as typeof import('../../../src/api/rpc/operationPolicy');
   const inv = feAvailable ? scanFrontend() : { ops: new Set<string>(), dynamicFiles: new Set<string>() };
   const registered = new Set(Object.entries(OPERATION_POLICY).flatMap(([s, ops]) => Object.keys(ops).map((o) => `${s}/${o}`)));
 
@@ -530,7 +531,7 @@ describe('RunOperation + gerçek OPERATION_POLICY: kademe matrisi', () => {
 
 // =====================================================================================================================
 describe('AdminService: TAMAMI platformAdmin (sıradan owner bile 403)', () => {
-  const { OPERATION_POLICY } = require('../../../src/api/operationPolicy') as typeof import('../../../src/api/operationPolicy');
+  const { OPERATION_POLICY } = require('../../../src/api/rpc/operationPolicy') as typeof import('../../../src/api/rpc/operationPolicy');
 
   it('AdminService\'in TÜM genel metotları kayıtta ve platformAdmin; kayıtta fazladan operasyon yok', () => {
     const methods = [...SERVICE_METHODS.AdminService].sort();
@@ -603,8 +604,8 @@ describe('Varsayılan ret: init / yardımcı / prototip / _önekli / bilinmeyen 
   });
 
   it('ApiWrapper doğrudan: yaşam döngüsü/iç/prototip adları örneklemeden 403 (ikinci savunma hattı)', async () => {
-    const Wrapper = require('../../../src/api/ApiWrapper').default;
-    const { isCallableOperationName } = require('../../../src/api/ApiWrapper');
+    const Wrapper = require('../../../src/api/rpc/ApiWrapper').default;
+    const { isCallableOperationName } = require('../../../src/api/rpc/ApiWrapper');
     const w = new Wrapper(fakeService('X', ['ok', '_p']));
     for (const op of ['init', 'constructor', 'toString', 'hasOwnProperty', '__proto__', '_p', '', undefined, 5]) {
       await expect(w.process(1, op, {})).rejects.toMatchObject({ statusCode: 403 });
@@ -664,7 +665,7 @@ describe('Açık rotalar (login/register/logout) politika kaydına takılmaz', (
   const OPEN = ['login', 'register', 'logout'];
 
   it('OPEN_OPERATIONS ile authenticate.OPEN_ROUTES aynı kaynaktan: 3 SecurityService + 3 AccountService POST açık operasyon + GET checkAuthentication', () => {
-    const { OPEN_OPERATIONS } = require('../../../src/api/operationPolicy');
+    const { OPEN_OPERATIONS } = require('../../../src/api/rpc/operationPolicy');
     jest.isolateModules(() => {
       jest.doMock('@database/DatabaseManager', () => ({ DatabaseManagerInstance: {} }));
       const { OPEN_ROUTES } = require('../../../src/api/authenticate');
@@ -676,7 +677,7 @@ describe('Açık rotalar (login/register/logout) politika kaydına takılmaz', (
   });
 
   it('kayıtta yok (kayıt yalnızca kimlikli operasyonlar) ama RunOperation kimliksiz (userContext/principal YOK) çağırır', async () => {
-    const { OPERATION_POLICY } = require('../../../src/api/operationPolicy');
+    const { OPERATION_POLICY } = require('../../../src/api/rpc/operationPolicy');
     for (const o of OPEN) expect(OPERATION_POLICY.SecurityService[o]).toBeUndefined();
     const { run } = loadRunWithRealPolicy({ SecurityService: fakeService('SecurityService', [...OPEN, 'selectStore', 'get']) });
     for (const o of OPEN) expect((await run(undefined, 'SecurityService', o, {})).ok).toBe('SecurityService.' + o);

@@ -1,16 +1,16 @@
 import { IService } from '@interfaces/index'
-import { BaseApi } from '../../BaseApi'
+import { BaseApi } from '../BaseApi'
 import { DatabaseManagerInstance } from "@database/DatabaseManager";
-import { buildCacheDump } from "../../cacheDump";
+import { buildCacheDump } from "../cacheDump";
 import { RedisService } from "@services/redis/RedisService";
 import { ApplicationError } from '@platform/core/security/Security';
 import { TenantProvisioningService } from '@operations/tenant/TenantProvisioningService';
-import { createTenantLifecycleService } from '../../tenantLifecycleFactory';
-import { toClientDto, CLIENT_SAFE_PROJECTION, CLIENT_SORT_FIELDS } from '../../clientDto';
+import { createTenantLifecycleService } from '../tenantLifecycleFactory';
+import { toClientDto, CLIENT_SAFE_PROJECTION, CLIENT_SORT_FIELDS } from '../dto/clientDto';
 import { maskIntegrationItem } from '@platform/core/security/integrationSecrets';
 import { nextSequence } from '@utils/sequence';
 import { containsRegex, clampPage, clampLimit, pickSortField } from '@utils/search';
-import { TICKET_SORT_FIELDS } from '../../listSortFields';
+import { TICKET_SORT_FIELDS } from '../listSortFields';
 import { getTenantRegistry } from '@database/TenantRegistry';
 import { getIdentityCache } from '@platform/core/security/identityCache';
 

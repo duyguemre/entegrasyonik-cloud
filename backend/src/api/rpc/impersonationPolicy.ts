@@ -5,7 +5,7 @@
 // `integrations:manage` OKUMALARI (sağlık vb.) destek için açıktır; sırlar zaten hiçbir yanıtta dönmez ('sensitive' maskesi, ADR-0012).
 // Yetenek kaydında görünmeyen, hedef kullanıcının kimlik bilgisini değiştiren hesap RPC'leri AÇIK küçük listededir (CREDENTIAL_RPCS);
 // `impersonation-policy.test.ts` listedeki her girdinin kayıtta var olduğunu ve beklenen her yasağın türediğini kanıtlar (sürüklenme yakalanır).
-import { CAPABILITY_BY_RPC } from '../capabilities';
+import { CAPABILITY_BY_RPC } from '../../capabilities';
 
 /** Tenant sahipliği/ödeme/kullanıcı yönetimi izinleri: okuma dahil yasak (mevcut davranış, ADR-0028 Karar 9). */
 export const IMP_DENIED_PERMISSIONS: ReadonlySet<string> = new Set(['users:manage', 'billing:manage', 'tenant:export', 'tenant:delete']);

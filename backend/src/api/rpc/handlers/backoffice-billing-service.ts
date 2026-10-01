@@ -1,7 +1,7 @@
 import { config } from '@config'
 import { IService } from '@interfaces/index'
 import { Types } from 'mongoose'
-import { BaseApi } from '../../BaseApi'
+import { BaseApi } from '../BaseApi'
 import { ApplicationError } from '@platform/core/security/Security'
 import { getRequestId } from '@platform/core/context'
 import { getPaymentProvider } from '@services/billing/PaymentProviderFactory'

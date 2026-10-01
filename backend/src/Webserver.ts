@@ -6,7 +6,7 @@ import cors from 'cors';
 import compression from 'compression'
 import express, { Express, Request, Response } from 'express';
 
-import { configureApis } from '@api/ApiManager';
+import { configureApis } from '@api/rpc/ApiManager';
 import { configureAdminApi } from '@api/admin';
 import { configureImageServices } from '@api/ImageApiManager';
 import { configureExportDownloadRoutes } from '@api/ExportDownloadApiManager';

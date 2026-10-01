@@ -1,8 +1,8 @@
 import { IService, TICKET_STATUS, TICKET_TYPE, TICKET_PRIORITY } from '@interfaces/index'
-import { BaseApi } from '../../BaseApi'
+import { BaseApi } from '../BaseApi'
 import { nextSequence } from '@utils/sequence'
 import { containsRegex, normalizePagination, pickSortField } from '@utils/search'
-import { TICKET_SORT_FIELDS } from '../../listSortFields';
+import { TICKET_SORT_FIELDS } from '../listSortFields';
 
 export default class TicketService extends BaseApi implements IService {
 

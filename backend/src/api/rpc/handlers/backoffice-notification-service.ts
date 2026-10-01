@@ -1,5 +1,5 @@
 import { IService } from '@interfaces/index'
-import { BaseApi } from '../../BaseApi'
+import { BaseApi } from '../BaseApi'
 import { config } from '@config'
 import { NotificationOps, type BackofficeActor } from '@operations/notifications/backofficeOps'
 import { AnnouncementAdmin } from '@operations/notifications/announcementAdmin'

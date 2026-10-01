@@ -24,7 +24,7 @@ async function bootWebserver(): Promise<{ webserverClose: jest.Mock<any>; instan
       jest.doMock('compression', () => ({ __esModule: true, default: () => (() => undefined) }));
       jest.doMock('cors', () => ({ __esModule: true, default: () => (() => undefined) }));
       jest.doMock('body-parser', () => ({ __esModule: true, default: { json: () => (() => undefined), urlencoded: () => (() => undefined) } }));
-      jest.doMock('../../../src/api/ApiManager', () => ({ configureApis: () => undefined }));
+      jest.doMock('../../../src/api/rpc/ApiManager', () => ({ configureApis: () => undefined }));
       jest.doMock('../../../src/api/ImageApiManager', () => ({ configureImageServices: () => undefined }));
       jest.doMock('../../../src/api/WebhookApiManager', () => ({ configureWebhookRoutes: () => undefined })); // [ADR-0005 Karar 8] fakeApp'te app.post yok; ApiManager/ImageApiManager ile AYNI nedenle mock'lanır
       jest.doMock('../../../src/api/http/agentRoutes', () => ({ configureAgentRoutes: () => undefined, getAgentBroker: () => undefined })); // [ADR-0034 BR-1] app.delete/post; fakeApp'te yok -> AYNI nedenle mock
@@ -37,7 +37,7 @@ async function bootWebserver(): Promise<{ webserverClose: jest.Mock<any>; instan
       jest.doMock('../../../src/api/BillingWebhookApiManager', () => ({ configureBillingWebhookRoutes: () => undefined })); // [ADR-0008 §4] AYNI nedenle mock'lanır
       jest.doMock('../../../src/api/MockCheckoutApiManager', () => ({ configureMockCheckoutRoutes: () => undefined })); // [ADR-0014 S4a] AYNI nedenle mock'lanır
       jest.doMock('../../../src/api/authenticate', () => ({ createAuthenticateMiddleware: () => (() => undefined) }));
-      jest.doMock('../../../src/api/index', () => ({ __esModule: true, default: {} }));
+      jest.doMock('../../../src/api/rpc/index', () => ({ __esModule: true, default: {} }));
       const WebserverModule = require('../../../src/Webserver').default;
       instance = WebserverModule.getInstance();
       instance.init('all').then(resolve, reject);

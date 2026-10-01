@@ -4,9 +4,9 @@ import express from 'express';
 import type { Server } from 'http';
 import jwt from 'jsonwebtoken';
 
-jest.mock('../../../../src/api/RunOperation', () => ({ __esModule: true, default: jest.fn(async () => ({ ok: true })) }));
+jest.mock('../../../../src/api/rpc/RunOperation', () => ({ __esModule: true, default: jest.fn(async () => ({ ok: true })) }));
 
-import run from '../../../../src/api/RunOperation';
+import run from '../../../../src/api/rpc/RunOperation';
 import { createAdminRouter } from '../../../../src/api/admin/AdminApiManager';
 import { ADMIN_COOKIE_NAME, signAdminSession, verifyAdminToken } from '../../../../src/api/admin/adminSession';
 import { totpAt } from '../../../../src/api/admin/totp';

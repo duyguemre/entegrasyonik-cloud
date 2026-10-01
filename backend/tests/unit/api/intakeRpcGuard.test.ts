@@ -1,6 +1,6 @@
 // [ADR-0030 X6-b] RPC intake kapısı: davranış tablosu (on/drain/off × okuma/yazma) ve kapsam.
 import { describe, it, expect, beforeEach, afterAll, jest } from '@jest/globals';
-import { enforceIntakeForRpc, extractRecordIds, isIntakeGatedRpc, resolveIntegrationCodes } from '../../../src/api/intakeRpcGuard';
+import { enforceIntakeForRpc, extractRecordIds, isIntakeGatedRpc, resolveIntegrationCodes } from '../../../src/api/rpc/intakeRpcGuard';
 import { setTargetIntake } from '../../../src/integration/config/platformOverrideStore';
 import { ENGINE_TARGET } from '../../../src/integration/config/targets';
 import { CAPABILITIES, rpcBindingsOf } from '../../../src/capabilities';

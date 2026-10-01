@@ -1,6 +1,6 @@
 import { InvalidatesTenantCache } from '@utils/decorator/cache'
 import { IService } from '@interfaces/index'
-import { BaseApi } from '../../BaseApi'
+import { BaseApi } from '../BaseApi'
 import { ObjectId } from 'mongodb'
 import { deleteMappingsOfCategory } from '@operations/catalog/mapping/mappingCleanup'
 export default class CategoryService extends BaseApi implements IService {

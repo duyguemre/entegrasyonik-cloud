@@ -6,10 +6,10 @@ jest.mock('../../../../src/health/HealthCheck', () => ({ checkReadiness: jest.fn
 
 import { BACKOFFICE_ENGINE_RPC_INPUT } from '../../../../src/capabilities/rpc-input/backoffice-engine';
 import { CAPABILITY_BY_RPC } from '../../../../src/capabilities';
-import { getRequiredTier } from '../../../../src/api/operationPolicy';
+import { getRequiredTier } from '../../../../src/api/rpc/operationPolicy';
 import { requiresStepUp } from '../../../../src/api/admin/stepUp';
-import { isLiveReadonlyBlockedRpc } from '../../../../src/api/liveReadonlyRpcGuard';
-import services from '../../../../src/api';
+import { isLiveReadonlyBlockedRpc } from '../../../../src/api/rpc/liveReadonlyRpcGuard';
+import services from '../../../../src/api/rpc';
 import { FakeModel } from '../../../helpers/fakeEngineDb';
 
 const RPCS = Object.keys(BACKOFFICE_ENGINE_RPC_INPUT);

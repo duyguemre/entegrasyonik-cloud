@@ -17,10 +17,10 @@
 // `defineCapability({ ..., bindings: [{ rpc: 'Servis/operasyon' }] })` girdisi ile yapılır.
 // FE'ye yeni operasyon eklendiğinde ilgili yetenek/bağ unutulursa 403 ile hemen görünür
 // (tests/characterization/auth/operation-policy.test.ts FE envanterini tarar ve kırılır).
-import { CAPABILITIES, CAPABILITY_BY_RPC } from '../capabilities';
-import type { CapabilityPermission } from '../capabilities/permissions';
-import { derivePolicy } from '../capabilities/derive/policy';
-import type { Tier as CapabilityTier } from '../capabilities/types';
+import { CAPABILITIES, CAPABILITY_BY_RPC } from '../../capabilities';
+import type { CapabilityPermission } from '../../capabilities/permissions';
+import { derivePolicy } from '../../capabilities/derive/policy';
+import type { Tier as CapabilityTier } from '../../capabilities/types';
 import { resolveTier, TENANT_TIER_RANK, type TenantTier, type TierActor } from '@platform/core/authz/tier';
 
 export type Tier = CapabilityTier;

@@ -1,5 +1,5 @@
 import { IService } from '@interfaces/index'
-import { BaseApi } from '../../BaseApi'
+import { BaseApi } from '../BaseApi'
 import { ApplicationError } from '@platform/core/security/Security'
 import { AuditLogger } from '@services/audit/AuditLogger'
 import { FindingService, type IntegrationFindingRecord } from '@integration/compliance/FindingService'

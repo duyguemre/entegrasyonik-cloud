@@ -1,5 +1,5 @@
 import { IService } from '@interfaces/index'
-import { BaseApi } from '../../BaseApi'
+import { BaseApi } from '../BaseApi'
 import { ObjectId } from 'mongodb'
 import { containsRegex, normalizePagination, pickSortField } from '@utils/search'
 

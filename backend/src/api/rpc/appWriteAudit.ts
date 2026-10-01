@@ -7,7 +7,7 @@
 // Kimlik bilgisi/ayar alanlarında değer ASLA yazılmaz; yalnız değişen alan ADLARI (`changed`). Toplu işlemde yalnız sayı. Tam belge anlık görüntüsü YOK.
 // Yazım AuditLogger üzerinden best-effort/asenkrondur (isteği düşürmez). "Önce" değeri yalnız tabloda `load` tanımlı işlemlerde, tek dar
 // projeksiyonlu okumayla ve zaman aşımıyla alınır; hata olursa "önce" alanı atlanır, işlem etkilenmez.
-import { CAPABILITY_BY_RPC } from '../capabilities';
+import { CAPABILITY_BY_RPC } from '../../capabilities';
 import type { AuditEntry } from '@services/audit/AuditLogger';
 import { maskLogText } from '@platform/core/logger/redact';
 import { getRequestId } from '@platform/core/context';

@@ -1,5 +1,5 @@
 import { IService, OrderInternalStatusEnum, IPlatformResponse } from '@interfaces/index'
-import { BaseApi } from '../../BaseApi'
+import { BaseApi } from '../BaseApi'
 import IntegrationFactory from '@integration/modules/IntegrationFactory';
 import { ApplicationError } from '@platform/core/security/Security';
 

@@ -1,5 +1,5 @@
 import { IService } from '@interfaces/index'
-import { BaseApi } from '../../BaseApi'
+import { BaseApi } from '../BaseApi'
 import { getPaymentProvider } from '@services/billing/PaymentProviderFactory'
 import { EntitlementService } from '@services/billing/EntitlementService'
 import type { BillingInterval } from '@services/billing/PaymentProvider'

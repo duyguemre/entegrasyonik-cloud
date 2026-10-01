@@ -1,7 +1,7 @@
 // Backoffice B5/B6/B6b + B8a-d + B9: yetenek kaydi/sema/kademe, Redis/cache/resilience/yavas-sorgu mantigi, sizinti kurallari. DB/Redis YOK (sahte bagimliliklar).
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 import { BACKOFFICE_INFRA_RPC_INPUT } from '../../../../src/capabilities/rpc-input/backoffice-infra';
-import { getRequiredTier } from '../../../../src/api/operationPolicy';
+import { getRequiredTier } from '../../../../src/api/rpc/operationPolicy';
 import { requiresStepUp } from '../../../../src/api/admin/stepUp';
 import { CAPABILITY_BY_RPC } from '../../../../src/capabilities';
 import { getRedisStatus, familyOfRedisKey, parseInfo } from '../../../../src/operations/backoffice/redisStatus';

@@ -1,6 +1,6 @@
 import { IService } from '@interfaces/index'
 import os from 'os'
-import { BaseApi } from '../../BaseApi'
+import { BaseApi } from '../BaseApi'
 import { RedisService } from '@services/redis/RedisService'
 import { checkReadiness, type AppRole } from '@health/HealthCheck'
 import { listNonOpenIntakeTargets } from '@integration/config/platformOverrideStore'

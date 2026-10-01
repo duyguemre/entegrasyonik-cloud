@@ -17,7 +17,7 @@ import { ConnectionsService, type ConnectionsSession } from '../oauth/connection
 import { getOAuthRuntime } from '../oauth/routes';
 import { setMcpAccessReader } from '../oauth/tenantAccess';
 import { publicErrorExtras, sendHttpError } from './errorEnvelope';
-import type { Actor } from '../requestContext';
+import type { Actor } from '../rpc/requestContext';
 
 export const MCP_PATH = '/mcp';
 

@@ -3,7 +3,7 @@
 // iletiler zod'un değer içeren metinlerinden değil, `issue.code`'dan üretilen sabit Türkçe iletilerdendir; yalnız izin verilmeyen
 // alanların ADLARI (arındırılmış, sınırlı) yazılır.
 import type { ZodIssue } from 'zod';
-import { RPC_INPUT_BY_RPC } from '../capabilities';
+import { RPC_INPUT_BY_RPC } from '../../capabilities';
 import { ApplicationError } from '@platform/core/security/Security';
 
 export interface FieldIssue { path: string; message: string }

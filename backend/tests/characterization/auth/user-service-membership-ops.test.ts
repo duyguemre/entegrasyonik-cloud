@@ -18,7 +18,7 @@ jest.mock('@operations/users/ownership', () => ({ OwnershipService: jest.fn().mo
 
 import UserService from '../../../src/api/rpc/handlers/user-service';
 import AccountService from '../../../src/api/rpc/handlers/account-service';
-import { OPERATION_POLICY, OPEN_OPERATIONS } from '../../../src/api/operationPolicy';
+import { OPERATION_POLICY, OPEN_OPERATIONS } from '../../../src/api/rpc/operationPolicy';
 
 beforeEach(() => { calls.length = 0; });
 const OWNER = { userContext: { email: 'o@x.y', roleCode: 'ROLE_OWNER', owner: true, order: 4 }, principal: { sub: 'o1', tid: 4, ga: false, tv: 0, imp: false } };

@@ -1,5 +1,5 @@
 import { IService } from '@interfaces/index'
-import { BaseApi } from '../../BaseApi'
+import { BaseApi } from '../BaseApi'
 import { containsRegex, toSearchString } from '@utils/search'
 
 /** [GV-01] ReDoS/maliyet sınırı: sorgu ≤ 100 karakter, en çok 5 kelime (her kelime 4 koleksiyonda x çok alanda regex). */

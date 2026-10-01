@@ -10,7 +10,7 @@ import { resetCacheForTests } from '@utils/decorator/cache';
 import FinancialService from '@api/rpc/handlers/financial-service';
 import { CAPABILITY_BY_RPC } from '../../../src/capabilities';
 import { COMMERCE_RPC_INPUT } from '../../../src/capabilities/rpc-input/commerce';
-import { planAppWriteAudit, buildAppWriteEntry, WRITE_AUDIT_FIELDS } from '../../../src/api/appWriteAudit';
+import { planAppWriteAudit, buildAppWriteEntry, WRITE_AUDIT_FIELDS } from '../../../src/api/rpc/appWriteAudit';
 
 const lean = (v: any) => { const c: any = { limit: jest.fn(() => c), sort: jest.fn(() => c), lean: jest.fn(async () => v) }; return c; };
 const sale = { transactionType: 'SALE', commissionRate: 20, commissionAmount: 20, sellerRevenue: 80, meta: { barcode: 'BC-1' } };

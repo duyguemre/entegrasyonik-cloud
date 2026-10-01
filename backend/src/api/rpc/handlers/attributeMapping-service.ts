@@ -1,6 +1,6 @@
 import { InvalidatesTenantCache } from '@utils/decorator/cache'
 import { IService } from '@interfaces/index'
-import { BaseApi } from '../../BaseApi'
+import { BaseApi } from '../BaseApi'
 import { ObjectId } from 'mongodb'
 import stringSimilarity from 'string-similarity'
 import IntegrationFactory from '../../../integration/modules/IntegrationFactory'

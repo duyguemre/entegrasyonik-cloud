@@ -2,8 +2,8 @@ import { randomUUID } from 'crypto';
 import type { TenantEntry } from '@database/TenantRegistry';
 import { getRequestId } from '@platform/core/context';
 import { resolveTier, type TenantTier } from './operationPolicy';
-import { ROLE_PERMISSIONS, roleFromTier, type Role } from '../capabilities/roles';
-import type { Permission } from '../capabilities/permissions';
+import { ROLE_PERMISSIONS, roleFromTier, type Role } from '../../capabilities/roles';
+import type { Permission } from '../../capabilities/permissions';
 
 const EMPTY_PERMISSIONS: ReadonlySet<Permission> = new Set<Permission>();
 

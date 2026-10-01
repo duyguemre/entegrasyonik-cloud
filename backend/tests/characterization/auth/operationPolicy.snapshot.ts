@@ -1,11 +1,11 @@
 // ADR-0019 §7 Aşama A geri alma fixture'ı: bu dosya, Yetenek Kaydı'na geçmeden ÖNCEKİ
-// `backend/src/api/operationPolicy.ts`'teki `OPERATION_POLICY` LİTERALİNİN BİREBİR KOPYASIDIR
+// `backend/src/api/rpc/operationPolicy.ts`'teki `OPERATION_POLICY` LİTERALİNİN BİREBİR KOPYASIDIR
 // (2026-09-28, `faz3-arayuz` @ 0ed7d4c). DÜZENLENMEZ. Yalnızca iki amaçla kullanılır:
 //   1. `capability-parity.test.ts` P1: `derivePolicy(CAPABILITIES)` bu tabloyla DERİN EŞİT olmalı
 //      ("türetilen politika = Aşama A öncesi politikanın anlık görüntüsü").
 //   2. Geri alma: bir regresyon olursa bu literal `operationPolicy.ts`'e geri yapıştırılır (tek commit).
 // Yeni operasyon eklemek İÇİN BU DOSYA DEĞİL `backend/src/capabilities/domains/<alan>.ts` değiştirilir.
-import type { Tier } from '../../../src/api/operationPolicy';
+import type { Tier } from '../../../src/api/rpc/operationPolicy';
 
 export type SnapshotPolicy = Record<string, Record<string, Tier>>;
 

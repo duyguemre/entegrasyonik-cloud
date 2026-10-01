@@ -1,5 +1,5 @@
 import { IService } from '@interfaces/index'
-import { BaseApi } from '../../BaseApi'
+import { BaseApi } from '../BaseApi'
 import { ApplicationError } from '@platform/core/security/Security'
 import { containsRegex, clampPage, clampLimit } from '@utils/search'
 import { listCommissionOverrides, setCommissionOverride, deleteCommissionOverride } from '@operations/finance/commissionOverrides'

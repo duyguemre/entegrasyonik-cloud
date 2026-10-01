@@ -1,5 +1,5 @@
 import { IService } from '@interfaces/index'
-import { BaseApi } from '../../BaseApi'
+import { BaseApi } from '../BaseApi'
 import MenuService from './menu-service'
 import ProductService from './product-service'
 import CategoryService from './category-service'

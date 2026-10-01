@@ -1,11 +1,11 @@
 import archiver from 'archiver';
 import { IService } from '@interfaces/index';
-import { BaseApi } from '../../BaseApi';
+import { BaseApi } from '../BaseApi';
 import { ApplicationError } from '@platform/core/security/Security';
 import Security from '@platform/core/security/Security';
 import { AuditLogger } from '@services/audit/AuditLogger';
 import { storageService } from '@services/storage/StorageService';
-import { createTenantLifecycleService } from '../../tenantLifecycleFactory';
+import { createTenantLifecycleService } from '../tenantLifecycleFactory';
 import { EXPORT_COLLECTIONS, sanitizeExportDoc } from '@operations/tenant/exportCollections';
 import { signExportDownloadToken } from '@operations/tenant/exportDownloadToken';
 

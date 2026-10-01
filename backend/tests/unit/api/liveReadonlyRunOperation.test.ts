@@ -15,9 +15,9 @@ class Fake {
 function loadRun() {
     let run: any;
     jest.isolateModules(() => {
-        jest.doMock('../../../src/api/index', () => ({ __esModule: true, default: { OrderService: Fake, IntegrationService: Fake } }));
-        jest.doMock('../../../src/api/requestValidation', () => ({ validateRpcRequest: (_s: string, _o: string, b: any) => b }));
-        run = require('../../../src/api/RunOperation').default;
+        jest.doMock('../../../src/api/rpc/index', () => ({ __esModule: true, default: { OrderService: Fake, IntegrationService: Fake } }));
+        jest.doMock('../../../src/api/rpc/requestValidation', () => ({ validateRpcRequest: (_s: string, _o: string, b: any) => b }));
+        run = require('../../../src/api/rpc/RunOperation').default;
     });
     return run as (uc: any, s: string, o: string, req: any, principal?: any) => Promise<any>;
 }

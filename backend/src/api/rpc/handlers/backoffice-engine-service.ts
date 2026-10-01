@@ -1,6 +1,6 @@
 import { IService } from '@interfaces/index'
 import { Queue } from 'bullmq'
-import { BaseApi } from '../../BaseApi'
+import { BaseApi } from '../BaseApi'
 import { RedisService } from '@services/redis/RedisService'
 import { EngineOps, type BullQueueLike, type EngineActor, type EngineQueueName, type QueueProvider } from '../../admin/engineOps'
 

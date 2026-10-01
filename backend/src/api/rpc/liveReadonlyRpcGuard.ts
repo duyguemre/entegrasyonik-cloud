@@ -3,7 +3,7 @@
 // İstisna (AÇIK liste): kullanıcı tetiklemeli İÇE ALMA (`requestFetchFromPlatform`: yerel ImportJob açar, pazaryerinden YALNIZ okur; yazma capability'si
 // `integrations.batch.dispatch`'i export ile paylaştığı için effect=write görünür). Ek yasak (AÇIK liste): yetenek kaydında `external:false` görünen ama
 // dış yazma tetikleyebilecekler. Yerel DB'ye yazan RPC'ler (ürün düzenleme, eşleme vb.) SERBEST; bu kipte yayın işçileri kapalı olduğundan dışarı çıkmaz.
-import { CAPABILITY_BY_RPC } from '../capabilities';
+import { CAPABILITY_BY_RPC } from '../../capabilities';
 import { ApplicationError } from '@platform/core/errors/ApplicationError';
 import { config } from '@config';
 

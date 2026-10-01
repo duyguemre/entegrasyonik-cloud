@@ -1,5 +1,5 @@
 import { IService } from '@interfaces/index'
-import { BaseApi } from '../../BaseApi'
+import { BaseApi } from '../BaseApi'
 import { StatsOperations } from '@operations/client/StatsOperations'
 import { findStockChanges, recordManualStockMovements, stockDirtyFields } from '@operations/stock/markStockDirty'
 import { stripEngineOwnedVariantFields } from './product-service'

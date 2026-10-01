@@ -3,7 +3,7 @@
 import { describe, it, expect, jest, beforeEach, afterAll } from '@jest/globals';
 import jwt from 'jsonwebtoken';
 import { CAPABILITIES, CAPABILITY_BY_RPC, rpcBindingsOf } from '../../../../src/capabilities';
-import { impersonationDenial, IMP_DENIED_CREDENTIAL_RPCS } from '../../../../src/api/impersonationPolicy';
+import { impersonationDenial, IMP_DENIED_CREDENTIAL_RPCS } from '../../../../src/api/rpc/impersonationPolicy';
 import Security from '../../../../src/platform/core/security/Security';
 
 const allRpcs = () => CAPABILITIES.flatMap(c => rpcBindingsOf(c).map(b => ({ rpc: b.rpc, cap: c })));
@@ -74,9 +74,9 @@ let audits: any[] = [];
 function loadRun() {
     let run: any;
     jest.isolateModules(() => {
-        jest.doMock('../../../../src/api/index', () => ({ __esModule: true, default: { ProductService: Fake, IntegrationService: Fake, TenantDataService: Fake, UserService: Fake, AccountService: Fake, BillingService: Fake } }));
-        jest.doMock('../../../../src/api/requestValidation', () => ({ validateRpcRequest: (_s: string, _o: string, b: any) => b }));
-        run = require('../../../../src/api/RunOperation').default;
+        jest.doMock('../../../../src/api/rpc/index', () => ({ __esModule: true, default: { ProductService: Fake, IntegrationService: Fake, TenantDataService: Fake, UserService: Fake, AccountService: Fake, BillingService: Fake } }));
+        jest.doMock('../../../../src/api/rpc/requestValidation', () => ({ validateRpcRequest: (_s: string, _o: string, b: any) => b }));
+        run = require('../../../../src/api/rpc/RunOperation').default;
         require('../../../../src/services/audit/AuditLogger').AuditLogger.setSink(async (r: any) => { audits.push(r); });
     });
     return run as (uc: any, s: string, o: string, req: any, principal?: any, meta?: any) => Promise<any>;

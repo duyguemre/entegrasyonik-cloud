@@ -1,5 +1,5 @@
 import { IService } from '@interfaces/index'
-import { BaseApi } from '../../BaseApi'
+import { BaseApi } from '../BaseApi'
 import { sortBySeverity, toTenantDto, visibleTo, type AnnouncementDoc } from '@operations/notifications/announcements'
 
 const QUERY_MAX_TIME_MS = 3000

@@ -1,7 +1,7 @@
 // ADR-0026 WP-LOG L2: BackofficeLog/Error/Audit servisleri -- girdi semasi, kademe, 400 VALIDATION esleme, kesme, tek-kayit hassas okuma denetimi. DB/Redis YOK (sahte modeller).
 import { describe, it, expect, jest, beforeEach } from '@jest/globals';
 import { BACKOFFICE_RPC_INPUT } from '../../../../src/capabilities/rpc-input/backoffice';
-import { getRequiredTier } from '../../../../src/api/operationPolicy';
+import { getRequiredTier } from '../../../../src/api/rpc/operationPolicy';
 import { truncateLogEntry } from '../../../../src/api/rpc/handlers/backoffice-support';
 import { AuditLogger } from '../../../../src/services/audit/AuditLogger';
 

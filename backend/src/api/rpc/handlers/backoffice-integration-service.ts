@@ -1,5 +1,5 @@
 import { IService } from '@interfaces/index'
-import { BaseApi } from '../../BaseApi'
+import { BaseApi } from '../BaseApi'
 import { ApplicationError } from '@platform/core/security/Security'
 import { RedisService } from '@services/redis/RedisService'
 import { buildApiHealth, type ApiHealthRange } from '../../../operations/backoffice/apiHealth'

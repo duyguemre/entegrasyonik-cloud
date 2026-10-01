@@ -1,5 +1,5 @@
 import { IService } from '@interfaces/index'
-import { BaseApi } from '../../BaseApi'
+import { BaseApi } from '../BaseApi'
 import { ApplicationError } from '@platform/core/security/Security'
 import { ObjectId } from 'mongodb'
 import { ATTENTION_ALLOCATION_STATES } from '@operations/stock/allocationStates'

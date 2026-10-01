@@ -13,7 +13,7 @@ jest.mock('@database/DatabaseManager', () => ({
   },
 }));
 jest.mock('@services/mail/MailService', () => ({ mailService: { send: jest.fn() } }));
-jest.mock('../../../src/api/index', () => ({
+jest.mock('../../../src/api/rpc/index', () => ({
   __esModule: true,
   default: {
     AccountService: require('../../../src/api/rpc/handlers/account-service').default,
@@ -24,7 +24,7 @@ jest.mock('../../../src/api/index', () => ({
 import jwt from 'jsonwebtoken';
 import { mailService } from '@services/mail/MailService';
 import Security from '../../../src/platform/core/security/Security';
-import { configureApis } from '../../../src/api/ApiManager';
+import { configureApis } from '../../../src/api/rpc/ApiManager';
 import { drainBackground } from '../../../src/operations/account/AccountLifecycleService';
 import { hashToken } from '../../../src/operations/account/accountTokens';
 import { makeReq, makeRes } from '../../characterization/auth/_helpers';

@@ -16,7 +16,7 @@ jest.mock('@database/DatabaseManager', () => ({ DatabaseManagerInstance: { getAp
 
 import { handleTrendyolWebhook, configureWebhookRoutes, webhookContentTypeGuard } from '@api/WebhookApiManager';
 import { safeEqual, parseBasicAuth, verifyWebhookHeaders } from '@api/webhookAuth';
-import { familyOfKey } from '@api/cacheDump';
+import { familyOfKey } from '@api/rpc/cacheDump';
 import { DatabaseManagerInstance } from '@database/DatabaseManager';
 
 function mockClient(integration: any) {

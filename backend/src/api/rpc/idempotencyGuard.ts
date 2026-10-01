@@ -1,7 +1,7 @@
 // [ADR-0030 X3] RunOperation'ın tek kancası: dış etkili yazma RPC'lerinde `Idempotency-Key` koruması.
 // Kapsam = yetenek kaydı `external === true && effect !== 'read'` (capabilities/domains/*; ayrı liste tutulmaz).
 // Yalnız `/api` (app) yüzeyi; backoffice ve tenant kimliği çözülemeyen çağrılar dışarıda.
-import { CAPABILITY_BY_RPC } from '../capabilities';
+import { CAPABILITY_BY_RPC } from '../../capabilities';
 import { config } from '@config';
 import { DatabaseManagerInstance } from '@database/DatabaseManager';
 import { ApplicationError } from '@platform/core/errors/ApplicationError';

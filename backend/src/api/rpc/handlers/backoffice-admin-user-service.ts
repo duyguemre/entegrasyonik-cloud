@@ -1,5 +1,5 @@
 import { IService } from '@interfaces/index'
-import { BaseApi } from '../../BaseApi'
+import { BaseApi } from '../BaseApi'
 import { config } from '@config'
 import { AdminUserManager, type AdminActor } from '../../admin/adminUserManager'
 import { createMongoAdminMfaStore } from '../../admin/adminMfaStore'
