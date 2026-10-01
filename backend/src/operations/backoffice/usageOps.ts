@@ -71,6 +71,12 @@ function daily(docs: UsageDoc[], days: string[]): DailyPoint[] {
     return days.map((day) => { const s = sets.get(day)!; return { day, desktop: s.desktop.size, mobile: s.mobile.size, unknown: s.unknown.size }; });
 }
 
+/** Üretim kablolaması (ADR-0024 P4-GATE: handler'lar model almaz, bağımlılığı buradan ister). */
+export function usageDailyModelOf(db: { getUsageDailyModel(): any }): any { return db.getUsageDailyModel(); }
+export function tenantUsageDepsOf(db: { getUsageDailyModel(): any; getAuditLogModel(): any }): TenantUsageDeps {
+    return { usageModel: db.getUsageDailyModel(), auditModel: db.getAuditLogModel() };
+}
+
 export interface ActiveUsersDeps { usageModel: any; now?: () => number }
 
 /** getPulse `activeUsers` bloğu: bugün / 7 g / 30 g tekil aktif kullanıcı + müşteri; 7 g sınıf/alt tür kırılımı; son 14 gün günlük seri. */

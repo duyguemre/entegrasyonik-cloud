@@ -6,7 +6,7 @@ import { getTenantLifecycle } from '../../../operations/backoffice/tenantLifecyc
 import { listTenants, getHealthSummary, type TenantOpsDeps } from '../../../operations/backoffice/tenantOps'
 import { productionFailedBullJobs } from './backoffice-attention-support'
 import { auditSensitiveRead } from './backoffice-support'
-import { tenantUsage } from '../../../operations/backoffice/usageOps'
+import { tenantUsage, tenantUsageDepsOf } from '../../../operations/backoffice/usageOps'
 
 /**
  * B2 (plan §2.2) -- müşteri (tenant) yaşam döngüsü paneli. Yalnız platformAdmin (`/admin-api`). `getLifecycle` salt okunur ve `backoffice.sensitive_read`
@@ -45,8 +45,7 @@ export default class BackofficeTenantService extends BaseApi implements IService
     async getUsage(): Promise<any> {
         const r = this.request || {}
         if (!Number.isInteger(r.tid) || r.tid <= 0) throw new ApplicationError('tid: pozitif tam sayı olmalı', 400, 'VALIDATION')
-        const db = this.applicationDB
-        return tenantUsage({ usageModel: db.getUsageDailyModel(), auditModel: db.getAuditLogModel() }, r.tid, r.days ?? 30, r.platform)
+        return tenantUsage(tenantUsageDepsOf(this.applicationDB), r.tid, r.days ?? 30, r.platform)
     }
 
     async cancelDeletion(): Promise<any> {

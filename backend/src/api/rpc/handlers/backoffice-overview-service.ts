@@ -8,6 +8,7 @@ import { OverviewOps } from '../../admin/overviewOps'
 import { productionQueueProvider } from './backoffice-engine-service'
 import { AttentionOps } from '../../admin/attentionOps'
 import { PulseOps } from '../../admin/pulseOps'
+import { usageDailyModelOf } from '../../../operations/backoffice/usageOps'
 import { productionAttentionSources } from './backoffice-attention-support'
 import { computeRevenueMetrics } from '../../../operations/backoffice/revenueMetrics'
 
@@ -42,7 +43,7 @@ export default class BackofficeOverviewService extends BaseApi implements IServi
     async getPulse(): Promise<any> {
         const db = this.applicationDB
         return new PulseOps({
-            clientModel: db.getClientModel(), metricRollupModel: db.getMetricRollupModel(), callMetricModel: db.getIntegrationCallMetricModel(), usageModel: db.getUsageDailyModel(),
+            clientModel: db.getClientModel(), metricRollupModel: db.getMetricRollupModel(), callMetricModel: db.getIntegrationCallMetricModel(), usageModel: usageDailyModelOf(db),
             revenue: () => computeRevenueMetrics({ subscriptionModel: db.getSubscriptionModel(), planModel: db.getPlanModel(), billingEventModel: db.getBillingEventModel() }, '30d'),
         }).getPulse(this.request?.platform)
     }
