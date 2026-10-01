@@ -56,7 +56,7 @@ const registerPlan = plans.find((p) => p.code === trialPlanCode) ?? plans.find((
 const closingHref = appUrls.register({ plan: registerPlan?.code, interval: registerPlan?.interval })
 const demoHref = mailtoHref(contactEmail, 'Entegrasyonik demo talebi')
 const featuredCode = cards.find((c) => c.recommended)?.code
-// Hero çipleri: güven kaydının ilk üç öğesi (deneme, kart, Otopilot); tamamı kartların altında şerit olarak.
+// Hero çipleri: güven kaydının ilk üç öğesi (deneme, kart, ajan ürünü); tamamı kartların altında şerit olarak.
 const heroChips = trust.filter((t) => ['trial', 'card', 'agent'].includes(t.id))
 const ladder = cards.filter((c) => c.agent)
 
@@ -302,7 +302,7 @@ const planFeatureRows = [...new Map(plans.flatMap((p) => p.features.map((f) => [
       id="compare-title"
       eyebrow="Karşılaştırma"
       title="Planları yan yana görün"
-      lead="Limitler, özellikler ve Otopilot yetkileri tek tabloda; tablo kaydırılırken plan adları üstte kalır."
+      lead={`Limitler, özellikler ve ${AGENT_BRAND} yetkileri tek tabloda; tablo kaydırılırken plan adları üstte kalır.`}
     />
     <div class="table-wrap" role="region" aria-label="Plan karşılaştırma tablosu" tabindex="0">
       <table class="compare__table" data-testid="compare-table">
@@ -507,7 +507,7 @@ const planFeatureRows = [...new Map(plans.flatMap((p) => p.features.map((f) => [
   <CtaBand
     id="cta-title"
     title="Operasyonunuzu bugün tek merkeze taşıyın"
-    text="Ücretsiz denemeyle kanallarınızı bağlayın; stok, sipariş ve Otopilot önerilerini kendi işinizde görün."
+    text={`Ücretsiz denemeyle kanallarınızı bağlayın; stok, sipariş ve ${AGENT_BRAND} önerilerini kendi işinizde görün.`}
     primary={{ label: 'Ücretsiz deneyin', href: closingHref }}
     secondary={{ label: 'Demo talep edin', href: demoHref }}
   />
