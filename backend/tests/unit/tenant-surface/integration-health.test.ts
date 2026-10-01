@@ -17,7 +17,7 @@ jest.mock('@services/notification/NotificationService', () => ({ NotificationSer
 
 import IntegrationService from '../../../src/api/rpc/handlers/integration-service';
 import { sanitizeResponse } from '../../../src/platform/core/security/responseSanitizer';
-import { buildIntegrationHealth, sanitizeOperation, CIRCUIT_STALE_MS } from '../../../src/operations/integration/IntegrationHealthOperations';
+import { buildIntegrationHealth, sanitizeOperation, CIRCUIT_STALE_MS } from '../../../src/operations/integrations/health';
 
 const NOW = new Date('2026-09-28T12:00:00.000Z');
 const ago = (ms: number) => new Date(NOW.getTime() - ms);

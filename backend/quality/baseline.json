@@ -31,7 +31,7 @@
       "src/database/DatabaseManager.ts": 3,
       "src/operations/account/AccountLifecycleService.ts": 7,
       "src/operations/billing/TrialExpiryJob.ts": 6,
-      "src/operations/integration/PostOrderOperations.ts": 5,
+      "src/operations/orders/postOrder.ts": 5,
       "src/operations/stock/AllocationSweepJob.ts": 4,
       "src/operations/stock/ExternalReconciliationJob.ts": 5,
       "src/operations/stock/InternalReconciliationJob.ts": 4,
