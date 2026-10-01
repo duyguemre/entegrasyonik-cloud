@@ -58,3 +58,6 @@ Notlar: `meta` yalnızca `sanitizeMeta`'dan geçmiş ilkel alanlardır (≤10 an
 
 ## Performans / indeks notu
 `AuditLogs`: mevcut `tid_1_at_-1`, `event_1_at_-1`, `sub_1_at_-1` ve `at` TTL indeksi yeterlidir; yalnız `imp`/`service`/`operation`/`result` tek başına verilirse ≤31 günlük `at` aralığı taranır (`maxTimeMS` 5 sn). Yeni indeks/göç önerilmedi. `LogEvents` indeksleri L1 göçü 0005'te tanımlıdır.
+
+## Ek (K51 / BO1) — sorun gruplarında müşteri süzgeci (BE-06)
+`BackofficeLogService/issueGroups` girdisine `tid?` eklenir (kova eşleşmesi, yaklaşık; yanıtta `tenantFilter`). Ayrıntı `docs/API_BACKOFFICE_ATTENTION.md` BE-06. BE-05 kayıtlı görünümler: `BackofficePrefsService` (aynı belge).

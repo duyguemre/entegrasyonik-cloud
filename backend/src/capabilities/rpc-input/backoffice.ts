@@ -24,7 +24,7 @@ export const BACKOFFICE_RPC_INPUT: Partial<Record<RpcRef, z.ZodType<any>>> = {
     }),
     'BackofficeLogService/issueGroups': strictBody({
         ...range, status: z.enum(ERROR_STATUS_VALUES).optional(), source: z.enum(['server', 'client']).optional(), module: str.optional(),
-        integrationCode: str.optional(), sort: z.enum(['lastSeen', 'count', 'tenantCount', 'firstSeen']).optional(), limit: limit.optional(),
+        integrationCode: str.optional(), tid: z.number().int().positive().max(2_000_000_000).optional(), sort: z.enum(['lastSeen', 'count', 'tenantCount', 'firstSeen']).optional(), limit: limit.optional(),
     }),
     'BackofficeLogService/issueTrend': strictBody({ fingerprint: str, ...range }),
     'BackofficeLogService/trace': strictBody({ correlationId: str }),

@@ -373,7 +373,7 @@ const handleForgotPassword = async () => {
   letter-spacing: 0;
   color: var(--ek-color-content-muted) !important;
   border-radius: var(--ek-radius-md);
-  transition: color var(--ek-duration-fast) var(--ek-easing-standard);
+  transition: color var(--ek-motion-feedback);
 }
 
 .ek-login-tabs :deep(.v-tab--selected) {

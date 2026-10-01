@@ -99,8 +99,8 @@ function onKeydown(e: KeyboardEvent) {
   border-radius: calc(var(--ek-radius-control) - 2px);
   cursor: pointer;
   transition:
-    background-color var(--ek-duration-fast) var(--ek-easing-standard),
-    color var(--ek-duration-fast) var(--ek-easing-standard);
+    background-color var(--ek-motion-feedback),
+    color var(--ek-motion-feedback);
 }
 
 .ek-theme-switch__opt:hover {

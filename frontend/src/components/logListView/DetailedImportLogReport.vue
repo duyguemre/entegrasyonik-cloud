@@ -805,7 +805,7 @@ onBeforeUnmount(() => {
   font-size: var(--ek-font-size-xs);
   font-weight: var(--ek-font-weight-semibold);
   cursor: pointer;
-  transition: background-color var(--ek-duration-fast) var(--ek-easing-standard);
+  transition: background-color var(--ek-motion-feedback);
 }
 
 .map-chip:focus-visible,
@@ -941,7 +941,7 @@ onBeforeUnmount(() => {
   background: var(--ek-color-border-strong);
   position: relative;
   z-index: 2;
-  transition: background-color var(--ek-duration-slow) var(--ek-easing-standard);
+  transition: background-color var(--ek-motion-layout);
 }
 
 .step-dot--upcoming {

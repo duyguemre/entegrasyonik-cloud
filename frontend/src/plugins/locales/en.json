@@ -349,7 +349,15 @@
     "error": "Could not create the webhook address — make sure your Trendyol integration is set up and try again."
   },
   "shell": {
+    "favorites": {
+      "empty": "Screens you star are pinned here.",
+      "add": "Add to favorites",
+      "remove": "Remove from favorites",
+      "added": "added to favorites",
+      "removed": "removed from favorites"
+    },
     "section": {
+      "favorites": "Favorites",
       "general": "General",
       "catalog": "Catalog",
       "orders": "Orders",
@@ -375,6 +383,7 @@
     "filters": {
       "channels": "Channels",
       "channel": "Channel",
+      "dateRange": "Date range",
       "startDate": "Start",
       "endDate": "End",
       "orderNumber": "Order no",

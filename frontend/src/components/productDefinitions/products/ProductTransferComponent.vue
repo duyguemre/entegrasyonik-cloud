@@ -332,11 +332,11 @@ const validateAndSearchProducts = async () => {
 }
 
 .animated-arrow {
-  animation: dash-move 1s linear infinite;
+  animation: dash-move var(--ek-motion-loop-flow) var(--ek-easing-linear) infinite;
 }
 
 .animated-icon {
-  animation: icon-move 8s var(--ek-easing-standard) infinite;
+  animation: icon-move var(--ek-motion-loop-transfer) var(--ek-easing-standard) infinite;
 }
 
 @keyframes icon-move {

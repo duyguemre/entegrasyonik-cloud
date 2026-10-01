@@ -13,7 +13,11 @@ const leaseId = z.string().regex(/^[a-f0-9]{24}$/i);
 export const BACKOFFICE_ENGINE_RPC_INPUT: Partial<Record<RpcRef, z.ZodType<any>>> = {
     'BackofficeOverviewService/getHealth': strictBody({}),
     'BackofficeEngineService/getQueues': strictBody({}),
-    'BackofficeEngineService/listFailedJobs': strictBody({ queue, source: z.enum(['bullmq', 'dlq']).optional(), cursor: cursor.optional(), limit: limit.optional() }),
+    'BackofficeEngineService/listFailedJobs': strictBody({
+        queue, source: z.enum(['bullmq', 'dlq']).optional(), cursor: cursor.optional(), limit: limit.optional(),
+        tid: z.number().int().positive().max(2_000_000_000).optional(), integrationCode: z.string().regex(/^[A-Za-z0-9_-]{1,64}$/).optional(), errorCode: z.string().regex(/^[A-Z_]{2,32}$/).optional(),
+    }),
+    'BackofficeEngineService/retryJobs': strictBody({ queue, jobIds: z.array(jobId).min(1).max(50), reason }),
     'BackofficeEngineService/retryJob': strictBody({ queue, jobId, reason }),
     'BackofficeEngineService/discardJob': strictBody({ queue, jobId, reason }),
     'BackofficeEngineService/getStateMachineJobs': strictBody({}),

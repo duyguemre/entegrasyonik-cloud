@@ -349,8 +349,8 @@ defineExpose({ start })
   outline: 2px solid var(--ek-color-border-focus);
   outline-offset: 0;
   pointer-events: none;
-  transition: left var(--ek-duration-base) var(--ek-easing-standard), top var(--ek-duration-base) var(--ek-easing-standard),
-    width var(--ek-duration-base) var(--ek-easing-standard), height var(--ek-duration-base) var(--ek-easing-standard);
+  transition: left var(--ek-motion-reveal), top var(--ek-motion-reveal),
+    width var(--ek-motion-reveal), height var(--ek-motion-reveal);
 }
 
 .ek-tour__spot.is-none {
@@ -401,7 +401,7 @@ defineExpose({ start })
 
 .ek-tour-fade-enter-active,
 .ek-tour-fade-leave-active {
-  transition: opacity var(--ek-duration-base) var(--ek-easing-standard);
+  transition: opacity var(--ek-motion-reveal);
 }
 
 .ek-tour-fade-enter-from,

@@ -43,6 +43,7 @@ import BackofficeOverviewService from "./services/backoffice-overview-service"
 import BackofficeIntegrationService from "./services/backoffice-integration-service"
 import BackofficeInfraService from "./services/backoffice-infra-service"
 import BackofficeNotificationService from "./services/backoffice-notification-service"
+import BackofficePrefsService from "./services/backoffice-prefs-service"
 import AnnouncementService from "./services/announcement-service"
 export default {
     MenuService,
@@ -90,5 +91,6 @@ export default {
     BackofficeIntegrationService,
     BackofficeInfraService,
     BackofficeNotificationService,
+    BackofficePrefsService,
     AnnouncementService
 }

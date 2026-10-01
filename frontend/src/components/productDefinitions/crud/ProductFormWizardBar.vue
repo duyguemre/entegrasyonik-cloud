@@ -370,7 +370,7 @@ function onIssue(item: ProgressItem) {
 .pfw-meter::-webkit-progress-value {
   background: var(--ek-color-action);
   border-radius: var(--ek-radius-full);
-  transition: width var(--ek-duration-base) var(--ek-easing-standard);
+  transition: width var(--ek-motion-reveal);
 }
 
 .pfw-meter::-moz-progress-bar {

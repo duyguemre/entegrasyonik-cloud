@@ -64,6 +64,8 @@
           label="Fatura durumu" multiple clearable item-title="title" item-value="value" />
         <v-select v-model="searchInvoiceForm.filters.type" :items="TYPE_ITEMS"
           clearable item-title="title" item-value="value" label="Belge tipi" />
+        <!-- FR3 madde 10: tarih aralığı (InvoiceService/getInvoices `filters.startDate/endDate` → düzenlenme tarihi). -->
+        <EkDateRange v-model:start="searchInvoiceForm.filters.startDate" v-model:end="searchInvoiceForm.filters.endDate" label="Fatura tarihi" value-format="iso-date" />
       </template>
 
       <template #bulk-actions>
@@ -104,7 +106,8 @@
 
 <script setup lang="ts">
 import HelpStartLink from '@/components/help/HelpStartLink.vue'
-import { EkSelect, EkRowActions, EkButton, EkChannelDot, EkStatusChip, EkConfirmDialog } from '@entegrasyonik/ui/components'
+import { EkDateRange, EkSelect, EkRowActions, EkButton, EkChannelDot, EkStatusChip, EkConfirmDialog } from '@entegrasyonik/ui/components'
+import { formatDateRange } from '@entegrasyonik/ui/components/dateRange'
 import type { EkGridColumn, EkGridSort, EkActiveFilterChip } from '@entegrasyonik/ui/components'
 import { ref, onMounted, computed } from 'vue';
 import useRestApi from '@/composables/restapi';
@@ -182,28 +185,30 @@ function onGridSort(sort: EkGridSort) {
 }
 
 // Aktif filtre çipleri — SON SORGULANAN değerlerden.
-const applied = ref<{ search: string; status: string[]; type: string | null }>({ search: '', status: [], type: null });
+const applied = ref<{ search: string; status: string[]; type: string | null; startDate?: string; endDate?: string }>({ search: '', status: [], type: null });
 
 const activeChips = computed<EkActiveFilterChip[]>(() => {
   const chips: EkActiveFilterChip[] = [];
   if (applied.value.search) chips.push({ key: 'search', label: 'Arama', value: applied.value.search });
   if (applied.value.status.length) chips.push({ key: 'status', label: 'Durum', value: applied.value.status.map(k => INVOICE_STATUS_LABELS[k as InvoiceStatusEnum] ?? k).join(', ') });
   if (applied.value.type) chips.push({ key: 'type', label: 'Belge tipi', value: INVOICE_TYPE_LABELS[applied.value.type as InvoiceTypeEnum] ?? applied.value.type });
+  if (applied.value.startDate || applied.value.endDate) chips.push({ key: 'date', label: 'Tarih', value: formatDateRange(applied.value.startDate, applied.value.endDate) });
   return chips;
 });
 
-const panelFilterCount = computed(() => (applied.value.status.length ? 1 : 0) + (applied.value.type ? 1 : 0));
+const panelFilterCount = computed(() => (applied.value.status.length ? 1 : 0) + (applied.value.type ? 1 : 0) + (applied.value.startDate || applied.value.endDate ? 1 : 0));
 
 function removeChip(key: string) {
   if (key === 'search') searchInvoiceForm.value.search = '';
   if (key === 'status') searchInvoiceForm.value.filters.status = [];
   if (key === 'type') searchInvoiceForm.value.filters.type = null;
+  if (key === 'date') { searchInvoiceForm.value.filters.startDate = undefined; searchInvoiceForm.value.filters.endDate = undefined; }
   getInvoices(true);
 }
 
 function clearFilters() {
   // Eski "Filtreleri temizle" gibi: durum/tip sıfırlanır; ek olarak arama da temizlenir (tek tıkla tümü).
-  searchInvoiceForm.value.filters = { status: [], type: null };
+  searchInvoiceForm.value.filters = { status: [], type: null, startDate: undefined, endDate: undefined };
   searchInvoiceForm.value.search = '';
   getInvoices(true);
 }
@@ -221,7 +226,7 @@ const getInvoices = async (resetPage: boolean = false) => {
   if (resetPage) pagination.value.page = 1;
   loading.value = true;
   loadError.value = false;
-  applied.value = { search: searchInvoiceForm.value.search || '', status: [...(searchInvoiceForm.value.filters.status || [])], type: searchInvoiceForm.value.filters.type || null };
+  applied.value = { search: searchInvoiceForm.value.search || '', status: [...(searchInvoiceForm.value.filters.status || [])], type: searchInvoiceForm.value.filters.type || null, startDate: searchInvoiceForm.value.filters.startDate || undefined, endDate: searchInvoiceForm.value.filters.endDate || undefined };
 
   try {
     let sortPayload: any = undefined;

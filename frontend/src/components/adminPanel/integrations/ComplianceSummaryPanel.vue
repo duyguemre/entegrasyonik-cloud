@@ -246,7 +246,7 @@ function cardAriaLabel(item: ComplianceSummaryItem) {
   border-radius: var(--ek-radius-lg);
   color: var(--ek-color-content-default);
   cursor: pointer;
-  transition: border-color var(--ek-duration-fast) var(--ek-easing-standard);
+  transition: border-color var(--ek-motion-feedback);
 }
 
 .compliance-summary__card:hover {

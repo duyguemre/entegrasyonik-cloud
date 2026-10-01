@@ -435,7 +435,7 @@ onBeforeUnmount(() => {
 }
 .ek-apps-guide__chevron {
   margin-inline-start: auto;
-  transition: transform var(--ek-duration-fast) var(--ek-easing-standard);
+  transition: transform var(--ek-motion-feedback);
 }
 .ek-apps-guide__chevron.is-open {
   transform: rotate(180deg);

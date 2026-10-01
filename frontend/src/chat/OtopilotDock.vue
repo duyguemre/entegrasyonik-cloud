@@ -161,7 +161,7 @@ onBeforeUnmount(() => {
   left: calc(var(--ek-space-1) - 1px);
   width: 2px;
   background: transparent;
-  transition: background-color var(--ek-duration-fast) var(--ek-easing-standard);
+  transition: background-color var(--ek-motion-feedback);
 }
 
 .ek-otopilot-dock__resize:hover::after,

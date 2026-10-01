@@ -83,6 +83,12 @@ const numericCounts = (v: any): Record<string, number> | null => {
     return out;
 };
 
+/** BE-04: korelasyon kimliği (iş verisinden `correlationId`/`traceId`); desen dışı/yoksa null. İş yükünün başka hiçbir alanı dönmez. */
+const CORR_RE = /^[A-Za-z0-9._:-]{1,64}$/;
+export const corrIdOf = (v: unknown): string | null => (typeof v === 'string' && CORR_RE.test(v) ? v : null);
+export const RETRY_JOBS_MAX = 50;
+const BULLMQ_FAILED_SCAN = 500; // removeOnFail ile aynı üst sınır
+
 const tenantNo = (v: unknown): number | null => { const n = Number(v); return Number.isFinite(n) && v !== null && v !== undefined && v !== '' ? n : null; };
 
 export class EngineOps {
@@ -158,34 +164,49 @@ export class EngineOps {
     }
 
     // ---------------------------------------------------------------- B7b
-    async listFailedJobs(input: { queue: EngineQueueName; source?: 'bullmq' | 'dlq'; cursor?: string; limit?: number }): Promise<any> {
+    async listFailedJobs(input: { queue: EngineQueueName; source?: 'bullmq' | 'dlq'; cursor?: string; limit?: number; tid?: number; integrationCode?: string; errorCode?: string }): Promise<any> {
         const limit = clampLimit(input.limit);
-        if ((input.source ?? 'bullmq') === 'dlq') return this.listDlq(input.queue, input.cursor, limit);
+        const filter = { tid: input.tid ?? null, integrationCode: input.integrationCode ?? null, errorCode: input.errorCode ?? null };
+        const filtered = input.tid !== undefined || input.integrationCode !== undefined || input.errorCode !== undefined;
+        if ((input.source ?? 'bullmq') === 'dlq') return { ...(await this.listDlq(input.queue, input.cursor, limit, input)), filter };
         const q = this.queue(input.queue);
         const start = input.cursor !== undefined ? decodeOffsetCursor(input.cursor) : 0;
-        const jobs = await q.getJobs(['failed'], start, start + limit, false); // en yeni önce; limit+1 okunur
-        const hasMore = jobs.length > limit;
-        const page = hasMore ? jobs.slice(0, limit) : jobs;
-        return {
-            source: 'bullmq', queue: input.queue,
-            items: page.map((j) => ({
-                id: String(j.id), operation: String(j.name).slice(0, 100), tenantId: tenantNo(j.data?.clientId), integrationCode: typeof j.data?.integrationCode === 'string' ? j.data.integrationCode.slice(0, 64) : null,
-                errorCode: errorCodeOf(j.failedReason), attemptsMade: j.attemptsMade, maxAttempts: j.opts?.attempts ?? null,
-                failedAt: j.finishedOn ? new Date(j.finishedOn).toISOString() : null, enqueuedAt: j.timestamp ? new Date(j.timestamp).toISOString() : null,
-            })),
-            nextCursor: hasMore ? encodeOffsetCursor(start + limit) : null,
-        };
+        const toItem = (j: BullJobLike) => ({
+            id: String(j.id), operation: String(j.name).slice(0, 100), tenantId: tenantNo(j.data?.clientId), integrationCode: typeof j.data?.integrationCode === 'string' ? j.data.integrationCode.slice(0, 64) : null,
+            errorCode: errorCodeOf(j.failedReason), attemptsMade: j.attemptsMade, maxAttempts: j.opts?.attempts ?? null,
+            failedAt: j.finishedOn ? new Date(j.finishedOn).toISOString() : null, enqueuedAt: j.timestamp ? new Date(j.timestamp).toISOString() : null,
+            reqId: corrIdOf(j.data?.correlationId), traceId: corrIdOf(j.data?.traceId),
+        });
+        if (!filtered) {
+            const jobs = await q.getJobs(['failed'], start, start + limit, false); // en yeni önce; limit+1 okunur
+            const hasMore = jobs.length > limit;
+            const page = hasMore ? jobs.slice(0, limit) : jobs;
+            return { source: 'bullmq', queue: input.queue, filter, items: page.map(toItem), nextCursor: hasMore ? encodeOffsetCursor(start + limit) : null };
+        }
+        // BE-03: süzgeç varken `failed` kümesinin tamamı (<=500) okunur, bellekte süzülür, ofsetle sayfalanır.
+        const all = await q.getJobs(['failed'], 0, BULLMQ_FAILED_SCAN - 1, false);
+        const matched = all.map(toItem).filter((it) => (input.tid === undefined || it.tenantId === input.tid)
+            && (input.integrationCode === undefined || it.integrationCode === input.integrationCode)
+            && (input.errorCode === undefined || it.errorCode === input.errorCode));
+        const page = matched.slice(start, start + limit);
+        return { source: 'bullmq', queue: input.queue, filter, total: matched.length, items: page, nextCursor: start + limit < matched.length ? encodeOffsetCursor(start + limit) : null };
     }
 
-    private async listDlq(queue: string, cursor: string | undefined, limit: number): Promise<any> {
+    private async listDlq(queue: string, cursor: string | undefined, limit: number, f: { tid?: number; integrationCode?: string; errorCode?: string } = {}): Promise<any> {
         const match: Record<string, any> = { queueName: queue };
+        if (f.tid !== undefined) match.clientId = f.tid;
+        if (f.integrationCode !== undefined) match.integrationCode = f.integrationCode;
+        if (f.errorCode !== undefined) {
+            // errorCodeOf ile aynı kural: `[KOD]` öneki; `UNKNOWN` = öneksiz. Kod şemada ^[A-Z_]{2,32}$ ile sınırlıdır (regex enjeksiyonu yok).
+            match.failedReason = f.errorCode === 'UNKNOWN' ? { $not: /^\[[A-Z_]{2,32}\]/ } : { $regex: `^\\[${f.errorCode}\\]` };
+        }
         let query: Record<string, any> = match;
         if (cursor !== undefined) {
             const c = decodeTimeCursor(cursor);
             query = { $and: [match, { $or: [{ failedAt: { $lt: c.at } }, { failedAt: c.at, _id: { $lt: c.id } }] }] };
         }
         const rows: any[] = await this.d.applicationDB.getDeadLetterQueueModel().find(query)
-            .select({ originalJobId: 1, clientId: 1, integrationCode: 1, failedReason: 1, dlqType: 1, status: 1, failedAt: 1 })
+            .select({ originalJobId: 1, clientId: 1, integrationCode: 1, failedReason: 1, dlqType: 1, status: 1, failedAt: 1, 'jobData.correlationId': 1, 'jobData.traceId': 1 })
             .sort({ failedAt: -1, _id: -1 }).limit(limit + 1).maxTimeMS(QUERY_MAX_TIME_MS).lean();
         const hasMore = rows.length > limit;
         const page = hasMore ? rows.slice(0, limit) : rows;
@@ -195,6 +216,7 @@ export class EngineOps {
             items: page.map((r) => ({
                 id: String(r._id), originalJobId: r.originalJobId ?? null, tenantId: tenantNo(r.clientId), integrationCode: r.integrationCode ?? null,
                 errorCode: errorCodeOf(r.failedReason), dlqType: r.dlqType ?? null, status: r.status ?? null, failedAt: r.failedAt ? new Date(r.failedAt).toISOString() : null,
+                reqId: corrIdOf(r.jobData?.correlationId), traceId: corrIdOf(r.jobData?.traceId),
             })),
             nextCursor: hasMore && last ? encodeTimeCursor(new Date(last.failedAt), last._id) : null,
         };
@@ -214,6 +236,30 @@ export class EngineOps {
         await job.retry('failed');
         this.audit('backoffice.engine.retry_job', actor, 'ok', { queue: input.queue, jobId: input.jobId, tenantId: tenantNo(job.data?.clientId) ?? -1, reason: input.reason });
         return { queue: input.queue, jobId: input.jobId, retried: true };
+    }
+
+    /**
+     * BE-03: toplu yeniden deneme (<=50). İş başına bağımsız + idempotent: `failed` değilse/yoksa o iş `ok:false` (çağrı düşmez), tekrar çağrı güvenlidir.
+     * Kuyruk yoksa tüm çağrı 503. Denetim: özet (`retry_jobs`) + başarılı iş başına alt kayıt (`retry_job`, `batch:true`).
+     */
+    async retryJobs(actor: EngineActor | undefined, input: { queue: EngineQueueName; jobIds: string[]; reason: string }): Promise<any> {
+        const q = this.queue(input.queue);
+        const ids = [...new Set(input.jobIds)];
+        if (ids.length === 0 || ids.length > RETRY_JOBS_MAX) bad(`jobIds: 1..${RETRY_JOBS_MAX} öğe olmalı`);
+        const results: Array<{ jobId: string; ok: boolean; error?: string }> = [];
+        for (const jobId of ids) {
+            try {
+                const job = await q.getJob(jobId);
+                if (!job) { results.push({ jobId, ok: false, error: 'JOB_NOT_FOUND' }); continue; }
+                if ((await job.getState()) !== 'failed') { results.push({ jobId, ok: false, error: 'JOB_NOT_FAILED' }); continue; }
+                await job.retry('failed');
+                results.push({ jobId, ok: true });
+                this.audit('backoffice.engine.retry_job', actor, 'ok', { queue: input.queue, jobId, tenantId: tenantNo(job.data?.clientId) ?? -1, batch: true, reason: input.reason });
+            } catch { results.push({ jobId, ok: false, error: 'RETRY_FAILED' }); }
+        }
+        const succeeded = results.filter((r) => r.ok).length;
+        this.audit('backoffice.engine.retry_jobs', actor, succeeded === results.length ? 'ok' : 'fail', { queue: input.queue, requested: ids.length, succeeded, failed: ids.length - succeeded, reason: input.reason });
+        return { queue: input.queue, requested: ids.length, succeeded, failed: ids.length - succeeded, results };
     }
 
     async discardJob(actor: EngineActor | undefined, input: { queue: EngineQueueName; jobId: string; reason: string }): Promise<any> {

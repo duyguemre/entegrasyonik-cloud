@@ -51,7 +51,7 @@ describe('A8 filtre başlığı — sayı, özet, aria', () => {
     expect(head).toMatch(/<EkActiveFilters v-if="chips.length" variant="compact"/)
     expect(head).toMatch(/#?slot name="head-actions"/)
     // Yumuşak dönüş + reduced-motion.
-    expect(src).toMatch(/transform var\(--ek-duration-base\)/)
+    expect(src).toMatch(/transform var\(--ek-motion-reveal\)/)
     expect(src).toMatch(/prefers-reduced-motion: reduce[\s\S]*?\.ek-filter__chevron[\s\S]*?transition: none/)
   })
 

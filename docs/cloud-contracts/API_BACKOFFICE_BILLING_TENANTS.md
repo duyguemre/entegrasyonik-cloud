@@ -69,3 +69,6 @@ Mevcut `TenantLifecycleService.cancelDeletion` (ADR-0003 F.20) backoffice yüzey
 1-3. **KAPANDI (K40, 2026-10-01):** süresi dolmuş kartsız deneme uzatmayla yeniden açılır; kartsız abonelikte iptal yerel ve doğrudandır; toplam deneme uzatma ≤ 60 gün.
 4. **Gelir metrikleri plan liste fiyatıdır** (indirim/`limitOverrides`/kupon ve vergi dahil-hariç ayrımı yok); faturalanan gerçek tutar iyzico adaptörü ve fatura kaynağı gelince ayrı iş.
 5. **`iyzico` adaptörü yok:** `cancel/changePlan` yalnız `mock` sağlayıcıyla çalışır; mock durumu süreç-içidir (yeniden başlatmada ref kaybı → `409 PROVIDER_SUBSCRIPTION_MISSING`).
+
+## Ek (K51 / BO1) — müşteri listesi operasyon özeti ve sağlık özeti
+Tam sözleşme `docs/API_BACKOFFICE_ATTENTION.md`: BE-01 `BackofficeTenantService/listTenants` (satır başına `ops`: plan, abonelik durumu, açık sorun, 24 sa başarısız iş, son hata; süzgeç `hasIssues`/`subscriptionStatus`; sıralama `openIssues`/`lastErrorAt`), BE-02 `BackofficeTenantService/getHealthSummary { tid }` ("Şu an" kartı).

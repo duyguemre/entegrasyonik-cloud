@@ -314,13 +314,24 @@ function toggleSort(key: string) {
   scrollbar-width: thin;
 }
 
+/* FR3 madde 9 (fe-r3a): TABLO TİPOGRAFİSİ TEK MERKEZDEN — tek aile (Inter; hücre içinde eş aralıklı/mono YOK — kodlar,
+   barkodlar, olay kodları da aynı ailede), tablo GENELİNDE `tabular-nums` (rakamlar her kolonda aynı genişlik → tarih,
+   tutar, kod alt alta hizalı; aynı tabloda orantılı/sabit rakam karışımı "farklı font" gibi görünüyordu). Ağırlık
+   rolleri: 400 veri · 500 birincil metin (`.ek-cell-primary`) · 600 kimlik/bağlantı (`--id`). Boyut: 13 hücre, 12 ikincil
+   satır (`.ek-cell-secondary`). Hizalama: tutar/adet sağa (`num`), tarih sola, tek satır. */
 .ek-grid__table {
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
   color: var(--ek-color-content-default);
+  font-family: var(--ek-font-sans);
   font-size: var(--ek-type-table-size);
   line-height: var(--ek-type-table-line);
+  font-variant-numeric: tabular-nums;
+}
+
+.ek-grid__td :where(*:not(.v-icon):not(.mdi)) {
+  font-family: inherit !important;
 }
 
 .ek-grid__th {
@@ -455,11 +466,11 @@ function toggleSort(key: string) {
 
 /* Aşama 5: genişleyen satır yumuşak girer/çıkar (opaklık + 4px; reduced-motion'da süre token'ı 0). */
 .ek-grid-expand-enter-active {
-  transition: opacity var(--ek-duration-base) var(--ek-easing-enter);
+  transition: opacity var(--ek-motion-reveal);
 }
 
 .ek-grid-expand-leave-active {
-  transition: opacity var(--ek-duration-fast) var(--ek-easing-standard);
+  transition: opacity var(--ek-motion-dismiss);
 }
 
 .ek-grid-expand-enter-from,
@@ -468,7 +479,7 @@ function toggleSort(key: string) {
 }
 
 .ek-grid-expand-enter-active > .ek-grid__expanded-cell > * {
-  animation: ek-grid-expand-in var(--ek-duration-base) var(--ek-easing-enter);
+  animation: ek-grid-expand-in var(--ek-motion-reveal);
 }
 
 @keyframes ek-grid-expand-in {
@@ -529,13 +540,42 @@ function toggleSort(key: string) {
   background: var(--ek-color-selection);
 }
 
-/* Aşama 5: kanal şeridi (`channelKey`) — seçili satırın aksiyon şeridi bunun üstüne yazar (sonra gelir). */
-.ek-grid__row.has-channel > .ek-grid__td:first-child {
-  box-shadow: inset 3px 0 0 var(--ek-ch-solid);
+/* FR3 madde 8 (fe-r3a): KANAL ÇİZGİSİ — satırın sol kenarına yapışık düz şerit (tablo kenarıyla birleşip "yapışık bant"
+   gibi duruyordu) yerine satır İÇİNDE, kenardan 4px ayrık, yuvarlak uçlu 3px dikey çizgi (orijinal marka rengi, K13).
+   Satır yüksekliğinin ~%60'ı; hover'da tam boya uzar (yalnız transform, `feedback` rolü). Seçili satır kanal kimliğini
+   KORUR (seçim = zemin + işaretli kutu); kanalsız seçili satırda aksiyon çizgisi aynı geometride. */
+:where(.ek-grid__row.has-channel, .ek-grid__row.is-selected) > .ek-grid__td:first-child {
+  position: relative;
 }
 
-.ek-grid__row.is-selected > .ek-grid__td:first-child {
-  box-shadow: inset 3px 0 0 var(--ek-color-action);
+.ek-grid__row.has-channel > .ek-grid__td:first-child::before,
+.ek-grid__row.is-selected:not(.has-channel) > .ek-grid__td:first-child::before {
+  content: '';
+  position: absolute;
+  left: var(--ek-space-1);
+  top: var(--ek-space-2);
+  bottom: var(--ek-space-2);
+  width: 3px;
+  border-radius: var(--ek-radius-chip);
+  background: var(--ek-ch-solid);
+  transform: scaleY(0.72);
+  transition: transform var(--ek-motion-feedback);
+  pointer-events: none;
+}
+
+.ek-grid__row.is-selected:not(.has-channel) > .ek-grid__td:first-child::before {
+  background: var(--ek-color-action);
+}
+
+.ek-grid__row.has-channel:hover > .ek-grid__td:first-child::before,
+.ek-grid__row.has-channel.is-hover > .ek-grid__td:first-child::before,
+.ek-grid__row.is-selected > .ek-grid__td:first-child::before {
+  transform: none;
+}
+
+/* Koyu temada koyu marka tonları (Pazarama/Ideasoft/Bizimhesap) koyu zeminde kaybolmasın: ince açık halka (K13 + FR2-DARK). */
+:root[data-theme='dark'] .ek-grid__row.has-channel > .ek-grid__td:first-child::before {
+  box-shadow: 0 0 0 1px var(--ek-channel-ring, transparent);
 }
 
 .ek-grid__check {
@@ -815,21 +855,36 @@ function toggleSort(key: string) {
     background: var(--ek-color-surface-muted);
   }
 
-  .ek-grid__row.has-channel {
-    box-shadow: inset 3px 0 0 var(--ek-ch-solid);
+  /* Kart: kanal çizgisi kartın solunda, kenardan ayrık (masaüstüyle aynı dil). */
+  .ek-grid__row.has-channel,
+  .ek-grid__row.is-selected {
+    position: relative;
   }
 
-  .ek-grid__row.has-channel > .ek-grid__td:first-child {
-    box-shadow: none;
+  .ek-grid__row.has-channel > .ek-grid__td:first-child::before,
+  .ek-grid__row.is-selected:not(.has-channel) > .ek-grid__td:first-child::before {
+    display: none;
+  }
+
+  .ek-grid__row.has-channel::before,
+  .ek-grid__row.is-selected:not(.has-channel)::before {
+    content: '';
+    position: absolute;
+    left: var(--ek-space-1);
+    top: var(--ek-space-3);
+    bottom: var(--ek-space-3);
+    width: 3px;
+    border-radius: var(--ek-radius-chip);
+    background: var(--ek-ch-solid);
+    pointer-events: none;
+  }
+
+  .ek-grid__row.is-selected:not(.has-channel)::before {
+    background: var(--ek-color-action);
   }
 
   .ek-grid__row.is-selected {
     background: var(--ek-color-selection);
-    box-shadow: inset 3px 0 0 var(--ek-color-action);
-  }
-
-  .ek-grid__row.is-selected > .ek-grid__td:first-child {
-    box-shadow: none;
   }
 
   /* İskelet kartı: başlık kemiği + iki satır. */
