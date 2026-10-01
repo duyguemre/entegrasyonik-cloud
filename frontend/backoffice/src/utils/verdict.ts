@@ -134,11 +134,13 @@ export function buildVerdict(input: VerdictInput): PageVerdict {
     return { tone, badge: input.calm.badge ?? BADGE[tone], summary: input.calm.summary, attention, actions, ...extra }
   }
   const tone = errors ? 'error' : 'warning'
+  // Hüküm kısa ve sayılı (§11.1: "2 konu şimdi müdahale istiyor"); en acil madde ikinci cümlede.
   const summary = input.busy
     ? input.busy({ top: attention[0], errors, warnings, total: urgent })
-    : urgent === 1
-      ? `1 konu dikkat istiyor: ${attention[0].title}.`
-      : `${countPhrase(urgent, 'konu')} dikkat istiyor; en acili: ${attention[0].title}.`
+    : errors
+      ? `${countPhrase(errors, 'konu')} şimdi müdahale istiyor`
+      : `${countPhrase(urgent, 'konu')} izlenmeli`
+  if (!input.note && !input.busy) extra.note = `En önemlisi: ${attention[0].title}.`
   return { tone, badge: BADGE[tone], summary, attention, actions, ...extra }
 }
 

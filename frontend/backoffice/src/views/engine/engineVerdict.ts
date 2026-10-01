@@ -130,11 +130,6 @@ export function engineVerdict(i: EngineVerdictInput): PageVerdict {
     calm: { summary: 'Her şey yolunda: kuyruklar akıyor; başarısız iş, takılı kira ve geciken görev yok.' },
     checks: ['Kuyruk sayaçları', 'Ölü mektuplar', 'Takılı kiralar', 'Zamanlanmış görevler'],
     okTitle: 'Motorda müdahale gereken bir şey yok',
-    busy: ({ errors, total, top }) =>
-      unknown
-        ? 'Motor durumu okunamadı — hüküm verilemiyor.'
-        : errors
-          ? `${errors === 1 ? 'Bir konu' : `${errors} konu`} şimdi müdahale istiyor: ${top.title}.`
-          : `${total === 1 ? 'Bir konu' : `${total} konu`} izlenmeli; en önemlisi: ${top.title}.`,
+    busy: unknown ? () => 'Motor durumu okunamadı — hüküm verilemiyor' : undefined,
   })
 }

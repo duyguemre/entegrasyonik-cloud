@@ -26,8 +26,8 @@ describe('verdict modeli (K51)', () => {
     const v = buildVerdict({ attention: [item('Az önemli', 'warning'), item('Çok önemli', 'error')], calm: { summary: '-' } })
     expect(v.tone).toBe('error')
     expect(v.badge).toBe('Müdahale gerekli')
-    expect(v.summary).toContain('2 konu')
-    expect(v.summary).toContain('Çok önemli')
+    expect(v.summary).toBe('1 konu şimdi müdahale istiyor')
+    expect(v.note).toBe('En önemlisi: Çok önemli.')
   })
 
   it('okunamayan kaynak sarı ve tekrar dene eylemi taşır; "sağlıklı" denmez', () => {

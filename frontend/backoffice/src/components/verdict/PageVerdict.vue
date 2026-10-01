@@ -7,7 +7,8 @@
   bo-r1b UYARLAYICISI: sayfalar yalnız bu bileşeni ve `utils/verdict.ts` modelini kullanır; çizim bo-r1a'nın triyaj
   bileşenleridir — BoStatusHeader (Durum) · BoActionCard "Önerilen ilk adım" (Eylem) · BoAttentionList (Karar).
   Eşleme: tone success/info → ok · warning → warning · error → critical · neutral → unknown; madde error → critical.
-  `unreadable()` maddeleri listeye değil BoAttentionList'in "X okunamadı — Yeniden dene" notuna gider.
+  `unreadable()` maddeleri listeye değil BoAttentionList'in "X okunamadı — Yeniden dene" notuna gider. Acil madde yokken
+  bilgi maddeleri Durum'daki bağlantılı özet çipleri olur (`facts`) — sakin sayfada liste ayrıntıyı aşağı itmez.
   Kalan eylemler sakin bağlantı satırıdır (sayfada tek dolgu/kart kuralı — §11.3).
 -->
 <template>
@@ -16,6 +17,7 @@
     :verdict="verdict?.summary ?? ''"
     :summary="verdict?.note"
     :badge-label="badgeLabel"
+    :facts="facts"
     :loading="!verdict"
     label="Sayfa durumu"
     data-testid="page-verdict"
@@ -72,7 +74,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
-import BoStatusHeader from '@bo/components/triage/BoStatusHeader.vue'
+import BoStatusHeader, { type StatusFact } from '@bo/components/triage/BoStatusHeader.vue'
 import BoAttentionList from '@bo/components/triage/BoAttentionList.vue'
 import BoActionCard from '@bo/components/triage/BoActionCard.vue'
 import type { AttentionEntry, Health, Severity } from '@bo/components/triage/triage'
@@ -90,9 +92,15 @@ function defaultBadge(t: VerdictTone) {
   return { success: 'Sağlıklı', warning: 'İzlenmeli', error: 'Müdahale gerekli', info: 'Bilgi', neutral: 'Bilinmiyor' }[t]
 }
 
+const linked = computed(() => (props.verdict?.attention ?? []).filter((a) => !a.source && a.to))
+/** Acil (kırmızı/sarı) madde yoksa bilgi maddeleri büyük liste yerine Durum'daki bağlantılı özet çiplerine iner (en çok 4). */
+const calmInfo = computed(() => !linked.value.some((a) => a.tone !== 'info'))
+const facts = computed<StatusFact[]>(() =>
+  calmInfo.value ? linked.value.slice(0, 4).map((a) => ({ label: a.title, value: '', tone: 'unknown' as Health, to: a.to })) : [],
+)
 const listed = computed<AttentionEntry[]>(() =>
-  (props.verdict?.attention ?? [])
-    .filter((a) => !a.source && a.to)
+  linked.value
+    .filter(() => !calmInfo.value)
     .map((a) => ({
       id: a.id,
       severity: SEV[a.tone],
