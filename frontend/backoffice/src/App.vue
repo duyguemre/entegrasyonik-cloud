@@ -4,6 +4,7 @@
     <RouterView v-else />
     <ReauthDialog />
     <EkToastHost />
+    <PwaPrompts />
   </v-app>
 </template>
 
@@ -12,6 +13,7 @@ import { useRoute } from 'vue-router'
 import { useTheme } from 'vuetify'
 import { EkBootScreen, EkToastHost } from '@entegrasyonik/ui/components'
 import ReauthDialog from '@bo/components/ReauthDialog.vue'
+import PwaPrompts from '@bo/pwa/PwaPrompts.vue'
 import { session } from '@bo/auth/session'
 import { bindTheme } from '@bo/theme'
 

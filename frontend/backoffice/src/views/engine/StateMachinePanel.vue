@@ -32,7 +32,7 @@
               <span class="bo-cell-stack"><span>{{ item.kind === 'export' ? 'Gönderim' : 'İçe aktarma' }}</span><code class="bo-code">{{ item.id }}</code></span>
             </template>
             <template #cell-tenantId="{ item }">
-              <RouterLink v-if="item.tenantId" :to="`/musteriler/${item.tenantId}`" class="ek-num">#{{ item.tenantId }}</RouterLink>
+              <RouterLink v-if="item.tenantId" :to="`/musteriler/${item.tenantId}`" class="ek-num bo-hit">#{{ item.tenantId }}</RouterLink>
               <span v-else class="bo-muted">—</span>
             </template>
             <template #cell-integrationCode="{ item }">

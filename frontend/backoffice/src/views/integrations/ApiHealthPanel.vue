@@ -134,6 +134,18 @@ function meter(i: ApiHealthItem): MeterRow[] {
   min-width: 240px;
   padding-block: var(--ek-space-2);
 }
+/* MOB-06: kart görünümünde dağılım hücresi etiketin altına tam genişlik iner (değer kırpılmaz). */
+@media (max-width: 599.98px) {
+  .bo-health__meter {
+    width: 100%;
+    min-width: 0;
+  }
+  :deep(.ek-data-table__td:has(.bo-health__meter)) {
+    flex-direction: column;
+    align-items: stretch;
+    text-align: left;
+  }
+}
 .bo-health__p95 {
   display: inline-flex;
   align-items: center;

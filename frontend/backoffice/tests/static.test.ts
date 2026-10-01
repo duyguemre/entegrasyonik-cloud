@@ -34,6 +34,8 @@ describe('backoffice statik kurallar', () => {
       if (rel === join('src', 'chat', 'prefs.ts')) continue
       // BO-ELEV son açılanlar: yalnız { kind, key | tid } — ad/kişisel veri yok (elev.test.ts korur).
       if (rel === join('src', 'navigation', 'recents.ts')) continue
+      // MOB-06 kurulum kartı: yalnız `bo-pwa-install-dismissed` = '1' (pwa-state.test.ts korur).
+      if (rel === join('src', 'pwa', 'pwaState.ts')) continue
       expect(/localStorage|sessionStorage|document\.cookie/.test(read(f)), `${rel}`).toBe(false)
     }
   })

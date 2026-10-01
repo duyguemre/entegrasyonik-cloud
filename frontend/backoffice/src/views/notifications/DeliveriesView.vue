@@ -84,7 +84,7 @@
               <span class="bo-cell-stack"><code class="bo-code">{{ item.code }}</code><span class="bo-mono bo-muted">{{ item.id }}</span></span>
             </template>
             <template #cell-tid="{ item }">
-              <RouterLink v-if="(item as DeliveryRow).tid" :to="`/musteriler/${item.tid}`" class="ek-num">#{{ item.tid }}</RouterLink>
+              <RouterLink v-if="(item as DeliveryRow).tid" :to="`/musteriler/${item.tid}`" class="ek-num bo-hit">#{{ item.tid }}</RouterLink>
               <span v-else class="bo-muted">platform</span>
             </template>
             <template #cell-status="{ item }">

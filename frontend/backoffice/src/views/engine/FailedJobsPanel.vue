@@ -32,7 +32,7 @@
             <code class="bo-id" :title="item.operation">{{ item.id }}</code>
           </template>
           <template #cell-tenantId="{ item }">
-            <RouterLink v-if="item.tenantId" :to="`/musteriler/${item.tenantId}`" class="ek-num">#{{ item.tenantId }}</RouterLink>
+            <RouterLink v-if="item.tenantId" :to="`/musteriler/${item.tenantId}`" class="ek-num bo-hit">#{{ item.tenantId }}</RouterLink>
             <span v-else class="bo-muted">platform</span>
           </template>
           <template #cell-integrationCode="{ item }">
@@ -60,7 +60,7 @@
             <code class="bo-id" :title="`Ölü mektup kaydı: ${item.id}`">{{ item.originalJobId }}</code>
           </template>
           <template #cell-tenantId="{ item }">
-            <RouterLink v-if="item.tenantId" :to="`/musteriler/${item.tenantId}`" class="ek-num">#{{ item.tenantId }}</RouterLink>
+            <RouterLink v-if="item.tenantId" :to="`/musteriler/${item.tenantId}`" class="ek-num bo-hit">#{{ item.tenantId }}</RouterLink>
             <span v-else class="bo-muted">platform</span>
           </template>
           <template #cell-integrationCode="{ item }">

@@ -37,7 +37,8 @@
         <span v-if="!compact" class="bo-top__otopilot-label">{{ CHAT_PRODUCT.name }}</span>
       </button>
       <StepUpIndicator :compact="compact" />
-      <v-menu location="bottom end" :offset="6">
+      <!-- MOB-06: < 600 px tema seçimi hesap menüsüne taşınır (üst bar 360 px'e 44 px hedeflerle sığar). -->
+      <v-menu v-if="!narrow" location="bottom end" :offset="6">
         <template #activator="{ props: menu }">
           <button v-bind="menu" type="button" class="bo-top__icon-btn" :aria-label="`Tema: ${themeLabel}`" data-testid="theme-menu">
             <v-icon :icon="themeIcon" aria-hidden="true" />
@@ -83,6 +84,23 @@
             <div><dt>Son doğrulama</dt><dd>{{ user?.reauthAt ? formatRelative(user.reauthAt) : '—' }}</dd></div>
             <div><dt>2 adımlı doğrulama</dt><dd>Etkin</dd></div>
           </dl>
+          <div v-if="narrow" class="bo-menu__theme" role="group" aria-label="Tema">
+            <p class="bo-menu__label">Tema</p>
+            <button
+              v-for="opt in THEME_OPTIONS"
+              :key="opt.value"
+              type="button"
+              class="bo-menu__item"
+              role="menuitemradio"
+              :aria-checked="themePreference === opt.value"
+              :data-theme-option="opt.value"
+              @click="setThemePreference(opt.value)"
+            >
+              <v-icon :icon="opt.icon" aria-hidden="true" />
+              <span>{{ opt.label }}</span>
+              <v-icon v-if="themePreference === opt.value" class="bo-menu__check" icon="mdi-check" aria-hidden="true" />
+            </button>
+          </div>
           <button type="button" class="bo-menu__item bo-menu__item--danger" data-testid="logout" @click="$emit('logout')">
             <v-icon icon="mdi-logout" aria-hidden="true" />
             <span>Çıkış yap</span>
@@ -95,6 +113,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useDisplay } from 'vuetify'
 import { EkBrandLogo, EkKbd } from '@entegrasyonik/ui/components'
 import StepUpIndicator from '@bo/components/shell/StepUpIndicator.vue'
 import type { ThemePreference } from '@entegrasyonik/ui/theme'
@@ -129,6 +148,9 @@ const themeLabel = computed(() => THEME_OPTIONS.find((o) => o.value === themePre
 const themeIcon = computed(() => (themeMode.value === 'dark' ? 'mdi-weather-night' : 'mdi-white-balance-sunny'))
 
 const env = currentEnv
+/** < 600 px (telefon): üst bar sadeleşir. */
+const { xs } = useDisplay()
+const narrow = computed(() => xs.value)
 </script>
 
 <style scoped>
@@ -480,6 +502,74 @@ const env = currentEnv
 
   .bo-top__brand {
     margin: 0;
+  }
+}
+
+/* MOB-06: telefon — her hedef 44 × 44, aralık sıfır (görsel boşluğu hedefin iç dolgusu verir). */
+@media (max-width: 599.98px) {
+  .bo-top,
+  .bo-top__start,
+  .bo-top__end {
+    gap: 0;
+  }
+
+  .bo-top__icon-btn,
+  .bo-top__search.is-compact {
+    width: 44px;
+    height: 44px;
+  }
+
+  .bo-top__brand {
+    justify-content: center;
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .bo-top__user {
+    flex: none;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border-color: transparent;
+    background: transparent;
+  }
+
+  /* Ortam rozeti etkileşimsiz: görsel boyu sabit kalır. Örnek veri/yerel yalnız ikon (ad ekran okuyucuda);
+     staging/üretim etiketi her zaman görünür. */
+  .bo-top__env {
+    height: 28px;
+    margin-inline: var(--ek-space-1);
+  }
+
+  .bo-top__otopilot {
+    width: 44px;
+    height: 44px;
+    padding: 0;
+  }
+
+  .bo-top__env.is-mock,
+  .bo-top__env.is-local {
+    padding: 0 var(--ek-space-2);
+  }
+
+  .bo-top__env.is-mock > span:not(.ek-sr-only),
+  .bo-top__env.is-local > span:not(.ek-sr-only) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+}
+
+/* 360–399 px staging/üretim: etiketli ortam rozeti + renkli şerit kimliği taşır; marka işareti yer açar
+   (genel bakışa çekmece menüsünden gidilir). */
+@media (max-width: 399.98px) {
+  .bo-top.env-staging .bo-top__brand,
+  .bo-top.env-production .bo-top__brand {
+    display: none;
   }
 }
 
