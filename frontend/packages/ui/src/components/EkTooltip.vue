@@ -20,9 +20,11 @@
   </span>
   <!-- Aşama 6b: tembel (`eager=false`) — kapalı ipucu metni DOM'da kalmaz (erişilebilir ad/metin çiftlenmesi yok). -->
   <v-tooltip
-    v-else :location="location" :open-delay="openDelay" :model-value="forceOpen || undefined" :eager="false" transition="fade-transition">
+    v-else v-model="shown" :location="location" :open-delay="openDelay" :eager="false" transition="fade-transition">
     <template #activator="{ props: activatorProps }">
-      <span class="ek-tooltip__anchor" v-bind="activatorProps">
+      <!-- fe-polish: tetikleyiciye tıklanınca ipucu kapanır — tıklama bir katman (detay sayfası, diyalog) açtığında
+           ipucu kapanmadan katmanın arkasında asılı kalıyordu (axe aria-tooltip-name). -->
+      <span class="ek-tooltip__anchor" v-bind="activatorProps" @click.capture="shown = false">
         <slot />
       </span>
     </template>
@@ -34,9 +36,10 @@
 </template>
 
 <script setup lang="ts">
+import { computed, ref } from 'vue'
 import EkKbd from './EkKbd.vue'
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
     text: string
     shortcut?: string | string[]
@@ -48,6 +51,13 @@ withDefaults(
   }>(),
   { location: 'bottom', openDelay: 400, forceOpen: false, inline: false },
 )
+
+const open = ref(false)
+/** `forceOpen` (vitrin) her zaman açık tutar; aksi hâlde Vuetify'ın hover/odak durumu. */
+const shown = computed({
+  get: () => props.forceOpen || open.value,
+  set: (v: boolean) => { open.value = v },
+})
 </script>
 
 <style scoped>

@@ -68,6 +68,7 @@ const CASES: Case[] = [
       const row = page.locator('.orderListView tbody tr').filter({ hasText: 'E2E-100001' }).first()
       const scope = (await row.count()) ? row : page.locator('.orderListView :is(.ek-grid-card, article, li):visible').first()
       await scope.locator('button:has([class*="mdi-eye"])').first().click()
+      await page.mouse.move(1, 1) // tetikleyicinin ipucu açık kalmasın (axe aria-tooltip-name yanlış pozitifi)
       await page.locator('.ek-detail-sheet, .v-overlay--active .v-card').first().waitFor({ timeout: 5000 }).catch(() => undefined)
       await settle(page)
     },
