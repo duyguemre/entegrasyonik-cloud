@@ -117,6 +117,25 @@ test.describe('FR3-15 — Çıktılar: düzenleyici', () => {
     await expect(canvasEls(page)).toHaveCount(before)
   })
 
+  test('işaretçiyle sürükleme öğeyi ızgaraya yapışarak taşır; tek geri al adımı', async ({ page }) => {
+    await open(page)
+    await editCopyOf(page, 'Kargo etiketi — kare')
+    await pane(page, 'Tuval')
+    const el = canvasEls(page).filter({ hasText: 'KARGO' }).first()
+    const box = (await el.boundingBox())!
+    await page.mouse.move(box.x + 4, box.y + 4)
+    await page.mouse.down()
+    await page.mouse.move(box.x + 30, box.y + 34, { steps: 6 })
+    await page.mouse.up()
+    const pos = await page.locator('.ek-tpl-editor__pos').textContent()
+    const [, x, y] = /X ([\d.]+) · Y ([\d.]+)/.exec(pos ?? '') ?? []
+    expect(Number(x)).toBeGreaterThan(5)
+    expect(Number(y)).toBeGreaterThan(5)
+    expect(Number.isInteger(Number(x)) && Number.isInteger(Number(y))).toBe(true) // 1 mm ızgara
+    await page.keyboard.press('Control+z')
+    await expect(page.locator('.ek-tpl-editor__pos')).toHaveText(/X 5 · Y 5 mm/)
+  })
+
   test('paletten tuvale sürükle-bırak: öğe bırakılan konumda oluşur', async ({ page }) => {
     await open(page)
     await editCopyOf(page, 'Sipariş fişi — A4')

@@ -734,7 +734,7 @@ defineExpose({ save, dirty })
   text-align: left;
   cursor: grab;
   color: var(--ek-color-content-default);
-  transition: background-color var(--ek-duration-fast) var(--ek-easing-standard);
+  transition: var(--ek-transition-colors);
 }
 .ek-tpl-palette-item:hover { background: var(--ek-color-surface-muted); }
 .ek-tpl-palette-item:focus-visible { outline: none; box-shadow: var(--ek-focus-ring); }
@@ -761,7 +761,7 @@ defineExpose({ save, dirty })
   background: var(--ek-color-surface);
   text-align: left;
   cursor: grab;
-  transition: border-color var(--ek-duration-fast) var(--ek-easing-standard), background-color var(--ek-duration-fast) var(--ek-easing-standard);
+  transition: var(--ek-transition-colors);
 }
 .ek-tpl-block:hover { border-color: var(--ek-color-border-strong); background: var(--ek-color-surface-muted); }
 .ek-tpl-block:focus-visible { outline: none; box-shadow: var(--ek-focus-ring); }
@@ -935,7 +935,7 @@ defineExpose({ save, dirty })
   border-radius: var(--ek-radius-sm);
   color: var(--ek-color-content-muted);
   font-size: var(--ek-font-size-sm);
-  transition: background-color var(--ek-duration-fast) var(--ek-easing-standard), color var(--ek-duration-fast) var(--ek-easing-standard);
+  transition: var(--ek-transition-colors);
 }
 .ek-tpl-seg button[aria-pressed='true'] { background: var(--ek-color-surface); color: var(--ek-color-content-strong); box-shadow: var(--ek-shadow-sm); }
 .ek-tpl-seg button:focus-visible { outline: none; box-shadow: var(--ek-focus-ring); }

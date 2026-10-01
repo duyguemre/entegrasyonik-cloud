@@ -34,11 +34,11 @@ export const TEMPLATE_CSS = `
 .ek-tpl-code{flex:1 1 auto;min-height:0;display:block;width:100%;height:100%;fill:CanvasText}
 .ek-tpl-code-text{flex:none;text-align:center;font-size:8pt;letter-spacing:.08em;font-variant-numeric:tabular-nums}
 .ek-tpl-items{width:100%;border-collapse:collapse;table-layout:fixed}
-.ek-tpl-items th,.ek-tpl-items td{padding:0 1mm;text-align:left;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;
+.ek-tpl-page .ek-tpl-items th,.ek-tpl-page .ek-tpl-items td{background:Canvas;color:CanvasText;height:auto;font-size:inherit;padding:0 1mm;text-align:left;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;
   border-bottom:0.2mm solid color-mix(in srgb,CanvasText 22%,Canvas)}
-.ek-tpl-items th{font-weight:600;border-bottom-color:CanvasText}
+.ek-tpl-page .ek-tpl-items th{font-weight:600;border-bottom-color:CanvasText}
 .ek-tpl-items .is-num{text-align:right;font-variant-numeric:tabular-nums}
-.ek-tpl-items.is-zebra tbody tr:nth-child(even) td{background:color-mix(in srgb,CanvasText 6%,Canvas)}
+.ek-tpl-page .ek-tpl-items.is-zebra tbody tr:nth-child(even) td{background:color-mix(in srgb,CanvasText 6%,Canvas)}
 .ek-tpl-items .is-more td{font-style:italic;text-align:left}
 .ek-tpl-items .is-check{text-align:center}
 .ek-tpl-items .is-check i{display:inline-block;width:3mm;height:3mm;border:0.25mm solid CanvasText}

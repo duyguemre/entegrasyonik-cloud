@@ -322,7 +322,8 @@ function confirmDelete() {
   border-bottom: 1px solid var(--ek-color-border-subtle);
 }
 .ek-tpl-gallery__toolbar :deep(.ek-page-tabs) { min-width: 0; max-width: 100%; }
-.ek-tpl-gallery__head .ek-tpl-gallery__storage { display: flex; align-items: center; gap: var(--ek-space-1); }
+.ek-tpl-gallery__head .ek-tpl-gallery__storage { display: flex; align-items: flex-start; gap: var(--ek-space-1); }
+.ek-tpl-gallery__storage .v-icon { margin-top: 2px; flex: none; }
 .ek-tpl-create {
   display: flex;
   flex-direction: column;
@@ -339,7 +340,7 @@ function confirmDelete() {
   color: var(--ek-color-content-strong);
   font-size: var(--ek-font-size-sm);
   text-align: center;
-  transition: border-color var(--ek-duration-fast) var(--ek-easing-standard), background-color var(--ek-duration-fast) var(--ek-easing-standard);
+  transition: var(--ek-transition-colors);
 }
 .ek-tpl-create > span:last-child { font-size: var(--ek-font-size-xs); color: var(--ek-color-content-muted); }
 .ek-tpl-create:hover { border-color: var(--ek-color-action-border); background: var(--ek-color-action-subtle); }
@@ -383,7 +384,7 @@ function confirmDelete() {
   background: var(--ek-color-surface);
   box-shadow: var(--ek-shadow-card);
   overflow: hidden;
-  transition: border-color var(--ek-duration-fast) var(--ek-easing-standard), box-shadow var(--ek-duration-fast) var(--ek-easing-standard);
+  transition: var(--ek-transition-colors);
 }
 .ek-tpl-card:hover { border-color: var(--ek-color-border-strong); box-shadow: var(--ek-shadow-md); }
 .ek-tpl-card__thumb {
@@ -420,7 +421,7 @@ function confirmDelete() {
   border-radius: var(--ek-radius-md);
   cursor: pointer;
   color: var(--ek-color-content-muted);
-  transition: border-color var(--ek-duration-fast) var(--ek-easing-standard), background-color var(--ek-duration-fast) var(--ek-easing-standard);
+  transition: var(--ek-transition-colors);
 }
 .ek-tpl-kind:hover { border-color: var(--ek-color-border-strong); }
 .ek-tpl-kind.is-active { border-color: var(--ek-color-action-border); background: var(--ek-color-action-subtle); color: var(--ek-color-action); }

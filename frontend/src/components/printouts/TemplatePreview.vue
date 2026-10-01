@@ -233,7 +233,7 @@ async function print() {
   border: 1px solid var(--ek-color-border-subtle);
   border-radius: var(--ek-radius-md);
   cursor: pointer;
-  transition: border-color var(--ek-duration-fast) var(--ek-easing-standard), background-color var(--ek-duration-fast) var(--ek-easing-standard);
+  transition: var(--ek-transition-colors);
 }
 .ek-tpl-option:hover { border-color: var(--ek-color-border-strong); }
 .ek-tpl-option.is-active { border-color: var(--ek-color-action-border); background: var(--ek-color-action-subtle); }
@@ -269,7 +269,7 @@ async function print() {
 
 @media (max-width: 959px) {
   .ek-tpl-preview__body { grid-template-columns: minmax(0, 1fr); height: auto; }
-  .ek-tpl-preview__stage { max-height: 80vh; }
+  .ek-tpl-preview__stage { max-height: 80vh; order: -1; } /* dar ekranda önce sayfa, sonra ayarlar */
   .ek-tpl-preview__side { border-right: 0; border-bottom: 1px solid var(--ek-color-border-subtle); overflow: visible; }
   .ek-tpl-preview__stage { padding: var(--ek-space-4); }
 }
