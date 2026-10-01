@@ -2,6 +2,7 @@ import { IService } from '@interfaces/index'
 import { BaseApi } from '../BaseApi'
 import { ApplicationError } from '@platform/core/security/Security'
 import { sanitizeMeta } from '@services/audit/AuditLogger'
+import { AuditLogRepository } from '@database/repositories/app/AuditLogRepository'
 
 const DAY_MS = 24 * 60 * 60 * 1000
 const DEFAULT_WINDOW_DAYS = 30
@@ -38,6 +39,8 @@ function parseDate(v: any, field: string): Date {
  * daraltılır (`at` indeksi) ve `maxTimeMS` ile sınırlanır. `{tid:1, at:-1}` indeksi önerilir (insan onayı gerekir; bkz. docs/API_TENANT_SURFACE.md).
  */
 export default class AuditService extends BaseApi implements IService {
+
+    private get auditLogs() { return new AuditLogRepository(this.applicationDB) }
 
     async get(): Promise<any> {
         // IService gereksinimi; kullanılmıyor
@@ -87,11 +90,7 @@ export default class AuditService extends BaseApi implements IService {
             filter.result = req.result
         }
 
-        const model = this.applicationDB.getAuditLogModel()
-        const [total, rows] = await Promise.all([
-            model.countDocuments(filter).maxTimeMS(QUERY_MAX_TIME_MS),
-            model.find(filter, { at: 1, event: 1, result: 1, sub: 1, meta: 1, imp: 1 }).sort({ at: -1 }).skip((page - 1) * limit).limit(limit).maxTimeMS(QUERY_MAX_TIME_MS).lean(),
-        ])
+        const [total, rows] = await this.auditLogs.listPage(filter, page, limit, QUERY_MAX_TIME_MS)
 
         return {
             logs: (rows || []).map((r: any) => {
