@@ -54,8 +54,7 @@
       @refresh="handlePageChange()"
     >
       <template #filters>
-        <EkDateField v-model="searchExportLogForm.data.startDate" label="Başlangıç tarihi" :max="searchExportLogForm.data.endDate" />
-        <EkDateField v-model="searchExportLogForm.data.endDate" label="Bitiş tarihi" :min="searchExportLogForm.data.startDate" />
+        <EkDateRange v-model:start="searchExportLogForm.data.startDate" v-model:end="searchExportLogForm.data.endDate" label="İşlem tarihi" value-format="date" />
         <EkSelect kind="channel" v-model="searchExportLogForm.data.integrationCode" :items="channelOptionsFrom(integrationStore.getClientPlatforms())"
           label="Kanal" clearable multiple />
         <v-select v-model="searchExportLogForm.data.mode" :items="processMenuItems" label="İşlem tipi" item-value="id" clearable />
@@ -117,7 +116,7 @@
 </template>
 
 <script setup lang="ts">
-import { EkSelect, EkRowActions, EkButton, EkChannelDot, EkDateField, EkStatusChip } from '@entegrasyonik/ui/components'
+import { EkSelect, EkRowActions, EkButton, EkChannelDot, EkDateRange, EkStatusChip } from '@entegrasyonik/ui/components'
 import type { EkGridColumn, EkGridSort, EkActiveFilterChip } from '@entegrasyonik/ui/components'
 import { channelOptionsFrom } from '@entegrasyonik/ui/components/selectOptions'
 import { ref, onMounted, reactive, computed } from 'vue'

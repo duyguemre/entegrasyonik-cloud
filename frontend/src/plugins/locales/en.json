@@ -383,6 +383,7 @@
     "filters": {
       "channels": "Channels",
       "channel": "Channel",
+      "dateRange": "Date range",
       "startDate": "Start",
       "endDate": "End",
       "orderNumber": "Order no",

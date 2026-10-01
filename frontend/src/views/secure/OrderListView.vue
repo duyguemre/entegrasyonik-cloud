@@ -102,6 +102,8 @@
         <EkSelect v-model="filters.integrationCodes" kind="channel" :items="channelSelectOptions" label="Kanal" multiple clearable />
         <EkSelect v-model="filters.internalStatuses" kind="status" :items="statusSelectOptions" label="Sipariş durumu" multiple clearable recent-key="orders.status" />
         <EkSelect v-model="filters.allocationStates" kind="status" :items="allocationSelectOptions" label="Stok durumu" multiple clearable />
+        <!-- FR3 madde 10: tarih aralığı (OrderService/getOrders `filter.startDate/endDate` → sipariş tarihi). -->
+        <EkDateRange v-model:start="filters.startDate" v-model:end="filters.endDate" label="Sipariş tarihi" value-format="iso-date" />
       </template>
 
       <template #bulk-actions>
@@ -175,7 +177,7 @@
 <script setup lang="ts">
 import HelpStartLink from '@/components/help/HelpStartLink.vue'
 import EkHelpHint from '@/components/page/EkHelpHint.vue'
-import { EkSelect, EkAlert, EkRowActions, type EkRowAction, EkButton, EkContextMenu, EkChannelDot, EkStatusChip, EkConfirmDialog, EkFormDialog, EkPlatformMark } from '@entegrasyonik/ui/components'
+import { EkDateRange, EkSelect, EkAlert, EkRowActions, type EkRowAction, EkButton, EkContextMenu, EkChannelDot, EkStatusChip, EkConfirmDialog, EkFormDialog, EkPlatformMark } from '@entegrasyonik/ui/components'
 import type { EkGridColumn, EkGridSort, EkActiveFilterChip, EkMenuGroup } from '@entegrasyonik/ui/components'
 import { channelOptionsFrom, toneOptionsFrom } from '@entegrasyonik/ui/components/selectOptions'
 import { problemFromError, type ProblemCopy } from '@/composables/useProblem'
@@ -191,6 +193,7 @@ import { useOrderActions } from '@/components/order/composables/useOrderActions'
 import { useOrderCancel } from '@/components/order/composables/useOrderCancel'
 import { useLifecycle } from '@/composables/useLifecycle'
 import { formatMoney, formatDateTime } from '@entegrasyonik/ui/format'
+import { formatDateRange } from '@entegrasyonik/ui/components/dateRange'
 import { ORDER_STATUS_TONE, ALLOCATION_STATE_TONE, ALLOCATION_STATES } from '@/design/status-map'
 import { orderStatusOptions, ORDER_STATUS_GUIDE } from '@/design/status-map'
 import { useI18n } from 'vue-i18n'
@@ -394,11 +397,12 @@ const activeChips = computed<EkActiveFilterChip[]>(() => {
   if (applied.value.allocationStates.length) {
     chips.push({ key: 'allocationStates', label: 'Stok durumu', value: applied.value.allocationStates.map(allocationTitle).join(', ') })
   }
+  if (applied.value.startDate || applied.value.endDate) chips.push({ key: 'date', label: 'Tarih', value: formatDateRange(applied.value.startDate, applied.value.endDate) })
   return chips
 })
 
 const panelFilterCount = computed(() => (applied.value.integrationCodes.length ? 1 : 0) + (applied.value.internalStatuses.length ? 1 : 0)
-  + (applied.value.allocationStates.length ? 1 : 0))
+  + (applied.value.allocationStates.length ? 1 : 0) + (applied.value.startDate || applied.value.endDate ? 1 : 0))
 
 // C2.4 kayıtlı görünümler: son sorgulanan filtreler verilir; görünüme YALNIZ screens.ts `urlParams`
 // alanları (durum, stok durumu) girer — arama metni/kanal süzülür (useSavedViews → pickUrlParams).
@@ -418,6 +422,8 @@ function applySavedView(params: Record<string, any>) {
   data.integrationCodes = []
   data.internalStatuses = Array.isArray(params.internalStatuses) ? [...params.internalStatuses] : []
   data.allocationStates = allocationParam(params.allocationStates) ?? []
+  data.startDate = undefined
+  data.endDate = undefined
   getOrders(true)
 }
 
@@ -427,6 +433,7 @@ function removeChip(key: string) {
   if (key === 'integrationCodes') data.integrationCodes = []
   if (key === 'internalStatuses') data.internalStatuses = []
   if (key === 'allocationStates') data.allocationStates = []
+  if (key === 'date') { data.startDate = undefined; data.endDate = undefined }
   getOrders(true)
 }
 

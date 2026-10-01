@@ -72,6 +72,8 @@
         <EkSelect kind="channel" v-model="filters.integrationCodes" :items="channelOptionsFrom(integrationStore.getClientPlatforms())" label="Kanal" multiple clearable />
         <EkSelect v-model="filters.internalStatuses" kind="status" :items="statusSelectOptions" label="Talep durumu" multiple clearable recent-key="claims.status" />
         <EkSelect v-model="filters.types" kind="status" :items="typeSelectOptions" label="Talep türü" multiple clearable />
+        <!-- FR3 madde 10: tarih aralığı (ClaimService/getClaims `filter.startDate/endDate` → talep tarihi). -->
+        <EkDateRange v-model:start="filters.startDate" v-model:end="filters.endDate" label="Talep tarihi" value-format="iso-date" />
       </template>
 
       <template #bulk-actions>
@@ -113,7 +115,8 @@
 <script setup lang="ts">
 import HelpStartLink from '@/components/help/HelpStartLink.vue'
 import EkHelpHint from '@/components/page/EkHelpHint.vue'
-import { EkSelect, EkRowActions, EkButton, EkChannelDot, EkStatusChip, EkConfirmDialog, EkFormDialog } from '@entegrasyonik/ui/components'
+import { EkDateRange, EkSelect, EkRowActions, EkButton, EkChannelDot, EkStatusChip, EkConfirmDialog, EkFormDialog } from '@entegrasyonik/ui/components'
+import { formatDateRange } from '@entegrasyonik/ui/components/dateRange'
 import type { EkGridColumn, EkGridSort, EkActiveFilterChip } from '@entegrasyonik/ui/components'
 import { channelOptionsFrom } from '@entegrasyonik/ui/components/selectOptions'
 import { problemFromError, type ProblemCopy } from '@/composables/useProblem'
@@ -192,10 +195,11 @@ const activeChips = computed<EkActiveFilterChip[]>(() => {
     chips.push({ key: 'internalStatuses', label: 'Durum', value: applied.value.internalStatuses.map(titleOf).join(', ') })
   }
   if (applied.value.types.length) chips.push({ key: 'types', label: 'Tür', value: applied.value.types.map(claimTypeLabel).join(', ') })
+  if (applied.value.startDate || applied.value.endDate) chips.push({ key: 'date', label: 'Tarih', value: formatDateRange(applied.value.startDate, applied.value.endDate) })
   return chips
 })
 
-const panelFilterCount = computed(() => (applied.value.integrationCodes.length ? 1 : 0) + (applied.value.internalStatuses.length ? 1 : 0) + (applied.value.types.length ? 1 : 0))
+const panelFilterCount = computed(() => (applied.value.integrationCodes.length ? 1 : 0) + (applied.value.internalStatuses.length ? 1 : 0) + (applied.value.types.length ? 1 : 0) + (applied.value.startDate || applied.value.endDate ? 1 : 0))
 
 // C2.4 kayıtlı görünümler: görünüme YALNIZ screens.ts `urlParams` alanı (talep durumu) girer.
 const savedViews = computed<EkSavedViewsConfig>(() => ({
@@ -211,6 +215,8 @@ function applySavedView(params: Record<string, any>) {
   data.integrationCodes = []
   data.internalStatuses = Array.isArray(params.internalStatuses) ? [...params.internalStatuses] : []
   data.types = []
+  data.startDate = undefined
+  data.endDate = undefined
   getClaims(true)
 }
 
@@ -220,6 +226,7 @@ function removeChip(key: string) {
   if (key === 'integrationCodes') data.integrationCodes = []
   if (key === 'internalStatuses') data.internalStatuses = []
   if (key === 'types') data.types = []
+  if (key === 'date') { data.startDate = undefined; data.endDate = undefined }
   getClaims(true)
 }
 

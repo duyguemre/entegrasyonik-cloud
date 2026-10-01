@@ -59,8 +59,7 @@
         <v-select v-model="searchForm.data.type" :items="typeOptions" label="Mesaj tipi" item-title="label" item-value="value" clearable />
         <v-select v-model="searchForm.data.isRejected" :items="REJECT_OPTIONS" label="Red durumu" item-title="label" item-value="value" />
         <EkSelect kind="channel" v-model="searchForm.data.integrationCodes" :items="CHANNEL_OPTIONS" item-title="title" item-value="value" label="Kanal" multiple clearable />
-        <EkDateField v-model="searchForm.data.startDate" label="Başlangıç tarihi" value-format="iso-date" :max="searchForm.data.endDate" />
-        <EkDateField v-model="searchForm.data.endDate" label="Bitiş tarihi" value-format="iso-date" :min="searchForm.data.startDate" />
+        <EkDateRange v-model:start="searchForm.data.startDate" v-model:end="searchForm.data.endDate" label="Mesaj tarihi" value-format="iso-date" />
       </template>
 
       <template #toolbar-end>
@@ -131,7 +130,7 @@
 
 <script setup lang="ts">
 import HelpStartLink from '@/components/help/HelpStartLink.vue'
-import { EkSelect, EkRowActions, type EkRowAction, EkButton, EkDateField, EkChannelDot, EkStatusChip, EkTooltip } from '@entegrasyonik/ui/components'
+import { EkSelect, EkRowActions, type EkRowAction, EkButton, EkDateRange, EkChannelDot, EkStatusChip, EkTooltip } from '@entegrasyonik/ui/components'
 import type { EkGridColumn, EkGridSort, EkActiveFilterChip } from '@entegrasyonik/ui/components'
 import { ref, reactive, computed, onBeforeUnmount } from 'vue';
 import { useI18n } from 'vue-i18n';

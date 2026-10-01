@@ -76,8 +76,7 @@
           multiple
           clearable
         />
-        <EkDateField v-model="form.startDate" :label="t('finance.filters.startDate')" :max="form.endDate" />
-        <EkDateField v-model="form.endDate" :label="t('finance.filters.endDate')" :min="form.startDate" />
+        <EkDateRange v-model:start="form.startDate" v-model:end="form.endDate" :label="t('finance.filters.dateRange')" :start-label="t('finance.filters.startDate')" :end-label="t('finance.filters.endDate')" value-format="date" />
       </template>
 
       <template #toolbar-start>
@@ -126,7 +125,7 @@
 </template>
 
 <script setup lang="ts">
-import { EkSelect, EkButton, EkDateField, EkChannelDot, EkTooltip } from '@entegrasyonik/ui/components'
+import { EkSelect, EkButton, EkDateRange, EkChannelDot, EkTooltip } from '@entegrasyonik/ui/components'
 import type { EkGridColumn, EkGridSort, EkActiveFilterChip } from '@entegrasyonik/ui/components'
 import { channelOptionsFrom } from '@entegrasyonik/ui/components/selectOptions'
 import { computed, onMounted, reactive, ref } from 'vue'
