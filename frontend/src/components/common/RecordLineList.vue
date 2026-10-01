@@ -4,7 +4,7 @@
   kolon sıkışması olmaz, aynı dil iki detayda. Pasif (iptal/iade) kalem soluk + tutar üstü çizili — hata rengi değil.
 -->
 <template>
-  <ul class="ek-lines" :aria-label="label">
+  <ul class="ek-lines" :class="{ 'ek-lines--plain': plain }" :aria-label="label">
     <li v-for="line in lines" :key="line.key" class="ek-line" :class="{ 'is-inactive': !!line.inactiveLabel }">
       <span class="ek-line__qty ek-num" :aria-label="`${line.quantity ?? 0} adet`">{{ line.quantity ?? '—' }}×</span>
       <span class="ek-line__main">
@@ -45,7 +45,7 @@ export interface RecordLine {
   inactiveTone?: StatusTone
 }
 
-withDefaults(defineProps<{ lines: RecordLine[]; label?: string; currency?: string }>(), { label: 'Kalemler' })
+withDefaults(defineProps<{ lines: RecordLine[]; label?: string; currency?: string; /** FR3-12: bölüm kartının (EkDetailPanel flush) içinde — kendi çerçevesi yok. */ plain?: boolean }>(), { label: 'Kalemler' })
 </script>
 
 <style scoped>
@@ -56,6 +56,12 @@ withDefaults(defineProps<{ lines: RecordLine[]; label?: string; currency?: strin
   border: 1px solid var(--ek-color-border-default);
   border-radius: var(--ek-radius-card);
   background: var(--ek-color-surface);
+}
+
+.ek-lines--plain {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
 }
 
 .ek-line {

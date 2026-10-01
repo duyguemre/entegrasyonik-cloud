@@ -10,7 +10,7 @@
 -->
 <template>
   <section class="ek-alloc" :aria-labelledby="headingId">
-    <h2 :id="headingId" class="ek-alloc__heading">{{ title }}</h2>
+    <h2 :id="headingId" class="ek-alloc__heading" :class="{ 'ek-sr-only': embedded }">{{ title }}</h2>
 
     <p v-if="entries.length === 0" class="ek-alloc__empty">Bu siparişte kalem yok.</p>
 
@@ -50,7 +50,7 @@ import { ALLOCATION_STATE_TONE } from '@/design/status-map'
 import { formatDateTime, formatNumber } from '@entegrasyonik/ui/format'
 import { buildAllocationTimeline, type AllocationEventKind } from '@/composables/useStockHealthApi'
 
-const props = withDefaults(defineProps<{ items: Array<Record<string, any>> | null | undefined; title?: string }>(), {
+const props = withDefaults(defineProps<{ items: Array<Record<string, any>> | null | undefined; title?: string; /** FR3-12: bölüm kartının (EkDetailPanel) içinde — görünür başlığı kart taşır. */ embedded?: boolean }>(), {
   title: 'Stok tahsisi',
 })
 

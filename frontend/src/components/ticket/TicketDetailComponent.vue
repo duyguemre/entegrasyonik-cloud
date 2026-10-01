@@ -8,44 +8,35 @@
   Veri kaynağı: liste satırı nesnesi (ayrı detay isteği YOK); `ticket` yokken iskelet gösterilir.
 -->
 <template>
-  <EkDialog
+  <!-- FR3-13: destek talebi de ortak kayıt detayı deseninde (EkRecordSheet): özet kartı üstte, yazışma başlıklı bölüm
+       kartında, yanıt alanı sabit alt çubukta. -->
+  <EkRecordSheet
     :model-value="modelValue"
-    :title="`Destek talebi ${ticket?.ticketNumber || ''}`.trim()"
-    :description="ticket?.subject"
-    icon="mdi-message-text-clock-outline"
-    width="lg"
-    attach="ticketListView"
-    class="ek-ticket-dialog ek-ticket-detail-dialog"
-    hide-actions
-    :retain-focus="false"
+    kind="Destek talebi"
+    :identity="ticket?.ticketNumber || 'Destek talebi'"
     @update:model-value="(v: boolean) => emit('update:modelValue', v)"
   >
+    <template #status>
+      <EkStatusChip v-if="ticket" :tone="statusTone(ticket.status)" :label="translateStatus(ticket.status)" />
+    </template>
+
+    <template v-if="ticket" #summary>
+      <EkRecordSummary
+        icon="mdi-lifebuoy"
+        :kind="translateType(ticket.type)"
+        :title="ticket.subject || 'Konu belirtilmedi'"
+        :facts="summaryFacts"
+        label="Destek talebi özeti"
+      >
+        <template #status>
+          <EkStatusChip :tone="priorityTone(ticket.priority)" :label="`${translatePriority(ticket.priority)} öncelik`" />
+        </template>
+      </EkRecordSummary>
+    </template>
+
     <EkSkeleton v-if="!ticket" type="detail" class="tk-loading" />
 
-    <div v-else class="tk-detail">
-      <!-- Başlık alanı: durum · öncelik · tip · açılış -->
-      <dl class="tk-meta">
-        <div class="tk-meta__item">
-          <dt>Durum</dt>
-          <dd><EkStatusChip :tone="statusTone(ticket.status)" :label="translateStatus(ticket.status)" /></dd>
-        </div>
-        <div class="tk-meta__item">
-          <dt>Öncelik</dt>
-          <dd><EkStatusChip :tone="priorityTone(ticket.priority)" :label="translatePriority(ticket.priority)" /></dd>
-        </div>
-        <div class="tk-meta__item">
-          <dt>Talep tipi</dt>
-          <dd class="tk-meta__value">
-            <v-icon :icon="typeIcon(ticket.type)" class="tk-meta__icon" aria-hidden="true" />{{ translateType(ticket.type) }}
-          </dd>
-        </div>
-        <div class="tk-meta__item tk-meta__item--end">
-          <dt>Açılış</dt>
-          <dd class="tk-meta__value ek-num">{{ formatDateTime(ticket.createdDate) }}</dd>
-        </div>
-      </dl>
-
-      <!-- Zaman çizgisi -->
+    <EkDetailPanel v-else title="Yazışma" icon="mdi-forum-outline" :description="threadText" flush>
       <div ref="scroller" class="tk-scroll" role="log" aria-label="Yazışma geçmişi" tabindex="0">
         <ol class="tk-timeline">
           <template v-for="entry in entries" :key="entry.key">
@@ -68,8 +59,9 @@
           <li v-if="!hasMessages" class="tk-empty">Bu talepte henüz mesaj yok.</li>
         </ol>
       </div>
+    </EkDetailPanel>
 
-      <!-- Yanıt alanı (sabit, altta) -->
+    <template v-if="ticket" #footer>
       <div v-if="ticket.status !== TicketStatusEnum.CLOSED" class="tk-reply">
         <div v-if="reply.state.value.error" class="tk-alert" role="alert">
           <v-icon icon="mdi-alert-circle-outline" class="tk-alert__icon" aria-hidden="true" />
@@ -101,13 +93,13 @@
         <v-icon icon="mdi-lock-outline" class="tk-closed__icon" aria-hidden="true" />
         <p>Bu destek talebi kapatılmıştır. Yeni bir mesaj gönderilemez — başka bir konu için yeni bir destek talebi açabilirsiniz.</p>
       </div>
-    </div>
-  </EkDialog>
+    </template>
+  </EkRecordSheet>
 </template>
 
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue'
-import { EkDialog, EkButton, EkKbd, EkSkeleton, EkStatusChip } from '@entegrasyonik/ui/components'
+import { EkRecordSheet, EkRecordSummary, type EkSummaryFact, EkDetailPanel, EkButton, EkKbd, EkSkeleton, EkStatusChip } from '@entegrasyonik/ui/components'
 import { formatDate, formatDateTime } from '@entegrasyonik/ui/format'
 import {
   TicketStatusEnum, TicketPriorityEnum, TicketTypeEnum,
@@ -139,7 +131,9 @@ const hasMessages = computed(() => (props.ticket?.messages?.length ?? 0) > 0)
 function scrollToBottom() {
   nextTick(() => {
     requestAnimationFrame(() => {
-      if (scroller.value) scroller.value.scrollTop = scroller.value.scrollHeight
+      // FR3-13: kaydırma kabı kayıt diyaloğunun gövdesi (yazışma kartı onun içinde).
+      const el = (scroller.value?.closest('.ek-record-sheet__body') as HTMLElement | null) ?? scroller.value
+      if (el) el.scrollTop = el.scrollHeight
     })
   })
 }
@@ -177,7 +171,18 @@ const statusTone = (s: any) => TICKET_STATUS_TONE[s as TicketStatusEnum]?.tone |
 const translatePriority = (p: any) => TICKET_PRIORITY_LABELS[p as TicketPriorityEnum] || p
 const priorityTone = (p: any) => TICKET_PRIORITY_TONE[p as TicketPriorityEnum] || 'neutral'
 const translateType = (t: any) => TICKET_TYPE_LABELS[t as TicketTypeEnum] || t
-const typeIcon = (t: any) => TICKET_TYPE_META[t as TicketTypeEnum]?.icon || 'mdi-help-circle-outline'
+const messageCount = computed(() => props.ticket?.messages?.length ?? 0)
+const threadText = computed(() => (messageCount.value ? `${messageCount.value} mesaj · eskiden yeniye` : 'Henüz mesaj yok'))
+const summaryFacts = computed<EkSummaryFact[]>(() => {
+  const t = props.ticket
+  if (!t) return []
+  const facts: EkSummaryFact[] = [
+    { label: 'Talep no', value: t.ticketNumber, numeric: true },
+    { label: 'Açılış', value: formatDateTime(t.createdDate), numeric: true },
+  ]
+  if (t.lastMessageAt) facts.push({ label: 'Son mesaj', value: formatDateTime(t.lastMessageAt), numeric: true })
+  return facts
+})
 </script>
 
 <style scoped>
@@ -193,65 +198,10 @@ const typeIcon = (t: any) => TICKET_TYPE_META[t as TicketTypeEnum]?.icon || 'mdi
   min-width: 0;
 }
 
-.tk-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--ek-space-3) var(--ek-space-6);
-  margin: 0;
-  padding: var(--ek-space-3) var(--ek-space-6);
-  border-top: 1px solid var(--ek-color-border-subtle);
-  border-bottom: 1px solid var(--ek-color-border-default);
-  background: var(--ek-color-surface-muted);
-}
-
-.tk-meta__item {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ek-space-1);
-  min-width: 0;
-}
-
-.tk-meta__item--end {
-  margin-left: auto;
-}
-
-.tk-meta dt {
-  color: var(--ek-color-content-muted);
-  font-size: var(--ek-type-micro-size);
-  line-height: var(--ek-type-micro-line);
-  font-weight: var(--ek-type-micro-weight);
-  letter-spacing: var(--ek-type-micro-tracking);
-  text-transform: uppercase;
-}
-
-.tk-meta dd {
-  margin: 0;
-  display: flex;
-  align-items: center;
-  min-height: var(--ek-space-5);
-}
-
-.tk-meta__value {
-  gap: var(--ek-space-1);
-  color: var(--ek-color-content-strong);
-  font-size: var(--ek-type-label-size);
-  font-weight: var(--ek-type-subheading-weight);
-}
-
-.tk-meta__icon {
-  color: var(--ek-color-content-muted);
-  font-size: var(--ek-icon-sm);
-}
-
 /* Zaman çizgisi */
 .tk-scroll {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding: var(--ek-space-4) var(--ek-space-6);
-  background: var(--ek-color-surface);
-  scrollbar-width: thin;
+  padding: var(--ek-space-4) var(--ek-space-5);
+  border-radius: 0 0 var(--ek-radius-card) var(--ek-radius-card);
 }
 
 .tk-scroll:focus-visible {
@@ -386,9 +336,6 @@ const typeIcon = (t: any) => TICKET_TYPE_META[t as TicketTypeEnum]?.icon || 'mdi
   display: flex;
   flex-direction: column;
   gap: var(--ek-space-3);
-  padding: var(--ek-space-4) var(--ek-space-6);
-  border-top: 1px solid var(--ek-color-border-default);
-  background: var(--ek-color-surface-muted);
 }
 
 .tk-reply__bar {
@@ -457,9 +404,6 @@ const typeIcon = (t: any) => TICKET_TYPE_META[t as TicketTypeEnum]?.icon || 'mdi
   display: flex;
   align-items: flex-start;
   gap: var(--ek-space-3);
-  padding: var(--ek-space-4) var(--ek-space-6);
-  border-top: 1px solid var(--ek-color-border-default);
-  background: var(--ek-color-surface-muted);
   color: var(--ek-color-content-muted);
 }
 
@@ -474,58 +418,13 @@ const typeIcon = (t: any) => TICKET_TYPE_META[t as TicketTypeEnum]?.icon || 'mdi
 }
 
 @media (max-width: 599px) {
-  .tk-meta {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .tk-meta,
-  .tk-scroll,
-  .tk-reply,
-  .tk-closed {
-    padding-left: var(--ek-space-4);
-    padding-right: var(--ek-space-4);
-  }
-
-  .tk-meta__item--end {
-    margin-left: 0;
+  .tk-scroll {
+    padding-left: var(--ek-space-3);
+    padding-right: var(--ek-space-3);
   }
 
   .tk-msg {
     max-width: 92%;
-  }
-}
-</style>
-
-<style src="./ticket-dialog.css"></style>
-
-<style>
-/* Ayrıntı diyaloğu: sabit yükseklik; gövde kaydırmaz, iç zaman çizgisi kayar, yanıt alanı altta sabit kalır. */
-.ek-ticket-detail-dialog .ek-dialog.ek-dialog {
-  height: calc(100vh - var(--ek-space-16) - var(--ek-space-16));
-  max-height: 46rem;
-}
-
-.ek-ticket-detail-dialog .ek-dialog__body {
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  padding: 0;
-  overflow: hidden;
-}
-
-.ek-ticket-detail-dialog .ek-dialog__desc {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  overflow-wrap: anywhere;
-}
-
-@media (max-width: 599px) {
-  .ek-ticket-detail-dialog .ek-dialog.ek-dialog {
-    height: 100%;
-    max-height: none;
   }
 }
 </style>
