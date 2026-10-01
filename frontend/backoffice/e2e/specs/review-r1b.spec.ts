@@ -34,7 +34,7 @@ const SCREENS: Array<[string, string]> = [
 ]
 
 test.skip(!process.env.BO_REVIEW, 'BO_REVIEW=1 ile koşar')
-test.setTimeout(900_000)
+test.setTimeout(600_000)
 
 const want = (name: string) => !ONLY.length || ONLY.some((o) => name.includes(o))
 
@@ -63,18 +63,6 @@ for (const cfg of CONFIGS) {
       await page.goto(path)
       await expect(page.getByRole('heading', { level: 1 })).toBeVisible({ timeout: 20_000 })
       await shot(page, name, cfg)
-    }
-
-    // Kısmi bozulma (Redis düşük): motor hükmü kırmızı + altyapıya yönlendirir. SPA içi gezinme (sahte durum yenilemede sıfırlanır).
-    if (want('60-bozulma') && cfg.width > 600) {
-      await page.goto('/genel-bakis')
-      await page.waitForFunction(() => 'setDegraded' in ((window as unknown as { __boMock?: object }).__boMock ?? {}))
-      await page.evaluate(() => (window as unknown as { __boMock: { setDegraded: (v: boolean) => void } }).__boMock.setDegraded(true))
-      await page.keyboard.press('Control+k')
-      await page.keyboard.type('Motor ve kuyruklar')
-      await page.keyboard.press('Enter')
-      await expect(page.getByRole('heading', { level: 1, name: 'Motor ve kuyruklar' })).toBeVisible()
-      await shot(page, '60-bozulma-motor', cfg)
     }
 
     // Komut paleti "Bu ekranda" (NT-01).

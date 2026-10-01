@@ -29,7 +29,7 @@
       eyebrow="Önerilen ilk adım"
       :title="first.label"
       :text="first.detail"
-      :action-label="first.cta ?? (first.to ? 'Aç' : 'Başlat…')"
+      :action-label="firstCta"
       :to="first.to"
       :tone="cardTone"
       :icon="first.icon ?? 'mdi-lightbulb-on-outline'"
@@ -133,6 +133,15 @@ const actions = computed<SuggestedAction[]>(() => props.verdict?.actions ?? [])
 /** §11.3: yıkıcı eylem kartla önerilmez → ilk YIKICI OLMAYAN eylem kart olur. */
 const first = computed<(SuggestedAction & { cta?: string }) | undefined>(() => actions.value.find((a) => !a.danger))
 const rest = computed(() => actions.value.filter((a) => a !== first.value))
+/** Kart düğmesi: eylemin `cta`'sı; yoksa aynı hedefe giden dikkat maddesinin bağlantı metni ("Ölü mektupları aç"); yoksa "Aç". */
+const firstCta = computed(() => {
+  const f = first.value
+  if (!f) return ''
+  if (f.cta) return f.cta
+  if (!f.to) return 'Başlat…'
+  const key = JSON.stringify(f.to)
+  return props.verdict?.attention.find((a) => a.cta && a.to && JSON.stringify(a.to) === key)?.cta ?? 'Aç'
+})
 const cardTone = computed(() => (health.value === 'critical' ? 'critical' : health.value === 'warning' ? 'warning' : 'neutral'))
 </script>
 
@@ -217,5 +226,15 @@ const cardTone = computed(() => (health.value === 'critical' ? 'critical' : heal
   flex: 1;
   height: 1px;
   background: var(--ek-color-border-subtle);
+}
+</style>
+
+<style>
+/* Yalnız sayfa hükmü (genel bakış değil): BoStatusHeader dar ekranda rozeti sıraya alıyor ama metin esnediği için hüküm
+   rozetin yanında dar bir sütuna sıkışıyordu (bo-r1a'ya bildirildi). Metin satırı tam genişlik → rozet alta iner. */
+@media (max-width: 600px) {
+  .bo-sh[data-testid='page-verdict'] .bo-sh__text {
+    flex-basis: calc(100% - var(--ek-icon-lg) - var(--ek-space-3) * 3);
+  }
 }
 </style>
