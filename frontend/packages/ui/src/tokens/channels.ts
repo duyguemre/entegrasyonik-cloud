@@ -70,6 +70,30 @@ export function carrierCode(codeOrName?: string | null): CarrierCode | undefined
   return undefined
 }
 
+/**
+ * P12 (K49 onaylı) — E-FATURA SAĞLAYICISI kısa/uzun ad kaydı (kanal rozetiyle aynı biçim). Baş harf türetmesi iki sağlayıcıya
+ * aynı "TE" kısaltmasını, e-Logo'ya "E-" veriyordu. RENK: orijinal marka hex'leri doğrulanmadı (K13 "tahmini renk yok") → nötr.
+ */
+export const EINVOICE_PROVIDERS = {
+  trendyolefaturam: { name: 'Trendyol e-Faturam', short: 'TEF', aliases: ['trendyol e-faturam', 'trendyol efaturam'] },
+  turkcellesirket: { name: 'Turkcell e-Şirket', short: 'TCL', aliases: ['turkcell e-şirket', 'turkcell esirket'] },
+  elogo: { name: 'e-Logo', short: 'ELG', aliases: ['e-logo', 'elogo'] },
+  geliridaresi: { name: 'Gelir İdaresi (GİB)', short: 'GİB', aliases: ['gelir i̇daresi (gi̇b)', 'gelir idaresi (gib)', 'gelir idaresi', 'gib', 'gi̇b'] },
+} as const satisfies Record<string, { name: string; short: string; aliases: readonly string[] }>
+
+export type EInvoiceProviderCode = keyof typeof EINVOICE_PROVIDERS
+
+/** E-fatura sağlayıcısı kodu: kod ya da görünen ad → bilinen kod; bilinmiyorsa `undefined`. */
+export function einvoiceProviderCode(codeOrName?: string | null): EInvoiceProviderCode | undefined {
+  const key = foldTr(String(codeOrName ?? ''))
+  if (!key) return undefined
+  if (Object.prototype.hasOwnProperty.call(EINVOICE_PROVIDERS, key)) return key as EInvoiceProviderCode
+  for (const [code, p] of Object.entries(EINVOICE_PROVIDERS)) {
+    if (foldTr(p.name) === key || (p.aliases as readonly string[]).includes(key)) return code as EInvoiceProviderCode
+  }
+  return undefined
+}
+
 /** Kargo firması seçenekleri (seçim listesi): değer = görünen ad (mevcut kayıtlarla uyumlu), `carrier` = kod. */
 export function carrierOptions(extra: string[] = ['Diğer']): Array<{ value: string; title: string; carrier: string }> {
   const list = Object.entries(CARRIERS).map(([code, c]) => ({ value: c.name as string, title: c.name as string, carrier: code }))
@@ -92,6 +116,8 @@ export function channelShort(code?: string | null, name?: string | null): string
   if (known) return CHANNEL_SHORT[known]
   const carrier = carrierCode(code) ?? carrierCode(name)
   if (carrier) return CARRIERS[carrier].short
+  const provider = einvoiceProviderCode(code) ?? einvoiceProviderCode(name)
+  if (provider) return EINVOICE_PROVIDERS[provider].short
   return initials(name || String(code ?? '') || '?')
 }
 
@@ -101,6 +127,8 @@ export function brandName(code?: string | null, name?: string | null): string {
   if (channelCode(code)) return channelName(code)
   const carrier = carrierCode(code)
   if (carrier) return CARRIERS[carrier].name
+  const provider = einvoiceProviderCode(code)
+  if (provider) return EINVOICE_PROVIDERS[provider].name
   return channelName(code)
 }
 

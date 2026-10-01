@@ -26,21 +26,14 @@
 
     <p :id="summaryId" class="ek-chat-confirm__summary">{{ part.summary }}</p>
 
-    <p v-if="part.external" class="ek-chat-confirm__external">
-      <v-icon icon="mdi-cloud-upload-outline" size="small" aria-hidden="true" />
-      <span>{{ t('confirm.external') }}</span>
-    </p>
-
-    <div v-if="part.affected.count > 0" class="ek-chat-confirm__block">
-      <p class="ek-chat-confirm__label">{{ t('confirm.affected', { count: formatNumber(part.affected.count) }) }}</p>
-      <ul class="ek-chat-confirm__sample">
-        <li v-for="ref in part.affected.sample" :key="`${ref.type}:${ref.id}`">
-          <v-icon :icon="ENTITY_ICON[ref.type]" size="x-small" aria-hidden="true" />
-          <span>{{ ref.label }}</span>
-        </li>
-        <li v-if="hiddenCount > 0" class="is-more">{{ t('confirm.affectedMore', { count: formatNumber(hiddenCount) }) }}</li>
-      </ul>
-    </div>
+    <!-- P-MCP-2: gövde (dış sistem notu + etkilenen kayıtlar) MCP işlem onayıyla ortak bileşen. -->
+    <ConfirmBody
+      :external="part.external"
+      :external-text="t('confirm.external')"
+      :label="part.affected.count > 0 ? t('confirm.affected', { count: formatNumber(part.affected.count) }) : ''"
+      :items="part.affected.count > 0 ? part.affected.sample.map((ref) => ({ key: `${ref.type}:${ref.id}`, label: ref.label, icon: ENTITY_ICON[ref.type] })) : []"
+      :more-text="part.affected.count > 0 && hiddenCount > 0 ? t('confirm.affectedMore', { count: formatNumber(hiddenCount) }) : ''"
+    />
 
     <div v-if="part.changes?.length" class="ek-chat-confirm__block">
       <table class="ek-chat-confirm__changes">
@@ -118,6 +111,7 @@ import { EkButton, EkIconTile, EkStatusChip } from '@entegrasyonik/ui/components
 import { formatNumber } from '@entegrasyonik/ui/format'
 import type { ConfirmPart } from '../../protocol/v1'
 import { useChat } from '../../state/useChat'
+import ConfirmBody from './ConfirmBody.vue'
 import { formatCountdown } from '../cellFormat'
 import { ENTITY_ICON } from '../icons'
 import ChatSpinner from '../ChatSpinner.vue'

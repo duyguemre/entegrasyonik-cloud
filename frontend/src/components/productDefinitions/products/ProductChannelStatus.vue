@@ -8,7 +8,7 @@
     • Panel (tıklayınca): kanal başına uzun rozet + durum çipi + varyant dağılımı + (varsa) kısa neden ve "Gönderime hazır"
       anahtarı (`platformUploads.<kod>.isReady`; kaydı ebeveyn `IntegrationService/savePlatformUploadIsReadyForProduct` ile
       yapar). NOT: backend bu bayrağı yalnız YAZAR, aktarım akışı okumaz (2026-09-30 tarama) → metin otomatik gönderim VAAT
-      ETMEZ; gönderim Toplu işlemler → Platformlara Yükle. Eski satır-içi "logoya tıkla = hazır/değil" gizli davranışının
+      ETMEZ; gönderim Toplu işlemler → Kanallara yükle. Eski satır-içi "logoya tıkla = hazır/değil" gizli davranışının
       yerini alır: ne yaptığı yazılı, durumu görünür, geri alınabilir.
   Veri: `channelStatus.ts` (saf, testli). Durum çipi dili `EkStatusChip` (renk + ikon + metin).
 -->
@@ -16,10 +16,19 @@
   <v-menu v-model="open" :close-on-content-click="false" location="bottom end" offset="8" transition="fade-transition"
     content-class="pcs-menu">
     <template #activator="{ props: menuProps }">
+      <!-- FR3-11: iki satır — (1) en kritik durum sade cümleyle, durum tonunda; (2) bulunduğu kanalların rozeti + glif,
+           gönderilmemiş kanallar "+n" olarak. Ayrıntı (kanal başına durum + gönderime hazır) tıklayınca panelde. -->
       <button type="button" v-bind="menuProps" class="pcs" :aria-label="`${summaryText}. Kanal durumu ve gönderime hazır işareti`"
-        :title="summaryText" @click.stop>
-        <ChannelStatusTile v-for="s in statuses" :key="s.code" :status="s" :name="titleOf(s.code)" />
-        <span v-if="!statuses.length" class="pcs__empty">Kanal bağlı değil</span>
+        :title="titleText" @click.stop>
+        <span class="pcs__summary" :class="`is-${summary.tone}`">
+          <v-icon :icon="summary.icon" class="pcs__summary-icon" aria-hidden="true" />
+          <span class="pcs__summary-text">{{ summary.text }}</span>
+        </span>
+        <span v-if="present.length || absentCount" class="pcs__channels" aria-hidden="true">
+          <ChannelStatusTile v-for="s in present" :key="s.code" :status="s" :name="titleOf(s.code)" />
+          <span v-if="absentCount" class="pcs__absent">+{{ absentCount }}</span>
+        </span>
+        <span v-if="summary.detail" class="ek-sr-only">{{ summary.detail }}</span>
       </button>
     </template>
 
@@ -32,7 +41,7 @@
         <li v-for="s in statuses" :key="s.code" class="pcs-row" :class="{ 'is-ready': s.ready }" :data-channel-status="s.key">
           <div class="pcs-row__main">
             <EkChannelBadge :code="s.code" :name="titleOf(s.code)" size="sm" />
-            <EkStatusChip :tone="s.tone" :label="s.label" dot />
+            <EkStatusChip :tone="s.tone" :label="s.label" :icon="s.icon" />
             <button type="button" role="switch" class="pcs-switch" :aria-checked="s.ready" :disabled="busy === s.code"
               :aria-label="`${titleOf(s.code)} için gönderime hazır`" @click="emit('toggle-ready', s.code)">
               <span class="pcs-switch__label">Gönderime hazır</span>
@@ -46,7 +55,7 @@
       <footer class="pcs-panel__foot">
         <v-icon icon="mdi-information-outline" aria-hidden="true" />
         <span><strong class="ek-num">{{ readyCount }}</strong> kanal gönderime hazır işaretli. İşaret planlama içindir; gönderimi
-          Toplu işlemler → Platformlara Yükle başlatır.</span>
+          Toplu işlemler → Kanallara yükle başlatır.</span>
       </footer>
     </section>
   </v-menu>
@@ -57,7 +66,7 @@ import { computed, ref } from 'vue'
 import { EkChannelBadge, EkStatusChip } from '@entegrasyonik/ui/components'
 import { channelName } from '@entegrasyonik/ui/tokens'
 import ChannelStatusTile from './ChannelStatusTile.vue'
-import { channelStatusText, productChannelStatus, type ProductChannelStatus } from './channelStatus'
+import { channelStatusSummary, channelStatusText, productChannelStatus, type ProductChannelStatus } from './channelStatus'
 
 const props = defineProps<{
   product: any
@@ -74,6 +83,21 @@ const productTitle = computed(() => String(props.product?.title ?? 'Ürün'))
 const statuses = computed<ProductChannelStatus[]>(() => props.channels.map((c) => productChannelStatus(props.product, c.code)))
 const titleOf = (code: string) => props.channels.find((c) => c.code === code)?.title ?? channelName(code)
 const summaryText = computed(() => statuses.value.map((s) => channelStatusText(s, titleOf(s.code))).join('; ') || 'Kanal bağlı değil')
+const summary = computed(() => channelStatusSummary(statuses.value))
+/** Hücrede rozetiyle görünen kanallar: ürünün bulunduğu ya da gönderime hazır işaretli olanlar — en kritik önce,
+ *  satır en fazla 3 öğe (tek satır, ~160px): ya 3 rozet ya da 2 rozet + "+n" hapı (kalanlar ve gönderilmemişler;
+ *  ayrıntı ipucu + panelde). */
+const SEVERITY: Record<string, number> = { failed: 0, waiting: 1, offsale: 2, live: 3, none: 4 }
+const MAX_SLOTS = 3
+const withPresence = computed(() => statuses.value.filter((s) => s.key !== 'none' || s.ready)
+  .sort((a, b) => SEVERITY[a.key] - SEVERITY[b.key]))
+const present = computed(() => {
+  const all = withPresence.value
+  return all.length === statuses.value.length && all.length <= MAX_SLOTS ? all : all.slice(0, MAX_SLOTS - 1)
+})
+const absentCount = computed(() => statuses.value.length - present.value.length)
+/** İpucu: kanal başına bir satır (panelle aynı dil). */
+const titleText = computed(() => statuses.value.map((s) => channelStatusText(s, titleOf(s.code))).join('\n') || 'Kanal bağlı değil')
 const readyCount = computed(() => statuses.value.filter((s) => s.ready).length)
 
 function countsText(s: ProductChannelStatus): string {
@@ -89,15 +113,18 @@ function countsText(s: ProductChannelStatus): string {
 <style scoped>
 .pcs {
   display: inline-flex;
-  flex-wrap: nowrap; /* satır yüksekliği sabit: karolar tek satır (dar kapta kart görünümü sarar) */
-  align-items: center;
-  gap: 9px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+  max-width: 100%;
   min-height: 36px;
-  padding: 6px 10px 8px 6px;
+  margin-inline-start: -8px; /* hover zemini hücre hizasının dışına taşar; içerik kolon başlığıyla hizalı kalır */
+  padding: 6px 8px;
   border: 1px solid transparent;
   border-radius: var(--ek-radius-control);
   background: transparent;
   font: inherit;
+  text-align: left;
   cursor: pointer;
   transition: var(--ek-transition-colors);
 }
@@ -112,13 +139,51 @@ function countsText(s: ProductChannelStatus): string {
   box-shadow: var(--ek-focus-ring);
 }
 
-@media (max-width: 599px) {
-  .pcs { flex-wrap: wrap; }
+.pcs__summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  font-size: var(--ek-type-caption-size);
+  line-height: var(--ek-type-caption-line);
+  font-weight: var(--ek-font-weight-semibold);
+  white-space: nowrap;
 }
 
-.pcs__empty {
+.pcs__summary-icon {
+  flex: none;
+  font-size: var(--ek-icon-sm);
+}
+
+.pcs__summary.is-success { color: var(--ek-color-success-emphasis); }
+.pcs__summary.is-danger { color: var(--ek-color-error-emphasis); }
+.pcs__summary.is-info { color: var(--ek-color-info-emphasis); }
+.pcs__summary.is-warning { color: var(--ek-color-warning-emphasis); }
+.pcs__summary.is-action { color: var(--ek-color-action); }
+.pcs__summary.is-neutral { color: var(--ek-color-content-muted); font-weight: var(--ek-font-weight-medium); }
+
+/* Masaüstünde rozet satırı tek satır (satır yüksekliği sabit); dar kart görünümünde sarar. */
+.pcs__channels {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 4px 6px;
+}
+
+@media (max-width: 599px) {
+  .pcs__channels { flex-wrap: wrap; }
+}
+
+.pcs__absent {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 6px;
+  border: 1px dashed var(--ek-color-border-strong);
+  border-radius: var(--ek-radius-chip);
   color: var(--ek-color-content-muted);
   font-size: var(--ek-type-caption-size);
+  font-weight: var(--ek-font-weight-semibold);
 }
 </style>
 
@@ -167,7 +232,7 @@ function countsText(s: ProductChannelStatus): string {
   flex-direction: column;
   gap: 6px;
   padding: 10px var(--ek-space-3) 10px var(--ek-space-4);
-  transition: background-color var(--ek-duration-fast) var(--ek-easing-standard);
+  transition: background-color var(--ek-motion-feedback);
 }
 
 .pcs-row + .pcs-row {
@@ -233,7 +298,7 @@ function countsText(s: ProductChannelStatus): string {
   height: 18px;
   border-radius: var(--ek-radius-full);
   background: var(--ek-color-border-strong);
-  transition: background-color var(--ek-duration-fast) var(--ek-easing-standard);
+  transition: background-color var(--ek-motion-feedback);
 }
 
 .pcs-switch__knob {
@@ -245,7 +310,7 @@ function countsText(s: ProductChannelStatus): string {
   border-radius: var(--ek-radius-full);
   background: var(--ek-color-surface);
   box-shadow: var(--ek-shadow-card);
-  transition: transform var(--ek-duration-fast) var(--ek-easing-standard);
+  transition: transform var(--ek-motion-feedback);
 }
 
 .pcs-switch[aria-checked='true'] .pcs-switch__track { background: var(--ek-color-action); }

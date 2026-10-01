@@ -1,5 +1,6 @@
 import type { AlertLevel, AnnouncementAudience, AnnouncementKind, AnnouncementSeverity, AnnouncementStatus, DeliveryStatus, IssueStatus, LogCategory, LogLevel, LogSource, SubscriptionStatus, TenantStatus } from '@bo/api/contract'
 import type { StatusTone } from '@entegrasyonik/ui/components'
+import type { ClientPlatform, PlatformClass } from '@entegrasyonik/ui/platform'
 
 export const CATEGORY: Record<LogCategory, { label: string; icon: string }> = {
   integration: { label: 'Entegrasyon', icon: 'mdi-transit-connection-variant' },
@@ -165,4 +166,21 @@ export const ALERT_RULE: Record<string, { label: string; hint: string }> = {
   R2: { label: 'Kimlik hatası / devre kesici', hint: 'Kimlik hatası 15 dk\'da ≥3 ya da devre kesici 10 dk\'dan uzun açık.' },
   R4: { label: 'Sipariş kuyruğu birikimi', hint: 'Bekleyen iş >200 ya da en eski >10 dk.' },
   R7: { label: 'Teslim edilemeyen bildirimler', hint: 'Son 1 saatte ≥10 kalıcı hatalı teslim.' },
+}
+
+// ---------------------------------------------------------------- MOB-08 / K55 istemci platformu
+/** Ana kırılım (masaüstü / mobil). Renk yalnız ayırt etmek için; anlam metindedir. */
+export const PLATFORM_CLASS: Record<PlatformClass, { label: string; icon: string; tone: StatusTone }> = {
+  desktop: { label: 'Masaüstü', icon: 'mdi-monitor', tone: 'info' },
+  mobile: { label: 'Mobil', icon: 'mdi-cellphone', tone: 'success' },
+  unknown: { label: 'Belirlenemedi', icon: 'mdi-help-circle-outline', tone: 'neutral' },
+}
+/** Alt türler (ayrıntı). Sıra = backend CLIENT_PLATFORMS. */
+export const CLIENT_PLATFORM: Record<ClientPlatform, { label: string; hint: string; cls: PlatformClass }> = {
+  desktop_web: { label: 'Masaüstü tarayıcı', hint: 'Bilgisayarda tarayıcı (masaüstüne kurulu uygulama dahil)', cls: 'desktop' },
+  electron: { label: 'Masaüstü uygulaması', hint: 'Electron kabuğu', cls: 'desktop' },
+  mobile_web: { label: 'Mobil tarayıcı', hint: 'Telefon/tablet tarayıcısı', cls: 'mobile' },
+  pwa: { label: 'Kurulu web uygulaması', hint: 'Telefona ana ekrandan kurulmuş uygulama (PWA)', cls: 'mobile' },
+  android_app: { label: 'Android uygulaması', hint: 'Android kabuğu (APK)', cls: 'mobile' },
+  unknown: { label: 'Belirlenemedi', hint: 'İstemci platformu bildirmedi ve tarayıcı bilgisinden çıkarılamadı', cls: 'unknown' },
 }

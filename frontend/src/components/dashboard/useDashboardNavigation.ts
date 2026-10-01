@@ -16,6 +16,8 @@ export type DashboardScreen =
   | 'productDefinition'
   | 'logList'
   | 'marketplace'
+  | 'StockHealthView'
+  | 'integrations/IntegrationHealthView'
 
 export function useDashboardNavigation() {
   const menuStore: any = useMenuStore()

@@ -4,7 +4,7 @@
   DS-v2 Aşama 2 — liste standardı (EkListScreen). API sözleşmesi DEĞİŞMEDİ:
   `FinancialService/getTransactionData` gövdesi (searchForm + page/limit/sortBy), özet (`res.summary`),
   detay diyaloğu (satır nesnesini doğrudan kullanır) AYNEN korundu. Sıralama SUNUCUDA (externalId,
-  netAmount, transactionDate). Tarih filtreleri EkDateField (Date modeli — eski v-date-picker ile aynı).
+  netAmount, transactionDate). Tarih filtresi EkDateRange (FR3 madde 10; Date modeli — eski v-date-picker ile aynı).
   Arama Enter ile sorgular. Özet şeridi tablonun üstünde kalır.
 
   C1.4 — sayfa başlığı (EkPageHeader) + sekmeler (EkPageTabs): İşlemler (yukarıdaki içerik, DEĞİŞMEDİ) ·
@@ -16,7 +16,7 @@
 <template>
   <div class="financialListView">
     <div class="ek-fin-head">
-      <EkPageHeader section="Finans ve raporlar" :title="t('finance.title')" :description="t('finance.description')" />
+      <EkPageHeader section="Finans ve raporlar" :title="t('finance.title')" :description="t('finance.description')" :tools-id="toolsId" />
       <EkPageTabs v-model="activeTab" :tabs="tabs" :label="t('finance.tabs.label')" />
     </div>
 
@@ -103,8 +103,7 @@
                 <div class="ek-fin-flow__row">
                   <div class="d-flex flex-column">
                     <span class="ek-fin-label">BRÜT TUTAR</span>
-                    <span class="ek-fin-flow__amount ek-num">{{ formatCurrency(selectedTransaction.credit) }}
-                      ₺</span>
+                    <span class="ek-fin-flow__amount ek-num">{{ formatCurrency(selectedTransaction.credit) }}</span>
                   </div>
                   <v-icon color="success" size="22" aria-hidden="true">mdi-plus-circle-outline</v-icon>
                 </div>
@@ -113,7 +112,7 @@
                   <div class="d-flex flex-column">
                     <span class="ek-fin-label">PAZARYERİ KOMİSYONU</span>
                     <span class="ek-fin-flow__amount ek-fin-negative ek-num">-{{
-                      formatCurrency(selectedTransaction.commissionAmount) }} ₺</span>
+                      formatCurrency(selectedTransaction.commissionAmount) }}</span>
                   </div>
                   <span class="ek-fin-label">{{ selectedTransaction.commissionRate ? '%' +
                     selectedTransaction.commissionRate : '' }}</span>
@@ -123,7 +122,7 @@
                   <div class="d-flex flex-column">
                     <span class="ek-fin-label">DİĞER KESİNTİLER / BORÇ</span>
                     <span class="ek-fin-flow__amount ek-fin-negative ek-num">{{
-                      formatCurrency(selectedTransaction.debt - (selectedTransaction.commissionAmount || 0)) }} ₺</span>
+                      formatCurrency(selectedTransaction.debt - (selectedTransaction.commissionAmount || 0)) }}</span>
                   </div>
                   <v-icon color="error" size="22" aria-hidden="true">mdi-minus-circle-outline</v-icon>
                 </div>
@@ -139,8 +138,7 @@
                       </template>
                     </v-tooltip>
                   </div>
-                  <span class="ek-fin-flow__net ek-num">{{ formatCurrency(selectedTransaction.netAmount) }}
-                    ₺</span>
+                  <span class="ek-fin-flow__net ek-num">{{ formatCurrency(selectedTransaction.netAmount) }}</span>
                 </div>
               </div>
             </v-col>
@@ -153,7 +151,7 @@
                 <v-icon color="error" class="mr-2" aria-hidden="true">mdi-calculator-variant-outline</v-icon>
                 <span class="ek-fin-label">KDV Kesintisi (Meta)</span>
               </div>
-              <span class="ek-fin-negative ek-num">-{{ formatCurrency(getVatFromMeta) }} ₺</span>
+              <span class="ek-fin-negative ek-num">-{{ formatCurrency(getVatFromMeta) }}</span>
             </div>
 
             <v-expansion-panels flat variant="inset">
@@ -179,6 +177,7 @@
 
     <EkListScreen channel-key="integrationCode"
       class="ek-fin-screen"
+      :tools-target="activeTab === 'transactions' ? toolsTarget : false"
       label="Finansal işlemler tablosu"
       noun="işlem"
       row-key="_id"
@@ -189,7 +188,7 @@
       :error="loadError"
       error-title="Finansal işlemler yüklenemedi"
       :search="searchForm.externalIdSearch"
-      search-placeholder="İşlem No Ara (External ID)"
+      search-placeholder="İşlem no ile ara"
       :chips="activeChips"
       :filter-count="panelFilterCount"
       :sort="gridSort"
@@ -213,11 +212,10 @@
       @refresh="getFinancials(true)"
     >
       <template #filters>
-        <EkSelect kind="channel" v-model="searchForm.integrationCodes" :items="channelOptionsFrom(integrationStore.getClientPlatforms())" label="Platformlar" multiple clearable />
-        <EkSelect v-model="searchForm.transactionTypes" :items="transactionTypeOptions" label="İşlem Tipi"
+        <EkSelect kind="channel" v-model="searchForm.integrationCodes" :items="channelOptionsFrom(integrationStore.getClientPlatforms())" label="Kanal" multiple clearable />
+        <EkSelect v-model="searchForm.transactionTypes" :items="transactionTypeOptions" label="İşlem türü"
           multiple clearable />
-        <EkDateField v-model="searchForm.startDate" label="Başlangıç" :max="searchForm.endDate" />
-        <EkDateField v-model="searchForm.endDate" label="Bitiş" :min="searchForm.startDate" />
+        <EkDateRange v-model:start="searchForm.startDate" v-model:end="searchForm.endDate" label="İşlem tarihi" value-format="date" />
       </template>
 
       <template #cell-externalId="{ row }">
@@ -242,7 +240,7 @@
           <span v-if="!(row.credit > 0) && !(row.debt > 0)" class="ek-muted">—</span>
         </span>
       </template>
-      <template #cell-netAmount="{ row }"><span class="ek-fin-net ek-num" :class="{ 'ek-fin-net--in': row.netAmount > 0 }">{{ row.netAmount > 0 ? '+' : '' }}{{ formatCurrency(row.netAmount) }} ₺</span></template>
+      <template #cell-netAmount="{ row }"><span class="ek-fin-net ek-num" :class="{ 'ek-fin-net--in': row.netAmount > 0 }">{{ row.netAmount > 0 ? '+' : row.netAmount < 0 ? '−' : '' }}{{ formatCurrency(Math.abs(row.netAmount)) }}</span></template>
       <template #cell-transactionDate="{ row }">
         <span class="ek-fin-id">
           <span class="ek-num">{{ formatDate(row.transactionDate) }}</span>
@@ -266,10 +264,11 @@
 </template>
 
 <script setup lang="ts">
-import { EkSelect, EkRowActions, EkButton, EkDateField, EkChannelDot, EkStatusChip, EkPageTabs, EkTooltip, type EkPageTab } from '@entegrasyonik/ui/components'
+import { EkSelect, EkRowActions, EkButton, EkDateRange, EkChannelDot, EkStatusChip, EkPageTabs, EkTooltip, type EkPageTab } from '@entegrasyonik/ui/components'
 import type { EkGridColumn, EkGridSort, EkActiveFilterChip } from '@entegrasyonik/ui/components'
 import { channelOptionsFrom } from '@entegrasyonik/ui/components/selectOptions'
-import { ref, reactive, computed, watch } from 'vue';
+import { ref, reactive, computed, watch, useId } from 'vue';
+import { provideListToolsTarget } from '@/components/page/listTools';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { useIntegrationStore } from '@/stores/integrationStore';
@@ -286,15 +285,17 @@ import EkListScreen from '@/components/page/templates/EkListScreen.vue';
 ;
 ;
 import { isRequestError } from '@entegrasyonik/ui/components/listStandard';
-import { formatDate as formatDay, formatDateTime } from '@entegrasyonik/ui/format';
+import { formatDate as formatDay, formatDateTime, formatMoney } from '@entegrasyonik/ui/format';
 import FinancialSummaryBar from '@/components/financial/FinancialSummaryBar.vue';
 import FinancialSummaryTab from '@/components/financial/FinancialSummaryTab.vue';
 import FinancialCargoInvoicesTab from '@/components/financial/FinancialCargoInvoicesTab.vue';
 import FinancialPayoutsTab from '@/components/financial/FinancialPayoutsTab.vue';
 import EkPageHeader from '@/components/page/EkPageHeader.vue';
-;
 import { buildScreenPath, resolveScreenByKey } from '@/navigation/screens';
 import type { StatusTone } from '@/design/status-map';
+// P03 (K49): etkin sekmenin arama + yenile'si başlık çubuğunda (sekme gövdesinde araç satırı yok).
+const toolsId = `ek-fin-tools-${useId().replace(/[^\w-]/g, '-')}`
+const toolsTarget = provideListToolsTarget(toolsId)
 
 // Sabitler
 const transactionTypeOptions = ['SALE', 'RETURN', 'PAYOUT', 'DEDUCTION', 'COMMISSION', 'CARGO'];
@@ -469,7 +470,7 @@ const TYPE_TONE: Record<string, StatusTone> = {
 };
 const typeTone = (type: string): StatusTone => TYPE_TONE[type] || 'neutral';
 
-const formatCurrency = (val: any) => parseFloat(val || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2 });
+const formatCurrency = (val: any) => formatMoney(Number(val || 0));
 // Aşama 3: diğer listelerle aynı biçim (GG.AA.YYYY SS:dd — saniye yok), `composables/format`.
 const formatDate = (d: any) => d ? formatDateTime(d) : '—';
 
@@ -546,7 +547,10 @@ defineExpose({ initialize: applyParameters, activate: applyParameters });
   display: flex;
   flex-direction: column;
   gap: var(--ek-space-3);
-  overflow: hidden;
+  /* P15: bu ekranlar EkListFrame'i EkListScreen dışında kullanır — liste kartı asgari yüksekliğe (340px)
+     ulaşınca ekran kökü kendi içinde kayar (kırpılıp sayfalama erişilemez olmasın). */
+  overflow-x: hidden;
+  overflow-y: auto;
   padding: var(--ek-space-5) var(--ek-space-6);
 }
 

@@ -64,7 +64,7 @@
                 <span v-for="(v, k) in item.counts" :key="k">{{ k }} <strong class="ek-num">{{ formatCount(v) }}</strong></span>
               </span>
               <span>
-                <template v-if="item.scope.level === 'tenant'">Müşteri <RouterLink :to="`/musteriler/${item.scope.tenantId}`">#{{ item.scope.tenantId }}</RouterLink><template v-if="item.scope.integrationCode"> · {{ CHANNEL[item.scope.integrationCode] ?? item.scope.integrationCode }}</template> · </template>
+                <template v-if="item.scope.level === 'tenant'">Müşteri <RouterLink :to="`/musteriler/${item.scope.tenantId}`" class="bo-hit">#{{ item.scope.tenantId }}</RouterLink><template v-if="item.scope.integrationCode"> · {{ CHANNEL[item.scope.integrationCode] ?? item.scope.integrationCode }}</template> · </template>
                 <template v-if="item.pod">{{ item.pod }}</template>
                 <template v-if="item.corrId"> · <span class="bo-mono">{{ item.corrId }}</span></template>
               </span>

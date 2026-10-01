@@ -48,11 +48,11 @@ const cases: FormCase[] = [
     saveEndpoint: 'IntegrationService/saveClientMarketplaceSettings',
     bodyKey: 'clientMarketplace',
     tab1: [
-      { kind: 'text', label: 'Mağaza Adı', value: 'E2E Mağaza' },
+      { kind: 'text', label: 'Mağaza adı', value: 'E2E Mağaza' },
       { kind: 'text', label: 'Satıcı ID', value: '248113' },
       { kind: 'text', label: 'API Key (Merchant ID)', value: 'key-1' },
       { kind: 'text', label: 'API Secret', value: 'secret-1' },
-      { kind: 'switch', label: 'Entegrasyon Durumu' },
+      { kind: 'switch', label: 'Entegrasyon durumu' },
     ],
     tab2Label: 'Varsayılan Bilgiler',
     tab2: [
@@ -94,11 +94,11 @@ const cases: FormCase[] = [
     saveEndpoint: 'IntegrationService/saveClientMarketplaceSettings',
     bodyKey: 'clientMarketplace',
     tab1: [
-      { kind: 'text', label: 'Mağaza Adı', value: 'E2E HB' },
+      { kind: 'text', label: 'Mağaza adı', value: 'E2E HB' },
       { kind: 'text', label: 'Satıcı ID (Merchant ID)', value: 'm-77' },
       { kind: 'text', label: 'API Key (Merchant ID)', value: 'hb-key' },
       { kind: 'text', label: 'API Secret', value: 'hb-secret' },
-      { kind: 'switch', label: 'Entegrasyon Durumu' },
+      { kind: 'switch', label: 'Entegrasyon durumu' },
     ],
     tab2Label: 'Varsayılan Bilgiler',
     tab2: [
@@ -136,7 +136,7 @@ const cases: FormCase[] = [
     saveEndpoint: 'IntegrationService/saveClientECommerceSettings',
     bodyKey: 'clientECommerce',
     tab1: [
-      { kind: 'text', label: 'Mağaza Adı', value: 'E2E Ideasoft' },
+      { kind: 'text', label: 'Mağaza adı', value: 'E2E Ideasoft' },
       { kind: 'text', label: 'Client ID', value: 'cid-1' },
       { kind: 'text', label: 'Client Secret', value: 'csec-1' },
     ],
@@ -170,7 +170,7 @@ const cases: FormCase[] = [
     tab1: [
       { kind: 'text', label: 'Bizimhesap ID', value: 'bh-1' },
       { kind: 'text', label: 'API Key', value: 'bh-key' },
-      { kind: 'switch', label: 'Entegrasyon Durumu' },
+      { kind: 'switch', label: 'Entegrasyon durumu' },
     ],
     tab2Label: 'Kargo Bilgileri',
     tab2: [

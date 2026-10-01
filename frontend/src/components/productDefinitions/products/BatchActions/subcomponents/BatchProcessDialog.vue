@@ -33,7 +33,7 @@
             </EkFormSection>
 
             <EkFormSection v-else-if="PLATFORM_PROCESS_MODES.includes(mode as PLATFORM_PROCESS)"
-                title="İşlem Yapılacak Platformlar" icon="mdi-storefront-outline" :columns="1">
+                title="İşlem yapılacak kanallar" icon="mdi-storefront-outline" :columns="1">
                 <div class="platform-grid">
                     <template v-if="integrationStore" v-for="integration of integrationStore.getClientPlatforms()"
                         :key="integration.code">

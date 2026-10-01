@@ -8,14 +8,14 @@ import { installApiMocks, mockError } from '../fixtures/mockApi'
 
 const NO_SESSION = { checkAuthentication: false, userContext: mockError(401, {}) } as const
 
-test.describe('P1 — Şifremi unuttum (giriş ekranı sekmesi)', () => {
+test.describe('P1 — Parola sıfırlama (giriş ekranındaki bağlantı)', () => {
   test('smoke: sekme e-posta alanı ve gönder düğmesini render eder', async ({ page }) => {
     await installApiMocks(page, NO_SESSION)
     await page.goto('/login')
-    await page.getByRole('tab', { name: 'Şifremi unuttum' }).click()
+    await page.getByRole('button', { name: 'Parolanızı mı unuttunuz?' }).click()
 
     await expect(page.getByLabel('E-posta').last()).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Şifremi Sıfırla' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Parolamı sıfırla' })).toBeVisible()
   })
 
   test('istemci doğrulaması: geçersiz e-posta biçiminde backend çağrılmaz', async ({ page }) => {
@@ -28,9 +28,9 @@ test.describe('P1 — Şifremi unuttum (giriş ekranı sekmesi)', () => {
       },
     })
     await page.goto('/login')
-    await page.getByRole('tab', { name: 'Şifremi unuttum' }).click()
+    await page.getByRole('button', { name: 'Parolanızı mı unuttunuz?' }).click()
     await page.getByLabel('E-posta').last().fill('gecersiz-adres')
-    await page.getByRole('button', { name: 'Şifremi Sıfırla' }).click()
+    await page.getByRole('button', { name: 'Parolamı sıfırla' }).click()
 
     await expect(page.getByText('Geçerli bir e-posta adresi girin.')).toBeVisible()
     // İstemci doğrulaması senkron döner (await'ten önce return) — görünen hata iletisi çağrı olmadığının kanıtıdır.
@@ -52,9 +52,9 @@ test.describe('P1 — Şifremi unuttum (giriş ekranı sekmesi)', () => {
       },
     })
     await page.goto('/login')
-    await page.getByRole('tab', { name: 'Şifremi unuttum' }).click()
+    await page.getByRole('button', { name: 'Parolanızı mı unuttunuz?' }).click()
     await page.getByLabel('E-posta').last().fill('kayitsiz-veya-kayitli@example.invalid')
-    await page.getByRole('button', { name: 'Şifremi Sıfırla' }).click()
+    await page.getByRole('button', { name: 'Parolamı sıfırla' }).click()
 
     await expect(page.getByText('Bu e-posta adresi kayıtlıysa parola sıfırlama bağlantısı gönderildi.')).toBeVisible()
     await expect.poll(() => requestedEmail).toBe('kayitsiz-veya-kayitli@example.invalid')
@@ -65,9 +65,9 @@ test.describe('P1 — Şifremi unuttum (giriş ekranı sekmesi)', () => {
   test('hız sınırı (429): aksiyon alınabilir Türkçe mesaj, ham HTTP kodu sızmaz', async ({ page }) => {
     await installApiMocks(page, { ...NO_SESSION, 'AccountService/requestPasswordReset': mockError(429, {}) })
     await page.goto('/login')
-    await page.getByRole('tab', { name: 'Şifremi unuttum' }).click()
+    await page.getByRole('button', { name: 'Parolanızı mı unuttunuz?' }).click()
     await page.getByLabel('E-posta').last().fill('e2e@example.invalid')
-    await page.getByRole('button', { name: 'Şifremi Sıfırla' }).click()
+    await page.getByRole('button', { name: 'Parolamı sıfırla' }).click()
 
     await expect(page.getByText('Çok fazla deneme yaptınız. Lütfen bir süre sonra tekrar deneyin.')).toBeVisible()
     await expect(page.locator('body')).not.toContainText('429')
@@ -76,7 +76,7 @@ test.describe('P1 — Şifremi unuttum (giriş ekranı sekmesi)', () => {
   test('axe: ŞİFREMİ UNUTTUM sekmesi 0 ihlal', async ({ page }) => {
     await installApiMocks(page, NO_SESSION)
     await page.goto('/login')
-    await page.getByRole('tab', { name: 'Şifremi unuttum' }).click()
+    await page.getByRole('button', { name: 'Parolanızı mı unuttunuz?' }).click()
     await page.evaluate(() => document.fonts.ready)
     // Sekme geçişi `fade-transition` (200ms) kullanır; tarama tam opaklığa ULAŞMADAN çalışırsa
     // axe geçiş-anı opaklığını "düşük kontrast" sanabilir (bkz. bu görevin doğrulama koşusu).
@@ -88,8 +88,8 @@ test.describe('P1 — Şifremi unuttum (giriş ekranı sekmesi)', () => {
   test('ekran görüntüsü tabanı (şifremi unuttum sekmesi)', async ({ page }) => {
     await installApiMocks(page, NO_SESSION)
     await page.goto('/login')
-    await page.getByRole('tab', { name: 'Şifremi unuttum' }).click()
-    await expect(page.getByRole('button', { name: 'Şifremi Sıfırla' })).toBeVisible()
+    await page.getByRole('button', { name: 'Parolanızı mı unuttunuz?' }).click()
+    await expect(page.getByRole('button', { name: 'Parolamı sıfırla' })).toBeVisible()
     await page.evaluate(() => document.fonts.ready)
     await page.waitForTimeout(300)
     await expect(page).toHaveScreenshot('forgot-password-tab.png', { fullPage: false })

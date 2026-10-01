@@ -8,7 +8,7 @@
     title="Sipariş durumları"
     subtitle="Tüm siparişlerin iç durum dağılımı"
     icon="mdi-chart-donut"
-    :heading-level="2"
+    :heading-level="3"
     :to-label="linkable ? 'Sipariş listesini aç' : undefined"
     class="dash-status"
     @open="open('orderList')"
@@ -290,6 +290,13 @@ const option = computed(() => ({
 
   .dash-status__list {
     width: 100%;
+  }
+}
+
+/* MOB-00: dokunmatikte satır/bağlantı hedefi en az 44 px (--ek-control-h-touch). */
+@media (pointer: coarse) {
+  .dash-status__row {
+    min-height: var(--ek-control-h-touch);
   }
 }
 </style>

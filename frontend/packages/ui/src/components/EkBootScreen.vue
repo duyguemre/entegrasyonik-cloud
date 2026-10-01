@@ -72,7 +72,7 @@ onBeforeUnmount(() => clearTimeout(timer))
     radial-gradient(38% 32% at 50% 46%, color-mix(in srgb, var(--ek-color-brand) 8%, transparent), transparent 70%),
     radial-gradient(22% 18% at 56% 52%, color-mix(in srgb, var(--ek-color-secondary) 9%, transparent), transparent 72%);
   opacity: 0;
-  transition: opacity var(--ek-duration-slow) var(--ek-easing-enter);
+  transition: opacity var(--ek-motion-layout);
   pointer-events: none;
 }
 
@@ -85,8 +85,8 @@ onBeforeUnmount(() => clearTimeout(timer))
   opacity: 0;
   transform: translateY(var(--ek-motion-distance-sm));
   transition:
-    opacity var(--ek-duration-slow) var(--ek-easing-enter),
-    transform var(--ek-duration-slow) var(--ek-easing-enter);
+    opacity var(--ek-motion-layout),
+    transform var(--ek-motion-layout);
 }
 
 .ek-boot.is-visible .ek-boot__halo,
@@ -145,7 +145,7 @@ onBeforeUnmount(() => clearTimeout(timer))
   width: 40%;
   border-radius: inherit;
   background: var(--ek-color-brand);
-  animation: ek-boot-slide 1.4s ease-in-out infinite;
+  animation: ek-boot-slide var(--ek-motion-loop-pulse) var(--ek-easing-standard) infinite;
 }
 
 @keyframes ek-boot-slide {

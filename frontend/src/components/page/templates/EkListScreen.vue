@@ -6,6 +6,7 @@
   bileşimidir; ekran yalnız VERİ, KOLON, FİLTRE ALANLARI ve EYLEMLERİ verir.
 
     başlık  : H1 + açıklama ................. [hızlı arama] [#header-actions] [yenile]
+              #search-append: arama kutusunun hemen yanında (MOB-03 barkod düğmesi; yalnız telefon/tablet)
     filtre  : sayfa İÇİ katlanır panel (#filters dolu ise) — popup/overlay DEĞİL,
               yalnız bu sekmenin bileşen örneğinde yaşar → filtre yalnız bu sekmeyi etkiler
     çipler  : aktif filtreler (`chips`) — A8: filtre panelinin BAŞLIĞINDA kompakt özet (kapalıyken de görünür),
@@ -40,13 +41,17 @@
               @keyup.enter="emit('search-submit')"
               @click:clear="emit('search-submit')"
             />
+            <slot name="search-append" />
             <span v-if="$slots['header-actions']" class="ek-list-screen__extra"><slot name="header-actions" /></span>
           </div>
         </template>
       </EkPageBar>
     </header>
-    <header v-else class="ek-list-screen__head is-headless">
-      <div class="ek-list-screen__head-actions">
+    <header v-else v-show="!hostedTarget" class="ek-list-screen__head is-headless">
+      <!-- P03 (K49): sekmeli ekranda etkin sekmenin arama + ek eylemler + yenile'si sayfa başlık çubuğuna taşınır
+           (EkPageHeader `tools-id`); sekme kendi gövdesinde araç satırı taşımaz. -->
+      <Teleport defer :to="hostedTarget || 'body'" :disabled="!hostedTarget">
+      <div class="ek-list-screen__head-actions" :class="{ 'is-hosted': !!hostedTarget }">
         <v-text-field
           v-if="searchPlaceholder !== undefined"
           :model-value="search"
@@ -60,9 +65,11 @@
           @keyup.enter="emit('search-submit')"
           @click:clear="emit('search-submit')"
         />
+        <slot name="search-append" />
         <span v-if="$slots['header-actions']" class="ek-list-screen__extra"><slot name="header-actions" /></span>
         <span v-if="refreshable" class="ek-list-screen__refresh"><EkRefreshButton :loading="loading" :label="refreshLabel" @refresh="emit('refresh')" /></span>
       </div>
+      </Teleport>
     </header>
 
     <!-- Aşama 3: başlık ile liste arasında özet (KPI satırı vb.) — başlığın ÜSTÜNE konmasın (hiyerarşi). -->
@@ -157,7 +164,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, useSlots } from 'vue'
+import { computed, inject, onActivated, onDeactivated, ref, useSlots } from 'vue'
+import { LIST_TOOLS_TARGET } from '../listTools'
 import { EkListFrame, EkFilterPanel, EkActiveFilters, type EkActiveFilterChip, EkBulkBar, EkDataGrid, type EkGridColumn, type EkGridSort, EkPagerBar, EkButton, EkRefreshButton } from '@entegrasyonik/ui/components'
 import EkSavedViews, { type EkSavedViewsConfig } from '../EkSavedViews.vue'
 import EkPageBar from '../EkPageBar.vue'
@@ -224,6 +232,11 @@ const props = withDefaults(
     refreshLabel?: string
     /** C2.4 kayıtlı görünümler — verilmezse menü yok (geri uyumlu). */
     savedViews?: EkSavedViewsConfig
+    /**
+     * P03: başlıksız (sekme) listede araç satırının taşınacağı sayfa başlığı yuvası (CSS seçici). Verilmezse sayfanın
+     * sağladığı yuva (`provideListToolsTarget`) kullanılır; `false` → yerinde kalır (ör. `v-show` ile gizlenen sekme).
+     */
+    toolsTarget?: string | false
   }>(),
   {
     noun: 'kayıt',
@@ -252,6 +265,7 @@ const props = withDefaults(
     refreshLabel: 'Yenile',
     title: '',
     section: undefined,
+    toolsTarget: undefined,
   },
 )
 
@@ -273,6 +287,17 @@ const emit = defineEmits<{
   /** Seçilen görünümün filtreleri (ekranın okuduğu şekilde; çoklu alanlar dizi). */
   'apply-view': [params: Record<string, any>]
 }>()
+
+// P03: sayfa başlığındaki araç yuvası. KeepAlive ile önbelleğe alınan sekme pasifken yuvayı bırakır (iki sekmenin
+// araçları üst üste binmesin); yalnız başlıksız listede geçerlidir.
+const injectedToolsTarget = inject(LIST_TOOLS_TARGET, null)
+const keepAliveActive = ref(true)
+onActivated(() => (keepAliveActive.value = true))
+onDeactivated(() => (keepAliveActive.value = false))
+const hostedTarget = computed(() => {
+  if (props.title || props.toolsTarget === false || !keepAliveActive.value) return ''
+  return props.toolsTarget || injectedToolsTarget || ''
+})
 
 const slots = useSlots()
 const cellSlots = computed(() => Object.keys(slots).filter((n) => n.startsWith('cell-')))
@@ -307,8 +332,13 @@ function setCollapsed(v: boolean) {
   display: flex;
   flex-direction: column;
   gap: var(--ek-space-3);
-  height: 100%;
+  /* P15 (K49): liste kartı asgari yükseklikten (EkListFrame) aşağı ezilmez; sığmazsa ekran KENDİ içinde kayar.
+     4px iç pay + eşit negatif dış pay: kaydırma kabı kart gölgesini ve odak halkasını kırpmasın. */
+  height: calc(100% + 2 * var(--ek-space-1));
   min-height: 0;
+  margin: calc(-1 * var(--ek-space-1));
+  padding: var(--ek-space-1);
+  overflow-y: auto;
 }
 
 .ek-list-screen__head {
@@ -372,6 +402,7 @@ function setCollapsed(v: boolean) {
 @media (max-width: 767px) {
   .ek-list-screen {
     height: auto;
+    overflow-y: visible;
   }
 
   .ek-list-screen__head-actions {

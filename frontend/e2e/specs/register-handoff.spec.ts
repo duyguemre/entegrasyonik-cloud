@@ -25,8 +25,8 @@ async function fillRegisterForm(page: Page) {
   await page.getByLabel('İsim').fill('Deneme')
   await page.getByLabel('Soyisim').fill('Kullanici')
   await page.getByLabel('E-posta').last().fill('yeni@example.invalid')
-  await page.getByLabel('Şifre', { exact: true }).last().fill('e2e-pass-1234')
-  await page.getByLabel('Şifre (Tekrar)').fill('e2e-pass-1234')
+  await page.getByLabel('Parola', { exact: true }).last().fill('e2e-pass-1234')
+  await page.getByLabel('Parola (Tekrar)').fill('e2e-pass-1234')
 }
 
 /** Oturumsuz başlar; `SecurityService/register` çağrısı oturumu açar (çerez davranışının mock karşılığı). */
@@ -64,7 +64,7 @@ test.describe('ADR-0014 S4b — site -> kayıt devri', () => {
     const band = page.getByTestId('register-plan-band')
     await expect(band).toBeVisible()
     await expect(band).toContainText('Seçtiğiniz plan: Büyüme')
-    await expect(page.getByLabel('Şifre (Tekrar)')).toBeVisible()
+    await expect(page.getByLabel('Parola (Tekrar)')).toBeVisible()
   })
 
   test('mode=register plansız: kayıt sekmesi açılır, bilgi bandı yok', async ({ page }) => {
@@ -176,7 +176,7 @@ test.describe('ADR-0014 S4b — uçtan uca: kayıt -> abonelik -> mock checkout'
   }
 
   async function startCheckoutFromCard(page: Page) {
-    await page.getByRole('button', { name: /Büyüme planı için: Bu Plana Geç/ }).click()
+    await page.getByRole('button', { name: /Büyüme planı için: Bu plana geç/ }).click()
     const dialog = page.getByRole('dialog').filter({ hasText: 'Plan Seçimini Onayla' })
     await expect(dialog).toBeVisible(SCREEN_READY)
     await dialog.getByRole('button', { name: 'Devam Et' }).click()
@@ -185,7 +185,7 @@ test.describe('ADR-0014 S4b — uçtan uca: kayıt -> abonelik -> mock checkout'
     await expect(page.getByText(startCheckoutSuccessFixture.checkoutUrl)).toBeVisible()
   }
 
-  test('checkout BAŞARILI: kayıt -> abonelik ekranı -> startCheckout -> durum "Aktif", plan "Mevcut Planınız"', async ({ page }) => {
+  test('checkout BAŞARILI: kayıt -> abonelik ekranı -> startCheckout -> durum "Aktif", plan "Mevcut planınız"', async ({ page }) => {
     const registerBodies: any[] = []
     const checkoutBodies: any[] = []
     await registerAndLand(page, statefulMocks({ registerBodies, checkoutBodies, checkout: 'success' }))
@@ -194,7 +194,7 @@ test.describe('ADR-0014 S4b — uçtan uca: kayıt -> abonelik -> mock checkout'
     await startCheckoutFromCard(page)
     expect(checkoutBodies).toEqual([{ planCode: 'growth', billingInterval: 'month' }])
     await expect(statusTitle(page)).toContainText('Aktif', SCREEN_READY)
-    await expect(page.getByText('Mevcut Planınız').first()).toBeVisible()
+    await expect(page.getByText('Mevcut planınız').first()).toBeVisible()
     await expect(page.getByTestId('suggested-plan-note')).toHaveCount(0)
   })
 
@@ -204,13 +204,13 @@ test.describe('ADR-0014 S4b — uçtan uca: kayıt -> abonelik -> mock checkout'
     await startCheckoutFromCard(page)
     await expect(statusTitle(page)).toContainText('Deneme Sürümü', SCREEN_READY)
     await expect(statusTitle(page)).not.toContainText('Aktif')
-    await expect(page.getByRole('button', { name: /Büyüme planı için: Bu Plana Geç/ })).toBeEnabled()
+    await expect(page.getByRole('button', { name: /Büyüme planı için: Bu plana geç/ })).toBeEnabled()
   })
 
   test('checkout yetkisiz (403): aksiyon alınabilir Türkçe mesaj, ham hata sızmaz', async ({ page }) => {
     await registerAndLand(page, statefulMocks({ checkout: 'forbidden' }))
 
-    await page.getByRole('button', { name: /Büyüme planı için: Bu Plana Geç/ }).click()
+    await page.getByRole('button', { name: /Büyüme planı için: Bu plana geç/ }).click()
     const dialog = page.getByRole('dialog').filter({ hasText: 'Plan Seçimini Onayla' })
     await dialog.getByRole('button', { name: 'Devam Et' }).click()
     await expect(page.getByText('Bu işlemi yalnızca hesap sahibi veya yöneticisi gerçekleştirebilir.')).toBeVisible(SCREEN_READY)

@@ -252,6 +252,8 @@ function buildShape(m: Mode) {
         // --- Gözlemlenebilirlik bayrakları (yalnız test/geliştirme) ---
         INTEGRATION_METRICS_DISABLED: t.bool(false),
         AUDIT_LOG_DISABLED: t.bool(false),
+        // [MOB-08] günlük kullanım kaydı (UsageDaily) kapalı -- yalnız test (jest setup açar).
+        USAGE_RECORD_DISABLED: t.bool(false),
 
         // --- Zamanlayıcı (ADR-0016 §2.2) ---
         // Kaçış anahtarı: yalnız acil durum için `off`. Varsayılan `on` (Mongo lease etkin).
@@ -285,6 +287,12 @@ function buildShape(m: Mode) {
         // Abonelik baglantisi API origin'i (bos -> PUBLIC_APP_URL). Abonelikten cikma belirteci HMAC sirri (SIR; yalniz .env).
         PUBLIC_API_URL: t.str(),
         NOTIFY_UNSUB_SECRET: t.str(),
+        // MOB-04 web push (ADR-0029 Karar 4 kanal). VAPID anahtarlari YALNIZ env (SIR: private). Ucu da yoksa/gecersizse kanal KAPALI (surec cokmez).
+        WEBPUSH_VAPID_PUBLIC: t.str(),
+        WEBPUSH_VAPID_PRIVATE: t.str(),
+        WEBPUSH_VAPID_SUBJECT: t.str(),
+        // MOB-07 Android kabuğu yerel push (FCM HTTP v1). Hizmet hesabı JSON'u (ham ya da base64) -- SIR; yalnız .env. Yoksa FCM kapalı.
+        FCM_SERVICE_ACCOUNT_JSON: t.str(),
         // --- ADR-0017 Asama C / ADR-0029 NB8: platform alarm degerlendiricisi (varsayilan KAPALI; DB kapisi 0017 gocu) ---
         // ALERT_EVALUATOR_ENABLED=false: degerlendirici is DB'ye dokunmadan doner. ALERT_SHADOW_UNTIL (ISO tarih): bu tarihe dek yalniz kayit (e-posta/tenant bildirimi YOK).
         ALERT_EVALUATOR_ENABLED: t.bool(false),
@@ -438,6 +446,7 @@ function nest(e: Record<string, any>) {
         trendyolRatePerMin: { global: e.TY_RATE_PER_MIN as number | undefined, orderList: e.TY_ORDER_LIST_RATE_PER_MIN as number | undefined },
         flags: {
             integrationMetricsDisabled: e.INTEGRATION_METRICS_DISABLED as boolean, auditLogDisabled: e.AUDIT_LOG_DISABLED as boolean,
+            usageRecordDisabled: e.USAGE_RECORD_DISABLED as boolean,
             entitlementGuardEnabled: e.ENTITLEMENT_GUARD_ENABLED as boolean,
             membershipSource: e.MEMBERSHIP_SOURCE as 'legacy' | 'dual' | 'membership',
             idempotencyEnforce: e.IDEMPOTENCY_ENFORCE as 'observe' | 'enforce',
@@ -457,7 +466,9 @@ function nest(e: Record<string, any>) {
         notify: { v2Enabled: e.NOTIFY_V2_ENABLED as boolean, emailEnabled: e.NOTIFY_EMAIL_ENABLED as boolean,
             streamEnabled: e.NOTIFY_STREAM_ENABLED as boolean, streamMaxPerUser: e.NOTIFY_STREAM_MAX_PER_USER as number, streamMaxTotal: e.NOTIFY_STREAM_MAX_TOTAL as number,
             realtimeBus: e.REALTIME_BUS as string | undefined, publicApiUrl: e.PUBLIC_API_URL as string | undefined, unsubSecret: e.NOTIFY_UNSUB_SECRET as string | undefined,
-            alertEvaluatorEnabled: e.ALERT_EVALUATOR_ENABLED as boolean, alertShadowUntil: e.ALERT_SHADOW_UNTIL as string | undefined, alertEmailTo: e.ALERT_EMAIL_TO as string | undefined },
+            alertEvaluatorEnabled: e.ALERT_EVALUATOR_ENABLED as boolean, alertShadowUntil: e.ALERT_SHADOW_UNTIL as string | undefined, alertEmailTo: e.ALERT_EMAIL_TO as string | undefined,
+            webpush: { publicKey: e.WEBPUSH_VAPID_PUBLIC as string | undefined, privateKey: e.WEBPUSH_VAPID_PRIVATE as string | undefined, subject: e.WEBPUSH_VAPID_SUBJECT as string | undefined },
+            fcmServiceAccount: e.FCM_SERVICE_ACCOUNT_JSON as string | undefined },
         // ADR-0034 (sohbet aracısı)
         agent: { llmScripted: e.AGENT_LLM_SCRIPTED as boolean },
         // ADR-0035 (uzak MCP / OAuth). `resourceUri`: RFC 8707/9728 kaynak tanıtıcısı (token `aud`'u).

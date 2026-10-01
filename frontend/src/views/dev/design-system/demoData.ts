@@ -37,7 +37,7 @@ export const sidebarSections: EkSideSection[] = [
     items: [
       {
         key: 'catalog',
-        label: 'Ürün Kataloğu',
+        label: 'Ürün kataloğu',
         icon: 'mdi-tag-outline',
         children: [
           { key: 'products', label: 'Ürün Listesi' },

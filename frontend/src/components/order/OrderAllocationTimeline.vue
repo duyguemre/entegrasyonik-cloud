@@ -9,8 +9,8 @@
   zamanı bilinir — ara durumlar/zamanlar UYDURULMAZ. Durumsuz kalem (eski sipariş) "—" gösterir.
 -->
 <template>
-  <section class="ek-alloc" :aria-labelledby="headingId">
-    <h2 :id="headingId" class="ek-alloc__heading">{{ title }}</h2>
+  <component :is="embedded ? 'div' : 'section'" class="ek-alloc" :aria-labelledby="embedded ? undefined : headingId">
+    <h2 v-if="!embedded" :id="headingId" class="ek-alloc__heading">{{ title }}</h2>
 
     <p v-if="entries.length === 0" class="ek-alloc__empty">Bu siparişte kalem yok.</p>
 
@@ -40,7 +40,7 @@
         </ol>
       </li>
     </ol>
-  </section>
+  </component>
 </template>
 
 <script setup lang="ts">
@@ -50,7 +50,7 @@ import { ALLOCATION_STATE_TONE } from '@/design/status-map'
 import { formatDateTime, formatNumber } from '@entegrasyonik/ui/format'
 import { buildAllocationTimeline, type AllocationEventKind } from '@/composables/useStockHealthApi'
 
-const props = withDefaults(defineProps<{ items: Array<Record<string, any>> | null | undefined; title?: string }>(), {
+const props = withDefaults(defineProps<{ items: Array<Record<string, any>> | null | undefined; title?: string; /** FR3-12: bölüm kartının (EkDetailPanel) içinde — görünür başlığı kart taşır. */ embedded?: boolean }>(), {
   title: 'Stok tahsisi',
 })
 

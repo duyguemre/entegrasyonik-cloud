@@ -9,11 +9,11 @@ export enum ClaimInternalStatusEnum {
 }
 
 export const CLAIM_INTERNAL_STATUS_LABELS: Record<ClaimInternalStatusEnum, string> = {
-    [ClaimInternalStatusEnum.WAITING]: 'Yeni Talep',
+    [ClaimInternalStatusEnum.WAITING]: 'Yeni talep',
     [ClaimInternalStatusEnum.UNDER_REVIEW]: 'İncelemede',
     [ClaimInternalStatusEnum.APPROVED]: 'Onaylandı',
     [ClaimInternalStatusEnum.REJECTED]: 'Reddedildi',
-    [ClaimInternalStatusEnum.CANCELLED]: 'İptal Edildi',
+    [ClaimInternalStatusEnum.CANCELLED]: 'İptal edildi',
     [ClaimInternalStatusEnum.DISPUTED]: 'İtirazda',
     [ClaimInternalStatusEnum.COMPLETED]: 'Tamamlandı'
 };

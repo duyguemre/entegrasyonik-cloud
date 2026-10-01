@@ -131,6 +131,19 @@ export const SCREENS: BoScreen[] = [
     keywords: ['tenant', 'mağaza', 'hesap'],
     view: () => import('../views/TenantsView.vue'),
   },
+  {
+    // MOB-08 / K55: kullanım izleme -- masaüstü / mobil ana kırılım, alt türler ayrıntıda, platform süzgeci.
+    key: 'usage',
+    hotkey: 'n',
+    label: 'Kullanım',
+    lede: 'Aktif kullanıcılar masaüstü ve mobil ayrımıyla (tarayıcı, kurulu uygulama, Android, masaüstü uygulaması); müşteri bazında ayrıntı müşteri detayında.',
+    icon: 'mdi-devices',
+    group: 'customers',
+    status: 'ready',
+    path: '/musteriler/kullanim',
+    keywords: ['kullanım', 'aktif kullanıcı', 'mobil', 'masaüstü', 'pwa', 'android', 'platform', 'dau'],
+    view: () => import('../views/usage/UsageView.vue'),
+  },
   planned({
     key: 'lifecycle',
     // BO-ELEV IA-5: tek müşterinin yaşam döngüsü müşteri detayında hazır; bu planlı ekran ÇAPRAZ müşteri kuyruğudur.

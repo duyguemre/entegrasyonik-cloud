@@ -1,4 +1,4 @@
-// P2 — Admin paneli / Mağaza Yönetimi (AdminClientListView + AdminClientDetailComponent +
+// P2 — Admin paneli / Mağaza yönetimi (AdminClientListView + AdminClientDetailComponent +
 // AdminClientCreateComponent + ClientStatsCard). ADR-0011 Karar 2 tablosu: "admin panel
 // ekranları". platformAdmin-only ekranlar (ADR-0001 OPERATION_POLICY platformAdmin katmanı —
 // backend `AdminService` yalnızca süper yönetici içindir); menü kaydı ApplicationDB `menus`
@@ -18,17 +18,17 @@ function withAdminMenu(overrides: Record<string, any> = {}) {
   return { MenuService: menuFixtureWithAdmin, ...overrides }
 }
 
-test.describe('P2 — Admin / Mağaza Yönetimi (AdminClientListView)', () => {
+test.describe('P2 — Admin / Mağaza yönetimi (AdminClientListView)', () => {
   test('smoke: arama kutusu + özet çubuğu + mağaza satırları render olur', async ({ page }) => {
     await installApiMocks(page, withAdminMenu())
     await gotoAuthed(page)
     await openScreen(page, 'AdminClientListView')
 
     await expect(page.locator('.adminClientListView')).toBeVisible()
-    await expect(page.getByLabel('Müşteri / Mağaza Ara').first()).toBeVisible()
+    await expect(page.getByLabel('Mağaza adı veya kodu ara').first()).toBeVisible()
     await expect(page.getByText('E2E Örnek Mağaza', { exact: true })).toBeVisible()
     await expect(page.getByText('E2E Pasif Mağaza', { exact: true })).toBeVisible()
-    await expect(page.getByText('Toplam Mağaza')).toBeVisible()
+    await expect(page.getByText('Toplam mağaza')).toBeVisible()
     await expect(page.locator('.adminClientListView tbody tr')).toHaveCount(2)
   })
 
@@ -89,7 +89,7 @@ test.describe('P2 — Admin / Mağaza Yönetimi (AdminClientListView)', () => {
 
     const dialog = page.getByRole('dialog').filter({ hasText: 'Yeni Mağaza Oluştur' })
     await expect(dialog).toBeVisible()
-    await expect(dialog.getByLabel('Mağaza Adı')).toBeVisible()
+    await expect(dialog.getByLabel('Mağaza adı')).toBeVisible()
     await expect(dialog.getByLabel('E-Posta Adresi')).toBeVisible()
   })
 

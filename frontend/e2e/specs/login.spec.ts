@@ -19,9 +19,10 @@ test.describe('P1 — Giriş', () => {
 
     await expect(page.getByRole('tab', { name: 'Giriş' })).toBeVisible()
     await expect(page.getByRole('tab', { name: 'Kayıt' })).toBeVisible()
-    await expect(page.getByRole('tab', { name: 'Şifremi unuttum' })).toBeVisible()
+    await expect(page.getByRole('tab', { name: 'Parolamı unuttum' })).toHaveCount(0)
+    await expect(page.getByRole('button', { name: 'Parolanızı mı unuttunuz?' })).toBeVisible()
     await expect(page.getByLabel('E-posta')).toBeVisible()
-    await expect(page.getByLabel('Şifre', { exact: true })).toBeVisible()
+    await expect(page.getByLabel('Parola', { exact: true })).toBeVisible()
     await expect(page.getByRole('button', { name: 'Giriş' })).toBeVisible()
   })
 
@@ -35,7 +36,7 @@ test.describe('P1 — Giriş', () => {
     })
     await page.goto('/login')
     await page.getByLabel('E-posta').fill('yanlis@example.invalid')
-    await page.getByLabel('Şifre', { exact: true }).fill('yanlis-sifre')
+    await page.getByLabel('Parola', { exact: true }).fill('yanlis-sifre')
     await page.getByRole('button', { name: 'Giriş' }).click()
 
     await expect(page.getByText('Bilgiler hatalı, lütfen kontrol ediniz.')).toBeVisible()
@@ -58,7 +59,7 @@ test.describe('P1 — Giriş', () => {
     })
     await page.goto('/login')
     await page.getByLabel('E-posta').fill('e2e@example.invalid')
-    await page.getByLabel('Şifre', { exact: true }).fill('e2e-pass-1234')
+    await page.getByLabel('Parola', { exact: true }).fill('e2e-pass-1234')
     await page.getByRole('button', { name: 'Giriş' }).click()
 
     // ADR-0012 Karar 1/2 (kasıtlı davranış değişikliği, T4a): giriş sonrası artık kanonik

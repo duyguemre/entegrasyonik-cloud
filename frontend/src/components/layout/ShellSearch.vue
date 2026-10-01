@@ -1,7 +1,7 @@
 <!--
   frontend/src/components/layout/ShellSearch.vue
 
-  DS-v2 Aşama 2 — üst barın BİRLEŞİK akıllı araması (eski "Akıllı Arama" alanı +
+  DS-v2 Aşama 2 — üst barın BİRLEŞİK akıllı araması (eski "Akıllı arama" alanı +
   komut paleti tek yerde; Ctrl+K buraya odaklanır). Sunum `EkSmartSearch`;
   veri kaynakları GERÇEK:
     - Boş sorgu (odakta): "Son açılanlar" — bu oturumda etkinleştirilen sekmeler
@@ -40,7 +40,7 @@ import logger from '@/composables/logger'
 import { formatDate, formatMoney, formatNumber } from '@entegrasyonik/ui/format'
 import { useWorkspaceStore } from '@/stores/workspace'
 import { screenKeyForLink } from '@/navigation/screens'
-import { useShellMenu } from './useShellMenu'
+import { FAVORITES_SECTION_ID, useShellMenu } from './useShellMenu'
 import { useHelpNavigation } from '@/help/useHelpNavigation'
 import { CHAT_ICON } from '@entegrasyonik/chat/brand'
 import { useOtopilotStore } from '@/chat/otopilotStore'
@@ -86,6 +86,24 @@ const recentGroup = computed<EkSearchGroup>(() => {
     }
   })
   return { key: 'recent', label: 'Son açılanlar', icon: 'mdi-history', items }
+})
+
+// --- Kaynak 1b: favoriler (boş sorgu; FR3 madde 2) — menünün Favoriler bölümüyle AYNI kayıt ve sıra ---
+const favoriteGroup = computed<EkSearchGroup>(() => {
+  const fav = model.value.sections.find((sec) => sec.id === FAVORITES_SECTION_ID)
+  const items = (fav?.items ?? []).map((item) => {
+    const entry = model.value.entries.find((e) => e.key === item.key)
+    return {
+      id: `favorite:${item.key}`,
+      title: item.label,
+      icon: item.icon ?? 'mdi-star-outline',
+      tone: 'neutral' as const,
+      meta: entry?.parentTitle || entry?.sectionLabel ? [{ label: 'Bölüm', value: entry?.parentTitle ?? entry?.sectionLabel ?? '' }] : undefined,
+      __kind: 'recent',
+      __ref: entry?.link,
+    }
+  }).filter((i) => !!i.__ref)
+  return { key: 'favorites', label: t('shell.section.favorites'), icon: 'mdi-star-outline', items }
 })
 
 // --- Kaynak 2: ekranlar (menü, istemci filtresi) ---
@@ -199,7 +217,7 @@ const askGroup = computed<EkSearchGroup | null>(() => {
 })
 
 const groups = computed<EkSearchGroup[]>(() => {
-  if (!q.value) return recentGroup.value.items.length ? [recentGroup.value] : []
+  if (!q.value) return [favoriteGroup.value, recentGroup.value].filter((g) => g.items.length)
   const ask = askGroup.value ? [askGroup.value] : []
   return [...ask, screenGroup.value, ...(q.value.length >= MIN_REMOTE_LENGTH ? [...recordGroups.value, helpGroup.value] : [])]
 })

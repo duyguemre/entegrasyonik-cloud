@@ -38,6 +38,8 @@ export interface CatalogEntry {
 export interface CategoryDefaults {
   inApp: boolean
   email: EmailMode
+  /** MOB-04 web push varsayılanı (backend `categoryLocks().catalogDefault.push`: zorunlu/kritik kodu olan kategori açık). */
+  push: boolean
 }
 
 export interface CategoryMeta {
@@ -53,18 +55,22 @@ export interface CategoryMeta {
 export type CatalogSource = 'none' | 'server' | 'fallback'
 
 const EMAIL_VALUES: readonly EmailMode[] = ['inst', 'dig', 'off']
+/** Backend e-posta modu (`off|instant|digest`) <-> FE kısaltması (`off|inst|dig`). Sınırda tek eşleme. */
+const WIRE_TO_EMAIL: Record<string, EmailMode> = { off: 'off', instant: 'inst', digest: 'dig' }
+export const fromWireEmail = (v: unknown): EmailMode | undefined => (typeof v === 'string' ? WIRE_TO_EMAIL[v] : undefined)
+export const toWireEmail = (v: EmailMode): 'off' | 'instant' | 'digest' => (v === 'inst' ? 'instant' : v === 'dig' ? 'digest' : 'off')
 const isEmailMode = (v: unknown): v is EmailMode => typeof v === 'string' && (EMAIL_VALUES as readonly string[]).includes(v)
 
 /** Plan §2.3 — tercih matrisi varsayılanları (tenant varsayılanı yoksa). */
 export const CATEGORY_DEFAULTS: Record<NotificationCategory, CategoryDefaults> = {
-  order: { inApp: true, email: 'dig' },
-  stock: { inApp: true, email: 'dig' },
-  integration: { inApp: true, email: 'dig' },
-  catalog: { inApp: true, email: 'off' },
-  finance: { inApp: true, email: 'dig' },
-  billing: { inApp: true, email: 'inst' },
-  security: { inApp: true, email: 'inst' },
-  system: { inApp: true, email: 'off' },
+  order: { inApp: true, email: 'dig', push: true },
+  stock: { inApp: true, email: 'dig', push: true },
+  integration: { inApp: true, email: 'dig', push: true },
+  catalog: { inApp: true, email: 'off', push: false },
+  finance: { inApp: true, email: 'dig', push: false },
+  billing: { inApp: true, email: 'inst', push: true },
+  security: { inApp: true, email: 'inst', push: true },
+  system: { inApp: true, email: 'off', push: false },
 }
 
 const e = (code: string, category: NotificationCategory, severities: NotificationSeverity[], mandatory: boolean, email: EmailMode): CatalogEntry => ({
@@ -251,7 +257,7 @@ export function normalizeCatalog(response: any): CatalogEntry[] | null {
     const code = typeof row.code === 'string' ? row.code.trim() : ''
     if (!code || seen.has(code) || code.startsWith('LEGACY_') || row.surface === 'platform') continue
     if (!isNotificationCategory(row.category)) continue
-    const emailRaw = row.channels?.email ?? row.defaultEmail ?? row.email
+    const emailRaw = fromWireEmail(row.defaultChannels?.email) ?? row.channels?.email ?? row.defaultEmail ?? row.email
     seen.add(code)
     out.push({
       code,

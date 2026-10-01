@@ -362,7 +362,7 @@ function openHelpCenter() {
   gap: var(--ek-space-4);
   height: min(600px, calc(100vh - 248px));
   min-height: 320px;
-  animation: ek-sc-enter var(--ek-duration-slow) var(--ek-easing-enter) both;
+  animation: ek-sc-enter var(--ek-motion-layout) both;
 }
 
 @keyframes ek-sc-enter {

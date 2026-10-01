@@ -295,7 +295,7 @@ const channelPriceRows = computed(() => channelRows(
    bilesen kokleri scoped ozniteligi almayabilir; onek dosyaya ozgudur. */
 
 .psvc-s11 {
-  transition: opacity var(--ek-duration-base) var(--ek-easing-standard) !important;
+  transition: opacity var(--ek-motion-reveal) !important;
 }
 
 .psvc-dim {

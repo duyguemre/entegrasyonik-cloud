@@ -218,7 +218,7 @@ function onClick() {
 }
 
 .ek-refresh.is-loading .ek-refresh__icon {
-  animation: ek-refresh-spin calc(var(--ek-duration-slow) * 3) var(--ek-easing-standard) infinite;
+  animation: ek-refresh-spin var(--ek-motion-loop-spin) var(--ek-easing-standard) infinite;
 }
 
 .ek-refresh.is-success {
@@ -232,7 +232,7 @@ function onClick() {
 }
 
 .ek-refresh__icon--ok {
-  animation: ek-refresh-pop var(--ek-duration-base) var(--ek-easing-enter);
+  animation: ek-refresh-pop var(--ek-motion-overlay);
 }
 
 .ek-refresh__dot {

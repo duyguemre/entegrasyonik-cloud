@@ -37,10 +37,6 @@ const RAW_HTML_ALLOWLIST: Record<string, { count: number; why: string }> = {
     count: 1,
     why: "Vue'nun kendi (kaçışlı) DOM'undan `innerHTML` serileştirilip yazdırma penceresine yazılır; ham kullanıcı dizesi eklenmez.",
   },
-  'views/secure/PrintoutListView.vue': {
-    count: 1,
-    why: 'Şablon tasarımcısı prototipi: yalnızca kod içi sabit sürüklenebilir öğeler kopyalanır; sunucu verisi yok.',
-  },
 }
 
 const files = walk(srcRoot)

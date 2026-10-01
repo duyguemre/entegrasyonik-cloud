@@ -80,6 +80,10 @@
         </div>
       </template>
 
+      <template v-else-if="tab === 'kullanim'">
+        <TenantUsagePanel :tid="tid" />
+      </template>
+
       <template v-else>
         <StateBlock :phase="life.phase.value" :error="life.error.value" skeleton="cards" :rows="3" @retry="life.load()">
           <div v-if="life.data.value" class="bo-grid bo-tenant__grid">
@@ -166,6 +170,7 @@ import { useTabQuery } from '@bo/composables/useTabQuery'
 import BoPageHeader from '@bo/components/shell/BoPageHeader.vue'
 import StateBlock from '@bo/components/kit/StateBlock.vue'
 import GuardedDialog from '@bo/components/kit/GuardedDialog.vue'
+import TenantUsagePanel from '@bo/views/usage/TenantUsagePanel.vue'
 import { CHANNEL, SUB_STATUS, TENANT_STATUS, channelTypeLabel, planLabel } from '@bo/utils/labels'
 import { formatDate, formatDateTime, formatRelative } from '@bo/utils/format'
 import { notifyAudited } from '@bo/utils/toast'
@@ -176,7 +181,7 @@ const router = useRouter()
 const tid = Number(route.params.tid)
 const client = ref<ClientDto | null>(null)
 const clientLoaded = ref(false)
-const tab = useTabQuery(['ozet', 'yasam-dongusu'] as const, 'ozet')
+const tab = useTabQuery(['ozet', 'kullanim', 'yasam-dongusu'] as const, 'ozet')
 const traceLinks = computed(() => {
   const q = { tid: String(tid) }
   return [
@@ -189,6 +194,7 @@ const traceLinks = computed(() => {
 
 const TABS = [
   { value: 'ozet', label: 'Özet', icon: 'mdi-view-grid-outline' },
+  { value: 'kullanim', label: 'Kullanım', icon: 'mdi-devices' },
   { value: 'yasam-dongusu', label: 'Yaşam döngüsü', icon: 'mdi-timeline-clock-outline' },
 ]
 const STEP_LABEL: Record<string, string> = {

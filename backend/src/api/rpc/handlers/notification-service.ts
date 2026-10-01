@@ -8,6 +8,9 @@ import { ApplicationError } from '@platform/core/errors'
 import { getCatalogDto } from '@operations/notifications/catalog'
 import { NOTIFICATION_CATEGORIES } from '@operations/notifications/catalog.types'
 import { categoryLocks, violatedMandatory } from '@operations/notifications/preferences'
+import { PushSubscriptionRepository } from '@database/repositories/app/PushSubscriptionRepository'
+import { currentVapid, isFcmEnabled, isPushEnabled, isWebPushEnabled } from '@operations/notifications/push/pushConfig'
+import { listPushDevices, PushRequestError, PushSubscriptionError, removePushSubscription, subscribeFromBody, unsubscribeTarget } from '@operations/notifications/push/subscriptions'
 import { buildListFilter, buildOwnUpdateFilter, buildUnreadFilter, presentNotification } from '@operations/notifications/inAppRepository'
 
 /**
@@ -21,6 +24,8 @@ export default class NotificationService extends BaseApi implements IService {
     private get notifications() { return new NotificationRepository(this.clientDB) }
 
     private get prefs() { return new NotificationPreferencesRepository(this.applicationDB) }
+
+    private get pushSubs() { return new PushSubscriptionRepository(this.applicationDB) }
 
     private get uid(): string { return this.ctx.actor.sub }
 
@@ -199,5 +204,36 @@ export default class NotificationService extends BaseApi implements IService {
 
         await this.prefs.upsert(this.tid, userId, { $set, ...(Object.keys($unset).length ? { $unset } : {}) });
         return { result: true, message: 'Tercihler kaydedildi.' };
+    }
+
+    // ---- Web push (MOB-04): kullanıcı × cihaz aboneliği. Tenant + kullanıcı kapsamlı; destek oturumu yazamaz. ----
+
+    /** Kanal durumu + VAPID açık anahtarı (sır değil) + FCM (Android kabuğu) açık mı + kendi cihazlarım. Kanal kapalıyken cihaz listesi okunmaz. */
+    async getPushConfig(): Promise<any> {
+        if (!isPushEnabled()) return { result: true, enabled: false, publicKey: null, fcm: false, devices: [] }
+        const devices = this.ctx.actor.imp === true ? [] : await listPushDevices(this.pushSubs, this.tid, this.uid)
+        return { result: true, enabled: true, publicKey: isWebPushEnabled() ? currentVapid()?.publicKey ?? null : null, fcm: isFcmEnabled(), devices }
+    }
+
+    /** Bu cihazı kaydet: tarayıcı aboneliği (aynı uç = güncelle) YA DA Android kabuğu FCM belirteci. Uç yalnız bilinen push servisleri (SSRF). */
+    async subscribePush(): Promise<any> {
+        this.assertWritable()
+        try {
+            await subscribeFromBody(this.pushSubs, { tid: this.tid, userId: this.uid, body: this.request, now: new Date(), channels: { web: isWebPushEnabled(), fcm: isFcmEnabled() } })
+        } catch (e) {
+            if (e instanceof PushRequestError) throw new ApplicationError(e.message, e.code === 'PUSH_DISABLED' ? 409 : 400, e.code)
+            if (e instanceof PushSubscriptionError) throw new ApplicationError(e.message, 400, e.code)
+            throw e
+        }
+        return { result: true, message: 'Bu cihazda anlık bildirimler açıldı.' }
+    }
+
+    /** Cihaz aboneliğini sil (uç, cihaz kimliği ya da FCM belirteci; yalnız kendi kaydı). Kanal kapalıyken de çalışır (temizlik). İdempotent. */
+    async unsubscribePush(): Promise<any> {
+        this.assertWritable()
+        let target
+        try { target = unsubscribeTarget(this.request) } catch (e) { throw new ApplicationError((e as Error).message, 400, 'VALIDATION') }
+        const removed = await removePushSubscription(this.pushSubs, { tid: this.tid, userId: this.uid, ...target })
+        return { result: true, removed, message: 'Bu cihazda anlık bildirimler kapatıldı.' }
     }
 }

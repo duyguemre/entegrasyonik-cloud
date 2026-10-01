@@ -133,7 +133,7 @@ defineEmits(['action', 'clear']);
 .bulk-action-btn {
   background: transparent !important;
   color: var(--ek-color-content-inverse) !important;
-  transition: background-color var(--ek-duration-fast) var(--ek-easing-standard), color var(--ek-duration-fast) var(--ek-easing-standard);
+  transition: background-color var(--ek-motion-feedback), color var(--ek-motion-feedback);
   min-width: 80px !important;
   height: auto !important;
   padding: var(--ek-space-2) !important;

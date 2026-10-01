@@ -32,7 +32,7 @@ async function openBatchMenu(page: Page) {
 test.describe('P3 (B5-2) — Ürün toplu işlemleri (BatchActions)', () => {
   test('menü: "Toplu Ürün İşlemleri" başlığı ve işlem listesi görünür', async ({ page }, testInfo) => {
     const menu = await openBatchMenu(page)
-    for (const label of ['Platformlara Yükle', 'Platformlarda Güncelle', 'Platform Fiyatlarını Güncelle', 'Platform Stoklarını Güncelle', 'Platformdan Ürün Yükle', "Excel'e Aktar", "Excel'den Güncelle", 'Satış Durum Değiştir', 'Kategori Ata / Değiştir', 'Marka Ata / Değiştir', 'Etiket (Tag) Ata / Değiştir', 'Toplu Sil']) {
+    for (const label of ['Kanallara yükle', 'Kanallarda güncelle', 'Platform Fiyatlarını Güncelle', 'Platform Stoklarını Güncelle', 'Platformdan Ürün Yükle', "Excel'e Aktar", "Excel'den Güncelle", 'Satış Durum Değiştir', 'Kategori Ata / Değiştir', 'Marka Ata / Değiştir', 'Etiket (Tag) Ata / Değiştir', 'Toplu Sil']) {
       await expect(menu.getByText(label, { exact: true })).toBeVisible()
     }
     await page.waitForTimeout(300)
@@ -40,21 +40,21 @@ test.describe('P3 (B5-2) — Ürün toplu işlemleri (BatchActions)', () => {
     await testInfo.attach('axe-BatchActionMenu-sonuclari.json', { body: JSON.stringify(results.violations, null, 2), contentType: 'application/json' })
     expect(results.violations.map((v) => v.id)).toEqual([])
     // Klavye: menü açılınca odak ilk işlemde; ↓ sonraki işleme gider.
-    await expect(menu.getByRole('menuitem', { name: 'Platformlara Yükle' })).toBeFocused()
+    await expect(menu.getByRole('menuitem', { name: 'Kanallara yükle' })).toBeFocused()
     await page.keyboard.press('ArrowDown')
-    await expect(menu.getByRole('menuitem', { name: 'Platformlarda Güncelle' })).toBeFocused()
+    await expect(menu.getByRole('menuitem', { name: 'Kanallarda güncelle' })).toBeFocused()
     // Tehlikeli öğe en sonda.
     await expect(menu.getByRole('menuitem').last()).toHaveText('Toplu Sil')
   })
 
-  test('platform işlemi: "Platformlara Yükle" toplu işlem diyaloğunu açar; seçim yoksa uyarı gösterilir', async ({ page }, testInfo) => {
+  test('platform işlemi: "Kanallara yükle" toplu işlem diyaloğunu açar; seçim yoksa uyarı gösterilir', async ({ page }, testInfo) => {
     const menu = await openBatchMenu(page)
-    await menu.getByText('Platformlara Yükle', { exact: true }).click()
+    await menu.getByText('Kanallara yükle', { exact: true }).click()
 
     const dialog = page.locator('.v-overlay--active').filter({ hasText: 'Toplu İşlem Merkezi' }).last()
     await expect(dialog).toBeVisible()
-    await expect(dialog.getByText('Platformlara Ürün Yükleme')).toBeVisible()
-    await expect(dialog.getByText('İşlem Yapılacak Platformlar')).toBeVisible()
+    await expect(dialog.getByText('Kanallara ürün yükleme')).toBeVisible()
+    await expect(dialog.getByText('İşlem yapılacak kanallar')).toBeVisible()
     await expect(dialog.getByText('Tablodan ürün seçilmedi. Lütfen seçim yapın veya kapsamı değiştirin.')).toBeVisible()
     await page.waitForTimeout(300)
     await expect(page).toHaveScreenshot('batch-process-dialog.png', { fullPage: false })

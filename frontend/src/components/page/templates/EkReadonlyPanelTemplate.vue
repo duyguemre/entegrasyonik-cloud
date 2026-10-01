@@ -8,7 +8,7 @@
   animasyonu YOK (premium-ui-standards).
 
   Kullanım:
-    <EkReadonlyPanelTemplate title="Entegrasyon Sağlığı" :last-updated="lastUpdated" @refresh="refetch">
+    <EkReadonlyPanelTemplate title="Entegrasyon sağlığı" :last-updated="lastUpdated" @refresh="refetch">
       <template #kpis><EkKpiRow>...</EkKpiRow></template>
       <template #status-list>
         <EkStatusChip v-for="i in integrations" :key="i.code" :tone="..." :label="..." />

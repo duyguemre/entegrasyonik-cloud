@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "sha256": "e8ab45c628666d0e30d350c21e11511fc1bb4df48623bd77286e4a3ab8cc4e7e",
-  "generatedAt": "2026-10-01T08:07:49.703Z",
+  "sha256": "5208c53c43505a5e78c0c6c5f87d4597e3c1a8d18fc65011c83c92cb92f6f073",
+  "generatedAt": "2026-10-01T14:00:49.647Z",
   "stage": "A",
-  "totalCapabilities": 280,
-  "totalBindings": 316,
+  "totalCapabilities": 287,
+  "totalBindings": 323,
   "capabilities": [
     {
       "id": "account.email_verification.resend",
@@ -2397,6 +2397,60 @@
       }
     },
     {
+      "id": "notifications.push.config",
+      "version": "1.0",
+      "domain": "account",
+      "effect": "read",
+      "minTier": "member",
+      "scope": "user",
+      "rpc": [
+        "NotificationService/getPushConfig"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "ui_plumbing"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "notifications.push.subscribe",
+      "version": "1.0",
+      "domain": "account",
+      "effect": "write",
+      "minTier": "member",
+      "scope": "user",
+      "rpc": [
+        "NotificationService/subscribePush"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "ui_plumbing"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "notifications.push.unsubscribe",
+      "version": "1.0",
+      "domain": "account",
+      "effect": "write",
+      "minTier": "member",
+      "scope": "user",
+      "rpc": [
+        "NotificationService/unsubscribePush"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "ui_plumbing"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
       "id": "notifications.tenant_defaults.get",
       "version": "1.0",
       "domain": "account",
@@ -4037,6 +4091,60 @@
       }
     },
     {
+      "id": "platform.prefs.push_config",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "read",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "BackofficePrefsService/getPushConfig"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.prefs.push_subscribe",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "write",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "BackofficePrefsService/subscribePush"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.prefs.push_unsubscribe",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "write",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "BackofficePrefsService/unsubscribePush"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
       "id": "platform.prefs.save_view",
       "version": "1.0",
       "domain": "platform",
@@ -4279,6 +4387,24 @@
       "scope": "platform",
       "rpc": [
         "BackofficeTenantService/listTenants"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "platform_admin"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "platform.tenants.usage",
+      "version": "1.0",
+      "domain": "platform",
+      "effect": "read",
+      "minTier": "platformAdmin",
+      "scope": "platform",
+      "rpc": [
+        "BackofficeTenantService/getUsage"
       ],
       "mcp": {
         "exposed": false,

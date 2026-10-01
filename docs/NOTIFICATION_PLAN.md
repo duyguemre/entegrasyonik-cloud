@@ -11,6 +11,7 @@ NB1 katalog ──► NB2 çekirdek ──┬─► NB3 çağıran göçü
                                └─► NB6 SSE ─────────► F-N3
 NB2 + ADR-0026 Aşama 2-BE ───────► NB7 duyuru + backoffice uçları ──► F-N4, BO-N1..N3
 ADR-0017 Aşama C ────────────────► NB8 platform alarm kanalı + tenant alarm kodları
+NB4 + NB5 outbox + MOB-01 PWA ────► NB9 web push kanalı (MOB-04)
 ```
 
 - **DB kapısı:** NB2, NB5 ve NB7 yeni ApplicationDB koleksiyonları ve indeksleri getirir.
@@ -272,6 +273,45 @@ Test komutları `docs/TESTING.md`'den alınır:
   - fırtına testi: 100 uyarı → 1 özet.
 - **Test:** ADR-0017 Aşama C test seti + `npm run test:module -- compliance`.
 
+### NB9 — Web push kanalı (MOB-04; ADR-0029 Karar 4 "İleride: web push")
+> **Durum: YAPILDI (2026-10-01, bulut `cloud/mob-push`; kanal env ile kapalı, göç `0020` ÇALIŞTIRILMADI).** Gerçek cihaz doğrulaması yerelde.
+
+**Kanal kuralları**
+- Push, uygulama içi + e-postanın **tamamlayıcısıdır**; cihaz aboneliği olmadan hiçbir şey gitmez. Tercih matrisinde yeni sütun `push: boolean` (kategori hücresi: `{inApp?, email?, push?}`).
+- Varsayılan: zorunlu ya da kritik olabilen kodlar **açık** (`STOCK_OVERSOLD`, `INTEGRATION_AUTH_FAILED`, `security`/`billing` zorunluları…), diğerleri **kapalı**. Çözüm sırası e-postayla aynı: kullanıcı → tenant varsayılanı → katalog. Zorunlu kategoride de push kapatılabilir (kilit yalnız uygulama içi/e-posta için).
+- **İçerik (hassas veri YOK):** başlık = katalog şablonunun sabit başlığı (yer tutucu içeriyorsa kategori etiketi), metin = sabit "Ayrıntılar için Entegrasyonik'i açın.", `url` = katalog `action` yolu (yalnız uygulama içi göreli yol), `tag = ntf:<eventId>`. `params` (sipariş no, SKU, entegrasyon adı…) kilit ekranına **asla** girmez; test tüm katalog için denetler. Yük RFC 8291 ile uçtan uca şifrelidir (push servisi okuyamaz).
+- Destek oturumu (impersonation) aktörü push alamaz; destek oturumu abonelik yazamaz/silemez (403).
+
+**Backend**
+- `ApplicationDB.PushSubscriptions` (yeni): `{tid, userId, endpointHash (sha256), sub (enc:v1: {endpoint, keys}), deviceLabel?, createdAt, lastSuccessAt?}`; indeksler `uniq_endpointHash`, `tid_1_userId_1_createdAt_-1` → `migrations/0020-push-subscriptions-app.js` (**ÇALIŞTIRILMADI**; kanal açılmadan önce `done` olmalı). Kullanıcı başına ≤10 cihaz (en eskiler düşer). Aynı tarayıcıda başka kullanıcı abone olursa kayıt ona geçer.
+- RPC (`NotificationService`, `self:manage`, kullanıcı kapsamlı, yetenek `notifications.push.{config,subscribe,unsubscribe}`, MCP'ye kapalı): `getPushConfig {}` → `{enabled, publicKey, devices[{id, deviceLabel, createdAt, lastSuccessAt}]}`; `subscribePush {subscription:{endpoint, expirationTime?, keys:{p256dh, auth}}, deviceLabel?}` (kanal kapalı → 409 `PUSH_DISABLED`, izinsiz uç → 400 `PUSH_ENDPOINT_NOT_ALLOWED`, bozuk anahtar → 400 `PUSH_KEYS_INVALID`); `unsubscribePush {endpoint} | {id}` (idempotent; kanal kapalıyken de çalışır).
+- **SSRF koruması:** uç yalnız `https` + izinli push servisleri (`operations/notifications/push/pushHosts.ts`: `fcm.googleapis.com`, `updates.push.services.mozilla.com`, `web.push.apple.com`, `*.notify.windows.com`); kimlik bilgisi/port yok.
+- Üretim: `notify` 7b adımı — push açıksa aday alıcılardan cihazı olan ve tercihi açık olanlar için outbox'a `channel:'push', mode:'instant'` kaydı (`NotificationDeliveries`; özet yok). Gönderici `notifications.push-dispatch` (worker, 10 sn; `PushDispatcher`): e-postayla aynı kira/fencing/yeniden deneme (1 dk → 5 dk → 30 dk → 2 sa → 12 sa), kullanıcının tüm cihazlarına; **404/410 → abonelik silinir**; 429/5xx/ağ → yeniden dene; diğer 4xx → `dead`; tercih kapalı → `skipped:opt_out`; cihaz yok → `skipped:no_subscription`; 24 saatten eski → `skipped:stale`; sessiz saatlerde zorunlu olmayan ertelenir. TTL 12 sa; kritik/hata → `Urgency: high`.
+- Taşıyıcı: `web-push` 3.6.7 (MPL-2.0 — dosya düzeyinde zayıf copyleft, değiştirilmeden kullanılır; `npm audit` 0). Backoffice teslim günlüğü `channel: 'push'` süzgecini kabul eder.
+- Bayraklar: kanal = `NOTIFY_V2_ENABLED` **ve** geçerli `WEBPUSH_VAPID_PUBLIC/PRIVATE/SUBJECT`. Biri eksik/bozuksa kanal kapalı, süreç başlar (bir kez uyarı logu, değer loglanmaz).
+- Testler: `tests/unit/notifications/webPush.test.ts` (VAPID, SSRF, içerik, tercih, abonelik deposu, gönderici, notify, web-push kripto gidiş-dönüş), `webPushRpc.test.ts` (RPC, impersonation, kapsam, RBAC), `tests/dev/egress-guard.test.ts`.
+
+**Frontend**: bkz. `frontend/docs/MOB_PUSH.md` (tercih matrisinde "Telefon/tarayıcı" sütunu, izin isteme yalnız kullanıcı eylemiyle, iOS 16.4+ yalnız ana ekrana eklenmiş PWA, service worker `push` + `notificationclick`, Electron'da gizli).
+
+**Yerel kurulum (VAPID üretimi ve gerçek cihazla deneme)**
+1. Anahtar çifti üret (bir kez; ortam başına ayrı): `cd backend && npx web-push generate-vapid-keys` → çıktıdaki *Public Key* ve *Private Key*'i `backend/.env`'e yaz: `WEBPUSH_VAPID_PUBLIC=…`, `WEBPUSH_VAPID_PRIVATE=…` (SIR; yalnız `.env`), `WEBPUSH_VAPID_SUBJECT=mailto:<operasyon adresi>`. Anahtarı değiştirmek tüm abonelikleri geçersiz kılar (cihazlar yeniden abone olur; eski kayıtlar ilk gönderimde 404/410 ile temizlenir).
+2. Yedek doğrulandıktan sonra göç: `node dev-tools/migrate.js` ile `0020-push-subscriptions-app` (önce `plan`, sonra `up`; CLAUDE.md kural 3).
+3. `NOTIFY_V2_ENABLED=true`; backend'i `EGRESS_ALLOW_WEBPUSH=1 npm run start:local` ile çalıştır (egress guard yalnız bu bayrakla push servislerine izin verir; LLM/pazaryeri açılmaz).
+4. Push yalnız güvenli bağlamda çalışır: `localhost` ya da HTTPS. Telefonla denemek için HTTPS tünel/staging gerekir; iOS'ta önce Safari → Paylaş → "Ana Ekrana Ekle", sonra uygulamayı ana ekrandan açıp Ayarlar > Bildirimler'den aç.
+
+**MOB-06 backoffice push (2026-10-01, bulut `cloud/mob-android`)**
+- Platform yöneticisi aboneliği: `BackofficePrefsService/{getPushConfig,subscribePush,unsubscribePush}` (sözleşme `docs/API_BACKOFFICE_ATTENTION.md` BE-07). Aynı `PushSubscriptions`, `tid = 0` + `userId = Users._id`; aynı SSRF/şifreleme/cihaz sınırı.
+- Kaynak: outbox DEĞİL — `notifications.platform-attention-push` (worker, 2 dk; `operations/notifications/push/platformAttentionPush.ts`, üretim bağlantısı `api/admin/createAttentionPusher.ts`) her turda abone yönetici varsa `getAttention` (K51 kaynakları) hesaplar, yalnız **kritik** maddeleri gönderir. Kanal kapalı → DB'ye dokunmaz; abone yok → dikkat hesaplanmaz.
+- Tekrar: yeni kritik madde ya da 6 sa'tir süren madde; çözülüp yeniden kritikleşen madde tekrar bildirilir. Durum süreç belleğinde (birden çok worker podunda aynı bildirim çoğalabilir; cihazda `tag:'bo-attention'` öncekinin yerine geçer). Yalnız geçici hatalarla iletilemezse durum yazılmaz (sonraki tur).
+- Alıcı: gönderim anında `Users.isGlobalAdmin===true` ve `isActive!==false`; değilse abonelik silinir. 404/410 → silinir. `Urgency: high`, TTL 12 sa.
+- Önyüz: `frontend/backoffice/src/pwa/{webPush.ts,PushCard.vue}` (Platform uyarıları ekranında kart; izin yalnız "Bu cihazda aç" ile), SW `push`/`notificationclick` (yalnız panel içi göreli yol). Testler: backend `tests/unit/notifications/platformAttentionPush.test.ts`; backoffice `tests/web-push.test.ts`, `tests/pwa-sw-push.test.ts`.
+
+**MOB-07 Android kabuğu yerel push (FCM HTTP v1; 2026-10-01, bulut `cloud/mob-android`)**
+- Android WebView'de Web Push API yok → kabukta bildirim FCM cihaz belirteciyle. Aynı kanal: aynı `PushSubscriptions` (`sub` = şifreli `{fcm}`, tekillik `sha256('fcm:'+token)`), aynı outbox/dağıtıcılar (tenant `notifications.push-dispatch`, backoffice `notifications.platform-attention-push`), aynı içerik kuralları. Gönderici hedef türüne göre yönlendirir (`createPushDispatcher.ts` → `fcm.ts`).
+- RPC: `subscribePush { subscription } | { fcmToken }` ve `unsubscribePush { endpoint } | { id } | { fcmToken }` (tenant + backoffice; yalnız biri, aksi 400 `VALIDATION`; kanal türü kapalı → 409 `PUSH_DISABLED`; bozuk belirteç 400 `PUSH_TOKEN_INVALID`). `getPushConfig` yanıtına `fcm: boolean`; `enabled` = VAPID **ya da** FCM açık, `publicKey` yalnız VAPID açıkken.
+- Yapılandırma: `FCM_SERVICE_ACCOUNT_JSON` (Firebase hizmet hesabı JSON'u, ham ya da base64; SIR, yalnız `.env`). Yoksa/bozuksa FCM kapalı, süreç başlar. OAuth2 erişim belirteci (JWT-bearer, RS256) bellekte; 401 → yenilenir. FCM 404 (UNREGISTERED) → abonelik silinir; 400 → `dead`; 429/5xx → yeniden dene. Egress guard: `EGRESS_ALLOW_WEBPUSH=1` `oauth2.googleapis.com`'u da açar. Yeni bağımlılık yok (`jsonwebtoken` + `fetch`).
+- İstemci: `@entegrasyonik/ui/native` (kabuk tespiti, `registerNativePush`, bildirime dokunma → uygulama içi yol). Derleme/kurulum: `docs/MOBILE_ANDROID_BUILD.md`. Testler: `tests/unit/notifications/fcmPush.test.ts`.
+
 ## 4. Bulut görev brifleri — müşteri uygulaması (yapıştırmaya hazır)
 
 Ortak ek (her brifin sonuna):
@@ -382,4 +422,5 @@ Dosya sahipliği: frontend/backoffice/src/views/customers/detail/NotificationHis
 | S5 | Toplu duyuru e-postası: yalnızca hizmet duyurusu; ticari ileti/İYS sınırı hukuki görüşü | E-posta kanalı step-up + onay kutusu ile, pazarlama yasak |
 | S6 | Destek erişiminde (impersonation) tenant'a e-posta da gitsin mi, "önceden onay" ayarı olsun mu (ADR-0028 ile ortak) | Yalnızca uygulama içi, zorunlu |
 | S7 | Doğrulanmamış e-posta adresine gönderim | Yalnızca zorunlu security/billing |
+| S8 | Web push açılışı: VAPID anahtarları (ortam başına), göç `0020`, push servislerine çıkış (FCM/Mozilla/Apple/WNS — kullanıcı cihazına teslim için Google/Apple/Mozilla/Microsoft altyapısı; yük uçtan uca şifreli, içerikte kişisel veri yok) | Kapalı (`WEBPUSH_VAPID_*` boş) |
 | S8 | Platform alarm alıcıları `ALERT_EMAIL_TO` (ADR-0017 S4) | Platform sahibinin adresi (env) |

@@ -21,7 +21,7 @@
 
     <EkListScreen
       section="Destek"
-      title="Destek Talepleri"
+      title="Destek talepleri"
       description="Destek ekibiyle yazışmalarınızı buradan takip edin ve yeni talep açın."
       label="Destek talepleri tablosu"
       noun="talep"
@@ -34,7 +34,7 @@
       :error="loadError"
       error-title="Destek talepleri yüklenemedi"
       :search="filters.globalSearch"
-      search-placeholder="Destek No veya Konu Ara"
+      search-placeholder="Talep no veya konu ara"
       :chips="activeChips"
       :filter-count="panelFilterCount"
       selectable
@@ -60,18 +60,17 @@
       @refresh="getTickets(true)"
     >
       <template #header-actions>
-        <EkButton icon="mdi-plus" @click="isCreateDialogOpen = true">Yeni Bilet Aç</EkButton>
+        <EkButton icon="mdi-plus" @click="isCreateDialogOpen = true">Yeni talep</EkButton>
       </template>
 
       <template #filters>
         <EkSelect v-model="filters.statuses" :items="statusOptions" item-title="title" item-value="id"
           label="Durumlar" multiple clearable />
         <EkSelect v-model="filters.priorities" :items="priorityOptions" item-title="title"
-          item-value="id" label="Öncelik Seviyesi" multiple clearable />
+          item-value="id" label="Öncelik" multiple clearable />
         <EkSelect v-model="filters.types" :items="typeOptions" item-title="title" item-value="id"
-          label="Talep Tipleri" multiple clearable />
-        <EkDateField v-model="filters.startDate" label="Başlangıç" :max="filters.endDate" />
-        <EkDateField v-model="filters.endDate" label="Bitiş" :min="filters.startDate" />
+          label="Talep tipi" multiple clearable />
+        <EkDateRange v-model:start="filters.startDate" v-model:end="filters.endDate" label="Oluşturma tarihi" value-format="date" />
       </template>
 
       <template #bulk-actions>
@@ -115,7 +114,7 @@
 </template>
 
 <script setup lang="ts">
-import { EkSelect, EkRowActions, type EkRowAction, EkButton, EkDateField, EkStatusChip } from '@entegrasyonik/ui/components'
+import { EkSelect, EkRowActions, type EkRowAction, EkButton, EkDateRange, EkStatusChip } from '@entegrasyonik/ui/components'
 import type { EkGridColumn, EkGridSort, EkActiveFilterChip } from '@entegrasyonik/ui/components'
 import { ref, onMounted, reactive, computed } from 'vue'
 import { useI18n } from 'vue-i18n'

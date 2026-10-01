@@ -9,7 +9,7 @@ export function appDialogs(page: Page): Locator {
 
 /**
  * Tur teklifi kartını (sağ alt, `HelpTour`) bastırır: tercih `localStorage`'a "dismissed" yazılır (sayfa yüklenmeden önce).
- * Kart, sağ alttaki sabit eylem çubuklarını (ör. "Ayarları Kaydet") örter; bu yardımcı yalnızca o örtmenin test
+ * Kart, sağ alttaki sabit eylem çubuklarını (ör. "Ayarları kaydet") örter; bu yardımcı yalnızca o örtmenin test
  * sonuçlarını etkilediği spec'lerde `beforeEach`'te çağrılır. Teklifin kendisini doğrulayan testlerde ÇAĞRILMAZ.
  */
 export async function suppressTourOffer(page: Page): Promise<void> {

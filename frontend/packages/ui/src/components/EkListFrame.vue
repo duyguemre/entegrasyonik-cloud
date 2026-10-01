@@ -44,7 +44,9 @@ defineProps<{ label: string }>()
   display: flex;
   flex: 1;
   flex-direction: column;
-  min-height: 0;
+  /* P15 (K49): açık filtre paneli / uyarı bandı tablo alanını ~0'a ezmesin — kart asgari 340px (araç satırı + ~240px tablo
+     alanı + sayfalama); sığmazsa ekran kendi içinde kayar (EkListScreen). Tablo alanı ayrıca sınırlanmaz → sayfalama kırpılmaz. */
+  min-height: 340px;
   overflow: hidden;
   background: var(--ek-color-surface);
   border: 1px solid var(--ek-color-border-default);

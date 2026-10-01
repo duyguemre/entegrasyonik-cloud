@@ -107,8 +107,8 @@ const restApi = useRestApi()
 const editingClientIntegration: any = ref({ settings: {} })
 
 const guideSteps = [
-  { title: 'Platformu Belirleyin', text: 'Üstteki ikonlara tıklayarak işlem yapacağınız e-ticaret sitesini seçin.' },
-  { title: 'API Bağlantısı', text: 'E-ticaret panelinden aldığınız API anahtarlarını ilgili alanlara girin.' },
+  { title: 'Kanalı seçin', text: 'Üstteki ikonlara tıklayarak işlem yapacağınız e-ticaret sitesini seçin.' },
+  { title: 'API bağlantısı', text: 'E-ticaret panelinden aldığınız API anahtarlarını ilgili alanlara girin.' },
   { title: 'Senkronizasyon', text: 'Bağlantı sağlandıktan sonra ürün ve sipariş verileriniz otomatik olarak eşitlenecektir.' }
 ]
 

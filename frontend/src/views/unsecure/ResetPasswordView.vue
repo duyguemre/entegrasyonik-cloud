@@ -24,7 +24,7 @@
             title="Bağlantı geçersiz"
             message="Bu sayfaya doğrudan erişilemez. Parola sıfırlama e-postasındaki bağlantıyı kullanın."
             show-action
-            action-text="Şifremi unuttum ekranına dön"
+            action-text="Parola sıfırlama ekranına dön"
             action-icon="mdi-arrow-left"
             @action="goToForgotPassword"
           />

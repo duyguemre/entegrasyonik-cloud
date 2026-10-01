@@ -12,10 +12,10 @@
       </EkFormSection>
 
       <EkFormSection title="Güvenlik bilgileri" icon="mdi-lock-outline"
-        :description="user._id ? 'Şifreyi değiştirmek istemiyorsanız boş bırakın.' : undefined">
-        <v-text-field v-model="user.password" label="Şifre" type="password" prepend-inner-icon="mdi-lock-outline"
+        :description="user._id ? 'Parolayı değiştirmek istemiyorsanız boş bırakın.' : undefined">
+        <v-text-field v-model="user.password" label="Parola" type="password" prepend-inner-icon="mdi-lock-outline"
           :placeholder="user._id ? 'Değiştirmek istemiyorsanız boş bırakın' : ''" />
-        <v-text-field v-if="!user._id" v-model="user.password2" label="Şifre Tekrar" type="password" />
+        <v-text-field v-if="!user._id" v-model="user.password2" label="Parola (Tekrar)" type="password" />
       </EkFormSection>
 
       <EkFormSection title="Rol ve yetkiler" icon="mdi-shield-account-outline" :columns="1">

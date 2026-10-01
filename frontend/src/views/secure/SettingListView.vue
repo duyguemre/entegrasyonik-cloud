@@ -19,304 +19,272 @@
 -->
 <template>
   <div class="settingListView">
-    <EkPageHeader section="Ayarlar" title="Mağaza Ayarları"
+    <EkPageHeader section="Ayarlar" title="Mağaza ayarları"
       description="Mağaza kimliği, fatura bilgileri, lojistik varsayılanları ve bildirim tercihleri." />
     <LoadingComponent attach=".settingListView" ref="loadingComponentRef"></LoadingComponent>
 
-    <div v-if="settings" class="settingListView__body">
-      <EkPageTabs v-model="activeTab" class="settingListView__tabs" label="Ayar bölümleri" :tabs="[
-        { value: 1, label: 'Mağaza Kimliği', icon: 'mdi-store-cog-outline' },
-        { value: 2, label: 'Fatura & Yasal Bilgiler', icon: 'mdi-pencil-outline' },
-        { value: 3, label: 'Lojistik & Operasyon', icon: 'mdi-truck-delivery-outline' },
-        { value: 4, label: 'İletişim & Bildirimler', icon: 'mdi-bell-ring-outline' },
-      ]" />
+    <div v-if="settings" class="sl-layout">
+      <!-- FR3-14: sol — ayar arama + grup gezinmesi (dikey sekme listesi; değişen grupta nokta). -->
+      <nav class="sl-nav" aria-label="Ayar bölümleri">
+        <v-text-field v-model="query" class="sl-nav__search" prepend-inner-icon="mdi-magnify" placeholder="Ayarlarda ara"
+          aria-label="Ayarlarda ara" clearable hide-details @keydown.esc="query = ''" />
+        <div class="sl-nav__list" role="tablist" aria-orientation="vertical" aria-label="Ayar bölümleri">
+          <button v-for="g in GROUPS" :key="g.value" type="button" role="tab" class="sl-nav__item"
+            :class="{ 'is-active': !searching && activeTab === g.value }"
+            :aria-selected="!searching && activeTab === g.value" :aria-controls="`sl-group-${g.value}`" @click="selectGroup(g.value)">
+            <v-icon :icon="g.icon" class="sl-nav__icon" aria-hidden="true" />
+            <span class="sl-nav__text">
+              <span class="sl-nav__label">{{ g.label }}</span>
+              <span class="sl-nav__desc">{{ g.short }}</span>
+            </span>
+            <span v-if="searching && hitsByGroup[g.value]" class="sl-nav__count ek-num">{{ hitsByGroup[g.value] }}</span>
+            <span v-else-if="dirtyGroups.has(g.value)" class="sl-nav__dot" title="Kaydedilmemiş değişiklik var"><span class="ek-sr-only">Kaydedilmemiş değişiklik var</span></span>
+          </button>
+        </div>
+      </nav>
 
-      <div class="settingListView__panel">
-        <v-window v-model="activeTab" class="settingListView__window">
-          <!-- Tab 1: Mağaza Kimliği -->
-          <v-window-item :value="1">
-            <v-row>
-              <v-col cols="12" md="7">
-                <v-text-field clearable maxlength="128" v-model="settings.storeName"
-                  variant="outlined" label="Mağaza Adı"
-                  hint="Müşterilere ve e-postalarda görünecek resmi mağaza adınız" persistent-hint counter />
+      <div class="sl-content">
+        <p v-if="searching" class="sl-search-state" role="status">
+          <template v-if="hitCount"><strong class="ek-num">{{ hitCount }}</strong> ayar “{{ query }}” ile eşleşti.</template>
+          <template v-else>“{{ query }}” ile eşleşen ayar yok. Farklı bir kelime deneyin ya da aramayı temizleyin.</template>
+        </p>
 
-                <div class="settingListView__block">
-                  <p class="settingListView__block-title">
-                    <v-icon start size="20" color="primary">mdi-palette-swatch-outline</v-icon>
-                    Mağaza Renk Paleti
-                  </p>
-
-                  <div class="settingListView__swatches">
-                    <button v-for="color in premiumPalettes" :key="color.hex" type="button" class="color-swatch-item"
-                      :class="{ 'active': settings.brandColor === color.hex }"
-                      :style="{ backgroundColor: color.hex }" :aria-label="color.name"
-                      :aria-pressed="settings.brandColor === color.hex" @click="settings.brandColor = color.hex">
-                      <v-tooltip activator="parent" location="top" :eager="false">{{ color.name }}</v-tooltip>
-                      <v-icon v-if="settings.brandColor === color.hex" class="color-swatch-item__check"
-                        size="20">mdi-check</v-icon>
-                    </button>
-
-                    <!-- Custom Color Trigger -->
-                    <v-menu :close-on-content-click="false" location="top">
-                      <template v-slot:activator="{ props }">
-                        <button v-bind="props" type="button" class="color-swatch-item custom-picker-trigger"
-                          aria-label="Özel Renk">
-                          <v-icon size="24">mdi-plus</v-icon>
-                          <v-tooltip activator="parent" location="top" :eager="false">Özel Renk</v-tooltip>
-                        </button>
-                      </template>
-                      <v-card min-width="300" class="settingListView__picker">
-                        <v-color-picker v-model="settings.brandColor" hide-inputs show-swatches flat
-                          mode="hex"></v-color-picker>
-                      </v-card>
-                    </v-menu>
-                  </div>
-
-                  <v-text-field v-model="settings.brandColor" variant="outlined"
-                    label="Seçili Renk Kodu" class="settingListView__color-code" prepend-inner-icon="mdi-pound">
-                  </v-text-field>
+        <!-- 1 · Mağaza kimliği -->
+        <section v-show="groupShown(1)" :id="'sl-group-1'" class="sl-group" role="tabpanel" aria-labelledby="sl-group-1-title">
+          <header class="sl-group__head">
+            <h2 id="sl-group-1-title" class="sl-group__title">{{ GROUPS[0].label }}</h2>
+            <p class="sl-group__desc">{{ GROUPS[0].description }}</p>
+          </header>
+          <div class="sl-identity">
+            <EkDetailPanel v-show="cardShown(['storeName', 'brandColor', 'logo'])" title="Ad ve görünüm" icon="mdi-store-outline" flush>
+              <SettingRow v-show="rowShown('storeName')" name="storeName" label="Mağaza adı" for-id="sl-storeName"
+                :description="row('storeName').description" :changed="changed('storeName')">
+                <v-text-field id="sl-storeName" v-model="settings.storeName" clearable maxlength="128" counter />
+              </SettingRow>
+              <SettingRow v-show="rowShown('brandColor')" name="brandColor" label="Mağaza renk paleti" stacked
+                :description="row('brandColor').description" :changed="changed('brandColor')">
+                <div class="sl-swatches">
+                  <button v-for="color in premiumPalettes" :key="color.hex" type="button" class="color-swatch-item"
+                    :class="{ 'active': settings.brandColor === color.hex }"
+                    :style="{ backgroundColor: color.hex }" :aria-label="color.name"
+                    :aria-pressed="settings.brandColor === color.hex" @click="settings.brandColor = color.hex">
+                    <v-tooltip activator="parent" location="top" :eager="false">{{ color.name }}</v-tooltip>
+                    <v-icon v-if="settings.brandColor === color.hex" class="color-swatch-item__check" size="20">mdi-check</v-icon>
+                  </button>
+                  <v-menu :close-on-content-click="false" location="top">
+                    <template v-slot:activator="{ props }">
+                      <button v-bind="props" type="button" class="color-swatch-item custom-picker-trigger" aria-label="Özel Renk">
+                        <v-icon size="24">mdi-plus</v-icon>
+                        <v-tooltip activator="parent" location="top" :eager="false">Özel Renk</v-tooltip>
+                      </button>
+                    </template>
+                    <v-card min-width="300" class="settingListView__picker">
+                      <v-color-picker v-model="settings.brandColor" hide-inputs show-swatches flat mode="hex"></v-color-picker>
+                    </v-card>
+                  </v-menu>
+                  <v-text-field v-model="settings.brandColor" label="Seçili renk kodu" class="sl-color-code" prepend-inner-icon="mdi-pound" hide-details />
                 </div>
-
-                <div class="settingListView__block">
-                  <div class="settingListView__logo-head">
-                    <p class="settingListView__block-title">Mağaza Logosu</p>
-                    <v-switch v-model="useLogoUrl" label="URL kullan" color="primary" density="compact" hide-details></v-switch>
-                  </div>
-
-                  <!-- Upload Mode -->
+              </SettingRow>
+              <SettingRow v-show="rowShown('logo')" name="logo" label="Mağaza logosu" stacked
+                :description="row('logo').description" :changed="changed('logo')">
+                <div class="sl-logo">
+                  <v-switch v-model="useLogoUrl" label="URL kullan" color="primary" density="compact" hide-details class="sl-logo__mode" />
                   <div v-if="!useLogoUrl" class="settingListView__upload">
-                    <v-avatar size="100" rounded="lg" class="settingListView__avatar">
-                      <template v-if="settings.logo">
-                        <v-img :src="settings.logo" cover>
-                          <template v-slot:placeholder>
-                            <v-skeleton-loader type="image" />
-                          </template>
-                        </v-img>
-                      </template>
-                      <v-icon v-else size="32" class="settingListView__avatar-icon">mdi-image-plus-outline</v-icon>
+                    <v-avatar size="72" rounded="lg" class="settingListView__avatar">
+                      <v-img v-if="settings.logo" :src="settings.logo" cover>
+                        <template v-slot:placeholder><v-skeleton-loader type="image" /></template>
+                      </v-img>
+                      <v-icon v-else size="28" class="settingListView__avatar-icon">mdi-image-plus-outline</v-icon>
                     </v-avatar>
                     <div class="settingListView__upload-text">
                       <p class="settingListView__help">Resmi mağaza logonuzu buradan yükleyebilirsiniz.</p>
-                      <v-btn color="primary" variant="outlined" size="small" class="text-none"
-                        @click="logoInput?.click()">
-                        <v-icon start size="16">mdi-upload-outline</v-icon>
-                        {{ settings.logo ? 'Logoyu Değiştir' : 'Logo Seç' }}
-                      </v-btn>
+                      <EkButton tone="secondary" size="sm" icon="mdi-upload-outline" @click="logoInput?.click()">{{ settings.logo ? 'Logoyu Değiştir' : 'Logo seç' }}</EkButton>
                     </div>
-                    <input type="file" ref="logoInput" class="d-none" accept="image/*"
-                      @change="onLogoFileChange($event)" />
+                    <input type="file" ref="logoInput" class="d-none" accept="image/*" @change="onLogoFileChange($event)" />
                   </div>
+                  <v-text-field v-else v-model="settings.logo" clearable maxlength="512" placeholder="https://example.com/logo.png"
+                    aria-label="Logo bağlantısı" prepend-inner-icon="mdi-link-variant"
+                    hint="Doğrudan bir görsel bağlantısı yapıştırmak için kullanın." persistent-hint />
+                </div>
+              </SettingRow>
+            </EkDetailPanel>
 
-                  <!-- URL Mode -->
-                  <div v-else>
-                    <v-text-field clearable maxlength="512" v-model="settings.logo"
-                      variant="outlined" placeholder="https://example.com/logo.png"
-                      prepend-inner-icon="mdi-link-variant"
-                      hint="Doğrudan bir görsel bağlantısı yapıştırmak için kullanın." persistent-hint />
+            <!-- Önizleme: müşterinin göreceği kimlik (yalnız arama dışında). -->
+            <aside v-show="!searching" class="settingListView__preview" aria-label="Önizleme">
+              <div class="settingListView__preview-head">
+                <p class="settingListView__overline">Önizleme</p>
+                <EkStatusChip tone="success" label="Canlı" />
+              </div>
+              <div class="settingListView__preview-card">
+                <span class="settingListView__preview-accent" :style="{ backgroundColor: settings.brandColor }" aria-hidden="true"></span>
+                <v-avatar size="64" rounded="lg" class="settingListView__avatar flex-shrink-0">
+                  <v-img v-if="settings.logo" :src="settings.logo" cover>
+                    <template v-slot:placeholder><v-skeleton-loader type="image" /></template>
+                  </v-img>
+                  <v-icon v-else size="24" class="settingListView__avatar-icon">mdi-image-plus-outline</v-icon>
+                </v-avatar>
+                <div class="settingListView__preview-text">
+                  <h3 class="settingListView__preview-name">{{ settings.storeName || 'Mağaza adı' }}</h3>
+                  <div class="settingListView__verified">
+                    <v-icon size="14" color="success">mdi-check-decagram-outline</v-icon>
+                    <span>Doğrulanmış mağaza</span>
                   </div>
                 </div>
-              </v-col>
+              </div>
+              <p class="settingListView__help">Ad, renk ve logo değiştikçe önizleme anında güncellenir; değişiklikler kaydettiğinizde saklanır.</p>
+            </aside>
+          </div>
+        </section>
 
-              <!-- Preview Card Section -->
-              <v-col cols="12" md="5">
-                <div class="settingListView__preview">
-                  <div class="settingListView__preview-head">
-                    <p class="settingListView__overline">Önizleme</p>
-                    <EkStatusChip tone="success" label="Canlı" />
-                  </div>
+        <!-- 2 · Fatura & yasal bilgiler -->
+        <section v-show="groupShown(2)" :id="'sl-group-2'" class="sl-group" role="tabpanel" aria-labelledby="sl-group-2-title">
+          <header class="sl-group__head">
+            <h2 id="sl-group-2-title" class="sl-group__title">{{ GROUPS[1].label }}</h2>
+            <p class="sl-group__desc">{{ GROUPS[1].description }}</p>
+          </header>
+          <EkDetailPanel v-show="cardShown(['invoiceType', 'firstname', 'lastname', 'tckn', 'invoicePhone'])" title="Fatura kimliği" icon="mdi-card-account-details-outline" flush>
+            <SettingRow v-show="rowShown('invoiceType')" name="invoiceType" label="Fatura tipi" label-id="sl-invoiceType"
+              :description="row('invoiceType').description" :changed="changed('invoiceType')">
+              <v-radio-group v-model="settings.invoice.type" inline hide-details aria-labelledby="sl-invoiceType">
+                <v-radio :value="0" :label="$t('customers.customer.new.real')" color="primary" />
+                <v-radio :value="1" :label="$t('customers.customer.new.corporate')" color="primary" />
+              </v-radio-group>
+            </SettingRow>
+            <SettingRow v-show="rowShown('firstname')" name="firstname" label="İsim" for-id="sl-firstname" :changed="changed('firstname')">
+              <v-text-field id="sl-firstname" v-model="settings.invoice.firstname" clearable />
+            </SettingRow>
+            <SettingRow v-show="rowShown('lastname')" name="lastname" label="Soyisim" for-id="sl-lastname" :changed="changed('lastname')">
+              <v-text-field id="sl-lastname" v-model="settings.invoice.lastname" clearable />
+            </SettingRow>
+            <SettingRow v-show="rowShown('tckn')" name="tckn" label="T.C. Kimlik No" for-id="sl-tckn"
+              :description="row('tckn').description" :changed="changed('tckn')">
+              <v-text-field id="sl-tckn" v-model="settings.invoice.tckn" clearable maxlength="11" inputmode="numeric" />
+            </SettingRow>
+            <SettingRow v-show="rowShown('invoicePhone')" name="invoicePhone" label="Fatura Telefon" for-id="sl-invoicePhone" :changed="changed('invoicePhone')">
+              <v-text-field id="sl-invoicePhone" v-model="settings.invoice.phone" clearable inputmode="tel" />
+            </SettingRow>
+          </EkDetailPanel>
 
-                  <div class="settingListView__preview-card">
-                    <span class="settingListView__preview-accent" :style="{ backgroundColor: settings.brandColor }"
-                      aria-hidden="true"></span>
-                    <v-avatar size="80" rounded="lg" class="settingListView__avatar flex-shrink-0">
-                      <template v-if="settings.logo">
-                        <v-img :src="settings.logo" cover>
-                          <template v-slot:placeholder>
-                            <v-skeleton-loader type="image" />
-                          </template>
-                        </v-img>
-                      </template>
-                      <v-icon v-else size="24" class="settingListView__avatar-icon">mdi-image-plus-outline</v-icon>
-                    </v-avatar>
+          <EkDetailPanel v-if="settings.invoice.type === 1" v-show="cardShown(['companyName', 'taxOffice', 'taxNumber', 'mersisNo', 'ticaretSicilNo'])"
+            title="Şirket bilgileri" icon="mdi-domain" description="Yalnız kurumsal fatura tipinde" flush>
+            <SettingRow v-show="rowShown('companyName')" name="companyName" label="Firma Ünvanı" for-id="sl-companyName" :changed="changed('companyName')">
+              <v-text-field id="sl-companyName" v-model="settings.invoice.companyName" clearable />
+            </SettingRow>
+            <SettingRow v-show="rowShown('taxOffice')" name="taxOffice" label="Vergi Dairesi" for-id="sl-taxOffice" :changed="changed('taxOffice')">
+              <v-text-field id="sl-taxOffice" v-model="settings.invoice.taxOffice" clearable />
+            </SettingRow>
+            <SettingRow v-show="rowShown('taxNumber')" name="taxNumber" label="Vergi No" for-id="sl-taxNumber" :changed="changed('taxNumber')">
+              <v-text-field id="sl-taxNumber" v-model="settings.invoice.taxNumber" clearable inputmode="numeric" />
+            </SettingRow>
+            <SettingRow v-show="rowShown('mersisNo')" name="mersisNo" label="MERSIS No" for-id="sl-mersisNo"
+              :description="row('mersisNo').description" :changed="changed('mersisNo')">
+              <v-text-field id="sl-mersisNo" v-model="settings.mersisNo" clearable />
+            </SettingRow>
+            <SettingRow v-show="rowShown('ticaretSicilNo')" name="ticaretSicilNo" label="Ticaret Sicil No" for-id="sl-ticaretSicilNo"
+              :description="row('ticaretSicilNo').description" :changed="changed('ticaretSicilNo')">
+              <v-text-field id="sl-ticaretSicilNo" v-model="settings.ticaretSicilNo" clearable />
+            </SettingRow>
+          </EkDetailPanel>
 
-                    <div class="settingListView__preview-text">
-                      <h4 class="settingListView__preview-name">{{ settings.storeName || 'Mağaza Adı' }}</h4>
-                      <div class="settingListView__verified">
-                        <v-icon size="14" color="success">mdi-check-decagram-outline</v-icon>
-                        <span>Doğrulanmış Mağaza</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </v-col>
-            </v-row>
-          </v-window-item>
+          <EkDetailPanel v-show="cardShown(['address', 'city', 'district'])" title="Fatura adresi" icon="mdi-map-marker-outline" flush>
+            <SettingRow v-show="rowShown('address')" name="address" label="Fatura Adresi" for-id="sl-address"
+              :description="row('address').description" :changed="changed('address')">
+              <v-textarea id="sl-address" v-model="settings.invoice.address" clearable rows="3" auto-grow />
+            </SettingRow>
+            <SettingRow v-show="rowShown('city')" name="city" label="İl" for-id="sl-city" :changed="changed('city')">
+              <v-select id="sl-city" v-model="settings.invoice.city" :items="staticsStore.cities" clearable aria-label="İl" />
+            </SettingRow>
+            <SettingRow v-show="rowShown('district')" name="district" label="İlçe" for-id="sl-district" :changed="changed('district')">
+              <v-text-field id="sl-district" v-model="settings.invoice.district" clearable />
+            </SettingRow>
+          </EkDetailPanel>
+        </section>
 
-          <!-- Tab 2: Fatura & Yasal Bilgiler -->
-          <v-window-item :value="2">
-            <v-row>
-              <v-col cols="12">
-                <v-radio-group inline v-model="settings.invoice.type" hide-details>
-                  <v-radio :value="0" :label="$t('customers.customer.new.real')" color="primary" />
-                  <v-radio :value="1" :label="$t('customers.customer.new.corporate')" color="primary" />
-                </v-radio-group>
-              </v-col>
+        <!-- 3 · Lojistik & operasyon -->
+        <section v-show="groupShown(3)" :id="'sl-group-3'" class="sl-group" role="tabpanel" aria-labelledby="sl-group-3-title">
+          <header class="sl-group__head">
+            <h2 id="sl-group-3-title" class="sl-group__title">{{ GROUPS[2].label }}</h2>
+            <p class="sl-group__desc">{{ GROUPS[2].description }}</p>
+          </header>
+          <EkDetailPanel v-show="cardShown(['shippingDuration', 'desi', 'taxPercentage', 'warranty', 'maxPurchaseQuantity'])" title="Ürün ve gönderi varsayılanları"
+            icon="mdi-package-variant-closed" description="Boş bırakılan alanda platform varsayılanı geçerlidir" flush>
+            <SettingRow v-show="rowShown('shippingDuration')" name="shippingDuration" label="Kargo Süresi (Gün)" for-id="sl-shippingDuration"
+              :changed="changed('shippingDuration')">
+              <template #description>Siparişi kargoya verme süreniz. <span class="ek-num">(Varsayılan: {{ computedDefaultShipingDuration }})</span></template>
+              <v-text-field id="sl-shippingDuration" v-model.number="settings.shippingDuration" type="number" clearable suffix="gün" />
+            </SettingRow>
+            <SettingRow v-show="rowShown('desi')" name="desi" label="Varsayılan Desi (dm³)" for-id="sl-desi" :changed="changed('desi')">
+              <template #description>Üründe desi yoksa kullanılan değer. <span class="ek-num">(Varsayılan: {{ computedDefaultDesi }})</span></template>
+              <v-text-field id="sl-desi" v-model.number="settings.desi" type="number" clearable suffix="dm³" />
+            </SettingRow>
+            <SettingRow v-show="rowShown('taxPercentage')" name="taxPercentage" label="Varsayılan KDV Oranı" for-id="sl-taxPercentage"
+              :description="row('taxPercentage').description" :changed="changed('taxPercentage')">
+              <v-select id="sl-taxPercentage" v-model.number="settings.taxPercentage" item-value="_id" :items="taxList" aria-label="Varsayılan KDV Oranı" />
+            </SettingRow>
+            <SettingRow v-show="rowShown('warranty')" name="warranty" label="Garanti Süresi (Ay)" for-id="sl-warranty" :changed="changed('warranty')">
+              <template #description>Mağaza genelindeki garanti süresi. <span class="ek-num">(Varsayılan: {{ computedDefaultWarranty }})</span></template>
+              <v-text-field id="sl-warranty" v-model.number="settings.warranty" type="number" clearable suffix="ay" />
+            </SettingRow>
+            <SettingRow v-show="rowShown('maxPurchaseQuantity')" name="maxPurchaseQuantity" label="Maksimum Satış Adedi" for-id="sl-maxPurchaseQuantity"
+              :changed="changed('maxPurchaseQuantity')">
+              <template #description>Tek siparişte satılabilecek en fazla adet. <span class="ek-num">(Varsayılan: {{ computedDefaultMaxPurchaseQuantity }})</span></template>
+              <v-text-field id="sl-maxPurchaseQuantity" v-model.number="settings.maxPurchaseQuantity" type="number" clearable suffix="adet" />
+            </SettingRow>
+          </EkDetailPanel>
 
-              <v-col cols="12" sm="6">
-                <v-text-field clearable v-model="settings.invoice.firstname" label="İsim"
-                  variant="outlined" />
-              </v-col>
-              <v-col cols="12" sm="6">
-                <v-text-field clearable v-model="settings.invoice.lastname" label="Soyisim"
-                  variant="outlined" />
-              </v-col>
+          <EkDetailPanel v-show="cardShown(['timezone', 'workingDays'])" title="Çalışma takvimi" icon="mdi-calendar-clock-outline" flush>
+            <SettingRow v-show="rowShown('timezone')" name="timezone" label="Zaman Dilimi" for-id="sl-timezone"
+              :description="row('timezone').description" :changed="changed('timezone')">
+              <v-select id="sl-timezone" v-model="settings.timezone" :items="timezones" aria-label="Zaman Dilimi" />
+            </SettingRow>
+            <SettingRow v-show="rowShown('workingDays')" name="workingDays" label="Çalışma Günleri" stacked
+              :description="row('workingDays').description" :changed="changed('workingDays')">
+              <div class="settingListView__days">
+                <v-checkbox v-for="day in weekDays" :key="day.id" v-model="settings.workingDays" :label="day.name"
+                  :value="day.id" density="compact" hide-details color="primary" />
+              </div>
+            </SettingRow>
+          </EkDetailPanel>
+        </section>
 
-              <v-col cols="12" sm="6">
-                <v-text-field clearable v-model="settings.invoice.tckn" label="T.C. Kimlik No"
-                  variant="outlined" maxlength="11" />
-              </v-col>
-              <v-col cols="12" sm="6">
-                <v-text-field clearable v-model="settings.invoice.phone" label="Fatura Telefon"
-                  variant="outlined" />
-              </v-col>
+        <!-- 4 · İletişim & bildirimler -->
+        <section v-show="groupShown(4)" :id="'sl-group-4'" class="sl-group" role="tabpanel" aria-labelledby="sl-group-4-title">
+          <header class="sl-group__head">
+            <h2 id="sl-group-4-title" class="sl-group__title">{{ GROUPS[3].label }}</h2>
+            <p class="sl-group__desc">{{ GROUPS[3].description }}</p>
+          </header>
+          <EkDetailPanel v-show="cardShown(['alertEmail', 'supportPhone'])" title="Bildirim ve destek" icon="mdi-bell-ring-outline" flush>
+            <SettingRow v-show="rowShown('alertEmail')" name="alertEmail" label="Hata Bildirim E-postası" for-id="sl-alertEmail"
+              :description="row('alertEmail').description" :changed="changed('alertEmail')">
+              <v-text-field id="sl-alertEmail" v-model="settings.alertEmail" clearable type="email" prepend-inner-icon="mdi-email-alert-outline" />
+            </SettingRow>
+            <SettingRow v-show="rowShown('supportPhone')" name="supportPhone" label="Müşteri Destek Telefonu" for-id="sl-supportPhone"
+              :description="row('supportPhone').description" :changed="changed('supportPhone')">
+              <v-text-field id="sl-supportPhone" v-model="settings.supportPhone" clearable inputmode="tel" prepend-inner-icon="mdi-headphones" />
+            </SettingRow>
+          </EkDetailPanel>
+          <EkAlert v-show="!searching" tone="info" title="Entegrasyon sağlık durumu">
+            Entegrasyonlarınızın anlık durumunu ve son hatalarını Entegrasyon sağlığı ekranından izleyebilirsiniz.
+          </EkAlert>
+        </section>
 
-              <template v-if="settings.invoice.type === 1">
-                <v-col cols="12">
-                  <v-text-field clearable v-model="settings.invoice.companyName"
-                    label="Firma Ünvanı" variant="outlined" />
-                </v-col>
-                <v-col cols="12" sm="6">
-                  <v-text-field clearable v-model="settings.invoice.taxOffice"
-                    label="Vergi Dairesi" variant="outlined" />
-                </v-col>
-                <v-col cols="12" sm="6">
-                  <v-text-field clearable v-model="settings.invoice.taxNumber" label="Vergi No"
-                    variant="outlined" />
-                </v-col>
-
-                <!-- Yeni Yasal Alanlar -->
-                <v-col cols="12" sm="6">
-                  <v-text-field clearable v-model="settings.mersisNo" label="MERSIS No"
-                    variant="outlined" hint="Hukuki belgelerde basılacaktır" persistent-hint />
-                </v-col>
-                <v-col cols="12" sm="6">
-                  <v-text-field clearable v-model="settings.ticaretSicilNo"
-                    label="Ticaret Sicil No" variant="outlined" hint="Hukuki belgelerde basılacaktır"
-                    persistent-hint />
-                </v-col>
-              </template>
-
-              <v-col cols="12">
-                <v-textarea clearable v-model="settings.invoice.address" label="Fatura Adresi"
-                  variant="outlined" rows="3" />
-              </v-col>
-
-              <v-col cols="12" sm="6">
-                <v-select clearable :items="staticsStore.cities" v-model="settings.invoice.city"
-                  label="İl" variant="outlined" />
-              </v-col>
-              <v-col cols="12" sm="6">
-                <v-text-field clearable v-model="settings.invoice.district" label="İlçe"
-                  variant="outlined" />
-              </v-col>
-            </v-row>
-          </v-window-item>
-
-          <!-- Tab 3: Lojistik & Operasyon -->
-          <v-window-item :value="3">
-            <v-row>
-              <v-col cols="12" sm="6">
-                <v-text-field clearable v-model.number="settings.shippingDuration"
-                  variant="outlined" type="number">
-                  <template #label>
-                    Kargo Süresi (Gün) <span class="settingListView__label-hint">(Varsayılan: {{
-                      computedDefaultShipingDuration }})</span>
-                  </template>
-                </v-text-field>
-              </v-col>
-
-              <v-col cols="12" sm="6">
-                <v-text-field clearable v-model.number="settings.desi" variant="outlined"
-                  type="number">
-                  <template #label>
-                    Varsayılan Desi (dm³) <span class="settingListView__label-hint">(Varsayılan: {{
-                      computedDefaultDesi }})</span>
-                  </template>
-                </v-text-field>
-              </v-col>
-
-              <v-col cols="12" sm="6">
-                <v-select v-model.number="settings.taxPercentage" item-value="_id"
-                  :items="taxList" variant="outlined" label="Varsayılan KDV Oranı" />
-              </v-col>
-
-              <v-col cols="12" sm="6">
-                <v-text-field clearable v-model.number="settings.warranty" variant="outlined"
-                  type="number">
-                  <template #label>
-                    Garanti Süresi (Ay) <span class="settingListView__label-hint">(Varsayılan: {{
-                      computedDefaultWarranty }})</span>
-                  </template>
-                </v-text-field>
-              </v-col>
-
-              <v-col cols="12" sm="6">
-                <v-text-field clearable v-model.number="settings.maxPurchaseQuantity"
-                  variant="outlined" type="number">
-                  <template #label>
-                    Maksimum Satış Adedi <span class="settingListView__label-hint">(Varsayılan: {{
-                      computedDefaultMaxPurchaseQuantity }})</span>
-                  </template>
-                </v-text-field>
-              </v-col>
-
-              <v-col cols="12" sm="6">
-                <v-select v-model="settings.timezone" :items="timezones" variant="outlined"
-                  label="Zaman Dilimi" hint="Sipariş senkronizasyonu bu zaman dilimine göre yapılacaktır"
-                  persistent-hint />
-              </v-col>
-
-              <v-col cols="12">
-                <p class="settingListView__block-title">Çalışma Günleri</p>
-                <div class="settingListView__days">
-                  <v-checkbox v-for="day in weekDays" :key="day.id" v-model="settings.workingDays" :label="day.name"
-                    :value="day.id" density="compact" hide-details color="primary" />
-                </div>
-                <p class="settingListView__help">Seçili günlerin dışındaki siparişlerin kargo süresi otomatik olarak
-                  bir sonraki iş gününe kaydırılacaktır.</p>
-              </v-col>
-            </v-row>
-          </v-window-item>
-
-          <!-- Tab 4: İletişim & Bildirimler -->
-          <v-window-item :value="4">
-            <v-row>
-              <v-col cols="12" sm="6">
-                <v-text-field clearable v-model="settings.alertEmail"
-                  label="Hata Bildirim E-postası" variant="outlined" prepend-inner-icon="mdi-email-alert-outline"
-                  hint="Entegrasyon hataları bu adrese gönderilecektir" persistent-hint />
-              </v-col>
-              <v-col cols="12" sm="6">
-                <v-text-field clearable v-model="settings.supportPhone"
-                  label="Müşteri Destek Telefonu" variant="outlined" prepend-inner-icon="mdi-headphones"
-                  hint="Müşterilerinizin göreceği iletişim numarası" persistent-hint />
-              </v-col>
-
-              <v-col cols="12">
-                <EkAlert tone="info" title="Entegrasyon sağlık durumu">
-                  Bu bölümdeki iletişim bilgileri, sistem mimarinizin bir parçası olarak entegrasyonlarınızın
-                  sürekliliğini sağlamak için kullanılır.
-                  Kritik bir hata oluştuğunda belirtilen kanallar üzerinden otomatik bilgilendirme yapılır.
-                </EkAlert>
-              </v-col>
-            </v-row>
-          </v-window-item>
-        </v-window>
-
-        <div class="settingListView__actions">
-          <!-- fe-polish: FR2 §2 tek kaydet standardı (intent="save": primary · kaydet ikonu). -->
-          <EkButton intent="save" class="settingListView__save" @click="saveSettings">Ayarları Kaydet</EkButton>
+        <!-- Kaydetme durumu: sabit alt çubuk — değişiklik var mı, kaydedildi mi tek bakışta. -->
+        <div class="sl-savebar" data-ek-sticky-bottom :class="{ 'is-dirty': isDirty }" role="region" aria-label="Kaydetme durumu">
+          <p class="sl-savebar__state" aria-live="polite">
+            <template v-if="isDirty">
+              <v-icon icon="mdi-circle-medium" class="sl-savebar__icon is-dirty" aria-hidden="true" />
+              <span><strong>Kaydedilmemiş değişiklik var</strong> · {{ dirtyGroupNames }}</span>
+            </template>
+            <template v-else>
+              <v-icon icon="mdi-check-circle-outline" class="sl-savebar__icon" aria-hidden="true" />
+              <span>{{ savedAt ? `Tüm değişiklikler kaydedildi · ${savedAt}` : 'Kaydedilmemiş değişiklik yok' }}</span>
+            </template>
+          </p>
+          <div class="sl-savebar__actions">
+            <EkButton v-if="isDirty" tone="secondary" @click="revertChanges">Vazgeç</EkButton>
+            <!-- fe-polish: FR2 §2 tek kaydet standardı (intent="save": primary · kaydet ikonu). -->
+            <EkButton intent="save" class="settingListView__save" @click="saveSettings">Ayarları kaydet</EkButton>
+          </div>
         </div>
       </div>
     </div>
@@ -324,7 +292,9 @@
 </template>
 
 <script setup lang="ts">
-import { EkPageTabs, EkAlert, EkStatusChip, EkButton } from '@entegrasyonik/ui/components'
+import { EkAlert, EkStatusChip, EkButton, EkDetailPanel } from '@entegrasyonik/ui/components'
+import SettingRow from '@/components/settings/SettingRow.vue'
+import { formatDateTime } from '@entegrasyonik/ui/format'
 import { ref, onMounted, computed } from 'vue'
 import { useI18n } from 'vue-i18n';
 import LoadingComponent from '@/components/LoadingComponent.vue'
@@ -335,7 +305,7 @@ import { useSnackbarStore } from '@/stores/snackbarStore';
 
 const restApi = useRestApi()
 const snackbarStore = useSnackbarStore();
-const activeTab = ref(1)
+const activeTab = ref<GroupId>(1)
 /**
  * Marka rengi kullanıcı VERİSİDİR (tenant ayarı olarak `#RRGGBB` yazılır) — tasarım token'ı değil.
  * Palet 24-bit tamsayı olarak tutulur, kayıt biçimine burada çevrilir.
@@ -373,6 +343,82 @@ const settings: any = ref({
     phone: ''
   }
 })
+
+/**
+ * FR3-14 — ayar kayıt defteri: grup, etiket, açıklama, arama anahtar kelimeleri ve değerin yolu (değişiklik izi).
+ * Arama yalnız bu metinlerde yapılır; değişiklik "kaydedilen anlık görüntü" ile karşılaştırılarak bulunur.
+ */
+type GroupId = 1 | 2 | 3 | 4
+const GROUPS: Array<{ value: GroupId; label: string; short: string; description: string; icon: string }> = [
+  { value: 1, label: 'Mağaza kimliği', short: 'Ad, renk, logo', description: 'Müşterilerin gördüğü mağaza adı, marka rengi ve logo.', icon: 'mdi-store-cog-outline' },
+  { value: 2, label: 'Fatura ve yasal bilgiler', short: 'Fatura kimliği, adres', description: 'Faturalarda ve yasal belgelerde basılan kimlik ve adres bilgileri.', icon: 'mdi-file-document-outline' },
+  { value: 3, label: 'Lojistik ve operasyon', short: 'Varsayılanlar, takvim', description: 'Ürün ve gönderi varsayılanları, zaman dilimi ve çalışma günleri.', icon: 'mdi-truck-delivery-outline' },
+  { value: 4, label: 'İletişim ve bildirimler', short: 'Hata e-postası, destek', description: 'Hata bildirimlerinin gideceği adres ve müşterilerinizin göreceği destek numarası.', icon: 'mdi-bell-ring-outline' },
+]
+
+interface SettingDef { group: GroupId; label: string; description?: string; keywords?: string; path: string; corporate?: boolean }
+const ROWS: Record<string, SettingDef> = {
+  storeName: { group: 1, label: 'Mağaza adı', description: 'Müşterilere ve e-postalarda görünecek resmi mağaza adınız.', keywords: 'isim unvan', path: 'storeName' },
+  brandColor: { group: 1, label: 'Mağaza renk paleti', description: 'Mağaza kimliğinizin rengi; önizlemede görünür. Paletten seçin ya da kendi renginizi girin.', keywords: 'renk marka tema', path: 'brandColor' },
+  logo: { group: 1, label: 'Mağaza logosu', description: 'Dosya yükleyin ya da doğrudan bir görsel bağlantısı yapıştırın.', keywords: 'logo görsel resim', path: 'logo' },
+  invoiceType: { group: 2, label: 'Fatura tipi', description: 'Kurumsal seçildiğinde şirket bilgileri bölümü açılır.', keywords: 'bireysel kurumsal şahıs şirket', path: 'invoice.type' },
+  firstname: { group: 2, label: 'İsim', keywords: 'ad', path: 'invoice.firstname' },
+  lastname: { group: 2, label: 'Soyisim', keywords: 'soyad', path: 'invoice.lastname' },
+  tckn: { group: 2, label: 'T.C. Kimlik No', description: 'Bireysel faturalarda basılır; 11 hane.', keywords: 'tckn kimlik', path: 'invoice.tckn' },
+  invoicePhone: { group: 2, label: 'Fatura Telefon', keywords: 'telefon', path: 'invoice.phone' },
+  companyName: { group: 2, label: 'Firma Ünvanı', keywords: 'şirket unvan', path: 'invoice.companyName', corporate: true },
+  taxOffice: { group: 2, label: 'Vergi Dairesi', keywords: 'vergi', path: 'invoice.taxOffice', corporate: true },
+  taxNumber: { group: 2, label: 'Vergi No', keywords: 'vkn vergi', path: 'invoice.taxNumber', corporate: true },
+  mersisNo: { group: 2, label: 'MERSIS No', description: 'Hukuki belgelerde basılacaktır.', keywords: 'mersis', path: 'mersisNo', corporate: true },
+  ticaretSicilNo: { group: 2, label: 'Ticaret Sicil No', description: 'Hukuki belgelerde basılacaktır.', keywords: 'sicil', path: 'ticaretSicilNo', corporate: true },
+  address: { group: 2, label: 'Fatura Adresi', description: 'Faturada görünen açık adres.', keywords: 'adres', path: 'invoice.address' },
+  city: { group: 2, label: 'İl', keywords: 'şehir adres', path: 'invoice.city' },
+  district: { group: 2, label: 'İlçe', keywords: 'adres', path: 'invoice.district' },
+  shippingDuration: { group: 3, label: 'Kargo Süresi (Gün)', description: 'Siparişi kargoya verme süreniz.', keywords: 'kargo gün teslim', path: 'shippingDuration' },
+  desi: { group: 3, label: 'Varsayılan Desi (dm³)', description: 'Üründe desi yoksa kullanılan değer.', keywords: 'desi hacim kargo', path: 'desi' },
+  taxPercentage: { group: 3, label: 'Varsayılan KDV Oranı', description: 'Yeni ürünlerde önerilen KDV oranı.', keywords: 'kdv vergi oran', path: 'taxPercentage' },
+  warranty: { group: 3, label: 'Garanti Süresi (Ay)', description: 'Mağaza genelindeki garanti süresi.', keywords: 'garanti', path: 'warranty' },
+  maxPurchaseQuantity: { group: 3, label: 'Maksimum Satış Adedi', description: 'Tek siparişte satılabilecek en fazla adet.', keywords: 'adet limit sınır', path: 'maxPurchaseQuantity' },
+  timezone: { group: 3, label: 'Zaman Dilimi', description: 'Mağazanızın çalıştığı zaman dilimi.', keywords: 'saat dilim', path: 'timezone' },
+  workingDays: { group: 3, label: 'Çalışma Günleri', description: 'Mağazanızın sipariş hazırlayıp kargoya verdiği günler.', keywords: 'gün tatil hafta', path: 'workingDays' },
+  alertEmail: { group: 4, label: 'Hata Bildirim E-postası', description: 'Entegrasyon hata bildirimleri için iletişim adresiniz.', keywords: 'e-posta mail uyarı hata', path: 'alertEmail' },
+  supportPhone: { group: 4, label: 'Müşteri Destek Telefonu', description: 'Müşterilerinizin göreceği iletişim numarası.', keywords: 'telefon destek', path: 'supportPhone' },
+}
+const row = (key: string) => ROWS[key]
+
+const query = ref<string | null>('')
+const norm = (v: string) => v.toLocaleLowerCase('tr').trim()
+const searching = computed(() => !!query.value && norm(query.value).length > 0)
+const hits = computed<Set<string>>(() => {
+  if (!searching.value) return new Set()
+  const q = norm(query.value as string)
+  const corporate = settings.value?.invoice?.type === 1
+  return new Set(Object.entries(ROWS).filter(([, d]) => (!d.corporate || corporate) && norm(`${d.label} ${d.description ?? ''} ${d.keywords ?? ''}`).includes(q)).map(([k]) => k))
+})
+const hitCount = computed(() => hits.value.size)
+const hitsByGroup = computed(() => {
+  const out: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0 }
+  hits.value.forEach((k) => { out[ROWS[k].group]++ })
+  return out
+})
+const hit = (key: string) => hits.value.has(key)
+const rowShown = (key: string) => !searching.value || hit(key)
+const cardShown = (keys: string[]) => keys.some(rowShown)
+const groupShown = (g: GroupId) => (searching.value ? hitsByGroup.value[g] > 0 : activeTab.value === g)
+const selectGroup = (g: GroupId) => { query.value = ''; activeTab.value = g }
+
+// Değişiklik izi: son yüklenen/kaydedilen anlık görüntü ile karşılaştırma.
+const snapshot = ref<string>('')
+const valueAt = (obj: any, path: string) => path.split('.').reduce((o, k) => (o == null ? o : o[k]), obj)
+const savedState = computed(() => (snapshot.value ? JSON.parse(snapshot.value) : null))
+const same = (a: unknown, b: unknown) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null)
+const changed = (key: string) => !!savedState.value && !same(valueAt(settings.value, ROWS[key].path), valueAt(savedState.value, ROWS[key].path))
+const isDirty = computed(() => !!savedState.value && JSON.stringify(settings.value) !== snapshot.value)
+const dirtyGroups = computed(() => new Set(Object.keys(ROWS).filter(changed).map((k) => ROWS[k].group)))
+const dirtyGroupNames = computed(() => GROUPS.filter((g) => dirtyGroups.value.has(g.value)).map((g) => g.label).join(', ') || 'Ayarlar')
+const savedAt = ref<string>('')
+const takeSnapshot = () => { snapshot.value = JSON.stringify(settings.value) }
+const revertChanges = () => { if (snapshot.value) settings.value = JSON.parse(snapshot.value) }
 
 const loadingComponentRef: any = ref(null)
 const { t } = useI18n()
@@ -458,6 +504,7 @@ const saveSettings = async () => {
     loadingComponentRef.value.remove(guid)
     if (response?._id) {
       await getSettings()
+      savedAt.value = formatDateTime(new Date().toISOString())
       snackbarStore.addSnackbar({
         show: true,
         text: 'Ayarlar başarıyla kaydedildi.',
@@ -492,6 +539,7 @@ const getSettings = async () => {
       if (!settings.value.workingDays) settings.value.workingDays = [1, 2, 3, 4, 5];
       if (!settings.value.brandColor) settings.value.brandColor = hexOf(0x4f46e5);
     }
+    takeSnapshot()
   } catch (error) {
     loadingComponentRef.value.remove(guid)
   }
@@ -512,106 +560,268 @@ onMounted(() => {
   position: relative; /* LoadingComponent overlay (attach) için */
   display: flex;
   flex-direction: column;
-  gap: var(--ek-space-6);
-  padding: var(--ek-space-6);
-  max-width: 1120px;
+  gap: var(--ek-space-5);
+  padding: var(--ek-space-6) var(--ek-space-6) 0;
+  max-width: 1200px;
   /* fe-polish: ortalanmıyor — başlık/breadcrumb diğer tüm ekranlarla aynı sol hizada. */
   margin: 0;
 }
 
-.settingListView__body {
+/* FR3-14: iki kolon — sol gezinme (yapışkan), sağ içerik + sabit kaydetme çubuğu. */
+.sl-layout {
+  display: grid;
+  grid-template-columns: 248px minmax(0, 1fr);
+  gap: var(--ek-space-6);
+  align-items: start;
+}
+
+.sl-nav {
+  position: sticky;
+  top: var(--ek-space-4);
   display: flex;
   flex-direction: column;
+  gap: var(--ek-space-3);
 }
 
-.settingListView__tabs {
-  border-bottom: 1px solid var(--ek-color-border-default);
-}
-
-.settingListView__panel {
-  background: var(--ek-color-surface);
-  border: 1px solid var(--ek-color-border-default);
-  border-top: none;
-  border-radius: 0 0 var(--ek-radius-lg) var(--ek-radius-lg);
-}
-
-.settingListView__window {
-  padding: var(--ek-space-6);
-}
-
-.settingListView__actions {
+.sl-nav__list {
   display: flex;
-  justify-content: flex-end;
-  padding: var(--ek-space-4) var(--ek-space-6);
-  border-top: 1px solid var(--ek-color-border-default);
+  flex-direction: column;
+  gap: 2px;
 }
 
-.settingListView__block {
-  margin-top: var(--ek-space-8);
-}
-
-.settingListView__block-title {
+.sl-nav__item {
   display: flex;
   align-items: center;
-  margin: 0 0 var(--ek-space-3);
-  font-size: var(--ek-font-size-md);
-  font-weight: var(--ek-font-weight-semibold);
+  gap: var(--ek-space-3);
+  width: 100%;
+  padding: var(--ek-space-2) var(--ek-space-3);
+  border: 1px solid transparent;
+  border-radius: var(--ek-radius-control);
+  background: transparent;
+  color: var(--ek-color-content-default);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: var(--ek-transition-colors);
+}
+
+.sl-nav__item:hover {
+  background: var(--ek-color-surface-muted);
+}
+
+.sl-nav__item:focus-visible {
+  outline: none;
+  box-shadow: var(--ek-focus-ring);
+}
+
+.sl-nav__item.is-active {
+  border-color: var(--ek-color-border-default);
+  background: var(--ek-color-surface);
+  box-shadow: var(--ek-shadow-card);
+}
+
+.sl-nav__icon {
+  flex: none;
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-icon-md);
+}
+
+.sl-nav__item.is-active .sl-nav__icon {
+  color: var(--ek-color-action);
+}
+
+.sl-nav__text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.sl-nav__label {
   color: var(--ek-color-content-strong);
+  font-size: var(--ek-type-body-size);
+  line-height: var(--ek-type-body-line);
+  font-weight: var(--ek-font-weight-semibold);
+}
+
+.sl-nav__desc {
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-caption-size);
+  line-height: var(--ek-type-caption-line);
+}
+
+.sl-nav__dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: var(--ek-radius-full);
+  background: var(--ek-color-action);
+}
+
+.sl-nav__count {
+  flex: none;
+  min-width: 22px;
+  padding: 0 6px;
+  border-radius: var(--ek-radius-chip);
+  background: var(--ek-color-action-subtle);
+  color: var(--ek-color-action);
+  font-size: var(--ek-type-caption-size);
+  font-weight: var(--ek-font-weight-semibold);
+  text-align: center;
+}
+
+.sl-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ek-space-6);
+  min-width: 0;
+}
+
+.sl-search-state {
+  margin: 0;
+  padding: var(--ek-space-3) var(--ek-space-4);
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-card);
+  background: var(--ek-color-surface);
+  color: var(--ek-color-content-default);
+  font-size: var(--ek-type-body-size);
+}
+
+.sl-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ek-space-4);
+}
+
+.sl-group__head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sl-group__title {
+  margin: 0;
+  color: var(--ek-color-content-strong);
+  font-size: var(--ek-type-heading-size);
+  line-height: var(--ek-type-heading-line);
+  font-weight: var(--ek-type-heading-weight);
+}
+
+.sl-group__desc {
+  margin: 0;
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-body-size);
+  line-height: var(--ek-type-body-line);
+}
+
+.sl-identity {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: var(--ek-space-4);
+  align-items: start;
+}
+
+.sl-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ek-space-3);
+}
+
+.sl-color-code {
+  flex: 0 0 180px;
+}
+
+.sl-logo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ek-space-3);
+}
+
+.sl-logo__mode {
+  flex: none;
+}
+
+/* Kaydetme durumu çubuğu: içerik kolonunun altına yapışık; değişiklik varken aksiyon tonunda kenar. */
+.sl-savebar {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ek-space-3);
+  margin: 0 0 var(--ek-space-4);
+  padding: var(--ek-space-3) var(--ek-space-4);
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-card);
+  background: var(--ek-color-surface);
+  transition: var(--ek-transition-colors);
+}
+
+/* Değişiklik varken çubuk öne çıkar (aksiyon kenarı + yükseltilmiş gölge); temizken sakin. */
+.sl-savebar.is-dirty {
+  border-color: var(--ek-color-action-border);
+  box-shadow: var(--ek-shadow-raised);
+}
+
+.sl-savebar__state {
+  display: flex;
+  align-items: center;
+  gap: var(--ek-space-2);
+  min-width: 0;
+  margin: 0;
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-body-size);
+  line-height: var(--ek-type-body-line);
+}
+
+.sl-savebar__state strong {
+  color: var(--ek-color-content-strong);
+  font-weight: var(--ek-font-weight-semibold);
+}
+
+.sl-savebar__icon {
+  flex: none;
+  color: var(--ek-color-success-emphasis);
+  font-size: var(--ek-icon-md);
+}
+
+.sl-savebar__icon.is-dirty {
+  color: var(--ek-color-action);
+}
+
+.sl-savebar__actions {
+  display: flex;
+  flex: none;
+  gap: var(--ek-space-2);
 }
 
 .settingListView__help {
   margin: var(--ek-space-2) 0 0;
-  font-size: var(--ek-font-size-sm);
+  font-size: var(--ek-type-caption-size);
+  line-height: var(--ek-type-caption-line);
   color: var(--ek-color-content-muted);
 }
 
 .settingListView__overline {
   margin: 0;
-  font-size: var(--ek-font-size-xs);
-  font-weight: var(--ek-font-weight-semibold);
-  letter-spacing: 0.06em;
+  font-size: var(--ek-type-micro-size);
+  line-height: var(--ek-type-micro-line);
+  font-weight: var(--ek-type-micro-weight);
+  letter-spacing: var(--ek-type-micro-tracking);
   text-transform: uppercase;
   color: var(--ek-color-content-muted);
 }
 
-.settingListView__label-hint {
-  margin-left: var(--ek-space-1);
-  font-size: var(--ek-font-size-xs);
-  color: var(--ek-color-content-muted);
-}
-
-.settingListView__swatches {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--ek-space-3);
-  margin-bottom: var(--ek-space-4);
-}
-
-.settingListView__color-code {
-  max-width: 200px;
-}
-
-.settingListView__logo-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: var(--ek-space-3);
-}
-
-.settingListView__logo-head .settingListView__block-title {
-  margin: 0;
-}
-
 .settingListView__upload {
   display: flex;
-  flex-direction: column;
   align-items: center;
   gap: var(--ek-space-4);
   padding: var(--ek-space-4);
   background: var(--ek-color-surface-muted);
   border: 1px dashed var(--ek-color-border-strong);
-  border-radius: var(--ek-radius-lg);
-  text-align: center;
+  border-radius: var(--ek-radius-card);
 }
 
 .settingListView__upload-text .settingListView__help {
@@ -628,24 +838,27 @@ onMounted(() => {
 }
 
 .settingListView__picker {
-  border-radius: var(--ek-radius-lg);
-  box-shadow: var(--ek-shadow-lg);
+  border-radius: var(--ek-radius-popover);
+  box-shadow: var(--ek-shadow-popover);
   overflow: hidden;
 }
 
 .settingListView__preview {
-  height: 100%;
-  padding: var(--ek-space-6);
+  position: sticky;
+  top: var(--ek-space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--ek-space-3);
+  padding: var(--ek-space-4);
   background: var(--ek-color-surface-muted);
   border: 1px solid var(--ek-color-border-default);
-  border-radius: var(--ek-radius-lg);
+  border-radius: var(--ek-radius-card);
 }
 
 .settingListView__preview-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: var(--ek-space-4);
 }
 
 .settingListView__preview-card {
@@ -656,7 +869,8 @@ onMounted(() => {
   padding: var(--ek-space-4) var(--ek-space-4) var(--ek-space-4) var(--ek-space-5);
   background: var(--ek-color-surface);
   border: 1px solid var(--ek-color-border-default);
-  border-radius: var(--ek-radius-md);
+  border-radius: var(--ek-radius-card);
+  box-shadow: var(--ek-shadow-card);
   overflow: hidden;
 }
 
@@ -664,7 +878,7 @@ onMounted(() => {
   position: absolute;
   inset: 0 auto 0 0;
   width: var(--ek-space-1);
-  transition: background-color var(--ek-duration-base) var(--ek-easing-standard);
+  transition: var(--ek-transition-colors);
 }
 
 .settingListView__preview-text {
@@ -673,7 +887,8 @@ onMounted(() => {
 
 .settingListView__preview-name {
   margin: 0;
-  font-size: var(--ek-font-size-md);
+  font-size: var(--ek-type-subheading-size);
+  line-height: var(--ek-type-subheading-line);
   font-weight: var(--ek-font-weight-semibold);
   color: var(--ek-color-content-strong);
   overflow-wrap: anywhere;
@@ -683,7 +898,7 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: var(--ek-space-1);
-  font-size: var(--ek-font-size-sm);
+  font-size: var(--ek-type-caption-size);
   color: var(--ek-color-content-muted);
 }
 
@@ -694,17 +909,16 @@ onMounted(() => {
 }
 
 .color-swatch-item {
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   padding: 0;
   cursor: pointer;
   border: 2px solid var(--ek-color-border-default);
-  border-radius: var(--ek-radius-md);
-  transition: border-color var(--ek-duration-fast) var(--ek-easing-standard),
-    box-shadow var(--ek-duration-fast) var(--ek-easing-standard);
+  border-radius: var(--ek-radius-control);
+  transition: var(--ek-transition-colors);
 }
 
 .color-swatch-item:hover {
@@ -713,8 +927,8 @@ onMounted(() => {
 }
 
 .color-swatch-item:focus-visible {
-  outline: 2px solid var(--ek-color-primary);
-  outline-offset: 2px;
+  outline: none;
+  box-shadow: var(--ek-focus-ring);
 }
 
 .color-swatch-item.active {
@@ -736,24 +950,55 @@ onMounted(() => {
   border-color: var(--ek-color-primary);
 }
 
-@media (min-width: 600px) {
-  .settingListView__upload {
+@media (max-width: 1279px) {
+  .sl-identity {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .settingListView__preview {
+    position: static;
+  }
+}
+
+/* Dar ekran: gezinme üstte yatay şerit (kaydırılabilir), içerik tek kolon. */
+@media (max-width: 959px) {
+  .sl-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .sl-nav {
+    position: static;
+  }
+
+  .sl-nav__list {
     flex-direction: row;
-    text-align: left;
+    overflow-x: auto;
+    padding-bottom: 2px;
+  }
+
+  .sl-nav__item {
+    flex: none;
+    width: auto;
+  }
+
+  .sl-nav__desc {
+    display: none;
   }
 }
 
 @media (max-width: 599px) {
   .settingListView {
-    padding: var(--ek-space-4);
+    padding: var(--ek-space-4) var(--ek-space-4) 0;
   }
 
-  .settingListView__window {
-    padding: var(--ek-space-4);
+  .sl-savebar__state {
+    font-size: var(--ek-type-caption-size);
+    line-height: var(--ek-type-caption-line);
   }
 
-  .settingListView__save {
-    flex: 1 1 auto;
+  .settingListView__upload {
+    flex-direction: column;
+    text-align: center;
   }
 }
 </style>

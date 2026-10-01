@@ -69,6 +69,7 @@ export const OPERATION_POLICY_SNAPSHOT: SnapshotPolicy = {
         get: M, markAsRead: M, delete: M, getUnreadCount: M /* §6: hafif rozet sorgusu (salt-okunur sayım) */,
         // ADR-0029 NB4: kişisel (M) + tenant varsayılanı (A, settings:manage)
         archive: M, unarchive: M, getCatalog: M, getPreferences: M, updatePreferences: M, getTenantDefaults: A, updateTenantDefaults: A,
+        getPushConfig: M, subscribePush: M, unsubscribePush: M, // MOB-04 web push (self:manage)
     },
     MessageService: { getMessages: M, replyMessage: M, markAsRead: M, deleteMessage: M, bulkDeleteMessages: M },
     TicketService: { getTickets: M, openTicket: M, sendTicketMessage: M, closeTicket: M },
@@ -98,9 +99,9 @@ export const OPERATION_POLICY_SNAPSHOT: SnapshotPolicy = {
     BackofficeAdminUserService: { list: P, invite: P, disable: P, enable: P, resetMfa: P },
     // B2/B4: abonelik + gelir + tenant yaşam döngüsü (yazmalar step-up ister)
     BackofficeBillingService: { listSubscriptions: P, getSubscription: P, extendTrial: P, cancelSubscription: P, changePlan: P, getRevenueMetrics: P },
-    BackofficeTenantService: { getLifecycle: P, cancelDeletion: P, listTenants: P, getHealthSummary: P },
+    BackofficeTenantService: { getLifecycle: P, cancelDeletion: P, listTenants: P, getHealthSummary: P, getUsage: P },
     // K51 (BO1) + BE-05: kayıtlı görünümler (yönetici başına)
-    BackofficePrefsService: { listViews: P, saveView: P, deleteView: P },
+    BackofficePrefsService: { listViews: P, saveView: P, deleteView: P, getPushConfig: P, subscribePush: P, unsubscribePush: P },
     // B5/B6/B8/B9: entegrasyon sağlığı + altyapı gözlemi + cache (flushCacheFamily step-up ister)
     BackofficeIntegrationService: { getApiHealth: P, getResilienceState: P },
     // ADR-0029 NB7/NB8: tenant duyuru bandi (member) + backoffice bildirim/duyuru/uyari (yazmalar step-up ister)

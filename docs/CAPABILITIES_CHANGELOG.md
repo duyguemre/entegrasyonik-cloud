@@ -57,3 +57,15 @@ buraya tarihli bir blok ekler (ADR-0019 §4.1). Kademe değişiklikleri HER ZAMA
 
 - Eklenen: `platform.engine.retry_jobs`, `platform.overview.attention`, `platform.overview.pulse`, `platform.prefs.delete_view`, `platform.prefs.list_views`, `platform.prefs.save_view`, `platform.tenants.health_summary`, `platform.tenants.list`
 
+## 2026-10-01 — sha256 3bfd6aab5406…
+
+- Eklenen: `notifications.push.config`, `notifications.push.subscribe`, `notifications.push.unsubscribe`
+
+## 2026-10-01 — sha256 110d6cf1a3bf…
+
+- Eklenen: `platform.prefs.push_config`, `platform.prefs.push_subscribe`, `platform.prefs.push_unsubscribe`
+
+## 2026-10-01 — sha256 5208c53c4350…
+
+- Eklenen: `platform.tenants.usage`
+

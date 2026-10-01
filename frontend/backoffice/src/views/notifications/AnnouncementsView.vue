@@ -37,7 +37,7 @@
           <template #cell-title="{ item }">
             <span class="bo-ann__title">
               <v-icon :icon="ANN_KIND[(item as Announcement).kind].icon" aria-hidden="true" />
-              <RouterLink :to="`/sistem/duyurular/${item.id}`" :data-testid="`ann-${item.id}`">{{ (item as Announcement).title.tr }}</RouterLink>
+              <RouterLink :to="`/sistem/duyurular/${item.id}`" class="bo-hit" :data-testid="`ann-${item.id}`">{{ (item as Announcement).title.tr }}</RouterLink>
             </span>
           </template>
           <template #cell-kind="{ item }">

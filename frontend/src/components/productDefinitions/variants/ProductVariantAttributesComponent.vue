@@ -1335,7 +1335,7 @@ const imageSrc = computed(() => {
 .pva-logo--active,
 .pva-logo--idle {
   height: 70px !important;
-  transition: width var(--ek-duration-slow) var(--ek-easing-standard), box-shadow var(--ek-duration-slow) var(--ek-easing-standard);
+  transition: width var(--ek-motion-layout), box-shadow var(--ek-motion-layout);
 }
 
 .pva-logo--active {

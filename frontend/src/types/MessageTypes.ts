@@ -8,7 +8,7 @@ export enum MessageStatusEnum {
 }
 
 export const MESSAGE_STATUS_LABELS: Record<MessageStatusEnum, string> = {
-    [MessageStatusEnum.WAITING_SELLER]: 'Cevap Bekleniyor',
+    [MessageStatusEnum.WAITING_SELLER]: 'Cevap bekleniyor',
     [MessageStatusEnum.ANSWERED]: 'Cevaplandı',
     [MessageStatusEnum.REJECTED]: 'Reddedildi',
     [MessageStatusEnum.UNREAD]: 'Okunmadı',
@@ -31,8 +31,8 @@ export enum MessageTypeEnum {
 }
 
 export const MESSAGE_TYPE_LABELS: Record<MessageTypeEnum, string> = {
-    [MessageTypeEnum.PRODUCT_QUESTION]: 'Ürün Sorusu',
-    [MessageTypeEnum.ORDER_QUESTION]: 'Sipariş Sorusu'
+    [MessageTypeEnum.PRODUCT_QUESTION]: 'Ürün sorusu',
+    [MessageTypeEnum.ORDER_QUESTION]: 'Sipariş sorusu'
 };
 
 export const MESSAGE_TYPE_ICONS: Record<MessageTypeEnum, string> = {

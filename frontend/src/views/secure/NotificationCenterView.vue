@@ -44,7 +44,7 @@
         >
           <EkSelect v-model="draft.category" :items="categoryOptions" label="Kategori" clearable />
           <EkSelect v-model="draft.severities" :items="severityOptions" kind="status" label="Önem" multiple clearable />
-          <EkSelect v-model="draft.read" :items="READ_OPTIONS" label="Okunma durumu" />
+          <EkSelect v-model="draft.read" :items="READ_OPTIONS" label="Okunma durumu" clearable />
         </EkFilterPanel>
       </template>
 
@@ -240,7 +240,8 @@ interface NotificationRow extends NotificationItem {
 }
 type GridRow = Record<string, any>
 
-type ReadFilter = 'all' | 'unread' | 'read'
+// P02 (K49): boş alan = tümü (diğer filtrelerle aynı); "Tümü" seçeneği yok.
+type ReadFilter = 'unread' | 'read' | null
 interface FilterState {
   category: NotificationCategory | null
   severities: NotificationSeverity[]
@@ -259,7 +260,6 @@ const menuStore: any = inject('useMenuStore', undefined)
 const labels = computed(() => labelsFor(locale.value))
 
 const READ_OPTIONS: Array<{ title: string; value: ReadFilter }> = [
-  { title: 'Tümü', value: 'all' },
   { title: 'Okunmamış', value: 'unread' },
   { title: 'Okundu', value: 'read' },
 ]
@@ -308,12 +308,12 @@ const filtersCollapsed = ref(!isDesktop.value)
 /** SSE ile yeni eklenen satırlar kısa süre vurgulanır (hareket azaltmada yalnız renk). */
 const fresh = ref(new Set<string>())
 
-const emptyFilters = (): FilterState => ({ category: null, severities: [], read: 'all' })
+const emptyFilters = (): FilterState => ({ category: null, severities: [], read: null })
 const draft = reactive<FilterState>(emptyFilters())
 const applied = ref<FilterState>(emptyFilters())
 
 // --- türetilmiş ---
-const isFiltered = computed(() => !!applied.value.category || applied.value.severities.length > 0 || applied.value.read !== 'all')
+const isFiltered = computed(() => !!applied.value.category || applied.value.severities.length > 0 || applied.value.read !== null)
 const unreadTotal = computed(() => notificationStore.unreadCount)
 
 function toRow(item: NotificationItem): NotificationRow {
@@ -362,7 +362,7 @@ const activeChips = computed<EkActiveFilterChip[]>(() => {
   const a = applied.value
   if (a.category) chips.push({ key: 'category', label: 'Kategori', value: labels.value.categories[a.category] })
   if (a.severities.length) chips.push({ key: 'severities', label: 'Önem', value: a.severities.map((s) => labels.value.severities[s]).join(', ') })
-  if (a.read !== 'all') chips.push({ key: 'read', label: 'Okunma', value: READ_OPTIONS.find((o) => o.value === a.read)?.title ?? a.read })
+  if (a.read) chips.push({ key: 'read', label: 'Okunma', value: READ_OPTIONS.find((o) => o.value === a.read)?.title ?? a.read })
   return chips
 })
 
@@ -497,7 +497,7 @@ function resetFilters() {
 function removeChip(key: string) {
   if (key === 'category') draft.category = null
   if (key === 'severities') draft.severities = []
-  if (key === 'read') draft.read = 'all'
+  if (key === 'read') draft.read = null
   applyFilters()
 }
 

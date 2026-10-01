@@ -187,11 +187,11 @@ describe('getAttention: sıralama, limit, degraded, gizlilik', () => {
 
 describe('getPulse', () => {
     const rollup = (h: number, series: Record<string, any>) => ({ metric: 'http_requests', resolution: '1h', bucketStart: new Date(Math.floor((NOW - h * 3_600_000) / 3_600_000) * 3_600_000), series });
-    function build(over: { rollups?: any[]; calls?: any[]; failClients?: boolean; revenue?: () => Promise<any> } = {}) {
+    function build(over: { rollups?: any[]; calls?: any[]; usage?: any[]; failClients?: boolean; revenue?: () => Promise<any> } = {}) {
         const clients = new FakeModel(); clients.aggregateResult = [{ _id: 'ACTIVE', n: 41 }, { _id: 'DELETION_PENDING', n: 2 }]; if (over.failClients) clients.failWith = new Error('x');
         const rollups = new FakeModel(over.rollups ?? []);
         const calls = new FakeModel(); calls.aggregateResult = over.calls ?? [{ _id: null, c7: 1000, c24: 200, e7: 50, e24: 10 }];
-        return new PulseOps({ clientModel: clients, metricRollupModel: rollups, callMetricModel: calls, revenue: over.revenue ?? (async () => ({ mrr: { byCurrency: { TRY: 123400 }, billedSubscriptions: 30 }, statusDistribution: { trialing: 8 }, churn: { count: 2 } })), now: () => NOW });
+        return new PulseOps({ clientModel: clients, metricRollupModel: rollups, callMetricModel: calls, usageModel: new FakeModel(over.usage ?? []), revenue: over.revenue ?? (async () => ({ mrr: { byCurrency: { TRY: 123400 }, billedSubscriptions: 30 }, statusDistribution: { trialing: 8 }, churn: { count: 2 } })), now: () => NOW });
     }
     it('tenant, çağrı hacmi (24 sa saatlik + 7 g), 5xx oranı, MRR; sipariş kovası yoksa -> hesaplanamadı', async () => {
         const r = await build({ rollups: [

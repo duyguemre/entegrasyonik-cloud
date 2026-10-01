@@ -5,9 +5,11 @@
  *  - Hata zarfı (ERROR_CODES.md) → `AdminApiError { status, code, requestId }`.
  *  - `REAUTH_REQUIRED` → `requestReauth()` (step-up diyaloğu) → başarılıysa istek BİR kez yenilenir.
  *  - Oturum düştü (`401` ≠ REAUTH) → `onUnauthenticated`; TOTP eksik (`MFA_REQUIRED`) → `onMfaRequired`.
+ *  - Her istekte `X-Client-Platform` (MOB-08; masaüstü/mobil kullanım ayrımı).
  *  - İstek/yanıt gövdesi loglanmaz (impersonation URL'i dahil).
  */
 import axios, { type AxiosAdapter, type AxiosInstance } from 'axios'
+import { clientPlatformHeaders } from '@entegrasyonik/ui/platform'
 import { AUTH_FLOW_OPS, type AdminOp, type ApiErrorBody, type ReqOf, type ResOf } from './contract'
 
 export class AdminApiError extends Error {
@@ -69,7 +71,8 @@ export function createAdminApi(options: AdminApiOptions) {
     adapter: options.adapter,
     withCredentials: true,
     timeout: 15000,
-    headers: { 'Content-Type': 'application/json' },
+    // MOB-08 / K55: istemci platform sınıfı (tek kaynak `@entegrasyonik/ui/platform`; yalnız sınıf değeri, ham UA yok).
+    headers: { 'Content-Type': 'application/json', ...clientPlatformHeaders() },
   })
   const hooks: AdminApiHooks = {}
   let reauthInFlight: Promise<boolean> | null = null

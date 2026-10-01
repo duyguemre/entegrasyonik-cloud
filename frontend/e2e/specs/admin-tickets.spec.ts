@@ -1,4 +1,4 @@
-// P2 — Admin paneli / Destek Yönetimi (AdminTicketListView + AdminChatComponent).
+// P2 — Admin paneli / Destek yönetimi (AdminTicketListView + AdminChatComponent).
 // ADR-0011 Karar 2 tablosu: "admin panel ekranları" (platformAdmin-only, ADR-0001). Menü kaydı için
 // sentetik 'adminPanel' grubu — bkz. admin-clients.spec.ts başındaki not / nav.ts `menuFixtureWithAdmin`.
 import { test, expect } from '@playwright/test'
@@ -14,7 +14,7 @@ function withAdminMenu(overrides: Record<string, any> = {}) {
   return { MenuService: menuFixtureWithAdmin, ...overrides }
 }
 
-test.describe('P2 — Admin / Destek Yönetimi (AdminTicketListView)', () => {
+test.describe('P2 — Admin / Destek yönetimi (AdminTicketListView)', () => {
   test('smoke: başlık + arama kutusu + talep satırları render olur', async ({ page }) => {
     await installApiMocks(page, withAdminMenu())
     await gotoAuthed(page)
@@ -22,8 +22,8 @@ test.describe('P2 — Admin / Destek Yönetimi (AdminTicketListView)', () => {
 
     await expect(page.locator('.ticket-list-view')).toBeVisible()
     // Aşama 3: dekoratif "DESTEK MERKEZİ ANALİZİ" bandı kalktı (warning tonu yanlış anlamdaydı); başlık iddiası yerine geçer.
-    await expect(page.getByRole('heading', { name: 'Destek Yönetimi' })).toBeVisible()
-    await expect(page.getByLabel('Talep No, Konu veya Mesaj Ara').first()).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Destek yönetimi' })).toBeVisible()
+    await expect(page.getByLabel('Talep no, konu veya mesaj ara').first()).toBeVisible()
     await expect(page.getByText('TKT-100001')).toBeVisible()
     await expect(page.getByText('E2E Sipariş senkronizasyonu gecikiyor')).toBeVisible()
     await expect(page.getByText('E2E Fatura ayarı sorusu')).toBeVisible()

@@ -424,7 +424,7 @@ const columns: EkGridColumn[] = [
   height: 28px;
   padding: 0 var(--ek-space-3);
   border: 0;
-  transition: box-shadow var(--ek-duration-fast) var(--ek-easing-standard);
+  transition: box-shadow var(--ek-motion-feedback);
   cursor: pointer;
   border-radius: var(--ek-radius-sm);
 }

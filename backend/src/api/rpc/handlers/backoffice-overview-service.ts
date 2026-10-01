@@ -8,6 +8,7 @@ import { OverviewOps } from '../../admin/overviewOps'
 import { productionQueueProvider } from './backoffice-engine-service'
 import { AttentionOps } from '../../admin/attentionOps'
 import { PulseOps } from '../../admin/pulseOps'
+import { usageDailyModelOf } from '../../../operations/backoffice/usageOps'
 import { productionAttentionSources } from './backoffice-attention-support'
 import { computeRevenueMetrics } from '../../../operations/backoffice/revenueMetrics'
 
@@ -38,12 +39,12 @@ export default class BackofficeOverviewService extends BaseApi implements IServi
         return new AttentionOps({ sources: productionAttentionSources(this.applicationDB) }).getAttention(this.request?.limit)
     }
 
-    /** K51 (BO1): büyük resim kullanım özeti; olmayan veri `computable:false` ('hesaplanamadı'). */
+    /** K51 (BO1): büyük resim kullanım özeti; olmayan veri `computable:false` ('hesaplanamadı'). MOB-08: `activeUsers` bloğu + isteğe bağlı `platform` süzgeci. */
     async getPulse(): Promise<any> {
         const db = this.applicationDB
         return new PulseOps({
-            clientModel: db.getClientModel(), metricRollupModel: db.getMetricRollupModel(), callMetricModel: db.getIntegrationCallMetricModel(),
+            clientModel: db.getClientModel(), metricRollupModel: db.getMetricRollupModel(), callMetricModel: db.getIntegrationCallMetricModel(), usageModel: usageDailyModelOf(db),
             revenue: () => computeRevenueMetrics({ subscriptionModel: db.getSubscriptionModel(), planModel: db.getPlanModel(), billingEventModel: db.getBillingEventModel() }, '30d'),
-        }).getPulse()
+        }).getPulse(this.request?.platform)
     }
 }

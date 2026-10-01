@@ -78,7 +78,7 @@ const target = computed(() => resolveOverlayAttach(props.attach, scope))
   min-width: 240px;
   max-width: min(360px, calc(100vw - var(--ek-space-8)));
   padding: var(--ek-space-8) var(--ek-space-10);
-  animation: ek-lo-in var(--ek-duration-slow) var(--ek-easing-enter) 150ms both;
+  animation: ek-lo-in var(--ek-motion-layout) var(--ek-app-loader-delay) both;
 }
 
 /* Kart yerine hale: merkezde tam yüzey rengi (metin kontrastı perdeden bağımsız), kenara doğru eriyerek içerikle birleşir. */

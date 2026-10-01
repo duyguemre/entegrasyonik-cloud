@@ -145,13 +145,13 @@ var close = () => {
     background-color: transparent;
     opacity: 1;
     transition:
-        all var(--ek-duration-base) var(--ek-easing-standard),
-        opacity var(--ek-duration-base) var(--ek-easing-standard);
+        all var(--ek-motion-reveal),
+        opacity var(--ek-motion-reveal);
 }
 
 .custom-dialog .custom-dialog-workplace {
     opacity: .06;
-    transition: all var(--ek-duration-base) var(--ek-easing-standard), opacity var(--ek-duration-base) var(--ek-easing-standard);
+    transition: all var(--ek-motion-reveal), opacity var(--ek-motion-reveal);
     visibility: hidden !important;
     border-radius: var(--ek-radius-card);
     border-color: var(--ek-color-border-strong);
@@ -168,7 +168,7 @@ var close = () => {
 }
 
 .active .custom-dialog-workplace {
-    transition: opacity var(--ek-duration-fast) var(--ek-easing-standard);
+    transition: opacity var(--ek-motion-feedback);
     padding-top: 24px !important;
     border: none;
 }
@@ -181,7 +181,7 @@ var close = () => {
 
 .custom-dialog .custom-dialog-overlay {
     opacity: 0;
-    transition: all var(--ek-duration-base) var(--ek-easing-standard), opacity var(--ek-duration-fast) var(--ek-easing-standard);
+    transition: all var(--ek-motion-reveal), opacity var(--ek-motion-feedback);
     visibility: hidden !important;
     border-top: 1px solid var(--ek-color-border-strong);
     background-color: var(--ek-color-scrim);
@@ -196,7 +196,7 @@ var close = () => {
 
 .custom-dialog.active .custom-dialog-overlay {
     opacity: .2;
-    transition: all var(--ek-duration-base) var(--ek-easing-standard), opacity var(--ek-duration-base) var(--ek-easing-standard);
+    transition: all var(--ek-motion-reveal), opacity var(--ek-motion-reveal);
     visibility: visible !important;
 }
 

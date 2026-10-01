@@ -1,5 +1,5 @@
 // ADR-0018 Karar 2 "Konsol" — `useIntegrationComplianceApi.ts` saf yardımcıları + status-map ek haritaları.
-// Backend sözleşmesi (`backend/src/api/services/integration-compliance-service.ts`, `FindingService.ts`,
+// Backend sözleşmesi (`backend/src/api/rpc/handlers/integration-compliance-service.ts`, `FindingService.ts`,
 // `models/IntegrationFinding.ts`) SALT OKUNUR kanıt olarak okunur: FE sabitleri onunla birebir kalmalı.
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
@@ -28,7 +28,7 @@ function readTr(dotted: string): unknown {
 
 describe('backend sözleşmesiyle birebir sabitler', () => {
   const model = read('database/application/models/IntegrationFinding.ts')
-  const service = read('api/services/integration-compliance-service.ts')
+  const service = read('api/rpc/handlers/integration-compliance-service.ts')
   const catalog = read('integration/catalog/types.ts')
 
   it('kind/source/severity/status enumları IntegrationFinding.ts ile aynı', () => {

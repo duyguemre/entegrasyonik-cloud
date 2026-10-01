@@ -202,6 +202,28 @@ export interface ListAlertsRequest {
 /** Susturma süresi (saat): 1–336; 0 susturmayı kaldırır. */
 export const ALERT_MUTE_MAX_HOURS = 336
 
+// ---------------------------------------------------------------- MOB-06 web push (BackofficePrefsService; backend backoffice-prefs-service.ts)
+/** Bu yöneticinin kayıtlı cihazı (uç/anahtar DÖNMEZ). */
+export interface BoPushDevice {
+  id: string
+  deviceLabel: string | null
+  createdAt: string
+  lastSuccessAt: string | null
+}
+/** Kanal kapalıysa (`NOTIFY_V2_ENABLED`/VAPID yok) `enabled:false`, `publicKey:null`, cihaz listesi boş. */
+export interface BoPushConfig {
+  enabled: boolean
+  /** Tarayıcı web push (VAPID) açıksa açık anahtar; değilse null. */
+  publicKey: string | null
+  /** Android kabuğu yerel push (FCM) açık mı (MOB-07). */
+  fcm: boolean
+  devices: BoPushDevice[]
+}
+/** Tarayıcı aboneliği YA DA Android kabuğu FCM belirteci — yalnız biri. */
+export type BoPushSubscribeRequest =
+  | { subscription: { endpoint: string; expirationTime?: number | null; keys: { p256dh: string; auth: string } }; deviceLabel?: string }
+  | { fcmToken: string; deviceLabel?: string }
+
 interface Page<T> {
   items: T[]
   nextCursor: string | null
@@ -225,6 +247,9 @@ declare module '../contract' {
     'BackofficeNotificationService/sendTestEmail': [{ reason: string }, { sent: true }]
     'BackofficeNotificationService/getTenantHistory': [{ tid: number; cursor?: string; limit?: number }, Page<TenantHistoryRow>]
     'BackofficeNotificationService/listAlerts': [ListAlertsRequest, Page<AlertRow>]
+    'BackofficePrefsService/getPushConfig': [Record<string, never>, BoPushConfig]
+    'BackofficePrefsService/subscribePush': [BoPushSubscribeRequest, { ok: true }]
+    'BackofficePrefsService/unsubscribePush': [{ endpoint: string } | { id: string } | { fcmToken: string }, { removed: number }]
     'BackofficeNotificationService/muteAlert': [{ ruleId: string; scopeKey: string; hours: number; reason: string }, { ruleId: string; scopeKey: string; mutedUntil: string | null }]
   }
 }

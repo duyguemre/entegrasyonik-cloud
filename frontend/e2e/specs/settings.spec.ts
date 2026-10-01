@@ -62,23 +62,23 @@ async function tab(page: any, name: string) {
 }
 
 test.describe('ADR-0015 B5-3 — SettingListView', () => {
-  // Sağ alttaki tur teklifi kartı alt sabit "Ayarları Kaydet" çubuğunu örter (kaydırılamaz) → kullanıcı gibi önce kapatılmış sayılır.
+  // Sağ alttaki tur teklifi kartı alt sabit "Ayarları kaydet" çubuğunu örter (kaydırılamaz) → kullanıcı gibi önce kapatılmış sayılır.
   test.beforeEach(async ({ page }) => { await suppressTourOffer(page) })
 
-  test('smoke: 4 sekme + Mağaza Kimliği alanları + kaydet düğmesi render olur', async ({ page }) => {
+  test('smoke: 4 sekme + Mağaza kimliği alanları + kaydet düğmesi render olur', async ({ page }) => {
     await installApiMocks(page, withMenu())
     await gotoAuthed(page)
     await openScreen(page, 'SettingListView')
 
     await expect(page.locator('.settingListView')).toBeVisible()
-    for (const name of ['Mağaza Kimliği', 'Fatura & Yasal Bilgiler', 'Lojistik & Operasyon', 'İletişim & Bildirimler']) {
+    for (const name of ['Mağaza kimliği', 'Fatura ve yasal bilgiler', 'Lojistik ve operasyon', 'İletişim ve bildirimler']) {
       await expect(page.getByRole('tab', { name })).toBeVisible()
     }
-    await expect(page.getByLabel('Mağaza Adı', { exact: true })).toBeVisible()
-    await expect(page.getByText('Mağaza Renk Paleti')).toBeVisible()
-    await expect(page.getByText('Mağaza Logosu')).toBeVisible()
+    await expect(page.getByLabel('Mağaza adı', { exact: true })).toBeVisible()
+    await expect(page.getByText('Mağaza renk paleti')).toBeVisible()
+    await expect(page.getByText('Mağaza logosu')).toBeVisible()
     await expect(page.getByText('Önizleme', { exact: true })).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Ayarları Kaydet' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Ayarları kaydet' })).toBeVisible()
   })
 
   test('mevcut ayarlar API\'den yüklenir: mağaza adı alanı ve önizleme', async ({ page }) => {
@@ -87,9 +87,9 @@ test.describe('ADR-0015 B5-3 — SettingListView', () => {
     await openScreen(page, 'SettingListView')
 
     // Varsayılan fixture: yalnızca storeName döner.
-    await expect(page.getByLabel('Mağaza Adı', { exact: true })).toHaveValue('E2E Test Mağazası')
+    await expect(page.getByLabel('Mağaza adı', { exact: true })).toHaveValue('E2E Test Mağazası')
     await expect(page.locator('.settingListView').getByText('E2E Test Mağazası', { exact: true })).toBeVisible()
-    await expect(page.getByText('Doğrulanmış Mağaza')).toBeVisible()
+    await expect(page.getByText('Doğrulanmış mağaza')).toBeVisible()
   })
 
   test('karakterizasyon: eksik alanlar için varsayılanlar (marka rengi, saat dilimi, çalışma günleri, fatura tipi)', async ({ page }) => {
@@ -97,9 +97,9 @@ test.describe('ADR-0015 B5-3 — SettingListView', () => {
     await gotoAuthed(page)
     await openScreen(page, 'SettingListView')
 
-    await expect(page.getByLabel('Seçili Renk Kodu', { exact: true })).toHaveValue('#4F46E5')
-    await tab(page, 'Lojistik & Operasyon')
-    await expect(page.locator('.v-window-item--active').getByText('Europe/Istanbul')).toBeVisible()
+    await expect(page.getByLabel('Seçili renk kodu', { exact: true })).toHaveValue('#4F46E5')
+    await tab(page, 'Lojistik ve operasyon')
+    await expect(page.locator('.settingListView .sl-group:visible').getByText('Europe/Istanbul')).toBeVisible()
     for (const d of ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma']) {
       await expect(page.getByLabel(d, { exact: true })).toBeChecked()
     }
@@ -116,7 +116,7 @@ test.describe('ADR-0015 B5-3 — SettingListView', () => {
     await gotoAuthed(page)
     await openScreen(page, 'SettingListView')
 
-    await tab(page, 'Fatura & Yasal Bilgiler')
+    await tab(page, 'Fatura ve yasal bilgiler')
     await expect(page.getByLabel('İsim', { exact: true })).toBeVisible()
     await expect(page.getByLabel('T.C. Kimlik No', { exact: true })).toBeVisible()
     await expect(page.getByLabel('Firma Ünvanı', { exact: true })).toHaveCount(0)
@@ -131,12 +131,12 @@ test.describe('ADR-0015 B5-3 — SettingListView', () => {
     await expect(page.getByLabel('Ticaret Sicil No', { exact: true })).toBeVisible()
   })
 
-  test('sekmeler: İletişim & Bildirimler alanları ve bilgi uyarısı', async ({ page }) => {
+  test('sekmeler: İletişim ve bildirimler alanları ve bilgi uyarısı', async ({ page }) => {
     await installApiMocks(page, withMenu())
     await gotoAuthed(page)
     await openScreen(page, 'SettingListView')
 
-    await tab(page, 'İletişim & Bildirimler')
+    await tab(page, 'İletişim ve bildirimler')
     await expect(page.getByLabel('Hata Bildirim E-postası', { exact: true })).toBeVisible()
     await expect(page.getByLabel('Müşteri Destek Telefonu', { exact: true })).toBeVisible()
     await expect(page.getByText('Entegrasyon Sağlık Durumu')).toBeVisible()
@@ -148,10 +148,10 @@ test.describe('ADR-0015 B5-3 — SettingListView', () => {
     await gotoAuthed(page)
     await openScreen(page, 'SettingListView')
 
-    await expect(page.getByLabel('Mağaza Adı', { exact: true })).toHaveValue('Elif Ticaret')
-    await expect(page.getByLabel('Seçili Renk Kodu', { exact: true })).toHaveValue('#10B981')
+    await expect(page.getByLabel('Mağaza adı', { exact: true })).toHaveValue('Elif Ticaret')
+    await expect(page.getByLabel('Seçili renk kodu', { exact: true })).toHaveValue('#10B981')
 
-    await tab(page, 'Fatura & Yasal Bilgiler')
+    await tab(page, 'Fatura ve yasal bilgiler')
     await expect(page.getByLabel('İsim', { exact: true })).toHaveValue('Elif')
     await expect(page.getByLabel('Soyisim', { exact: true })).toHaveValue('Yıldız')
     await expect(page.getByLabel('T.C. Kimlik No', { exact: true })).toHaveValue('10000000146')
@@ -159,16 +159,46 @@ test.describe('ADR-0015 B5-3 — SettingListView', () => {
     await expect(page.getByLabel('MERSIS No', { exact: true })).toHaveValue('0123456789012345')
     await expect(page.getByLabel('Fatura Adresi', { exact: true })).toHaveValue('Örnek Mah. 1. Sok. No:1')
 
-    await tab(page, 'Lojistik & Operasyon')
+    await tab(page, 'Lojistik ve operasyon')
     await expect(page.getByLabel(/Kargo Süresi/)).toHaveValue('4')
     await expect(page.getByLabel(/Garanti Süresi/)).toHaveValue('24')
     await expect(page.getByLabel(/Maksimum Satış Adedi/)).toHaveValue('50')
     await expect(page.getByLabel('Pazartesi', { exact: true })).toBeChecked()
     await expect(page.getByLabel('Cuma', { exact: true })).not.toBeChecked()
 
-    await tab(page, 'İletişim & Bildirimler')
+    await tab(page, 'İletişim ve bildirimler')
     await expect(page.getByLabel('Hata Bildirim E-postası', { exact: true })).toHaveValue('hata@example.com')
     await expect(page.getByLabel('Müşteri Destek Telefonu', { exact: true })).toHaveValue('02120000000')
+  })
+
+  test('FR3-14 arama: eşleşen ayarlar gruplarıyla gösterilir, grup sayaçları görünür; Esc temizler', async ({ page }) => {
+    await installApiMocks(page, withMenu({ 'SettingService/getSettings': settingsDolu }))
+    await gotoAuthed(page)
+    await openScreen(page, 'SettingListView')
+    await expect(page.getByLabel('Mağaza adı', { exact: true })).toHaveValue('Elif Ticaret')
+    const search = page.getByLabel('Ayarlarda ara')
+    await search.fill('vergi')
+    await expect(page.locator('.settingListView .sl-search-state')).toContainText('3 ayar')
+    await expect(page.getByLabel('Vergi Dairesi', { exact: true })).toBeVisible()
+    await expect(page.getByLabel('Varsayılan KDV Oranı', { exact: true })).toBeVisible()
+    await expect(page.getByLabel('Mağaza adı', { exact: true })).toBeHidden()
+    await search.press('Escape')
+    await expect(page.getByLabel('Mağaza adı', { exact: true })).toBeVisible()
+  })
+
+  test('FR3-14 değişiklik durumu: değişen alan ve grup işaretlenir, Vazgeç kayıtlı değere döndürür', async ({ page }) => {
+    await installApiMocks(page, withMenu({ 'SettingService/getSettings': settingsDolu }))
+    await gotoAuthed(page)
+    await openScreen(page, 'SettingListView')
+    const bar = page.getByRole('region', { name: 'Kaydetme durumu' })
+    await expect(bar).toContainText('Kaydedilmemiş değişiklik yok')
+    await page.getByLabel('Mağaza adı', { exact: true }).fill('Yeni Ad')
+    await expect(bar).toContainText('Kaydedilmemiş değişiklik var · Mağaza kimliği')
+    await expect(page.locator('[data-setting="storeName"]')).toContainText('Değişti')
+    await expect(page.getByRole('tab', { name: /Mağaza kimliği/ })).toContainText('Kaydedilmemiş değişiklik var')
+    await bar.getByRole('button', { name: 'Vazgeç' }).click()
+    await expect(page.getByLabel('Mağaza adı', { exact: true })).toHaveValue('Elif Ticaret')
+    await expect(bar).toContainText('Kaydedilmemiş değişiklik yok')
   })
 
   test('kaydet: düzenlenen alanlar SettingService/updateSettings gövdesinde { settings } olarak gider, başarıda yeniden yüklenir + başarı bildirimi', async ({ page }) => {
@@ -176,13 +206,13 @@ test.describe('ADR-0015 B5-3 — SettingListView', () => {
     await installApiMocks(page, captureSave(sink))
     await gotoAuthed(page)
     await openScreen(page, 'SettingListView')
-    await expect(page.getByLabel('Mağaza Adı', { exact: true })).toHaveValue('Elif Ticaret')
+    await expect(page.getByLabel('Mağaza adı', { exact: true })).toHaveValue('Elif Ticaret')
     const getsBefore = sink.getCalls
 
-    await page.getByLabel('Mağaza Adı', { exact: true }).fill('Yeni Mağaza')
-    await tab(page, 'İletişim & Bildirimler')
+    await page.getByLabel('Mağaza adı', { exact: true }).fill('Yeni Mağaza')
+    await tab(page, 'İletişim ve bildirimler')
     await page.getByLabel('Hata Bildirim E-postası', { exact: true }).fill('yeni@example.com')
-    await page.getByRole('button', { name: 'Ayarları Kaydet' }).click()
+    await page.getByRole('button', { name: 'Ayarları kaydet' }).click()
 
     await expect.poll(() => sink.calls).toBe(1)
     expect(Object.keys(sink.body)).toEqual(['settings'])
@@ -207,15 +237,15 @@ test.describe('ADR-0015 B5-3 — SettingListView', () => {
     await installApiMocks(page, captureSave(sink))
     await gotoAuthed(page)
     await openScreen(page, 'SettingListView')
-    await expect(page.getByLabel('Mağaza Adı', { exact: true })).toHaveValue('Elif Ticaret')
+    await expect(page.getByLabel('Mağaza adı', { exact: true })).toHaveValue('Elif Ticaret')
 
-    await tab(page, 'Lojistik & Operasyon')
+    await tab(page, 'Lojistik ve operasyon')
     await page.getByLabel(/Kargo Süresi/).fill('7')
     await page.locator('.v-checkbox label', { hasText: /^Cuma$/ }).click()
     await expect(page.getByLabel('Cuma', { exact: true })).toBeChecked()
     await page.locator('.v-checkbox label', { hasText: /^Pazartesi$/ }).click()
     await expect(page.getByLabel('Pazartesi', { exact: true })).not.toBeChecked()
-    await page.getByRole('button', { name: 'Ayarları Kaydet' }).click()
+    await page.getByRole('button', { name: 'Ayarları kaydet' }).click()
 
     await expect.poll(() => sink.calls).toBe(1)
     expect(sink.body.settings.shippingDuration).toBe(7)
@@ -228,12 +258,12 @@ test.describe('ADR-0015 B5-3 — SettingListView', () => {
     await installApiMocks(page, captureSave(sink))
     await gotoAuthed(page)
     await openScreen(page, 'SettingListView')
-    await expect(page.getByLabel('Seçili Renk Kodu', { exact: true })).toHaveValue('#10B981')
+    await expect(page.getByLabel('Seçili renk kodu', { exact: true })).toHaveValue('#10B981')
 
     // 5. palet öğesi = Ruby (#E11D48); swatch'lar `.color-swatch-item` sınıfıyla (palet sırası).
     await page.locator('.settingListView .color-swatch-item').nth(4).click()
-    await expect(page.getByLabel('Seçili Renk Kodu', { exact: true })).toHaveValue('#E11D48')
-    await page.getByRole('button', { name: 'Ayarları Kaydet' }).click()
+    await expect(page.getByLabel('Seçili renk kodu', { exact: true })).toHaveValue('#E11D48')
+    await page.getByRole('button', { name: 'Ayarları kaydet' }).click()
     await expect.poll(() => sink.calls).toBe(1)
     expect(sink.body.settings.brandColor).toBe('#E11D48')
   })
@@ -243,15 +273,15 @@ test.describe('ADR-0015 B5-3 — SettingListView', () => {
     await installApiMocks(page, captureSave(sink))
     await gotoAuthed(page)
     await openScreen(page, 'SettingListView')
-    await expect(page.getByLabel('Mağaza Adı', { exact: true })).toHaveValue('Elif Ticaret')
+    await expect(page.getByLabel('Mağaza adı', { exact: true })).toHaveValue('Elif Ticaret')
 
-    await expect(page.getByRole('button', { name: 'Logo Seç' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Logo seç' })).toBeVisible()
     await expect(page.getByPlaceholder('https://example.com/logo.png')).toHaveCount(0)
 
     await page.getByLabel('URL kullan', { exact: true }).check({ force: true })
-    await expect(page.getByRole('button', { name: 'Logo Seç' })).toHaveCount(0)
+    await expect(page.getByRole('button', { name: 'Logo seç' })).toHaveCount(0)
     await page.getByPlaceholder('https://example.com/logo.png').fill('https://example.com/e2e-logo.png')
-    await page.getByRole('button', { name: 'Ayarları Kaydet' }).click()
+    await page.getByRole('button', { name: 'Ayarları kaydet' }).click()
 
     await expect.poll(() => sink.calls).toBe(1)
     expect(sink.body.settings.logo).toBe('https://example.com/e2e-logo.png')
@@ -272,7 +302,7 @@ test.describe('ADR-0015 B5-3 — SettingListView', () => {
     })
     await gotoAuthed(page)
     await openScreen(page, 'SettingListView')
-    await expect(page.getByLabel('Mağaza Adı', { exact: true })).toHaveValue('Elif Ticaret')
+    await expect(page.getByLabel('Mağaza adı', { exact: true })).toHaveValue('Elif Ticaret')
 
     await page.locator('.settingListView input[type="file"]').setInputFiles({ name: 'logo.png', mimeType: 'image/png', buffer: Buffer.from('e2e') })
     await expect(page.getByText('Logo başarıyla yüklendi.')).toBeVisible()
@@ -285,10 +315,10 @@ test.describe('ADR-0015 B5-3 — SettingListView', () => {
     await installApiMocks(page, captureSave(sink, { saveResponse: { message: 'x' } }))
     await gotoAuthed(page)
     await openScreen(page, 'SettingListView')
-    await expect(page.getByLabel('Mağaza Adı', { exact: true })).toHaveValue('Elif Ticaret')
+    await expect(page.getByLabel('Mağaza adı', { exact: true })).toHaveValue('Elif Ticaret')
     const getsBefore = sink.getCalls
 
-    await page.getByRole('button', { name: 'Ayarları Kaydet' }).click()
+    await page.getByRole('button', { name: 'Ayarları kaydet' }).click()
     await expect(page.getByText('Ayarlar kaydedilirken bir hata oluştu.')).toBeVisible()
     expect(sink.getCalls).toBe(getsBefore)
   })
@@ -299,9 +329,9 @@ test.describe('ADR-0015 B5-3 — SettingListView', () => {
     await installApiMocks(page, withMenu({ 'SettingService/updateSettings': mockError(500) }))
     await gotoAuthed(page)
     await openScreen(page, 'SettingListView')
-    await expect(page.getByLabel('Mağaza Adı', { exact: true })).toHaveValue('E2E Test Mağazası')
+    await expect(page.getByLabel('Mağaza adı', { exact: true })).toHaveValue('E2E Test Mağazası')
 
-    await page.getByRole('button', { name: 'Ayarları Kaydet' }).click()
+    await page.getByRole('button', { name: 'Ayarları kaydet' }).click()
     await expect(page.getByText('Ayarlar kaydedilirken bir hata oluştu.')).toBeVisible()
   })
 
@@ -312,8 +342,8 @@ test.describe('ADR-0015 B5-3 — SettingListView', () => {
     await gotoAuthed(page)
     await openScreen(page, 'SettingListView')
 
-    await expect(page.getByLabel('Mağaza Adı', { exact: true })).toHaveValue('')
-    await expect(page.getByLabel('Seçili Renk Kodu', { exact: true })).toHaveValue('#4F46E5')
+    await expect(page.getByLabel('Mağaza adı', { exact: true })).toHaveValue('')
+    await expect(page.getByLabel('Seçili renk kodu', { exact: true })).toHaveValue('#4F46E5')
     await expect(page.getByText('E2E sentetik hata')).toHaveCount(0)
   })
 })

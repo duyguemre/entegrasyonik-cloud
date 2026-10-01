@@ -61,7 +61,7 @@ export function useTicketActions(getTickets: Function) {
         } catch (error) {
             console.error('Bilet kapatma hatası:', error);
             snackbarStore.addSnackbar({
-                text: 'Bilet kapatılırken bir hata oluştu.',
+                text: 'Destek talebi kapatılırken bir hata oluştu.',
                 color: 'error'
             });
         }
