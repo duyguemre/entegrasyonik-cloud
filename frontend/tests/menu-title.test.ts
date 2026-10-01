@@ -26,7 +26,7 @@ describe('resolveMenuTitle', () => {
   })
 
   it('menüde karşılığı olmayan ekran `screens.ts` titleKey ile, o da yoksa okunur yedekle adlandırılır', () => {
-    expect(resolveMenuTitle({ code: 'StockHealthView', parent: '', title: 'bilinmeyen', fullPath: 'menu.bilinmeyen' }, t, te)).toBe('Stok Sağlığı')
+    expect(resolveMenuTitle({ code: 'StockHealthView', parent: '', title: 'bilinmeyen', fullPath: 'menu.bilinmeyen' }, t, te)).toBe('Stok sağlığı')
     const title = resolveMenuTitle({ code: 'SomeNewScreenView', parent: '', title: 'someNewScreen', fullPath: 'menu.someNewScreen' }, t, te)
     expect(title).toBe('Some new screen')
     expect(title).not.toMatch(/menu\./i)

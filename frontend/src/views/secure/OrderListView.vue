@@ -69,7 +69,7 @@
       :error-details="loadProblem?.details"
       error-title="Siparişler yüklenemedi"
       :search="filters.globalSearch"
-      search-placeholder="Sipariş No, Müşteri Adı veya Telefon Ara"
+      search-placeholder="Sipariş no, müşteri adı veya telefon ara"
       :chips="activeChips"
       :filter-count="panelFilterCount"
       :saved-views="savedViews"

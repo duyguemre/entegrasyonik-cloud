@@ -37,7 +37,7 @@
       :error="loadError"
       error-title="Müşteriler yüklenemedi"
       :search="searchCustomerForm.data.globalSearch"
-      search-placeholder="İsim, Telefon, E-posta veya Vergi No"
+      search-placeholder="Ad, telefon, e-posta veya vergi no"
       :chips="activeChips"
       :filter-count="panelFilterCount"
       selectable
@@ -173,7 +173,7 @@ const STATUS_OPTIONS = [
 // (yalnız saklanan alanlar: ad, şehir); ciro/iade oranı sayfada hesaplandığı için sıralanamaz.
 const columns: EkGridColumn[] = [
   { key: 'name', label: 'Müşteri', sortable: true },
-  { key: 'channel', label: 'Kaynak' },
+  { key: 'channel', label: 'Kanal' },
   { key: 'contact', label: 'İletişim' },
   { key: 'region', label: 'Şehir', sortable: true },
   { key: 'orders', label: 'Sipariş', type: 'num' },

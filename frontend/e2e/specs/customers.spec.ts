@@ -16,7 +16,7 @@ test.describe('P2 — Müşteriler (CustomerListView)', () => {
     await openScreen(page, 'CustomerListView')
 
     await expect(page.locator('.customerListView')).toBeVisible()
-    await expect(page.getByLabel('İsim, Telefon, E-posta veya Vergi No').first()).toBeVisible()
+    await expect(page.getByLabel('Ad, telefon, e-posta veya vergi no').first()).toBeVisible()
     await expect(page.getByText('Ayşe Yılmaz')).toBeVisible()
     await expect(page.getByText('Mehmet Demir')).toBeVisible()
   })

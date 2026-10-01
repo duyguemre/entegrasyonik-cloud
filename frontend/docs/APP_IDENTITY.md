@@ -90,7 +90,7 @@ Site satış yapar; uygulama iş yaptırır. Ses aynı aileden (kendinden emin, 
 |---|---|
 | Aynı kanal rozeti biçimi (koyu kenarlık + açık zemin, orijinal hex) site ve uygulamada (K13, FR2-15) | Uygulamada dolgu rozet, sitede kenarlıklı rozet |
 | Aynı marka mavisi / lacivert / teal rolleri; teal yalnız "canlı/başarılı akış" vurgusu | Uygulamaya özel yeni marka rengi |
-| İçerik sekmeleri sitedeki sekme diliyle (alt çizgi gösterge, sakin pasif) (FR3-5) | Hap/dolgu sekme + kalın gölge |
+| İçerik sekmeleri sitenin süzgeç diliyle: **segment tepsisi** (soluk tepsi, etkin segment yüzeye çıkar; `EkPageTabs`, FR3_PATTERNS §4) (FR3-5) | Ekrana özel hap/dolgu sekme, kalın gölge, renkli etkin sekme |
 | Yazı: Inter; sayılar `tabular-nums`; başlık ağırlıkları token | Ekranda üçüncü bir font, tabloda orantılı rakam |
 | Otopilot adı tek sabitten (`CHAT_PRODUCT`, K39) | Elle yazılmış "Asistan", "AI Bot" |
 

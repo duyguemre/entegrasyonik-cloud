@@ -39,7 +39,7 @@
       :error-details="loadProblem?.details"
       error-title="İade talepleri yüklenemedi"
       :search="filters.globalSearch"
-      search-placeholder="İade No, Sipariş No veya Takip Ara"
+      search-placeholder="İade no, sipariş no veya takip no ara"
       :chips="activeChips"
       :filter-count="panelFilterCount"
       :saved-views="savedViews"

@@ -59,7 +59,7 @@ test.describe('P1 — Dashboard', () => {
     await expect(next.locator('.dna__foot')).toContainText('İade')
 
     const status = card(page, 'Sipariş durumları')
-    await expect(status.getByRole('button', { name: /Teslim Edildi: 3 sipariş/ })).toBeVisible()
+    await expect(status.getByRole('button', { name: /Teslim edildi: 3 sipariş/ })).toBeVisible()
     await expect(status).toContainText('12')
 
     const stock = card(page, 'Stok ve eşleşme uyarıları')

@@ -188,7 +188,7 @@
       :error="loadError"
       error-title="Finansal işlemler yüklenemedi"
       :search="searchForm.externalIdSearch"
-      search-placeholder="İşlem No Ara (External ID)"
+      search-placeholder="İşlem no ile ara"
       :chips="activeChips"
       :filter-count="panelFilterCount"
       :sort="gridSort"
@@ -212,8 +212,8 @@
       @refresh="getFinancials(true)"
     >
       <template #filters>
-        <EkSelect kind="channel" v-model="searchForm.integrationCodes" :items="channelOptionsFrom(integrationStore.getClientPlatforms())" label="Platformlar" multiple clearable />
-        <EkSelect v-model="searchForm.transactionTypes" :items="transactionTypeOptions" label="İşlem Tipi"
+        <EkSelect kind="channel" v-model="searchForm.integrationCodes" :items="channelOptionsFrom(integrationStore.getClientPlatforms())" label="Kanal" multiple clearable />
+        <EkSelect v-model="searchForm.transactionTypes" :items="transactionTypeOptions" label="İşlem türü"
           multiple clearable />
         <EkDateRange v-model:start="searchForm.startDate" v-model:end="searchForm.endDate" label="İşlem tarihi" value-format="date" />
       </template>
@@ -240,7 +240,7 @@
           <span v-if="!(row.credit > 0) && !(row.debt > 0)" class="ek-muted">—</span>
         </span>
       </template>
-      <template #cell-netAmount="{ row }"><span class="ek-fin-net ek-num" :class="{ 'ek-fin-net--in': row.netAmount > 0 }">{{ row.netAmount > 0 ? '+' : '' }}{{ formatCurrency(row.netAmount) }}</span></template>
+      <template #cell-netAmount="{ row }"><span class="ek-fin-net ek-num" :class="{ 'ek-fin-net--in': row.netAmount > 0 }">{{ row.netAmount > 0 ? '+' : row.netAmount < 0 ? '−' : '' }}{{ formatCurrency(Math.abs(row.netAmount)) }}</span></template>
       <template #cell-transactionDate="{ row }">
         <span class="ek-fin-id">
           <span class="ek-num">{{ formatDate(row.transactionDate) }}</span>

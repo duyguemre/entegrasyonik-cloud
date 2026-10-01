@@ -25,7 +25,7 @@
       :error="loadError"
       error-title="Gönderim kayıtları yüklenemedi"
       :search="searchJobId"
-      search-placeholder="Ürün Adı, Barkod, Stok Kodu veya Platform Ara"
+      search-placeholder="Ürün adı, barkod, stok kodu veya kanal"
       :chips="activeChips"
       :filter-count="panelFilterCount"
       :filter-collapsed="filterCollapsed"
@@ -184,7 +184,7 @@ const statusOptions = ref([
   { id: 'SENT', title: 'Gönderim Sorgulanıyor' },
   { id: 'WAITING', title: 'Onay Bekleniyor' },
   { id: 'COMPLETED', title: 'Tamamlandı' },
-  { id: 'FAILED', title: 'Hata Oluştu' }
+  { id: 'FAILED', title: 'Hata oluştu' }
 ]);
 
 // DS-v2 liste standardı. Sıralama SUNUCUDA (getExportJobs / advancedSearchExportJobs `sortBy`/`sortOrder`).

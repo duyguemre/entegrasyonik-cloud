@@ -6,7 +6,7 @@
  *   hatalı (en az bir varyant reddedildi) > bekliyor (onay/aktarım sürüyor) > yayında (en az biri yayında) > kapalı (onaylı ama
  *   satışa kapalı) > yok (hiç gönderilmedi).
  * "Gönderime hazır" (`platformUploads.<kod>.isReady`) ayrı bayraktır: kullanıcı ürünü o kanal için hazır işaretlemiş (planlama
- * işareti — backend yalnız saklar, aktarım akışı okumaz; gönderim Toplu işlemler → Platformlara Yükle).
+ * işareti — backend yalnız saklar, aktarım akışı okumaz; gönderim Toplu işlemler → Kanallara yükle).
  * Varyantta hiç kanal verisi yoksa ürünün eski `platformUploads.<kod>.isUploaded` alanı "yayında" sayılır (geri uyum).
  */
 import type { StatusTone } from '@/design/status-map'

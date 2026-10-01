@@ -15,7 +15,7 @@
 -->
 <template>
   <div class="printoutListView">
-    <EkPageHeader section="Finans" :title="$t('menu.printoutList')"
+    <EkPageHeader section="Ayarlar" :title="$t('menu.printoutList')"
       description="Kargo etiketi, sipariş fişi, irsaliye taslağı ve toplama listesi şablonlarınızı tasarlayın, gerçek siparişle önizleyip yazdırın."
       :tips="TIPS" :primary-action="view === 'gallery' ? { label: 'Yeni şablon', icon: 'mdi-plus', onClick: openCreate } : undefined" />
 

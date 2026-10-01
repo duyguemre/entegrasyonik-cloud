@@ -4,7 +4,7 @@
 
     <div class="flex-grow-1 overflow-y-auto scroll-area" :aria-busy="loading ? 'true' : 'false'">
 
-      <EkPageHeader section="Yönetim" title="Sistem Yönetimi"
+      <EkPageHeader section="Yönetim" title="Sistem yönetimi"
         description="Platform sağlığı, aktif işleyiciler ve bellek durumu anlık olarak izleniyor."
         refreshable :refreshing="loading" @refresh="loadData()" />
 
@@ -341,7 +341,7 @@
               clearable variant="outlined" class="customTextField select-max-150"
               color="primary"></v-select>
 
-            <v-select v-model="exportFilters.mode" :items="modeOptions" label="İşlem Tipi" density="compact"
+            <v-select v-model="exportFilters.mode" :items="modeOptions" label="İşlem türü" density="compact"
               hide-details clearable variant="outlined" class="customTextField select-max-150"
               color="primary"></v-select>
 

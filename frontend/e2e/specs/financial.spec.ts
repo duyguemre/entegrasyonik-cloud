@@ -67,7 +67,7 @@ test.describe('ADR-0015 B5-3 — FinancialListView (finans)', () => {
     await open(page, { [ENDPOINT]: financialDoluFixture })
 
     await expect(page.locator('.financialListView')).toBeVisible()
-    await expect(page.getByLabel('İşlem No Ara (External ID)', { exact: true })).toBeVisible()
+    await expect(page.getByLabel('İşlem no ile ara', { exact: true })).toBeVisible()
     await expect(page.getByText('SIP-E2E-1001')).toBeVisible()
     // Sipariş no'su olmayan satır: mobil kartta "İşlem No: <externalId>", masaüstünde "ID: <externalId>"
     await expect(page.getByText('TRX-E2E-0002')).toBeVisible()
@@ -139,7 +139,7 @@ test.describe('ADR-0015 B5-3 — FinancialListView (finans)', () => {
     await open(page, { [ENDPOINT]: capturing(bodies) })
     await expect(page.getByText('SIP-E2E-1001')).toBeVisible()
 
-    const input = page.getByLabel('İşlem No Ara (External ID)', { exact: true })
+    const input = page.getByLabel('İşlem no ile ara', { exact: true })
     await input.fill('TRX-E2E-0002')
     await input.press('Enter')
 
@@ -173,7 +173,7 @@ test.describe('ADR-0015 B5-3 — FinancialListView (finans)', () => {
     if (!(await panel.locator('form').isVisible())) await view.getByRole('button', { name: /Filtreler/ }).click()
     await expect(panel).toBeVisible()
 
-    await panel.locator('.v-select').filter({ hasText: 'İşlem Tipi' }).click()
+    await panel.locator('.v-select').filter({ hasText: 'İşlem türü' }).click()
     // Karakterizasyon (DÜZELTİLMEDİ): seçenekler çevrilmemiş ham kodlarla listelenir (SALE, RETURN...).
     await page.getByRole('option', { name: 'SALE', exact: true }).click()
     await page.keyboard.press('Escape')
@@ -448,13 +448,13 @@ test.describe('C1.4 — Finans sekmeleri', () => {
     await open(page, financeRoutes())
     const view = page.locator('.financialListView')
     const bar = view.locator('.ek-page-header')
-    await expect(bar.getByLabel('İşlem No Ara (External ID)', { exact: true })).toBeVisible()
+    await expect(bar.getByLabel('İşlem no ile ara', { exact: true })).toBeVisible()
     await expect(view.getByRole('button', { name: 'Yenile' })).toHaveCount(1)
     await expect(bar.getByRole('button', { name: 'Yenile' })).toBeVisible()
 
     await view.getByRole('tab', { name: 'Kargo faturaları' }).click()
     await expect(bar.getByLabel('Fatura no ile ara (tam eşleşme)', { exact: true })).toBeVisible()
-    await expect(bar.getByLabel('İşlem No Ara (External ID)', { exact: true })).toHaveCount(0)
+    await expect(bar.getByLabel('İşlem no ile ara', { exact: true })).toHaveCount(0)
     await expect(bar.getByRole('button', { name: 'Yenile' })).toHaveCount(1)
 
     // Araçsız sekme (Özet) başlıkta önceki sekmenin aracını bırakmaz.

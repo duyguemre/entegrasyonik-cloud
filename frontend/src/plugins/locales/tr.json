@@ -71,7 +71,7 @@
     },
     "productDefinitions": {
       "productDefinition": "Ürün Ekle",
-      "productDefinitions": "Ürün Kataloğu",
+      "productDefinitions": "Ürün kataloğu",
       "productList": "Ürünler",
       "categoryList": "Kategoriler",
       "brandList": "Markalar",
@@ -89,12 +89,12 @@
     },
     "adminPanel": {
       "adminPanel": "Admin Paneli",
-      "adminClientlist": "Mağaza Yönetimi",
+      "adminClientlist": "Mağaza yönetimi",
       "adminClientDetail": "Mağaza Detayı",
-      "adminTicketList": "Destek Yönetimi",
+      "adminTicketList": "Destek yönetimi",
       "adminOperations": "Platform İşlemleri",
-      "adminSystemManagement": "Sistem Yönetimi",
-      "adminIntegrationCompliance": "Entegrasyon Uyum",
+      "adminSystemManagement": "Sistem yönetimi",
+      "adminIntegrationCompliance": "Entegrasyon uyumu",
       "integrationConfigList": "Entegrasyonlar",
       "integrationSettings": "Entegrasyon ayarları",
       "engineSettings": "Motor ayarları",
@@ -107,7 +107,7 @@
       "erp": "ERP",
       "shipping": "Kargo",
       "einvoice": "E-Fatura",
-      "integrationHealth": "Entegrasyon Sağlığı"
+      "integrationHealth": "Entegrasyon sağlığı"
     },
     "settings": {
       "settings": "Ayarlar",
@@ -116,12 +116,12 @@
       "printoutList": "Çıktılar",
       "logList": "İşlem kayıtları"
     },
-    "integrationHealth": "Entegrasyon Sağlığı",
-    "auditLog": "Denetim Günlüğü",
-    "accountSecurity": "Hesabım ve Güvenlik",
-    "privacyData": "Veri ve Gizlilik",
-    "stockPolicy": "Stok Politikası",
-    "stockHealth": "Stok Sağlığı",
+    "integrationHealth": "Entegrasyon sağlığı",
+    "auditLog": "Denetim günlüğü",
+    "accountSecurity": "Hesabım ve güvenlik",
+    "privacyData": "Veri ve gizlilik",
+    "stockPolicy": "Stok politikası",
+    "stockHealth": "Stok sağlığı",
     "user": {
       "user": "Hesabım",
       "subscription": "Abonelik",
@@ -422,7 +422,7 @@
   },
   "products": {
     "product": {
-      "searchlabel": "Ürün Adı, Stok Kodu, Barkod",
+      "searchlabel": "Ürün adı, stok kodu, barkod",
       "search": "Ürünlerde Ara"
     }
   },
@@ -514,7 +514,7 @@
       },
       "headers": {
         "log": "İşlem",
-        "logType": "İşlem Tipi",
+        "logType": "İşlem türü",
         "date": "Tarih",
         "status": "Sonuç",
         "address": "Adres",
@@ -920,14 +920,14 @@
     "updatePrices": "Fiyatlar Güncellensin",
     "updateStocks": "Stoklar Güncellensin",
     "help": "Yardım",
-    "storename": "Mağaza Adı",
+    "storename": "Mağaza adı",
     "apikey": "API Key (Merchant ID)",
     "apisecret": "API Secret",
     "sellerid": "Satıcı ID",
     "isSynchronized": "Eşitleme Yapılsın",
     "isUnapprovedOrders": "Onaylanmamış Siparişler Çekilsin",
     "shippingDuration": "Kargo Süresi",
-    "status": "Entegrasyon Durumu",
+    "status": "Entegrasyon durumu",
     "apiinfo": "API Bilgileri",
     "shippinginfo": "Kargo Bilgileri",
     "autoProcessOrders": "Siparişler Otomatik İşleme Alınsın",
@@ -976,7 +976,7 @@
     "all": "Hepsi",
     "select": "Seçiniz",
     "apply": "Uygula",
-    "smartsearch": "Akıllı Arama",
+    "smartsearch": "Akıllı arama",
     "count": "adet",
     "platformPrices": "Platform Fiyat Bilgileri",
     "ok": "Tamam",
@@ -1072,25 +1072,25 @@
   },
   "status": {
     "order": {
-      "unapproved": "Platform Onayı Bekliyor",
-      "awaitingApproval": "Satıcı Onayı Bekliyor",
-      "approved": "Sipariş Onaylandı",
+      "unapproved": "Kanal onayı bekliyor",
+      "awaitingApproval": "Satıcı onayı bekliyor",
+      "approved": "Sipariş onaylandı",
       "shipped": "Kargoda",
-      "delivered": "Teslim Edildi",
-      "cancelled": "İptal Edildi",
+      "delivered": "Teslim edildi",
+      "cancelled": "İptal edildi",
       "returned": "İade Edildi"
     },
     "claim": {
-      "waiting": "Yeni Talep",
+      "waiting": "Yeni talep",
       "underReview": "İncelemede",
       "approved": "Onaylandı",
       "rejected": "Reddedildi",
-      "cancelled": "İptal Edildi",
+      "cancelled": "İptal edildi",
       "disputed": "İtirazda",
       "completed": "Tamamlandı"
     },
     "message": {
-      "waitingSeller": "Cevap Bekleniyor",
+      "waitingSeller": "Cevap bekleniyor",
       "answered": "Cevaplandı",
       "rejected": "Reddedildi",
       "unread": "Okunmadı",
@@ -1110,7 +1110,7 @@
       "processing": "İşleniyor",
       "approved": "Onaylandı",
       "failed": "Hatalı",
-      "cancelled": "İptal Edildi"
+      "cancelled": "İptal edildi"
     },
     "job": {
       "queued": "Kuyrukta",
@@ -1124,7 +1124,7 @@
       "trialing": "Deneme Sürümü",
       "active": "Aktif",
       "pastDue": "Ödeme Gecikti",
-      "canceled": "İptal Edildi"
+      "canceled": "İptal edildi"
     },
     "store": {
       "active": "Aktif",
@@ -1231,11 +1231,11 @@
       "empty": "Katalogda tanımlı bir entegrasyon bulunamadı."
     },
     "probe": {
-      "title": "Son probe turu",
+      "title": "Son kontrol turu",
       "scopeNote": "Probe tüm entegrasyonlar için tek bir platform turu olarak koşar; bu sonuç entegrasyon başına ayrı değildir.",
-      "never": "Henüz kayıtlı bir probe turu yok.",
+      "never": "Henüz kayıtlı bir kontrol turu yok.",
       "notFinished": "Henüz tamamlanmadı",
-      "processed": "{n} probe işlendi",
+      "processed": "{n} kontrol işlendi",
       "failed": "{n} başarısız"
     },
     "table": {
@@ -1485,7 +1485,7 @@
     "save": "Kaydet",
     "guide": {
       "step1Title": "Durum: yakında",
-      "step1Text": "Bu kategoride henüz otomatik entegrasyon bulunmuyor; listedeki sağlayıcılarla henüz bağlantı kurulamıyor.",
+      "step1Text": "Bu kategoride henüz otomatik entegrasyon bulunmuyor; kargo entegrasyonu henüz geliştirilmedi.",
       "step2Title": "Kimlik bilgisi girmeyin",
       "step2Text": "Entegrasyon açılana kadar bu ekrandan API anahtarı veya parola kaydedilmez.",
       "step3Title": "Bugün ne yapabilirim?",
@@ -2002,7 +2002,7 @@
       "title": "Verilerinizi dışa aktarın",
       "description": "KVKK kapsamındaki veri taşınabilirliği için mağazanıza ait verilerin tamamını tek bir arşiv olarak indirin.",
       "facts": {
-        "scope": "Ürünler, varyantlar, kategoriler, markalar, siparişler, müşteriler, iadeler, faturalar, mesajlar, finans kayıtları, ayarlar ve kullanıcılar ZIP arşivinde NDJSON dosyaları olarak yer alır.",
+        "scope": "Ürünler, varyantlar, kategoriler, markalar, siparişler, müşteriler, iadeler, faturalar, mesajlar, finans kayıtları, ayarlar ve kullanıcılar tek bir sıkıştırılmış arşivde yer alır.",
         "secrets": "Parolalar ve pazaryeri API anahtarları gibi gizli bilgiler arşive eklenmez.",
         "validity": "İndirme bağlantısı 24 saat geçerlidir; hazırlık, veri hacmine göre birkaç dakika sürebilir.",
         "singleUse": "Bağlantı tek kullanımlıktır: indirme tamamlanınca arşiv sunucudan silinir."

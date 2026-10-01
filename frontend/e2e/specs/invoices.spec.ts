@@ -16,7 +16,7 @@ test.describe('P2 — Faturalar (InvoiceListView)', () => {
     await openScreen(page, 'InvoiceListView')
 
     await expect(page.locator('.invoiceListView')).toBeVisible()
-    await expect(page.getByLabel('Fatura No, Sipariş No veya Pazar Yeri Kodu Filtrele').first()).toBeVisible()
+    await expect(page.getByLabel('Fatura no, sipariş no veya pazaryeri kodu').first()).toBeVisible()
     await expect(page.getByText('INV-E2E-0001')).toBeVisible()
     await expect(page.getByText('INV-E2E-0002')).toBeVisible()
   })

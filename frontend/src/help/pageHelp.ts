@@ -244,10 +244,10 @@ export const PAGE_HELP: Record<string, PageHelp> = {
     purpose:
       'Mağaza kimliği, fatura bilgileri, lojistik varsayılanları ve bildirim tercihleri.',
     tips: [
-      'Ayarlar dört sekmede toplanır: Mağaza Kimliği, Fatura & Yasal Bilgiler, Lojistik & Operasyon, İletişim & Bildirimler.',
+      'Ayarlar dört sekmede toplanır: Mağaza kimliği, Fatura ve yasal bilgiler, Lojistik ve operasyon, İletişim ve bildirimler.',
       'Kurumsal fatura alanları (firma ünvanı, vergi dairesi, vergi no) yalnızca kurumsal seçildiğinde görünür.',
       'Zaman dilimi, sipariş senkronizasyonunun hangi saate göre yapılacağını belirler.',
-      'Değişiklikler Ayarları Kaydet düğmesine basınca kaydedilir.',
+      'Değişiklikler Ayarları kaydet düğmesine basınca kaydedilir.',
     ],
     shortcuts: ['search', 'tabClose', 'tabNext'],
     article: 'gs-account',
@@ -393,7 +393,7 @@ export const PAGE_HELP: Record<string, PageHelp> = {
       'Fatura tanımları için hazırlanan taslak ekrandır; tablo örnek verilerle gösterilir ve kayıt yapılmaz.',
     tips: [
       'Faturalarınızı Faturalar ekranında görüntüleyip manuel fatura ekleyin.',
-      'Mağazanızın fatura bilgileri Mağaza ayarları ekranındaki Fatura & Yasal Bilgiler sekmesinden kaydedilir.',
+      'Mağazanızın fatura bilgileri Mağaza ayarları ekranındaki Fatura ve yasal bilgiler sekmesinden kaydedilir.',
       'Aradığınız ekranı bulmak için akıllı aramayı (Ctrl+K) kullanın.',
     ],
     shortcuts: ['search', 'tabClose'],
@@ -488,8 +488,8 @@ export const PAGE_HELP: Record<string, PageHelp> = {
     purpose:
       'E-ticaret altyapınızı bağlayın ve API ayarlarını buradan yönetin. Bu sürümde canlı bağlantısı olan e-ticaret altyapısı Ideasoft’tur.',
     tips: [
-      'Ideasoft için mağaza adı, Client ID ve Client Secret girip Entegrasyona Yetki Ver düğmesiyle yetkilendirme başlatın.',
-      'Entegrasyon Durumu çipi yetkilendirmenin tamamlanıp tamamlanmadığını gösterir.',
+      'Ideasoft için mağaza adı, Client ID ve Client Secret girip Entegrasyona yetki ver düğmesiyle yetkilendirme başlatın.',
+      'Entegrasyon durumu çipi yetkilendirmenin tamamlanıp tamamlanmadığını gösterir.',
       'Diğer altyapılar "Yakında" olarak gösterilir; bu sağlayıcılar için kimlik bilgisi alanı yoktur.',
     ],
     shortcuts: ['search', 'tabClose', 'tabNext'],
@@ -554,8 +554,8 @@ export const PAGE_HELP: Record<string, PageHelp> = {
     purpose:
       'Fatura bilgileri için hazırlanan taslak ekrandır; bu ekrandaki alanlar kaydedilmez.',
     tips: [
-      'Mağazanızın fatura bilgilerini Mağaza ayarları ekranındaki Fatura & Yasal Bilgiler sekmesinden kaydedin.',
-      'Abonelik planınızı ve durumunu Abonelik ve Planlar ekranında görebilirsiniz.',
+      'Mağazanızın fatura bilgilerini Mağaza ayarları ekranındaki Fatura ve yasal bilgiler sekmesinden kaydedin.',
+      'Abonelik planınızı ve durumunu Abonelik ve planlar ekranında görebilirsiniz.',
       'Aradığınız ekranı bulmak için akıllı aramayı (Ctrl+K) kullanın.',
     ],
     shortcuts: ['search', 'tabClose'],
@@ -582,7 +582,7 @@ export const PAGE_HELP: Record<string, PageHelp> = {
     tips: [
       'Üstteki durum bandı aboneliğinizin güncel durumunu (deneme, aktif, ödeme sorunu, askı veya bitiş) ve ne anlama geldiğini açıklar.',
       'Plan kartlarında kanal, varyant (SKU), kullanıcı ve günlük MCP çağrısı limitleri yer alır.',
-      'Bu Plana Geç düğmesi onay sonrası ödeme adımını başlatır; durum, ödeme sağlayıcısından onay gelince güncellenir.',
+      'Bu plana geç düğmesi onay sonrası ödeme adımını başlatır; durum, ödeme sağlayıcısından onay gelince güncellenir.',
     ],
     shortcuts: ['search', 'tabClose'],
     article: 'acc-subscription',

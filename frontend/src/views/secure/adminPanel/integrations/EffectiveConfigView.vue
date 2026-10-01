@@ -108,7 +108,7 @@ const api = useIntegrationConfigApi()
 const target = ref<string | null>(null)
 const targetLabel = computed(() => {
   if (!target.value) return ''
-  if (target.value === ENGINE_TARGET) return 'Motor Ayarları'
+  if (target.value === ENGINE_TARGET) return 'Motor ayarları'
   return target.value.charAt(0).toUpperCase() + target.value.slice(1)
 })
 

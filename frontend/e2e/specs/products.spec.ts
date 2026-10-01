@@ -12,7 +12,7 @@ test.describe('P1 — Ürünler (ProductListView)', () => {
     await openScreen(page, 'ProductListView')
 
     await expectScreenOpen(page, '.productListView')
-    await expect(page.getByLabel('Ürün Adı, Stok Kodu, Barkod').first()).toBeVisible()
+    await expect(page.getByLabel('Ürün adı, stok kodu, barkod').first()).toBeVisible()
     // Birleştirme (Aşama 3): pano kartları da aynı ürün adını taşıyor (gizli sekmede DOM'da) → ekrana kapsandı.
     await expect(page.locator('.productListView').getByText('E2E Test Ürünü', { exact: true })).toBeVisible()
     await expect(page.locator('.productListView').getByText('E2E İkinci Ürün', { exact: true })).toBeVisible()

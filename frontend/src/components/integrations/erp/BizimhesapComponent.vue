@@ -19,7 +19,7 @@
         <EkFormSection title="Ürün işlemleri" icon="mdi-sync"
           description="Bizimhesap ürünlerini Entegrasyonik ürünleriyle eşleştirir.">
           <div class="ek-span-full">
-            <EkButton tone="secondary" icon="mdi-link-variant" @click="checkStatus()">Ürünleri Eşleştir</EkButton>
+            <EkButton tone="secondary" icon="mdi-link-variant" @click="checkStatus()">Ürünleri eşleştir</EkButton>
           </div>
         </EkFormSection>
       </v-window-item>

@@ -19,7 +19,7 @@ test.describe('ADR-0012 — Derin bağlantı', () => {
     // çoklu-seçim durum alanına yazıyor (bkz. navigation/screens.ts yorumu) — chip olarak görünür.
     // DS-v2 Aşama 2: aynı metin artık panel alanında, aktif filtre çipinde ve satır durumunda görünür;
     // filtrenin uygulandığını aktif filtre çipi kanıtlar.
-    await expect(page.locator('.orderListView').getByRole('group', { name: 'Aktif filtreler' }).getByText('Satıcı Onayı Bekliyor')).toBeVisible()
+    await expect(page.locator('.orderListView').getByRole('group', { name: 'Aktif filtreler' }).getByText('Satıcı onayı bekliyor')).toBeVisible()
   })
 
   test('bilinmeyen slug panoya düşer + bildirim gösterilir', async ({ page }) => {
@@ -173,7 +173,7 @@ test.describe('ADR-0012 — PII URL\'e YAZILMAZ (Karar 2)', () => {
     })
     await gotoAuthed(page)
 
-    await page.getByPlaceholder('Akıllı Arama').first().fill('E2E-100001')
+    await page.getByPlaceholder('Akıllı arama').first().fill('E2E-100001')
     await expect(page.getByText('E2E-100001', { exact: false }).first()).toBeVisible({ timeout: 5000 })
     await page.getByText('E2E-100001', { exact: false }).first().click()
 

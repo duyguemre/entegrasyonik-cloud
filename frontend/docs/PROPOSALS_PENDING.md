@@ -269,3 +269,25 @@ yukarıda "KARAR" ile kapatıldı. P-R3A-*, P-R3B-*, C01–C09 FR3 turunda K49'D
 | B-R3D-3 | Menü verisinde kalıcı grup düzeni (Ayarlar bölümü: Mağaza ayarları, Çıktılar, Yetkilendirme; Finans grubu yalnız finans) | P11 | FE eşlemesi `menuShape.regroupMenu`; backend düzeni gelince eşleme no-op olur |
 | B-R3D-4 | E-posta şablonlarında "şifre" → "parola" | P07 | Uygulama metinleri tamam |
 | B-R3D-5 | Denetim DTO'sunda silinmiş kullanıcı için ad/maskeli e-posta anlık görüntüsü (`actorLabel`) | P09 | Bugün dizinden çözülüyor; dizin eksikse "Bilinmeyen kullanıcı" |
+
+### Kimlik denetimi (FR3 madde 18) — onay bekleyen öneriler
+
+Kaynak: `docs/fe-r3d-review/README.md` §3 (43 ekran × light/dark × 1440/390; axe 0 ihlal, yatay taşma 0). Bariz olanlar
+uygulandı; aşağıdakiler davranış, düzen veya ortak bileşen kararı içerdiği için onay bekler.
+
+| # | Ekran | Öneri | Neden onay gerekiyor | Durum |
+|---|---|---|---|---|
+| P-R3D-1 | Finans › işlem detayı | Ortalanmış diyalog → r3b'nin ortak kayıt detayı deseni (`EkRecordSheet` + `EkDetailPanel`; özet kartı, başlıklı kartlar). Etiketler cümle düzeni ("İŞLEM REFERANSI" → "İşlem no"), eksi işareti tabloyla tek (`−`) | FR3-12 listesinde yoktu; diyalogdan yan sayfaya geçiş akış değişikliği | BEKLİYOR |
+| P-R3D-2 | Tüm listeler | Satır eylemleri tek desen: görüntüle (göz) + `⋯` taşma; sil taşma menüsünde. Bugün: sipariş/iade/fatura göz + ⋯, müşteri/kayıtlar göz + kırmızı çöp, ürün kalem + çöp, mesaj ilk satırda yanıt glifi; eylemi olmayan satırda göz ⋯ yuvasına kayıyor (hizasız) | Silme erişimini bir tık derine iter (davranış) | BEKLİYOR |
+| P-R3D-3 | Liste ekranları | Tek birincil eylem (§1): sayfanın "Yeni …" eylemi (Yeni ürün, Yeni fatura, Yeni mağaza, Yeni talep, Yeni personel) dolgu birincil; filtre panelindeki "Sorgula" ikincil (Enter ile sorgulama zaten var) | Ortak `EkFilterPanel` görünümü tüm listelerde değişir | BEKLİYOR |
+| P-R3D-4 | Faturalar, Mesajlar, İşlem kayıtları, Finans | P04'ün devamı: liste tarih kolonunda yalnız gün, saat ipucunda (Siparişler/İadeler gibi). İşlem kayıtlarında Başlangıç/Bitiş için saat önemli → orada "Bitiş" yalnız saat (aynı gün) önerilir | Mesaj/işlem kayıtlarında saat iş bilgisi olabilir | BEKLİYOR |
+| P-R3D-5 | Ana sayfa, Bildirimler | Dekoratif renkli ikon karoları (KPI: mavi/yeşil/teal/turuncu; bildirim kategorileri) nötr; renk yalnız durum taşıyan karoda (§2) | Ana sayfa görsel dili (r3b kararı) değişir | BEKLİYOR |
+| P-R3D-6 | 390 liste kart görünümü | Kart düzeninde masaüstü kolon/sıralama başlık satırı sağdan kırpılıyor (siparişler, iadeler, faturalar, destek, yetkilendirme, yönetim listeleri) → kart modunda başlık satırı gizlenir, sıralama "Sırala" menüsüne taşınır | Ortak `EkDataGrid` mobil etkileşimi | BEKLİYOR |
+| P-R3D-7 | Entegrasyon sağlığı | Ham kod/uç nokta ("UNAVAILABLE", "RATE_LIMITED", "GET /orders") okunur metinle aynı satırda → P09 deseni: okunur metin üstte, kod + uç nokta ikincil satır veya "Teknik ayrıntı" | Destek ekibinin kullandığı bilgi görünürlüğü | BEKLİYOR |
+| P-R3D-8 | Entegrasyon formları | Alan adları İngilizce/başlık düzeni ("API Key (Merchant ID)", "API Secret", "Client ID", "Satıcı ID") → "API anahtarı", "API gizli anahtarı", "İstemci kimliği", "Satıcı no"; pazaryerinin kendi terimi yardım metninde | Kullanıcı pazaryeri panelindeki adı birebir arıyor olabilir | BEKLİYOR |
+| P-R3D-9 | Abonelik | Plan kartlarında iki dolgu "Bu plana geç" → mevcut plandan üste "Yükselt" (birincil), alta "Plana geç" (ikincil); "MCP çağrısı / gün" → "Yapay zekâ bağlantısı çağrısı / gün" | Satış akışı ve plan dili | BEKLİYOR |
+| P-R3D-10 | Kabuk | Üst bar altındaki "—" tutamağı (`ShellChromeHandle`) tüm ekranlarda kırpık bir sekme gibi görünüyor (3 bağımsız inceleme aynı bulgu) → tam düğme biçimi (radius + kenarlık) ya da sekme şeridinin sağ ucunda satır içi düğme | FR2 kabuk kararı (üst barı gizle / odak modu) | BEKLİYOR |
+| P-R3D-11 | Sekme şeridi | Pasif sekmede yer varken başlık soluyor ("Anasayf…"; ~220px sekmede) → solma yalnız başlık sığmadığında | r3a sekme ölçü kuralı | BEKLİYOR |
+| P-R3D-12 | Yardım merkezi | Hero kartında gradyan dolgu, koyu temada parlak mavi kenarlık → düz `surface-raised` + standart kenarlık (§1) | Yardım merkezinin görsel kimliği | BEKLİYOR |
+| P-R3D-13 | Otopilot | Boş durum "Otopilot şu an kapalı" sonraki adım vermiyor → ikincil "Otopilot ayarları" düğmesi; başlık ortalanmış kapta, diğer sayfalar gibi sayfa boşluğuna hizalı | Sohbet paketi yerleşimi (chat-fe) | BEKLİYOR |
+| P-R3D-14 | Yönetim ekranları (backoffice yüzeyi web içinde) | Motor ayarları salt-okunur alanlar boş görünüyor (değer yardım satırında), süre birimleri tutarsız (45000 ms ↔ 45 sn), "Kaynak" boş hücre, KPI'da aralıklı yazı, sistem ekranında iki yarım 4px kayık, renkli başlık ikonları | Yönetim yüzeyi (K48: backoffice serbest — ayrı tur) | BEKLİYOR |

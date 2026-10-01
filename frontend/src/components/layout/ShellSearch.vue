@@ -1,7 +1,7 @@
 <!--
   frontend/src/components/layout/ShellSearch.vue
 
-  DS-v2 Aşama 2 — üst barın BİRLEŞİK akıllı araması (eski "Akıllı Arama" alanı +
+  DS-v2 Aşama 2 — üst barın BİRLEŞİK akıllı araması (eski "Akıllı arama" alanı +
   komut paleti tek yerde; Ctrl+K buraya odaklanır). Sunum `EkSmartSearch`;
   veri kaynakları GERÇEK:
     - Boş sorgu (odakta): "Son açılanlar" — bu oturumda etkinleştirilen sekmeler
