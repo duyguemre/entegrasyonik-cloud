@@ -86,13 +86,11 @@ describe('sahne kancaları (S2a yer tutucuları + S3 sahneleri + S7 sahneleri)',
     'stock-single-winner',
     'orders-merge',
     'integration-status',
-    'secret-encryption',
-    'tenant-isolation',
     'request-guard',
     'ecosystem',
   ]
   /** Birden çok öğede kullanılan sahneler: en az bu kadar. */
-  const REPEATED: Record<string, number> = { 'section-head': 8, reveal: 3, tile: 5, 'story-step': 5, 'how-progress': 3 }
+  const REPEATED: Record<string, number> = { 'section-head': 8, reveal: 3, tile: 3, 'story-step': 5, 'how-progress': 3 }
 
   it('sahneler: tekil sahneler bir kez, tekrarlayanlar beklenen sayıda; fiyat vurgusu ve kapanış dahil', () => {
     const found = attrValues(/data-scene="([^"]+)"/g)
@@ -106,7 +104,7 @@ describe('sahne kancaları (S2a yer tutucuları + S3 sahneleri + S7 sahneleri)',
   })
 
   it('görsel sahneler aria-hidden (anlam çevredeki metindedir); içerik taşıyan sahneler gerçek DOM (ol / kart + aria-hidden şemalar)', () => {
-    for (const scene of ['hero-mock', 'hero-bg', 'stock-single-winner', 'orders-merge', 'integration-status', 'secret-encryption', 'tenant-isolation', 'request-guard']) {
+    for (const scene of ['hero-mock', 'hero-bg', 'stock-single-winner', 'orders-merge', 'integration-status', 'request-guard']) {
       const tag = html.match(new RegExp(`<[a-z]+[^>]*data-scene="${scene}"[^>]*>`))![0]
       expect(tag, scene).toContain('aria-hidden="true"')
     }
@@ -314,7 +312,9 @@ describe('içerik kayıttan gelir', () => {
     expect(ps).toContain('data-scroll-progress')
     expect(ps).not.toContain('ps__compare')
     const t = textOf(ps)
-    for (const g of ['Merkezi stok yönetimi', 'Aşırı satışa karşı rezervasyon', 'Tek sipariş akışı', 'Kurumsal düzeyde güvenlik']) expect(t, g).toContain(g)
+    for (const g of ['Merkezi stok yönetimi', 'Aşırı satışa karşı rezervasyon', 'Tek sipariş akışı', 'Otopilot takipte']) expect(t, g).toContain(g)
+    // S27a (SR4 madde 5): güvenlik anlatısı yalnız Güvenlik bölümünde — sorun–çözüm kartında tekrar yok
+    expect(t).not.toMatch(/Kurumsal düzeyde güvenlik|şifreli saklanır|izole bir alanda/)
     for (const i of getPublicIntegrations()) expect(t, i.name).not.toContain(i.name)
   })
 
@@ -472,7 +472,7 @@ describe('animasyon sahneleri: betik, durdurma kontrolü, CSP (ADR-0014 S3)', ()
       .join('\n')
     expect(css).toMatch(/prefers-reduced-motion:\s*no-preference/)
     expect(css).toMatch(/data-motion[=\]]/)
-    for (const scene of ['hero-mock', 'hero-bg', 'marquee', 'problem-solution', 'stock-single-winner', 'orders-merge', 'integration-status', 'secret-encryption', 'tenant-isolation', 'story-step', 'how-progress', 'request-guard', 'price-emphasis']) {
+    for (const scene of ['hero-mock', 'hero-bg', 'problem-solution', 'stock-single-winner', 'orders-merge', 'integration-status', 'story-step', 'how-progress', 'request-guard', 'price-emphasis']) {
       expect(css, scene).toContain(scene)
     }
     // döngüsel hareket yalnızca oynatma durumunda ve görünürken çalışır

@@ -705,6 +705,7 @@ const innerCodes = orbitCodes.filter((_, i) => i % 2 === 1)
         opacity: 0;
       }
     }
+    /* S27a (N9): yörünge halkalarının sürekli dönüşü kaldırıldı (halkalar sabit dekor); döngü yalnız akış paketlerinde. */
     @keyframes eco-lit {
       0%,
       100% {
@@ -715,11 +716,6 @@ const innerCodes = orbitCodes.filter((_, i) => i % 2 === 1)
       }
       30% {
         opacity: 0;
-      }
-    }
-    @keyframes eco-orbit {
-      to {
-        rotate: 1turn;
       }
     }
 
@@ -756,13 +752,6 @@ const innerCodes = orbitCodes.filter((_, i) => i % 2 === 1)
     }
     :global(html[data-motion='play']) .eco[data-state='play'] .eco__ring--late {
       animation-delay: calc(var(--T) * 0.6);
-    }
-    :global(html[data-motion='play']) .eco[data-state='play'] .eco__orbit--outer {
-      animation: eco-orbit var(--site-motion-ambient-slow) var(--site-motion-ease-linear) infinite paused;
-    }
-    :global(html[data-motion='play']) .eco[data-state='play'] .eco__orbit--inner {
-      animation: eco-orbit var(--site-motion-ambient-slow) var(--site-motion-ease-linear) infinite reverse paused;
-      animation-duration: calc(var(--site-motion-ambient-slow) * 0.7);
     }
     :global(html[data-motion='play']) .eco[data-state='play'] .eco__packet--out {
       animation: eco-travel var(--site-motion-ambient-fast) var(--site-motion-ease-loop) infinite paused;
@@ -867,7 +856,7 @@ const innerCodes = orbitCodes.filter((_, i) => i % 2 === 1)
       animation: eco-stream var(--site-motion-ambient-fast) var(--site-motion-ease-loop) infinite paused;
       animation-delay: calc(var(--T) * var(--k, 0) / 4 + var(--T) * 0.42);
     }
-    :global(html[data-motion='play']) .eco[data-state='play'][data-visible='true'] :is(.eco__ring, .eco__orbit, .eco__packet, .eco__beam, .eco__lit, .eco__dots > i, .eco__stream),
+    :global(html[data-motion='play']) .eco[data-state='play'][data-visible='true'] :is(.eco__ring, .eco__packet, .eco__beam, .eco__lit, .eco__dots > i, .eco__stream),
     :global(html[data-motion='play']) .eco[data-state='play'][data-visible='true'] .eco__icon :global(svg) {
       animation-play-state: running;
     }

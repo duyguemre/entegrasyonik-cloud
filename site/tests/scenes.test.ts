@@ -33,8 +33,6 @@ const ENTER_SCENES: Record<string, string> = {
   'stock-single-winner': 'components/home/Capabilities.astro',
   'orders-merge': 'components/home/Capabilities.astro',
   'integration-status': 'components/home/Capabilities.astro',
-  'secret-encryption': 'components/home/Capabilities.astro',
-  'tenant-isolation': 'components/home/Capabilities.astro',
   'story-step': 'components/home/OrderStory.astro',
   'how-progress': 'components/home/HowItWorks.astro',
   'request-guard': 'components/home/SecuritySummary.astro',

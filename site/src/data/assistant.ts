@@ -293,6 +293,15 @@ export const heroAgentEntry = {
   },
 }
 
+/**
+ * S27a (SR4 madde 2/5): sorun–çözüm vitrin kartında güvenlik maddesinin yerine Otopilot maddesi (güvenlik anlatısı
+ * yalnız Güvenlik bölümünde). Katı taramadan geçer; metin vaat kaydından.
+ */
+export const homeAgentGain = {
+  title: `${AGENT_BRAND} takipte`,
+  text: claim('agents-lead'),
+}
+
 /** Özellikler sayfası köprüsü (claims.test.ts katı taramasından geçer). */
 export const featuresBridge = {
   eyebrow: 'Yeni',

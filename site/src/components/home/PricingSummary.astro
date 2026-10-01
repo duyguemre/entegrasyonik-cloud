@@ -16,6 +16,11 @@
  *
  * Vurgulanan plan: sabit fiyatlı planlar arasında en kapsamlı özellik setine sahip kademe (seed'deki plan koduna
  * bağlı TASARIM kararı; "en popüler" gibi uydurma istatistik İDDİASI DEĞİLDİR).
+ *
+ * S27a (SR4 madde 4, K46): her plan kartında Otopilot bloğu — fiyat sayfasıyla AYNI kayıt (`getPlanAgentSummary`,
+ * `planAgentIntro`; pricing.ts). Alt plan temel küme ("sınırlı"), üst planlar yalnız eklenenler; rakam/kredi/token yok.
+ * Kart altındaki güvence satırı (kart verisi, rol yetkisi, izole veri) kaldırıldı: aynı iddialar hemen aşağıdaki
+ * Güvenlik bölümünde (N3: her güvenlik iddiası sayfada bir kez).
  */
 import Section from '../Section.astro'
 import SectionHeading from './SectionHeading.astro'
@@ -23,7 +28,7 @@ import Button from '../Button.astro'
 import Icon from './Icon.astro'
 import { appUrls } from '../../lib/site-config'
 import { getPublicPlans, getPlanSourceNotice, getPublicTrial, getTrialPlanCode, type PublicPlan } from '../../data/plans'
-import { getPlanPitch, getPlanCommonFeatures } from '../../data/pricing'
+import { getPlanPitch, getPlanCommonFeatures, getPlanAgentSummary, planAgentIntro } from '../../data/pricing'
 import { pageHref } from './links'
 
 const plans = getPublicPlans()
@@ -60,6 +65,8 @@ const cards = plans.map((p, i) => {
     recommended: p.code === RECOMMENDED_PLAN_CODE,
     includesLabel: prev ? `${prev.name} planındaki her şey, artı:` : 'Her planda standart:',
     includes: prev ? extra : common,
+    agent: getPlanAgentSummary(p.code),
+    agentLabel: prev ? `${prev.name} planındakilere ek olarak` : undefined,
   }
 })
 ---
@@ -77,11 +84,12 @@ const cards = plans.map((p, i) => {
     <li><Icon name="clock" size="sm" /><span><strong>{trial.days} gün</strong> ücretsiz deneme</span></li>
     {!trial.cardRequired && <li><Icon name="card" size="sm" /><span>Kart bilgisi gerekmez</span></li>}
     <li><Icon name="refresh" size="sm" /><span>Planınızı büyüdükçe yükseltin</span></li>
+    <li class="pr__perk-agent" data-testid="perk-agent"><Icon name="sparkle" size="sm" /><span>{planAgentIntro.eyebrow}</span></li>
   </ul>
 
   <ul class="pr__grid" data-scene="price-emphasis" data-testid="plan-grid">
     {
-      cards.map(({ plan: p, pitch, recommended, includesLabel, includes }) => (
+      cards.map(({ plan: p, pitch, recommended, includesLabel, includes, agent, agentLabel }) => (
         <li class:list={['plan', { 'plan--rec': recommended }]} data-part="plan" data-code={p.code} data-tilt data-recommended={recommended ? 'true' : undefined}>
           {recommended && <span class="plan__glow" data-part="plan-glow" aria-hidden="true" />}
           <div class="plan__frame">
@@ -165,6 +173,19 @@ const cards = plans.map((p, i) => {
                 </ul>
               </div>
             )}
+
+            {agent && (
+              <div class="plan__agent" data-testid={`plan-agent-${p.code}`}>
+                <p class="plan__agent-title">
+                  <span class="plan__agent-icon" aria-hidden="true"><Icon name="sparkle" size="sm" /></span>
+                  {agent.title}
+                  {agentLabel && <span class="plan__agent-sub">{agentLabel}</span>}
+                </p>
+                <ul class="plan__agent-list">
+                  {agent.items.map((it) => <li>{it}</li>)}
+                </ul>
+              </div>
+            )}
           </div>
         </li>
       ))
@@ -172,11 +193,9 @@ const cards = plans.map((p, i) => {
   </ul>
 
   <div class="pr__foot">
-    <ul class="pr__trust" aria-label="Güvenceler">
-      <li><Icon name="lock" size="sm" />Kart verisi sistemlerimizden geçmez</li>
-      <li><Icon name="users" size="sm" />Ekip arkadaşlarınız için rol tabanlı yetki</li>
-      <li><Icon name="shield" size="sm" />Verileriniz izole bir alanda</li>
-    </ul>
+    <p class="pr__agent-note" data-testid="plan-agent-note">
+      <Icon name="sparkle" size="sm" /><strong>{planAgentIntro.title}.</strong> <span>{planAgentIntro.points.join(' · ')}</span>
+    </p>
     {pricingHref && (
       <a class="link pr__more" href={pricingHref}>
         Planları ayrıntılı karşılaştırın <Icon name="arrow" size="sm" />
@@ -495,22 +514,6 @@ const cards = plans.map((p, i) => {
     margin-top: var(--ek-space-12);
     text-align: center;
   }
-  .pr__trust {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: var(--ek-space-3) var(--ek-space-8);
-    color: var(--ek-color-content-default);
-    font-size: var(--ek-font-size-md);
-  }
-  .pr__trust li {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--ek-space-2);
-  }
-  .pr__trust :global(.icon) {
-    color: var(--ek-color-secondary-darken-1);
-  }
   /* S15: alt çizgisiz merkezi `.link` stili (global.css); burada yalnızca boyut */
   .pr__more {
     font-size: var(--ek-font-size-lg);
@@ -563,5 +566,95 @@ const cards = plans.map((p, i) => {
     :global(html[data-motion='play']) [data-scene='price-emphasis'][data-state='play'][data-visible='true'] .plan__beam {
       animation-play-state: running;
     }
+  }
+
+  /* --- Otopilot bloğu (S27a, K46): kart içinde ince teal çerçeveli alan; önerilen kartta koyu zemine uyumlu --- */
+  .plan__agent {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-2);
+    margin-top: var(--ek-space-5);
+    padding: var(--ek-space-4);
+    border: var(--site-border-width) solid var(--site-accent-line);
+    border-radius: var(--ek-radius-lg);
+    background: color-mix(in srgb, var(--ek-color-secondary) 7%, transparent);
+  }
+  .plan__agent-title {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--ek-space-1) var(--ek-space-2);
+    margin: 0;
+    color: var(--ek-color-content-strong);
+    font-size: var(--site-card-desc-size);
+    font-weight: var(--ek-font-weight-bold);
+  }
+  .plan__agent-icon {
+    display: inline-grid;
+    place-items: center;
+    width: var(--ek-space-6);
+    height: var(--ek-space-6);
+    border-radius: var(--ek-radius-md);
+    background: var(--site-gradient-accent);
+    color: var(--site-color-on-primary);
+  }
+  .plan__agent-sub {
+    flex-basis: 100%;
+    color: var(--ek-color-content-muted);
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--ek-font-weight-medium);
+  }
+  .plan__agent-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-1);
+    margin: 0;
+    padding: 0 0 0 var(--ek-space-8);
+    list-style: none;
+    color: var(--ek-color-content-default);
+    font-size: var(--ek-font-size-sm);
+  }
+  .plan__agent-list li {
+    position: relative;
+  }
+  .plan__agent-list li::before {
+    content: '';
+    position: absolute;
+    inset-inline-start: calc(var(--ek-space-4) * -1);
+    inset-block-start: 0.6em;
+    width: var(--ek-space-1);
+    height: var(--ek-space-1);
+    border-radius: var(--ek-radius-full);
+    background: var(--ek-color-secondary);
+  }
+  .plan--rec .plan__agent {
+    border-color: color-mix(in srgb, var(--ek-color-secondary) 45%, transparent);
+    background: color-mix(in srgb, var(--ek-color-secondary) 12%, transparent);
+  }
+  .plan--rec .plan__agent-title {
+    color: var(--site-color-on-primary);
+  }
+  .plan--rec :is(.plan__agent-sub, .plan__agent-list) {
+    color: var(--site-color-on-primary-muted);
+  }
+  .pr__perks .pr__perk-agent {
+    border-color: var(--site-accent-line);
+    background: color-mix(in srgb, var(--ek-color-secondary) 8%, transparent);
+  }
+  .pr__agent-note {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: var(--ek-space-2);
+    margin: 0;
+    color: var(--ek-color-content-default);
+    font-size: var(--ek-font-size-sm);
+  }
+  .pr__agent-note :global(.icon) {
+    color: var(--site-accent);
+  }
+  .pr__agent-note strong {
+    color: var(--ek-color-content-strong);
   }
 </style>
