@@ -9,8 +9,8 @@
   zamanı bilinir — ara durumlar/zamanlar UYDURULMAZ. Durumsuz kalem (eski sipariş) "—" gösterir.
 -->
 <template>
-  <section class="ek-alloc" :aria-labelledby="headingId">
-    <h2 :id="headingId" class="ek-alloc__heading" :class="{ 'ek-sr-only': embedded }">{{ title }}</h2>
+  <component :is="embedded ? 'div' : 'section'" class="ek-alloc" :aria-labelledby="embedded ? undefined : headingId">
+    <h2 v-if="!embedded" :id="headingId" class="ek-alloc__heading">{{ title }}</h2>
 
     <p v-if="entries.length === 0" class="ek-alloc__empty">Bu siparişte kalem yok.</p>
 
@@ -40,7 +40,7 @@
         </ol>
       </li>
     </ol>
-  </section>
+  </component>
 </template>
 
 <script setup lang="ts">

@@ -218,7 +218,7 @@ function countsText(s: ProductChannelStatus): string {
   flex-direction: column;
   gap: 6px;
   padding: 10px var(--ek-space-3) 10px var(--ek-space-4);
-  transition: background-color var(--ek-duration-fast) var(--ek-easing-standard);
+  transition: background-color var(--ek-motion-feedback);
 }
 
 .pcs-row + .pcs-row {
@@ -284,7 +284,7 @@ function countsText(s: ProductChannelStatus): string {
   height: 18px;
   border-radius: var(--ek-radius-full);
   background: var(--ek-color-border-strong);
-  transition: background-color var(--ek-duration-fast) var(--ek-easing-standard);
+  transition: background-color var(--ek-motion-feedback);
 }
 
 .pcs-switch__knob {
@@ -296,7 +296,7 @@ function countsText(s: ProductChannelStatus): string {
   border-radius: var(--ek-radius-full);
   background: var(--ek-color-surface);
   box-shadow: var(--ek-shadow-card);
-  transition: transform var(--ek-duration-fast) var(--ek-easing-standard);
+  transition: transform var(--ek-motion-feedback);
 }
 
 .pcs-switch[aria-checked='true'] .pcs-switch__track { background: var(--ek-color-action); }
