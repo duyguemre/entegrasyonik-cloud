@@ -99,5 +99,5 @@ Sonuçlar dal sonundaki koşudan (bkz. commit mesajı ve aşağıdaki tablo).
 | `test:backoffice` | 101/102 — bilinen `p2-states REAUTH` (backend `retryJobs`; fe-r3d HANDOFF'ta ve main'de aynı) |
 | e2e/preview/pwa.spec.ts (üretim derlemesi) | 4/4 |
 | e2e/specs/mob-00-mobile.spec.ts (chromium-mobile) | 27/27 |
-| Playwright tam (`--update-snapshots=missing`) | TAM_KOSU |
+| Playwright tam (`--update-snapshots=missing`, 2988 test) | 1647 geçti, 1127 atlandı (proje filtresi/inceleme spec'leri); ilk koşudaki kırıklar ilk-taban ekran görüntüsü yazımı; ikinci koşuda kalan 2: `logs` mobil taban (tek başına geçti, yük) ve `session-isolation` (fe-r3d P05 sekme adı "İadeler" — beklenti güncellendi, 3/3) |
 | e2e/preview/preview-smoke.spec.ts | 3 kırık, bu daldan bağımsız (eski logger metni regex'i, eski `.large-stat-card` seçicisi) |
