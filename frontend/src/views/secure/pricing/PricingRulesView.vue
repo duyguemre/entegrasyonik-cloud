@@ -55,7 +55,7 @@
 
           <!-- ÖNERİLER -->
           <section v-if="tab === 'suggestions'" class="pr-panel pr-section" aria-labelledby="pr-sug-title" data-testid="suggestions-panel">
-            <h2 id="pr-sug-title" class="sr-only">{{ t('pricingRules.tabs.suggestions') }}</h2>
+            <h2 id="pr-sug-title" class="ek-sr-only">{{ t('pricingRules.tabs.suggestions') }}</h2>
             <div class="pr-toolbar">
               <v-select v-model="sugStatus" :items="statusItems" item-title="title" item-value="value" density="compact" variant="outlined" hide-details
                 class="pr-toolbar__status" :label="t('pricingRules.suggestions.filterLabel')" data-testid="suggestion-status" />
@@ -157,9 +157,9 @@
                 <dl class="pr-rule__grid">
                   <div><dt>{{ t('pricingRules.form.mode') }}</dt><dd>{{ r.competition.mode === 'below' ? t('pricingRules.rules.modeBelow') : t('pricingRules.rules.modeAbove') }}</dd></div>
                   <div><dt>{{ t('pricingRules.rules.delta') }}</dt><dd class="ek-num">{{ deltaText(r) }}</dd></div>
-                  <div><dt>{{ t('pricingRules.rules.floor') }}</dt><dd>{{ t('pricingRules.rules.floorValue', { margin: formatNumber(r.competition.floorMarginPercent) }) }}</dd></div>
+                  <div><dt>{{ t('pricingRules.rules.floor') }}</dt><dd>{{ t('pricingRules.rules.floorValue', { margin: pct(r.competition.floorMarginPercent) }) }}</dd></div>
                   <div><dt>{{ t('pricingRules.rules.ceiling') }}</dt><dd class="ek-num">{{ formatMoney(r.competition.ceiling) }}</dd></div>
-                  <div><dt>{{ t('pricingRules.rules.limits') }}</dt><dd class="ek-num">{{ t('pricingRules.rules.limitsValue', { changes: r.competition.maxChangesPerDay, cooldown: r.competition.cooldownMin, increase: formatNumber(r.competition.maxIncreasePercentPerDay) }) }}</dd></div>
+                  <div><dt>{{ t('pricingRules.rules.limits') }}</dt><dd class="ek-num">{{ t('pricingRules.rules.limitsValue', { changes: r.competition.maxChangesPerDay, cooldown: r.competition.cooldownMin, increase: pct(r.competition.maxIncreasePercentPerDay) }) }}</dd></div>
                   <div><dt>{{ t('pricingRules.rules.scope') }}</dt><dd>{{ r.scope.barcodes.length ? t('pricingRules.rules.scopeBarcodes', { n: r.scope.barcodes.length }) : t('pricingRules.rules.scopeAll') }}</dd></div>
                 </dl>
                 <p class="pr-muted ek-num">{{ t('pricingRules.rules.open', { n: r.suggestions.open }) }} · {{ t('pricingRules.rules.blocked', { n: r.suggestions.blocked }) }}</p>
@@ -169,7 +169,7 @@
 
           <!-- FİYAT GEÇMİŞİ (denetim) -->
           <section v-else class="pr-panel pr-section" aria-labelledby="pr-hist-title" data-testid="history-panel">
-            <h2 id="pr-hist-title" class="sr-only">{{ t('pricingRules.tabs.history') }}</h2>
+            <h2 id="pr-hist-title" class="ek-sr-only">{{ t('pricingRules.tabs.history') }}</h2>
             <EkDataGrid :columns="histColumns" :rows="histRows" row-key="id" label-key="barcode" :label="t('pricingRules.history.listLabel')"
               :loading="histLoading" :error="histError" :error-title="t('pricingRules.errors.load')"
               :empty-title="t('pricingRules.history.emptyTitle')" :empty-text="t('pricingRules.history.emptyText')" empty-icon="mdi-history" data-testid="history-grid">
@@ -192,7 +192,7 @@
     <EkFormDialog v-model="consentOpen" :title="t('pricingRules.consent.title')" icon="mdi-file-sign" :submit-label="t('pricingRules.consent.submit')"
       :submit-disabled="!consentAccepted || !dualAck" :loading="busy" data-testid="consent-dialog" @submit="enable">
       <div v-if="rules" class="pr-consent">
-        <EkStatusChip v-if="rules.consent.draft" tone="warning" icon="mdi-alert-circle-outline" :label="t('pricingRules.consent.draft')" data-testid="consent-draft" />
+        <EkStatusChip v-if="rules.consent.draft" class="pr-consent__chip" tone="warning" icon="mdi-alert-circle-outline" :label="t('pricingRules.consent.draft')" data-testid="consent-draft" />
         <p class="pr-consent__text" data-testid="consent-text">{{ consentText }}</p>
         <p class="pr-muted ek-num">{{ t('pricingRules.consent.version', { version: rules.consent.version }) }}</p>
         <v-checkbox v-model="consentAccepted" density="compact" hide-details :label="t('pricingRules.consent.accept')" data-testid="consent-accept" />
@@ -226,7 +226,7 @@
       <v-text-field v-model.number="form.cooldownMin" type="number" :min="limits.minCooldownMin" :label="t('pricingRules.form.cooldownMin')" density="compact" variant="outlined"
         :error-messages="err('cooldownMin')" data-testid="f-cooldown" />
       <v-text-field v-model.number="form.maxIncreasePercentPerDay" type="number" min="0" :max="limits.maxIncreasePercentPerDay" :label="t('pricingRules.form.maxIncrease')" density="compact" variant="outlined"
-        :hint="t('pricingRules.form.maxIncreaseHint', { max: limits.maxIncreasePercentPerDay, max30: limits.maxIncreasePercent30d })" persistent-hint
+        :hint="t('pricingRules.form.maxIncreaseHint', { max: pct(limits.maxIncreasePercentPerDay), max30: pct(limits.maxIncreasePercent30d) })" persistent-hint
         :error-messages="err('maxIncreasePercentPerDay')" data-testid="f-max-increase" />
       <v-textarea v-model="form.barcodes" :label="t('pricingRules.form.barcodes')" :hint="t('pricingRules.form.barcodesHint')" persistent-hint rows="2" auto-grow
         density="compact" variant="outlined" class="pr-span-2" :error-messages="err('barcodes')" data-testid="f-barcodes" />
@@ -247,7 +247,7 @@
         <template #cell-before="{ row }"><span class="ek-num">{{ formatMoney(row.before) }}</span></template>
         <template #cell-after="{ row }"><span class="ek-num pr-strong">{{ formatMoney(row.after) }}</span></template>
         <template #cell-change="{ row }">
-          <span class="ek-num" :class="row.change < 0 ? 'pr-down' : 'pr-up'">{{ formatMoney(row.change) }} ({{ formatNumber(row.changePercent) }}%)</span>
+          <span class="ek-num" :class="row.change < 0 ? 'pr-down' : 'pr-up'">{{ formatMoney(row.change) }} ({{ pct(row.changePercent) }})</span>
           <EkStatusChip v-for="w in row.warnings" :key="w" tone="warning" :label="t(warningKey(w))" />
         </template>
       </EkDataGrid>
@@ -463,10 +463,13 @@ async function doDelete() {
   void loadSuggestions()
 }
 
+/** Yüzde metni: Türkçede işaret önde (%10), İngilizcede sonda (10%). vue-i18n `%{…}` yazımını yediği için kodla hazırlanır. */
+function pct(n: number): string { return isTr.value ? `%${formatNumber(n)}` : `${formatNumber(n)}%` }
+
 function deltaText(r: PriceRule): string {
   const parts: string[] = []
   if (r.competition.deltaAmount !== null) parts.push(formatMoney(r.competition.deltaAmount))
-  if (r.competition.deltaPercent !== null) parts.push(isTr.value ? `%${formatNumber(r.competition.deltaPercent)}` : `${formatNumber(r.competition.deltaPercent)}%`)
+  if (r.competition.deltaPercent !== null) parts.push(pct(r.competition.deltaPercent))
   return parts.join(' / ') || '—'
 }
 
@@ -548,6 +551,7 @@ onMounted(loadAll)
 .pr-rule__grid dt { color: var(--ek-color-content-muted); font-size: var(--ek-type-label-size); }
 .pr-rule__grid dd { margin: 0; color: var(--ek-color-content-default); font-size: var(--ek-type-body-size); }
 .pr-consent { display: flex; flex-direction: column; gap: var(--ek-space-2); }
+.pr-consent__chip { align-self: flex-start; }
 .pr-consent__text { margin: 0; padding: var(--ek-space-3); border: 1px solid var(--ek-color-border-default); border-radius: var(--ek-radius-control); background: var(--ek-color-surface-muted); color: var(--ek-color-content-default); font-size: var(--ek-type-body-size); }
 .pr-span-2 { grid-column: 1 / -1; }
 .pr-legal { margin: 0; color: var(--ek-color-content-muted); font-size: var(--ek-type-label-size); }

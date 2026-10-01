@@ -110,6 +110,9 @@ describe('legal-K11-no-discount-language: metinler "fiyat güncellendi" der, "in
     for (const [k, v] of Object.entries(flat(en.pricingRules))) expect([k, /discount/i.test(v)]).toEqual([k, false])
     expect(tr.pricingRules.apply.done).toMatch(/fiyatı güncellendi/)
   })
+  it('yüzde işareti metinde `%{…}` olarak yazılmaz (vue-i18n işareti yer; yüzde kodla hazırlanır)', () => {
+    for (const [k, v] of [...Object.entries(flat(tr.pricingRules)), ...Object.entries(flat(en.pricingRules))]) expect([k, v.includes('%{')]).toEqual([k, false])
+  })
   it('TR ve EN anahtarları birebir; menü başlığı var', () => {
     expect(Object.keys(flat(en.pricingRules)).sort()).toEqual(Object.keys(flat(tr.pricingRules)).sort())
     expect(tr.menu.pricingRules).toBe('Fiyat kuralları')
