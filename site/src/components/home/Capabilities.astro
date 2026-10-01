@@ -11,7 +11,7 @@
  *     (halka + kalan sayacı 1 -> 0) -> biri rezerve, diğeri aşırı satış olarak işaretlenir (S15-C: ışıklı döngü)
  *   - `orders-merge`: farklı kanallardan sipariş ve iade talepleri iki yönden gelip tek listede birleşir
  *   - `integration-status`: bağlı kanallar (tür etiketiyle) tek merkezde; ürün/stok/sipariş akış çubukları
- *   - `secret-encryption`: girilen anahtar -> kilit -> `enc:v1:` biçiminde saklanan -> arayüzde maskeli
+ *   - `secret-encryption`: girilen anahtar -> kilit -> şifreli kasada -> ekranda maskeli (ELEV: teknik önek/algoritma adı görselde yok, K44)
  *   - `tenant-isolation`: her müşteri hesabı kendi veritabanına bağlanır
  * Görseller örnek arayüzdür (aria-hidden; S15-C: ayrı "Örnek görünüm" etiketi yok); uydurma müşteri/ölçüm YOK.
  */
@@ -34,9 +34,6 @@ const stock = byId(all, 'stock-reservation')
 const orders = byId(all, 'unified-orders')
 const secrets = byId(security, 'secrets-encryption')
 const tenant = byId(security, 'tenant-database')
-// Algoritma adı satır sonunda tirelerinden bölünmesin (metnin kendisi kayıttan, değişmeden).
-const ALGO = 'AES-256-GCM'
-const secretParts = secrets.summary.split(ALGO)
 const spotlightIds = new Set([stock.id, orders.id])
 const rest = all.filter((c) => !spotlightIds.has(c.id))
 const pillars = getHomePillars()
@@ -81,9 +78,8 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
   <SectionHeading
     id="yetenek-baslik"
     eyebrow="Yetenekler"
-    title="Çok kanallı satışın tamamı, tek merkezde"
-    accent="tek merkezde"
-    lead="Merkezi stok yönetiminden sipariş operasyonuna, iadeden finans görünümüne: omnichannel satışın her adımı aynı panelde, aynı ritimde."
+    title="Siparişten iadeye, operasyonunuzun tamamı"
+    lead="Stoktan siparişe, iadeden hakedişe: ekibiniz her işi aynı ekrandan, aynı adımlarla yürütür."
   />
 
   <div class="clusters-band">
@@ -285,34 +281,26 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
       <div class="tile__copy" data-reveal>
         <span class="tile__icon"><Icon name="lock" size="md" /></span>
         <h3 id="spot-vault-title" class="tile__title">{secrets.title}</h3>
-        <p class="tile__text">
-          {secretParts.map((part, n) => (
-            <>
-              {part}
-              {n < secretParts.length - 1 && <span class="nowrap">{ALGO}</span>}
-            </>
-          ))}
-        </p>
+        <p class="tile__text">{secrets.summary}</p>
       </div>
       <div class="tile__frame" data-reveal>
         <div class="vault" data-scene="secret-encryption" aria-hidden="true">
           <div class="vault__row">
-            <span class="vault__label">Girdiğiniz API anahtarı</span>
+            <span class="vault__label">Girdiğiniz anahtar</span>
             <span class="vault__field" data-part="plain"><Icon name="key" size="sm" />••••••••••••••••</span>
           </div>
           <div class="vault__step" data-part="lock">
             <Icon name="lock" size="md" />
-            <span class="vault__algo" data-part="algorithm">AES-256-GCM</span>
+            <span class="vault__algo" data-part="algorithm">Şifrelenir</span>
           </div>
           <div class="vault__row">
-            <span class="vault__label">Saklanan</span>
+            <span class="vault__label">Kasada</span>
             <span class="vault__field vault__field--cipher" data-part="cipher">
-              <span class="vault__prefix">enc:v1:</span>
               <span class="vault__bars"><i data-part="bar"></i><i data-part="bar"></i><i data-part="bar"></i><i data-part="bar"></i></span>
             </span>
           </div>
           <div class="vault__row">
-            <span class="vault__label">Arayüz ve API yanıtlarında</span>
+            <span class="vault__label">Ekranlarınızda</span>
             <span class="vault__field" data-part="masked"><Icon name="eye" size="sm" />••••••••<em class="vault__hidden">gizli</em></span>
           </div>
           <span class="vault__rail"><i class="vault__spark"></i></span>
@@ -700,9 +688,6 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
     font-weight: var(--site-card-desc-weight);
     line-height: var(--ek-line-height-normal);
     text-wrap: pretty;
-  }
-  .nowrap {
-    white-space: nowrap;
   }
   /* Mini arayüz bir "ürün vitrini" gibi karonun üzerinde süzülür; hover'da hafifçe yükselir (yalnızca translate). */
   .tile__frame {
@@ -1518,10 +1503,6 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
     position: relative;
     overflow: hidden;
     color: var(--ek-color-secondary);
-  }
-  .vault__prefix {
-    font-weight: var(--ek-font-weight-semibold);
-    letter-spacing: 0;
   }
   .vault__bars {
     display: inline-flex;

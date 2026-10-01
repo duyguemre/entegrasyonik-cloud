@@ -403,7 +403,7 @@
   }
 
   /* ------------------------------------------------------------------------------------- */
-  /* 9) secret-encryption — girilen anahtar -> kilit -> enc:v1: biçiminde saklanan -> maskeli   */
+  /* 9) secret-encryption — girilen anahtar -> kilit -> şifreli kasada -> maskeli */
   /* ------------------------------------------------------------------------------------- */
   [data-scene='secret-encryption'] > :nth-child(1) {
     --i: 0;

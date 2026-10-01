@@ -29,7 +29,7 @@ export interface FaqCategory {
 export const FAQ_CATEGORIES: FaqCategory[] = [
   { id: 'baslangic', label: 'Başlangıç ve kurulum', lead: 'Hesap açılışından ilk kanal bağlantısına kadar bilmeniz gerekenler.' },
   { id: 'kanallar', label: 'Pazaryeri ve kanal uyumu', lead: 'Hangi kanallarla çalıştığınız ve her kanalda neleri yönetebildiğiniz.' },
-  { id: 'stok-siparis', label: 'Stok ve sipariş yönetimi', lead: 'Merkezi stok yönetimi, overselling koruması ve sipariş akışınız.' },
+  { id: 'stok-siparis', label: 'Stok ve sipariş yönetimi', lead: 'Merkezi stok yönetimi, aşırı satış koruması ve sipariş akışınız.' },
   { id: 'guvenlik-veri', label: 'Güvenlik ve veri', lead: 'API anahtarlarınızın, verilerinizin ve ekibinizin erişiminin nasıl korunduğu.' },
   { id: 'fiyat-plan', label: 'Fiyatlandırma ve plan', lead: 'Ücretsiz deneme, plan seçimi ve kurumsal teklifler.' },
   { id: 'destek-olcek', label: 'Destek ve ölçeklenme', lead: 'Büyürken yanınızda olan destek ve kapasite seçenekleri.' },
@@ -188,7 +188,7 @@ export const faq: FaqItem[] = [
   {
     id: 'asiri-satis',
     category: 'stok-siparis',
-    question: 'Overselling\'i (aşırı satışı) nasıl önlüyorsunuz?',
+    question: 'Aşırı satışı nasıl önlüyorsunuz?',
     answer: `Merkezi stok yönetiminin kalbinde stok rezervasyonu vardır. ${reservation().summary} ${reservation().caveat ?? ''}`.trim(),
     evidence: [
       evidence(
@@ -274,7 +274,7 @@ export const faq: FaqItem[] = [
     category: 'guvenlik-veri',
     question: 'Entegrasyon yazılımı seçerken nelere dikkat etmeliyim?',
     answer:
-      "Karşılaştırırken dört ölçüte bakmanızı öneririz: verilerinizin size ayrılmış, izole bir alanda tutulması, pazaryeri API anahtarlarının şifreli saklanması, eşzamanlı siparişlerde stok rezervasyonu ve tanımlı olmayan işlemleri varsayılan olarak reddeden bir yetkilendirme modeli. Entegrasyonik'te verileriniz yalnızca size ait, izole bir alanda tutulur ve API anahtarlarınız AES-256-GCM ile şifrelenerek saklanır. Stok yalnızca mevcut adet kadar rezerve edilir; sunucuda tanımlı işlem listesinde olmayan her işlem reddedilir. Son olarak her kanalda hangi işlemlerin desteklendiğini entegrasyon sayfalarındaki kapsam tablolarından kontrol edin.",
+      "Karşılaştırırken dört ölçüte bakmanızı öneririz: verilerinizin size ayrılmış, izole bir alanda tutulması, pazaryeri API anahtarlarının şifreli saklanması, eşzamanlı siparişlerde stok rezervasyonu ve yetkisiz işlemi varsayılan olarak engelleyen bir yetki modeli. Entegrasyonik'te verileriniz yalnızca size ait, izole bir alanda tutulur ve pazaryeri anahtarlarınız güçlü şifrelemeyle saklanır. Stok yalnızca mevcut adet kadar rezerve edilir; sunucuda tanımlı işlem listesinde olmayan her işlem reddedilir. Son olarak her kanalda hangi işlemlerin desteklendiğini entegrasyon sayfalarındaki kapsam tablolarından kontrol edin.",
     evidence: [
       evidence(PATHS.adr0003, 'ADR-0003 kiracı DB adlandırma', 'entegrasyonikClient_1'),
       evidence('backend/src/utils/FieldCrypto.ts', 'FieldCrypto AES-256-GCM', 'aes-256-gcm'),
@@ -292,7 +292,7 @@ export const faq: FaqItem[] = [
     category: 'guvenlik-veri',
     question: 'Kart bilgilerim Entegrasyonik\'te saklanır mı?',
     answer:
-      'Hayır. Ödeme, ödeme sağlayıcısının barındırdığı formda alınacak şekilde tasarlanmıştır; kart verisi Entegrasyonik sistemlerine gelmez. Ödeme akışı bu sürümde test (sandbox) aşamasındadır.',
+      'Hayır. Ödeme, ödeme sağlayıcısının barındırdığı formda alınacak şekilde tasarlanmıştır; kart verisi Entegrasyonik sistemlerine gelmez. Ödeme akışı bu sürümde test aşamasındadır.',
     evidence: [evidence(PATHS.adr0008, 'ADR-0008 barındırılan ödeme formu', 'kart verisi bize gelmez')],
     internalNotes: ['Canlı ödeme sağlayıcısı adaptörü yok; mock checkout (ADR-0008). Cevap bu yüzden "test aşamasında" der.'],
   },
@@ -309,7 +309,7 @@ export const faq: FaqItem[] = [
     id: 'plan-secimi',
     category: 'fiyat-plan',
     question: 'Hangi plan işletmeme uygun?',
-    answer: `Planlar bağlamak istediğiniz kanal sayısına, yönettiğiniz ürün varyantı (SKU) hacmine ve ekibinizdeki kullanıcı sayısına göre ayrılır. ${joinTr(fixedPlanNames())} planları sabit aylık fiyatlıdır${quotePlanName() ? `; özel limitlere ihtiyaç duyan işletmeler için ${quotePlanName()} planında size özel teklif hazırlanır` : ''}.`,
+    answer: `Planlar bağlamak istediğiniz kanal sayısına, yönettiğiniz ürün varyantı hacmine ve ekibinizdeki kullanıcı sayısına göre ayrılır. ${joinTr(fixedPlanNames())} planları sabit aylık fiyatlıdır${quotePlanName() ? `; özel limitlere ihtiyaç duyan işletmeler için ${quotePlanName()} planında size özel teklif hazırlanır` : ''}.`,
     evidence: [evidence(PLAN_SEED, 'Plans seed: limit alanları', '"limits": { "channels"')],
   },
   {

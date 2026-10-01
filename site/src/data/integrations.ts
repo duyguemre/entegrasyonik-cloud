@@ -844,7 +844,7 @@ export const ecosystemPromises: Array<{ id: string; title: string; line: string 
   },
   {
     id: 'one-standard',
-    title: 'Ortak entegrasyon standardı',
-    line: 'Her kanal aynı merkeze, ortak bir entegrasyon mimarisiyle bağlanır.',
+    title: 'Tek çalışma biçimi',
+    line: 'Her kanal aynı merkeze bağlanır; ekibiniz her kanalı aynı ekranda, aynı adımlarla yönetir.',
   },
 ]

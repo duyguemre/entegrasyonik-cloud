@@ -90,9 +90,9 @@ if (unplaced.length > 0) throw new Error(`Güvenlik özeti: sütuna atanmamış 
 // Kalkan illüstrasyonunun koruma katmanı çipleri: yalnızca kayıtta bulunan iddialar.
 const GUARDS: Array<{ id: string; icon: 'lock' | 'users' | 'shield' | 'database' | 'key'; label: string; sub: string }> = [
   { id: 'tenant-database', icon: 'database', label: 'Veri izolasyonu', sub: 'Yalnızca size ait' },
-  { id: 'secrets-encryption', icon: 'key', label: 'Şifreli anahtarlar', sub: 'AES-256-GCM' },
+  { id: 'secrets-encryption', icon: 'key', label: 'Şifreli anahtarlar', sub: 'Kasada, maskeli' },
   { id: 'role-based-access', icon: 'users', label: 'Rol tabanlı yetki', sub: 'Üç yetki kademesi' },
-  { id: 'default-deny', icon: 'shield', label: 'Varsayılan red', sub: 'Tanımsız işlem reddedilir' },
+  { id: 'default-deny', icon: 'shield', label: 'Yetki denetimi', sub: 'Yetkisiz işlem yapılamaz' },
 ]
 const guards = GUARDS.filter((g) => byId.has(g.id))
 
@@ -109,16 +109,15 @@ const cells = Array.from({ length: 24 }, (_, i) => ({ x: (i % 8) * 29 + 4, y: Ma
         id="guvenlik-baslik"
         tone="dark"
         eyebrow="Güvenlik ve KVKK"
-        title="Anahtarlarınız ve verileriniz için kurumsal düzeyde güvenlik"
-        accent="kurumsal düzeyde güvenlik"
-        lead="Pazaryeri API anahtarlarınız şifreli bir kasada, operasyon verileriniz yalnızca size ait, izole bir alanda saklanır; ekibinizin her işlemi sunucuda yetki denetiminden geçer."
+        title="Verileriniz yalnızca size ait"
+        lead="Operasyon verileriniz izole ve şifreli bir ortamda, pazaryeri anahtarlarınız şifreli bir kasada korunur; ekibinizin her işlemi yetki denetiminden geçer."
       />
       <ul class="sec__specs" aria-label="Öne çıkan güvenlik katmanları">
-        {byId.has('secrets-encryption') && <li><Icon name="lock" size="sm" />AES-256-GCM şifreleme</li>}
+        {byId.has('secrets-encryption') && <li><Icon name="lock" size="sm" />Şifreli anahtar kasası</li>}
         {byId.has('tenant-database') && <li><Icon name="database" size="sm" />İzole veri alanı</li>}
         {byId.has('role-based-access') && <li><Icon name="users" size="sm" />Rol tabanlı erişim</li>}
       </ul>
-      {detailHref && <a class="link sec__link" href={detailHref}>Güvenlik mimarisini inceleyin <Icon name="arrow" size="sm" /></a>}
+      {detailHref && <a class="link sec__link" href={detailHref}>Güvenlik yaklaşımımızı inceleyin <Icon name="arrow" size="sm" /></a>}
     </div>
 
     <div class="guard" data-scene="request-guard" aria-hidden="true">

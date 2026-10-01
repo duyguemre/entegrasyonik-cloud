@@ -98,13 +98,12 @@ const secureItems = [
         </span>
         <span class="hero__agent-value">{agent.value}</span>
       </a>
-      <p class="hero__eyebrow"><span class="hero__eyebrow-dot" aria-hidden="true"></span>Çok kanallı satış yönetimi</p>
       <h1 id="hero-title" class="hero__title">
         Tüm pazaryerleriniz, <span class="hero__accent">tek stok</span>, tek panel.
       </h1>
       <p class="hero__lead" data-testid="hero-lead">
-        Pazaryerlerindeki ürün, stok, sipariş ve iade operasyonunuzu tek merkezde birleştirin. Eşzamanlı gelen
-        siparişlerde stok rezerve edilir, aşırı satış riski azalır; ekibiniz panel panel dolaşmak yerine satışa odaklanır.
+        Ürün, stok, sipariş ve iadeleriniz tek merkezde. Satış hangi kanalda olursa olsun stok tek merkezden düşer ve
+        tüm kanallara iletilir; ekibiniz panel panel dolaşmak yerine satışa odaklanır.
       </p>
       <div class="hero__actions">
         <Button href={appUrls.register()} variant="inverse" size="lg" data-testid="hero-cta-primary">Ücretsiz dene</Button>
@@ -453,26 +452,6 @@ const secureItems = [
       clip-path: inset(50%);
       white-space: nowrap;
     }
-  }
-  .hero__eyebrow {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--ek-space-2);
-    padding: var(--ek-space-1) var(--ek-space-3);
-    border: var(--site-border-width) solid var(--site-glass-border);
-    border-radius: var(--ek-radius-full);
-    background: var(--site-glass-bg);
-    color: var(--site-text-on-dark-heading);
-    font-size: var(--ek-font-size-sm);
-    font-weight: var(--ek-font-weight-semibold);
-    letter-spacing: 0.04em;
-  }
-  .hero__eyebrow-dot {
-    width: var(--ek-space-2);
-    height: var(--ek-space-2);
-    border-radius: var(--ek-radius-full);
-    background: var(--site-accent);
-    box-shadow: var(--site-glow-ring);
   }
   .hero__title {
     color: var(--site-text-on-dark-heading);

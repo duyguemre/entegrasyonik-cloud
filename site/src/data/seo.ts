@@ -189,7 +189,7 @@ const STATIC_ENTRIES: SeoEntry[] = [
     path: '/sss',
     title: 'Sık sorulan sorular',
     description:
-      'Entegrasyonik hakkında sık sorulan sorular: kurulum, pazaryeri uyumu, merkezi stok ve overselling koruması, güvenlik, fiyatlandırma ve destek.',
+      'Entegrasyonik hakkında sık sorulan sorular: kurulum, pazaryeri uyumu, merkezi stok ve aşırı satış koruması, güvenlik, fiyatlandırma ve destek.',
     index: true,
     crumb: 'Sık sorulan sorular',
     schema: ['FAQPage'],

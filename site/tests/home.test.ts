@@ -126,7 +126,9 @@ describe('CTA ve bağlantılar', () => {
     expect(tag('hero-cta-primary')).toContain(`href="${APP_URL}/login?mode=register"`)
     expect(tag('hero-cta-secondary')).toContain('href="#nasil-calisir"')
     expect(tag('closing-cta-primary')).toContain(`href="${APP_URL}/login?mode=register"`)
-    expect(tag('closing-cta-login')).toContain(`href="${APP_URL}/login"`)
+    // ELEV A3: kapanışın ikincil eylemi giriş değil demo talebi (mailto, konu hazır).
+    expect(tag('closing-cta-demo')).toMatch(/href="mailto:[^"]+\?subject=Entegrasyonik%20demo%20talebi"/)
+    expect(html).not.toContain('data-testid="closing-cta-login"')
     expect(html).toMatch(/data-testid="hero-cta-primary"[^>]*>\s*Ücretsiz dene/)
     expect(html).toMatch(/data-testid="hero-cta-secondary"[^>]*>\s*Nasıl çalışır/)
   })
@@ -243,10 +245,13 @@ describe('içerik kayıttan gelir', () => {
     expect(html).toContain('Aşırı satış olarak işaretlendi')
   })
 
-  it('güvenlik: yalnızca kanıtlı iddialar (AES-256-GCM, kiracı DB, RBAC, barındırılan ödeme); sertifika iddiası yok', () => {
+  // ELEV (K44): algoritma adı ana sayfada değil yalnız /guvenlik "Ayrıntı" panelinde (pages.test.ts korur); ana sayfa şifreleme
+  // iddiasını kayıttaki fayda cümlesiyle verir. Kısmi (ödeme) iddiasının dürüst sınır notu aynen zorunlu.
+  it('güvenlik: yalnızca kanıtlı iddialar (şifreli anahtar, izole veri, RBAC, barındırılan ödeme); sertifika iddiası yok', () => {
     for (const c of getPublicCapabilities('security')) expect(text(), c.id).toContain(c.title)
-    expect(text()).toContain('AES-256-GCM')
-    expect(text()).toContain('test (sandbox) aşamasında')
+    expect(text()).toContain(getPublicCapabilities('security').find((c) => c.id === 'secrets-encryption')!.summary)
+    expect(text()).not.toContain('AES-256-GCM')
+    expect(text()).toContain('Ödeme akışı bu sürümde test aşamasındadır.')
     expect(text().toLocaleLowerCase('tr-TR')).not.toMatch(/iso 27001|soc 2|tier 3|uptime|veri merkezi|sertifika/)
   })
 

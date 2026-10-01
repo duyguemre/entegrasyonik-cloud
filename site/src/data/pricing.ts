@@ -147,7 +147,7 @@ export interface PlanPitch {
 
 const PLAN_PITCH: Record<string, PlanPitch> = {
   starter: { headline: 'Çok kanallı satışa güçlü bir başlangıç', ctaLabel: 'Ücretsiz deneyin' },
-  growth: { headline: 'Büyüyen omnichannel operasyonlar için', ctaLabel: 'Büyüme ile başlayın' },
+  growth: { headline: 'Büyüyen çok kanallı operasyonlar için', ctaLabel: 'Büyüme ile başlayın' },
   enterprise: { headline: 'Ölçeğinize göre şekillenen kapasite', ctaLabel: 'Teklif isteyin' },
 }
 
@@ -161,7 +161,7 @@ export function getPlanPitch(code: string): PlanPitch | undefined {
  * özellik kodu yoktur). Başlıklar `capabilities.ts` kayıtlarından gelir (yalnızca `available`).
  */
 const PLAN_COMMON_LABELS: Array<{ capabilityId: string; label: string }> = [
-  { capabilityId: 'stock-reservation', label: 'Stok rezervasyonu ile overselling koruması' },
+  { capabilityId: 'stock-reservation', label: 'Stok rezervasyonu ile aşırı satış koruması' },
   { capabilityId: 'multi-channel-products', label: 'Merkezi ürün, fiyat ve stok yönetimi' },
   { capabilityId: 'unified-orders', label: 'Tüm kanallardan birleşik sipariş akışı' },
   { capabilityId: 'secrets-encryption', label: 'Şifreli API anahtarı saklama' },

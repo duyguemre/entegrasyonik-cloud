@@ -20,6 +20,7 @@ import { appUrls } from '../lib/site-config'
 import { contactEmail, mailtoHref } from '../lib/contact'
 import { company, hasValue } from '../data/company'
 import { entityDefinition } from '../data/seo'
+import { BRAND_SLOGAN, BRAND_PROMISE } from '../data/brand'
 
 const groups = menuGroups()
   .map((g) => ({
@@ -39,7 +40,7 @@ const year = new Date().getFullYear()
     <div class="footer-top">
       <div class="footer-brand">
         <a href="/" class="footer-logo" aria-label="Entegrasyonik — ana sayfa"><Logo tone="inverse" /></a>
-        <p class="footer-tagline">Pazaryeri entegrasyon ve stok yönetimi: tek stok, tek panel.</p>
+        <p class="footer-tagline"><strong class="footer-slogan">{BRAND_SLOGAN}</strong> {BRAND_PROMISE}</p>
         <div class="footer-cta">
           <a class="footer-btn footer-btn--primary" href={appUrls.register()} data-testid="footer-register">Ücretsiz dene</a>
           <a class="footer-btn" href={appUrls.login()} data-testid="footer-login">Giriş yap</a>
@@ -178,9 +179,18 @@ const year = new Date().getFullYear()
   }
   .footer-tagline {
     max-width: 22rem;
-    color: var(--site-color-on-primary);
-    font-size: var(--ek-font-size-lg);
+    color: var(--site-text-on-dark-body);
+    font-size: var(--ek-font-size-md);
     line-height: var(--ek-line-height-normal);
+  }
+  /* ELEV: slogan footer'ın marka imzasıdır — display ağırlığında, kendi satırında; vaat cümlesi altında sakin. */
+  .footer-slogan {
+    display: block;
+    margin-block-end: var(--ek-space-1);
+    color: var(--site-color-on-primary);
+    font-size: var(--ek-font-size-xl);
+    font-weight: var(--site-font-display-weight);
+    letter-spacing: var(--site-font-display-tracking);
   }
   .footer-cta {
     display: flex;
