@@ -27,7 +27,7 @@ const TARGETS = [
 ];
 
 module.exports = {
-    id: '0021-usage-daily-app',
+    id: '0023-usage-daily-app',
     scope: 'app',
     kind: 'index',
     description: 'MOB-08 (App): UsageDaily koleksiyonu (uniq_day_tid_platform, tid+day, expAt TTL).',

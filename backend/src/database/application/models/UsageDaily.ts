@@ -4,7 +4,7 @@ import mongoose from "mongoose";
 // `u`: o gün o platformdan en az bir RPC yapan kullanıcıların TAKMA kimlikleri (sha256(sub) ilk 16 hex; ham sub/UA/IP YOK).
 // Aktif kullanıcı sayısı = `u` dizisinin boyu; günler/platformlar arası tekil sayım `u` birleşimiyle yapılır (kullanıcı başına 1 kayıt,
 // tenant başına üst sınır = kullanıcı sayısı → belge küçük kalır). Yalnız müşteri yüzeyi (impersonation/backoffice sayılmaz).
-// Saklama 180 gün (`expAt` TTL). ADR-0021 deseni: `autoIndex:false`; indeksler YALNIZ onaylı göçle (migrations/0021-usage-daily-app.js; ÇALIŞTIRILMADI).
+// Saklama 180 gün (`expAt` TTL). ADR-0021 deseni: `autoIndex:false`; indeksler YALNIZ onaylı göçle (migrations/0023-usage-daily-app.js; ÇALIŞTIRILMADI).
 
 export const USAGE_DAILY_RETENTION_DAYS = 180;
 

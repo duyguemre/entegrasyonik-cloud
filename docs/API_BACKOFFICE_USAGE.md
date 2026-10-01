@@ -32,7 +32,7 @@ Minimal günlük toplama: **(gün, tenant, platform) başına tek belge**.
 - `day`: Europe/Istanbul takvim günü. `u`: o gün o platformdan en az bir müşteri RPC'si yapan kullanıcıların **takma kimlikleri** (`sha256(sub)` ilk 16 hex; ham sub/UA/IP yok). Aktif kullanıcı = tekil takma kimlik sayısı.
 - Yazım: müşteri yüzeyi genel RPC rotası (`POST /api/:service/:operation`) başarılı yanıttan önce, beklemeden (fire-and-forget). Pod başına günlük tekilleştirme (aynı tenant+platform+kullanıcı için günde bir upsert: `$addToSet` + `$setOnInsert expAt`). **Fail-open:** yazma hatası isteği düşürmez; `warn` log + `usage_record_failures_total` sayacı.
 - **Sayılmaz:** tenant'sız oturum, platform yöneticisi (`ga`), impersonation/destek oturumu (`imp`), backoffice.
-- Saklama 180 gün (`expAt` TTL). İndeksler: `uniq_day_tid_platform` (UNIQUE), `tid_1_day_-1`, `expAt_ttl`. Şema `autoIndex:false`; göç **`backend/migrations/0021-usage-daily-app.js` — ÇALIŞTIRILMADI** (ilk dağıtımdan önce yerelde yedek + onayla `up`).
+- Saklama 180 gün (`expAt` TTL). İndeksler: `uniq_day_tid_platform` (UNIQUE), `tid_1_day_-1`, `expAt_ttl`. Şema `autoIndex:false`; göç **`backend/migrations/0023-usage-daily-app.js` — ÇALIŞTIRILMADI** (ilk dağıtımdan önce yerelde yedek + onayla `up`).
 - Geriye dönük doldurma yok: veri dağıtımdan sonra birikir; öncesi `computable:false`.
 
 ## 3. Okuma uçları
