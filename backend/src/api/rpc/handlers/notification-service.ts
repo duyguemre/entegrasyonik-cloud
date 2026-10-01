@@ -2,6 +2,8 @@ import { IService } from '@interfaces/index'
 import { BaseApi } from '../BaseApi'
 import { ObjectId } from 'mongodb'
 import { clampLimit } from '@utils/search'
+import { NotificationRepository } from '@database/repositories/tenant/NotificationRepository'
+import { NotificationPreferencesRepository } from '@database/repositories/app/NotificationPreferencesRepository'
 import { ApplicationError } from '@platform/core/errors'
 import { getCatalogDto } from '@operations/notifications/catalog'
 import { NOTIFICATION_CATEGORIES } from '@operations/notifications/catalog.types'
@@ -15,6 +17,10 @@ import { buildListFilter, buildOwnUpdateFilter, buildUnreadFilter, presentNotifi
  * RPC yanıt şekilleri yalnız EKLEME alır (nextCursor, unreadByCategory, legacy).
  */
 export default class NotificationService extends BaseApi implements IService {
+
+    private get notifications() { return new NotificationRepository(this.clientDB) }
+
+    private get prefs() { return new NotificationPreferencesRepository(this.applicationDB) }
 
     private get uid(): string { return this.ctx.actor.sub }
 
@@ -43,8 +49,7 @@ export default class NotificationService extends BaseApi implements IService {
         // aggregate() Mongoose şema dönüşümü YAPMAZ: userId ObjectId'ye açıkça çevrilir (yoksa eşleşme olmaz)
         const match = buildUnreadFilter(this.uid);
         if (/^[a-fA-F0-9]{24}$/.test(this.uid)) match.userId = new ObjectId(this.uid);
-        const rows: Array<{ _id: string | null; n: number }> = await this.clientDB.getNotificationModel()
-            .aggregate([{ $match: match }, { $group: { _id: '$category', n: { $sum: 1 } } }]);
+        const rows = await this.notifications.countByCategory(match);
         const out: Record<string, number> = {};
         for (const r of rows ?? []) out[r._id ?? 'uncategorized'] = r.n;
         return out;
@@ -58,13 +63,13 @@ export default class NotificationService extends BaseApi implements IService {
         const { onlyUnread = false, archived = false, category, cursor, afterId, byCategory = false } = this.request;
         const imp = this.ctx.actor.imp === true;
         const limit = clampLimit(this.request.limit, 20, cursor ? 50 : 200); // ADR-0029 Karar 3: imleçle ≤50, imleçsiz eski ≤200
-        const model = this.clientDB.getNotificationModel();
+        const repo = this.notifications;
 
         const filter = buildListFilter({
             userId: this.uid, category, onlyUnread, archived, cursor, afterId, tenantWide: imp,
             toObjectId: (id) => this.toObjectId(id),
         });
-        const rows: any[] = await model.find(filter).sort({ _id: -1 }).limit(limit + 1).lean();
+        const rows: any[] = await repo.findPage(filter, limit + 1);
         const hasMore = rows.length > limit;
         const page = rows.slice(0, limit);
         const nextCursor = hasMore && page.length ? String(page[page.length - 1]._id) : null;
@@ -80,7 +85,7 @@ export default class NotificationService extends BaseApi implements IService {
             });
         }
 
-        const unreadCount = imp ? 0 : await model.countDocuments(buildUnreadFilter(this.uid));
+        const unreadCount = imp ? 0 : await repo.countDocuments(buildUnreadFilter(this.uid));
         return {
             result: true, data, unreadCount, nextCursor,
             ...(byCategory ? { unreadByCategory: await this.unreadByCategory() } : {}),
@@ -99,7 +104,7 @@ export default class NotificationService extends BaseApi implements IService {
             if (!notificationIds?.length) return { result: false, message: 'ID listesi boş.' };
             filter = buildOwnUpdateFilter(this.uid, notificationIds.map((id: string) => this.toObjectId(id)), { isDeleted: false });
         }
-        const res = await this.clientDB.getNotificationModel().updateMany(filter, { $set: { isRead: true, readAt: now } });
+        const res = await this.notifications.updateMany(filter, { isRead: true, readAt: now });
         if (!all) this.assertMatched(res);
         return { result: true, message: 'Okundu olarak işaretlendi.' };
     }
@@ -115,7 +120,7 @@ export default class NotificationService extends BaseApi implements IService {
             if (!notificationIds?.length) return { result: false, message: 'ID listesi boş.' };
             filter = buildOwnUpdateFilter(this.uid, notificationIds.map((id: string) => this.toObjectId(id)));
         }
-        const res = await this.clientDB.getNotificationModel().updateMany(filter, { $set: { isDeleted: true } });
+        const res = await this.notifications.updateMany(filter, { isDeleted: true });
         if (!all) this.assertMatched(res);
         return { result: true, message: 'Bildirimler silindi.' };
     }
@@ -135,7 +140,7 @@ export default class NotificationService extends BaseApi implements IService {
         const ids = (this.request.notificationIds as string[] | undefined) ?? [];
         if (!ids.length) return { result: false, message: 'ID listesi boş.' };
         const filter = buildOwnUpdateFilter(this.uid, ids.map((id) => this.toObjectId(id)), { isDeleted: false });
-        const res = await this.clientDB.getNotificationModel().updateMany(filter, { $set: { isArchived: value, archivedAt: value ? new Date() : null } });
+        const res = await this.notifications.updateMany(filter, { isArchived: value, archivedAt: value ? new Date() : null });
         this.assertMatched(res);
         return { result: true, message: value ? 'Arşivlendi.' : 'Arşivden çıkarıldı.' };
     }
@@ -143,7 +148,7 @@ export default class NotificationService extends BaseApi implements IService {
     /** Çan rozeti: yalnız çağıranın okunmamış (silinmemiş, arşivsiz) sayısı; isteğe bağlı kategori kırılımı. */
     async getUnreadCount(): Promise<any> {
         if (this.ctx.actor.imp === true) return { result: true, unreadCount: 0, ...(this.request.byCategory ? { unreadByCategory: {} } : {}) };
-        const count = await this.clientDB.getNotificationModel().countDocuments(buildUnreadFilter(this.uid));
+        const count = await this.notifications.countDocuments(buildUnreadFilter(this.uid));
         return { result: true, unreadCount: count, ...(this.request.byCategory ? { unreadByCategory: await this.unreadByCategory() } : {}) };
     }
 
@@ -160,11 +165,7 @@ export default class NotificationService extends BaseApi implements IService {
 
     /** Kendi tercihlerim + tenant varsayılanı (salt okunur) + kategori kilitleri. */
     async getPreferences(): Promise<any> {
-        const model = this.applicationDB.getNotificationPreferencesModel();
-        const [mine, tenant] = await Promise.all([
-            model.findOne({ tid: this.tid, userId: this.uid }).lean(),
-            model.findOne({ tid: this.tid, userId: null }).lean(),
-        ]);
+        const [mine, tenant] = await this.prefs.findMineAndTenantDefault(this.tid, this.uid);
         return { result: true, data: this.prefsView(mine), tenantDefaults: this.prefsView(tenant), locks: categoryLocks() };
     }
 
@@ -174,7 +175,7 @@ export default class NotificationService extends BaseApi implements IService {
 
     /** Tenant varsayılanı (yalnız admin/owner: `settings:manage`; yetenek kaydı ve operasyon politikası uygular). */
     async getTenantDefaults(): Promise<any> {
-        const doc = await this.applicationDB.getNotificationPreferencesModel().findOne({ tid: this.tid, userId: null }).lean();
+        const doc = await this.prefs.findOne(this.tid, null);
         return { result: true, data: this.prefsView(doc), locks: categoryLocks() };
     }
 
@@ -196,11 +197,7 @@ export default class NotificationService extends BaseApi implements IService {
         // anahtarlar zod enum'undan (kategori adı) gelir -> noktalı yol güvenli
         for (const [cat, cell] of Object.entries(matrix ?? {})) $set[`matrix.${cat}`] = cell;
 
-        await this.applicationDB.getNotificationPreferencesModel().findOneAndUpdate(
-            { tid: this.tid, userId },
-            { $set, ...(Object.keys($unset).length ? { $unset } : {}) },
-            { upsert: true, new: true },
-        );
+        await this.prefs.upsert(this.tid, userId, { $set, ...(Object.keys($unset).length ? { $unset } : {}) });
         return { result: true, message: 'Tercihler kaydedildi.' };
     }
 }
