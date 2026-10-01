@@ -1,10 +1,12 @@
 <template>
   <div class="bo-page">
-    <BoPageHeader>
+    <BoPageHeader :updated-at="res.loadedAt.value ?? undefined" :stale="res.stale.value">
       <template #actions>
-        <EkRefreshButton :loading="res.refreshing.value || res.phase.value === 'loading'" :last-updated="res.loadedAt.value" :error="res.stale.value ? res.error.value?.title : null" @refresh="res.load()" />
+        <EkButton tone="secondary" icon="mdi-refresh" :loading="res.refreshing.value || res.phase.value === 'loading'" data-page-refresh @click="res.load()">Yenile</EkButton>
       </template>
     </BoPageHeader>
+
+    <PageVerdict :verdict="verdict" />
 
     <StateBlock :phase="res.phase.value" :error="res.error.value" skeleton="cards" :rows="3" error-title="Önbellek metrikleri okunamadı" degraded-title="Önbellek metrikleri okunamıyor" @retry="res.load()">
       <div v-if="res.data.value" class="bo-stack">
@@ -24,7 +26,7 @@
           </dl>
         </EkCard>
 
-        <EkCard title="Önbellek aileleri" :subtitle="`Pod ${d.pod}`" icon="mdi-lightning-bolt-outline" flush>
+        <EkCard id="bo-cache-families" title="Önbellek aileleri" :subtitle="`Pod ${d.pod}`" icon="mdi-lightning-bolt-outline" flush>
           <EkEmptyState v-if="!d.breakdown.length" title="Önbellekte aile yok" message="Bu pod'un önbelleğinde henüz kayıt bulunmuyor." />
           <EkDataTable tabindex="0" v-else :items="rows" :columns="COLUMNS" row-key="name">
             <template #cell-name="{ item }"><code class="bo-code">{{ item.name }}</code></template>
@@ -59,8 +61,10 @@
 
 <script setup lang="ts">
 import BoPageHeader from '@bo/components/shell/BoPageHeader.vue'
+import PageVerdict from '@bo/components/verdict/PageVerdict.vue'
+import { cacheVerdict } from './cacheVerdict'
 import { computed, onMounted } from 'vue'
-import { EkAlert, EkButton, EkCard, EkDataTable, EkEmptyState, EkMetricCard, EkRefreshButton, EkStatusChip, type EkTableColumn } from '@entegrasyonik/ui/components'
+import { EkAlert, EkButton, EkCard, EkDataTable, EkEmptyState, EkMetricCard, EkStatusChip, type EkTableColumn } from '@entegrasyonik/ui/components'
 import { api } from '@bo/api'
 import type { CacheMetrics } from '@bo/api/contract'
 import { useResource } from '@bo/composables/useResource'
@@ -94,6 +98,16 @@ const res = useResource(() => api.call('BackofficeInfraService/getCacheMetrics',
 onMounted(() => res.load())
 const d = computed(() => res.data.value as CacheMetrics)
 const hitRatio = computed(() => (d.value && d.value.hits + d.value.misses > 0 ? d.value.hits / (d.value.hits + d.value.misses) : null))
+const verdict = computed(() =>
+  res.phase.value === 'loading' && !res.data.value
+    ? null
+    : cacheVerdict({
+        data: res.data.value,
+        failed: !res.data.value,
+        retry: () => res.load(),
+        flush: (family) => flush.open(family),
+      }),
+)
 const rows = computed(() => d.value.breakdown as unknown as Array<Record<string, unknown>>)
 
 const flush = useGuardedAction(
