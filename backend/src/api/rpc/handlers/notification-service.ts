@@ -8,6 +8,9 @@ import { ApplicationError } from '@platform/core/errors'
 import { getCatalogDto } from '@operations/notifications/catalog'
 import { NOTIFICATION_CATEGORIES } from '@operations/notifications/catalog.types'
 import { categoryLocks, violatedMandatory } from '@operations/notifications/preferences'
+import { PushSubscriptionRepository } from '@database/repositories/app/PushSubscriptionRepository'
+import { currentVapid, isPushEnabled } from '@operations/notifications/push/pushConfig'
+import { listPushDevices, PushSubscriptionError, removePushSubscription, savePushSubscription } from '@operations/notifications/push/subscriptions'
 import { buildListFilter, buildOwnUpdateFilter, buildUnreadFilter, presentNotification } from '@operations/notifications/inAppRepository'
 
 /**
@@ -21,6 +24,8 @@ export default class NotificationService extends BaseApi implements IService {
     private get notifications() { return new NotificationRepository(this.clientDB) }
 
     private get prefs() { return new NotificationPreferencesRepository(this.applicationDB) }
+
+    private get pushSubs() { return new PushSubscriptionRepository(this.applicationDB) }
 
     private get uid(): string { return this.ctx.actor.sub }
 
@@ -199,5 +204,37 @@ export default class NotificationService extends BaseApi implements IService {
 
         await this.prefs.upsert(this.tid, userId, { $set, ...(Object.keys($unset).length ? { $unset } : {}) });
         return { result: true, message: 'Tercihler kaydedildi.' };
+    }
+
+    // ---- Web push (MOB-04): kullanıcı × cihaz aboneliği. Tenant + kullanıcı kapsamlı; destek oturumu yazamaz. ----
+
+    /** Kanal durumu + VAPID açık anahtarı (sır değil) + kendi cihazlarım. Kanal kapalıyken cihaz listesi okunmaz. */
+    async getPushConfig(): Promise<any> {
+        const vapid = isPushEnabled() ? currentVapid() : undefined
+        if (!vapid) return { result: true, enabled: false, publicKey: null, devices: [] }
+        const devices = this.ctx.actor.imp === true ? [] : await listPushDevices(this.pushSubs, this.tid, this.uid)
+        return { result: true, enabled: true, publicKey: vapid.publicKey, devices }
+    }
+
+    /** Bu cihazı kaydet (aynı uç = güncelle). Uç yalnız bilinen push servisleri (SSRF koruması). */
+    async subscribePush(): Promise<any> {
+        this.assertWritable()
+        if (!isPushEnabled()) throw new ApplicationError('Anlık bildirimler şu an kullanılamıyor.', 409, 'PUSH_DISABLED')
+        try {
+            await savePushSubscription(this.pushSubs, { tid: this.tid, userId: this.uid, subscription: this.request.subscription, deviceLabel: this.request.deviceLabel, now: new Date() })
+        } catch (e) {
+            if (e instanceof PushSubscriptionError) throw new ApplicationError(e.message, 400, e.code)
+            throw e
+        }
+        return { result: true, message: 'Bu cihazda anlık bildirimler açıldı.' }
+    }
+
+    /** Cihaz aboneliğini sil (uç ya da cihaz kimliği; yalnız kendi kaydı). Kanal kapalıyken de çalışır (temizlik). İdempotent. */
+    async unsubscribePush(): Promise<any> {
+        this.assertWritable()
+        const { endpoint, id } = this.request
+        if (!endpoint === !id) throw new ApplicationError('Uç ya da cihaz kimliğinden yalnız biri gönderilmeli.', 400, 'VALIDATION')
+        const removed = await removePushSubscription(this.pushSubs, { tid: this.tid, userId: this.uid, endpoint, id })
+        return { result: true, removed, message: 'Bu cihazda anlık bildirimler kapatıldı.' }
     }
 }

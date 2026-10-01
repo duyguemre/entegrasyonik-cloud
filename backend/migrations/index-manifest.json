@@ -1130,6 +1130,26 @@
           "unique": true
         }
       }
+    ],
+    "PushSubscriptions": [
+      {
+        "name": "tid_1_userId_1_createdAt_-1",
+        "fields": {
+          "tid": 1,
+          "userId": 1,
+          "createdAt": -1
+        },
+        "options": {}
+      },
+      {
+        "name": "uniq_endpointHash",
+        "fields": {
+          "endpointHash": 1
+        },
+        "options": {
+          "unique": true
+        }
+      }
     ]
   },
   "tenant": {

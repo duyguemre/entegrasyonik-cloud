@@ -37,6 +37,7 @@ import { OAuthClientSchema } from './models/OAuthClient';
 import { OAuthAuthCodeSchema } from './models/OAuthAuthCode';
 import { OAuthRefreshTokenSchema } from './models/OAuthRefreshToken';
 import { BackofficeViewSchema } from './models/BackofficeView';
+import { PushSubscriptionSchema } from './models/PushSubscription';
 
 export default (mongooseConnection: Connection): Record<string, Model<any>> => {
     return {
@@ -100,5 +101,7 @@ export default (mongooseConnection: Connection): Record<string, Model<any>> => {
         oauth_refresh_token: mongooseConnection.model('oauth_refresh_token', OAuthRefreshTokenSchema),
         // BE-05 / K51: backoffice kayitli gorunumler (yonetici basina, <=20). autoIndex kapali; indeksler yalniz onayli gocle: migrations/0019.
         backoffice_view: mongooseConnection.model('backoffice_view', BackofficeViewSchema),
+        // MOB-04: web push abonelikleri (kullanici x cihaz, sifreli uc). autoIndex kapali; indeksler yalniz onayli gocle: migrations/0020.
+        push_subscription: mongooseConnection.model('push_subscription', PushSubscriptionSchema),
     }
 }

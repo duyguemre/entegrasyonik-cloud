@@ -22,7 +22,7 @@ jest.mock('@platform/runtime/scheduler', () => ({
 jest.mock('@database/DatabaseManager', () => ({ DatabaseManagerInstance: {} }));
 for (const m of [
   '@operations/stock/AllocationSweepJob', '@operations/stock/StockPublishTrigger', '@operations/stock/OversellCompensationJob',
-  '@operations/stock/InternalReconciliationJob', '@operations/stock/ExternalReconciliationJob', '@operations/billing/TrialExpiryJob', '@operations/notifications/delivery/createEmailDispatcher',
+  '@operations/stock/InternalReconciliationJob', '@operations/stock/ExternalReconciliationJob', '@operations/billing/TrialExpiryJob', '@operations/notifications/delivery/createEmailDispatcher', '@operations/notifications/push/createPushDispatcher',
 ]) {
   jest.mock(m, () => new Proxy({}, { get: (_t, name) => (name === '__esModule' ? true : class { async run() { return {}; } }) }));
 }
@@ -45,6 +45,7 @@ const EXPECTED: Array<[string, number, number, string, string, 'worker' | 'any']
   ['compliance.probeRunner', DAY, 5 * MIN, 'normal', 'always', 'worker'],
   ['compliance.sourceMonitor', 7 * DAY, 30 * MIN, 'normal', 'ifDue', 'worker'],
   ['notifications.email-dispatch', 15 * 1000, 60 * 1000, 'normal', 'always', 'worker'],
+  ['notifications.push-dispatch', 10 * 1000, 60 * 1000, 'normal', 'always', 'worker'],
   ['notifications.announcements', 60 * 1000, 5 * MIN, 'normal', 'always', 'worker'],
   ['alerts.evaluator', 60 * 1000, 60 * 1000, 'normal', 'always', 'worker'],
   ['observability.metrics-flush', 60 * 1000, 30 * 1000, 'normal', 'always', 'any'],

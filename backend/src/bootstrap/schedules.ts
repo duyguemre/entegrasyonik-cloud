@@ -21,6 +21,8 @@ import { runConfigHeadPoll, CONFIG_HEAD_POLL_JOB_NAME } from '@integration/confi
 import { runExportSignalPoll } from '@integration/engine/catalog/export/exportSignalPoll';
 import { createEmailDispatcher } from '@operations/notifications/delivery/createEmailDispatcher';
 import type { EmailDispatcher } from '@operations/notifications/delivery/EmailDispatcher';
+import { createPushDispatcher } from '@operations/notifications/push/createPushDispatcher';
+import type { PushDispatcher } from '@operations/notifications/push/PushDispatcher';
 import { runAnnouncementFanout, type FanoutDeps } from '@operations/notifications/announcements';
 import { createAnnouncementFanoutDeps } from '@operations/notifications/createAnnouncementFanout';
 import { createAlertEvaluator } from '@operations/alerts/createAlertEvaluator';
@@ -88,6 +90,13 @@ export const SCHEDULES: readonly ScheduleSpec[] = [
     return defineJob({
       name: 'notifications.email-dispatch', everyMs: 15 * 1000, maxDurationMs: 60 * 1000, criticality: 'normal', runOnStart: 'always',
       run: async () => { d ??= createEmailDispatcher(); const r = await d.runOnce(); return { skipped: r.skipped, processed: r.processed, failed: r.failed, note: r.note }; } });
+  } },
+  // MOB-04: web push outbox gondericisi (anlik). Kanal kapaliyken (NOTIFY_V2_ENABLED / WEBPUSH_VAPID_*) DB'ye dokunmadan doner.
+  { id: 'notifications.push-dispatch', runsOn: 'worker', build: (impl?: PushDispatcher) => {
+    let d: PushDispatcher | undefined = impl;
+    return defineJob({
+      name: 'notifications.push-dispatch', everyMs: 10 * 1000, maxDurationMs: 60 * 1000, criticality: 'normal', runOnStart: 'always',
+      run: async () => { d ??= createPushDispatcher(); const r = await d.runOnce(); return { skipped: r.skipped, processed: r.processed, failed: r.failed, note: r.note }; } });
   } },
   // ADR-0029 NB7: duyuru durum gecisleri + inApp/e-posta fan-out. NOTIFY_V2_ENABLED=false iken DB'ye dokunmadan doner (`skipped:'notify_disabled'`).
   { id: 'notifications.announcements', runsOn: 'worker', build: (deps?: FanoutDeps) => {

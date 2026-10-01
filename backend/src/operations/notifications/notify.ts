@@ -6,7 +6,7 @@
 // Cagirana ASLA hata firlatmaz; sonuc `status` ile doner.
 import { logger } from '@platform/core/logger';
 import { getDefinition } from './catalog';
-import type { MinTier, NotificationSeverity } from './catalog.types';
+import type { MinTier, NotificationDefinition, NotificationSeverity } from './catalog.types';
 import { Member, memberTier, resolveRecipients, HasPermission } from './audience';
 import { resolveChannels } from './preferences';
 import { NotificationLedger, LedgerModelLike } from './ledger';
@@ -50,7 +50,9 @@ export interface NotifyDeps {
     tenantNotificationModel(tid: number): Promise<NotificationModelLike | undefined>;
     /** Tenant'in AKTIF uyeleri (e-posta adresi DONMEZ). */
     listMembers(tid: number): Promise<Member[]>;
-    flags(): { v2Enabled: boolean; emailEnabled: boolean };
+    flags(): { v2Enabled: boolean; emailEnabled: boolean; pushEnabled?: boolean };
+    /** MOB-04: aday alicilardan push teslimi uretilecekler (cihaz aboneligi + tercih). Yoksa push yok. */
+    pushRecipients?(tid: number, def: NotificationDefinition, userIds: string[]): Promise<string[]>;
     hasPermission?: HasPermission;
     /** RealtimeBus (NB6); yoksa yayin yok. Hata yutulur. */
     publish?(evt: RealtimePublish): void | Promise<void>;
@@ -228,6 +230,20 @@ export class Notifier {
                     locale: m.locale ?? 'tr', attempts: 0, nextAttemptAt: occurredAt, createdAt: occurredAt,
                     expAt: new Date(occurredAt.getTime() + NOTIFICATION_LEDGER_RETENTION_DAYS * DAY),
                 });
+            }
+            // 7b) web push outbox (MOB-04; gonderici `notifications.push-dispatch`). Destek aktoru push da ALAMAZ.
+            const { pushEnabled } = this.deps.flags();
+            if (pushEnabled && this.deps.pushRecipients) {
+                const candidates = recipients.filter((m) => !(opts.actorImpersonating && m.userId === opts.actorUserId)).map((m) => m.userId);
+                try {
+                    const locales = new Map(recipients.map((m) => [m.userId, m.locale ?? 'tr']));
+                    for (const userId of await this.deps.pushRecipients(tid, def, candidates)) {
+                        deliveries.push({
+                            eventId, tid, userId, code: def.code, channel: 'push', mode: 'instant', status: 'pending', locale: locales.get(userId) ?? 'tr',
+                            attempts: 0, nextAttemptAt: occurredAt, createdAt: occurredAt, expAt: new Date(occurredAt.getTime() + NOTIFICATION_LEDGER_RETENTION_DAYS * DAY),
+                        });
+                    }
+                } catch (e) { log.warn({ err: { message: (e as Error).message }, notifyCode: code, tid }, 'push alicilari cozulemedi (uygulama ici korundu)'); }
             }
             if (deliveries.length) {
                 try { await this.deps.deliveryModel.insertMany(deliveries); }

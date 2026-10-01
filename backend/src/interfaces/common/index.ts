@@ -197,6 +197,7 @@ export interface IApplicationDB {
     getAnnouncementModel(): any
     getAlertModel(): any
     getBackofficeViewModel(): any
+    getPushSubscriptionModel(): any
     getOAuthClientModel(): any
     getOAuthAuthCodeModel(): any
     getOAuthRefreshTokenModel(): any
