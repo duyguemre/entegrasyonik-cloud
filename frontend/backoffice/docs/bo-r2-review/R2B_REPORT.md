@@ -116,7 +116,24 @@ varsayılan değişmedi → web uygulaması etkilenmez).
 - Kareler: `docs/bo-r2-review/once/*.png` ↔ `sonra/*.png` (aynı ad; 01–21 öncesi bo-r2a `once/`'ta, 22–30 bu görevde)
 
 ## 5. Test sonuçları
-GATE_RESULTS
+Hepsi `cloud/bo-r2b` son hâlinde (bo-r2a birleşmesi sonrası), bulut Linux, Chromium `/opt/pw-browsers/chromium`.
+
+| Kapı | Sonuç |
+|---|---|
+| `npm run test:backoffice` (backoffice vitest + ui) | **362 / 362** + **43 / 43** geçti (r2-system mandalları dahil; taban tümü 0) |
+| `npx vitest run` (frontend tam) | **94 dosya, 1751 / 1751** geçti |
+| `npm run test:chat` | **186 geçti, 1 atlandı** (yeni `wide-layout.test.ts` 3 test dahil) |
+| `vue-tsc` (backoffice `typecheck` + frontend) | **0 hata** |
+| Ratchet'ler | typecheck 0 (taban 0) · style OK (635 dosya) · pattern OK (319 dosya) · no-console OK (iyileşme web `src`'de, bu işten değil — taban yazılmadı) · **r2-system 8 mandal taban 0** |
+| `test:contract-paths` | **171 / 171** OK |
+| `npm run lint` | 0 hata (1193 uyarı, önceden var) |
+| `build:backoffice` + `build` | ikisi de başarılı |
+| Backoffice Playwright tam (3 proje: desktop, desktop-dark, mobile 390) | **385 geçti, 0 başarısız, 170 atlandı** (atlananlar proje/BO_REVIEW koşullu). İlk tam koşuda 6 başarısız → 4'ü bu işin eskimiş yerel `*-linux.png` tabanı (silinip `missing` ile yeniden üretildi), 2'si smoke log trendi iddiası (bo-r2a `role="img"` ile uyumlandı); düzeltme sonrası `smoke.spec.ts` 44 + 6 geçti |
+| Frontend (web) Otopilot e2e (`otopilot.spec.ts` + `otopilot-harness.spec.ts`, 4 proje) | **117 geçti, 0 başarısız, 54 atlandı** (2 test ilk koşuda yalnız eksik linux tabanını yazdı; tekrar koşuda geçti) → paket değişikliği web sohbetini bozmadı |
+| Yeni e2e `r2b-otopilot.spec.ts` | 1440: geniş sohbet (> 1000 px), yardım sütunu 1680'de, öneri gönderir, sayfa yatay/dikey kaymaz, tablo içte kaymaz · 390: tablo kart satır, `data-label`, oluşturucu görünür |
+
+Not: ara adımlarda 7 paralel ajan nedeniyle makine yükü 45–60 idi; o sırada görülen giriş zaman aşımları yük kaynaklıydı,
+son koşular yük ~1 iken yapıldı. `*-linux.png` commit'lenmedi.
 
 ## 6. Backend sözleşme istekleri (BE)
 **BE-R2B-1 (BO2-P6, orta) — `BackofficeEngineService/listFailedJobs`.** UI tipleri `src/api/contracts/engine.ts`'te opsiyonel;
