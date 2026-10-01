@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "typecheck": "vue-tsc --noEmit -p tsconfig.json",
     "test": "vitest run",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "test:e2e:pwa": "vite build && playwright test -c playwright.preview.config.ts"
   },
   "dependencies": {
     "@entegrasyonik/ui": "*",
