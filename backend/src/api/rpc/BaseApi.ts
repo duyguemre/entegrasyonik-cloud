@@ -2,6 +2,9 @@ import { DatabaseManagerInstance } from "@database/DatabaseManager";
 import { IApplicationDB, IClientDB } from '@interfaces/index'
 import { ApplicationError } from '@platform/core/errors';
 import { buildRequestContext, type RequestContext } from './requestContext';
+import { eventLog } from '@platform/core/logger';
+
+const log = eventLog('api', 'BaseApi');
 
 export class BaseApi {
     applicationDB!: IApplicationDB
@@ -34,7 +37,7 @@ export class BaseApi {
 
     protected async initClientDB(clientId: any): Promise<void> {
         if (!clientId) {
-            console.warn(`[BaseApi] No clientId provided for initialization. Service: ${this.constructor.name}`);
+            log.warn('BASEAPI_NO_CLIENT_ID', '[BaseApi] başlatmada clientId yok', { service: this.constructor.name });
             return;
         }
 
@@ -46,7 +49,7 @@ export class BaseApi {
         if (tempClient) {
             this.clientDB = tempClient;
         } else {
-            console.error(`[BaseApi] Could not find ClientDB for clientId: ${clientId}`);
+            log.error('BASEAPI_CLIENT_DB_NOT_FOUND', '[BaseApi] ClientDB bulunamadı', { tenantId: clientId });
         }
     }
 

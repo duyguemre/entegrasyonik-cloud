@@ -5,6 +5,9 @@ import { ObjectId } from 'mongodb'
 import { deleteMappingsOfCategory } from '@operations/catalog/mapping/mappingCleanup'
 import { CategoryRepository } from '@database/repositories/tenant/CategoryRepository'
 import { AttributeMappingRepository } from '@database/repositories/tenant/AttributeMappingRepository'
+import { eventLog } from '@platform/core/logger';
+
+const log = eventLog('api', 'category-service');
 
 export default class CategoryService extends BaseApi implements IService {
     // Getter: test, servisi kurduktan SONRA `svc.clientDB` atar (BrandService deseni).
@@ -84,7 +87,7 @@ export default class CategoryService extends BaseApi implements IService {
                 fromCategory = categories[1]
                 toCategory = categories[0]
             }
-            console.log(fromCategory, toCategory)
+            log.debug('CATEGORY_REORDER', '[CategoryService] sıra değişimi', { fromId: String(fromCategory?._id ?? ''), toId: String(toCategory?._id ?? '') })
             let tempOrder = -1
             tempOrder = fromCategory.order
             fromCategory.order = toCategory.order

@@ -2,6 +2,9 @@ import { IService } from '@interfaces/index'
 import { BaseApi } from '../BaseApi'
 import { ShipmentPanelRepository } from '@database/repositories/tenant/ShipmentPanelRepository'
 import { listShipments, createShipment, bulkCreateShipments } from '@operations/orders/shipments'
+import { eventLog } from '@platform/core/logger';
+
+const log = eventLog('api', 'shipment-service');
 
 export { MAX_SHIPMENTS_PAGE_LIMIT } from '@operations/orders/shipments'
 
@@ -16,7 +19,7 @@ export default class ShipmentService extends BaseApi implements IService {
         return {
             repo: this.shipments,
             clientId: Number(this.currentClientId),
-            logError: (message: string, error: unknown) => console.error(message, error)
+            logError: (message: string, error: unknown) => log.error('SHIPMENT_PLATFORM_SYNC_FAILED', message, { err: error })
         }
     }
 
@@ -35,7 +38,7 @@ export default class ShipmentService extends BaseApi implements IService {
             const { orderId, fulfillmentData } = this.request;
             return await createShipment(this.deps, orderId, fulfillmentData);
         } catch (error: any) {
-            console.error('[ShipmentService] createShipment Hatası:', error);
+            log.error('SHIPMENT_CREATE_SHIPMENT_FAILED', '[ShipmentService] createShipment hatası', { err: error });
             throw error;
         }
     }

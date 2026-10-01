@@ -80,6 +80,9 @@ describe('IntegrationConfigService — _platform hedefi', () => {
         s.request = { target: T };
         const eff = await s.getEffectiveConfig();
         expect(eff.values.map((v: any) => v.key).sort()).toEqual([
+            // ADR-0029 NB8: alarm eşikleri (catalog/alerts.ts, yöneticiye özel)
+            'alerts.r1.criticalPercent', 'alerts.r1.minCalls', 'alerts.r1.warnPercent', 'alerts.r10.p95Min', 'alerts.r11.minCount', 'alerts.r2.authErrors', 'alerts.r2.circuitOpenMin',
+            'alerts.r3.lagCriticalMin', 'alerts.r3.lagWarnMin', 'alerts.r4.oldestWaitMin', 'alerts.r4.queueWait', 'alerts.r5.pendingMin', 'alerts.r7.deadPerHour', 'alerts.r8.unresolvedMin',
             'announcement.enabled', 'announcement.level', 'announcement.text', 'features.agent', 'features.agent.disabledCapabilities', 'maintenance.enabled', 'maintenance.message',
             'support.email', 'support.phone', 'ui.listPageSize', 'ui.reportPollMs',
         ]);

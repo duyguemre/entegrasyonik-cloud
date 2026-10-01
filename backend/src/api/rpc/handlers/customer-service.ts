@@ -2,6 +2,9 @@ import { IService } from '@interfaces/index'
 import { BaseApi } from '../BaseApi'
 import { CustomerPanelRepository } from '@database/repositories/tenant/CustomerPanelRepository'
 import { listCustomers, customerDetail, updateCustomer, anonymizeCustomer } from '@operations/orders/customers'
+import { eventLog } from '@platform/core/logger';
+
+const log = eventLog('api', 'customer-service');
 
 
 /**
@@ -22,7 +25,7 @@ export default class CustomerService extends BaseApi implements IService {
         try {
             return await listCustomers(this.customers, this.request);
         } catch (error) {
-            console.error('[CustomerService] getCustomers Hatası:', error);
+            log.error('CUSTOMER_GET_CUSTOMERS_FAILED', '[CustomerService] getCustomers hatası', { err: error });
             throw error;
         }
     }
@@ -32,7 +35,7 @@ export default class CustomerService extends BaseApi implements IService {
         try {
             return await customerDetail(this.customers, this.request.customerId);
         } catch (error) {
-            console.error('[CustomerService] getCustomerDetail Hatası:', error);
+            log.error('CUSTOMER_GET_CUSTOMER_DETAIL_FAILED', '[CustomerService] getCustomerDetail hatası', { err: error });
             throw error;
         }
     }
@@ -43,7 +46,7 @@ export default class CustomerService extends BaseApi implements IService {
             const { customerId, updateData } = this.request;
             return await updateCustomer(this.customers, customerId, updateData);
         } catch (error) {
-            console.error('[CustomerService] updateCustomer Hatası:', error);
+            log.error('CUSTOMER_UPDATE_CUSTOMER_FAILED', '[CustomerService] updateCustomer hatası', { err: error });
             throw error;
         }
     }
@@ -53,7 +56,7 @@ export default class CustomerService extends BaseApi implements IService {
         try {
             return await anonymizeCustomer(this.customers, this.request.customerId);
         } catch (error) {
-            console.error('[CustomerService] anonymizeCustomer Hatası:', error);
+            log.error('CUSTOMER_ANONYMIZE_CUSTOMER_FAILED', '[CustomerService] anonymizeCustomer hatası', { err: error });
             throw error;
         }
     }

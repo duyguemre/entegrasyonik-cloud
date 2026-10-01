@@ -2,6 +2,9 @@ import { IService } from '@interfaces/index'
 import { BaseApi } from '../BaseApi'
 import { MenuRepository } from '@database/repositories/app/MenuRepository'
 import { FavoriteRepository } from '@database/repositories/tenant/FavoriteRepository'
+import { eventLog } from '@platform/core/logger';
+
+const log = eventLog('api', 'menu-service');
 export default class MenuService extends BaseApi implements IService {
 
     private get menus() { return new MenuRepository(this.applicationDB) }
@@ -13,7 +16,7 @@ export default class MenuService extends BaseApi implements IService {
             if (res && res.list) return res.list
             throw (new Error("no list"))
         } catch (error) {
-            console.log(error)
+            log.error('MENU_GET_FAILED', '[MenuService] menü alınamadı', { err: error })
             throw error
         }
     }

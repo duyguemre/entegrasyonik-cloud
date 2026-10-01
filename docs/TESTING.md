@@ -64,6 +64,16 @@ Bellek-içi Mongo isteyen `tests/mongo-semantics` varsayılan koşuda çalışı
 Kural: yeni test varsayılan olarak mock'lu; gerçek DB gerektiriyorsa `tests/integration/` altına `*.realmongo.test.ts` olarak.
 Ayrıntı ve DB kuralları: `backend/tests/README.md`.
 
+## Kalite kapısı (ADR-0024 P4-GATE)
+
+`npm run depcruise`: ihlali sıfır olan tüm katman kuralları `error` (tek `warn`: `no-circular`, mandallı). `npm run ratchet`
+(`quality/check-ratchets.js`, ölçüm `quality/baseline.json`'a göre ARTAMAZ): `no-console` dosya başına, diğer eslint uyarıları
+kural başına, depcruise kural başına, `noUnusedLocals`, knip ve `handlers` — `src/api/rpc/handlers/**` dosya başına satır
+(yalnız 400'ü aşanlar; yeni handler 400'ü aşamaz, aşan büyüyemez) ve dosya başına `getXModel()` çağrısı (depo katmanına
+taşındıkça azalır). Azalma `npm run ratchet:update` ile kilitlenir. `src/api/**` için `no-console` eslint `error`'dur.
+Bulutta knip için Linux yerel bağlayıcısı lockfile'da kurulmuyorsa: `npm i --no-save @oxc-parser/binding-linux-x64-gnu@<sürüm>
+@oxc-resolver/binding-linux-x64-gnu@<sürüm>` (sürümler `package-lock.json`'da).
+
 ## Log doğrulama (F-06)
 
 Motor/adaptör kodu `console.*` yerine `eventLog` (yapılandırılmış JSON, stdout) kullanır. Testlerde `console` casusu yerine

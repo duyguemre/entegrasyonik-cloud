@@ -3,29 +3,6 @@
     "errors": 0,
     "consoleByFile": {
       "entegrasyonik.ts": 7,
-      "src/api/http/authenticate.ts": 1,
-      "src/api/rpc/BaseApi.ts": 2,
-      "src/api/webhooks/BillingWebhookApiManager.ts": 4,
-      "src/api/files/ExportDownloadApiManager.ts": 2,
-      "src/api/files/ImageApiManager.ts": 2,
-      "src/api/webhooks/MockCheckoutApiManager.ts": 3,
-      "src/api/rpc/RunOperation.ts": 1,
-      "src/api/rpc/handlers/admin-service.ts": 13,
-      "src/api/rpc/handlers/attributeMapping-service.ts": 1,
-      "src/api/rpc/handlers/category-service.ts": 1,
-      "src/api/rpc/handlers/claim-service.ts": 1,
-      "src/api/rpc/handlers/customer-service.ts": 4,
-      "src/api/rpc/handlers/financial-service.ts": 2,
-      "src/api/rpc/handlers/image-service.ts": 2,
-      "src/api/rpc/handlers/integration-service.ts": 8,
-      "src/api/rpc/handlers/invoice-service.ts": 2,
-      "src/api/rpc/handlers/menu-service.ts": 1,
-      "src/api/rpc/handlers/message-service.ts": 5,
-      "src/api/rpc/handlers/order-service.ts": 1,
-      "src/api/rpc/handlers/security-service.ts": 1,
-      "src/api/rpc/handlers/shipment-service.ts": 2,
-      "src/api/rpc/handlers/smart-service.ts": 1,
-      "src/api/rpc/handlers/tenant-data-service.ts": 2,
       "src/database/application/ApplicationDB.ts": 1,
       "src/database/Database.ts": 3,
       "src/database/DatabaseManager.ts": 3,
@@ -79,5 +56,28 @@
     "types": 6,
     "duplicates": 2,
     "enumMembers": 9
+  },
+  "handlers": {
+    "linesOverMax": {
+      "src/api/rpc/handlers/admin-service.ts": 404,
+      "src/api/rpc/handlers/integration-config-service.ts": 453
+    },
+    "getModelCalls": {
+      "src/api/rpc/handlers/announcement-service.ts": 2,
+      "src/api/rpc/handlers/backoffice-admin-user-service.ts": 1,
+      "src/api/rpc/handlers/backoffice-attention-support.ts": 5,
+      "src/api/rpc/handlers/backoffice-audit-service.ts": 1,
+      "src/api/rpc/handlers/backoffice-billing-service.ts": 12,
+      "src/api/rpc/handlers/backoffice-error-service.ts": 1,
+      "src/api/rpc/handlers/backoffice-infra-service.ts": 2,
+      "src/api/rpc/handlers/backoffice-notification-service.ts": 2,
+      "src/api/rpc/handlers/backoffice-overview-service.ts": 6,
+      "src/api/rpc/handlers/backoffice-prefs-service.ts": 1,
+      "src/api/rpc/handlers/backoffice-tenant-service.ts": 9,
+      "src/api/rpc/handlers/ecommerce-service.ts": 4,
+      "src/api/rpc/handlers/integration-compliance-service.ts": 2,
+      "src/api/rpc/handlers/integration-config-service.ts": 3,
+      "src/api/rpc/handlers/variant-service.ts": 1
+    }
   }
 }

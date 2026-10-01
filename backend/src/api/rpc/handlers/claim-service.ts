@@ -2,6 +2,9 @@ import { IService } from '@interfaces/index'
 import { BaseApi } from '../BaseApi'
 import { ClaimPanelRepository } from '@database/repositories/tenant/ClaimPanelRepository'
 import { listClaims, rejectClaim, approveClaim, bulkApproveClaims, getClaimById } from '@operations/orders/claims'
+import { eventLog } from '@platform/core/logger';
+
+const log = eventLog('api', 'claim-service');
 
 /**
  * İade/talep RPC cephesi (ADR-0024 Dalga 3 P3-ORD). Sorgular `ClaimPanelRepository`'de, iş kuralları `operations/orders/claims`'te;
@@ -21,7 +24,7 @@ export default class ClaimService extends BaseApi implements IService {
         try {
             return await listClaims(this.claims, this.request.searchClaimForm);
         } catch (error) {
-            console.error('[ClaimService] getClaims Hatası:', error);
+            log.error('CLAIM_GET_CLAIMS_FAILED', '[ClaimService] getClaims hatası', { err: error });
             throw error;
         }
     }

@@ -5,6 +5,9 @@ import { getConfiguredProviderName, getPaymentProvider } from '@services/billing
 import { EntitlementService } from '@services/billing/EntitlementService';
 import { PaymentProviderError, WebhookHeaders } from '@services/billing/PaymentProvider';
 import { createRateLimiter } from '@platform/rateLimit/rateLimit';
+import { eventLog } from '@platform/core/logger';
+
+const log = eventLog('webhook', 'BillingWebhookApiManager');
 
 // ADR-0008 §4: "Ayrı rota: POST /api/billing/webhooks/:provider — jenerik /:service/:operation RPC'sinin dışında,
 // JWT gerektirmez, IP/istek rate limit'li, ham gövde (raw body) yakalanır."
@@ -86,7 +89,7 @@ export async function handleBillingWebhook(provider: string, rawBody: Buffer, he
             event = await paymentProvider.verifyAndParseWebhook(rawBody, headers);
         } catch (e: any) {
             if (!(e instanceof PaymentProviderError) || e.code !== 'invalid_signature') {
-                console.error('[BillingWebhookApiManager] beklenmeyen doğrulama hatası:', e?.message);
+                log.error('BILLING_WEBHOOK_VERIFY_UNEXPECTED', '[BillingWebhookApiManager] beklenmeyen doğrulama hatası', { err: e?.message });
             }
             await AuditLogger.log({ event: 'billing.webhook.invalid_signature', result: 'fail', meta: { provider } });
             return { statusCode: 401, outcome: 'invalid_signature' };
@@ -135,7 +138,7 @@ export async function handleBillingWebhook(provider: string, rawBody: Buffer, he
         } catch (e: any) {
             status = 'failed';
             failureReason = String(e?.message ?? 'unknown_error').slice(0, 200);
-            console.error('[BillingWebhookApiManager] olay işleme hatası:', e?.message);
+            log.error('BILLING_WEBHOOK_PROCESS_FAILED', '[BillingWebhookApiManager] olay işleme hatası', { err: e?.message });
         }
 
         try {
@@ -153,13 +156,13 @@ export async function handleBillingWebhook(provider: string, rawBody: Buffer, he
         } catch (e: any) {
             // İdempotency yarışı: iki eşzamanlı istek aynı olayı aynı anda ilk kez işlemeye çalışırsa unique
             // indeks ikincisini reddeder -- bu durum da "ignored" ile eşdeğerdir (ilki zaten kaydı yazdı/yazacak).
-            console.error('[BillingWebhookApiManager] BillingEvent yazılamadı (muhtemelen idempotency yarışı):', e?.message);
+            log.error('BILLING_EVENT_WRITE_FAILED', '[BillingWebhookApiManager] BillingEvent yazılamadı (muhtemelen idempotency yarışı)', { err: e?.message });
             return { statusCode: 200, outcome: 'ignored' };
         }
 
         return { statusCode: 200, outcome: status === 'processed' ? 'processed' : 'failed' };
     } catch (e: any) {
-        console.error('[BillingWebhookApiManager] beklenmeyen hata:', e?.message);
+        log.error('BILLING_WEBHOOK_UNEXPECTED', '[BillingWebhookApiManager] beklenmeyen hata', { err: e?.message });
         return { statusCode: 500 };
     }
 }

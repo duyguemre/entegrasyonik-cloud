@@ -5,6 +5,9 @@ import { FinancialPanelRepository } from '@database/repositories/tenant/Financia
 import { queryTransactions, cargoInvoices, financialSummary, payoutDetails } from '@operations/finance/financialPanel'
 import { listCommissionOverrides, setCommissionOverride, deleteCommissionOverride } from '@operations/finance/commissionOverrides'
 import { getOrderCommissionSummary, getCommissionByBarcodes, getRealizedCommissionByCategory, getNetRevenuePreview, MAX_NET_PREVIEW_ITEMS } from '@operations/finance/commissionQueries'
+import { eventLog } from '@platform/core/logger';
+
+const log = eventLog('api', 'financial-service');
 
 export { CARGO_INVOICES_MAX_ROWS } from '@operations/finance/financialPanel'
 
@@ -27,9 +30,9 @@ export default class FinancialService extends BaseApi implements IService {
     async getTransactionData(): Promise<any> {
         const { filterQuery, transactions, totalNumberOfRecords, summary } = await queryTransactions(this.finance, this.request);
 
-        console.log(`[FinancialService:get] Filter: ${JSON.stringify(filterQuery)}, Found: ${transactions.length} records`);
+        log.debug('FINANCIAL_GET_RESULT', '[FinancialService:get] sorgu sonucu', { filterKeys: Object.keys(filterQuery), found: transactions.length });
         if (transactions.length > 0) {
-            console.log(`[FinancialService:get] Sample Record Integration: ${transactions[0].integrationCode}, Type: ${transactions[0].transactionType}`);
+            log.debug('FINANCIAL_GET_SAMPLE', '[FinancialService:get] örnek kayıt', { integrationCode: transactions[0].integrationCode, transactionType: transactions[0].transactionType });
         }
 
         return { transactions, totalNumberOfRecords, summary };

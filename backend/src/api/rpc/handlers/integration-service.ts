@@ -14,6 +14,9 @@ import * as stockPolicy from '@operations/integrations/stockPolicy'
 import * as lookup from '@operations/integrations/platformLookup'
 import * as importJobs from '@operations/integrations/importJobs'
 import * as exportJobs from '@operations/integrations/exportJobs'
+import { eventLog } from '@platform/core/logger';
+
+const log = eventLog('api', 'integration-service');
 
 /**
  * Entegrasyon RPC cephesi (ADR-0024 D6, Dalga 3 P3-INT). RPC adları ve yanıt biçimleri DEĞİŞMEDİ; sorgular
@@ -164,7 +167,7 @@ export default class IntegrationService extends BaseApi implements IService {
         return importJobs.requestImportFetch(
             { jobs: this.importJobRepo, staging: this.clientDB ? new ImportStagingRepository(this.clientDB, clientId) : null },
             this.request.integrationCode,
-            (cleanupErr: any) => console.error(`[API] Cleanup Error for Client ${clientId}:`, cleanupErr.message),
+            (cleanupErr: any) => log.error('INTEGRATION_CLEANUP_FAILED', '[IntegrationService] temizlik hatası', { tenantId: clientId, err: cleanupErr.message }),
         )
     }
 
@@ -176,7 +179,7 @@ export default class IntegrationService extends BaseApi implements IService {
         try {
             return await importJobs.getImportJob(this.importJobRepo, this.request.jobId)
         } catch (error: any) {
-            console.error("getJobByJobId Error:", error)
+            log.error('IMPORT_JOB_GET_FAILED', '[IntegrationService] getJobByJobId hatası', { err: error })
             return { success: false, message: "İşlem detayları getirilirken teknik bir hata oluştu.", error: error?.message }
         }
     }
@@ -186,7 +189,7 @@ export default class IntegrationService extends BaseApi implements IService {
         try {
             return await importJobs.archiveImportJobs(this.importJobRepo, this.request.ids)
         } catch (error) {
-            console.error("archiveImportJobs Error:", error)
+            log.error('IMPORT_JOBS_ARCHIVE_FAILED', '[IntegrationService] archiveImportJobs hatası', { err: error })
             return { success: false, message: "Arşivleme işlemi sırasında hata oluştu." }
         }
     }
@@ -199,17 +202,17 @@ export default class IntegrationService extends BaseApi implements IService {
 
     async getExportJobDetail() {
         return exportJobs.getExportJobDetail(new ExportJobRepository(this.clientDB), this.catalog, (this.request || {}).id,
-            (err: any) => console.error(`[getExportJobDetail] Error:`, err.message))
+            (err: any) => log.error('EXPORT_JOB_DETAIL_FAILED', '[IntegrationService] getExportJobDetail hatası', { err: err.message }))
     }
 
     async advancedSearchExportJobs() {
         return exportJobs.advancedSearchExportJobs(new ExportJobRepository(this.clientDB), this.request || {},
-            (err: any) => console.error(`[advancedSearchExportJobs] Error:`, err.message))
+            (err: any) => log.error('EXPORT_JOBS_SEARCH_FAILED', '[IntegrationService] advancedSearchExportJobs hatası', { err: err.message }))
     }
 
     async getExportJobs() {
         return exportJobs.listExportJobs(new ExportJobRepository(this.clientDB), this.request || {},
-            (err: any) => console.error(`[getExportJobs] Error:`, err.message))
+            (err: any) => log.error('EXPORT_JOBS_LIST_FAILED', '[IntegrationService] getExportJobs hatası', { err: err.message }))
     }
 
     /** Toplu dışa aktarma: doğrulayıp hemen yanıt döner; paket arka planda (await edilmeden) oluşturulur. */
@@ -223,11 +226,11 @@ export default class IntegrationService extends BaseApi implements IService {
                 return { result: false, message: 'Lütfen varyant seçiniz.' }
             }
             this.internalProcessBatch(this.request).catch(err => {
-                console.error("BatchCreator Background Error:", err)
+                log.error('BATCH_CREATOR_BACKGROUND_FAILED', '[BatchCreator] arka plan hatası', { err })
             })
             return { result: true, message: 'İşleminiz  başlatıldı. Ürünler işleme alınıyor.' }
         } catch (error: any) {
-            console.error("Batch Creator Entry Error:", error)
+            log.error('BATCH_CREATOR_ENTRY_FAILED', '[BatchCreator] giriş hatası', { err: error })
             return { result: false, message: 'Sistemsel bir hata oluştu.' }
         }
     }

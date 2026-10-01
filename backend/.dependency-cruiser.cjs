@@ -1,7 +1,7 @@
 /**
- * dependency-cruiser — katman sözleşmesi (docs/BACKEND_CODE_AUDIT.md §d.1). Faz 0 / B-R4: UYARI modu.
- * Mevcut ihlaller `quality/baseline.json`'da mandallıdır (`npm run ratchet`): sayı ARTAMAZ; B-R13'te
- * ters bağımlılıklar çözülünce kurallar 'error'a çevrilir ve baseline sıfırlanır.
+ * dependency-cruiser — katman sözleşmesi (docs/BACKEND_CODE_AUDIT.md §d.1). ADR-0024 P4-GATE (2026-10-01): ihlali
+ * sıfıra inen TÜM kurallar 'error'. Yalnız `no-circular` 'warn' kalır (interfaces/ barrel + metrics prodDeps döngüleri);
+ * sayısı `quality/baseline.json`'da mandallıdır (`npm run ratchet`): ARTAMAZ, sıfırlanınca 'error'a çevrilir.
  *
  * Çalıştırma: npm run depcruise  (yalnızca src + entegrasyonik.ts taranır; testler ve dev-tools kapsam dışı)
  */
@@ -18,28 +18,28 @@ module.exports = {
     {
       name: 'lower-layers-not-to-api',
       comment: 'database|services|operations|integration → api YASAK (api katmanı hiçbir alt katmandan içe aktarılmaz; ters bağımlılık, MM-04).',
-      severity: 'warn',
+      severity: 'error',
       from: { path: '^src/(database|services|operations|integration)/' },
       to: { path: '^src/api/' },
     },
     {
       name: 'adapters-not-to-operations',
       comment: 'integration/modules (adaptörler) → operations|api YASAK: adaptör iş kuralı katmanını bilmez.',
-      severity: 'warn',
+      severity: 'error',
       from: { path: '^src/integration/modules/' },
       to: { path: '^src/(operations|api)/' },
     },
     {
       name: 'database-not-to-upper-layers',
       comment: 'database → operations|integration|api YASAK: veri katmanı üst katmanları bilmez.',
-      severity: 'warn',
+      severity: 'error',
       from: { path: '^src/database/' },
       to: { path: '^src/(operations|integration|api)/' },
     },
     {
       name: 'leaf-layers-not-to-upper',
       comment: 'interfaces ve utils yaprak katmandır: database|services|operations|integration|api içe aktarmaz.',
-      severity: 'warn',
+      severity: 'error',
       from: { path: '^src/(interfaces|utils)/' },
       to: { path: '^src/(database|services|operations|integration|api)/' },
     },

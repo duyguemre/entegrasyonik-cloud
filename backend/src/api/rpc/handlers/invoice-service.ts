@@ -2,6 +2,9 @@ import { IService } from '@interfaces/index'
 import { BaseApi } from '../BaseApi'
 import { InvoicePanelRepository } from '@database/repositories/tenant/InvoicePanelRepository'
 import { createManualInvoice, listInvoices, deleteInvoice, createInvoice, bulkCreateInvoices, resolveAndReissueInvoice } from '@operations/orders/invoices'
+import { eventLog } from '@platform/core/logger';
+
+const log = eventLog('api', 'invoice-service');
 
 /**
  * Fatura RPC cephesi (ADR-0024 Dalga 3 P3-ORD). Sorgular `InvoicePanelRepository`'de, iş kuralları `operations/orders/invoices`'da;
@@ -14,7 +17,7 @@ export default class InvoiceService extends BaseApi implements IService {
         return {
             repo: this.invoices,
             clientId: Number(this.currentClientId),
-            logError: (message: string, error: unknown) => console.error(message, error)
+            logError: (message: string, error: unknown) => log.error('INVOICE_PLATFORM_SYNC_FAILED', message, { err: error })
         }
     }
 
@@ -67,7 +70,7 @@ export default class InvoiceService extends BaseApi implements IService {
                 return this.createInvoice();
             });
         } catch (error) {
-            console.error('[InvoiceService] Error:', error);
+            log.error('INVOICE_OPERATION_FAILED', '[InvoiceService] hata', { err: error });
             throw error;
         }
     }

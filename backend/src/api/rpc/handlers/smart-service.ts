@@ -2,6 +2,9 @@ import { IService } from '@interfaces/index'
 import { BaseApi } from '../BaseApi'
 import { containsRegex, toSearchString } from '@utils/search'
 import { SmartSummaryRepository } from '@database/repositories/tenant/SmartSummaryRepository'
+import { eventLog } from '@platform/core/logger';
+
+const log = eventLog('api', 'smart-service');
 
 /** [GV-01] ReDoS/maliyet sınırı: sorgu ≤ 100 karakter, en çok 5 kelime (her kelime 4 koleksiyonda x çok alanda regex). */
 const MAX_SEARCH_WORDS = 5
@@ -40,7 +43,7 @@ export default class SmartService extends BaseApi implements IService {
 
             return { orders, products, customers, claims };
         } catch (error) {
-            console.error('[SmartService] unifiedSearch Hatası:', error);
+            log.error('SMART_UNIFIED_SEARCH_FAILED', '[SmartService] unifiedSearch hatası', { err: error });
             throw error;
         }
     }

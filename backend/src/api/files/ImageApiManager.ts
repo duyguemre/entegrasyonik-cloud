@@ -4,6 +4,9 @@ import { runImageApi } from "../rpc/RunOperation";
 import { sanitizeResponse } from "@platform/core/security/responseSanitizer";
 import { sendHttpError } from '../http/errorEnvelope';
 import { logger } from '@platform/core/logger';
+import { eventLog } from '@platform/core/logger';
+
+const log = eventLog('api', 'ImageApiManager');
 
 function sendImageError(res: Response, error: any) {
     const status = error?.statusCode || 500;
@@ -127,7 +130,7 @@ export function configureImageServices(
             res.sendFile(imagePath);
 
         } catch (e: any) {
-            console.log(e)
+            log.error('IMAGE_API_FAILED', '[ImageApiManager] istek hatası', { err: e, service: req.params.service, operation: req.params.operation })
             res.status(e.statusCode || 500).send({ error: e.message, service: req.params.service, operation: req.params.operation })
         }
     })
@@ -147,7 +150,7 @@ export function configureImageServices(
             res.download(imagePath);
 
         } catch (e: any) {
-            console.log(e)
+            log.error('IMAGE_API_FAILED', '[ImageApiManager] istek hatası', { err: e, service: req.params.service, operation: req.params.operation })
             res.status(e.statusCode || 500).send({ error: e.message, service: req.params.service, operation: req.params.operation })
         }
     })

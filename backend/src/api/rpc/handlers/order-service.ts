@@ -4,6 +4,9 @@ import { OrderPanelRepository } from '@database/repositories/tenant/OrderPanelRe
 import { listOrders } from '@operations/orders/orderList'
 import { cancelOrder, bulkCancelOrders, approveOrder, bulkApproveOrders, markOrderPrinted, orderRejectionReasons } from '@operations/orders/orderActions'
 import { orderDashboardInsights } from '@operations/orders/dashboard'
+import { eventLog } from '@platform/core/logger';
+
+const log = eventLog('api', 'order-service');
 
 /**
  * Sipariş RPC cephesi (ADR-0024 Dalga 3 P3-ORD). Sorgular `OrderPanelRepository`'de, iş kuralları `operations/orders/*`'da;
@@ -23,7 +26,7 @@ export default class OrderService extends BaseApi implements IService {
         try {
             return await listOrders(this.orders, this.request.searchOrderForm);
         } catch (error) {
-            console.error('[OrderService] getOrders Hatası:', error);
+            log.error('ORDER_GET_ORDERS_FAILED', '[OrderService] getOrders hatası', { err: error });
             throw error;
         }
     }

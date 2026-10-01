@@ -62,6 +62,11 @@ export default tseslint.config(
     },
   },
   {
+    // ADR-0024 P4 / F-06: `src/api/**` console kullanımı sıfıra indi (yapılandırılmış `eventLog`); geri dönüş engellenir.
+    files: ['src/api/**/*.ts'],
+    rules: { 'no-console': 'error' },
+  },
+  {
     // Testler: yazım kolaylığı için gevşek; yalnızca gerçek hata sınıfı kurallar.
     files: ['tests/**/*.ts'],
     languageOptions: {

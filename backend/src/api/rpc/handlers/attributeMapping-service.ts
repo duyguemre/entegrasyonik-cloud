@@ -10,6 +10,9 @@ import { autoMatchAllCategories } from '@operations/catalog/mapping/autoMatch'
 import { AttributeMappingRepository } from '@database/repositories/tenant/AttributeMappingRepository'
 import { CategoryRepository } from '@database/repositories/tenant/CategoryRepository'
 import { ChoiceRepository } from '@database/repositories/tenant/ChoiceRepository'
+import { eventLog } from '@platform/core/logger';
+
+const log = eventLog('api', 'attributeMapping-service');
 
 /** autoMatch varsayılan platformu (parametre verilmezse; eski sabit davranış). */
 const AUTO_MATCH_DEFAULT_CODE = 'trendyol'
@@ -288,7 +291,7 @@ export default class AttributeMappingService extends BaseApi implements IService
             return { result: resp.modifiedCount > 0 || resp.upsertedCount > 0 };
 
         } catch (error) {
-            console.error("saveAttributeValueMapping Error:", error);
+            log.error('ATTRIBUTE_VALUE_MAPPING_SAVE_FAILED', '[AttributeMappingService] saveAttributeValueMapping hatası', { err: error });
             throw error;
         }
     }

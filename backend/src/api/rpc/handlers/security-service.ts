@@ -13,6 +13,9 @@ import { config } from '@config'
 import { ClientRepository } from '@database/repositories/app/ClientRepository'
 import { buildUserContext } from '../../http/authenticate'
 import { defaultTicketRedis, IMPERSONATION_SESSION_SECONDS, redeemImpersonationTicket } from '../../admin/impersonationTicket'
+import { eventLog } from '@platform/core/logger';
+
+const log = eventLog('api', 'security-service');
 
 /** ADR-0001 Karar 10: kullanıcı-yok / yanlış-parola / kilitli / pasif için AYNI mesaj (kullanıcı enumeration yok). */
 export const GENERIC_LOGIN_ERROR = 'E-posta veya parola hatalı'
@@ -53,7 +56,7 @@ export default class SecurityService extends BaseApi implements IService {
         runInBackground(
             new AccountLifecycleService({ applicationDB: this.applicationDB })
                 .issueEmailVerification({ _id: created._id, email: created.email, emailVerified: created.emailVerified }, { ip: this.request.requestMeta?.ip })
-                .catch((e: any) => { console.warn('[SecurityService.register] doğrulama e-postası hazırlanamadı:', e?.message); }),
+                .catch((e: any) => { log.warn('REGISTER_VERIFICATION_EMAIL_FAILED', '[SecurityService.register] doğrulama e-postası hazırlanamadı', { err: e?.message }); }),
         );
         return { sessionClaims: Security.claimsFromUser(created), body: toProfileDto(created) } as SessionResult;
     }

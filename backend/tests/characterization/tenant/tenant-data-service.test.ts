@@ -38,6 +38,7 @@ import TenantDataService from '../../../src/api/rpc/handlers/tenant-data-service
 import Security from '../../../src/platform/core/security/Security';
 import { TENANT_LIFECYCLE_STATUS } from '../../../src/operations/tenant/TenantLifecycleService';
 import { verifyExportDownloadToken } from '../../../src/operations/tenant/exportDownloadToken';
+import { captureLogs } from '../../helpers/logCapture';
 
 function chain(result: any) {
   const c: any = {};
@@ -217,9 +218,12 @@ describe('TenantDataService.exportTenantData (owner) — GERÇEK R2/ağ YOK, tam
     setupAppDb();
     clientDb.getProductModel = jest.fn(() => ({ find: jest.fn(() => ({ lean: jest.fn(async () => { throw new Error('mongo down'); }) })) }));
     const svc = await make({ userContext: { order: 7 }, principal: { sub: 'u1' } });
-    const r = await svc.exportTenantData();
-    expect(r.success).toBe(true);
-    expect(console.error).toHaveBeenCalledWith(expect.stringContaining("'products.ndjson'"), 'mongo down');
+    const cap = captureLogs();
+    try {
+      const r = await svc.exportTenantData();
+      expect(r.success).toBe(true);
+      expect(cap.lines).toContainEqual(expect.objectContaining({ level: 'error', code: 'TENANT_EXPORT_FILE_SKIPPED', file: 'products.ndjson', err: 'mongo down' }));
+    } finally { cap.restore(); }
   });
 
   it('yükleme başarısız olursa (uploadExportArchive result:false) hata fırlatılır', async () => {
