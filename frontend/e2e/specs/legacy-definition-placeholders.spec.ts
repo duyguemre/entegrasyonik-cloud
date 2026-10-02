@@ -21,6 +21,7 @@
 // onay yine yerelde (Windows tabanları) yapılır.
 import { test, expect } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
+import { settleAnimations } from '../fixtures/settle'
 import { installApiMocks } from '../fixtures/mockApi'
 import { gotoAuthed } from '../fixtures/nav'
 import { HIDDEN_DEFINITION_SCREENS, menuFixtureWithLegacyDefinitions, openHiddenDefinitionScreen } from '../fixtures/definitionsMenu'
@@ -82,6 +83,7 @@ test.describe('fe-r4d D5 — eski tanım ekranları: satır eylemleri bağlı', 
       const confirm = page.getByRole('alertdialog')
       await expect(confirm).toContainText("'Emre Yalçınkaya' satırı silinsin mi?")
       await expect(confirm.getByRole('button', { name: 'Vazgeç' })).toBeFocused()
+      await settleAnimations(page)
       expect((await new AxeBuilder({ page }).include('.v-overlay--active').withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze()).violations).toEqual([])
       await confirm.getByRole('button', { name: 'Vazgeç' }).click()
       await expect(rows).toHaveCount(6)
@@ -99,6 +101,7 @@ test.describe('fe-r4d D5 — eski tanım ekranları: satır eylemleri bağlı', 
       await expect(dlg).toContainText('Ad boş olamaz')
       await expect(dlg).toBeVisible()
       await name.fill('Ayşe Demir')
+      await settleAnimations(page)
       expect((await new AxeBuilder({ page }).include('.v-overlay--active').withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze()).violations).toEqual([])
       await dlg.getByRole('button', { name: 'Kaydet' }).click()
       await expect(dlg).toBeHidden()

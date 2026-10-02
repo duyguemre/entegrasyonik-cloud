@@ -3,6 +3,7 @@
 // İnceleme görüntüleri: PRC_REVIEW=1 PRC_OUT=docs/prc-r2-review/<genişlik> (günlük koşuda görüntü yazılmaz).
 import { test, expect } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
+import { settleAnimations } from '../fixtures/settle'
 import type { Page, Route } from '@playwright/test'
 import { installApiMocks, mockError } from '../fixtures/mockApi'
 import { waitForWorkplaceReady } from '../fixtures/nav'
@@ -32,17 +33,8 @@ async function shot(page: Page, name: string) {
 }
 
 async function seriousAxe(page: Page, include: string) {
-  // fe-r4d D1: renk geçişi (150–300ms token hareketi) sürerken ölçülen ara renk (~#7891e1) sahte kontrast ihlali
-  // üretiyordu (mobil/tablet, yük altında). Axe yerleşmiş son durumu ölçer: süren CSS geçiş/animasyonları beklenir
-  // (sonsuz animasyonlar — iskelet/yükleniyor — beklenmez).
-  await page.evaluate(() =>
-    Promise.all(
-      document
-        .getAnimations()
-        .filter((a) => a.effect?.getComputedTiming().endTime !== Infinity)
-        .map((a) => a.finished.catch(() => undefined)),
-    ),
-  )
+  // fe-r4d D1: renk geçişi sürerken ölçülen ara renk (~#7891e1) sahte kontrast ihlali üretiyordu → yerleşmiş durum ölçülür.
+  await settleAnimations(page)
   const r = await new AxeBuilder({ page }).include(include).withTags(AXE_TAGS).analyze()
   return r.violations.filter((v) => v.impact === 'critical' || v.impact === 'serious')
 }

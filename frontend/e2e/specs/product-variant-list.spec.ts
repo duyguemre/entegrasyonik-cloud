@@ -11,6 +11,7 @@
 // bizimhesap) çözülür.
 import { test, expect } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
+import { settleAnimations } from '../fixtures/settle'
 import type { Page } from '@playwright/test'
 import { installApiMocks } from '../fixtures/mockApi'
 import { buildProduct, choicesDoluFixture } from '../fixtures/apiData'
@@ -140,10 +141,12 @@ test.describe('P3 (B5-2) — Ürün listesi varyant açılımı (ProductVariantL
 
   test('axe: WCAG 2.1 AA taraması (tablo + durum kartı)', async ({ page }, testInfo) => {
     const list = await openVariantList(page)
+    await settleAnimations(page)
     const table = await new AxeBuilder({ page }).include(`#variant-target-${listProduct._id}`).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze()
     await list.locator('tbody tr').filter({ hasText: 'VL-E2E-SIYAH' }).getByRole('button', { name: /^Trendyol: Yayında/ }).click()
     await expect(page.locator('.v-overlay--active .premium-status-container')).toBeVisible()
     await page.waitForTimeout(500) // scale-transition bitsin (ara opaklık kontrastı bozar)
+    await settleAnimations(page)
     const card = await new AxeBuilder({ page }).include('.v-overlay--active .premium-status-container').withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze()
     await testInfo.attach('axe-ProductVariantListComponent-sonuclari.json', { body: JSON.stringify(table.violations, null, 2), contentType: 'application/json' })
     await testInfo.attach('axe-ProductVariantListTooltipComponent-sonuclari.json', { body: JSON.stringify(card.violations, null, 2), contentType: 'application/json' })
