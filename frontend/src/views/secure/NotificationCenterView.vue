@@ -117,6 +117,7 @@
                 <EkBadge v-if="row.groupCount > 1" variant="label" tone="neutral" :text="`×${row.groupCount}`" :aria-label="`${row.groupCount} kez`" />
                 <span v-if="row.mandatory" class="ek-nc-item__lock" role="img" aria-label="Zorunlu bildirim" title="Zorunlu bildirim">
                   <v-icon icon="mdi-lock-outline" aria-hidden="true" />
+                  <span aria-hidden="true">Zorunlu</span>
                 </span>
               </span>
               <span v-if="row.message" class="ek-nc-item__message">{{ row.message }}</span>
@@ -761,9 +762,14 @@ defineExpose({
   box-shadow: var(--ek-focus-ring);
 }
 
+/* FE-R4 A3 dil uyumu: çekmeceyle aynı — kilit + "Zorunlu" sessiz etiketi. */
 .ek-nc-item__lock {
   display: inline-flex;
+  align-items: center;
+  gap: 2px;
   color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-caption-size);
+  line-height: var(--ek-type-caption-line);
 }
 
 .ek-nc-item__lock :deep(.v-icon) {

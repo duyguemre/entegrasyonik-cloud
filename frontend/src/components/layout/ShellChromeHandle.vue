@@ -70,6 +70,10 @@ const focusLabel = computed(() => (props.focusMode ? 'Odak modundan çık' : 'Ta
 
 <style scoped>
 .ek-chrome-handle {
+  /* FE-R4 A1: tutamak üst barın devamı — aynı bir ton açık kabuk (EkAppHeader `tone="soft"` ile aynı eşleme). */
+  --ek-gradient-chrome: var(--ek-gradient-chrome-soft);
+  --ek-color-chrome-raised: var(--ek-color-chrome-soft-raised);
+  --ek-color-chrome-text-muted: var(--ek-color-chrome-soft-text-muted);
   /* Konum kabuktan (SecureLayout) gelir; burada yalnız görünüm. Görünür dil = 12px, açık = 28px. */
   --ek-handle-rest: 12px;
   --ek-handle-open: 28px;

@@ -172,6 +172,11 @@ function renderEffectLines(): string[] {
       'gradient-chrome',
       'linear-gradient(100deg, var(--ek-color-chrome) 0%, var(--ek-color-chrome-end) 100%)',
     ),
+    // FE-R4 A1 (ek): uygulama üst barının bir ton açık degradesi.
+    cssVarLine(
+      'gradient-chrome-soft',
+      'linear-gradient(100deg, var(--ek-color-chrome-soft) 0%, var(--ek-color-chrome-soft-end) 100%)',
+    ),
     cssVarLine('color-scrim-veil', 'color-mix(in srgb, var(--ek-color-scrim) 44%, transparent)'),
     cssVarLine(
       'focus-ring',

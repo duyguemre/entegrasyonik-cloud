@@ -885,3 +885,19 @@ hata/zaman aşımı, tek istek, tazelik; duyuru kapatma hatırlama; görsel URL 
 `e2e/specs/public-config.spec.ts` (3 viewport; axe AA). **Görseller:** `docs/cfg-review/` (duyuru info/warning/critical, bakım,
 bakım+duyuru, destek; light + dark; 1440 + 390) — `CFG_REVIEW=1 CFG_REVIEW_WIDTH=1440|390 [CFG_REVIEW_DARK=1] npx playwright test e2e/specs/cfg-review.spec.ts --project=chromium-desktop`.
 Görsel taban değişikliği YOK (varsayılan yapılandırmada şerit çıkmaz).
+
+## 34. FE-R4 Şerit A — kabuk ve pencereler (`cloud/fe-r4a`, K61)
+
+Sözleşme: `docs/cloud-contracts/FE_FEEDBACK_R4_2026-10-02.md` Şerit A. Ayrıntı + görseller: `docs/fe-r4-review/a/REPORT.md`.
+Paylaşılan paketlere YALNIZ EKLEME yapıldı; varsayılanlar eski görünümü korur (backoffice değişmez).
+
+| # | Konu | Nerede | Kural |
+|---|---|---|---|
+| A1 | Üst bar bir ton açık | `tokens/semantic.ts` + `palette.ts` (`chromeSoftDark`) + `roles.ts` + `render.ts` (`--ek-gradient-chrome-soft`); `EkAppHeader tone="soft"` | 5 yeni rol: `chrome-soft`, `-end`, `-raised`, `-border`, `-text-muted` (light navy-700→500, dark bir kademe aydınlık). `chrome-text` + `chrome-soft-text-muted` üç zeminde AA (kontrast çiftleri testte). Bileşen kapsamında `chrome*` → `chrome-soft*` yeniden bağlanır; yuvadaki arama ve Otopilot girişi aynı tonu kendiliğinden alır. `ShellChromeHandle` aynı eşleme. Vuetify tema tabanı +5 anahtar (124) — bilinçli ekleme. |
+| A2 | Profil koyu bloğu yok | `EkAppHeader tone="soft"` | Dinlenirken zeminsiz/çerçevesiz; avatar yuvarlak kabuk kontrol tonunda; hover'da hafif zemin. Koyu kapsül yalnız Otopilot girişinde. |
+| A3 | Bildirim penceresi | `NotificationDrawerComponent.vue`, `stores/notificationDrawer.ts` (`loading`, `listError`) | Yüzen panel (8px, dialog radius/gölge; < 600px tam genişlik). Başlık + okunmamış sayaç hapı + bağlantı durumu; zaman satır başlığının sağında (üzerine gelince/odakta yerini okundu/sil'e bırakır); okunmamış = nokta + kalın başlık (kritikte nokta hata tonu); kritik = ince hata kenarı + "Kritik" çipi; işlem özeti metrik şeridi; iskelet (ilk açılış) ve `EkProblemState` + Tekrar dene (liste alınamazsa). Merkez ile aynı "Zorunlu" etiketi. |
+| A4 | Otopilot penceresi | `ChatPanel appearance="refined"` → `.ek-chat--refined` (chat.css sonu) | Degrade Otopilot işareti, ortalı karşılama + öneri kart ızgarası, yüzen composer (sayaç sınıra yaklaşınca görünür; ekran okuyucu sayacı hep var), ince tonlu onay kartı, kurulum karşılaması. DOM/metin/eylem/durum makinesi aynı. |
+| A5 | Akıllı arama | `EkSmartSearch appearance="refined"` + `itemMenu`/`holdOpen`/`panelMaxWidth`, `item-menu` olayı; `ShellSearch` | Bantsız grup başlığı + sade sayı; tek satır başlık (taşan "…"), "Etiket değer ·" düz metin meta; etkin satır yalnız seçim zemini + `Enter` ipucu; ⋯ / sağ tık / Shift+F10 → türe göre bağlam menüsü (aç · ikincil gezinme · kopyala → toast); menü açıkken sonuçlar açık kalır, Esc odağı aramaya döndürür; alt şeritte toplam. |
+
+**Testler:** `e2e/specs/fe-r4a-shell.spec.ts` (karakterizasyon + yeni iddialar + axe açık/koyu), `tests/fe-r4a-notification-drawer.test.ts`,
+`tests/theme/*` (kontrast çiftleri, tema tabanı). **Görseller:** `FE_R4A_REVIEW=1 FE_R4A_OUT=docs/fe-r4-review/a/sonra npx playwright test e2e/specs/fe-r4a-review.spec.ts --project=chromium-desktop`.

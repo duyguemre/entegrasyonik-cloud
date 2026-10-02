@@ -20,9 +20,16 @@ import { computed } from 'vue'
 
 const props = defineProps<{ storeName?: string; logo?: string; size?: number | string }>()
 
+// FE-R4 A2: monogram üst bardaki hesap avatarıyla aynı (ilk iki kelimenin baş harfi, tr-TR büyük harf).
 const initial = computed(() => {
   const name = (props.storeName || '').trim()
-  return name ? name[0]!.toUpperCase() : '?'
+  if (!name) return '?'
+  return name
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((w) => w.charAt(0))
+    .join('')
+    .toLocaleUpperCase('tr-TR')
 })
 </script>
 
@@ -33,13 +40,14 @@ const initial = computed(() => {
 }
 
 .store-logo-avatar--monogram {
-  background-color: var(--ek-color-surface-sunken);
+  background-color: var(--ek-color-action-subtle);
+  box-shadow: inset 0 0 0 1px var(--ek-color-action-border);
 }
 
 .store-logo-avatar__initial {
-  font-weight: var(--ek-font-weight-semibold);
-  color: var(--ek-color-content-strong);
-  font-size: var(--ek-font-size-md);
+  font-weight: var(--ek-font-weight-bold);
+  color: var(--ek-color-action-emphasis);
+  font-size: var(--ek-type-label-size);
   line-height: 1;
 }
 </style>

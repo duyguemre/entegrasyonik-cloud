@@ -3,9 +3,11 @@
   okunur satır genişliği ≤ 760 px ortalanmış) AYNI bileşen; uygulama yerleşimi (itme/üstüne binme, genişlik) host'tadır.
   Durumlar: loading · setup-required (kurulum formu, sohbet listesi yerine) · unavailable · sohbet (idle/sending/streaming/
   awaiting-confirm/error). Canlı bölgeler: thread `role=log`; tur sonu özeti + durum için ayrı görünmez `role=status`.
+  FE-R4 A4 (ek, geri uyumlu): `appearance="refined"` → `ek-chat--refined` görsel katmanı (chat.css sonundaki ek kurallar;
+  DOM, metin, eylem ve durum makinesi AYNI). Varsayılan `default` eski görünümdür (backoffice değişmez).
 -->
 <template>
-  <section class="ek-chat" :class="[`is-${mode}`, `is-${chat.status.value}`]" :aria-labelledby="titleId">
+  <section class="ek-chat" :class="[`is-${mode}`, `is-${chat.status.value}`, { 'ek-chat--refined': appearance === 'refined' }]" :aria-labelledby="titleId">
     <header class="ek-chat__head">
       <span class="ek-chat__mark" aria-hidden="true"><v-icon :icon="CHAT_ICON" size="small" /></span>
       <h2 :id="titleId" class="ek-chat__title">{{ CHAT_PRODUCT.name }}</h2>
@@ -85,8 +87,17 @@ import ChatUnavailable from './ChatUnavailable.vue'
 import { CHAT_ICON } from './icons'
 import '../styles/chat.css'
 
-const props = withDefaults(defineProps<{ controller: ChatController; mode?: 'side' | 'page'; showClose?: boolean; showExpand?: boolean; autofocus?: boolean }>(), {
+const props = withDefaults(defineProps<{
+  controller: ChatController
+  mode?: 'side' | 'page'
+  showClose?: boolean
+  showExpand?: boolean
+  autofocus?: boolean
+  /** FE-R4 A4: `refined` = premium pencere katmanı (uygulama); `default` = eski görünüm. */
+  appearance?: 'default' | 'refined'
+}>(), {
   mode: 'side',
+  appearance: 'default',
   showClose: true,
   showExpand: true,
   autofocus: true,

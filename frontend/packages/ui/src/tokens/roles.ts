@@ -55,6 +55,11 @@ export const COLOR_ROLES: ColorRoleDoc[] = [
   { key: 'chrome-border', group: 'chrome', purpose: 'Üst bar kontrollerinin kenarlığı ve ayraçları.' },
   { key: 'chrome-text', group: 'chrome', purpose: 'Üst bar üzerindeki birincil metin ve ikon.' },
   { key: 'chrome-text-muted', group: 'chrome', purpose: 'Üst bar ikincil metni (yer tutucu, alt bilgi).' },
+  { key: 'chrome-soft', group: 'chrome', purpose: 'FE-R4 A1: uygulama üst barının bir ton AÇIK degrade başlangıcı (--ek-gradient-chrome-soft). Backoffice kabuğu chrome ile kalır.' },
+  { key: 'chrome-soft-end', group: 'chrome', purpose: 'Açık üst bar degradesinin bitişi. Yalnızca --ek-gradient-chrome-soft içinde.' },
+  { key: 'chrome-soft-raised', group: 'chrome', purpose: 'Açık üst bar üzerindeki kontrol zemini (arama kutusu, Otopilot girişi, hover).' },
+  { key: 'chrome-soft-border', group: 'chrome', purpose: 'Açık üst bar kontrollerinin kenarlığı ve ayraçları.' },
+  { key: 'chrome-soft-text-muted', group: 'chrome', purpose: 'Açık üst bar ikincil metni ve dinlenen ikonlar (chrome-text birincil metin olarak aynen kullanılır).' },
   // Sidebar
   { key: 'sidebar-bg', group: 'sidebar', purpose: 'Sol menü zemini — zeminden bir kademe açık, sağda sidebar-border.' },
   { key: 'sidebar-border', group: 'sidebar', purpose: 'Sol menünün içerikle sınırı.' },
@@ -150,6 +155,10 @@ export const CONTRAST_PAIRS: ContrastPair[] = [
   // Kabuk
   ...(['chrome-text', 'chrome-text-muted'] as SemanticColorKey[]).flatMap((fg) =>
     (['chrome', 'chrome-end', 'chrome-raised'] as SemanticColorKey[]).map((bg) => ({ fg, bg, min: 4.5 as const })),
+  ),
+  // FE-R4 A1: açık üst bar — birincil ve ikincil metin üç zeminde de AA.
+  ...(['chrome-text', 'chrome-soft-text-muted'] as SemanticColorKey[]).flatMap((fg) =>
+    (['chrome-soft', 'chrome-soft-end', 'chrome-soft-raised'] as SemanticColorKey[]).map((bg) => ({ fg, bg, min: 4.5 as const })),
   ),
   // Sidebar
   ...(['sidebar-bg', 'sidebar-hover'] as SemanticColorKey[]).map((bg) => ({ fg: 'sidebar-text' as SemanticColorKey, bg, min: 4.5 as const })),
