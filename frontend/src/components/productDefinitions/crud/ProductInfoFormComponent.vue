@@ -79,7 +79,7 @@
           </span>
         </template>
         <span v-else class="pif-drop">
-          <span class="pif-drop__icon" aria-hidden="true"><v-icon icon="mdi-cloud-upload-outline" /></span>
+          <span class="pif-drop__icon" aria-hidden="true"><v-icon icon="mdi-upload-outline" /></span>
           <span class="pif-drop__title">Görsel ekle</span>
           <span class="pif-drop__sub">Galeride görselleri sürükleyip bırakabilir, sıralayabilir ve kapağı seçebilirsiniz.</span>
         </span>

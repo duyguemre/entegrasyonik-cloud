@@ -7,6 +7,7 @@
   Not: metinler bilerek adım adlarını (Ürün Tanımı vb.) içermez — adım adları yalnız şeritte geçer.
   FE R4 B: ortada konum göstergesi (4 nokta + "n / 4", dekoratif — adım bilgisi şeritte `aria-current` ile okunur);
   altbilgi sihirbaz sütununda ince bir ayraçla içerikten ayrılır.
+  FE R5 B: içerik sütununun sonunda sakin bir çubuk (soluk zemin, ince kenarlık) — bölüm kartlarından ayrışır.
 -->
 <template>
   <div class="pfs" role="group" aria-label="Adım gezintisi">
@@ -50,9 +51,11 @@ function go(step: number) {
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
   gap: var(--ek-space-3);
-  margin-top: var(--ek-space-6);
-  padding-top: var(--ek-space-4);
-  border-top: 1px solid var(--ek-color-border-default);
+  margin-top: var(--ek-space-5);
+  padding: var(--ek-space-3) var(--ek-space-4);
+  border: 1px solid var(--ek-color-border-subtle);
+  border-radius: var(--ek-radius-card);
+  background: var(--ek-color-surface-muted);
 }
 
 .pfs > :first-child {
