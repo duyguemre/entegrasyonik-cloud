@@ -18,7 +18,6 @@
         <v-radio :value="false" :label="$t('productDefinitions.product.define.withoutVariant')">
           <template #label>
             <span class="pif-choice">
-              <v-icon class="pif-choice__icon" icon="mdi-package-variant-closed" aria-hidden="true" />
               <span class="pif-choice__text">
                 <span class="pif-choice__title">{{ $t('productDefinitions.product.define.withoutVariant') }}</span>
                 <span class="pif-choice__desc">Tek stok kodu ve barkodla satılır.</span>
@@ -29,7 +28,6 @@
         <v-radio :value="true" :label="$t('productDefinitions.product.define.withVariant')">
           <template #label>
             <span class="pif-choice">
-              <v-icon class="pif-choice__icon" icon="mdi-palette-swatch-outline" aria-hidden="true" />
               <span class="pif-choice__text">
                 <span class="pif-choice__title">{{ $t('productDefinitions.product.define.withVariant') }}</span>
                 <span class="pif-choice__desc">Renk, beden gibi her birleşim ayrı kod, fiyat ve stok taşır.</span>
@@ -152,14 +150,14 @@ function labelToolbar(quill: any) {
 <style scoped>
 /* ── ürün tipi: iki seçim kartı (radyo + ikon + başlık + açıklama tek tıklama alanı) ───────────────────────── */
 .pif-radios :deep(.v-selection-control-group) {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  flex-wrap: wrap;
   gap: var(--ek-space-3);
 }
 
 .pif-radios :deep(.v-radio) {
-  align-items: flex-start;
-  min-height: 72px;
+  flex: 1 1 240px;
+  align-items: center;
+  min-height: 68px;
   margin: 0;
   padding: var(--ek-space-3) var(--ek-space-4) var(--ek-space-3) var(--ek-space-2);
   border: 1px solid var(--ek-color-border-default);
@@ -187,19 +185,8 @@ function labelToolbar(quill: any) {
 
 .pif-choice {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: var(--ek-space-3);
-  padding-top: var(--ek-space-2);
-}
-
-.pif-choice__icon {
-  flex: none;
-  color: var(--ek-color-content-muted);
-  font-size: var(--ek-icon-lg);
-}
-
-.pif-radios :deep(.v-selection-control--dirty) .pif-choice__icon {
-  color: var(--ek-color-action);
 }
 
 .pif-choice__text {
@@ -413,10 +400,6 @@ function labelToolbar(quill: any) {
 }
 
 @container pform (max-width: 599px) {
-  .pif-radios :deep(.v-selection-control-group) {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
   .pif-gallery__grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }

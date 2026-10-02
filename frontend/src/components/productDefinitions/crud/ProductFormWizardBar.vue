@@ -17,7 +17,7 @@
   Adım adları/durumları, kilitler, aria bağları ve olaylar AYNI (karakterizasyon: `tests/fe-r4b-product-form-characterization.test.ts`).
 -->
 <template>
-  <div class="pfw-preview" :class="{ 'has-cover': !!coverSrc }">
+  <div class="pfw-preview" :class="{ 'has-cover': !!coverSrc, 'is-collapsed': collapsed }">
     <span class="pfw-preview__cover">
       <img v-if="coverSrc" :src="coverSrc" alt="" loading="lazy" decoding="async" />
       <v-icon v-else icon="mdi-image-outline" aria-hidden="true" />
@@ -25,16 +25,16 @@
     <div class="pfw-preview__body">
       <span class="pfw-preview__type">{{ form?.hasVariant ? 'Varyantlı ürün' : 'Tekil ürün' }}</span>
       <p class="pfw-preview__title" :class="{ 'is-empty': !titleText }">{{ titleText || 'Adsız ürün' }}</p>
-      <p class="pfw-preview__meta">
-        <span>{{ brandTitle || 'Marka seçilmedi' }}</span>
-        <span aria-hidden="true">·</span>
+      <p class="pfw-preview__meta">{{ brandTitle || 'Marka seçilmedi' }}</p>
+      <p class="pfw-preview__meta pfw-preview__path" :title="pathText || undefined">
+        <v-icon icon="mdi-file-tree-outline" aria-hidden="true" />
         <span>{{ pathText || 'Kategori seçilmedi' }}</span>
       </p>
     </div>
     <div class="pfw-preview__stats">
-      <span class="pfw-stat">
+      <span class="pfw-stat pfw-stat--price">
         <span class="pfw-stat__label">Fiyat</span>
-        <span class="pfw-stat__value ek-num">{{ priceText }}</span>
+        <span class="pfw-stat__value ek-num" :title="priceText">{{ priceText }}</span>
       </span>
       <span class="pfw-stat">
         <span class="pfw-stat__label">Stok</span>
@@ -45,9 +45,13 @@
         <span class="pfw-stat__value ek-num">{{ variantText }}</span>
       </span>
     </div>
+    <EkButton v-if="collapsible" tone="ghost" size="sm" icon-only class="pfw-collapse"
+      :icon="collapsed ? 'mdi-chevron-double-right' : 'mdi-chevron-double-left'"
+      :aria-label="collapsed ? 'Ürün panelini genişlet' : 'Ürün panelini daralt'" :aria-expanded="collapsed ? 'false' : 'true'"
+      @click="emit('toggle-collapse')" />
   </div>
 
-  <nav class="pfw-nav" aria-label="Ürün formu adımları">
+  <nav class="pfw-nav" :class="{ 'is-collapsed': collapsed }" aria-label="Ürün formu adımları">
     <span class="pfw-nav__head" aria-hidden="true">
       <span>Adımlar</span>
       <span class="ek-num">{{ current + 1 }} / 4</span>
@@ -61,7 +65,7 @@
           :aria-current="s.current ? 'step' : undefined"
           :aria-disabled="s.locked ? 'true' : undefined"
           :aria-describedby="s.locked ? `${uid}-status-${s.index} ${uid}-reason-${s.index}` : `${uid}-status-${s.index}`"
-          :title="s.locked ? s.lockedReason : undefined"
+          :title="s.locked ? s.lockedReason : collapsed ? `${s.title} · ${s.statusText}` : undefined"
           @click="onStep(s)"
         >
           <span class="pfw-step__marker" aria-hidden="true">
@@ -81,7 +85,7 @@
     </ol>
   </nav>
 
-  <section class="pfw-bar" :class="{ 'is-ready': progress.canSave, 'is-open': panelOpen }" aria-label="Ürün formu ilerlemesi">
+  <section class="pfw-bar" :class="{ 'is-ready': progress.canSave, 'is-open': panelOpen, 'is-collapsed': collapsed }" aria-label="Ürün formu ilerlemesi">
     <div class="pfw-bar__status">
       <span class="pfw-ring" :class="{ 'is-done': progress.canSave }" aria-hidden="true">
         <svg viewBox="0 0 48 48" class="pfw-ring__svg">
@@ -132,7 +136,7 @@
         <span v-if="!progress.canSave" class="pfw-toggle__count ek-num" aria-hidden="true">{{ progress.missing.length }}</span>
       </EkButton>
       <EkButton tone="primary" class="pfw-save" icon="mdi-content-save-outline" :disabled="!progress.canSave || saving" :loading="saving" :aria-describedby="`${uid}-hint`" @click="emit('save')">
-        {{ saveLabel }}
+        <span class="pfw-save__label">{{ saveLabel }}</span>
       </EkButton>
     </div>
 
@@ -217,11 +221,15 @@ const props = defineProps<{
   categoryPath?: string[]
   /** FE R5 B — son kayıt denemesinin satır içi geri bildirimi (toast'a ek; `role="status"`). */
   feedback?: ProductFormFeedback | null
+  /** FE R5 B — geniş kapta ray daraltılabilir (yalnız işaretçiler, halka ve Kaydet simgesi kalır). */
+  collapsible?: boolean
+  collapsed?: boolean
 }>()
 
 const emit = defineEmits<{
   navigate: [payload: { step: StepIndex; field?: string }]
   save: []
+  'toggle-collapse': []
 }>()
 
 const uid = useId()
@@ -238,7 +246,7 @@ const pathText = computed(() => (props.categoryPath?.length ? props.categoryPath
 const priceText = computed(() => {
   const priced = variants.value.filter((v) => v?.prices && v.prices.isPlatformBasedPrice !== true)
   const sales = priced.map((v) => Number(v.prices.salePrice)).filter((n) => Number.isFinite(n) && n > 0)
-  if (!sales.length) return variants.value.length && !priced.length ? 'Kanal bazında' : '—'
+  if (!sales.length) return variants.value.length && !priced.length ? 'Kanal fiyatı' : '—'
   const min = Math.min(...sales)
   const max = Math.max(...sales)
   return min === max ? formatMoney(min) : `${formatMoney(min)} – ${formatMoney(max)}`
@@ -378,13 +386,31 @@ function onIssue(item: ProgressItem) {
 }
 
 .pfw-preview__meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0 var(--ek-space-1);
   margin: 2px 0 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   color: var(--ek-color-content-muted);
   font-size: var(--ek-type-caption-size);
   line-height: var(--ek-type-caption-line);
+}
+
+.pfw-preview__path {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ek-space-1);
+  margin-top: 0;
+  white-space: normal;
+}
+
+.pfw-preview__path :deep(.v-icon) {
+  flex: none;
+  margin-top: 1px;
+  font-size: var(--ek-icon-xs);
+}
+
+.pfw-collapse {
+  display: none;
 }
 
 .pfw-preview__stats {
@@ -950,23 +976,120 @@ function onIssue(item: ProgressItem) {
   .pfw-preview {
     grid-template-columns: auto minmax(0, 1fr);
     gap: var(--ek-space-3);
-    padding: var(--ek-space-4);
+    padding: var(--ek-space-3);
   }
 
   .pfw-preview__cover {
-    width: 64px;
-    height: 64px;
+    width: 56px;
+    height: 56px;
+  }
+
+  .pfw-preview {
+    position: relative;
+  }
+
+  .pfw-preview__body {
+    padding-right: var(--ek-space-6);
+  }
+
+  .pfw-preview__path {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .pfw-preview__path :deep(.v-icon) {
+    margin: -2px var(--ek-space-1) 0 0;
+    vertical-align: middle;
   }
 
   .pfw-preview__stats {
     grid-column: 1 / -1;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    padding-top: var(--ek-space-3);
-    border-top: 1px solid var(--ek-color-border-subtle);
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1.15fr);
   }
 
   .pfw-stat {
     padding: var(--ek-space-1) var(--ek-space-2);
+  }
+
+  .pfw-collapse {
+    position: absolute;
+    top: var(--ek-space-2);
+    right: var(--ek-space-2);
+    display: inline-flex;
+  }
+
+  /* ── daraltılmış ray: işaretçiler + halka + Kaydet simgesi; metinler görsel olarak gizli (erişilebilir ad aynı) ── */
+  .pfw-preview.is-collapsed {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--ek-space-2);
+    padding: var(--ek-space-3) var(--ek-space-2);
+  }
+
+  .pfw-preview.is-collapsed .pfw-preview__cover {
+    width: 44px;
+    height: 44px;
+  }
+
+  .pfw-preview.is-collapsed .pfw-preview__body,
+  .pfw-preview.is-collapsed .pfw-preview__stats {
+    display: none;
+  }
+
+  .pfw-preview.is-collapsed .pfw-collapse {
+    position: static;
+  }
+
+  .pfw-nav.is-collapsed {
+    padding: var(--ek-space-2) var(--ek-space-1);
+  }
+
+  .pfw-nav.is-collapsed .pfw-nav__head,
+  .pfw-nav.is-collapsed .pfw-step__go {
+    display: none;
+  }
+
+  .pfw-nav.is-collapsed .pfw-step {
+    justify-content: center;
+    padding: var(--ek-space-2) 0;
+  }
+
+  .pfw-nav.is-collapsed .pfw-steps__link {
+    left: calc(50% - 1px);
+  }
+
+  .pfw-nav.is-collapsed .pfw-step__text,
+  .pfw-bar.is-collapsed .pfw-progress,
+  .pfw-bar.is-collapsed .pfw-feedback__text,
+  .pfw-bar.is-collapsed .pfw-save__label,
+  .pfw-bar.is-collapsed .pfw-toggle__label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .pfw-bar.is-collapsed {
+    justify-items: center;
+    padding: var(--ek-space-3) var(--ek-space-1);
+  }
+
+  .pfw-bar.is-collapsed .pfw-feedback {
+    padding: var(--ek-space-1);
+  }
+
+  .pfw-bar.is-collapsed .pfw-toggle__count {
+    margin-left: 0;
+  }
+
+  .pfw-bar.is-collapsed .pfw-actions > :deep(*) {
+    min-width: 0;
+    padding-inline: var(--ek-space-2);
   }
 
   .pfw-nav {
@@ -996,9 +1119,9 @@ function onIssue(item: ProgressItem) {
 
   /* Dikey bağlantı: işaretçiler arası ilerleme çizgisi. */
   .pfw-steps__link {
-    top: 46px;
-    bottom: -6px;
-    left: 27px;
+    top: 41px;
+    bottom: -7px;
+    left: 23px;
     right: auto;
     width: 2px;
     height: auto;
@@ -1008,9 +1131,9 @@ function onIssue(item: ProgressItem) {
     flex-direction: row;
     align-items: center;
     gap: var(--ek-space-3);
-    min-height: 56px;
-    margin: 2px 0;
-    padding: var(--ek-space-2) var(--ek-space-2) var(--ek-space-2) var(--ek-space-2);
+    min-height: 48px;
+    margin: 1px 0;
+    padding: var(--ek-space-1) var(--ek-space-2);
     border-radius: var(--ek-radius-control);
     text-align: left;
   }
@@ -1050,13 +1173,13 @@ function onIssue(item: ProgressItem) {
     align-self: auto;
     grid-template-columns: minmax(0, 1fr);
     gap: var(--ek-space-3);
-    padding: var(--ek-space-4);
+    padding: var(--ek-space-3) var(--ek-space-3) var(--ek-space-3) var(--ek-space-4);
     box-shadow: var(--ek-shadow-card);
   }
 
   .pfw-ring {
-    width: 52px;
-    height: 52px;
+    width: 48px;
+    height: 48px;
   }
 
   .pfw-ring__text {
@@ -1068,11 +1191,17 @@ function onIssue(item: ProgressItem) {
   }
 
   .pfw-actions {
-    flex-direction: column-reverse;
+    flex-wrap: wrap;
     align-items: stretch;
   }
 
   .pfw-save {
+    flex: 1 1 auto;
+    min-height: var(--ek-control-h-lg);
+  }
+
+  .pfw-toggle {
+    flex: 0 1 auto;
     min-height: var(--ek-control-h-lg);
   }
 

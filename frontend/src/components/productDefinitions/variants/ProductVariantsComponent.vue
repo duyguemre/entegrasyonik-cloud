@@ -32,6 +32,31 @@
       :title="deleteConfirm.title" :description="deleteConfirm.description" confirm-label="Sil" confirm-icon="mdi-trash-can-outline"
       @confirm="runDelete" />
 
+    <ProductStepCard :step="3" title="Varyant bilgileri" icon="mdi-palette-swatch-outline"
+      description="Her seçenek birleşiminin kodu, fiyatı ve stoğu; satırlar ilk seçeneğe göre gruplanır.">
+    <ul v-if="variantList.length" class="pv-summary" aria-label="Varyant özeti">
+      <li class="pv-tile">
+        <span class="pv-tile__label">Varyant</span>
+        <strong class="pv-tile__value ek-num">{{ formatNumber(variantList.length) }}</strong>
+        <span class="pv-tile__sub">{{ formatNumber(groupCount) }} {{ groupNoun }}</span>
+      </li>
+      <li class="pv-tile">
+        <span class="pv-tile__label">Toplam stok</span>
+        <strong class="pv-tile__value ek-num">{{ formatNumber(summary.stock) }}</strong>
+        <span class="pv-tile__sub" :class="{ 'is-warn': summary.outOfStock }">{{ summary.outOfStock ? `Stoksuz: ${formatNumber(summary.outOfStock)}` : 'Tümünde stok var' }}</span>
+      </li>
+      <li class="pv-tile">
+        <span class="pv-tile__label">Satış fiyatı</span>
+        <strong class="pv-tile__value ek-num">{{ summary.priceRange }}</strong>
+        <span class="pv-tile__sub">{{ summary.channelPriced ? `Kanal fiyatlı: ${formatNumber(summary.channelPriced)}` : 'Tüm kanallarda ana fiyat' }}</span>
+      </li>
+      <li class="pv-tile">
+        <span class="pv-tile__label">Görsel</span>
+        <strong class="pv-tile__value ek-num">{{ formatNumber(variantList.length - summary.noImage) }} / {{ formatNumber(variantList.length) }}</strong>
+        <span class="pv-tile__sub" :class="{ 'is-warn': summary.noImage }">{{ summary.noImage ? `Görselsiz: ${formatNumber(summary.noImage)}` : 'Hepsinde görsel var' }}</span>
+      </li>
+    </ul>
+
     <section class="pv-frame" aria-labelledby="pv-title">
       <!-- araç çubuğu -->
       <!-- Aşama 6b (Standart 3): tek toplu işlem çubuğu (EkBulkBar) — seçim yokken başlık + araçlar. -->
@@ -92,9 +117,16 @@
           <EkEmptyState v-if="filterText" variant="no-results" title="Aramaya uyan varyant yok"
             message="Stok kodu, barkod, raf veya seçenek adıyla aradınız. Aramayı temizleyip tekrar deneyin."
             show-action action-text="Aramayı temizle" action-icon="mdi-close" @action="filterText = ''" />
-          <EkEmptyState v-else variant="first-run" title="Henüz varyant yok"
-            message="Seçenek gruplarından (ör. renk, beden) değerleri seçerek varyantları tek seferde oluşturun."
-            show-action action-text="Varyant oluştur" action-icon="mdi-plus" @action="isVariantGeneratorMenu = true" />
+          <div v-else class="pv-empty">
+            <EkEmptyState variant="first-run" title="Henüz varyant yok"
+              message="Seçenek gruplarından (ör. renk, beden) değerleri seçerek varyantları tek seferde oluşturun."
+              show-action action-text="Varyant oluştur" action-icon="mdi-plus" @action="isVariantGeneratorMenu = true" />
+            <ol class="pv-empty__steps">
+              <li><span class="pv-empty__n ek-num" aria-hidden="true">1</span>Seçenek gruplarını seçin (renk, beden…)</li>
+              <li><span class="pv-empty__n ek-num" aria-hidden="true">2</span>Kullanacağınız değerleri işaretleyin</li>
+              <li><span class="pv-empty__n ek-num" aria-hidden="true">3</span>Kod, fiyat ve stoku tabloda doldurun</li>
+            </ol>
+          </div>
         </template>
       </VariantGrid>
 
@@ -115,6 +147,7 @@
         </div>
       </footer>
     </section>
+    </ProductStepCard>
   </div>
 </template>
 
@@ -133,6 +166,8 @@ import ProductVariantPlatformPricesComponent from './ProductVariantPlatformPrice
 import ProductVariantGeneratorComponent from './ProductVariantGeneratorComponent.vue';
 import ProductVariantImagesComponent from './ProductVariantImagesComponent.vue';
 import VariantGrid from './grid/VariantGrid.vue'
+import ProductStepCard from '../crud/ProductStepCard.vue'
+import { formatMoney, formatNumber } from '@entegrasyonik/ui/format'
 import VariantBulkEditor from './grid/VariantBulkEditor.vue'
 import { BASE_COLUMNS, channelColumns, rowId, snapshot, type Snapshot } from './grid/variantSheet'
 import { useIntegrationStore } from '@/stores/integrationStore';
@@ -181,6 +216,24 @@ const groupNoun = computed(() => {
   const lower = title ? String(title).toLocaleLowerCase('tr') : ''
   // Seçenek adı zaten "… grubu" ise yinelenmez ("renk grubu grubu" değil).
   return lower ? (/\bgrubu$/.test(lower) ? lower : `${lower} grubu`) : 'grup'
+})
+
+// FE R5 B: ızgaranın üstündeki özet kutucukları (yalnız görüntü; varyant verisi değişmez).
+const summary = computed(() => {
+  const list = variantList.value
+  const sales = list
+    .filter((v: any) => v?.prices && v.prices.isPlatformBasedPrice !== true)
+    .map((v: any) => Number(v.prices.salePrice))
+    .filter((n: number) => Number.isFinite(n) && n > 0)
+  const min = sales.length ? Math.min(...sales) : 0
+  const max = sales.length ? Math.max(...sales) : 0
+  return {
+    stock: list.reduce((n: number, v: any) => n + (Number(v?.stock) || 0), 0),
+    outOfStock: list.filter((v: any) => !(Number(v?.stock) > 0)).length,
+    channelPriced: list.filter((v: any) => v?.prices?.isPlatformBasedPrice === true).length,
+    noImage: list.filter((v: any) => !(Array.isArray(v?.images) && v.images.length)).length,
+    priceRange: !sales.length ? '—' : min === max ? formatMoney(min) : `${formatMoney(min)} – ${formatMoney(max)}`,
+  }
 })
 
 // ── değişen hücre tabanı: bileşen açıldığında / varyantlar yeniden yüklendiğinde (kaydetme sonrası) ──
@@ -447,6 +500,90 @@ void eventBus
 </script>
 
 <style scoped>
+/* FE R5 B: özet kutucukları + boş durum adımları. */
+.pv-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--ek-space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.pv-tile {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: var(--ek-space-3) var(--ek-space-4);
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-card);
+  background: var(--ek-color-surface);
+  box-shadow: var(--ek-shadow-card);
+}
+.pv-tile__label {
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-micro-size);
+  line-height: var(--ek-type-micro-line);
+  font-weight: var(--ek-type-micro-weight);
+  letter-spacing: var(--ek-type-micro-tracking);
+  text-transform: uppercase;
+}
+.pv-tile__value {
+  overflow: hidden;
+  color: var(--ek-color-content-strong);
+  font-size: var(--ek-type-heading-size);
+  line-height: var(--ek-type-heading-line);
+  font-weight: var(--ek-font-weight-semibold);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pv-tile__sub {
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-caption-size);
+  line-height: var(--ek-type-caption-line);
+}
+.pv-tile__sub.is-warn {
+  color: var(--ek-color-warning-emphasis);
+  font-weight: var(--ek-font-weight-medium);
+}
+.pv-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ek-space-4);
+  padding-bottom: var(--ek-space-6);
+}
+.pv-empty__steps {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--ek-space-2) var(--ek-space-5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--ek-color-content-default);
+  font-size: var(--ek-type-caption-size);
+}
+.pv-empty__steps li {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ek-space-2);
+}
+.pv-empty__n {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: var(--ek-radius-full);
+  background: var(--ek-color-action-subtle);
+  color: var(--ek-color-action-emphasis);
+  font-weight: var(--ek-font-weight-semibold);
+}
+@container pform (max-width: 719px) {
+  .pv-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 .pv { display: flex; flex-direction: column; min-height: 0; }
 .pv-frame {
   display: flex;

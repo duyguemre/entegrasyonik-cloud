@@ -22,13 +22,14 @@
     <v-form @keydown.enter.prevent @submit.prevent ref="productInfoFormRef" v-model="isProductInfoFormValid">
 
       <div class="pdv-flow">
-        <div class="pdv-grid">
+        <div class="pdv-grid" :class="{ 'is-rail-collapsed': railCollapsed }">
           <!-- FE R5 B: ürün rayı (önizleme · adımlar · durum/Kaydet) — geniş kapta solda yapışkan, dar kapta üst + alt çubuk. -->
           <div class="pdv-rail">
             <ProductFormWizardBar :form="productInfoForm" :current="stepper" save-label="Kaydet" :saving="isSaving"
               :category-title="categoriesStore.getCategoryTitle(productInfoForm.category)"
               :brand-title="brandsStore.getBrandTitle(productInfoForm.brand)" :cover-src="preview.coverSrc.value"
-              :category-path="preview.categoryPath.value" :feedback="saveFeedback" @navigate="onNavigate" @save="saveProduct" />
+              :category-path="preview.categoryPath.value" :feedback="saveFeedback" collapsible :collapsed="railCollapsed"
+              @toggle-collapse="toggleRail" @navigate="onNavigate" @save="saveProduct" />
           </div>
 
           <div class="pdv-main">
@@ -87,7 +88,7 @@ import ProductFormWizardBar from '@/components/productDefinitions/crud/ProductFo
 import ProductFormStepFooter from '@/components/productDefinitions/crud/ProductFormStepFooter.vue'
 import ProductCategoryStep from '@/components/productDefinitions/crud/ProductCategoryStep.vue'
 import type { ProductFormFeedback } from '@/components/productDefinitions/crud/ProductFormWizardBar.vue'
-import { useProductFormPreview } from '@/composables/useProductFormPreview'
+import { useProductFormPreview, useProductRailPreference } from '@/composables/useProductFormPreview'
 import { focusProductField } from '@/composables/productFormFocus'
 import type { StepIndex } from '@/composables/useProductFormProgress'
 import ProductCompetitivePricesComponent from '@/components/productDefinitions/crud/ProductCompetitivePricesComponent.vue'
@@ -202,6 +203,7 @@ const isSaving = ref(false)
 // FE R5 B: rayın önizleme kartı + son kayıt denemesinin satır içi geri bildirimi (toast'a ek).
 const preview = useProductFormPreview(productInfoForm, () => productInfoForm.value?.tempId)
 const saveFeedback = ref<ProductFormFeedback | null>(null)
+const { railCollapsed, toggleRail } = useProductRailPreference()
 let feedbackTimer: ReturnType<typeof setTimeout> | undefined
 const showFeedback = (value: ProductFormFeedback | null) => {
   clearTimeout(feedbackTimer)
@@ -730,6 +732,10 @@ defineExpose({
 
   .pdv-main {
     padding-bottom: 0;
+  }
+
+  .pdv-grid.is-rail-collapsed {
+    grid-template-columns: 76px minmax(0, 1fr);
   }
 }
 </style>

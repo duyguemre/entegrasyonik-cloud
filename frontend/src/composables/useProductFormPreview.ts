@@ -5,7 +5,7 @@
  * Form modeli DEĞİŞTİRİLMEZ; yalnız görüntü. Kategori yolu `categoriesStore` ağacından (kökten yaprağa adlar) bulunur;
  * tek "ana" kök (`isMain`) kullanıcıya gösterilmez (CategorySelectBoxLevelComponent ile aynı kural).
  */
-import { computed, type Ref } from 'vue'
+import { computed, ref, type Ref } from 'vue'
 import { useCategoriesStore } from '@/stores/categoriesStore'
 import { useProductImageUrl } from '@/composables/useProductImageUrl'
 
@@ -52,4 +52,26 @@ export function useProductFormPreview(form: Ref<any>, productId: () => string | 
   )
 
   return { coverSrc, categoryPath }
+}
+
+const RAIL_KEY = 'ek-product-form-rail'
+
+/** Ray daraltma tercihi (kişisel kolaylık; tarayıcı depolaması yoksa varsayılan açık). */
+export function useProductRailPreference() {
+  let initial = false
+  try {
+    initial = localStorage.getItem(RAIL_KEY) === 'collapsed'
+  } catch {
+    initial = false
+  }
+  const railCollapsed = ref(initial)
+  const toggleRail = () => {
+    railCollapsed.value = !railCollapsed.value
+    try {
+      localStorage.setItem(RAIL_KEY, railCollapsed.value ? 'collapsed' : 'open')
+    } catch {
+      /* depolama kapalı: tercih yalnız bu oturumda geçerli */
+    }
+  }
+  return { railCollapsed, toggleRail }
 }

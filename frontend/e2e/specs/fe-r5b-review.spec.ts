@@ -127,6 +127,13 @@ for (const v of VIEWS) {
       await expect(root.getByText('SK-R2C-SIYAH-S').first()).toBeVisible()
       await page.waitForTimeout(400)
       await shot(page, 'varyant-3-izgara', v)
+      // geniş kapta ray daraltılabilir: ızgara tüm genişliği alır (dar kapta düğme yok)
+      const collapse = root.getByRole('button', { name: 'Ürün panelini daralt' })
+      if (await collapse.isVisible()) {
+        await collapse.click()
+        await page.waitForTimeout(400)
+        await shot(page, 'varyant-3-izgara-ray-daraltilmis', v)
+      }
     })
   })
 }
