@@ -1,12 +1,8 @@
 <template>
-  <section class="bo-panel" aria-labelledby="bo-res-title">
-    <header class="bo-panel__bar">
-      <div>
-        <h2 id="bo-res-title" class="bo-panel__title">Dayanıklılık durumu</h2>
-        <p class="bo-panel__hint">Devre kesici, hız bütçesi ve alım (intake) kipi; her pod kendi anlık görüntüsünü yaklaşık 60 sn'de bir yazar.</p>
-      </div>
+  <BoSection id="bo-res" title="Dayanıklılık durumu" description="Devre kesici, hız bütçesi ve alım (intake) kipi; her pod kendi anlık görüntüsünü yaklaşık 60 sn'de bir yazar." icon="mdi-shield-half-full">
+    <template #actions>
       <EkRefreshButton quiet-success :loading="res.refreshing.value || res.phase.value === 'loading'" :last-updated="res.loadedAt.value" :error="res.stale.value ? res.error.value?.title : null" @refresh="res.load()" />
-    </header>
+    </template>
 
     <StateBlock
       :phase="phase"
@@ -22,22 +18,18 @@
         <EkAlert v-if="drift.length" tone="warning" title="Podlar arasında alım kipi sapması var" :text="`${drift.map((c) => CHANNEL[c] ?? c).join(', ')} için podların alım kipi aynı değil; bir pod boşaltılıyor ya da kapatılmış olabilir. Pod başına değerleri aşağıdaki tabloda karşılaştırın.`" live />
         <EkAlert v-if="engineDrift" tone="warning" title="Motor alım kipi podlar arasında farklı" text="Podların motor alım kipi aynı değil; ayarın tüm podlara yayıldığını doğrulayın." />
 
-        <EkCard flush>
-          <div class="bo-res__scroll" tabindex="0" role="region" aria-label="Entegrasyon ve pod matrisi">
-            <table class="bo-res__table">
-              <caption class="bo-res__caption">Satır: entegrasyon · sütun: pod</caption>
-              <thead>
+        <BoTableFrame label="Entegrasyon ve pod matrisi (satır: entegrasyon · sütun: pod)" density="comfortable" class="bo-res__frame">
+          <template #head>
                 <tr>
                   <th scope="col">Entegrasyon</th>
                   <th v-for="p in res.data.value.pods" :key="p.pod" scope="col">
                     <span class="bo-cell-stack">
                       <span class="bo-res__pod"><code class="bo-code">{{ p.pod }}</code><EkStatusChip :tone="intakeTone(p.engineIntake)" :label="`motor ${INTAKE[p.engineIntake]}`" /></span>
-                      <span>{{ ago(p.observedAt) }}</span>
+                      <span>{{ formatRelative(p.observedAt, res.loadedAt.value ?? Date.now()) }}</span>
                     </span>
                   </th>
                 </tr>
-              </thead>
-              <tbody>
+          </template>
                 <tr v-for="row in res.data.value.items" :key="row.integrationCode" :class="{ 'is-drift': drift.includes(row.integrationCode) }">
                   <th scope="row">
                     <span class="bo-cell-stack">
@@ -58,22 +50,23 @@
                     </div>
                   </td>
                 </tr>
-              </tbody>
-            </table>
-          </div>
-        </EkCard>
-        <p class="bo-panel__hint">Alım kipi: «açık» normal, «boşaltılıyor» yeni iş alınmıyor, «kapalı» hiç iş alınmıyor. Pod kapanırsa satırı bir dakika içinde listeden düşer.</p>
+        </BoTableFrame>
       </div>
     </StateBlock>
-  </section>
+    <template #footer>
+      <span class="bo-res__note">Alım kipi: «açık» normal, «boşaltılıyor» yeni iş alınmıyor, «kapalı» hiç iş alınmıyor. Pod kapanırsa satırı bir dakika içinde listeden düşer.</span>
+    </template>
+  </BoSection>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'
-import { EkAlert, EkCard, EkChannelDot, EkRefreshButton, EkStatusChip, type StatusTone } from '@entegrasyonik/ui/components'
+import { EkAlert, EkChannelDot, EkRefreshButton, EkStatusChip, type StatusTone } from '@entegrasyonik/ui/components'
 import { api } from '@bo/api'
 import type { IntakeMode } from '@bo/api/contract'
 import { useResource } from '@bo/composables/useResource'
+import BoSection from '@bo/components/r2/BoSection.vue'
+import BoTableFrame from '@bo/components/r2/BoTableFrame.vue'
 import StateBlock from '@bo/components/kit/StateBlock.vue'
 import { CHANNEL } from '@bo/utils/labels'
 import { formatDateTime, formatRelative } from '@bo/utils/format'
@@ -89,11 +82,6 @@ const drift = computed(() => (res.data.value?.items ?? []).filter((r) => new Set
 const engineDrift = computed(() => new Set((res.data.value?.pods ?? []).map((p) => p.engineIntake)).size > 1)
 const intakeTone = (m: IntakeMode): StatusTone => (m === 'on' ? 'success' : m === 'drain' ? 'warning' : 'danger')
 
-function ago(iso: string): string {
-  const base = res.loadedAt.value ?? Date.now()
-  const s = Math.max(0, Math.round((base - Date.parse(iso)) / 1000))
-  return s < 90 ? `${s} sn önce` : `${Math.round(s / 60)} dk önce`
-}
 </script>
 
 <style scoped>
@@ -103,40 +91,15 @@ function ago(iso: string): string {
   gap: var(--ek-space-4);
   min-width: 0;
 }
-.bo-res__scroll {
-  overflow-x: auto;
-}
-.bo-res__table {
-  width: 100%;
+.bo-res__frame :deep(.bo-table) {
   min-width: 720px;
-  border-collapse: collapse;
-  font-size: var(--ek-type-label-size);
 }
-.bo-res__caption {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-}
-.bo-res__table th,
-.bo-res__table td {
-  padding: var(--ek-space-3) var(--ek-space-4);
-  border-bottom: 1px solid var(--ek-color-border-subtle);
-  text-align: left;
-  vertical-align: top;
-}
-.bo-res__table thead th {
-  background: var(--ek-color-surface-muted);
+.bo-res__note {
   color: var(--ek-color-content-muted);
-  font-weight: var(--ek-font-weight-semibold);
+  font-size: var(--ek-type-caption-size);
+  line-height: var(--ek-type-caption-line);
 }
-.bo-res__table tbody th {
-  min-width: 140px;
-  color: var(--ek-color-content-strong);
-  font-weight: var(--ek-font-weight-semibold);
-}
-.bo-res__table tr.is-drift > * {
+.bo-res__frame :deep(tr.is-drift > *) {
   background: var(--ek-color-warning-subtle);
 }
 .bo-res__pod {

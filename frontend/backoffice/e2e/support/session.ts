@@ -17,12 +17,14 @@ export async function signInFully(page: Page) {
   await expect(page).toHaveURL(/\/genel-bakis$/)
 }
 
-/** axe: WCAG 2.1 A/AA ihlali 0 (iki temada). */
-export async function expectNoA11yViolations(page: Page, include?: string) {
+/** axe: WCAG 2.1 A/AA ihlali 0 (iki temada). `exclude`: betiksiz `sandbox=""` çerçeve (sunucu e-posta HTML'i) — axe oraya
+ *  betik enjekte edemez ve çerçeve zaman aşımını (~30 sn) bekler; içerik uygulama arayüzü değildir. */
+export async function expectNoA11yViolations(page: Page, include?: string, exclude?: string) {
   // Açılış/geçiş animasyonları (≤ slow 300 ms) bitsin; ara karede opaklık kontrastı yanlış ölçülür.
   await page.waitForTimeout(400)
   let builder = new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
   if (include) builder = builder.include(include)
+  if (exclude) builder = builder.exclude(exclude)
   const result = await builder.analyze()
   expect(result.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).slice(0, 3).join(' | ')}`)).toEqual([])
 }

@@ -30,9 +30,14 @@ test.describe('sistem ayarları', () => {
     await page.goto('/sistem/bayraklar')
     await expect(page.getByRole('heading', { level: 1, name: 'Platform ayarları' })).toBeVisible()
     await settle(page)
+    // BO2-70: sayfa sekmelere bölünür; varsayılan sekme Platform ayarları (URL'de ?sekme= yok).
+    await expect(page.getByRole('tab', { name: /Platform ayarları/ })).toHaveAttribute('aria-selected', 'true')
+    await expect(page).not.toHaveURL(/sekme=/)
     // Backend kataloğunda gerçek bayrak var (features.competition, PRC-CFG); `platform.pricing` grubu burada ÇİFT görünmez.
+    await page.getByRole('tab', { name: /Özellik bayrakları/ }).click()
     await expect(page.getByText('features.competition', { exact: true })).toBeVisible()
     await expect(page.getByText('pricing.buybox')).toHaveCount(0)
+    await page.getByRole('tab', { name: /Ortam/ }).click()
     await expect(page.locator('[data-env="upload-max"]')).toContainText('10 MB')
     await expect(page.locator('[data-env="image-base"]')).toContainText("env'den gelir")
     await expectNoA11yViolations(page)
@@ -42,12 +47,13 @@ test.describe('sistem ayarları', () => {
     await call(page, '(m) => m.setFeatureFlags(true)')
     await openFromMenu(page, 'Sistem ayarları', 'Platform ayarları')
     await settle(page)
+    await page.getByRole('tab', { name: /Özellik bayrakları/ }).click()
     await expect(page.getByText('features.aiListing', { exact: true })).toBeVisible()
     await expect(page.getByText('Yalnız yönetici').first()).toBeVisible()
   })
 
   test('bakım modu: taslak → fark → gerekçe + step-up → yayın; geçmişte yeni sürüm', async ({ page }) => {
-    await page.goto('/sistem/bayraklar')
+    await page.goto('/sistem/bayraklar?sekme=bakim')
     await settle(page)
     await call(page, '(m) => m.expireReauth()')
     const card = page.getByTestId('maintenance-card')
@@ -80,7 +86,51 @@ test.describe('sistem ayarları', () => {
     await page.keyboard.press('Escape')
     await expect(dlg).toBeHidden()
     await page.getByTestId('discard-draft').click()
+    await page.getByRole('alertdialog', { name: 'Taslak atılsın mı?' }).getByRole('button', { name: 'Taslağı at' }).click()
     await expect(page.getByTestId('draft-bar')).toHaveCount(0)
+  })
+})
+
+test.describe('sistem ayarları — duyuru ve geri alma (BO-CFG-1)', () => {
+  test.beforeEach(async ({ page }) => signInFully(page))
+
+  test('duyuru şeridi: alanlar → taslak → gerekçeli yayın; geçmişte "Yayında" yeni sürüm', async ({ page }) => {
+    await page.goto('/sistem/bayraklar')
+    await settle(page)
+    await call(page, '(m) => m.expireReauth()')
+    await page.locator('[data-setting="announcement.text"] input, [data-setting="announcement.text"] textarea').first().fill('Pazar 02:00 planlı bakım')
+    await page.getByTestId('settings-save').click()
+    const dlg = page.getByRole('dialog', { name: 'Değişiklikler yayınlansın mı?' })
+    await expect(dlg.getByRole('table')).toContainText('announcement.text')
+    await dlg.getByLabel('Gerekçe').fill('Hafta sonu bakım duyurusu')
+    await dlg.getByRole('button', { name: 'Yayınla' }).click()
+    await reauth(page)
+    await expect(page.getByText(/yayınlandı; değerler/)).toBeVisible()
+    await expect(page.getByTestId('draft-bar')).toHaveCount(0)
+    await page.getByRole('tab', { name: /Yayın geçmişi/ }).click()
+    const hist = page.getByRole('region', { name: 'Yayın geçmişi' })
+    await expect(hist.getByRole('row').nth(1)).toContainText('Yayında')
+  })
+
+  test('geçmişten geri alma: fark + gerekçe + step-up → yeni sürüm "Geri alma" kökenli', async ({ page }) => {
+    await page.goto('/sistem/bayraklar?sekme=gecmis')
+    await settle(page)
+    await call(page, '(m) => m.expireReauth()')
+    const hist = page.getByRole('region', { name: 'Yayın geçmişi' })
+    const btn = hist.getByTestId('rollback').first()
+    const label = (await btn.getAttribute('aria-label')) ?? ''
+    const version = label.match(/v(\d+)/)?.[1]
+    expect(version).toBeTruthy()
+    await btn.click()
+    const dlg = page.getByRole('dialog', { name: `Sürüm ${version} geri alınsın mı?` })
+    await expect(dlg).toBeVisible()
+    await expect(dlg.getByRole('button', { name: 'Geri al' })).toBeDisabled()
+    await dlg.getByLabel('Gerekçe').fill('Yanlış duyuru metni yayına çıktı')
+    await dlg.getByRole('button', { name: 'Geri al' }).click()
+    await reauth(page)
+    await expect(page.getByText(new RegExp(`Sürüm ${version} içeriği yeni sürüm \\d+ olarak yayınlandı`))).toBeVisible()
+    await expect(hist.getByRole('row').nth(1)).toContainText('Yayında')
+    await expect(hist.getByRole('row').nth(1)).toContainText(/Geri alma/)
   })
 })
 
@@ -92,8 +142,21 @@ test.describe('yöneticiler', () => {
     await expect(page.getByRole('heading', { level: 1, name: 'Yöneticiler' })).toBeVisible()
     await settle(page)
     await expect(page.getByText('Siz', { exact: true })).toBeVisible()
-    await expect(page.getByText('Kilitli')).toBeVisible()
+    await expect(page.getByRole('row').getByText('Kilitli')).toBeVisible()
     await expectNoA11yViolations(page)
+  })
+
+  test('süzgeç (BoSegmented + BoFilterBar): Kilitli → URL ?filtre=locked, liste daralır; Filtreleri temizle', async ({ page }) => {
+    await page.goto('/yoneticiler')
+    await settle(page)
+    const all = await page.getByRole('row').count()
+    await page.getByRole('radio', { name: /Kilitli/ }).click()
+    await expect(page).toHaveURL(/filtre=locked/)
+    await expect(page.getByText('1 süzgeç etkin')).toBeVisible()
+    expect(await page.getByRole('row').count()).toBeLessThan(all)
+    await page.getByTestId('filters-clear').click()
+    await expect(page).not.toHaveURL(/filtre=/)
+    await expect(page.getByRole('row')).toHaveCount(all)
   })
 
   test('davet: step-up + gerekçe; mevcut kullanıcı 409 iletisi', async ({ page }) => {

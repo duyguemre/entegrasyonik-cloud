@@ -10,72 +10,83 @@
           <EkStatusChip v-if="sub.cancelAtPeriodEnd" tone="warning" label="Dönem sonunda iptal" />
         </template>
         <template #meta>
-          <RouterLink :to="`/musteriler/${tid}`" class="bo-sd__tid ek-num" data-testid="tenant-link">Müşteri #{{ tid }}</RouterLink>
+          <BoAction kind="detail" size="sm" :to="`/musteriler/${tid}`" data-testid="tenant-link">Müşteriye git · #{{ tid }}</BoAction>
         </template>
         <template #actions>
-          <EkButton tone="secondary" icon="mdi-refresh" :loading="res.refreshing.value" data-page-refresh @click="res.load()">Yenile</EkButton>
+          <BoAction kind="refresh" :loading="res.refreshing.value" data-page-refresh @click="res.load()" />
         </template>
       </BoPageHeader>
 
       <PageVerdict :verdict="verdict" />
 
-      <div class="bo-grid-2">
-        <EkCard title="Özet" icon="mdi-card-account-details-outline">
-          <dl class="bo-kv">
-            <div><dt>Plan</dt><dd>{{ sub.plan?.name ?? planLabel(sub.planCode) }} <span class="bo-muted">(sürüm {{ sub.planVersion }})</span></dd></div>
-            <div><dt>Liste fiyatı</dt><dd class="ek-num">{{ priceText }}</dd></div>
-            <div><dt>Dönem</dt><dd class="ek-num">{{ periodText }}</dd></div>
-            <div><dt>Deneme bitişi</dt><dd class="ek-num">{{ sub.trialEndsAt ? formatDateTime(sub.trialEndsAt) : '—' }}</dd></div>
-            <div v-if="trialRelevant">
-              <dt>Deneme uzatma</dt>
-              <dd class="ek-num" data-testid="extension-usage">
-                {{ extension.used }} / {{ TRIAL_EXTENSION_MAX_TOTAL_DAYS }} gün kullanıldı <span class="bo-muted">· kalan {{ extension.remaining }} gün</span>
-              </dd>
-            </div>
-            <div v-if="sub.graceUntil"><dt>Ödeme toleransı</dt><dd class="ek-num">{{ formatDateTime(sub.graceUntil) }}</dd></div>
-            <div><dt>Ödeme sağlayıcı</dt><dd>{{ sub.provider }} <span class="bo-muted">· {{ sub.hasProviderRef ? 'sağlayıcı kaydı var' : 'sağlayıcı kaydı yok' }}</span></dd></div>
-            <div><dt>Kart</dt><dd class="ek-num">{{ card || 'kartsız' }}</dd></div>
-            <div><dt>Oluşturuldu</dt><dd class="ek-num">{{ formatDate(sub.createdAt) }}</dd></div>
-          </dl>
-        </EkCard>
+      <BoTileGrid :min="200" dense>
+        <BoStat label="Plan" :value="sub.plan?.name ?? planLabel(sub.planCode)" :hint="priceText" />
+        <BoStat :label="sub.status === 'trialing' ? 'Deneme bitişi' : 'Dönem sonu'" :value="nextDateText" :hint="periodText === '—' ? undefined : periodText" />
+        <BoStat label="Kart" :value="card || 'kartsız'" :hint="sub.hasProviderRef ? 'sağlayıcı kaydı var' : 'sağlayıcı kaydı yok'" />
+        <BoStat label="Olay sayısı" :value="formatCount(res.data.value!.events.length)" hint="Olaylar sekmesinde" :to="{ query: { ...route.query, sekme: 'olaylar' } }" />
+      </BoTileGrid>
 
-        <EkCard title="Plan kapsamı" icon="mdi-tune-variant">
-          <template v-if="sub.plan">
-            <dl class="bo-kv">
-              <div v-for="[k, v] in Object.entries(sub.plan.limits)" :key="k"><dt>{{ LIMIT_LABEL[k] ?? k }}</dt><dd class="ek-num">{{ formatCount(v) }}</dd></div>
-            </dl>
-            <p class="bo-sd__features">
-              <span class="bo-muted">Özellikler:</span>
-              {{ sub.plan.features.length ? sub.plan.features.map((f) => FEATURE_LABEL[f] ?? f).join(', ') : 'yok' }}
-            </p>
-          </template>
-          <p v-else class="bo-muted">Plan kaydı bulunamadı; limit ve özellikler gösterilemiyor.</p>
-          <p class="bo-sd__features">
-            <RouterLink :to="`/sistem/rekabet?tid=${tid}`" data-testid="competition-link">Rekabet izleme ayarı ve istisnası</RouterLink>
-            <span class="bo-muted"> · buybox izleme kapsamını bu müşteri için değiştirir</span>
-          </p>
-        </EkCard>
-      </div>
+      <BoTabs v-model="tab" :tabs="TABS" label="Abonelik bölümleri">
+        <template v-if="tab === 'ozet'">
+          <BoTileGrid :cols="2">
+            <BoSection title="Abonelik özeti" description="Planın, dönemin ve ödeme sağlayıcısının kayıtlı durumu." icon="mdi-card-account-details-outline">
+              <dl class="bo-kv">
+                <div><dt>Plan</dt><dd>{{ sub.plan?.name ?? planLabel(sub.planCode) }} <span class="bo-muted">(sürüm {{ sub.planVersion }})</span></dd></div>
+                <div><dt>Liste fiyatı</dt><dd class="ek-num">{{ priceText }}</dd></div>
+                <div><dt>Dönem</dt><dd class="ek-num">{{ periodText }}</dd></div>
+                <div><dt>Deneme bitişi</dt><dd class="ek-num">{{ sub.trialEndsAt ? formatDateTime(sub.trialEndsAt) : '—' }}</dd></div>
+                <div v-if="trialRelevant">
+                  <dt>Deneme uzatma</dt>
+                  <dd class="ek-num" data-testid="extension-usage">
+                    {{ extension.used }} / {{ TRIAL_EXTENSION_MAX_TOTAL_DAYS }} gün kullanıldı <span class="bo-muted">· kalan {{ extension.remaining }} gün</span>
+                  </dd>
+                </div>
+                <div v-if="sub.graceUntil"><dt>Ödeme toleransı</dt><dd class="ek-num">{{ formatDateTime(sub.graceUntil) }}</dd></div>
+                <div><dt>Ödeme sağlayıcı</dt><dd>{{ sub.provider }} <span class="bo-muted">· {{ sub.hasProviderRef ? 'sağlayıcı kaydı var' : 'sağlayıcı kaydı yok' }}</span></dd></div>
+                <div><dt>Kart</dt><dd class="ek-num">{{ card || 'kartsız' }}</dd></div>
+                <div><dt>Oluşturuldu</dt><dd class="ek-num">{{ formatDate(sub.createdAt) }}</dd></div>
+              </dl>
+            </BoSection>
 
-      <EkCard id="yonetim-eylemleri" title="Yönetim eylemleri" subtitle="Her eylem gerekçe ve kimlik doğrulaması ister; denetim kaydına yazılır." icon="mdi-shield-edit-outline">
-        <ul class="bo-sd__actions">
-          <li>
-            <EkButton tone="secondary" :icon="reopen ? 'mdi-restore' : 'mdi-timer-plus-outline'" :disabled="!!extendWhy" data-testid="extend-trial" @click="openExtend">{{ reopen ? 'Denemeyi yeniden aç' : 'Denemeyi uzat' }}</EkButton>
-            <p v-if="!extendWhy && reopen" class="bo-muted bo-sd__why">Deneme süresi bitmiş, abonelik askıda. Uzatma aboneliği yeniden deneme durumuna alır.</p>
-            <p v-if="extendWhy" class="bo-muted bo-sd__why">{{ extendWhy }}</p>
-          </li>
-          <li>
-            <EkButton tone="secondary" icon="mdi-swap-horizontal" :disabled="!!changeWhy" data-testid="change-plan" @click="openChange">Planı değiştir</EkButton>
-            <p v-if="changeWhy" class="bo-muted bo-sd__why">{{ changeWhy }}</p>
-          </li>
-          <li>
-            <EkButton tone="danger" icon="mdi-cancel" :disabled="!!cancelWhy" data-testid="cancel-sub" @click="openCancel">Aboneliği iptal et</EkButton>
-            <p v-if="cancelWhy" class="bo-muted bo-sd__why">{{ cancelWhy }}</p>
-          </li>
-        </ul>
-      </EkCard>
+            <BoSection title="Plan kapsamı" description="Bu planın müşteriye tanıdığı limitler ve özellikler." icon="mdi-tune-variant">
+              <template v-if="sub.plan">
+                <dl class="bo-kv">
+                  <div v-for="[k, v] in Object.entries(sub.plan.limits)" :key="k"><dt>{{ LIMIT_LABEL[k] ?? k }}</dt><dd class="ek-num">{{ formatCount(v) }}</dd></div>
+                </dl>
+                <p class="bo-sd__features">
+                  <span class="bo-muted">Özellikler:</span>
+                  {{ sub.plan.features.length ? sub.plan.features.map((f) => FEATURE_LABEL[f] ?? f).join(', ') : 'yok' }}
+                </p>
+              </template>
+              <p v-else class="bo-muted">Plan kaydı bulunamadı; limit ve özellikler gösterilemiyor.</p>
+              <p class="bo-sd__features">
+                <RouterLink :to="`/sistem/rekabet?tid=${tid}`" data-testid="competition-link">Rekabet izleme ayarı ve istisnası</RouterLink>
+                <span class="bo-muted"> · buybox izleme kapsamını bu müşteri için değiştirir</span>
+              </p>
+            </BoSection>
+          </BoTileGrid>
+        </template>
 
-      <SubscriptionEvents :events="res.data.value!.events" />
+        <SubscriptionEvents v-else-if="tab === 'olaylar'" :events="res.data.value!.events" />
+
+        <BoSection v-else id="yonetim-eylemleri" title="Yönetim eylemleri" description="Her eylem gerekçe ve kimlik doğrulaması ister; denetim kaydına yazılır. Gri düğmenin altında neden kullanılamadığı yazar." icon="mdi-shield-edit-outline">
+          <!-- Her düğme, altındaki açıklamaya bağlı: devre dışıyken neden kullanılamadığı ekran okuyucuya da söylenir. -->
+          <ul class="bo-sd__actions">
+            <li>
+              <EkButton tone="secondary" :icon="reopen ? 'mdi-restore' : 'mdi-timer-plus-outline'" :disabled="!!extendWhy" aria-describedby="bo-sd-why-extend" data-testid="extend-trial" @click="openExtend">{{ reopen ? 'Denemeyi yeniden aç' : 'Denemeyi uzat' }}</EkButton>
+              <p id="bo-sd-why-extend" class="bo-muted bo-sd__why">{{ extendWhy || (reopen ? 'Deneme süresi bitmiş, abonelik askıda. Uzatma aboneliği yeniden deneme durumuna alır.' : 'Deneme süresine gün ekler; müşteri erişimi sürer.') }}</p>
+            </li>
+            <li>
+              <EkButton tone="secondary" icon="mdi-swap-horizontal" :disabled="!!changeWhy" aria-describedby="bo-sd-why-change" data-testid="change-plan" @click="openChange">Planı değiştir</EkButton>
+              <p id="bo-sd-why-change" class="bo-muted bo-sd__why">{{ changeWhy || 'Müşteriyi başka bir plana geçirir; ücret farkı sağlayıcıda işlenir.' }}</p>
+            </li>
+            <li class="bo-sd__danger">
+              <BoAction kind="cancel" :disabled="!!cancelWhy" aria-describedby="bo-sd-why-cancel" data-testid="cancel-sub" @click="openCancel">Aboneliği iptal et</BoAction>
+              <p id="bo-sd-why-cancel" class="bo-muted bo-sd__why">{{ cancelWhy || 'Geri alınamaz; onay için müşteri numarası yazılır.' }}</p>
+            </li>
+          </ul>
+        </BoSection>
+      </BoTabs>
       <p class="bo-muted bo-sd__src">Abonelik okuması hassas okuma olarak denetime yazılır (BackofficeBillingService/getSubscription).</p>
     </template>
 
@@ -85,6 +96,7 @@
       irreversible
       :description="`${title} · mevcut bitiş: ${sub?.trialEndsAt ? formatDateTime(sub.trialEndsAt) : '—'}`"
       :icon="reopen ? 'mdi-restore' : 'mdi-timer-plus-outline'"
+      :tenant="{ tid, name: title }"
       :items="extendItems"
       :confirm-label="reopen ? 'Denemeyi yeniden aç' : 'Denemeyi uzat'"
       :confirm-icon="reopen ? 'mdi-restore' : 'mdi-timer-plus-outline'"
@@ -111,6 +123,7 @@
       title="Plan değiştirilsin mi?"
       :description="`${title} · mevcut plan: ${planLabel(sub?.planCode)}`"
       icon="mdi-swap-horizontal"
+      :tenant="{ tid, name: title }"
       :items="['Plan değişimi ödeme sağlayıcısında uygulanır; oransal ücret ve fatura sağlayıcı sorumluluğundadır.', 'Gerekçe denetim kaydına yazılır.']"
       confirm-label="Planı değiştir"
       confirm-icon="mdi-swap-horizontal"
@@ -127,26 +140,31 @@
       icon="mdi-cancel"
       danger
       :confirm-text="String(tid)"
+      :tenant="{ tid, name: title }"
       :items="cancelItems"
       confirm-label="Aboneliği iptal et"
       confirm-icon="mdi-cancel"
     >
       <p v-if="cancelLocal" class="bo-sd__preview" data-testid="cancel-local">Sağlayıcı kaydı olmadığı için iptal doğrudan ve hemen uygulanır; dönem sonu seçeneği yoktur.</p>
-      <div v-else class="bo-seg" role="radiogroup" aria-label="İptal zamanı">
-        <button type="button" role="radio" class="bo-seg__opt" :aria-checked="atPeriodEnd" data-testid="cancel-at-end" @click="atPeriodEnd = true">Dönem sonunda</button>
-        <button type="button" role="radio" class="bo-seg__opt" :aria-checked="!atPeriodEnd" data-testid="cancel-now" @click="atPeriodEnd = false">Hemen</button>
-      </div>
+      <BoSegmented v-else v-model="cancelWhen" :options="CANCEL_WHEN" label="İptal zamanı" />
     </GuardedDialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import BoPageHeader from '@bo/components/shell/BoPageHeader.vue'
+import BoAction from '@bo/components/r2/BoAction.vue'
+import BoSection from '@bo/components/r2/BoSection.vue'
+import BoTileGrid from '@bo/components/r2/BoTileGrid.vue'
+import BoStat from '@bo/components/r2/BoStat.vue'
+import BoTabs from '@bo/components/r2/BoTabs.vue'
+import BoSegmented from '@bo/components/r2/BoSegmented.vue'
+import { useTabQuery } from '@bo/composables/useTabQuery'
 import PageVerdict from '@bo/components/verdict/PageVerdict.vue'
 import { CANCEL_HASH, subscriptionDetailVerdict } from './billingVerdict'
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
-import { useRoute } from 'vue-router'
-import { EkAlert, EkButton, EkCard, EkEmptyState, EkStatusChip } from '@entegrasyonik/ui/components'
+import { useRoute, useRouter } from 'vue-router'
+import { EkAlert, EkButton, EkEmptyState, EkStatusChip, type EkPageTab } from '@entegrasyonik/ui/components'
 import { api } from '@bo/api'
 import type { GetSubscriptionResponse } from '@bo/api/contract'
 import { useResource } from '@bo/composables/useResource'
@@ -158,7 +176,7 @@ import { TRIAL_EXTENSION_MAX_DAYS, TRIAL_EXTENSION_MAX_TOTAL_DAYS } from '@bo/ap
 import { PLAN, SUB_STATUS, planLabel } from '@bo/utils/labels'
 import { formatCount, formatMinor } from '@bo/utils/units'
 import { formatDate, formatDateTime } from '@bo/utils/format'
-import { notify } from '@bo/utils/toast'
+import { notifyAuditedAt } from '@bo/utils/toast'
 import '@bo/styles/kit.css'
 
 const DAY_MS = 86_400_000
@@ -168,11 +186,23 @@ const FEATURE_LABEL: Record<string, string> = { erp: 'ERP', einvoice: 'E-fatura'
 const KNOWN_PLANS = ['starter', 'growth', 'enterprise']
 
 const route = useRoute()
+const router = useRouter()
 const tid = Number(route.params.tid)
 const res = useResource<GetSubscriptionResponse>(() => api.call('BackofficeBillingService/getSubscription', { tid }))
 const sub = computed(() => res.data.value?.subscription ?? null)
 const title = computed(() => sub.value?.tenantName ?? `#${tid}`)
 
+const tab = useTabQuery(['ozet', 'olaylar', 'eylemler'] as const, 'ozet')
+const TABS = computed<EkPageTab[]>(() => [
+  { value: 'ozet', label: 'Özet', icon: 'mdi-card-account-details-outline' },
+  { value: 'olaylar', label: 'Olaylar', icon: 'mdi-history', count: res.data.value?.events.length ?? null },
+  { value: 'eylemler', label: 'Eylemler', icon: 'mdi-shield-edit-outline' },
+])
+const nextDateText = computed(() => {
+  const s = sub.value
+  const iso = s?.status === 'trialing' ? s.trialEndsAt : s?.currentPeriodEnd
+  return iso ? formatDate(iso) : '—'
+})
 const priceText = computed(() => {
   const p = sub.value?.plan
   if (!p) return '—'
@@ -246,7 +276,7 @@ const extend = useGuardedAction(
   (id: number, reason) => api.call('BackofficeBillingService/extendTrial', { tid: id, days: days.value, reason }),
   (r) => {
     const head = r.reopened ? `Deneme yeniden açıldı (${r.extendedDays} gün)` : `Deneme ${r.extendedDays} gün uzatıldı`
-    notify('success', `${head}; yeni bitiş ${formatDateTime(r.trialEndsAt)}. Kalan uzatma hakkı ${r.remainingExtensionDays} gün.`)
+    notifyAuditedAt(`${head}; yeni bitiş ${formatDateTime(r.trialEndsAt)}. Kalan uzatma hakkı ${r.remainingExtensionDays} gün.`, { tid: String(tid) })
     res.load()
   },
 )
@@ -268,7 +298,7 @@ const planHint = computed(() => (targetPlan.value === sub.value?.planCode ? 'Ayn
 const change = useGuardedAction(
   (id: number, reason) => api.call('BackofficeBillingService/changePlan', { tid: id, planCode: targetPlan.value, reason }),
   (r) => {
-    notify('success', `Plan ${planLabel(r.planCode)} olarak değiştirildi.`)
+    notifyAuditedAt(`Plan ${planLabel(r.planCode)} olarak değiştirildi.`, { tid: String(tid) })
     res.load()
   },
 )
@@ -280,6 +310,8 @@ function openChange() {
 // --- İptal (K40: sağlayıcı kaydı yoksa yerel ve doğrudan)
 const cancelLocal = computed(() => !!sub.value && !sub.value.billingExempt && !sub.value.hasProviderRef)
 const atPeriodEnd = ref(true)
+const CANCEL_WHEN = [{ value: 'end', label: 'Dönem sonunda' }, { value: 'now', label: 'Hemen' }]
+const cancelWhen = computed<string>({ get: () => (atPeriodEnd.value ? 'end' : 'now'), set: (v) => { atPeriodEnd.value = v === 'end' } })
 const cancelItems = computed(() =>
   cancelLocal.value
     ? [
@@ -297,7 +329,7 @@ const cancel = useGuardedAction(
   (id: number, reason) => api.call('BackofficeBillingService/cancelSubscription', { tid: id, atPeriodEnd: cancelLocal.value ? false : atPeriodEnd.value, reason }),
   (r) => {
     const where = r.external ? 'ödeme sağlayıcısında' : 'doğrudan (sağlayıcı kaydı yok)'
-    notify('success', r.status === 'canceled' ? `Abonelik ${where} iptal edildi.` : `Abonelik dönem sonunda iptal edilecek (${where}).`)
+    notifyAuditedAt(r.status === 'canceled' ? `Abonelik ${where} iptal edildi.` : `Abonelik dönem sonunda iptal edilecek (${where}).`, { tid: String(tid) })
     res.load()
   },
 )
@@ -330,6 +362,8 @@ watch(
   () => [route.hash, sub.value?.tid],
   async () => {
     if (route.hash !== CANCEL_HASH || !sub.value) return
+    if (tab.value !== 'eylemler') tab.value = 'eylemler'
+    await nextTick()
     await nextTick()
     document.getElementById('yonetim-eylemleri')?.scrollIntoView({ block: 'center' })
     document.querySelector<HTMLElement>('[data-testid="cancel-sub"]')?.focus()

@@ -5,7 +5,7 @@ import { createMockAdapter } from '../src/api/mock/adapter'
 import { MockAdminServer } from '../src/api/mock/server'
 import { MOCK_ACCOUNTS } from '../src/api/mock/data'
 import type { PulseActiveUsers, TenantUsage } from '../src/api/contract'
-import { pulseUsageVerdict, tenantUsageVerdict } from '../src/views/usage/usageVerdict'
+import { USAGE_DETAIL_HASH, pulseUsageVerdict, tenantUsageVerdict, toPageVerdict } from '../src/views/usage/usageVerdict'
 import { platformFromQuery } from '../src/views/usage/platformOrder'
 import { SCREENS } from '../src/navigation/screens'
 import { CLIENT_PLATFORM, PLATFORM_CLASS } from '../src/utils/labels'
@@ -119,5 +119,32 @@ describe('ekran kaydı ve etiketler', () => {
     expect(platformFromQuery(['mobile'])).toBe('mobile')
     expect(platformFromQuery('tablet')).toBeNull()
     expect(platformFromQuery(undefined)).toBeNull()
+  })
+})
+
+describe('INT-1001 §8 — kullanım hükmü ortak PageVerdict modelinde (içerik aynı)', () => {
+  const base = { status: 'ok', computable: true, platform: null, today: { users: 10, tenants: 4 }, last7d: { users: 40, tenants: 9 }, last30d: { users: 60, tenants: 12 }, daily: [], truncated: false } as const
+  it('sakin: hüküm = başlık, not = cümle, "Müdahale gerekmez" + nedeni sakin başlıkta, eylemler aynı sırada', () => {
+    const u = pulseUsageVerdict({ ...base, byClass: { desktop: 30, mobile: 12, unknown: 0 }, byPlatform: { desktop_web: 28, electron: 2, mobile_web: 6, pwa: 2, android_app: 4, unknown: 0 }, mobileShare: 0.3 })
+    const v = toPageVerdict(u)
+    expect(v).toMatchObject({ tone: 'success', badge: 'Sağlıklı', summary: u.title, note: u.sentence, attention: [] })
+    expect(v.okTitle).toBe('Müdahale gerekmez — Kullanım dağılımında olağan dışı bir durum yok.')
+    expect(v.checks?.length).toBeGreaterThan(0)
+    expect(v.actions.map((a) => [a.id, a.label, a.to])).toEqual(u.actions.map((a) => [a.key, a.label, a.to]))
+  })
+  it('uyarı + bilgi kararları bağlantılı dikkat maddesi olur (neden → etki), sıra kırmızı/sarı → bilgi', () => {
+    const u = pulseUsageVerdict({ ...base, byClass: { desktop: 10, mobile: 20, unknown: 10 }, byPlatform: { desktop_web: 10, electron: 0, mobile_web: 5, pwa: 5, android_app: 10, unknown: 10 }, mobileShare: 0.667, truncated: true })
+    const v = toPageVerdict(u)
+    expect(v.tone).toBe('warning')
+    expect(v.attention.map((a) => [a.id, a.tone])).toEqual([['unknown', 'warning'], ['truncated', 'warning'], ['mobile-majority', 'info']])
+    expect(v.attention.every((a) => a.to && a.cta && a.impact)).toBe(true)
+    expect(v.attention.find((a) => a.id === 'truncated')!.to).toEqual({ hash: USAGE_DETAIL_HASH })
+    expect(v.okTitle).toBeUndefined()
+  })
+  it('okunamadı → Altyapı bağlantılı uyarı; veri yok → nötr "Veri yok" rozeti', () => {
+    const d = toPageVerdict(pulseUsageVerdict({ status: 'degraded', error: 'timeout' }))
+    expect(d.attention[0]).toMatchObject({ id: 'degraded', tone: 'warning', to: '/altyapi' })
+    const nc = toPageVerdict(pulseUsageVerdict({ status: 'ok', computable: false, platform: null, today: null, last7d: null, last30d: null, byClass: null, byPlatform: null, mobileShare: null, daily: [], truncated: false, note: 'hesaplanamadı' } as PulseActiveUsers))
+    expect(nc).toMatchObject({ tone: 'neutral', badge: 'Veri yok', summary: 'Kullanım verisi henüz yok' })
   })
 })

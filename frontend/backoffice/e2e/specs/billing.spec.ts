@@ -14,6 +14,8 @@ test.describe('abonelikler', () => {
     await expect(page.getByTestId('sub-101')).toBeVisible()
     await expect(page.getByText('kartsız').first()).toBeVisible()
     await expect(page.getByText('VİSA •••• 4242')).toBeVisible()
+    await expect(page.getByRole('tab', { name: /Abonelikler/ })).toContainText(/\d/)
+    await expect(page.getByRole('link', { name: /aboneliği ayrıntı/ }).first()).toBeVisible()
     await expectNoA11yViolations(page)
 
     await page.getByTestId('status-filter').click()
@@ -31,7 +33,7 @@ test.describe('abonelikler', () => {
     await expect(page.getByText('Liste fiyatından tahmini').first()).toBeVisible()
     await expect(page.getByTestId('mrr')).toContainText('₺')
     await expect(page.getByText('Kayıp yaklaşık')).toBeVisible()
-    await page.locator('[data-range="7d"]').click()
+    await page.locator('[data-value="7d"]').click()
     await settle(page)
     await expectNoA11yViolations(page)
   })
@@ -40,6 +42,14 @@ test.describe('abonelikler', () => {
     await page.goto('/abonelikler/101')
     await expect(page.getByRole('heading', { level: 1, name: /Lale Ev Tekstil/ })).toBeVisible()
     await settle(page)
+    // Sekmeli detay: Özet (varsayılan) · Olaylar (sayı) · Eylemler; müşteriye gitme bağlantısı başlıkta.
+    await expect(page.getByRole('tab', { name: /Özet/ })).toHaveAttribute('aria-selected', 'true')
+    await expect(page.getByRole('tab', { name: /Olaylar/ })).toContainText(/\d/)
+    await page.getByRole('tab', { name: /Olaylar/ }).click()
+    await expect(page).toHaveURL(/sekme=olaylar/)
+    await expect(page.getByRole('heading', { name: 'Faturalama olayları' })).toBeVisible()
+    await page.getByRole('tab', { name: 'Eylemler' }).click()
+    await expect(page).toHaveURL(/sekme=eylemler/)
     await expect(page.getByTestId('extend-trial')).toBeDisabled()
     await expect(page.getByText('Yalnız deneme sürecindeki ya da denemesi bitmiş (askıdaki, kartsız) abonelik uzatılabilir.')).toBeVisible()
     await expect(page.getByTestId('tenant-link')).toHaveAttribute('href', '/musteriler/101')
@@ -49,7 +59,7 @@ test.describe('abonelikler', () => {
   })
 
   test('denemeyi uzat: step-up + gerekçe → toast', async ({ page }) => {
-    await page.goto('/abonelikler/103')
+    await page.goto('/abonelikler/103?sekme=eylemler')
     await settle(page)
     await mock(page, (m) => m.expireReauth())
     await page.getByTestId('extend-trial').click()
@@ -66,18 +76,18 @@ test.describe('abonelikler', () => {
   })
 
   test('K40 iptal: kartsız abonelik doğrudan iptal (salt-okumada da); kartlıda salt-okuma 423 diyalogda', async ({ page }) => {
-    await page.goto('/abonelikler/103')
+    await page.goto('/abonelikler/103?sekme=eylemler')
     await settle(page)
     await mock(page, (m) => m.setLiveReadonly(true))
     await page.getByTestId('cancel-sub').click()
     const dialog = page.getByRole('dialog', { name: 'Abonelik iptal edilsin mi?' })
     await expect(dialog.getByTestId('cancel-local')).toBeVisible()
-    await expect(dialog.getByTestId('cancel-at-end')).toHaveCount(0)
+    await expect(dialog.getByRole('radiogroup', { name: 'İptal zamanı' })).toHaveCount(0)
     await dialog.getByLabel('Gerekçe').fill('Test: kartsız deneme iptali')
     await dialog.getByRole('button', { name: 'Aboneliği iptal et' }).click()
     await expect(page.getByText('Abonelik doğrudan (sağlayıcı kaydı yok) iptal edildi.')).toBeVisible()
 
-    await page.goto('/abonelikler/101')
+    await page.goto('/abonelikler/101?sekme=eylemler')
     await settle(page)
     await mock(page, (m) => m.setLiveReadonly(true))
     await page.getByTestId('cancel-sub').click()
@@ -91,6 +101,7 @@ test.describe('abonelikler', () => {
     await page.goto('/abonelikler/103')
     await settle(page)
     await expect(page.getByTestId('extension-usage')).toContainText('45 / 60 gün')
+    await page.getByRole('tab', { name: 'Eylemler' }).click()
     await page.getByTestId('extend-trial').click()
     const dialog = page.getByRole('dialog', { name: 'Deneme süresi uzatılsın mı?' })
     await dialog.getByTestId('extend-days').locator('input').fill('16')
@@ -101,7 +112,7 @@ test.describe('abonelikler', () => {
   })
 
   test('K40 yeniden aç: askıdaki kartsız deneme uzatmayla yeniden açılır', async ({ page }) => {
-    await page.goto('/abonelikler/109')
+    await page.goto('/abonelikler/109?sekme=eylemler')
     await settle(page)
     await expect(page.getByTestId('extend-trial')).toHaveText(/Denemeyi yeniden aç/)
     await page.getByTestId('extend-trial').click()
@@ -113,7 +124,7 @@ test.describe('abonelikler', () => {
   })
 
   test('plan değiştir: aynı plan seçilemez, başarıda toast', async ({ page }) => {
-    await page.goto('/abonelikler/101')
+    await page.goto('/abonelikler/101?sekme=eylemler')
     await settle(page)
     await page.getByTestId('change-plan').click()
     const dialog = page.getByRole('dialog', { name: 'Plan değiştirilsin mi?' })

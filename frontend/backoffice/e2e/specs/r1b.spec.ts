@@ -76,14 +76,14 @@ test.describe('BO-R1b NEXT_TASKS', () => {
     await page.getByLabel('Doğrulama kodu').fill('123456')
     await page.getByRole('button', { name: 'Doğrula', exact: true }).click()
     await expect(page).toHaveURL(/\/genel-bakis/)
-    await page.goto('/motor?sekme=basarisiz&env=production')
+    await page.goto('/motor?sekme=basarisiz&gorunum=ayrinti&env=production')
     await settle(page)
-    await page.getByRole('button', { name: /sil/i }).first().click()
+    await page.getByRole('button', { name: / at$/ }).first().click()
     const dialog = page.getByRole('dialog')
     await dialog.getByLabel('Gerekçe').fill('Test: yinelenen iş, müşteri onayıyla siliniyor')
     const typed = dialog.getByTestId('danger-confirm-text').locator('input')
     await expect(typed).toBeVisible()
-    const confirm = dialog.getByRole('button', { name: 'Sil', exact: true })
+    const confirm = dialog.getByRole('button', { name: 'Gerekçeyle at', exact: true })
     await expect(confirm).toBeDisabled()
     const label = await dialog.getByTestId('danger-confirm-text').locator('label').first().textContent()
     const id = /Onay için (\S+) yazın/.exec(label ?? '')?.[1] ?? ''
@@ -93,9 +93,9 @@ test.describe('BO-R1b NEXT_TASKS', () => {
 
   test('NT-02: örnek veri ortamında hedef kimliği istenmez', async ({ page }) => {
     await signInFully(page)
-    await page.goto('/motor?sekme=basarisiz')
+    await page.goto('/motor?sekme=basarisiz&gorunum=ayrinti')
     await settle(page)
-    await page.getByRole('button', { name: /sil/i }).first().click()
+    await page.getByRole('button', { name: / at$/ }).first().click()
     await expect(page.getByRole('dialog').getByTestId('danger-confirm-text')).toHaveCount(0)
   })
 

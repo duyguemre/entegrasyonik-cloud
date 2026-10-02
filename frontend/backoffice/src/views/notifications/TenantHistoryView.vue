@@ -5,7 +5,7 @@
         <span><v-icon icon="mdi-shield-lock-outline" size="small" aria-hidden="true" /> Her görüntüleme hassas okuma olarak denetime yazılır.</span>
       </template>
       <template #actions>
-        <EkButton v-if="tid" tone="secondary" icon="mdi-refresh" :loading="list.refreshing.value || list.phase.value === 'loading'" data-page-refresh @click="list.reload({ keep: true })">Yenile</EkButton>
+        <BoAction v-if="tid" kind="refresh" :loading="list.refreshing.value || list.phase.value === 'loading'" data-page-refresh @click="list.reload({ keep: true })" />
       </template>
     </BoPageHeader>
 
@@ -24,79 +24,86 @@
         data-testid="tid-input"
       />
       <EkButton type="submit" tone="primary" icon="mdi-magnify" data-testid="show-history">Geçmişi göster</EkButton>
-      <RouterLink v-if="tid" :to="`/musteriler/${tid}`" class="bo-nh__tenant">Müşteri #{{ tid }} detayı <v-icon icon="mdi-arrow-right" aria-hidden="true" /></RouterLink>
+      <BoAction v-if="tid" kind="detail" :to="`/musteriler/${tid}`" :label="`Müşteri #${tid} detayı`" />
     </form>
 
-    <EkCard v-if="!tid">
+    <BoSection v-if="!tid" label="Bildirim geçmişi">
       <EkEmptyState variant="first-run" title="Bir müşteri seçin" message="Müşteri numarasını girin ya da müşteri detayındaki bağlantıyı kullanın. Yalnız meta veri gösterilir: bildirim metni, alıcı kimliği ve e-posta adresi yoktur." />
-    </EkCard>
-    <EkCard v-else flush>
-      <StateBlock
+    </BoSection>
+    <BoSection v-else id="bo-nh-list" title="Bildirim geçmişi" :description="`Müşteri #${tid} · defter kaydı 30 gün saklanır.`" icon="mdi-history">
+      <BoDataTable
+        :items="rows"
+        :columns="COLUMNS"
+        row-key="id"
+        label="Bildirim geçmişi"
         :phase="list.phase.value"
         :error="list.error.value"
-        :retrying="list.phase.value === 'loading'"
         empty-title="Bildirim geçmişi yok"
         :empty-message="`Müşteri #${tid} için son 30 günde bildirim üretilmedi.`"
         @retry="list.reload()"
       >
-        <EkDataTable :items="rows" :columns="COLUMNS" row-key="id">
-          <template #cell-code="{ item }">
-            <span class="bo-cell-stack">
-              <code class="bo-code">{{ item.code }}</code>
-              <span class="bo-muted">{{ NOTIFY_CATEGORY[(item as TenantHistoryRow).category] ?? item.category }}</span>
-            </span>
-          </template>
-          <template #cell-severity="{ item }">
-            <EkStatusChip :tone="sev(item as TenantHistoryRow).tone" :label="sev(item as TenantHistoryRow).label" dot />
-          </template>
-          <template #cell-count="{ item }">
-            <span class="bo-cell-stack"><span class="ek-num">{{ item.count }}</span><span class="bo-muted">{{ (item as TenantHistoryRow).count > 1 ? 'gruplandı' : 'tek olay' }}</span></span>
-          </template>
-          <template #cell-recipients="{ item }">
-            <span class="bo-cell-stack">
-              <span class="ek-num">{{ item.recipientCount }} alıcı</span>
-              <span class="bo-muted">uygulama içi {{ item.inAppCount }}<template v-if="(item as TenantHistoryRow).suppressedCount"> · bastırılan {{ item.suppressedCount }}</template></span>
-            </span>
-          </template>
-          <template #cell-email="{ item }">
-            <span v-if="!Object.keys((item as TenantHistoryRow).emailStatus).length" class="bo-muted">e-posta yok</span>
-            <span v-else class="bo-nh__email">
-              <EkStatusChip v-for="[s, n] in emailPairs(item as TenantHistoryRow)" :key="s" :tone="DELIVERY_STATUS[s].tone" :label="`${DELIVERY_STATUS[s].label} ${n}`" />
-            </span>
-          </template>
-          <template #cell-at="{ item }">
-            <span class="bo-cell-stack"><span>{{ formatRelative((item as TenantHistoryRow).at) }}</span><span class="ek-num bo-muted">{{ formatDateTime((item as TenantHistoryRow).at) }}</span></span>
-          </template>
-          <template #cell-actions="{ item }">
-            <RouterLink
-              v-if="Object.keys((item as TenantHistoryRow).emailStatus).length"
-              :to="{ path: '/bildirimler/teslimler', query: { olay: item.id } }"
-              class="bo-nh__open"
-              :aria-label="`${item.code} olayının e-posta teslimlerini aç`"
-            >Teslimler</RouterLink>
-          </template>
-        </EkDataTable>
-        <LoadMore :count="list.items.value.length" :has-more="list.hasMore.value" :loading="list.loadingMore.value" :error="list.moreError.value" @more="list.loadMore()" />
-      </StateBlock>
-    </EkCard>
-    <p class="bo-table-foot">Defter kaydı 30 gün saklanır · kaynak: BackofficeNotificationService/getTenantHistory</p>
+        <template #cell-code="{ item }">
+          <span class="bo-cell-stack">
+            <code class="bo-code">{{ item.code }}</code>
+            <span class="bo-muted">{{ NOTIFY_CATEGORY[(item as TenantHistoryRow).category] ?? item.category }}</span>
+          </span>
+        </template>
+        <template #cell-severity="{ item }">
+          <EkStatusChip :tone="sev(item as TenantHistoryRow).tone" :label="sev(item as TenantHistoryRow).label" dot />
+        </template>
+        <template #cell-count="{ item }">
+          <span class="bo-cell-stack"><span class="ek-num">{{ formatCount((item as TenantHistoryRow).count) }}</span><span class="bo-muted">{{ (item as TenantHistoryRow).count > 1 ? 'gruplandı' : 'tek olay' }}</span></span>
+        </template>
+        <template #cell-recipients="{ item }">
+          <span class="bo-cell-stack">
+            <span class="ek-num">{{ formatCount((item as TenantHistoryRow).recipientCount) }} alıcı</span>
+            <span class="bo-muted ek-num">uygulama içi {{ formatCount((item as TenantHistoryRow).inAppCount) }}<template v-if="(item as TenantHistoryRow).suppressedCount"> · bastırılan {{ formatCount((item as TenantHistoryRow).suppressedCount) }}</template></span>
+          </span>
+        </template>
+        <template #cell-email="{ item }">
+          <span v-if="!Object.keys((item as TenantHistoryRow).emailStatus).length" class="bo-muted">e-posta yok</span>
+          <span v-else class="bo-nh__email">
+            <EkStatusChip v-for="[s, n] in emailPairs(item as TenantHistoryRow)" :key="s" :tone="DELIVERY_STATUS[s].tone" :label="`${DELIVERY_STATUS[s].label} ${n}`" />
+          </span>
+        </template>
+        <template #cell-at="{ item }">
+          <span class="bo-cell-stack"><span>{{ formatRelative((item as TenantHistoryRow).at) }}</span><span class="ek-num bo-muted">{{ formatDateTime((item as TenantHistoryRow).at) }}</span></span>
+        </template>
+        <template #cell-actions="{ item }">
+          <BoAction
+            v-if="Object.keys((item as TenantHistoryRow).emailStatus).length"
+            kind="detail"
+            size="sm"
+            label="Teslimler"
+            :to="{ path: '/bildirimler/teslimler', query: { olay: item.id } }"
+            :aria-label="`${item.code} olayının e-posta teslimlerini aç`"
+          />
+        </template>
+        <template v-if="list.phase.value === 'ready'" #footer>
+          <BoPagination :count="list.items.value.length" :has-more="list.hasMore.value" :loading="list.loadingMore.value" :error="list.moreError.value" source="BackofficeNotificationService/getTenantHistory" @more="list.loadMore()" />
+        </template>
+      </BoDataTable>
+    </BoSection>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { EkButton, EkCard, EkDataTable, EkEmptyState, EkStatusChip, type EkTableColumn } from '@entegrasyonik/ui/components'
+import { EkButton, EkEmptyState, EkStatusChip, type EkTableColumn } from '@entegrasyonik/ui/components'
 import { api } from '@bo/api'
 import type { DeliveryStatus, TenantHistoryRow } from '@bo/api/contract'
 import { useCursorList } from '@bo/composables/useCursorList'
 import BoPageHeader from '@bo/components/shell/BoPageHeader.vue'
+import BoAction from '@bo/components/r2/BoAction.vue'
 import PageVerdict from '@bo/components/verdict/PageVerdict.vue'
 import { tenantHistoryVerdict } from './notificationsVerdict'
-import StateBlock from '@bo/components/kit/StateBlock.vue'
-import LoadMore from '@bo/components/kit/LoadMore.vue'
+import BoPagination from '@bo/components/r2/BoPagination.vue'
+import BoSection from '@bo/components/r2/BoSection.vue'
+import BoDataTable from '@bo/components/r2/BoDataTable.vue'
 import { DELIVERY_STATUS, NOTIFY_CATEGORY, NOTIFY_SEVERITY } from '@bo/utils/labels'
 import { formatDateTime, formatRelative } from '@bo/utils/format'
+import { formatCount } from '@bo/utils/units'
 import '@bo/styles/kit.css'
 
 const COLUMNS: EkTableColumn[] = [
@@ -154,19 +161,6 @@ onMounted(() => {
 <style scoped>
 .bo-nh__search {
   align-items: center;
-}
-.bo-nh__tenant,
-.bo-nh__open {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--ek-space-1);
-  color: var(--ek-color-action);
-  font-size: var(--ek-type-label-size);
-  text-decoration: none;
-}
-.bo-nh__tenant:hover,
-.bo-nh__open:hover {
-  text-decoration: underline;
 }
 .bo-nh__email {
   display: inline-flex;

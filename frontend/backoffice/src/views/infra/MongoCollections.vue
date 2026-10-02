@@ -1,5 +1,5 @@
 <template>
-  <EkCard :title="`Koleksiyonlar · ${title}`" subtitle="Bir satırı genişleterek indeksleri görün" icon="mdi-table-multiple" flush data-testid="collections">
+  <BoSection :title="`Koleksiyonlar · ${title}`" description="Bir satırı genişleterek indeksleri görün" icon="mdi-table-multiple" flush data-testid="collections">
     <template #actions>
       <EkButton size="sm" tone="ghost" icon="mdi-close" @click="emit('close')">Kapat</EkButton>
     </template>
@@ -13,22 +13,20 @@
       empty-message="Bu veritabanında listelenecek koleksiyon bulunmuyor."
       @retry="list.reload()"
     >
-      <div class="bo-coll__scroll" tabindex="0" role="region" :aria-label="`${title} koleksiyonları`">
-        <table class="bo-coll__table">
-          <thead>
-            <tr>
-              <th scope="col">Koleksiyon</th>
-              <th scope="col" class="is-num">Belge</th>
-              <th scope="col" class="is-num">Veri</th>
-              <th scope="col" class="is-num">İndeks boyutu</th>
-              <th scope="col" class="is-num">İndeks</th>
-            </tr>
-          </thead>
-          <tbody>
+      <BoTableFrame :label="`${title} koleksiyonları`" class="bo-coll__frame">
+        <template #head>
+          <tr>
+            <th scope="col">Koleksiyon</th>
+            <th scope="col" class="is-num">Belge</th>
+            <th scope="col" class="is-num bo-hide-sm">Veri</th>
+            <th scope="col" class="is-num bo-hide-sm">İndeks boyutu</th>
+            <th scope="col" class="is-num">İndeks</th>
+          </tr>
+        </template>
             <template v-for="c in list.items.value" :key="c.name">
               <tr>
                 <th scope="row">
-                  <button type="button" class="bo-coll__toggle" :aria-expanded="open.has(c.name)" :aria-controls="`idx-${c.name}`" @click="toggle(c.name)">
+                  <button type="button" class="bo-coll__toggle" :aria-expanded="open.has(c.name)" :aria-controls="open.has(c.name) ? `idx-${c.name}` : undefined" @click="toggle(c.name)">
                     <v-icon :icon="open.has(c.name) ? 'mdi-chevron-down' : 'mdi-chevron-right'" size="small" aria-hidden="true" />
                     <span>{{ c.name }}</span>
                     <EkStatusChip v-if="c.statsAvailable === false" tone="warning" label="İstatistik okunamadı" />
@@ -36,13 +34,13 @@
                 </th>
                 <template v-if="c.statsAvailable !== false">
                   <td class="is-num ek-num">{{ formatCount(c.documents) }}</td>
-                  <td class="is-num ek-num">{{ formatBytes(c.dataSize) }}</td>
-                  <td class="is-num ek-num">{{ formatBytes(c.indexSize) }}</td>
+                  <td class="is-num ek-num bo-hide-sm">{{ formatBytes(c.dataSize) }}</td>
+                  <td class="is-num ek-num bo-hide-sm">{{ formatBytes(c.indexSize) }}</td>
                 </template>
                 <template v-else>
                   <td class="is-num">—</td>
-                  <td class="is-num">—</td>
-                  <td class="is-num">—</td>
+                  <td class="is-num bo-hide-sm">—</td>
+                  <td class="is-num bo-hide-sm">—</td>
                 </template>
                 <td class="is-num ek-num">{{ c.indexes.length }}<EkStatusChip v-if="unused(c) > 0" class="bo-coll__warn" tone="warning" :label="`${unused(c)} kullanılmıyor`" /></td>
               </tr>
@@ -69,22 +67,22 @@
                 </td>
               </tr>
             </template>
-          </tbody>
-        </table>
-      </div>
-      <LoadMore :count="list.items.value.length" :has-more="list.hasMore.value" :loading="list.loadingMore.value" :error="list.moreError.value" @more="list.loadMore()" />
+      </BoTableFrame>
+      <BoPagination :count="list.items.value.length" :has-more="list.hasMore.value" :loading="list.loadingMore.value" :error="list.moreError.value" @more="list.loadMore()" />
     </StateBlock>
-  </EkCard>
+  </BoSection>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, reactive } from 'vue'
-import { EkButton, EkCard, EkStatusChip } from '@entegrasyonik/ui/components'
+import { EkButton, EkStatusChip } from '@entegrasyonik/ui/components'
 import { api } from '@bo/api'
 import type { MongoCollection } from '@bo/api/contract'
 import { useCursorList } from '@bo/composables/useCursorList'
 import StateBlock from '@bo/components/kit/StateBlock.vue'
-import LoadMore from '@bo/components/kit/LoadMore.vue'
+import BoSection from '@bo/components/r2/BoSection.vue'
+import BoTableFrame from '@bo/components/r2/BoTableFrame.vue'
+import BoPagination from '@bo/components/r2/BoPagination.vue'
 import { formatDate } from '@bo/utils/format'
 import { formatBytes, formatCount, formatDuration } from '@bo/utils/units'
 import '@bo/styles/kit.css'
@@ -102,28 +100,8 @@ const phase = computed(() => (list.phase.value === 'error' && list.error.value?.
 </script>
 
 <style scoped>
-.bo-coll__scroll {
-  overflow-x: auto;
-}
-.bo-coll__table {
-  width: 100%;
-  min-width: 560px;
-  border-collapse: collapse;
-  font-size: var(--ek-type-label-size);
-}
-.bo-coll__table th,
-.bo-coll__table td {
-  padding: var(--ek-space-2) var(--ek-space-4);
-  border-bottom: 1px solid var(--ek-color-border-subtle);
-  text-align: left;
-}
-.bo-coll__table thead th {
-  background: var(--ek-color-surface-muted);
-  color: var(--ek-color-content-muted);
-  font-weight: var(--ek-font-weight-semibold);
-}
-.bo-coll__table .is-num {
-  text-align: right;
+.bo-coll__frame :deep(.bo-table) {
+  min-width: 440px;
 }
 .bo-coll__toggle {
   display: inline-flex;

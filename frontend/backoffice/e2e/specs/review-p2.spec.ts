@@ -67,7 +67,7 @@ for (const cfg of CONFIGS) {
     }
 
     // Hassas işlem diyaloğu (gerekçe + kimlik doğrulama bilgisi).
-    await page.goto('/motor?sekme=basarisiz')
+    await page.goto('/motor?sekme=basarisiz&gorunum=ayrinti')
     await page.getByTestId('retry').first().click()
     await expect(page.getByRole('dialog')).toBeVisible()
     await page.waitForTimeout(400)

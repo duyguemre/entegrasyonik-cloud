@@ -1,8 +1,4 @@
 <!--
-  PulseTrends — "Sistem kullanımı büyük resimde nasıl?" (genel bakış 2. soru). Sakin trend satırları: ad · değer ·
-  önceki eş döneme göre değişim (renksiz metin) · küçük çizgi. Renk yalnız eşik aşımında (hata oranı ≥ %1, p95 ≥ 1 sn).
--->
-<!--
   PulseTrends — "Kullanım büyük resimde nasıl?" (genel bakış 2. soru). Sakin satırlar: ad · değer · karşılaştırma/not
   (renksiz) · son 24 saatin saatlik çizgisi. Renk yalnız eşik aşımında (getAttention eşikleri: 5xx ≥ %5, kanal ≥ %20).
   Hesaplanamayan değer "—" + neden; okunamayan blok "Okunamadı" (boşluk "sorun yok" değildir).
@@ -19,13 +15,34 @@
       <span v-else class="bo-pt__spark" aria-hidden="true"></span>
     </li>
   </ul>
+  <!-- BO2-60: ana eğilim tek büyük grafikte (API isteği, son 24 saat saatlik) — satırlar özet, grafik kanıt. -->
+  <BoChart
+    v-if="http"
+    class="bo-pt__chart"
+    kind="area"
+    :height="150"
+    title="API isteği · son 24 saat"
+    :categories="hours"
+    :series="[{ name: 'İstek', data: http.series!, tone: 'action' }]"
+    summary="Saatlik API isteği, son 24 saat"
+    category-label="Saat"
+  />
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import Sparkline from '@bo/components/Sparkline.vue'
+import BoChart from '@bo/components/charts/BoChart.vue'
 import type { PulseModel } from '@bo/api/attention'
 
-defineProps<{ model: PulseModel }>()
+const props = defineProps<{ model: PulseModel }>()
+const http = computed(() => props.model.rows.find((r) => r.key === 'http' && r.series && r.series.length > 1))
+const hours = computed(() => {
+  const n = http.value?.series?.length ?? 0
+  const end = new Date(props.model.generatedAt).getTime()
+  const f = new Intl.DateTimeFormat('tr-TR', { hour: '2-digit', minute: '2-digit' })
+  return Array.from({ length: n }, (_, i) => f.format(new Date(end - (n - 1 - i) * 3_600_000)))
+})
 </script>
 
 <style scoped>
@@ -37,7 +54,7 @@ defineProps<{ model: PulseModel }>()
 
 .bo-pt__row {
   display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(56px, auto) minmax(0, 1.5fr) 64px;
+  grid-template-columns: minmax(0, 1.1fr) minmax(56px, auto) minmax(0, 1.5fr) 96px;
   align-items: center;
   gap: var(--ek-space-3);
   min-height: 44px;
@@ -84,6 +101,12 @@ defineProps<{ model: PulseModel }>()
 
 .bo-pt__spark {
   min-width: 0;
+}
+
+.bo-pt__chart {
+  margin-top: var(--ek-space-4);
+  padding-top: var(--ek-space-4);
+  border-top: 1px solid var(--ek-color-border-subtle);
 }
 
 

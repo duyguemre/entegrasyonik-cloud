@@ -1,5 +1,5 @@
 /** Sahte BackofficeEngineService (B7a-d) — sözleşme şekli birebir; yük/hata metni yok (yalnız kod). */
-import { RETRY_JOBS_MAX, type DlqRecord, type FailedBullJob, type JobRun, type JobRunStatus, type JobState, type ListFailedJobsResponse, type RetryJobsResponse, type StuckLease } from '../../contract'
+import { RETRY_JOBS_MAX, type DlqRecord, type FailedBullJob, type FailedJobGroup, type JobRun, type JobRunStatus, type JobState, type ListFailedJobsResponse, type RetryJobsResponse, type StuckLease } from '../../contract'
 import { rng } from '../data'
 import { MockHttpError } from '../errors'
 import { DAY, HOUR, MIN, UNHANDLED, conflict, hex24, iso, liveReadonly, notFound, page, strict, validation, type MockCtx, type MockDomain } from './context'
@@ -23,16 +23,22 @@ export function createEngineMock(t0: number): MockDomain {
   let failed: FailedBullJob[] = Array.from({ length: 37 }, (_, i) => {
     const code = CHANNELS[i % CHANNELS.length]
     const at = t0 - Math.floor(i * 47 * MIN + r() * 20 * MIN)
+    const enqueuedAt = at - Math.floor(3 * MIN + r() * 40 * MIN)
+    // BO2-P6: iki iş otomatik yeniden deneme sırasında (denemeler tükenmedi); geri kalanı kalıcı başarısız.
+    const retrying = i === 5 || i === 22
     return {
       id: `${OPS[i % OPS.length]}-${1200 - i}`,
       operation: `${OPS[i % OPS.length]}-${code}`,
       tenantId: 101 + ((i * 5) % 12),
       integrationCode: code,
       errorCode: CODES[(i * 7) % CODES.length],
-      attemptsMade: 5,
+      attemptsMade: retrying ? 3 : 5,
       maxAttempts: 5,
       failedAt: iso(at),
-      enqueuedAt: iso(at - Math.floor(3 * MIN + r() * 40 * MIN)),
+      enqueuedAt: iso(enqueuedAt),
+      jobType: OPS[i % OPS.length],
+      state: retrying ? 'retrying' : 'failed',
+      firstFailedAt: iso(enqueuedAt + 2 * MIN),
       // BE-04: üçte biri korelasyon kimliği taşımaz (null); periyodik işler `ord_…`, webhook `req_…`.
       reqId: i % 3 === 0 ? null : i % 3 === 1 ? `ord_${hex24(300 + i).slice(0, 12)}` : `req_${hex24(300 + i).slice(0, 12)}`,
       traceId: null,
@@ -51,6 +57,10 @@ export function createEngineMock(t0: number): MockDomain {
     failedAt: iso(t0 - (i + 1) * 7 * HOUR),
     reqId: i % 2 ? `ord_${hex24(500 + i).slice(0, 12)}` : null,
     traceId: null,
+    jobType: OPS[i % OPS.length],
+    attemptsMade: i % 3 ? 5 : 1,
+    maxAttempts: 5,
+    firstFailedAt: iso(t0 - (i + 1) * 7 * HOUR - 30 * MIN),
   }))
   let stuck: StuckLease[] = [
     { kind: 'export', id: hex24(901), tenantId: 104, integrationCode: 'trendyol', status: 'PENDING', lockedBy: 'worker-1', leaseExpiredAt: iso(t0 - 45 * MIN), lastActivityAt: iso(t0 - 75 * MIN), staleForMs: 45 * MIN },
@@ -128,6 +138,23 @@ export function createEngineMock(t0: number): MockDomain {
   }
   const metricSeries = series({ t0 } as MockCtx)
 
+  /** BO2-P6: süzgeçe uyan tüm kayıtlar için hata kodu × iş türü özeti. */
+  function groupsOf(list: Array<FailedBullJob | DlqRecord>): FailedJobGroup[] {
+    const map = new Map<string, FailedJobGroup>()
+    for (const j of list) {
+      const jobType = j.jobType ?? null
+      const key = `${j.errorCode}|${jobType}`
+      const g = map.get(key)
+      if (!g) map.set(key, { errorCode: j.errorCode, jobType, count: 1, oldestFailedAt: j.failedAt, newestFailedAt: j.failedAt })
+      else {
+        g.count++
+        if (j.failedAt < g.oldestFailedAt) g.oldestFailedAt = j.failedAt
+        if (j.failedAt > (g.newestFailedAt ?? '')) g.newestFailedAt = j.failedAt
+      }
+    }
+    return [...map.values()].sort((a, b) => b.count - a.count || a.errorCode.localeCompare(b.errorCode))
+  }
+
   function checkQueue(body: Record<string, unknown>) {
     if (body.queue !== QUEUE) throw validation('queue', 'bilinmeyen kuyruk')
   }
@@ -170,7 +197,7 @@ export function createEngineMock(t0: number): MockDomain {
           }
           const base: Array<FailedBullJob | DlqRecord> = source === 'dlq' ? dlq : failed
           const list = base.filter((j) => (filter.tid === undefined || j.tenantId === filter.tid) && (filter.integrationCode === undefined || j.integrationCode === filter.integrationCode) && (filter.errorCode === undefined || j.errorCode === filter.errorCode))
-          const res: ListFailedJobsResponse = { source, queue: QUEUE, ...page<FailedBullJob | DlqRecord>(list, body) }
+          const res: ListFailedJobsResponse = { source, queue: QUEUE, ...page<FailedBullJob | DlqRecord>(list, body), groups: groupsOf(list) }
           if (Object.keys(filter).length) res.filter = { tid: filter.tid ?? null, integrationCode: filter.integrationCode ?? null, errorCode: filter.errorCode ?? null }
           if (source === 'bullmq' && Object.keys(filter).length) res.total = list.length
           return res

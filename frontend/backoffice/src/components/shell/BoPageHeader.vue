@@ -5,7 +5,7 @@
   yalnız detay sayfaları `title`/`lede` verir.
 
     <BoPageHeader :updated-at="loadedAt">
-      <template #actions><EkButton icon="mdi-refresh" @click="load">Yenile</EkButton></template>
+      <template #actions><BoAction kind="refresh" :loading="loading" data-page-refresh @click="load" /></template>
     </BoPageHeader>
 -->
 <template>
@@ -20,6 +20,7 @@
       </ol>
     </nav>
     <div class="bo-ph__row">
+      <span v-if="icon" class="bo-ph__icon" aria-hidden="true"><v-icon :icon="icon" /></span>
       <div class="bo-ph__titles">
         <div class="bo-ph__title-row">
           <h1 class="bo-ph__title">{{ title ?? screen?.label }}</h1>
@@ -40,6 +41,9 @@
         </div>
       </div>
       <div v-if="$slots.actions" class="bo-ph__actions"><slot name="actions" /></div>
+      <!-- bo-wdg: otomatik yenileme başarısızlığı kalıcı durum bölgesinde duyurulur (yalnız eski veri; "Güncellendi" her
+           turda okunmaz). Bölge hep DOM'da → ilk başarısızlık da duyurulur. -->
+      <span class="ek-sr-only" role="status" data-testid="page-stale-live">{{ stale && updatedAt ? 'Sayfa yenilenemedi; gösterilen veri eski.' : '' }}</span>
     </div>
   </header>
 </template>
@@ -62,11 +66,16 @@ const props = defineProps<{
   stale?: boolean
   /** NT-09 (TX-2): otomatik yenileme aralığı (sn) — tek metin "Sekme açıkken 30 sn'de bir yenilenir". */
   autoRefresh?: number
+  /** Başlık ikonu: verilmezse ekran kaydındaki ikon. */
+  icon?: string
+  hideIcon?: boolean
 }>()
 
 const route = useRoute()
 const screen = computed(() => screenByKey(props.screenKey ?? String(route.meta.screen ?? '')))
 const crumbs = computed(() => crumbsFor(screen.value, props.extraCrumbs))
+/** BO2-20 (R2): ekranın kayıttaki ikonu başlığın solunda sakin kapsülde — sayfalar arasında tek kimlik dili. */
+const icon = computed(() => (props.hideIcon ? undefined : (props.icon ?? screen.value?.icon)))
 const badge = computed(() => (screen.value && !props.extraCrumbs?.length ? STATUS_BADGE[screen.value.status] : null))
 </script>
 
@@ -75,6 +84,26 @@ const badge = computed(() => (screen.value && !props.extraCrumbs?.length ? STATU
   display: flex;
   flex-direction: column;
   gap: var(--ek-space-2);
+  padding-bottom: var(--ek-space-4);
+  border-bottom: 1px solid var(--ek-color-border-default);
+}
+
+.bo-ph__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  align-self: flex-start;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--ek-color-action-border);
+  border-radius: var(--ek-radius-tile);
+  background: var(--ek-color-action-subtle);
+  color: var(--ek-color-action-emphasis);
+}
+
+.bo-ph__icon .v-icon {
+  font-size: var(--ek-icon-lg);
 }
 
 .bo-ph__crumbs ol {
@@ -130,16 +159,15 @@ const badge = computed(() => (screen.value && !props.extraCrumbs?.length ? STATU
 .bo-ph__row {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: var(--ek-space-3) var(--ek-space-6);
+  align-items: center;
+  gap: var(--ek-space-3) var(--ek-space-4);
 }
 
 .bo-ph__titles {
   display: flex;
-  flex: 1 1 420px;
+  flex: 1 1 360px;
   flex-direction: column;
-  gap: var(--ek-space-1);
+  gap: 2px;
   min-width: 0;
 }
 
@@ -155,12 +183,12 @@ const badge = computed(() => (screen.value && !props.extraCrumbs?.length ? STATU
   color: var(--ek-color-content-strong);
   font-size: var(--ek-type-title-size);
   line-height: var(--ek-type-title-line);
-  font-weight: var(--ek-font-weight-semibold);
-  letter-spacing: -0.01em;
+  font-weight: var(--ek-type-title-weight);
+  letter-spacing: var(--ek-type-title-tracking);
 }
 
 .bo-ph__lede {
-  max-width: 88ch;
+  max-width: 96ch;
   margin: 0;
   color: var(--ek-color-content-muted);
   font-size: var(--ek-type-body-size);
@@ -172,9 +200,10 @@ const badge = computed(() => (screen.value && !props.extraCrumbs?.length ? STATU
   flex-wrap: wrap;
   align-items: center;
   gap: var(--ek-space-1) var(--ek-space-4);
-  margin-top: var(--ek-space-1);
+  margin-top: 2px;
   color: var(--ek-color-content-muted);
   font-size: var(--ek-type-caption-size);
+  line-height: var(--ek-type-caption-line);
 }
 
 .bo-ph__updated {
@@ -197,5 +226,17 @@ const badge = computed(() => (screen.value && !props.extraCrumbs?.length ? STATU
   flex-wrap: wrap;
   align-items: center;
   gap: var(--ek-space-2);
+  margin-left: auto;
+}
+
+@media (max-width: 600px) {
+  /* Dar ekranda dikey alan değerli: kimlik ikonu menüde zaten var. */
+  .bo-ph__icon {
+    display: none;
+  }
+
+  .bo-ph__actions {
+    margin-left: 0;
+  }
 }
 </style>

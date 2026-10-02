@@ -5,9 +5,11 @@
 import type { RouteLocationRaw } from 'vue-router'
 import type { ByClass, PulseActiveUsers, TenantUsage } from '@bo/api/contract'
 import { formatCount, formatPercent } from '@bo/utils/units'
+import { BADGE, rankAttention, type PageVerdict } from '@bo/utils/verdict'
 
 export type VerdictTone = 'success' | 'info' | 'warning' | 'error' | 'neutral'
-export interface UsageDecision { key: string; tone: VerdictTone; title: string; why: string }
+/** `to`/`cta`: kararın bağlantısı (ortak PageVerdict bağlantısız madde çizmez — CONSOLE_IDENTITY ilke 1). */
+export interface UsageDecision { key: string; tone: VerdictTone; title: string; why: string; to?: RouteLocationRaw; cta?: string }
 export interface UsageAction { key: string; label: string; icon: string; to: RouteLocationRaw }
 export interface UsageVerdict { tone: VerdictTone; title: string; sentence: string; decisions: UsageDecision[]; actions: UsageAction[] }
 
@@ -17,6 +19,8 @@ export const UNKNOWN_SHARE_WARN = 0.2
 export const MOBILE_MAJORITY = 0.5
 /** Müşteri bu kadar gündür aktif değilse uyarı. */
 export const INACTIVE_DAYS_WARN = 7
+/** Ayrıntı bölümünün konumu (göstergeler + kırılım); konumsuz kararların bağlantısı. */
+export const USAGE_DETAIL_HASH = '#kullanim-ayrinti'
 
 const RANK: Record<VerdictTone, number> = { error: 4, warning: 3, info: 1, neutral: 0, success: 0 }
 
@@ -39,15 +43,17 @@ function commonDecisions(byClass: ByClass, mobileShare: number | null, truncated
     out.push({
       key: 'unknown', tone: 'warning', title: `Platformu belirlenemeyen kullanım yüksek (${formatPercent(unk)})`,
       why: `${scope} istemcilerin bir kısmı platform bilgisi göndermiyor; eski sürüm ya da dış entegrasyon olabilir. Yeni sürümün yayında olduğunu doğrulayın.`,
+      to: { query: { platform: 'unknown' } }, cta: 'Belirlenemeyenleri göster',
     })
   }
   if (mobileShare !== null && mobileShare >= MOBILE_MAJORITY) {
     out.push({
       key: 'mobile-majority', tone: 'info', title: `Kullanıcıların çoğu mobilden geliyor (${formatPercent(mobileShare)})`,
       why: 'Mobil ekranlardaki sorunlar daha çok kullanıcıyı etkiler; mobil hata ve geri bildirimleri önce ele alın.',
+      to: { query: { platform: 'mobile' } }, cta: 'Mobil kullanımı göster',
     })
   }
-  if (truncated) out.push({ key: 'truncated', tone: 'warning', title: 'Sayılar alt sınırdır', why: 'Okunan kayıt üst sınırı aşıldı; daha dar bir süzgeçle bakın.' })
+  if (truncated) out.push({ key: 'truncated', tone: 'warning', title: 'Sayılar alt sınırdır', why: 'Okunan kayıt üst sınırı aşıldı; daha dar bir süzgeçle bakın.', to: { hash: USAGE_DETAIL_HASH }, cta: 'Ayrıntıya bak' })
   return out
 }
 
@@ -58,7 +64,7 @@ export function pulseUsageVerdict(a: PulseActiveUsers): UsageVerdict {
   if (a.status === 'degraded') {
     return {
       tone: 'warning', title: 'Kullanım verisi okunamadı', sentence: 'Aktif kullanıcı sayıları şu an okunamıyor; diğer göstergeler etkilenmez.',
-      decisions: [{ key: 'degraded', tone: 'warning', title: 'Okunamayan bölüm "kullanım yok" anlamına gelmez', why: 'Yeniden deneyin; sürerse veritabanı durumunu Altyapı ekranında kontrol edin.' }],
+      decisions: [{ key: 'degraded', tone: 'warning', title: 'Okunamayan bölüm "kullanım yok" anlamına gelmez', why: 'Yeniden deneyin; sürerse veritabanı durumunu Altyapı ekranında kontrol edin.', to: '/altyapi', cta: 'Altyapı durumu' }],
       actions: [{ key: 'infra', label: 'Altyapı durumu', icon: 'mdi-server-outline', to: '/altyapi' }],
     }
   }
@@ -117,5 +123,32 @@ export function tenantUsageVerdict(u: TenantUsage, today: string = u.to): UsageV
     sentence: `${formatCount(u.logins.total)} başarılı giriş; mobil payı ${pct(a.mobileShare)}.`,
     decisions,
     actions: decisions.some((d) => d.key === 'inactive') ? [toLife, toAudit] : [toAudit],
+  }
+}
+
+/** Denetlenen ölçütler (sakin durumda "Denetlenen: …"). */
+const USAGE_CHECKS = ['Belirlenemeyen platform payı', 'Mobil payı', 'Okuma üst sınırı']
+
+/**
+ * INT-1001 §8 uyarlaması — kullanım hükmünü ortak `PageVerdict` modeline (bo-r1b; BO_UI_PATTERNS §11) çevirir.
+ * İçerik aynı: başlık = hüküm, cümle = not, uyarı/bilgi kararları = dikkat maddeleri (neden → etki, bağlantı + eylem metni),
+ * "Müdahale gerekmez" kararı = sakin başlık + nedeni, eylemler aynı sırada (ilki "Önerilen ilk adım").
+ */
+export function toPageVerdict(v: UsageVerdict): PageVerdict {
+  const ok = v.decisions.find((d) => d.tone === 'success' || d.tone === 'neutral')
+  const attention = rankAttention(
+    v.decisions
+      .filter((d): d is UsageDecision & { tone: 'error' | 'warning' | 'info' } => d.tone === 'error' || d.tone === 'warning' || d.tone === 'info')
+      .map((d) => ({ id: d.key, tone: d.tone, title: d.title, impact: d.why, to: d.to ?? { hash: USAGE_DETAIL_HASH }, cta: d.cta ?? 'Ayrıntıya bak' })),
+  )
+  return {
+    tone: v.tone,
+    badge: v.tone === 'neutral' ? 'Veri yok' : BADGE[v.tone],
+    summary: v.title,
+    note: v.sentence,
+    attention,
+    actions: v.actions.map((a) => ({ id: a.key, label: a.label, icon: a.icon, to: a.to })),
+    okTitle: ok ? `${ok.title} — ${ok.why}` : undefined,
+    checks: ok ? USAGE_CHECKS : undefined,
   }
 }

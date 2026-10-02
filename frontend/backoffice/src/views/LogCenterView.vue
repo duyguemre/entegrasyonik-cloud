@@ -5,19 +5,16 @@
         <span class="bo-inline-note"><v-icon icon="mdi-flask-outline" aria-hidden="true" />Örnek veriyle taslak — uçlar (L6–L8) henüz yok</span>
       </template>
       <template #actions>
-        <div class="bo-seg" role="radiogroup" aria-label="Zaman aralığı">
-          <button v-for="r in RANGES" :key="r.value" type="button" role="radio" class="bo-seg__opt" :aria-checked="range === r.value" @click="range = r.value">{{ r.label }}</button>
-        </div>
         <CopyViewLink />
-        <EkButton tone="secondary" icon="mdi-refresh" :loading="loading || summary.refreshing.value" data-page-refresh @click="refresh">Yenile</EkButton>
+        <BoAction kind="refresh" :loading="loading || summary.refreshing.value" data-page-refresh @click="refresh" />
       </template>
     </BoPageHeader>
 
     <PageVerdict :verdict="verdict" />
 
     <!-- Kategori şeridi: kontrol merkezinin ana ekseni -->
-    <section class="bo-cats" aria-label="Kategoriler">
-      <template v-if="volume">
+    <BoSection title="Kategoriler" description="Bir kategoriyi seçerek sorun gruplarını ve olay akışını süzün." icon="mdi-shape-outline">
+      <BoTileGrid v-if="volume" :cols="6" :mobile-cols="2" dense>
         <button
           v-for="c in volume.categories"
           :key="c.category"
@@ -34,164 +31,139 @@
           </span>
           <span class="bo-cat__total ek-num">{{ compact(c.total) }}<span class="bo-cat__unit"> olay</span></span>
           <span class="bo-cat__split">
-            <span :class="{ 'is-error': c.error }"><v-icon icon="mdi-close-circle" aria-hidden="true" />{{ c.error }} hata</span>
-            <span :class="{ 'is-warn': c.warn }"><v-icon icon="mdi-alert" aria-hidden="true" />{{ c.warn }} uyarı</span>
+            <span :class="{ 'is-error': c.error }"><v-icon icon="mdi-close-circle" aria-hidden="true" /><span class="ek-num">{{ formatCount(c.error) }}</span> hata</span>
+            <span :class="{ 'is-warn': c.warn }"><v-icon icon="mdi-alert" aria-hidden="true" /><span class="ek-num">{{ formatCount(c.warn) }}</span> uyarı</span>
           </span>
           <Sparkline :values="c.series" :tone="c.error ? 'error' : c.warn ? 'warning' : 'neutral'" :label="`${CATEGORY[c.category].label}: uyarı ve hata eğilimi`" />
         </button>
-      </template>
+      </BoTileGrid>
       <p v-else-if="!loading" class="bo-muted">Kategori hacmi okunamadı. <button type="button" class="bo-link" @click="loadAll">Yeniden dene</button></p>
       <EkSkeleton v-else type="cards" :rows="1" />
-    </section>
+    </BoSection>
 
-    <div class="bo-logs">
-      <!-- MOB-06: telefonda seviye/kaynak süzgeçleri katlanır — önce sorunlar (Durum → Karar), süzgeç istenince. -->
-      <button
-        type="button"
-        class="bo-facets-toggle"
-        :aria-expanded="facetsOpen"
-        aria-controls="bo-facets"
-        data-testid="facets-toggle"
-        @click="facetsOpen = !facetsOpen"
-      >
-        <v-icon icon="mdi-filter-variant" aria-hidden="true" />
-        <span>Seviye ve kaynak süzgeci</span>
-        <span v-if="facetCount" class="bo-facets-toggle__n ek-num">{{ facetCount }}</span>
-        <v-icon class="bo-facets-toggle__chev" :icon="facetsOpen ? 'mdi-chevron-up' : 'mdi-chevron-down'" aria-hidden="true" />
-      </button>
-      <aside id="bo-facets" class="bo-facets" :class="{ 'is-open': facetsOpen }" aria-label="Filtreler">
-        <fieldset class="bo-facet">
-          <legend>Seviye</legend>
-          <label v-for="l in LEVELS" :key="l" class="bo-facet__opt" :class="`lvl-${l}`">
-            <input type="checkbox" :checked="level.includes(l)" @change="toggle(level, l)" />
-            <v-icon :icon="LEVEL[l].icon" aria-hidden="true" />
-            <span>{{ LEVEL[l].label }}</span>
-            <span class="bo-facet__n ek-num">{{ facets?.level[l] ?? 0 }}</span>
-          </label>
-        </fieldset>
-        <fieldset class="bo-facet">
-          <legend>Kaynak</legend>
-          <label v-for="s in sourcesShown" :key="s" class="bo-facet__opt">
-            <input type="checkbox" :checked="src.includes(s)" @change="toggle(src, s)" />
-            <span>{{ SOURCE[s] }}</span>
-            <span class="bo-facet__n ek-num">{{ facets?.src[s] ?? 0 }}</span>
-          </label>
-        </fieldset>
-        <p v-if="legacyShare !== null" class="bo-facet__note">
-          Eski <code>console.*</code> payı: <strong class="ek-num">%{{ legacyShare }}</strong> — F-06 göçü ilerledikçe düşer.
-        </p>
-        <EkButton v-if="filtered" tone="ghost" size="sm" icon="mdi-filter-remove-outline" @click="clearFilters">Filtreleri temizle</EkButton>
-      </aside>
+    <BoFilterBar class="bo-fb" label="Log süzgeçleri" :active="activeCount" @clear="clearFilters">
+      <template v-if="tab === 'akis'" #search>
+        <v-text-field v-model="text" label="İleti öneki (regex yok)" prepend-inner-icon="mdi-text-search" density="compact" hide-details clearable @update:model-value="debouncedStream" />
+      </template>
+      <BoSegmented v-model="range" :options="RANGES" label="Zaman aralığı" />
+      <v-select v-model="level" :items="levelItems" label="Seviye" multiple chips density="compact" hide-details clearable data-testid="level-filter">
+        <template #item="{ props: ip, item }">
+          <v-list-item v-bind="ip"><template #append><span class="bo-facet__n ek-num">{{ facets?.level[item.value as LogLevel] ?? 0 }}</span></template></v-list-item>
+        </template>
+      </v-select>
+      <v-select v-model="src" :items="sourceItems" label="Kaynak" multiple chips density="compact" hide-details clearable data-testid="source-filter">
+        <template #item="{ props: ip, item }">
+          <v-list-item v-bind="ip"><template #append><span class="bo-facet__n ek-num">{{ facets?.src[item.value as LogSource] ?? 0 }}</span></template></v-list-item>
+        </template>
+      </v-select>
+    </BoFilterBar>
 
-      <section class="bo-logs__main">
-        <p v-if="tid" class="bo-logs__scope" data-testid="tid-scope">
-          <span class="bo-logs__scope-chip">
-            <v-icon icon="mdi-storefront-outline" aria-hidden="true" />
-            Müşteri <RouterLink :to="`/musteriler/${tid}`" class="ek-num bo-hit">#{{ tid }}</RouterLink>
-            <button type="button" class="bo-logs__scope-x" :aria-label="`Müşteri #${tid} süzgecini kaldır`" @click="tid = undefined">
-              <v-icon icon="mdi-close" aria-hidden="true" />
+    <p v-if="tid" class="bo-logs__scope" data-testid="tid-scope">
+      <span class="bo-logs__scope-chip">
+        <v-icon icon="mdi-storefront-outline" aria-hidden="true" />
+        Müşteri <RouterLink :to="`/musteriler/${tid}`" class="ek-num bo-hit">#{{ tid }}</RouterLink>
+        <button type="button" class="bo-logs__scope-x" :aria-label="`Müşteri #${tid} süzgecini kaldır`" @click="tid = undefined">
+          <v-icon icon="mdi-close" aria-hidden="true" />
+        </button>
+      </span>
+      <span class="bo-logs__scope-note" data-testid="tid-scope-note">Olay akışı kesin süzülür; sorun grupları yaklaşıktır (başka müşterinin grubu da görünebilir).</span>
+    </p>
+
+    <BoTabs :tabs="tabs" label="Log görünümü" :model-value="tab" @update:model-value="(v: string) => (tab = v === 'akis' ? 'akis' : 'sorunlar')" />
+
+    <!-- Sorun grupları -->
+    <BoSection v-if="tab === 'sorunlar'" id="panel-issues" title="Sorun grupları" description="Aynı kök nedene sahip olaylar tek grupta; en çok etkileyen önce." icon="mdi-bug-outline" flush role="tabpanel">
+      <template #actions>
+        <v-select v-model="sort" :items="SORTS" label="Sırala" density="compact" hide-details class="bo-logs__sort" />
+      </template>
+      <p v-if="tid && issues" class="bo-logs__scope-note bo-logs__approx" data-testid="issues-approx">
+        <v-icon icon="mdi-information-outline" aria-hidden="true" />Yaklaşık: müşteri #{{ tid }} süzgeci kova eşleşmesiyle uygulanır; başka müşterinin grubu da görünebilir.
+      </p>
+      <BoPanelState v-if="issuesError" state="error" :error="issuesError" error-text="Sorun grupları yüklenemedi" @retry="loadIssues" />
+      <EkSkeleton v-else-if="!issues" type="table" :rows="6" />
+      <EkEmptyState v-else-if="!issues.length" variant="no-results" title="Bu filtrelerde sorun yok" message="Aralığı genişletin ya da filtreleri temizleyin." />
+      <BoTableFrame v-else label="Sorun grupları" density="comfortable" flat>
+        <template #head>
+          <tr>
+            <th scope="col"><span class="ek-sr-only">Seviye</span></th>
+            <th scope="col">Sorun</th>
+            <th scope="col" class="bo-hide-sm">Eğilim</th>
+            <th scope="col" class="is-num">Olay</th>
+            <th scope="col" class="is-num bo-hide-sm">Müşteri</th>
+            <th scope="col" class="bo-hide-sm">Durum · son görülme</th>
+          </tr>
+        </template>
+        <tr v-for="issue in issues" :key="issue.fp" class="is-link bo-issue-row" :class="{ 'is-selected': selected?.fp === issue.fp }" :data-fp="issue.fp" @click="onIssueRow(issue, $event)">
+          <td class="bo-issue-row__lvl">
+            <span class="bo-issue__lvl" :class="`lvl-${issue.level}`" :title="LEVEL[issue.level].label"><v-icon :icon="LEVEL[issue.level].icon" aria-hidden="true" /><span class="ek-sr-only">{{ LEVEL[issue.level].label }}</span></span>
+          </td>
+          <td class="bo-issue-row__main">
+            <button type="button" class="bo-issue" :aria-label="`Sorun ayrıntısı: ${issue.title}`" @click="openIssue(issue)">
+              <span class="bo-issue__title">
+                <EkBadge v-if="issue.isNew" text="Yeni" tone="error" class="bo-issue__new" />
+                <span class="bo-issue__text" :title="issue.title">{{ issue.title }}</span>
+              </span>
             </button>
-          </span>
-          <span class="bo-logs__scope-note" data-testid="tid-scope-note">Olay akışı kesin süzülür; sorun grupları yaklaşıktır (başka müşterinin grubu da görünebilir).</span>
-        </p>
-        <div class="bo-tabs">
-          <div class="bo-tabs__list" role="tablist" aria-label="Görünüm">
-          <button id="tab-issues" type="button" role="tab" class="bo-tab" :aria-selected="tab === 'issues'" aria-controls="panel-issues" @click="tab = 'issues'">
-            Sorun grupları <span class="bo-tab__n ek-num">{{ issues?.length ?? '…' }}</span>
-          </button>
-          <button id="tab-stream" type="button" role="tab" class="bo-tab" :aria-selected="tab === 'stream'" aria-controls="panel-stream" @click="tab = 'stream'">
-            Olay akışı <span class="bo-tab__n ek-num">{{ stream?.items.length ?? '…' }}{{ stream?.nextCursor ? '+' : '' }}</span>
-          </button>
-          </div>
-          <span class="bo-tabs__spacer" />
-          <v-select
-            v-if="tab === 'issues'"
-            v-model="sort"
-            :items="SORTS"
-            label="Sırala"
-            density="compact"
-            hide-details
-            class="bo-tabs__sort"
-          />
-        </div>
+            <span class="bo-issue__meta">
+              <span class="bo-issue__cat"><v-icon :icon="CATEGORY[issue.category].icon" aria-hidden="true" />{{ CATEGORY[issue.category].label }}</span>
+              <span>{{ SOURCE[issue.src] }}</span>
+              <code v-if="issue.errClass">{{ issue.errClass }}</code>
+              <EkChannelDot v-if="issue.integ" :code="issue.integ" :name="CHANNEL[issue.integ] ?? issue.integ" variant="plain" />
+              <span class="bo-issue__op">{{ issue.op }}</span>
+            </span>
+          </td>
+          <td class="bo-hide-sm bo-issue-row__spark"><Sparkline :values="Object.values(issue.daily)" :tone="issue.level === 'warn' ? 'warning' : 'error'" :label="`${issue.title}: 14 günlük eğilim`" /></td>
+          <td class="is-num ek-num">{{ formatCount(issue.count) }}</td>
+          <td class="is-num ek-num bo-hide-sm">{{ issue.tenantCount ? formatCount(issue.tenantCount) : '—' }}</td>
+          <td class="bo-hide-sm bo-issue-row__when">
+            <EkStatusChip :tone="ISSUE_STATUS[issue.status].tone" :label="ISSUE_STATUS[issue.status].label" dot />
+            <span class="ek-num"><EkRelativeTime :value="issue.lastSeen" /></span>
+          </td>
+        </tr>
+      </BoTableFrame>
+    </BoSection>
 
-        <!-- Sorun grupları -->
-        <div v-if="tab === 'issues'" id="panel-issues" role="tabpanel" aria-labelledby="tab-issues">
-          <p v-if="tid && issues" class="bo-logs__scope-note bo-logs__approx" data-testid="issues-approx">
-            <v-icon icon="mdi-information-outline" aria-hidden="true" />Yaklaşık: müşteri #{{ tid }} süzgeci kova eşleşmesiyle uygulanır; başka müşterinin grubu da görünebilir.
-          </p>
-          <BoPanelState v-if="issuesError" state="error" :error="issuesError" error-text="Sorun grupları yüklenemedi" @retry="loadIssues" />
-          <EkSkeleton v-else-if="!issues" type="table" :rows="6" />
-          <EkEmptyState v-else-if="!issues.length" variant="no-results" title="Bu filtrelerde sorun yok" message="Aralığı genişletin ya da filtreleri temizleyin." />
-          <ul v-else class="bo-issues">
-            <li v-for="issue in issues" :key="issue.fp">
-              <button type="button" class="bo-issue" :class="{ 'is-selected': selected?.fp === issue.fp }" :data-fp="issue.fp" @click="openIssue(issue)">
-                <span class="bo-issue__lvl" :class="`lvl-${issue.level}`" :title="LEVEL[issue.level].label"><v-icon :icon="LEVEL[issue.level].icon" aria-hidden="true" /><span class="ek-sr-only">{{ LEVEL[issue.level].label }}</span></span>
-                <span class="bo-issue__main">
-                  <span class="bo-issue__title">
-                    <EkBadge v-if="issue.isNew" text="Yeni" tone="error" class="bo-issue__new" />
-                    <span class="bo-issue__text" :title="issue.title">{{ issue.title }}</span>
-                  </span>
-                  <span class="bo-issue__meta">
-                    <span class="bo-issue__cat"><v-icon :icon="CATEGORY[issue.category].icon" aria-hidden="true" />{{ CATEGORY[issue.category].label }}</span>
-                    <span>{{ SOURCE[issue.src] }}</span>
-                    <code v-if="issue.errClass">{{ issue.errClass }}</code>
-                    <EkChannelDot v-if="issue.integ" :code="issue.integ" :name="CHANNEL[issue.integ] ?? issue.integ" variant="plain" />
-                    <span class="bo-issue__op">{{ issue.op }}</span>
-                  </span>
-                </span>
-                <span class="bo-issue__spark"><Sparkline :values="Object.values(issue.daily)" :tone="issue.level === 'warn' ? 'warning' : 'error'" :label="`${issue.title}: 14 günlük eğilim`" /></span>
-                <span class="bo-issue__num"><strong class="ek-num">{{ issue.count }}</strong><span>olay</span></span>
-                <span class="bo-issue__num bo-issue__num--tenants"><strong class="ek-num">{{ issue.tenantCount || '—' }}</strong><span>müşteri</span></span>
-                <span class="bo-issue__when">
-                  <EkStatusChip :tone="ISSUE_STATUS[issue.status].tone" :label="ISSUE_STATUS[issue.status].label" dot />
-                  <span class="ek-num"><EkRelativeTime :value="issue.lastSeen" /></span>
-                </span>
-              </button>
-            </li>
-          </ul>
-        </div>
-
-        <!-- Olay akışı -->
-        <div v-else id="panel-stream" role="tabpanel" aria-labelledby="tab-stream">
-          <div class="bo-stream__bar">
-            <v-text-field v-model="text" label="İleti öneki (regex yok)" prepend-inner-icon="mdi-text-search" density="compact" hide-details clearable @update:model-value="debouncedStream" />
-            <v-tooltip text="Canlı akış 3 sn aralıklı sorguyla gelecek (uç henüz yok)" location="bottom">
-              <template #activator="{ props: tip }">
-                <span v-bind="tip"><v-switch label="Canlı" density="compact" hide-details disabled inset /></span>
-              </template>
-            </v-tooltip>
-          </div>
-          <BoPanelState v-if="streamError" state="error" :error="streamError" error-text="Olay akışı yüklenemedi" @retry="loadStream" />
-          <EkSkeleton v-else-if="!stream" type="table" :rows="8" />
-          <EkEmptyState v-else-if="!stream.items.length" variant="no-results" title="Olay yok" message="Bu filtrelerle kayıt bulunamadı." />
-          <div v-else class="bo-stream">
-            <table>
-              <caption class="ek-sr-only">Olay akışı</caption>
-              <thead>
-                <tr><th scope="col">Zaman</th><th scope="col">Seviye</th><th scope="col">Kategori · kaynak</th><th scope="col">İleti</th><th scope="col">İstek</th></tr>
-              </thead>
-              <tbody>
-                <tr v-for="e in stream.items" :key="e.id" :class="`lvl-${e.level}`">
-                  <td class="ek-num bo-stream__time">{{ formatClock(e.t) }}<span><EkRelativeTime :value="e.t" /></span></td>
-                  <td><EkStatusChip :tone="LEVEL[e.level].tone" :label="LEVEL[e.level].label" /></td>
-                  <td class="bo-stream__src">{{ CATEGORY[e.category].label }}<span>{{ SOURCE[e.src] }}<template v-if="e.tid"> · #{{ e.tid }}</template></span></td>
-                  <td class="bo-stream__msg">{{ e.msg }}</td>
-                  <td class="bo-stream__req">
-                    <template v-if="e.reqId">
-                      <button type="button" class="bo-link bo-mono" :aria-label="`İstek zincirini aç: ${e.reqId}`" @click="traceId = e.reqId">{{ e.reqId.slice(4, 12) }}</button><EkCopyButton :value="e.reqId" label="İstek kimliği" />
-                    </template>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-            <div v-if="stream.nextCursor" class="bo-stream__more">
-              <EkButton tone="secondary" size="sm" :loading="loadingMore" @click="loadMore">Daha fazla</EkButton>
-            </div>
-          </div>
-        </div>
-      </section>
-    </div>
+    <!-- Olay akışı -->
+    <BoSection v-else id="panel-stream" title="Olay akışı" :description="streamNote" icon="mdi-format-list-bulleted" flush role="tabpanel">
+      <template #actions>
+        <v-tooltip text="Canlı akış 3 sn aralıklı sorguyla gelecek (uç henüz yok)" location="bottom">
+          <template #activator="{ props: tip }">
+            <span v-bind="tip"><v-switch label="Canlı" density="compact" hide-details disabled inset /></span>
+          </template>
+        </v-tooltip>
+      </template>
+      <BoPanelState v-if="streamError" state="error" :error="streamError" error-text="Olay akışı yüklenemedi" @retry="loadStream" />
+      <EkSkeleton v-else-if="!stream" type="table" :rows="8" />
+      <EkEmptyState v-else-if="!stream.items.length" variant="no-results" title="Olay yok" message="Bu filtrelerle kayıt bulunamadı." />
+      <BoTableFrame v-else label="Olay akışı" flat>
+        <template #head>
+          <tr>
+            <th scope="col">Zaman</th>
+            <th scope="col">Seviye</th>
+            <th scope="col" class="bo-hide-sm">Kategori · kaynak</th>
+            <th scope="col">İleti</th>
+            <th scope="col" class="bo-hide-sm">İstek</th>
+          </tr>
+        </template>
+        <tr v-for="e in stream.items" :key="e.id" :class="`lvl-${e.level}`">
+          <td class="ek-num bo-stream__time">{{ formatClock(e.t) }}<span><EkRelativeTime :value="e.t" /></span></td>
+          <td><EkStatusChip :tone="LEVEL[e.level].tone" :label="LEVEL[e.level].label" /></td>
+          <td class="bo-stream__src bo-hide-sm">{{ CATEGORY[e.category].label }}<span>{{ SOURCE[e.src] }}<template v-if="e.tid"> · #{{ e.tid }}</template></span></td>
+          <td class="bo-stream__msg">
+            {{ e.msg }}
+            <button v-if="e.reqId" type="button" class="bo-link bo-mono bo-show-sm bo-stream__req-sm" :aria-label="`İstek zincirini aç: ${e.reqId}`" @click="traceId = e.reqId">{{ e.reqId.slice(4, 12) }}</button>
+          </td>
+          <td class="bo-stream__req bo-hide-sm">
+            <template v-if="e.reqId">
+              <button type="button" class="bo-link bo-mono" :aria-label="`İstek zincirini aç: ${e.reqId}`" @click="traceId = e.reqId">{{ e.reqId.slice(4, 12) }}</button><EkCopyButton :value="e.reqId" label="İstek kimliği" />
+            </template>
+          </td>
+        </tr>
+      </BoTableFrame>
+      <template v-if="stream && stream.items.length" #footer>
+        <BoPagination :count="stream.items.length" :has-more="!!stream.nextCursor" :loading="loadingMore" :error="moreError" @more="loadMore" />
+      </template>
+    </BoSection>
 
     <!-- Sorun detayı -->
     <EkDetailSheet :model-value="!!selected" :identity="selected ? `Sorun · ${CATEGORY[selected.category].label}` : 'Sorun'" @update:model-value="(v: boolean) => !v && closeIssue()">
@@ -207,39 +179,39 @@
         </div>
         <EkDescriptionList
           :items="[
-            { label: 'Olay (aralıkta)', value: selected.count },
-            { label: 'Etkilenen müşteri', value: selected.tenantCount },
+            { label: 'Olay (aralıkta)', value: formatCount(selected.count) },
+            { label: 'Etkilenen müşteri', value: formatCount(selected.tenantCount) },
             { label: 'İlk görülme', value: formatDateTime(selected.firstSeen) },
             { label: 'Son görülme', value: formatDateTime(selected.lastSeen) },
             { label: 'Hata sınıfı', value: selected.errClass ?? '—' },
             { label: 'Operasyon', value: selected.op ?? '—' },
           ]"
         />
-        <section class="bo-drawer__section">
-          <h3>Eğilim</h3>
+        <BoSection title="Eğilim" :heading-level="3" plain>
           <BarTrend v-if="trend" :points="trend.points" :bucket="trend.bucket" :label="`${selected.title} eğilimi`" />
+          <BoPanelState v-else-if="trendError" state="error" :error="trendError" error-text="Eğilim yüklenemedi" @retry="openIssue(selected)" />
           <EkSkeleton v-else type="cards" :rows="1" />
-        </section>
-        <section v-if="trend" class="bo-drawer__section">
-          <h3>Örnek (maskeli)</h3>
-          <pre class="bo-drawer__sample">{{ trend.sample.msg }}</pre>
-          <p class="bo-drawer__fp">parmak izi <code>{{ selected.fp }}</code><EkCopyButton :value="selected.fp" label="Parmak izi" /></p>
-        </section>
-        <section v-if="trend?.tenants.length" class="bo-drawer__section">
-          <h3>Etkilenen müşteriler</h3>
+        </BoSection>
+        <BoSection v-if="trend?.tenants.length" title="Etkilenen müşteriler" :heading-level="3" plain>
           <div class="bo-drawer__tenants">
             <RouterLink v-for="t in trend.tenants" :key="t" :to="`/musteriler/${t}`" class="bo-drawer__tenant ek-num bo-hit">#{{ t }}</RouterLink>
           </div>
-        </section>
-        <section v-if="trend?.reqIds.length" class="bo-drawer__section">
-          <h3>Son istekler</h3>
-          <ul class="bo-drawer__reqs">
-            <li v-for="id in trend.reqIds" :key="id">
-              <code>{{ id }}</code><EkCopyButton :value="id" label="İstek kimliği" />
-              <EkButton tone="ghost" size="sm" icon="mdi-source-branch" @click="traceId = id">İzi aç</EkButton>
-            </li>
-          </ul>
-        </section>
+        </BoSection>
+        <!-- Kanıtlar ikinci planda: örnek ileti ve son istekler ihtiyaç olunca açılır. -->
+        <div v-if="trend" class="bo-drawer__evidence">
+          <BoCollapsible label="Örnek ileti (maskeli)" hint="parmak izi ile">
+            <pre class="bo-drawer__sample">{{ trend.sample.msg }}</pre>
+            <p class="bo-drawer__fp">parmak izi <code>{{ selected.fp }}</code><EkCopyButton :value="selected.fp" label="Parmak izi" /></p>
+          </BoCollapsible>
+          <BoCollapsible v-if="trend.reqIds.length" label="Son istekler" :hint="`${trend.reqIds.length} istek`">
+            <ul class="bo-drawer__reqs">
+              <li v-for="id in trend.reqIds" :key="id">
+                <code>{{ id }}</code><EkCopyButton :value="id" label="İstek kimliği" />
+                <EkButton tone="ghost" size="sm" icon="mdi-source-branch" @click="traceId = id">İzi aç</EkButton>
+              </li>
+            </ul>
+          </BoCollapsible>
+        </div>
       </div>
     </EkDetailSheet>
 
@@ -256,6 +228,15 @@ import BarTrend from '@bo/components/BarTrend.vue'
 import Sparkline from '@bo/components/Sparkline.vue'
 import TraceDialog from '@bo/components/TraceDialog.vue'
 import BoPageHeader from '@bo/components/shell/BoPageHeader.vue'
+import BoAction from '@bo/components/r2/BoAction.vue'
+import BoCollapsible from '@bo/components/r2/BoCollapsible.vue'
+import BoFilterBar from '@bo/components/r2/BoFilterBar.vue'
+import BoPagination from '@bo/components/r2/BoPagination.vue'
+import BoSection from '@bo/components/r2/BoSection.vue'
+import BoSegmented from '@bo/components/r2/BoSegmented.vue'
+import BoTableFrame from '@bo/components/r2/BoTableFrame.vue'
+import BoTabs from '@bo/components/r2/BoTabs.vue'
+import BoTileGrid from '@bo/components/r2/BoTileGrid.vue'
 import CopyViewLink from '@bo/components/CopyViewLink.vue'
 import PageVerdict from '@bo/components/verdict/PageVerdict.vue'
 import { useVerdictSources } from '@bo/composables/useVerdictSources'
@@ -273,6 +254,7 @@ import type {
 } from '@bo/api/contract'
 import { CATEGORY, CHANNEL, ISSUE_STATUS, LEVEL, SOURCE } from '@bo/utils/labels'
 import { formatClock, formatDateTime } from '@bo/utils/format'
+import { formatCount } from '@bo/utils/units'
 
 const RANGES: Array<{ value: LogRange; label: string }> = [
   { value: '1h', label: '1 sa' },
@@ -297,7 +279,7 @@ const queryTid = Number(route.query.tid)
 const tid = ref<number | undefined>(Number.isInteger(queryTid) && queryTid > 0 ? queryTid : undefined)
 const range = ref<LogRange>('24h')
 // Açılışta ?sekme= önceliklidir (hüküm/kayıtlı görünüm bağlantıları); yoksa ?tid= olay akışıyla, aksi halde sorun gruplarıyla başlar.
-const tab = ref<'issues' | 'stream'>(route.query.sekme === 'sorunlar' ? 'issues' : route.query.sekme === 'akis' || tid.value ? 'stream' : 'issues')
+const tab = ref<'sorunlar' | 'akis'>(route.query.sekme === 'sorunlar' ? 'sorunlar' : route.query.sekme === 'akis' || tid.value ? 'akis' : 'sorunlar')
 const sort = ref<'lastSeen' | 'count' | 'tenantCount' | 'new'>('lastSeen')
 const category = ref<LogCategory[]>(queryList('category', Object.keys(CATEGORY) as LogCategory[]))
 const level = ref<LogLevel[]>(queryList('level', ['fatal', 'error', 'warn', 'info'] as const))
@@ -309,10 +291,12 @@ const issues = ref<IssueGroup[] | null>(null)
 const stream = ref<ListLogsResponse | null>(null)
 const loading = ref(false)
 const loadingMore = ref(false)
+const moreError = ref<{ message: string } | null>(null)
 const selected = ref<IssueGroup | null>(null)
 const trend = ref<GetIssueTrendResponse | null>(null)
 const traceId = ref<string | null>(null)
 const issuesError = ref<unknown>(null)
+const trendError = ref<unknown>(null)
 const streamError = ref<unknown>(null)
 
 // Hüküm: süzgeç ve aralıktan bağımsız son 24 saatin sorun grupları (+ ?tid= varsa müşterinin olay sayıları).
@@ -345,7 +329,7 @@ function applyQuery() {
   const cat = queryList('category', Object.keys(CATEGORY) as LogCategory[])
   if (lv.join() !== level.value.join()) level.value = lv
   if (cat.join() !== category.value.join()) category.value = cat
-  if (q.sekme === 'akis' || q.sekme === 'sorunlar') tab.value = q.sekme === 'akis' ? 'stream' : 'issues'
+  if (q.sekme === 'akis' || q.sekme === 'sorunlar') tab.value = q.sekme
   const sirala = SORT_KEYS.find((k) => k === q.sirala)
   if (sirala && sirala !== sort.value) sort.value = sirala
   if (typeof q.fp === 'string' && q.fp && selected.value?.fp !== q.fp) {
@@ -368,9 +352,15 @@ const legacyShare = computed(() => {
   const total = Object.values(f).reduce((a, b) => a + (b ?? 0), 0)
   return total ? Math.round(((f['legacy-console'] ?? 0) / total) * 100) : 0
 })
-const facetsOpen = ref(false)
-const facetCount = computed(() => level.value.length + src.value.length)
-const filtered = computed(() => category.value.length + level.value.length + src.value.length > 0 || !!text.value || !!tid.value)
+const streamNote = computed(() => (legacyShare.value !== null ? `Eski console.* payı: %${legacyShare.value} — F-06 göçü ilerledikçe düşer.` : undefined))
+const levelItems = LEVELS.map((l) => ({ value: l, title: LEVEL[l].label }))
+const sourceItems = computed(() => sourcesShown.value.map((s) => ({ value: s, title: SOURCE[s] })))
+const tabs = computed(() => [
+  { value: 'sorunlar', label: 'Sorun grupları', count: issues.value?.length ?? null },
+  { value: 'akis', label: 'Olay akışı', count: stream.value?.items.length ?? null },
+])
+/** Etkin süzgeç sayısı (BoFilterBar): kategori + seviye + kaynak + ileti öneki + müşteri kapsamı; aralık her zaman seçili olduğundan sayılmaz. */
+const activeCount = computed(() => category.value.length + level.value.length + src.value.length + (text.value ? 1 : 0) + (tid.value ? 1 : 0))
 
 function toggle<T>(list: T[], value: T) {
   const i = list.indexOf(value)
@@ -432,9 +422,12 @@ async function loadStream() {
 async function loadMore() {
   if (!stream.value?.nextCursor) return
   loadingMore.value = true
+  moreError.value = null
   try {
     const next = await api.call('LogCenterService/listLogs', { ...streamFilter(), cursor: stream.value.nextCursor })
     stream.value = { ...next, items: [...stream.value.items, ...next.items] }
+  } catch {
+    moreError.value = { message: 'Sonraki olaylar yüklenemedi — "Daha fazla" ile yeniden deneyin.' }
   } finally {
     loadingMore.value = false
   }
@@ -467,7 +460,7 @@ watch([category, level, tab, sort], () => {
       ...rest,
       ...(level.value.length ? { level: level.value.join(',') } : {}),
       ...(category.value.length ? { category: category.value.join(',') } : {}),
-      ...(tab.value === 'stream' ? { sekme: 'akis' } : {}),
+      ...(tab.value === 'akis' ? { sekme: 'akis' } : tid.value ? { sekme: 'sorunlar' } : {}),
       ...(sort.value !== 'lastSeen' ? { sirala: sort.value } : {}),
     },
   })
@@ -481,11 +474,24 @@ watch(tid, (v) => {
   void summary.load()
 })
 
+function onIssueRow(issue: IssueGroup, e: MouseEvent) {
+  // Düğme kendi işini yapar; metin seçimi satırı açmaz.
+  if ((e.target as HTMLElement).closest('a, button') || window.getSelection()?.toString()) return
+  void openIssue(issue)
+}
+
 async function openIssue(issue: IssueGroup) {
   selected.value = issue
   trend.value = null
+  trendError.value = null
   if (route.query.fp !== issue.fp) router.replace({ query: { ...route.query, fp: issue.fp } })
-  trend.value = await api.call('LogCenterService/getIssueTrend', { fp: issue.fp, range: range.value === '1h' ? '24h' : range.value })
+  try {
+    const res = await api.call('LogCenterService/getIssueTrend', { fp: issue.fp, range: range.value === '1h' ? '24h' : range.value })
+    // Hızlı ardışık seçimde eski yanıt yeni seçimin üstüne yazmasın.
+    if (selected.value?.fp === issue.fp) trend.value = res
+  } catch (e) {
+    if (selected.value?.fp === issue.fp) trendError.value = e
+  }
 }
 
 function closeIssue() {
@@ -506,12 +512,8 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-
-
-
 .bo-cat:focus-visible,
 .bo-issue:focus-visible,
-.bo-tab:focus-visible,
 .bo-link:focus-visible {
   outline: 2px solid var(--ek-color-border-focus);
   outline-offset: 1px;
@@ -522,7 +524,8 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   gap: var(--ek-space-1);
-  margin: 0 0 var(--ek-space-2);
+  margin: 0;
+  padding: var(--ek-space-3) var(--ek-space-4) 0;
 }
 
 .bo-logs__scope {
@@ -530,7 +533,7 @@ onMounted(async () => {
   flex-wrap: wrap;
   align-items: center;
   gap: var(--ek-space-2) var(--ek-space-3);
-  margin: 0 0 var(--ek-space-3);
+  margin: 0;
 }
 
 .bo-logs__scope-chip {
@@ -577,22 +580,20 @@ onMounted(async () => {
   font-size: var(--ek-type-caption-size);
 }
 
-/* ---- kategori şeridi ---- */
-.bo-cats {
-  display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: var(--ek-space-3);
+.bo-logs__sort {
+  min-width: 180px;
 }
 
+/* ---- kategori kutusu ---- */
 .bo-cat {
   display: flex;
   flex-direction: column;
   gap: var(--ek-space-2);
-  padding: var(--ek-space-3) var(--ek-space-4) var(--ek-space-3);
+  min-width: 0;
+  padding: var(--ek-space-3);
   border: 1px solid var(--ek-color-border-default);
-  border-radius: var(--ek-radius-card);
+  border-radius: var(--ek-radius-lg);
   background: var(--ek-color-surface);
-  box-shadow: var(--ek-shadow-card);
   color: var(--ek-color-content-default);
   font: inherit;
   text-align: left;
@@ -606,7 +607,8 @@ onMounted(async () => {
 
 .bo-cat.is-on {
   border-color: var(--ek-color-action);
-  box-shadow: 0 0 0 1px var(--ek-color-action), var(--ek-shadow-card);
+  background: var(--ek-color-action-subtle);
+  box-shadow: 0 0 0 1px var(--ek-color-action);
 }
 
 .bo-cat__head {
@@ -618,6 +620,12 @@ onMounted(async () => {
   font-weight: var(--ek-font-weight-medium);
 }
 
+.bo-cat__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .bo-cat__head :deep(.v-icon) {
   font-size: var(--ek-icon-sm);
 }
@@ -625,7 +633,7 @@ onMounted(async () => {
 .bo-cat__total {
   color: var(--ek-color-content-strong);
   font-size: var(--ek-type-heading-size);
-  font-weight: var(--ek-font-weight-semibold);
+  font-weight: var(--ek-type-heading-weight);
 }
 
 .bo-cat__unit {
@@ -637,7 +645,7 @@ onMounted(async () => {
 .bo-cat__split {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--ek-space-3);
+  gap: var(--ek-space-1) var(--ek-space-3);
   color: var(--ek-color-content-muted);
   font-size: var(--ek-type-caption-size);
 }
@@ -660,184 +668,54 @@ onMounted(async () => {
   color: var(--ek-color-warning-emphasis);
 }
 
-/* ---- gövde ---- */
-.bo-logs {
-  display: grid;
-  grid-template-columns: 220px minmax(0, 1fr);
-  gap: var(--ek-space-5);
-  align-items: start;
-}
-
-.bo-facets {
-  position: sticky;
-  top: calc(var(--ek-app-topbar-height) + var(--ek-space-4));
-  display: flex;
-  flex-direction: column;
-  gap: var(--ek-space-4);
-}
-
-.bo-facet {
-  margin: 0;
-  padding: 0;
-  border: 0;
-}
-
-.bo-facet legend {
-  margin-bottom: var(--ek-space-2);
-  color: var(--ek-color-content-muted);
-  font-size: var(--ek-type-micro-size);
-  font-weight: var(--ek-type-micro-weight);
-  letter-spacing: var(--ek-type-micro-tracking);
-  text-transform: uppercase;
-}
-
-.bo-facet__opt {
-  display: flex;
-  align-items: center;
-  gap: var(--ek-space-2);
-  min-height: 32px;
-  padding: 0 var(--ek-space-2);
-  border-radius: var(--ek-radius-md);
-  color: var(--ek-color-content-default);
-  font-size: var(--ek-type-body-size);
-  cursor: pointer;
-}
-
-.bo-facet__opt:hover {
-  background: var(--ek-color-surface);
-}
-
-.bo-facet__opt input {
-  width: 16px;
-  height: 16px;
-  accent-color: var(--ek-color-action);
-}
-
-.bo-facet__opt input:focus-visible {
-  outline: 2px solid var(--ek-color-border-focus);
-  outline-offset: 2px;
-}
-
-.bo-facet__opt :deep(.v-icon) {
-  font-size: var(--ek-icon-sm);
-}
-
-.bo-facet__opt.lvl-fatal :deep(.v-icon),
-.bo-facet__opt.lvl-error :deep(.v-icon) {
-  color: var(--ek-color-error);
-}
-
-.bo-facet__opt.lvl-warn :deep(.v-icon) {
-  color: var(--ek-color-warning);
-}
-
-.bo-facet__opt.lvl-info :deep(.v-icon) {
-  color: var(--ek-color-info);
-}
-
 .bo-facet__n {
-  margin-left: auto;
-  color: var(--ek-color-content-muted);
-  font-size: var(--ek-type-caption-size);
-}
-
-.bo-facet__note {
-  margin: 0;
-  padding: var(--ek-space-3);
-  border: 1px dashed var(--ek-color-border-strong);
-  border-radius: var(--ek-radius-lg);
-  color: var(--ek-color-content-muted);
-  font-size: var(--ek-type-caption-size);
-}
-
-.bo-logs__main {
-  min-width: 0;
-  border: 1px solid var(--ek-color-border-default);
-  border-radius: var(--ek-radius-card);
-  background: var(--ek-color-surface);
-  box-shadow: var(--ek-shadow-card);
-}
-
-.bo-tabs {
-  display: flex;
-  align-items: center;
-  gap: var(--ek-space-1);
-  padding: var(--ek-space-2) var(--ek-space-3) 0;
-  border-bottom: 1px solid var(--ek-color-border-default);
-}
-
-.bo-tabs__list {
-  display: flex;
-  gap: var(--ek-space-1);
-}
-
-.bo-tabs__spacer {
-  flex: 1;
-}
-
-.bo-tabs__sort {
-  max-width: 200px;
-  margin-bottom: var(--ek-space-2);
-}
-
-.bo-tab {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--ek-space-2);
-  height: 40px;
-  padding: 0 var(--ek-space-3);
-  border: 0;
-  border-bottom: 2px solid transparent;
-  background: transparent;
-  color: var(--ek-color-content-muted);
-  font: inherit;
-  font-size: var(--ek-type-label-size);
-  font-weight: var(--ek-font-weight-semibold);
-  cursor: pointer;
-}
-
-.bo-tab[aria-selected='true'] {
-  border-bottom-color: var(--ek-color-action);
-  color: var(--ek-color-content-strong);
-}
-
-.bo-tab__n {
-  padding: 0 6px;
-  border-radius: var(--ek-radius-chip);
-  background: var(--ek-color-surface-muted);
   color: var(--ek-color-content-muted);
   font-size: var(--ek-type-caption-size);
 }
 
 /* ---- sorun satırları ---- */
-.bo-issues {
-  margin: 0;
-  padding: 0;
-  list-style: none;
+.bo-issue-row.is-selected > * {
+  background: var(--ek-color-surface-muted);
 }
 
-.bo-issues li + li {
-  border-top: 1px solid var(--ek-color-border-subtle);
+.bo-issue-row__lvl {
+  width: 44px;
+}
+
+.bo-issue-row__main {
+  min-width: 260px;
+}
+
+.bo-issue-row__spark {
+  width: 120px;
+}
+
+.bo-issue-row__when {
+  white-space: nowrap;
+}
+
+.bo-issue-row__when .ek-num {
+  display: block;
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-caption-size);
+}
+
+.bo-issue-row > td {
+  padding-top: var(--ek-space-2);
+  padding-bottom: var(--ek-space-2);
 }
 
 .bo-issue {
-  display: grid;
-  grid-template-columns: 28px minmax(0, 1fr) 96px 64px 64px 128px;
-  align-items: center;
-  gap: var(--ek-space-3);
-  width: 100%;
-  padding: var(--ek-space-3) var(--ek-space-4);
+  display: block;
+  max-width: 100%;
+  padding: 0;
   border: 0;
   background: transparent;
-  color: var(--ek-color-content-default);
+  color: var(--ek-color-content-strong);
   font: inherit;
+  font-weight: var(--ek-font-weight-medium);
   text-align: left;
   cursor: pointer;
-}
-
-.bo-issue:hover,
-.bo-issue.is-selected {
-  background: var(--ek-color-surface-muted);
 }
 
 .bo-issue__lvl {
@@ -861,20 +739,10 @@ onMounted(async () => {
   color: var(--ek-color-warning-emphasis);
 }
 
-.bo-issue__main {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 0;
-}
-
 .bo-issue__title {
   display: flex;
   align-items: flex-start;
   gap: var(--ek-space-2);
-  color: var(--ek-color-content-strong);
-  font-size: var(--ek-type-body-size);
-  font-weight: var(--ek-font-weight-medium);
 }
 
 .bo-issue__new {
@@ -897,8 +765,11 @@ onMounted(async () => {
   flex-wrap: wrap;
   align-items: center;
   gap: 2px var(--ek-space-3);
+  margin-top: 2px;
   color: var(--ek-color-content-muted);
   font-size: var(--ek-type-caption-size);
+  font-weight: var(--ek-font-weight-regular);
+  white-space: normal;
 }
 
 .bo-issue__meta code,
@@ -916,75 +787,7 @@ onMounted(async () => {
   font-size: var(--ek-icon-xs);
 }
 
-.bo-issue__num {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-}
-
-.bo-issue__num strong {
-  color: var(--ek-color-content-strong);
-  font-size: var(--ek-type-body-size);
-}
-
-.bo-issue__num span,
-.bo-issue__when {
-  color: var(--ek-color-content-muted);
-  font-size: var(--ek-type-caption-size);
-}
-
-.bo-issue__when {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 4px;
-}
-
 /* ---- akış ---- */
-.bo-stream__bar {
-  display: flex;
-  align-items: center;
-  gap: var(--ek-space-3);
-  padding: var(--ek-space-3) var(--ek-space-4);
-  border-bottom: 1px solid var(--ek-color-border-subtle);
-}
-
-.bo-stream {
-  overflow-x: auto;
-}
-
-.bo-stream table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: var(--ek-type-body-size);
-}
-
-.bo-stream th {
-  padding: var(--ek-space-2) var(--ek-space-3);
-  background: var(--ek-color-surface-muted);
-  color: var(--ek-color-content-muted);
-  font-size: var(--ek-type-micro-size);
-  font-weight: var(--ek-type-micro-weight);
-  letter-spacing: var(--ek-type-micro-tracking);
-  text-align: left;
-  text-transform: uppercase;
-}
-
-.bo-stream td {
-  padding: var(--ek-space-2) var(--ek-space-3);
-  border-top: 1px solid var(--ek-color-border-subtle);
-  vertical-align: top;
-}
-
-.bo-stream tr.lvl-error td:first-child,
-.bo-stream tr.lvl-fatal td:first-child {
-  box-shadow: inset 3px 0 0 var(--ek-color-error);
-}
-
-.bo-stream tr.lvl-warn td:first-child {
-  box-shadow: inset 3px 0 0 var(--ek-color-warning);
-}
-
 .bo-stream__time,
 .bo-stream__src {
   white-space: nowrap;
@@ -997,16 +800,34 @@ onMounted(async () => {
   font-size: var(--ek-type-caption-size);
 }
 
-.bo-stream__msg {
-  min-width: 280px;
-  color: var(--ek-color-content-strong);
+:deep(.bo-table tbody tr.lvl-error > :first-child),
+:deep(.bo-table tbody tr.lvl-fatal > :first-child) {
+  box-shadow: inset 3px 0 0 var(--ek-color-error);
 }
 
-.bo-stream__more {
-  display: flex;
-  justify-content: center;
-  padding: var(--ek-space-3);
-  border-top: 1px solid var(--ek-color-border-subtle);
+:deep(.bo-table tbody tr.lvl-warn > :first-child) {
+  box-shadow: inset 3px 0 0 var(--ek-color-warning);
+}
+
+.bo-stream__msg {
+  min-width: 200px;
+  color: var(--ek-color-content-strong);
+  overflow-wrap: anywhere;
+}
+
+.bo-stream__req-sm {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .bo-stream__req-sm {
+    display: block;
+    min-height: 44px;
+  }
+
+  .bo-issue-row__main {
+    min-width: 0;
+  }
 }
 
 .bo-link {
@@ -1041,8 +862,9 @@ onMounted(async () => {
   margin: 0;
   color: var(--ek-color-content-strong);
   font-size: var(--ek-type-heading-size);
-  line-height: 1.35;
+  line-height: var(--ek-type-heading-line);
   font-weight: var(--ek-type-heading-weight);
+  overflow-wrap: anywhere;
 }
 
 .bo-drawer__chips {
@@ -1051,16 +873,12 @@ onMounted(async () => {
   gap: var(--ek-space-2);
 }
 
-.bo-drawer__section {
-  padding-top: var(--ek-space-4);
+.bo-drawer__evidence {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ek-space-2);
+  padding-top: var(--ek-space-3);
   border-top: 1px solid var(--ek-color-border-subtle);
-}
-
-.bo-drawer__section h3 {
-  margin: 0 0 var(--ek-space-3);
-  color: var(--ek-color-content-strong);
-  font-size: var(--ek-type-subheading-size);
-  font-weight: var(--ek-type-subheading-weight);
 }
 
 .bo-drawer__sample {
@@ -1072,6 +890,7 @@ onMounted(async () => {
   font-family: var(--ek-font-mono);
   font-size: var(--ek-type-label-size);
   white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 .bo-drawer__fp {
@@ -1115,96 +934,17 @@ onMounted(async () => {
 
 .bo-drawer__reqs li {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
+  gap: var(--ek-space-1);
+  min-width: 0;
   font-size: var(--ek-type-label-size);
 }
 
-@media (max-width: 1439px) {
-  .bo-cats {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
-/* NT-06: 1280 altında sparkline sütunu gizlenir. */
-@media (max-width: 1279px) {
-  .bo-issue {
-    grid-template-columns: 28px minmax(0, 1fr) 64px 64px 128px;
-  }
-
-  .bo-issue__spark {
-    display: none;
-  }
-}
-
-@media (max-width: 1023px) {
-  .bo-logs {
-    grid-template-columns: 1fr;
-  }
-
-  .bo-facets {
-    position: static;
-    flex-direction: row;
-    flex-wrap: wrap;
-  }
-
-  .bo-issue {
-    grid-template-columns: 28px minmax(0, 1fr) 64px;
-  }
-
-  .bo-issue__num--tenants,
-  .bo-issue__when {
-    display: none;
-  }
-}
-
-.bo-facets-toggle {
-  display: none;
-}
-
-@media (max-width: 767.98px) {
-  .bo-facets-toggle {
-    display: flex;
-    align-items: center;
-    gap: var(--ek-space-2);
-    width: 100%;
-    min-height: 44px;
-    padding: 0 var(--ek-space-3);
-    border: 1px solid var(--ek-color-border-default);
-    border-radius: var(--ek-radius-control);
-    background: var(--ek-color-surface);
-    color: var(--ek-color-content-strong);
-    font: inherit;
-    font-size: var(--ek-type-label-size);
-    font-weight: var(--ek-font-weight-medium);
-    cursor: pointer;
-  }
-
-  .bo-facets-toggle:focus-visible {
-    outline: 2px solid var(--ek-color-border-focus);
-    outline-offset: 1px;
-  }
-
-  .bo-facets-toggle__n {
-    padding: 0 var(--ek-space-2);
-    border-radius: var(--ek-radius-full);
-    background: var(--ek-color-action);
-    color: var(--ek-color-action-contrast);
-    font-size: var(--ek-type-caption-size);
-  }
-
-  .bo-facets-toggle__chev {
-    margin-left: auto;
-  }
-
-  .bo-facets:not(.is-open) {
-    display: none;
-  }
-}
-
-@media (max-width: 599px) {
-  .bo-cats {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
+/* Uzun istek kimliği dar çekmecede taşmaz (390 px): kendi içinde kırılır, düğmeler alt satıra iner. */
+.bo-drawer__reqs code {
+  flex: 1 1 12rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 </style>

@@ -2,21 +2,19 @@
   <div class="bo-page">
     <BoPageHeader :updated-at="res.loadedAt.value ?? undefined" :stale="res.stale.value">
       <template #actions>
-        <EkButton tone="secondary" icon="mdi-refresh" :loading="res.refreshing.value || res.phase.value === 'loading'" data-page-refresh @click="res.load()">Yenile</EkButton>
-        <EkButton tone="primary" icon="mdi-account-plus-outline" data-testid="invite" @click="openInvite">Davet et</EkButton>
+        <BoAction kind="add" label="Davet et" data-testid="invite" @click="openInvite" />
+        <BoAction kind="refresh" :loading="res.refreshing.value || res.phase.value === 'loading'" data-page-refresh @click="res.load()" />
       </template>
     </BoPageHeader>
 
     <PageVerdict :verdict="verdict" />
 
-    <p v-if="filter !== 'all'" class="bo-admin__filter" data-testid="admin-filter" role="status">
-      Süzgeç: {{ FILTER_LABEL[filter] }} — {{ rows.length }} kayıt
-      <EkButton size="sm" tone="ghost" @click="filter = 'all'">Süzgeci temizle</EkButton>
-    </p>
-
-    <EkCard flush>
-      <StateBlock :phase="phase" :error="res.error.value" :rows="4" empty-title="Yönetici yok" empty-message="Listelenecek platform yöneticisi bulunamadı." error-title="Yönetici listesi yüklenemedi" degraded-title="Yönetici servisi şu an kullanılamıyor" @retry="res.load()">
-        <EkDataTable :items="rows" :columns="COLUMNS" row-key="sub">
+    <BoSection id="bo-admins" flush class="bo-flushed" title="Platform yöneticileri" :description="`${items.length} hesap · giriş, iki adımlı doğrulama ve davet durumu`">
+      <template #default>
+        <BoFilterBar label="Yönetici süzgeci" :active="filter === 'all' ? 0 : 1" class="bo-admin__filter" @clear="filter = 'all'">
+          <BoSegmented v-model="filter" :options="FILTER_OPTIONS" label="Yönetici süzgeci" />
+        </BoFilterBar>
+        <BoDataTable :items="rows" :columns="COLUMNS" row-key="sub" label="Yönetici listesi" :phase="phase" :error="res.error.value" empty-title="Yönetici yok" :empty-message="filter === 'all' ? 'Listelenecek platform yöneticisi bulunamadı.' : `Bu süzgece uyan yönetici yok (${FILTER_LABEL[filter]}).`" @retry="res.load()">
           <template #cell-name="{ item }">
             <span class="bo-cell-stack">
               <span class="bo-admin__name">{{ full(item as PlatformAdmin) }} <EkStatusChip v-if="isSelf(item as PlatformAdmin)" tone="info" label="Siz" /></span>
@@ -41,16 +39,19 @@
           <template #cell-actions="{ item }">
             <span class="bo-row-actions">
               <template v-if="!isSelf(item as PlatformAdmin)">
-                <EkButton v-if="(item as PlatformAdmin).status === 'disabled'" size="sm" tone="secondary" icon="mdi-account-check-outline" :aria-label="`${full(item as PlatformAdmin)} etkinleştir`" data-testid="enable" @click="enable.open(item as PlatformAdmin)">Etkinleştir</EkButton>
-                <EkButton v-if="(item as PlatformAdmin).status === 'active'" size="sm" tone="secondary" icon="mdi-account-cancel-outline" :aria-label="`${full(item as PlatformAdmin)} devre dışı bırak`" data-testid="disable" @click="disable.open(item as PlatformAdmin)">Devre dışı bırak</EkButton>
-                <EkButton v-if="(item as PlatformAdmin).status === 'invited'" size="sm" tone="secondary" icon="mdi-email-remove-outline" :aria-label="`${(item as PlatformAdmin).email} davetini iptal et`" data-testid="revoke" @click="disable.open(item as PlatformAdmin)">Daveti iptal et</EkButton>
-                <EkButton v-if="(item as PlatformAdmin).status !== 'invited'" size="sm" tone="ghost" icon="mdi-shield-refresh-outline" :aria-label="`${full(item as PlatformAdmin)} iki adımlı doğrulamayı sıfırla`" data-testid="reset-mfa" @click="resetMfa.open(item as PlatformAdmin)">2FA sıfırla</EkButton>
+                <BoAction v-if="(item as PlatformAdmin).status === 'disabled'" kind="enable" size="sm" :aria-label="`${full(item as PlatformAdmin)} hesabını etkinleştir`" data-testid="enable" @click="enable.open(item as PlatformAdmin)" />
+                <BoAction v-if="(item as PlatformAdmin).status === 'active'" kind="cancel" size="sm" label="Devre dışı bırak" :aria-label="`${full(item as PlatformAdmin)} devre dışı bırak`" data-testid="disable" @click="disable.open(item as PlatformAdmin)" />
+                <BoAction v-if="(item as PlatformAdmin).status === 'invited'" kind="cancel" size="sm" label="Daveti iptal et" :aria-label="`${(item as PlatformAdmin).email} davetini iptal et`" data-testid="revoke" @click="disable.open(item as PlatformAdmin)" />
+                <BoAction v-if="(item as PlatformAdmin).status !== 'invited'" kind="reset" label="2FA sıfırla" size="sm" :aria-label="`${full(item as PlatformAdmin)} iki adımlı doğrulamayı sıfırla`" data-testid="reset-mfa" @click="resetMfa.open(item as PlatformAdmin)" />
               </template>
             </span>
           </template>
-        </EkDataTable>
-      </StateBlock>
-    </EkCard>
+          <template #footer>
+            <BoPagination :count="rows.length" :total="filter === 'all' ? null : items.length" :has-more="false" />
+          </template>
+        </BoDataTable>
+      </template>
+    </BoSection>
 
     <GuardedDialog
       :action="invite"
@@ -61,7 +62,7 @@
       confirm-icon="mdi-email-fast-outline"
       :confirm-disabled="!emailValid"
     >
-      <v-text-field v-model="inviteEmail" label="E-posta" type="email" autocomplete="off" density="compact" maxlength="254" :error-messages="inviteEmail && !emailValid ? 'Geçerli bir e-posta adresi girin.' : undefined" hide-details="auto" data-testid="invite-email" />
+      <v-text-field v-model="inviteEmail" label="E-posta" type="email" autocomplete="off" spellcheck="false" autocapitalize="off" autocorrect="off" density="compact" maxlength="254" :error-messages="inviteEmail && !emailValid ? 'Geçerli bir e-posta adresi girin.' : undefined" hide-details="auto" data-testid="invite-email" />
     </GuardedDialog>
 
     <GuardedDialog
@@ -97,16 +98,21 @@
 
 <script setup lang="ts">
 import BoPageHeader from '@bo/components/shell/BoPageHeader.vue'
+import BoAction from '@bo/components/r2/BoAction.vue'
+import BoSection from '@bo/components/r2/BoSection.vue'
+import BoDataTable from '@bo/components/r2/BoDataTable.vue'
+import BoFilterBar from '@bo/components/r2/BoFilterBar.vue'
+import BoSegmented from '@bo/components/r2/BoSegmented.vue'
+import BoPagination from '@bo/components/r2/BoPagination.vue'
 import PageVerdict from '@bo/components/verdict/PageVerdict.vue'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { EkButton, EkCard, EkDataTable, EkStatusChip, type EkTableColumn } from '@entegrasyonik/ui/components'
+import { EkStatusChip, type EkTableColumn } from '@entegrasyonik/ui/components'
 import { api } from '@bo/api'
 import type { AdminStatus, PlatformAdmin } from '@bo/api/contract'
 import { session } from '@bo/auth/session'
 import { useResource } from '@bo/composables/useResource'
 import { useGuardedAction } from '@bo/composables/useGuardedAction'
-import StateBlock from '@bo/components/kit/StateBlock.vue'
 import GuardedDialog from '@bo/components/kit/GuardedDialog.vue'
 import { formatDate, formatDateTime, formatRelative } from '@bo/utils/format'
 import { notify } from '@bo/utils/toast'
@@ -143,8 +149,10 @@ const filter = computed<AdminFilter>({
 })
 const filterTo = (f: AdminFilter) => ({ query: { ...route.query, filtre: f } })
 const FILTER_LABEL: Record<AdminFilter, string> = { all: 'tümü', nomfa: 'iki adımlı doğrulaması olmayanlar', locked: 'parola kilidi olanlar', invites: 'bekleyen davetler', idle: 'uzun süredir girmeyenler' }
+const FILTER_OPTIONS = computed(() => FILTERS.map((f) => ({ value: f, label: f === 'all' ? 'Tümü' : FILTER_SHORT[f], count: items.value.filter((a) => matchesFilter(a, f, Date.now())).length })))
+const FILTER_SHORT: Record<AdminFilter, string> = { all: 'Tümü', nomfa: '2FA yok', locked: 'Kilitli', invites: 'Davetler', idle: 'Uzun süredir girmeyen' }
 const rows = computed(() => items.value.filter((a) => matchesFilter(a, filter.value, Date.now())) as unknown as Array<Record<string, unknown>>)
-const phase = computed(() => (res.phase.value === 'ready' && !items.value.length ? 'empty' : res.phase.value))
+const phase = computed(() => (res.phase.value === 'ready' && !rows.value.length ? 'empty' : res.phase.value))
 const verdict = computed(() =>
   res.phase.value === 'loading' && !res.data.value
     ? null
@@ -251,6 +259,9 @@ onMounted(() => res.load())
 </script>
 
 <style scoped>
+.bo-flushed :deep(.bo-section__body) {
+  padding-top: var(--ek-space-3);
+}
 .bo-admin__name {
   display: inline-flex;
   flex-wrap: wrap;
@@ -260,13 +271,8 @@ onMounted(() => res.load())
   font-weight: var(--ek-font-weight-medium);
 }
 .bo-admin__filter {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--ek-space-2);
-  margin: 0;
-  color: var(--ek-color-content-default);
-  font-size: var(--ek-type-label-size);
+  padding: var(--ek-space-3) var(--ek-space-5);
+  border-bottom: 1px solid var(--ek-color-border-subtle);
 }
 .bo-admin__flags {
   display: inline-flex;

@@ -1,14 +1,11 @@
 <template>
-  <section class="bo-panel" aria-labelledby="bo-hist-title">
-    <header class="bo-panel__bar">
-      <div>
-        <h2 id="bo-hist-title" class="bo-panel__title">Yayın geçmişi</h2>
-        <p class="bo-panel__hint">Son 20 sürüm. Geri alma, eski sürümün içeriğini yeni bir sürüm olarak yayınlar.</p>
-      </div>
-    </header>
-    <EkCard flush>
-      <StateBlock :phase="rows.length ? 'ready' : 'empty'" empty-title="Henüz yayın yok" empty-message="İlk yayın yapıldığında sürümler burada listelenir; şu an varsayılan değerler geçerli.">
-        <EkDataTable :items="rows" :columns="COLUMNS" row-key="version">
+  <BoSection id="bo-hist" flush class="bo-flushed" title="Yayın geçmişi" description="Son 20 sürüm. Geri alma, eski sürümün içeriğini yeni bir sürüm olarak yayınlar.">
+    <!-- Devre dışı "Geri al" nedeni bir kez, görünür metin olarak (yalnız `title` değil); düğmeler bu metne bağlı. -->
+    <p v-if="cfg.hasDraft" :id="lockId" class="bo-hist__lock" data-testid="rollback-locked">
+      <v-icon icon="mdi-lock-outline" aria-hidden="true" />
+      Açık taslak varken geri alınamaz; önce taslağı yayınlayın ya da atın.
+    </p>
+    <BoDataTable :items="rows" :columns="COLUMNS" row-key="version" label="Yayınlanan sürümler" :phase="rows.length ? 'ready' : 'empty'" empty-title="Henüz yayın yok" empty-message="İlk yayın yapıldığında sürümler burada listelenir; şu an varsayılan değerler geçerli.">
           <template #cell-version="{ item }">
             <span class="bo-cell-stack"><span class="ek-num">v{{ (item as Row).version }}</span><EkStatusChip v-if="(item as Row).status === 'published'" tone="success" label="Yayında" dot /></span>
           </template>
@@ -20,25 +17,26 @@
           <template #cell-diff="{ item }">{{ summary((item as Row).diff) }}</template>
           <template #cell-origin="{ item }"><EkStatusChip :tone="(item as Row).origin === 'rollback' ? 'warning' : 'neutral'" :label="originLabel((item as Row).origin)" /></template>
           <template #cell-actions="{ item }">
-            <EkButton v-if="(item as Row).status !== 'published'" size="sm" tone="secondary" icon="mdi-undo-variant" :disabled="cfg.hasDraft" :title="cfg.hasDraft ? 'Açık taslak varken geri alınamaz; önce taslağı yayınlayın ya da vazgeçin.' : undefined" :aria-label="`v${(item as Row).version} sürümüne geri al`" data-testid="rollback" @click="cfg.rollback.open(item as Row)">Bu sürüme geri al</EkButton>
+            <BoAction v-if="(item as Row).status !== 'published'" kind="rollback" label="Bu sürüme geri al" size="sm" :disabled="cfg.hasDraft" :aria-describedby="cfg.hasDraft ? lockId : undefined" :aria-label="`Bu sürüme geri al: v${(item as Row).version}`" data-testid="rollback" @click="cfg.rollback.open(item as Row)" />
           </template>
-        </EkDataTable>
-      </StateBlock>
-    </EkCard>
-  </section>
+    </BoDataTable>
+  </BoSection>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import { EkButton, EkCard, EkDataTable, EkStatusChip, type EkTableColumn } from '@entegrasyonik/ui/components'
+import { computed, useId } from 'vue'
+import { EkStatusChip, type EkTableColumn } from '@entegrasyonik/ui/components'
+import BoAction from '@bo/components/r2/BoAction.vue'
+import BoSection from '@bo/components/r2/BoSection.vue'
+import BoDataTable from '@bo/components/r2/BoDataTable.vue'
 import type { ConfigDiffEntry, ConfigRevision } from '@bo/api/contract'
-import StateBlock from '@bo/components/kit/StateBlock.vue'
 import { formatDateTime, formatRelative } from '@bo/utils/format'
 import type { PlatformConfig } from './usePlatformConfig'
 import '@bo/styles/kit.css'
 
 type Row = ConfigRevision
 const props = defineProps<{ cfg: PlatformConfig }>()
+const lockId = `bo-hist-lock-${useId()}`
 const rows = computed(() => (props.cfg.data?.history ?? []) as unknown as Array<Record<string, unknown>>)
 const COLUMNS: EkTableColumn[] = [
   { key: 'version', label: 'Sürüm' },
@@ -57,3 +55,22 @@ function summary(diff: ConfigDiffEntry[] | null): string {
   return `${keys.length} ayar: ${keys.slice(0, 3).join(', ')}${keys.length > 3 ? ` +${keys.length - 3}` : ''}`
 }
 </script>
+
+<style scoped>
+.bo-hist__lock {
+  display: flex;
+  align-items: center;
+  gap: var(--ek-space-2);
+  margin: 0;
+  padding: var(--ek-space-3) var(--ek-space-4) 0;
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-caption-size);
+  line-height: var(--ek-type-caption-line);
+}
+.bo-hist__lock .v-icon {
+  font-size: var(--ek-icon-sm);
+}
+.bo-flushed :deep(.bo-section__body) {
+  padding-top: var(--ek-space-4);
+}
+</style>

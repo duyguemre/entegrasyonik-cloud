@@ -59,9 +59,9 @@ describe('B7 motor ve kuyruklar', () => {
     let pages = 0
     do {
       const res = await api.call('BackofficeEngineService/listFailedJobs', { queue: 'order-sync-queue', cursor, limit: 10 })
-      conforms(res, { source: 'string', queue: 'string', items: 'array', nextCursor: 'string|null' }, 'listFailedJobs')
+      conforms(res, { source: 'string', queue: 'string', items: 'array', nextCursor: 'string|null', 'groups?': 'array' }, 'listFailedJobs')
       for (const j of res.items) {
-        conforms(j, { id: 'string', operation: 'string', tenantId: 'number|null', integrationCode: 'string|null', errorCode: 'string', attemptsMade: 'number', maxAttempts: 'number', failedAt: 'string', enqueuedAt: 'string', reqId: 'string|null', traceId: 'null' }, 'job')
+        conforms(j, { id: 'string', operation: 'string', tenantId: 'number|null', integrationCode: 'string|null', errorCode: 'string', attemptsMade: 'number', maxAttempts: 'number', failedAt: 'string', enqueuedAt: 'string', reqId: 'string|null', traceId: 'null', 'jobType?': 'string', 'state?': 'string', 'firstFailedAt?': 'string' }, 'job')
         expect(seen.has(j.id)).toBe(false)
         seen.add(j.id)
       }
@@ -70,7 +70,7 @@ describe('B7 motor ve kuyruklar', () => {
     } while (cursor && pages < 10)
     expect(seen.size).toBe(37)
     const dlq = await api.call('BackofficeEngineService/listFailedJobs', { queue: 'order-sync-queue', source: 'dlq' })
-    for (const d of dlq.items) conforms(d, { id: 'string', originalJobId: 'string', tenantId: 'number|null', integrationCode: 'string|null', errorCode: 'string', dlqType: 'string', status: 'string', failedAt: 'string', reqId: 'string|null', traceId: 'null' }, 'dlq')
+    for (const d of dlq.items) conforms(d, { id: 'string', originalJobId: 'string', tenantId: 'number|null', integrationCode: 'string|null', errorCode: 'string', dlqType: 'string', status: 'string', failedAt: 'string', reqId: 'string|null', traceId: 'null', 'jobType?': 'string', 'attemptsMade?': 'number', 'maxAttempts?': 'number', 'firstFailedAt?': 'string' }, 'dlq')
     await expect(api.call('BackofficeEngineService/listFailedJobs', { queue: 'order-sync-queue', cursor: 'bozuk' })).rejects.toMatchObject({ status: 400, code: 'VALIDATION' })
     await expect(api.call('BackofficeEngineService/listFailedJobs', { queue: 'order-sync-queue', payload: 1 } as never)).rejects.toMatchObject({ status: 400, code: 'VALIDATION' })
     server.setDegraded(true)

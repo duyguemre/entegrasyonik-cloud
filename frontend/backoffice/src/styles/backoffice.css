@@ -6,15 +6,22 @@ body {
   font-family: var(--ek-font-sans);
 }
 
+/* bo-wdg (WCAG 2.4.11): sabit üst bar klavye odağını ve `#bölüm` çapalarını örtmesin. */
+html {
+  scroll-padding-top: calc(var(--ek-app-topbar-height, 56px) + var(--ek-space-3));
+}
+
 /* Tema geçişi kuralı (ek-theme-switching) ortak pakette: @entegrasyonik/ui/styles app.css. */
 
 .bo-page {
+  /* BO2-10 (R2): dar yan boşluk — içerik ekran alanını kullanır. Yan boşluk 16 px (≤ 600 px: 12 px), üst 20 px; çok geniş
+     ekranlarda okunabilirlik için 1760 px tavan. Bölümler arası tek ritim: 20 px (mobil 16 px). */
   display: flex;
   flex-direction: column;
   gap: var(--ek-space-5);
-  max-width: 1440px;
+  max-width: 1760px;
   margin: 0 auto;
-  padding: var(--ek-space-6) var(--ek-space-6) var(--ek-space-8);
+  padding: var(--ek-space-5) var(--ek-space-4) var(--ek-space-8);
 }
 
 .bo-page__head {
@@ -36,7 +43,7 @@ body {
 .bo-page__lede {
   margin: var(--ek-space-1) 0 0;
   color: var(--ek-color-content-muted);
-  font-size: var(--ek-font-size-md);
+  font-size: var(--ek-type-body-size);
 }
 
 .bo-page__actions {
@@ -48,7 +55,7 @@ body {
 
 .bo-mono {
   font-family: var(--ek-font-mono);
-  font-size: 0.92em;
+  font-size: var(--ek-type-caption-size);
 }
 
 .bo-muted {
@@ -62,7 +69,7 @@ body {
 
 @media (max-width: 767px) {
   .bo-page {
-    padding: var(--ek-space-4) var(--ek-space-4) var(--ek-space-6);
+    padding: var(--ek-space-4) var(--ek-space-3) var(--ek-space-6);
     gap: var(--ek-space-4);
   }
 }
@@ -151,7 +158,7 @@ body {
 
 .bo-table .is-id {
   font-family: var(--ek-font-mono);
-  font-size: 0.92em;
+  font-size: var(--ek-type-caption-size);
   white-space: nowrap;
 }
 
@@ -234,6 +241,13 @@ body {
   box-shadow: var(--ek-focus-ring);
 }
 
+/* bo-wdg: kapalı seçenek tıklanabilir görünmez (ayrı opaklık token'ı yok → sönük içerik rengi). */
+.bo-seg__opt:disabled,
+.bo-seg__opt:disabled:hover {
+  color: var(--ek-color-content-subtle);
+  cursor: not-allowed;
+}
+
 .bo-seg__count {
   color: var(--ek-color-content-muted);
   font-size: var(--ek-type-caption-size);
@@ -298,4 +312,10 @@ body {
 
 #bo-main [data-kb-row]:focus {
   outline: none;
+}
+
+/* bo-wdg: menü bölüm etiketi (ortak `EkSidebarNav`, main eşitlemesi `content-subtle`) backoffice yüzeyinde AA kontrastın
+   altında kalıyordu (axe color-contrast) → okunur ikincil ton. Müşteri uygulaması etkilenmez. */
+.bo-shell .ek-side .ek-side__section-label {
+  color: var(--ek-color-content-muted);
 }

@@ -41,20 +41,15 @@
           <EkStatusChip v-if="cs.tenant.effective.planCode === null" tone="warning" label="Plan kodu yok (Başlangıç değerleri)" />
         </p>
 
-        <div class="bo-table-wrap" tabindex="0" role="region" aria-label="Mevcut etkin ayar">
-          <table class="bo-table" data-density="compact" data-testid="override-current">
-            <caption class="ek-sr-only">Bu müşteri için plan değeri, şu an etkin değer ve kaynağı</caption>
-            <thead><tr><th scope="col">Alan</th><th scope="col">Plan değeri</th><th scope="col">Şu an etkin</th><th scope="col">Kaynak</th></tr></thead>
-            <tbody>
-              <tr v-for="f in FIELDS" :key="f">
-                <th scope="row">{{ FIELD_LABEL[f] }}</th>
-                <td class="ek-num">{{ planRow ? formatFieldValue(f, planRow[f]) : '—' }}</td>
-                <td class="ek-num">{{ formatFieldValue(f, cs.tenant.effective[f]) }}</td>
-                <td>{{ cs.tenant.effective.sources[f] === 'tenant' ? 'İstisna' : 'Plan' }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+        <BoTableFrame label="Mevcut etkin ayar" data-testid="override-current">
+          <template #head><tr><th scope="col">Alan</th><th scope="col">Plan değeri</th><th scope="col">Şu an etkin</th><th scope="col">Kaynak</th></tr></template>
+          <tr v-for="f in FIELDS" :key="f">
+            <th scope="row">{{ FIELD_LABEL[f] }}</th>
+            <td class="ek-num">{{ planRow ? formatFieldValue(f, planRow[f]) : '—' }}</td>
+            <td class="ek-num">{{ formatFieldValue(f, cs.tenant.effective[f]) }}</td>
+            <td>{{ cs.tenant.effective.sources[f] === 'tenant' ? 'İstisna' : 'Plan' }}</td>
+          </tr>
+        </BoTableFrame>
 
         <fieldset class="bo-od__fields">
           <legend class="bo-od__legend">İstisna değerleri <span class="bo-muted">(boş bırakılan alan plan değerini kullanır)</span></legend>
@@ -104,7 +99,7 @@
             <template v-else-if="cs.check.isEmpty">Henüz bir istisna değeri girilmedi.</template>
             <template v-else>Kayıttan sonra etkin: <strong class="ek-num">{{ afterText }}</strong></template>
           </p>
-          <EkButton size="sm" tone="danger-quiet" icon="mdi-delete-outline" :disabled="!cs.hadOverride" data-testid="override-clear" @click="cs.clearFields()">İstisnayı kaldır</EkButton>
+          <BoAction kind="delete" label="Alanları temizle" size="sm" :disabled="!cs.hadOverride" data-testid="override-clear" @click="cs.clearFields()" />
         </div>
       </template>
     </div>
@@ -114,6 +109,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { EkAlert, EkButton, EkStatusChip } from '@entegrasyonik/ui/components'
+import BoAction from '@bo/components/r2/BoAction.vue'
+import BoTableFrame from '@bo/components/r2/BoTableFrame.vue'
 import GuardedDialog from '@bo/components/kit/GuardedDialog.vue'
 import { planLabel } from '@bo/utils/labels'
 import type { CompetitionState, useCompetition } from './useCompetition'

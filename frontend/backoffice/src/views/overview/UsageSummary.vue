@@ -1,114 +1,226 @@
 <!--
-  UsageSummary — "Genel kullanım nasıl?" (genel bakış 4. soru). Müşteri ve abonelik sayıları (her biri ilgili listeye
-  bağlı) + aylık yinelenen gelir. Sakin: renk yalnız sorunlu durum (kurulum/silme başarısız) noktasında.
+  UsageSummary — "Genel kullanım nasıl?" (genel bakış 4. soru). BO2-P1: aktif müşteri ve MRR üstteki metrik şeridinde;
+  burada dağılım (müşteri durumları halka grafiği, ECharts) ve abonelik sayıları — her biri ilgili listeye bağlı.
+  Sakin: renk yalnız anlamlı dilimde (Aktif = yeşil, başarısız = kırmızı, bekleyen = sarı).
 -->
 <template>
   <div class="bo-us" data-testid="usage-summary">
-    <dl class="bo-us__stats">
-      <div v-for="s in stats" :key="s.key" class="bo-us__stat">
-        <dt>{{ s.label }}</dt>
-        <dd>
-          <RouterLink v-if="s.value !== null" :to="s.to" class="bo-us__num ek-num" :aria-label="`${s.label}: ${s.value} — listeyi aç`">{{ s.value }}</RouterLink>
-          <span v-else class="bo-us__na">Okunamadı</span>
-          <span v-if="s.hint" class="bo-us__hint">{{ s.hint }}</span>
-        </dd>
-      </div>
-    </dl>
-
-    <ul v-if="otherStatuses.length" class="bo-us__statuses" aria-label="Aktif olmayan müşteriler">
-      <li v-for="o in otherStatuses" :key="o.key">
-        <span class="bo-us__dot" :class="`is-${o.tone}`" aria-hidden="true"></span>{{ o.label }} <strong class="ek-num">{{ o.count }}</strong>
-      </li>
-    </ul>
-
-    <section class="bo-us__block" aria-labelledby="bo-us-mrr">
-      <h3 id="bo-us-mrr" class="bo-us__k">Aylık yinelenen gelir (MRR)</h3>
-      <template v-if="mrr.state === 'ok'">
-        <p class="bo-us__mrr ek-num">{{ formatMinor(mrr.minor, mrr.currency) }}</p>
-        <p class="bo-us__note">Plan liste fiyatından tahmini; muaf ve özel teklif hariç.</p>
+    <div class="bo-us__dist">
+      <template v-if="dist">
+        <div class="bo-us__donut">
+          <BoChart kind="donut" :height="132" :categories="dist.labels" :category-tones="dist.tones" :series="[{ name: 'Müşteri', data: dist.values }]" summary="Müşterilerin durum dağılımı" :table="false" />
+          <span class="bo-us__donut-center" aria-hidden="true"><strong class="ek-num">{{ dist.totalText }}</strong>müşteri</span>
+        </div>
+        <ul class="bo-us__legend" aria-label="Müşteri durumları">
+          <li v-for="(l, i) in dist.labels" :key="l">
+            <span class="bo-us__dot" :class="`is-${dist.tones[i]}`" aria-hidden="true"></span>{{ l }}<strong class="ek-num">{{ nf.format(dist.values[i]) }}</strong>
+          </li>
+        </ul>
       </template>
-      <p v-else class="bo-us__note">{{ mrr.state === 'na' ? 'Hesaplanamadı.' : 'Okunamadı — birazdan yeniden denenir.' }}</p>
-      <RouterLink :to="{ name: 'subscriptions', query: { sekme: 'gelir' } }" class="bo-us__link">Gelir metrikleri<v-icon icon="mdi-arrow-right" aria-hidden="true" /></RouterLink>
-    </section>
+      <p v-else class="bo-us__na">
+        Müşteri sayıları okunamadı — yeniden deneyin; sürerse Entegrasyonlar › API sağlığı sayfasına bakın.
+        <button type="button" class="bo-link-btn" @click="emit('retry')">Yeniden dene</button>
+      </p>
+    </div>
+
+    <div class="bo-us__stats">
+      <dl class="bo-us__stat-list">
+        <div v-for="s in stats" :key="s.key" class="bo-us__stat">
+          <dt>{{ s.label }}</dt>
+          <dd>
+            <RouterLink v-if="s.value !== null" :to="s.to" class="bo-us__num ek-num" :aria-label="`${s.label}: ${s.value} — listeyi aç`">{{ s.value }}</RouterLink>
+            <span v-else class="bo-us__na">Okunamadı</span>
+            <span v-if="s.hint" class="bo-us__hint">{{ s.hint }}</span>
+          </dd>
+        </div>
+      </dl>
+      <!-- Okunamayan sayılar için sonraki adım: yeniden dene; sürerse listeyi doğrudan aç. -->
+      <p v-if="mrrFailed" class="bo-us__na">
+        Abonelik sayıları okunamadı — yeniden deneyin ya da Abonelikler listesini açın.
+        <button type="button" class="bo-link-btn" @click="emit('retry')">Yeniden dene</button>
+      </p>
+    </div>
+    <RouterLink :to="{ name: 'subscriptions', query: { sekme: 'gelir' } }" class="bo-us__link">Gelir metrikleri<v-icon icon="mdi-arrow-right" aria-hidden="true" /></RouterLink>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { RouteLocationRaw } from 'vue-router'
+import BoChart from '@bo/components/charts/BoChart.vue'
+import type { ChartTone } from '@bo/components/charts/chartTheme'
 import type { PulseModel } from '@bo/api/attention'
 import type { TenantStatus } from '@bo/api/contract'
 import { TENANT_STATUS } from '@bo/utils/labels'
-import { formatMinor } from '@bo/utils/units'
 
 const props = defineProps<{ model: PulseModel }>()
+// Okunamayan blokta "Yeniden dene": sayfa özeti yeniden yüklenir (genel bakış `load`).
+const emit = defineEmits<{ retry: [] }>()
+const mrrFailed = computed(() => props.model.usage.mrr.state !== 'ok')
 const nf = new Intl.NumberFormat('tr-TR')
+const TONE: Record<string, ChartTone> = { success: 'success', danger: 'error', warning: 'warning', info: 'info', neutral: 'neutral' }
 
-const mrr = computed(() => props.model.usage.mrr)
-
-const stats = computed(() => {
+const dist = computed(() => {
   const t = props.model.usage.tenants
-  const m = props.model.usage.mrr
-  const tenants: RouteLocationRaw = { name: 'tenants' }
-  const subs: RouteLocationRaw = { name: 'subscriptions' }
-  return [
-    { key: 'active', label: 'Aktif müşteri', value: t.state === 'ok' ? nf.format(t.active) : null, hint: t.state === 'ok' ? `toplam ${nf.format(t.total)}` : '', to: tenants },
-    { key: 'subs', label: 'Ücretli abonelik', value: m.state === 'ok' ? nf.format(m.activeSubscriptions) : null, hint: '', to: subs },
-    { key: 'trialing', label: 'Denemede', value: m.state === 'ok' ? nf.format(m.trialing) : null, hint: '', to: subs },
-    { key: 'lost', label: 'Kayıp (30 gün)', value: m.state === 'ok' ? nf.format(m.lostLast30d) : null, hint: 'iptal / süre dolumu', to: subs },
-  ]
+  if (t.state !== 'ok') return null
+  const entries = Object.entries(t.byStatus).filter(([, n]) => n > 0)
+  entries.sort((a, b) => (a[0] === 'ACTIVE' ? -1 : b[0] === 'ACTIVE' ? 1 : b[1] - a[1]))
+  return {
+    labels: entries.map(([k]) => TENANT_STATUS[k as TenantStatus]?.label ?? k),
+    values: entries.map(([, n]) => n),
+    tones: entries.map(([k]) => TONE[TENANT_STATUS[k as TenantStatus]?.tone ?? 'neutral']),
+    totalText: nf.format(t.total),
+  }
 })
 
-const otherStatuses = computed(() => {
-  const t = props.model.usage.tenants
-  if (t.state !== 'ok') return []
-  return Object.entries(t.byStatus)
-    .filter(([k, n]) => k !== 'ACTIVE' && n > 0)
-    .map(([k, n]) => {
-      const meta = TENANT_STATUS[k as TenantStatus]
-      return { key: k, label: meta?.label ?? k, count: nf.format(n), tone: meta?.tone === 'danger' ? 'danger' : 'neutral' }
-    })
+const stats = computed(() => {
+  const m = props.model.usage.mrr
+  const subs: RouteLocationRaw = { name: 'subscriptions' }
+  return [
+    { key: 'subs', label: 'Ücretli abonelik', value: m.state === 'ok' ? nf.format(m.activeSubscriptions) : null, hint: '', to: subs },
+    { key: 'trialing', label: 'Denemede', value: m.state === 'ok' ? nf.format(m.trialing) : null, hint: '', to: { name: 'subscriptions', query: { durum: 'trialing' } } },
+    { key: 'lost', label: 'Kayıp (30 gün)', value: m.state === 'ok' ? nf.format(m.lostLast30d) : null, hint: 'iptal / süre dolumu', to: subs },
+  ]
 })
 </script>
 
 <style scoped>
 .bo-us {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  grid-template-areas: 'dist stats' 'dist link';
+  grid-template-rows: 1fr auto;
+  gap: var(--ek-space-3) var(--ek-space-5);
+  align-items: start;
+}
+
+.bo-us__dist {
+  grid-area: dist;
+  display: flex;
+  align-items: center;
+  gap: var(--ek-space-4);
+  min-width: 0;
+}
+
+.bo-us__donut {
+  position: relative;
+  flex: none;
+  width: 132px;
+}
+
+.bo-us__donut-center {
+  position: absolute;
+  inset: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--ek-space-4);
+  align-items: center;
+  justify-content: center;
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-caption-size);
+  line-height: var(--ek-type-caption-line);
+  pointer-events: none;
+}
+
+.bo-us__donut-center strong {
+  color: var(--ek-color-content-strong);
+  font-size: var(--ek-type-heading-size);
+  line-height: var(--ek-type-heading-line);
+  font-weight: var(--ek-type-heading-weight);
+}
+
+.bo-us__legend {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ek-space-1);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--ek-color-content-default);
+  font-size: var(--ek-type-label-size);
+  line-height: var(--ek-type-label-line);
+}
+
+.bo-us__legend li {
+  display: flex;
+  align-items: center;
+  gap: var(--ek-space-2);
+}
+
+.bo-us__legend strong {
+  margin-left: auto;
+  padding-left: var(--ek-space-2);
+  color: var(--ek-color-content-strong);
+  font-weight: var(--ek-font-weight-semibold);
+}
+
+.bo-us__dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: var(--ek-radius-full);
+  background: var(--ek-color-neutral);
+}
+
+.bo-us__dot.is-success {
+  background: var(--ek-color-success);
+}
+
+.bo-us__dot.is-error {
+  background: var(--ek-color-error);
+}
+
+.bo-us__dot.is-warning {
+  background: var(--ek-color-warning);
+}
+
+.bo-us__dot.is-info {
+  background: var(--ek-color-info);
 }
 
 .bo-us__stats {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-area: stats;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ek-space-3);
+  min-width: 0;
+}
+
+.bo-us__stat-list {
+  display: flex;
+  flex-direction: column;
   gap: var(--ek-space-3);
   margin: 0;
 }
 
 .bo-us__stat {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--ek-space-3);
+  padding-bottom: var(--ek-space-2);
+  border-bottom: 1px solid var(--ek-color-border-subtle);
 }
 
 .bo-us__stat dt {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--ek-space-1);
   color: var(--ek-color-content-muted);
-  font-size: var(--ek-type-caption-size);
+  font-size: var(--ek-type-label-size);
+  line-height: var(--ek-type-label-line);
 }
 
 .bo-us__stat dd {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
   margin: 0;
 }
 
 .bo-us__num {
   border-radius: var(--ek-radius-sm);
   color: var(--ek-color-content-strong);
-  font-size: var(--ek-type-title-size);
-  font-weight: var(--ek-font-weight-semibold);
+  font-size: var(--ek-type-heading-size);
+  line-height: var(--ek-type-heading-line);
+  font-weight: var(--ek-type-heading-weight);
   text-decoration: none;
 }
 
@@ -122,85 +234,23 @@ const otherStatuses = computed(() => {
   box-shadow: var(--ek-focus-ring);
 }
 
-.bo-us__dot {
-  width: 8px;
-  height: 8px;
-  border-radius: var(--ek-radius-full);
-  background: var(--ek-color-content-subtle);
-}
-
-.bo-us__dot.is-danger {
-  background: var(--ek-color-error);
-}
-
 .bo-us__na,
 .bo-us__hint {
-  display: block;
   color: var(--ek-color-content-muted);
   font-size: var(--ek-type-caption-size);
-}
-
-.bo-us__statuses {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--ek-space-1) var(--ek-space-4);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  color: var(--ek-color-content-default);
-  font-size: var(--ek-type-label-size);
-}
-
-.bo-us__statuses li {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--ek-space-1);
-}
-
-.bo-us__block {
-  padding-top: var(--ek-space-3);
-  border-top: 1px solid var(--ek-color-border-subtle);
-}
-
-
-.bo-us__block {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ek-space-1);
-  min-width: 0;
-}
-
-.bo-us__k {
-  margin: 0 0 var(--ek-space-1);
-  color: var(--ek-color-content-muted);
-  font-size: var(--ek-type-micro-size);
-  font-weight: var(--ek-type-micro-weight);
-  letter-spacing: var(--ek-type-micro-tracking);
-  text-transform: uppercase;
-}
-
-.bo-us__mrr {
-  margin: 0;
-  color: var(--ek-color-content-strong);
-  font-size: var(--ek-type-title-size);
-  font-weight: var(--ek-font-weight-semibold);
-}
-
-.bo-us__note {
-  margin: 0;
-  color: var(--ek-color-content-muted);
-  font-size: var(--ek-type-caption-size);
+  line-height: var(--ek-type-caption-line);
 }
 
 .bo-us__link {
+  grid-area: link;
   display: inline-flex;
   align-items: center;
   gap: var(--ek-space-1);
-  align-self: flex-start;
-  margin-top: var(--ek-space-1);
+  justify-self: start;
   border-radius: var(--ek-radius-sm);
   color: var(--ek-color-action-emphasis);
   font-size: var(--ek-type-label-size);
+  line-height: var(--ek-type-label-line);
   font-weight: var(--ek-font-weight-semibold);
   text-decoration: none;
 }
@@ -209,9 +259,11 @@ const otherStatuses = computed(() => {
   font-size: var(--ek-icon-sm);
 }
 
-@media (max-width: 600px) {
-  .bo-us__stats {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+@media (max-width: 1279px) {
+  .bo-us {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: 'dist' 'stats' 'link';
+    grid-template-rows: none;
   }
 }
 </style>

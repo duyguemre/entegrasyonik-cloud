@@ -14,21 +14,21 @@
     <EkEmptyState v-else-if="error" variant="no-results" title="İz bulunamadı" :message="error" />
     <div v-else-if="trace" class="bo-trace">
       <div class="bo-trace__summary">
-        <span><strong class="ek-num">{{ trace.durationMs }} ms</strong> toplam</span>
-        <span>{{ trace.events.length }} olay</span>
+        <span><strong class="ek-num">{{ formatNumber(trace.durationMs) }}&nbsp;ms</strong> toplam</span>
+        <span>{{ formatNumber(trace.events.length) }} olay</span>
         <span v-if="trace.tid">müşteri <RouterLink :to="`/musteriler/${trace.tid}`" class="bo-hit" @click="$emit('close')">#{{ trace.tid }}</RouterLink></span>
         <span class="bo-muted">{{ formatDateTime(trace.startedAt) }}</span>
       </div>
       <ol class="bo-trace__list">
         <li v-for="(e, i) in trace.events" :key="i" class="bo-trace__item" :class="[`is-${e.kind}`, e.level ? `lvl-${e.level}` : '']">
-          <span class="bo-trace__offset ek-num">+{{ offset(e.t) }} ms</span>
+          <span class="bo-trace__offset ek-num">+{{ formatNumber(offset(e.t)) }}&nbsp;ms</span>
           <span class="bo-trace__node" aria-hidden="true"><v-icon :icon="KIND[e.kind].icon" /></span>
           <div class="bo-trace__body">
             <p class="bo-trace__title">
               <span class="bo-trace__kind">{{ KIND[e.kind].label }}</span>
               <EkStatusChip v-if="e.level && e.level !== 'info'" :tone="LEVEL[e.level].tone" :label="LEVEL[e.level].label" />
               <span v-if="e.status" class="bo-trace__status" :class="{ 'is-bad': isBad(e.status) }">{{ e.status }}</span>
-              <span v-if="e.durationMs" class="bo-trace__dur ek-num">{{ e.durationMs }} ms</span>
+              <span v-if="e.durationMs" class="bo-trace__dur ek-num">{{ formatNumber(e.durationMs) }}&nbsp;ms</span>
             </p>
             <p class="bo-trace__msg">{{ e.title }}</p>
             <div v-if="e.durationMs" class="bo-trace__bar" aria-hidden="true">
@@ -49,7 +49,7 @@ import { api } from '@bo/api'
 import { AdminApiError } from '@bo/api/client'
 import type { GetTraceResponse, TraceEvent } from '@bo/api/contract'
 import { CHANNEL, LEVEL, SOURCE } from '@bo/utils/labels'
-import { formatDateTime } from '@bo/utils/format'
+import { formatDateTime, formatNumber } from '@bo/utils/format'
 
 const props = defineProps<{ reqId: string | null }>()
 defineEmits<{ close: [] }>()
@@ -213,6 +213,8 @@ function barStyle(e: TraceEvent) {
 
 .bo-trace__msg {
   margin: 2px 0 0;
+  /* bo-wdg: uzun ileti/kimlik diyaloğu yatay kaydırmaz. */
+  overflow-wrap: anywhere;
   color: var(--ek-color-content-strong);
   font-size: var(--ek-type-body-size);
 }

@@ -45,6 +45,11 @@
       v-else
       :model-value="String(modelValue ?? '')"
       :label="item.label.tr"
+      :type="inputKind.type"
+      :inputmode="inputKind.inputmode"
+      :spellcheck="inputKind.plain ? false : undefined"
+      :autocapitalize="inputKind.plain ? 'off' : undefined"
+      :autocomplete="inputKind.plain ? 'off' : undefined"
       density="compact"
       :maxlength="maxLength"
       :counter="counter ? maxLength : undefined"
@@ -85,6 +90,14 @@ const ENUM_OPTIONS: Record<string, Array<{ value: string | number; title: string
 }
 const options = computed(() => ENUM_OPTIONS[props.item.key] ?? [{ value: props.item.default as string, title: String(props.item.default) }])
 const maxLength = computed(() => (props.item.key === 'support.email' ? 120 : props.item.key === 'support.phone' ? 20 : 280))
+/** BO-WDG: destek e-posta/telefon alanı uygun klavye + yazım denetimi kapalı (adres/numara "düzeltilmez"). */
+const inputKind = computed(() =>
+  props.item.key === 'support.email'
+    ? { type: 'email', inputmode: 'email', plain: true }
+    : props.item.key === 'support.phone'
+      ? { type: 'tel', inputmode: 'tel', plain: true }
+      : { type: 'text', inputmode: undefined, plain: false },
+)
 const source = computed(() => (props.effective?.source === 'platform' ? `Yayında (sürüm ${props.effective.revision ?? '—'})` : 'Varsayılan değer'))
 </script>
 

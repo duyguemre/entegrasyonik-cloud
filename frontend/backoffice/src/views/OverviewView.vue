@@ -6,16 +6,13 @@
 -->
 <template>
   <div class="bo-page bo-ov">
-    <BoPageHeader :updated-at="checkedAt" :stale="stale">
-      <template #meta>
-        <span class="bo-inline-note"><v-icon icon="mdi-autorenew" aria-hidden="true" />Sekme açıkken 30 sn'de bir yenilenir</span>
-      </template>
+    <BoPageHeader :updated-at="checkedAt" :stale="stale" :auto-refresh="30">
       <template #actions>
-        <EkButton tone="secondary" icon="mdi-refresh" :loading="loading" data-page-refresh @click="load">Yenile</EkButton>
+        <BoAction kind="refresh" :loading="loading" data-page-refresh @click="load" />
       </template>
     </BoPageHeader>
 
-    <!-- 1 · DURUM -->
+    <!-- 1 · DURUM: hüküm + önerilen ilk adım -->
     <BoPanelState v-if="!attention && attentionError" state="error" :error="attentionError" error-text="Genel durum okunamadı" :retrying="loading" @retry="load" />
     <BoStatusHeader v-else :health="health" :verdict="verdict" :summary="summary" :facts="facts" :badge-label="badgeLabel" :loading="!attention">
       <BoActionCard
@@ -30,12 +27,20 @@
       />
     </BoStatusHeader>
 
-    <!-- 2 · KARAR (sistem, müşteri) + sakin büyük resim / kullanım -->
-    <div class="bo-ov-grid">
+    <!-- BO2-P1: önemli metrikler öne — tek bakışta sayı; ayrıntı kutunun bağlantısında / ipucunda. -->
+    <section class="bo-ov-kpis" aria-label="Önemli metrikler" data-testid="overview-kpis">
+      <BoTileGrid :min="176" dense>
+        <BoStat v-for="({ key, ...k }) in kpis" :key="key" v-bind="k" :data-kpi="key" />
+      </BoTileGrid>
+    </section>
+
+    <!-- 2 · KARAR (sistem) + sakin büyük resim — aynı satır, eş yükseklik -->
+    <BoTileGrid :cols="2" class="bo-ov-row">
       <BoTriageSection id="sistem" :index="1" question="Sistemde müdahale gereken var mı?" :health="sys.health" :answer="sys.answer" :more="{ label: 'Uyarılar', to: { name: 'alerts' } }">
         <BoAttentionList
+          compact
           :items="sys.items"
-          :limit="narrow ? 2 : 5"
+          :limit="narrow ? 2 : 3"
           :total="attention?.total.system ?? 0"
           :state="listState"
           :error="attentionError"
@@ -53,9 +58,13 @@
         <BoPanelState v-if="pulseState !== 'ready'" :state="pulseState" :error="pulseError" :rows="5" empty-title="Kullanım özeti henüz bağlı değil" empty-text="Sunucu bu özeti sağladığında trendler burada görünür. O zamana dek: Entegrasyonlar › API sağlığı." empty-icon="mdi-chart-line-variant" @retry="load" />
         <PulseTrends v-else-if="pulse" :model="pulse" />
       </BoTriageSection>
+    </BoTileGrid>
 
+    <!-- 3 · KARAR (müşteriler) + 4 genel kullanım -->
+    <BoTileGrid :cols="2" class="bo-ov-row">
       <BoTriageSection id="musteriler" :index="3" question="Müşterilerimde müdahale gereken var mı?" :health="ten.health" :answer="ten.answer" :more="{ label: 'Müşteriler', to: { name: 'tenants' } }">
         <BoAttentionList
+          compact
           :items="ten.items"
           :total="attention?.total.tenant ?? 0"
           :state="attention?.source === 'fallback' ? 'unsupported' : listState"
@@ -64,7 +73,7 @@
           :checks="attention?.checks.tenant ?? []"
           :degraded="attention?.degraded.tenant ?? []"
           list-label="Müşterilerde dikkat isteyenler"
-          :limit="narrow ? 2 : 4"
+          :limit="narrow ? 2 : 3"
           ok-title="Müşterilerde müdahale gereken bir şey yok"
           ok-text="Entegrasyon hatası, eşitleme gecikmesi, ödeme sorunu ya da bekleyen kurulum yok."
           unsupported-title="Müşteri denetimleri henüz bağlı değil"
@@ -75,11 +84,11 @@
 
       <BoTriageSection id="kullanim" :index="4" question="Genel kullanım nasıl?" calm :answer="usageAnswer" :more="{ label: 'Abonelikler', to: { name: 'subscriptions' } }">
         <BoPanelState v-if="pulseState !== 'ready'" :state="pulseState" :error="pulseError" :rows="4" empty-title="Kullanım özeti henüz bağlı değil" empty-text="Abonelik ve gelir ayrıntısı: Abonelikler › gelir." empty-icon="mdi-account-group-outline" @retry="load" />
-        <UsageSummary v-else-if="pulse" :model="pulse" />
+        <UsageSummary v-else-if="pulse" :model="pulse" @retry="load" />
       </BoTriageSection>
-    </div>
+    </BoTileGrid>
 
-    <!-- 4 · AYRINTI -->
+    <!-- AYRINTI -->
     <BoDetailSection id="teknik" title="Teknik ayrıntılar" summary="Bağımlılıklar ve podlar · kuyruk sayaçları · veri alımı · son yönetim işlemleri" sync-query>
       <TechDetails :tick="tick" />
     </BoDetailSection>
@@ -88,7 +97,9 @@
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
-import { EkButton } from '@entegrasyonik/ui/components'
+import BoAction from '@bo/components/r2/BoAction.vue'
+import BoStat from '@bo/components/r2/BoStat.vue'
+import BoTileGrid from '@bo/components/r2/BoTileGrid.vue'
 import BoPageHeader from '@bo/components/shell/BoPageHeader.vue'
 import BoPanelState, { type PanelState } from '@bo/components/shell/BoPanelState.vue'
 import BoStatusHeader, { type StatusFact } from '@bo/components/triage/BoStatusHeader.vue'
@@ -101,6 +112,7 @@ import { loadAttention, loadPulse, type AttentionItem, type AttentionModel, type
 import PulseTrends from './overview/PulseTrends.vue'
 import UsageSummary from './overview/UsageSummary.vue'
 import TechDetails from './overview/TechDetails.vue'
+import { formatMinor } from '@bo/utils/units'
 import '@bo/styles/kit.css'
 
 const REFRESH_MS = 30_000
@@ -224,6 +236,90 @@ const firstTitle = computed(() => {
   return f.count ? `${f.title} (${f.count})` : f.title
 })
 
+// ------------------------------------------------------------ önemli metrikler (BO2-P1)
+const nf = new Intl.NumberFormat('tr-TR')
+interface Kpi {
+  key: string
+  label: string
+  value: string | number
+  hint?: string
+  info?: string
+  tone?: 'neutral' | 'critical' | 'warning' | 'success' | 'info'
+  delta?: { text: string; dir: 'up' | 'down' | 'flat' }
+  series?: number[]
+  to?: string | Record<string, unknown>
+  loading?: boolean
+}
+const kpis = computed<Kpi[]>(() => {
+  const ready = !!attention.value
+  const c = critical.value.length
+  const w = warnings.value.length
+  const row = (key: string) => pulse.value?.rows.find((r) => r.key === key)
+  const http = row('http')
+  const err = row('http5xx')
+  const usage = pulse.value?.usage
+  const tenants = usage?.tenants.state === 'ok' ? usage.tenants : null
+  const mrr = usage?.mrr.state === 'ok' ? usage.mrr : null
+  const pulseLoading = pulse.value === undefined && !pulseError.value
+  return [
+    {
+      key: 'critical',
+      label: 'Kritik konu',
+      value: ready ? c : '—',
+      loading: !ready && !attentionError.value,
+      tone: c ? 'critical' : 'neutral',
+      hint: ready ? (c ? 'Şimdi müdahale gerekli' : 'Şimdi müdahale gereken yok') : undefined,
+      to: '#sistem',
+    },
+    {
+      key: 'warning',
+      label: 'İzlenecek konu',
+      value: ready ? w : '—',
+      loading: !ready && !attentionError.value,
+      tone: w ? 'warning' : 'neutral',
+      hint: ready ? `Sistem ${sys.value.items.filter((i) => i.severity === 'warning').length} · müşteri ${ten.value.items.filter((i) => i.severity === 'warning').length}` : undefined,
+      to: '#sistem',
+    },
+    {
+      key: 'http',
+      label: 'API isteği · 24 sa',
+      value: http?.value ?? '—',
+      loading: pulseLoading,
+      hint: http?.note,
+      delta: undefined,
+      series: http?.series ?? undefined,
+      info: '7 günlük ortalamaya göre değişim; çizgi son 24 saatin saatlik istek sayısı.',
+    },
+    {
+      key: 'http5xx',
+      label: '5xx hata oranı',
+      value: err?.value ?? '—',
+      loading: pulseLoading,
+      tone: err?.over ? 'warning' : 'neutral',
+      hint: err?.note,
+      series: err?.series ?? undefined,
+      info: '5xx yanıtların tüm isteklere oranı (son 24 saat). Eşik %5: aşılırsa uyarı.',
+    },
+    {
+      key: 'tenants',
+      label: 'Aktif müşteri',
+      value: tenants ? nf.format(tenants.active) : '—',
+      loading: pulseLoading,
+      hint: tenants ? `Toplam ${nf.format(tenants.total)} müşteri` : undefined,
+      to: { name: 'tenants' },
+    },
+    {
+      key: 'mrr',
+      label: 'MRR · aylık gelir',
+      value: mrr ? formatMinor(mrr.minor, mrr.currency) : '—',
+      loading: pulseLoading,
+      hint: mrr ? `${nf.format(mrr.activeSubscriptions)} ücretli · ${nf.format(mrr.trialing)} denemede` : undefined,
+      info: 'Plan liste fiyatından tahmini (MRR); muaf ve özel teklif hariç.',
+      to: { name: 'subscriptions', query: { sekme: 'gelir' } },
+    },
+  ]
+})
+
 // ------------------------------------------------------------ nabız
 const pulseState = computed<PanelState>(() => (pulse.value === undefined ? (pulseError.value ? 'error' : 'loading') : pulse.value === null ? 'empty' : 'ready'))
 const big = computed<{ health: Health; answer: string }>(() => {
@@ -240,38 +336,8 @@ const usageAnswer = computed(() => {
 </script>
 
 <style scoped>
-.bo-ov-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
-  /* Duvar düzeni, DOM (okuma) sırası 1-2-3-4 korunarak: 1 ilk iki satırı, 4 son iki satırı kaplar; son satır esnek. Böylece
-     3 hemen 1'in, 4 hemen 2'nin altından başlar (kısa bölümün altında boşluk kalmaz). */
-  grid-template-areas: 'sistem buyuk' 'sistem kullanim' 'musteriler kullanim';
-  grid-template-rows: auto auto 1fr;
-  gap: var(--ek-space-4);
-  align-items: start;
-}
-
-.bo-ov-grid > #sistem {
-  grid-area: sistem;
-}
-
-.bo-ov-grid > #buyuk-resim {
-  grid-area: buyuk;
-}
-
-.bo-ov-grid > #musteriler {
-  grid-area: musteriler;
-}
-
-.bo-ov-grid > #kullanim {
-  grid-area: kullanim;
-}
-
-@media (max-width: 1099px) {
-  .bo-ov-grid {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-areas: 'sistem' 'buyuk' 'musteriler' 'kullanim';
-    grid-template-rows: none;
-  }
+/* BO2-12: satırlar BoTileGrid ile eş yükseklik (DOM/okuma sırası K51: 1-2-3-4). Bölümler kartla ayrık (BO2-11). */
+.bo-ov-row > :deep(.bo-ts) {
+  height: 100%;
 }
 </style>

@@ -5,9 +5,15 @@
   awaiting-confirm/error). Canlı bölgeler: thread `role=log`; tur sonu özeti + durum için ayrı görünmez `role=status`.
   FE-R4 A4 (ek, geri uyumlu): `appearance="refined"` → `ek-chat--refined` görsel katmanı (chat.css sonundaki ek kurallar;
   DOM, metin, eylem ve durum makinesi AYNI). Varsayılan `default` eski görünümdür (backoffice değişmez).
+  İsteğe bağlı (varsayılanlar web uygulamasını DEĞİŞTİRMEZ): `confirmReset` → "Yeni sohbet" önce onay ister; `#setup`
+  yuvası → host kurulum formu yerine kendi içeriğini (ör. ayar sayfası bağlantısı) koyar.
 -->
 <template>
-  <section class="ek-chat" :class="[`is-${mode}`, `is-${chat.status.value}`, { 'ek-chat--refined': appearance === 'refined' }]" :aria-labelledby="titleId">
+  <section
+    class="ek-chat"
+    :class="[`is-${mode}`, `is-${chat.status.value}`, { 'is-wide': wide, 'ek-chat--refined': appearance === 'refined' }]"
+    :aria-labelledby="titleId"
+  >
     <header class="ek-chat__head">
       <span class="ek-chat__mark" aria-hidden="true"><v-icon :icon="CHAT_ICON" size="small" /></span>
       <h2 :id="titleId" class="ek-chat__title">{{ CHAT_PRODUCT.name }}</h2>
@@ -22,6 +28,7 @@
           :aria-label="t('panel.newChat')"
           :title="t('panel.newChat')"
           :disabled="!chat.messages.value.length"
+          data-testid="ek-chat-new"
           @click="newChat"
         />
         <EkButton v-if="settingsTarget" tone="ghost" size="sm" icon="mdi-cog-outline" icon-only :aria-label="t('panel.settings')" :title="t('panel.settings')" @click="openSettings" />
@@ -45,7 +52,9 @@
         <p class="ek-chat-state__body">{{ t('panel.loading') }}</p>
       </div>
       <div v-else-if="chat.status.value === 'setup-required'" class="ek-chat__scroll">
-        <ChatProviderSetup :api="chat.transport.setup" variant="panel" @ready="chat.setupSaved()" />
+        <slot name="setup">
+          <ChatProviderSetup :api="chat.transport.setup" variant="panel" @ready="chat.setupSaved()" />
+        </slot>
       </div>
       <div v-else-if="chat.status.value === 'unavailable'" class="ek-chat__scroll">
         <ChatUnavailable />
@@ -67,6 +76,17 @@
       </p>
     </footer>
 
+    <EkConfirmDialog
+      v-if="confirmReset"
+      v-model="resetOpen"
+      :title="t('panel.newChatTitle')"
+      :description="t('panel.newChatBody', { count: chat.messages.value.length })"
+      :confirm-label="t('panel.newChatConfirm')"
+      :cancel-label="t('panel.cancel')"
+      danger
+      @confirm="confirmNewChat"
+    />
+
     <p class="ek-chat-sr-only" role="status" aria-live="polite" aria-atomic="true">{{ chat.liveMessage.value }}</p>
     <p class="ek-chat-sr-only" aria-live="polite" aria-atomic="true">{{ politeNote }}</p>
   </section>
@@ -74,7 +94,7 @@
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, useId } from 'vue'
-import { EkAlert, EkButton, EkStatusChip } from '@entegrasyonik/ui/components'
+import { EkAlert, EkButton, EkConfirmDialog, EkStatusChip } from '@entegrasyonik/ui/components'
 import { CHAT_PRODUCT } from '../brand'
 import { provideChat, type ChatController } from '../state/useChat'
 import ChatComposer from './ChatComposer.vue'
@@ -87,21 +107,36 @@ import ChatUnavailable from './ChatUnavailable.vue'
 import { CHAT_ICON } from './icons'
 import '../styles/chat.css'
 
-const props = withDefaults(defineProps<{
-  controller: ChatController
-  mode?: 'side' | 'page'
-  showClose?: boolean
-  showExpand?: boolean
-  autofocus?: boolean
-  /** FE-R4 A4: `refined` = premium pencere katmanı (uygulama); `default` = eski görünüm. */
-  appearance?: 'default' | 'refined'
-}>(), {
+const props = withDefaults(
+  defineProps<{
+    controller: ChatController
+    mode?: 'side' | 'page'
+    showClose?: boolean
+    showExpand?: boolean
+    autofocus?: boolean
+    /**
+     * Geniş yerleşim (isteğe bağlı; varsayılan KAPALI → web uygulaması değişmez): tam sayfada okunur sınır 760 → 1180 px
+     * (metin yine ≤ 80ch), dar kapta (< 560 px) tablolar yatay kaydırma yerine etiketli kart satırlara iner.
+     */
+    wide?: boolean
+    /**
+     * "Yeni sohbet" önce onay diyaloğu açar (isteğe bağlı; varsayılan KAPALI → web uygulaması değişmez). Konuşma
+     * kaydedilmeyen host'larda (backoffice) silme geri alınamaz olduğundan açılır.
+     */
+    confirmReset?: boolean
+    /** FE-R4 A4: `refined` = premium pencere katmanı (uygulama); `default` = eski görünüm. */
+    appearance?: 'default' | 'refined'
+  }>(),
+  {
   mode: 'side',
   appearance: 'default',
   showClose: true,
   showExpand: true,
   autofocus: true,
-})
+  wide: false,
+  confirmReset: false,
+  },
+)
 const emit = defineEmits<{ close: []; expand: []; collapse: [] }>()
 
 const chat = provideChat(props.controller)
@@ -124,8 +159,20 @@ function announce(text: string) {
   queueMicrotask(() => (politeNote.value = text))
 }
 
+const resetOpen = ref(false)
+
 async function newChat() {
+  if (props.confirmReset) {
+    resetOpen.value = true
+    return
+  }
   await chat.reset()
+}
+
+async function confirmNewChat() {
+  resetOpen.value = false
+  await chat.reset()
+  composerRef.value?.focus()
 }
 
 function openSettings() {

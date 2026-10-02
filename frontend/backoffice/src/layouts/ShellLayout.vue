@@ -2,7 +2,7 @@
   <div class="bo-shell">
     <a class="bo-skip" href="#bo-main">İçeriğe geç</a>
     <TopBar class="bo-shell__top" :menu-open="drawerOpen" :compact="mobile" @toggle-menu="drawerOpen = !drawerOpen" @logout="logout" @open-palette="paletteOpen = true" />
-    <CommandPalette v-model="paletteOpen" @logout="logout" @shortcuts="helpOpen = true" />
+    <CommandPalette v-model="paletteOpen" :blocked="dialogOpen" @logout="logout" @shortcuts="helpOpen = true" />
     <ShortcutsDialog v-model="helpOpen" />
     <v-navigation-drawer
       v-model="drawerOpen"
@@ -22,7 +22,8 @@
       </template>
     </v-navigation-drawer>
     <OtopilotDock />
-    <v-main class="bo-shell__main">
+    <!-- bo-wdg: tek `main` işareti — v-main yalnız yerleşim kabı (div); odak hedefi `#bo-main` (router.afterEach). -->
+    <v-main tag="div" class="bo-shell__main">
       <main id="bo-main" tabindex="-1">
         <RouterView :key="route.path" />
       </main>
@@ -58,13 +59,15 @@ const helpOpen = ref(false)
 watch(mobile, (m) => (drawerOpen.value = !m))
 
 // BO-ELEV E2: g + harf, ?, Alt+R (navigation/hotkeys.ts). Açık diyalog/palet varken beklemede.
+/** Açık bir Vuetify diyaloğu (onay/gerekçe/kısayollar) var mı — kısayollar ve palet bu sırada beklemede. */
+const dialogOpen = () => helpOpen.value || !!document.querySelector('.v-dialog.v-overlay--active')
 const rowNav = createRowNav()
 const onHotkey = createHotkeyHandler({
   go: (path) => router.push(path),
   row: (cmd) => (cmd === 'next' ? rowNav.move(1) : cmd === 'prev' ? rowNav.move(-1) : cmd === 'enter' ? rowNav.enter() : rowNav.exit()),
   help: () => (helpOpen.value = true),
   refresh: () => clickPageRefresh(),
-  blocked: () => paletteOpen.value || helpOpen.value || !!document.querySelector('.v-dialog.v-overlay--active'),
+  blocked: () => paletteOpen.value || dialogOpen(),
 })
 
 // Son açılanlar (palet): ekran anahtarı ve müşteri numarası; yönetici başına ayrı.

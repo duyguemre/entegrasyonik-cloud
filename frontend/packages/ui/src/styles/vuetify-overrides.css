@@ -510,3 +510,17 @@
   transition-duration: var(--ek-motion-overlay-duration) !important;
   transition-timing-function: var(--ek-motion-overlay-easing) !important;
 }
+
+/* bo-wdg — `prefers-reduced-motion`: Vuetify çekmece kayması ve belirsiz `v-progress-circular` dönüşü süre token'ı
+ * kullanmaz (kök token 0'a inse de kendi süresiyle oynar). Çekmece rol token'ıyla (bu kipte 0) anında açılır; dönen
+ * yay durağan kalır (yükleme hâlâ görünür, yanında metin vardır). Normal kipte değişiklik yok. */
+@media (prefers-reduced-motion: reduce) {
+  .v-navigation-drawer {
+    transition-duration: var(--ek-motion-overlay-duration) !important;
+  }
+
+  .v-progress-circular--indeterminate > svg,
+  .v-progress-circular--indeterminate .v-progress-circular__overlay {
+    animation: none !important;
+  }
+}
