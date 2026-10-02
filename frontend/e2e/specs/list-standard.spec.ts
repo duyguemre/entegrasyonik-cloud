@@ -115,6 +115,11 @@ test.describe('DS-v2 liste standardı — sipariş listesi', () => {
     await expect(view.getByText('E2E-100001')).toBeVisible()
     const pager = view.getByRole('navigation', { name: /sayfalama/ })
     const header = view.locator('thead th').nth(1)
+    // fe-r4d D2: tur teklifi kabuk hazır olduktan ~900ms sonra açılır ve çalışma alanının altına kendi yüksekliği kadar pay
+    // (`--ek-tour-offer-space`, tablette 158.5 + 24 = 183px) ayırır. İki ölçüm arasında açılırsa sayfalama 183px yukarı
+    // "kayıyordu" (yapışkanlık hatası DEĞİL, ölçüm yarışı; yavaş/yüklü makinede kırmızı). Ölçüm teklif yerleştikten sonra.
+    await expect(page.locator('[data-help-tour-offer]')).toBeVisible()
+    await expect.poll(() => page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--ek-tour-offer-space'))).not.toMatch(/^\s*(0px)?\s*$/)
     // P15 (K49): kısa görünümde (açık filtre + tur teklifi payı) liste kartı asgari yükseklikte kalır, ekran kendi içinde kayar.
     await view.locator('.ek-list-screen').evaluate((el) => el.scrollTo(0, el.scrollHeight))
     const pagerBox1 = await pager.boundingBox()
