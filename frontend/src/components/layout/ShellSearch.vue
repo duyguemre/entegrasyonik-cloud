@@ -13,6 +13,10 @@
   Seçim davranışı eski `ApplicationBar.handleSearchSelect` ile AYNI: ilgili liste
   sekmesi açılır, arama değeri sekme PARAMETRESİ olarak geçer (URL'ye YAZILMAZ —
   ADR-0012 Karar 2 PII kuralı; screens.ts urlParams'ta yok).
+  FE-R4 A5: sonuç listesi `appearance="refined"` (sakin komut paleti satırı, geniş panel) + satır BAĞLAM MENÜSÜ
+  (sağ tık / Shift+F10 / ⋯): türüne göre "aç" (Enter ile aynı iş), ikincil gezinme (ör. iadenin siparişi) ve
+  "kopyala" eylemleri. Kopyalama yalnız panoya yazar (log/URL yok); sonuç toast ile bildirilir. Menü açıkken
+  sonuçlar açık kalır; Esc menüyü kapatıp odağı aramaya döndürür.
 -->
 <template>
   <v-tooltip :open-on-focus="false" :open-on-click="false" location="bottom" :open-delay="600" transition="fade-transition">
@@ -29,9 +33,19 @@
         aria-keyshortcuts="Control+K"
         open-on-focus
         :empty-text="emptyText"
+        appearance="refined"
+        item-menu
+        :hold-open="ctxOpen"
+        :panel-max-width="640"
         @select="onSelect"
         @dismiss="$emit('dismiss')"
+        @item-menu="onItemMenu"
       />
+      <!-- FE-R4 A5: satır bağlam menüsü (konum = sağ tık / satır noktası; içerik teleport edilir). -->
+      <v-menu v-model="ctxOpen" :target="ctxPoint" location="bottom start" :offset="4" :close-on-content-click="false">
+        <EkMenuPanel autofocus class="ek-shell-search__menu" :groups="ctxGroups" :title="ctxTitle" label="Sonuç işlemleri"
+          @select="onCtxSelect" @close="closeCtx(true)" />
+      </v-menu>
     </template>
     <span class="ek-shell-search__tip">Ara <EkKbd :keys="['Ctrl', 'K']" tone="inverse" /></span>
   </v-tooltip>
@@ -41,15 +55,16 @@
 import { computed, inject, ref, shallowRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useDebounceFn } from '@vueuse/core'
-import { EkKbd, EkSmartSearch, type EkSearchGroup, type EkSearchItem } from '@entegrasyonik/ui/components'
+import { EkKbd, EkSmartSearch, EkMenuPanel, type EkSearchGroup, type EkSearchItem, type EkMenuGroup, type EkMenuItem } from '@entegrasyonik/ui/components'
+import { useToast } from '@entegrasyonik/ui/composables/useToast'
 import useRestApi from '@/composables/restapi'
 import logger from '@/composables/logger'
 import { formatDate, formatMoney, formatNumber } from '@entegrasyonik/ui/format'
 import { useWorkspaceStore } from '@/stores/workspace'
-import { screenKeyForLink } from '@/navigation/screens'
+import { buildScreenPath, resolveScreenByKey, screenKeyForLink } from '@/navigation/screens'
 import { FAVORITES_SECTION_ID, useShellMenu } from './useShellMenu'
 import { useHelpNavigation } from '@/help/useHelpNavigation'
-import { CHAT_ICON } from '@entegrasyonik/chat/brand'
+import { CHAT_ICON, CHAT_PRODUCT } from '@entegrasyonik/chat/brand'
 import { useOtopilotStore } from '@/chat/otopilotStore'
 
 defineEmits<{ dismiss: [] }>()
@@ -294,6 +309,95 @@ function onSelect(item: EkSearchItem) {
   else if (kind === 'claim') openWith('claimList', { filter: { globalSearch: ref.externalClaimId || ref.externalOrderId } })
 }
 
+// --- FE-R4 A5: sonuç bağlam menüsü ---
+type SearchEntry = EkSearchItem & { __kind: string; __ref: any }
+const { showToast } = useToast()
+const ctxOpen = ref(false)
+const ctxPoint = ref<[number, number]>([0, 0])
+const ctxItem = shallowRef<SearchEntry | null>(null)
+const ctxTitle = computed(() => ctxItem.value?.title ?? '')
+
+const OPEN_LABEL: Record<string, { label: string; icon: string }> = {
+  screen: { label: 'Ekranı aç', icon: 'mdi-arrow-right' },
+  recent: { label: 'Ekranı aç', icon: 'mdi-arrow-right' },
+  help: { label: 'Makaleyi aç', icon: 'mdi-book-open-page-variant-outline' },
+  order: { label: 'Siparişi aç', icon: 'mdi-cart-outline' },
+  product: { label: 'Ürünü düzenle', icon: 'mdi-pencil-outline' },
+  customer: { label: 'Müşteri listesinde göster', icon: 'mdi-account-outline' },
+  claim: { label: 'İadeyi aç', icon: 'mdi-undo-variant' },
+  ask: { label: `${CHAT_PRODUCT.name}'a sor`, icon: CHAT_ICON },
+}
+
+/** Ekran sonucunun kanonik adresi (yalnız slug; parametre/PII taşımaz). */
+function screenUrl(link: any): string {
+  const screen = link ? resolveScreenByKey(screenKeyForLink(link)) : undefined
+  return screen ? `${window.location.origin}${buildScreenPath(screen)}` : ''
+}
+
+const ctxGroups = computed<EkMenuGroup[]>(() => {
+  const item = ctxItem.value
+  if (!item) return []
+  const ref = item.__ref ?? {}
+  const open = OPEN_LABEL[item.__kind] ?? { label: 'Aç', icon: 'mdi-arrow-right' }
+  const primary: EkMenuItem[] = [{ key: 'open', label: open.label, icon: open.icon, shortcut: 'Enter' }]
+  if (item.__kind === 'claim' && ref.externalOrderId) primary.push({ key: 'claimOrder', label: 'İlgili siparişi aç', icon: 'mdi-cart-arrow-right' })
+  if (item.__kind === 'order' && fullName(ref.billingAddress?.firstName, ref.billingAddress?.lastName)) {
+    primary.push({ key: 'customerOrders', label: 'Müşterinin siparişleri', icon: 'mdi-account-search-outline' })
+  }
+  const copy: EkMenuItem[] = []
+  if (item.__kind === 'order' && ref.orderNumber) copy.push({ key: 'copy:orderNumber', label: 'Sipariş numarasını kopyala', icon: 'mdi-content-copy' })
+  if (item.__kind === 'product' && ref.title) copy.push({ key: 'copy:title', label: 'Ürün adını kopyala', icon: 'mdi-content-copy' })
+  if (item.__kind === 'customer' && ref.email) copy.push({ key: 'copy:email', label: 'E-postayı kopyala', icon: 'mdi-email-outline' })
+  if (item.__kind === 'customer' && ref.phone) copy.push({ key: 'copy:phone', label: 'Telefonu kopyala', icon: 'mdi-phone-outline' })
+  if (item.__kind === 'claim' && (ref.externalClaimId || ref.externalOrderId)) copy.push({ key: 'copy:claim', label: 'Talep numarasını kopyala', icon: 'mdi-content-copy' })
+  if ((item.__kind === 'screen' || item.__kind === 'recent') && screenUrl(ref)) copy.push({ key: 'copy:link', label: 'Bağlantıyı kopyala', icon: 'mdi-link-variant' })
+  return copy.length ? [{ items: primary }, { label: 'Kopyala', items: copy }] : [{ items: primary }]
+})
+
+function onItemMenu(item: EkSearchItem, point: { x: number; y: number }) {
+  ctxItem.value = item as SearchEntry
+  ctxPoint.value = [point.x, point.y]
+  ctxOpen.value = true
+}
+
+function closeCtx(refocus: boolean) {
+  ctxOpen.value = false
+  if (refocus) searchRef.value?.focus()
+}
+
+async function copyText(text: string, what: string) {
+  try {
+    await navigator.clipboard.writeText(text)
+    showToast({ tone: 'success', message: `${what} panoya kopyalandı.` })
+  } catch {
+    showToast({ tone: 'warning', message: 'Kopyalanamadı — tarayıcı pano erişimine izin vermedi.' })
+  }
+}
+
+function onCtxSelect(action: EkMenuItem) {
+  const item = ctxItem.value
+  ctxOpen.value = false
+  if (!item) return
+  const ref = item.__ref ?? {}
+  if (action.key === 'open') {
+    searchRef.value?.blur()
+    onSelect(item)
+  } else if (action.key === 'claimOrder') {
+    query.value = ''
+    searchRef.value?.blur()
+    openWith('orderList', { globalSearch: ref.externalOrderId })
+  } else if (action.key === 'customerOrders') {
+    query.value = ''
+    searchRef.value?.blur()
+    openWith('orderList', { globalSearch: fullName(ref.billingAddress?.firstName, ref.billingAddress?.lastName) })
+  } else if (action.key === 'copy:orderNumber') copyText(String(ref.orderNumber), 'Sipariş numarası').then(() => searchRef.value?.focus())
+  else if (action.key === 'copy:title') copyText(String(ref.title), 'Ürün adı').then(() => searchRef.value?.focus())
+  else if (action.key === 'copy:email') copyText(String(ref.email), 'E-posta').then(() => searchRef.value?.focus())
+  else if (action.key === 'copy:phone') copyText(String(ref.phone), 'Telefon').then(() => searchRef.value?.focus())
+  else if (action.key === 'copy:claim') copyText(String(ref.externalClaimId || ref.externalOrderId), 'Talep numarası').then(() => searchRef.value?.focus())
+  else if (action.key === 'copy:link') copyText(screenUrl(ref), 'Bağlantı').then(() => searchRef.value?.focus())
+}
+
 defineExpose({ focus: () => searchRef.value?.focus() })
 </script>
 
@@ -305,5 +409,9 @@ defineExpose({ focus: () => searchRef.value?.focus() })
 /* Kısayol görünür rozet değil, tooltip'te (kullanıcı geri bildirimi). */
 .ek-shell-search :deep(.ek-search__hint) {
   display: none;
+}
+
+.ek-shell-search__menu {
+  min-width: 240px;
 }
 </style>

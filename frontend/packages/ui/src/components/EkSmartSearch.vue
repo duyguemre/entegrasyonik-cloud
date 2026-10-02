@@ -13,9 +13,16 @@
   açılanlar" grubu); `emptyText` — sonuç yok metni; öğede `platform` →
   başlık yanında kanal marka renkli nokta (EkPlatformMark `dot`); Esc →
   `dismiss` (çağıran odağı önceki yere döndürebilir).
+  FE-R4 A5 (ek, geri uyumlu — varsayılanlar eski görünümü/davranışı korur):
+    `appearance="refined"` — sakin komut paleti satırı: tek satır başlık + kanal noktası, altında "Etiket değer ·"
+      düz metin (çerçeveli çipler yok), etkin satır yalnız seçim zemini, sağda tür rozeti / ⋯; grup başlığı bantsız
+      mikro etiket + sayı; alt şeritte toplam sonuç.
+    `itemMenu` — satır bağlam menüsü: sağ tık, Shift+F10 / Menü tuşu (etkin satır) ya da satırdaki ⋯ →
+      `item-menu(item, {x,y})` yayılır; menüyü çağıran çizer. `holdOpen` — çağıranın menüsü açıkken sonuçlar
+      açık kalır (odak menüdeyken). `panelMaxWidth` — açılır panelin en geniş hali (varsayılan 560).
 -->
 <template>
-  <div ref="rootRef" class="ek-search" :class="{ 'is-open': isOpen, 'is-focused': focused }">
+  <div ref="rootRef" class="ek-search" :class="{ 'is-open': isOpen, 'is-focused': focused, 'ek-search--refined': appearance === 'refined' }">
     <div class="ek-search__field">
       <v-icon class="ek-search__icon" :icon="SHELL_ICONS.search" aria-hidden="true" />
       <input
@@ -53,9 +60,10 @@
       <div v-else-if="flat.length" :id="listId" class="ek-search__results" role="listbox" :aria-label="`${label} sonuçları`">
         <div v-for="group in visibleGroups" :key="group.key" class="ek-search__group" role="group" :aria-labelledby="`${listId}-${group.key}`">
           <div :id="`${listId}-${group.key}`" class="ek-search__group-head">
-            <v-icon v-if="group.icon" :icon="group.icon" aria-hidden="true" />
+            <v-icon v-if="group.icon && appearance !== 'refined'" :icon="group.icon" aria-hidden="true" />
             <span class="ek-search__group-label">{{ group.label }}</span>
-            <span class="ek-search__group-count">{{ group.items.length }} sonuç</span>
+            <span v-if="appearance === 'refined'" class="ek-search__group-count ek-num">{{ group.items.length }}<span class="ek-sr-only"> sonuç</span></span>
+            <span v-else class="ek-search__group-count">{{ group.items.length }} sonuç</span>
           </div>
           <div
             v-for="item in group.items"
@@ -68,6 +76,7 @@
             @mousedown.prevent
             @mousemove="activeId = optionId(item)"
             @click="choose(item)"
+            @contextmenu="onOptionContextMenu($event, item)"
           >
             <span class="ek-search__avatar" :class="`ek-search__avatar--${item.tone ?? 'action'}`" aria-hidden="true">
               <v-icon v-if="item.icon" :icon="outlineIcon(item.icon)" />
@@ -79,14 +88,28 @@
                 <EkPlatformMark v-if="item.platform" class="ek-search__platform" variant="dot" :name="item.platform.name" :code="item.platform.code" />
                 <EkBadge v-if="item.typeLabel" :tone="item.tone ?? 'action'" :text="item.typeLabel" />
               </span>
-              <span v-if="item.meta?.length" class="ek-search__meta">
+              <span v-if="item.meta?.length && appearance === 'refined'" class="ek-search__meta-line">
+                <span v-for="m in item.meta" :key="m.label" class="ek-search__meta-pair">
+                  <span class="ek-search__meta-pair-label">{{ m.label }}</span>
+                  <span class="ek-search__meta-pair-value">{{ m.value }}</span>
+                </span>
+              </span>
+              <span v-else-if="item.meta?.length" class="ek-search__meta">
                 <span v-for="m in item.meta" :key="m.label" class="ek-search__meta-chip">
                   <span class="ek-search__meta-label">{{ m.label }}</span>
                   <span class="ek-search__meta-value">{{ m.value }}</span>
                 </span>
               </span>
             </span>
-            <v-icon class="ek-search__chevron" icon="mdi-chevron-right" aria-hidden="true" />
+            <span v-if="appearance === 'refined' && optionId(item) === activeId" class="ek-search__enter" aria-hidden="true">
+              <EkKbd keys="Enter" />
+            </span>
+            <!-- Fare için görünür ⋯ (klavyede Shift+F10); seçenek içinde etkileşimli öğe olmasın diye düğme değil, aria-hidden. -->
+            <span v-if="itemMenu" class="ek-search__more" aria-hidden="true" title="İşlemler"
+              @mousedown.prevent.stop @click.stop="onMoreClick($event, item)">
+              <v-icon icon="mdi-dots-horizontal" />
+            </span>
+            <v-icon v-if="appearance !== 'refined'" class="ek-search__chevron" icon="mdi-chevron-right" aria-hidden="true" />
           </div>
         </div>
       </div>
@@ -99,7 +122,9 @@
       <div class="ek-search__footer" aria-hidden="true">
         <span><EkKbd :keys="['↑', '↓']" /> gezin</span>
         <span><EkKbd keys="Enter" /> aç</span>
+        <span v-if="itemMenu"><EkKbd :keys="['Shift', 'F10']" /> işlemler</span>
         <span><EkKbd keys="Esc" /> kapat</span>
+        <span v-if="appearance === 'refined' && !loading && flat.length" class="ek-search__total ek-num">{{ flat.length }} sonuç</span>
       </div>
     </div>
   </div>
@@ -141,6 +166,14 @@ const props = withDefaults(
     initialActiveIndex?: number
     openOnFocus?: boolean
     emptyText?: string
+    /** FE-R4 A5: `refined` = sakin komut paleti görünümü; `default` eski görünüm. */
+    appearance?: 'default' | 'refined'
+    /** FE-R4 A5: satır bağlam menüsü (sağ tık / Shift+F10 / ⋯ → `item-menu`). */
+    itemMenu?: boolean
+    /** FE-R4 A5: çağıranın bağlam menüsü açıkken sonuçlar odak dışında da açık kalır. */
+    holdOpen?: boolean
+    /** FE-R4 A5: açılır panelin en geniş hali (px). */
+    panelMaxWidth?: number
   }>(),
   {
     placeholder: 'Sipariş no, ürün, barkod, müşteri ara…',
@@ -150,10 +183,20 @@ const props = withDefaults(
     initialActiveIndex: 0,
     openOnFocus: false,
     emptyText: undefined,
+    appearance: 'default',
+    itemMenu: false,
+    holdOpen: false,
+    panelMaxWidth: 560,
   },
 )
 
-const emit = defineEmits<{ 'update:modelValue': [value: string]; select: [item: EkSearchItem]; dismiss: [] }>()
+const emit = defineEmits<{
+  'update:modelValue': [value: string]
+  select: [item: EkSearchItem]
+  dismiss: []
+  /** FE-R4 A5: satır bağlam menüsü isteği (görünüm alanı koordinatı). */
+  'item-menu': [item: EkSearchItem, point: { x: number; y: number }]
+}>()
 
 const uid = useId()
 const listId = `ek-search-list-${uid}`
@@ -175,7 +218,7 @@ function placePanel() {
   const field = rootRef.value?.getBoundingClientRect()
   if (!field || typeof window === 'undefined') return
   const vw = window.innerWidth
-  const width = Math.max(field.width, Math.min(560, vw - VIEWPORT_GUTTER * 2))
+  const width = Math.max(field.width, Math.min(props.panelMaxWidth, vw - VIEWPORT_GUTTER * 2))
   const ideal = field.left + field.width / 2 - width / 2
   const left = Math.min(Math.max(ideal, VIEWPORT_GUTTER), vw - VIEWPORT_GUTTER - width)
   panelLeft.value = `${Math.round(left - field.left)}px`
@@ -188,6 +231,7 @@ const flat = computed(() => visibleGroups.value.flatMap((g) => g.items))
 const isOpen = computed(
   () =>
     props.forceOpen ||
+    (props.holdOpen && (props.loading || visibleGroups.value.length > 0 || props.modelValue.trim().length > 0)) ||
     (focused.value &&
       (props.modelValue.trim().length > 0 || (props.openOnFocus && (props.loading || visibleGroups.value.length > 0)))),
 )
@@ -268,7 +312,33 @@ function move(delta: number) {
   rootRef.value?.querySelector(`#${CSS.escape(activeId.value)}`)?.scrollIntoView({ block: 'nearest' })
 }
 
+/** FE-R4 A5: bağlam menüsü — satır etkinleşir, çağırana konum verilir (menüyü o çizer). */
+function requestItemMenu(item: EkSearchItem, point: { x: number; y: number }) {
+  activeId.value = optionId(item)
+  emit('item-menu', item, point)
+}
+
+function onOptionContextMenu(event: MouseEvent, item: EkSearchItem) {
+  if (!props.itemMenu) return
+  event.preventDefault()
+  requestItemMenu(item, { x: event.clientX, y: event.clientY })
+}
+
+function onMoreClick(event: MouseEvent, item: EkSearchItem) {
+  const rect = (event.currentTarget as HTMLElement | null)?.getBoundingClientRect()
+  requestItemMenu(item, rect ? { x: rect.left, y: rect.bottom } : { x: event.clientX, y: event.clientY })
+}
+
 function onKeydown(event: KeyboardEvent) {
+  if (props.itemMenu && isOpen.value && (event.key === 'ContextMenu' || (event.shiftKey && event.key === 'F10'))) {
+    const item = flat.value.find((i) => optionId(i) === activeId.value)
+    if (item) {
+      event.preventDefault()
+      const rect = rootRef.value?.querySelector(`#${CSS.escape(activeId.value)}`)?.getBoundingClientRect()
+      requestItemMenu(item, rect ? { x: rect.left + 48, y: rect.bottom } : { x: 0, y: 0 })
+    }
+    return
+  }
   if (!isOpen.value) {
     if (event.key === 'Escape') {
       event.preventDefault()
@@ -648,6 +718,185 @@ defineExpose({ focus: () => inputRef.value?.focus(), blur: () => inputRef.value?
   display: inline-flex;
   align-items: center;
   gap: var(--ek-space-1);
+}
+
+/* ---------- FE-R4 A5 — `appearance="refined"` (yalnız ek kurallar; varsayılan görünüm değişmez) ---------- */
+.ek-search--refined .ek-search__panel {
+  border-color: var(--ek-color-border-default);
+  box-shadow: var(--ek-shadow-dialog);
+}
+
+.ek-search--refined .ek-search__results {
+  padding: var(--ek-space-1) 0 var(--ek-space-2);
+}
+
+.ek-search--refined .ek-search__group + .ek-search__group {
+  border-top: 0;
+}
+
+/* Grup başlığı: bant yok — yüzeyle aynı zeminde mikro etiket + sade sayı. */
+.ek-search--refined .ek-search__group-head {
+  padding: var(--ek-space-3) var(--ek-space-4) var(--ek-space-1);
+  background: var(--ek-color-surface-raised);
+}
+
+.ek-search--refined .ek-search__group-count {
+  padding: 0;
+  background: transparent;
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-caption-size);
+  font-weight: var(--ek-font-weight-medium);
+}
+
+.ek-search--refined .ek-search__option {
+  gap: var(--ek-space-3);
+  margin: 0 var(--ek-space-2);
+  padding: var(--ek-space-2) var(--ek-space-2) var(--ek-space-2) var(--ek-space-3);
+  transition: var(--ek-transition-colors);
+}
+
+/* Etkin satır: yalnız seçim zemini (halka/şerit yok) — tek, sakin vurgu. */
+.ek-search--refined .ek-search__option.is-active {
+  background: var(--ek-color-selection);
+  box-shadow: none;
+}
+
+.ek-search--refined .ek-search__option.is-active::before {
+  content: none;
+}
+
+.ek-search--refined .ek-search__avatar {
+  width: 32px;
+  height: 32px;
+  box-shadow: none;
+}
+
+.ek-search--refined .ek-search__avatar :deep(.v-icon) {
+  font-size: var(--ek-icon-sm);
+}
+
+.ek-search--refined .ek-search__option-main {
+  gap: 2px;
+}
+
+.ek-search--refined .ek-search__option-title {
+  font-size: var(--ek-type-body-size);
+  line-height: var(--ek-type-label-line);
+  font-weight: var(--ek-font-weight-medium);
+  flex-wrap: nowrap;
+}
+
+.ek-search--refined .ek-search__option-title > :not(.ek-search__option-text) {
+  flex: none;
+}
+
+.ek-search--refined .ek-search__option-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.ek-search--refined .ek-search__mark {
+  padding: 0;
+  background: transparent;
+  color: var(--ek-color-action-emphasis);
+  font-weight: var(--ek-font-weight-semibold);
+}
+
+/* Meta: düz metin, "Etiket değer" çiftleri ince nokta ile ayrılır; tek satır — sığmayan SATIRIN sonunda "…" ile
+   kesilir (çiftler tek tek kesilmez; ilk çiftler hep okunur). */
+.ek-search__meta-line {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-caption-size);
+  line-height: var(--ek-type-caption-line);
+  white-space: nowrap;
+}
+
+.ek-search__meta-pair-label {
+  margin-right: var(--ek-space-1);
+}
+
+.ek-search__meta-pair + .ek-search__meta-pair::before {
+  content: '·';
+  margin: 0 var(--ek-space-2);
+  color: var(--ek-color-content-subtle);
+}
+
+.ek-search__meta-pair-value {
+  color: var(--ek-color-content-default);
+  font-variant-numeric: tabular-nums;
+}
+
+.ek-search__enter {
+  display: inline-flex;
+  flex: none;
+}
+
+.ek-search__more {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--ek-radius-control);
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-icon-md);
+  opacity: 0;
+  transition: var(--ek-transition-colors), opacity var(--ek-duration-fast) var(--ek-easing-standard);
+}
+
+.ek-search__more :deep(.v-icon) {
+  font-size: var(--ek-icon-md);
+}
+
+.ek-search__option:hover .ek-search__more,
+.ek-search__option.is-active .ek-search__more {
+  opacity: 1;
+}
+
+.ek-search__more:hover {
+  background: var(--ek-color-surface-sunken);
+  color: var(--ek-color-content-strong);
+}
+
+@media (hover: none) {
+  .ek-search__more {
+    opacity: 1;
+  }
+}
+
+.ek-search--refined .ek-search__footer {
+  gap: var(--ek-space-3);
+  background: var(--ek-color-surface-raised);
+}
+
+.ek-search__total {
+  margin-left: auto;
+}
+
+.ek-search--refined .ek-search__empty {
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--ek-space-2);
+  padding: var(--ek-space-8) var(--ek-space-6);
+  text-align: center;
+}
+
+.ek-search--refined .ek-search__empty :deep(.v-icon) {
+  font-size: var(--ek-icon-xl);
+  color: var(--ek-color-content-subtle);
+}
+
+@media (max-width: 767px) {
+  .ek-search--refined .ek-search__footer > span:not(.ek-search__total) {
+    display: none;
+  }
 }
 
 /* Dar ekranda açılır, arama alanına değil görünüm alanına yaslanır (taşma yok). */

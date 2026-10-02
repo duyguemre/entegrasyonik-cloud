@@ -240,3 +240,68 @@ test.describe('FE-R4A — yeni: bildirim penceresi durumları', () => {
     await expect(drawer(page).getByText('Okunmamış bildiriminiz yok')).toBeVisible()
   })
 })
+
+test.describe('FE-R4A — yeni: üst bar tonu ve arama bağlam menüsü', () => {
+  test('A1/A2: üst bar bir ton açık (soft); profil düğmesi koyu blok taşımaz (zemin saydam)', async ({ page }) => {
+    await start(page)
+    const header = page.locator('.ek-shell-bar .ek-header')
+    await expect(header).toHaveClass(/ek-header--soft/)
+    const bar = await header.evaluate((el) => getComputedStyle(el).backgroundImage)
+    expect(bar).toContain('linear-gradient')
+    const bg = await page.locator('[data-header-action=account]').evaluate((el) => getComputedStyle(el).backgroundColor)
+    expect(bg).toBe('rgba(0, 0, 0, 0)')
+  })
+
+  test('A5: sağ tık → türüne göre menü; "Sipariş numarasını kopyala" panoya yazar, toast gösterir', async ({ page, context }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write'])
+    await start(page)
+    await page.keyboard.press('Control+k')
+    await page.getByRole('combobox', { name: 'Akıllı arama' }).fill('R4')
+    const order = page.getByRole('option', { name: /R4-100231/ })
+    await expect(order).toBeVisible()
+    await order.click({ button: 'right' })
+    const menu = page.getByRole('menu', { name: 'Sonuç işlemleri' })
+    await expect(menu).toBeVisible()
+    await expect(menu.getByRole('menuitem', { name: /Siparişi aç/ })).toBeVisible()
+    await expect(menu.getByRole('menuitem', { name: /Müşterinin siparişleri/ })).toBeVisible()
+    // Menü açıkken sonuçlar açık kalır.
+    await expect(order).toBeVisible()
+    await menu.getByRole('menuitem', { name: /Sipariş numarasını kopyala/ }).click()
+    await expect(menu).toBeHidden()
+    await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toBe('R4-100231')
+    await expect(page.getByText('Sipariş numarası panoya kopyalandı.')).toBeVisible()
+  })
+
+  test('A5: klavye — Shift+F10 etkin satırın menüsünü açar, Esc kapatıp odağı aramaya döndürür; "aç" = Enter', async ({ page }) => {
+    await start(page)
+    await page.keyboard.press('Control+k')
+    const input = page.getByRole('combobox', { name: 'Akıllı arama' })
+    await input.fill('R4')
+    await expect(page.getByRole('option', { name: /R4 pamuklu tişört/ })).toBeVisible()
+    // Etkin satırı ürüne taşı (Ekranlar grubu boş: ilk sipariş, sonra ürün).
+    await page.keyboard.press('ArrowDown')
+    await page.keyboard.press('Shift+F10')
+    const menu = page.getByRole('menu', { name: 'Sonuç işlemleri' })
+    await expect(menu.getByRole('menuitem', { name: /Ürünü düzenle/ })).toBeVisible()
+    await page.keyboard.press('Escape')
+    await expect(menu).toBeHidden()
+    await expect(input).toBeFocused()
+    // Siparişe dön; menüden "Siparişi aç" Enter ile aynı işi yapar (liste sekmesi, arama değeri URL'ye yazılmaz).
+    await page.keyboard.press('ArrowUp')
+    await page.keyboard.press('Shift+F10')
+    await menu.getByRole('menuitem', { name: /Siparişi aç/ }).click()
+    await expect(page.getByRole('option', { name: /R4 pamuklu tişört/ })).toBeHidden()
+    await expect(page.locator('.orderListView')).toBeVisible()
+    expect(page.url()).not.toContain('globalSearch')
+  })
+
+  test('axe: arama bağlam menüsü açıkken WCAG 2.1 AA = 0', async ({ page }) => {
+    await start(page)
+    await page.keyboard.press('Control+k')
+    await page.getByRole('combobox', { name: 'Akıllı arama' }).fill('R4')
+    await page.getByRole('option', { name: /R4-100231/ }).click({ button: 'right' })
+    await expect(page.getByRole('menu', { name: 'Sonuç işlemleri' })).toBeVisible()
+    const result = await new AxeBuilder({ page }).withTags(AA).include('.ek-shell-bar').include('.v-overlay--active').analyze()
+    expect(result.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`)).toEqual([])
+  })
+})
