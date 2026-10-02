@@ -113,6 +113,7 @@ test.describe('FE-R4 Şerit A inceleme görüntüleri', () => {
           return
         }
         await launcher(page).click()
+        await page.mouse.move(600, 500) // giriş ipucu panel başlığını örtmesin
         await page.waitForTimeout(700)
         await shot(page, '08-otopilot-bos', v.name)
         await ask(page, 'onay bekleyen siparişler')
@@ -127,6 +128,7 @@ test.describe('FE-R4 Şerit A inceleme görüntüleri', () => {
         test.skip(v.width < 768, 'dar ekranda panel yok')
         await open(page, v.theme, 'setup-required')
         await launcher(page).click()
+        await page.mouse.move(600, 500)
         await page.getByLabel('API anahtarı').waitFor()
         await page.waitForTimeout(400)
         await shot(page, '11-otopilot-kurulum', v.name)

@@ -1439,3 +1439,183 @@
     scroll-behavior: auto;
   }
 }
+
+
+/* =====================================================================================================================
+ * FE-R4 A4 — `ek-chat--refined` (ChatPanel `appearance="refined"`): Otopilot penceresinin premium katmanı.
+ * YALNIZ ek kurallar; varsayılan görünüm (backoffice) değişmez. Kimlik: Otopilot işareti üst barın açık kabuk
+ * degradesini taşır (koyu blok yalnız Otopilot'ta — K61 A2), geri kalan her şey sakin yüzey + ince kenar.
+ * ===================================================================================================================== */
+
+.ek-chat--refined {
+  background: var(--ek-color-surface-raised);
+}
+
+/* Başlık bandı: daha sakin yükseklik, marka işareti degrade kapsül. */
+.ek-chat--refined .ek-chat__head {
+  gap: var(--ek-space-3);
+  padding: var(--ek-space-3) var(--ek-space-2) var(--ek-space-3) var(--ek-space-4);
+}
+
+.ek-chat--refined .ek-chat__mark,
+.ek-chat--refined .ek-chat-msg__avatar,
+.ek-chat--refined .ek-chat-empty__mark {
+  background: var(--ek-gradient-chrome-soft);
+  color: var(--ek-color-chrome-text);
+  box-shadow: inset 0 0 0 1px var(--ek-color-chrome-soft-border);
+}
+
+.ek-chat--refined .ek-chat__mark {
+  width: var(--ek-icon-tile-md);
+  height: var(--ek-icon-tile-md);
+  border-radius: var(--ek-radius-tile);
+}
+
+.ek-chat--refined .ek-chat__title {
+  font-size: var(--ek-type-heading-size);
+  line-height: var(--ek-type-heading-line);
+}
+
+.ek-chat--refined .ek-chat__actions {
+  gap: 2px;
+}
+
+/* Mesaj akışı: biraz daha nefes; kullanıcı balonu yumuşak köşe + ince kenar. */
+.ek-chat--refined .ek-chat-thread__inner {
+  padding: var(--ek-space-5) var(--ek-space-4) var(--ek-space-4);
+}
+
+.ek-chat--refined .ek-chat-thread__list {
+  gap: var(--ek-space-6);
+}
+
+.ek-chat--refined .ek-chat-msg__avatar {
+  border-radius: var(--ek-radius-tile);
+}
+
+.ek-chat--refined .ek-chat-msg.is-user .ek-chat-msg__body {
+  padding: var(--ek-space-2) var(--ek-space-4);
+  border-radius: var(--ek-radius-dialog) var(--ek-radius-dialog) var(--ek-radius-sm) var(--ek-radius-dialog);
+  box-shadow: inset 0 0 0 1px var(--ek-color-action-border);
+}
+
+/* Boş durum: ortalanmış karşılama + kart ızgarası öneriler (dar panelde tek kolon). */
+.ek-chat--refined .ek-chat-empty {
+  align-items: center;
+  gap: var(--ek-space-2);
+  padding: var(--ek-space-10) 0 var(--ek-space-4);
+  text-align: center;
+}
+
+.ek-chat--refined .ek-chat-empty__mark {
+  width: 56px;
+  height: 56px;
+  margin-bottom: var(--ek-space-3);
+  border-radius: var(--ek-radius-card);
+  box-shadow: inset 0 0 0 1px var(--ek-color-chrome-soft-border), var(--ek-shadow-raised);
+}
+
+.ek-chat--refined .ek-chat-empty__mark .v-icon {
+  font-size: var(--ek-icon-xl);
+}
+
+.ek-chat--refined .ek-chat-empty__title {
+  font-size: var(--ek-type-heading-size);
+  line-height: var(--ek-type-heading-line);
+  text-wrap: balance;
+}
+
+.ek-chat--refined .ek-chat-empty__body {
+  max-width: 40ch;
+  text-wrap: pretty;
+}
+
+.ek-chat--refined .ek-chat-empty__suggestions {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 150px), 1fr));
+  gap: var(--ek-space-2);
+  margin-top: var(--ek-space-6);
+}
+
+.ek-chat--refined .ek-chat-suggestion {
+  align-items: flex-start;
+  min-height: 64px;
+  padding: var(--ek-space-3);
+  border-color: var(--ek-color-border-default);
+  border-radius: var(--ek-radius-card);
+  background: var(--ek-color-surface);
+  box-shadow: var(--ek-shadow-card);
+  font-size: var(--ek-type-label-size);
+  line-height: var(--ek-type-label-line);
+}
+
+.ek-chat--refined .ek-chat-suggestion:hover:not(:disabled) {
+  border-color: var(--ek-color-action-border);
+  background: var(--ek-color-surface);
+  box-shadow: var(--ek-shadow-raised);
+}
+
+.ek-chat--refined .ek-chat-suggestion .v-icon {
+  margin-top: 2px;
+}
+
+/* Alt bölüm: çizgi yok — composer yüzen kart; gizlilik notu ortada, sessiz. */
+.ek-chat--refined .ek-chat__foot {
+  gap: var(--ek-space-2);
+  padding: var(--ek-space-2) var(--ek-space-3) var(--ek-space-3);
+  border-top: 0;
+  background: var(--ek-color-surface-raised);
+}
+
+.ek-chat--refined .ek-chat-composer {
+  padding: var(--ek-space-2) var(--ek-space-2) var(--ek-space-2) var(--ek-space-4);
+  border-color: var(--ek-color-border-default);
+  border-radius: var(--ek-radius-dialog);
+  background: var(--ek-color-surface);
+  box-shadow: var(--ek-shadow-raised);
+}
+
+.ek-chat--refined .ek-chat-composer:focus-within {
+  border-color: var(--ek-color-action-border);
+  box-shadow: var(--ek-shadow-raised), 0 0 0 3px var(--ek-color-action-subtle);
+}
+
+.ek-chat--refined .ek-chat-composer.is-disabled {
+  background: var(--ek-color-surface-muted);
+  box-shadow: none;
+}
+
+.ek-chat--refined .ek-chat-composer__action {
+  border-radius: var(--ek-radius-full);
+}
+
+/* Sayaç yalnız sınıra yaklaşınca görünür (ekran okuyucu sayacı her zaman var — aria-describedby). */
+.ek-chat--refined .ek-chat-composer__count:not(.is-near):not(.is-over) {
+  visibility: hidden;
+}
+
+.ek-chat--refined .ek-chat__privacy {
+  justify-content: center;
+  text-align: center;
+}
+
+/* Onay kartı: sol şerit yerine ton kenarı tüm kart boyunca ince + başlık bandı; büyük köşe. */
+.ek-chat--refined .ek-chat-confirm {
+  border-left-width: 1px;
+  border-color: var(--ek-color-action-border);
+  border-radius: var(--ek-radius-dialog);
+  box-shadow: var(--ek-shadow-raised);
+}
+
+.ek-chat--refined .ek-chat-confirm.is-destructive {
+  border-color: var(--ek-color-error-border);
+}
+
+.ek-chat--refined .ek-chat-confirm.is-done {
+  border-color: var(--ek-color-success-border);
+}
+
+.ek-chat--refined .ek-chat-confirm.is-rejected,
+.ek-chat--refined .ek-chat-confirm.is-expired {
+  border-color: var(--ek-color-border-default);
+}

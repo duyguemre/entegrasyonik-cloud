@@ -12,6 +12,7 @@
       :key="panelKey"
       :controller="controller"
       mode="page"
+      appearance="refined"
       :show-close="false"
       :show-expand="!isMobile"
       @collapse="otopilot.collapseToSide()"
