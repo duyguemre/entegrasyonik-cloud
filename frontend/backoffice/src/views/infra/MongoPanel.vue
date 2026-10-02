@@ -1,41 +1,40 @@
 <template>
-  <section class="bo-panel" aria-labelledby="bo-mongo-title">
-    <header class="bo-panel__bar">
-      <div>
-        <h2 id="bo-mongo-title" class="bo-panel__title">MongoDB</h2>
-        <p class="bo-panel__hint">Sunucu sayaçları ve izinli veritabanlarının boyutu. Belge içeriği okunmaz.</p>
-      </div>
-      <EkRefreshButton quiet-success :loading="res.refreshing.value || res.phase.value === 'loading'" :last-updated="res.loadedAt.value" :error="res.stale.value ? res.error.value?.title : null" @refresh="res.load()" />
-    </header>
-
-    <StateBlock :phase="res.phase.value" :error="res.error.value" skeleton="cards" :rows="3" degraded-title="MongoDB okunamıyor" @retry="res.load()">
-      <div v-if="res.data.value" class="bo-stack">
-        <EkAlert v-if="!d.server" tone="info" title="Sunucu sayaçları için yetki yok" text="Uygulama kullanıcısı serverStatus okuyamıyor; bağlantı, işlem sayacı ve önbellek bilgisi gösterilemiyor. Veritabanı boyutları aşağıda yine de listelenir." />
-        <template v-else>
-          <div class="bo-mongo__kpis">
-            <EkMetricCard label="Sürüm" :value="d.server.version" :description="`Çalışma süresi ${formatUptime(d.server.uptimeSeconds)}`" icon="mdi-server" tone="info" />
-            <EkMetricCard label="Bağlantılar" :value="formatCount(d.server.connections.current)" :description="`${formatCount(d.server.connections.available)} boşta · toplam açılan ${formatCount(d.server.connections.totalCreated)}`" icon="mdi-lan-connect" tone="neutral" />
-            <EkMetricCard label="WiredTiger önbelleği" :value="formatPercent(d.server.cache.fillRatio, 0)" :description="`${formatBytes(d.server.cache.usedBytes)} / ${formatBytes(d.server.cache.maxBytes)}`" icon="mdi-memory" :tone="fill >= 0.95 ? 'warning' : 'success'" />
-            <EkMetricCard label="Havuzlar" :value="`${d.pools.appPoolSize} + ${d.pools.openTenantHandles}`" description="uygulama havuzu + açık müşteri bağlantısı" icon="mdi-water-outline" tone="neutral" />
-          </div>
-          <div class="bo-grid-2">
-            <EkCard title="İşlem sayaçları" subtitle="Sunucu başlangıcından beri" icon="mdi-counter">
-              <MeterList label="İşlem sayaçları" :rows="opRows" />
-            </EkCard>
-            <EkCard title="WiredTiger önbelleği" icon="mdi-memory">
-              <MeterList label="Önbellek doluluk oranı" :max="1" :rows="[{ key: 'fill', label: 'Dolu', value: fill, display: formatPercent(d.server.cache.fillRatio, 0), tone: fill >= 0.95 ? 'warning' : 'success' }]" />
-              <dl class="bo-kv bo-mongo__kv">
-                <div><dt>Kullanılan</dt><dd>{{ formatBytes(d.server.cache.usedBytes) }}</dd></div>
-                <div><dt>Üst sınır</dt><dd>{{ formatBytes(d.server.cache.maxBytes) }}</dd></div>
-                <div><dt>Yazılmamış (dirty)</dt><dd>{{ formatBytes(d.server.cache.dirtyBytes) }}</dd></div>
-              </dl>
-            </EkCard>
-          </div>
+  <div class="bo-stack">
+    <BoSection id="bo-mongo" title="MongoDB" description="Sunucu sayaçları ve izinli veritabanlarının boyutu. Belge içeriği okunmaz." icon="mdi-database-outline">
+      <template #actions>
+        <EkRefreshButton quiet-success :loading="res.refreshing.value || res.phase.value === 'loading'" :last-updated="res.loadedAt.value" :error="res.stale.value ? res.error.value?.title : null" @refresh="res.load()" />
+      </template>
+      <StateBlock :phase="res.phase.value" :error="res.error.value" skeleton="cards" :rows="3" degraded-title="MongoDB okunamıyor" @retry="res.load()">
+        <template v-if="res.data.value">
+          <EkAlert v-if="!d.server" tone="info" title="Sunucu sayaçları için yetki yok" text="Uygulama kullanıcısı serverStatus okuyamıyor; bağlantı, işlem sayacı ve önbellek bilgisi gösterilemiyor. Veritabanı boyutları aşağıda yine de listelenir." />
+          <BoTileGrid v-else :min="190" dense>
+            <BoStat label="Sürüm" :value="d.server.version" :hint="`Çalışma süresi ${formatUptime(d.server.uptimeSeconds)}`" tone="info" />
+            <BoStat label="Bağlantılar" :value="formatCount(d.server.connections.current)" :hint="`${formatCount(d.server.connections.available)} boşta`" :info="`Toplam açılan bağlantı: ${formatCount(d.server.connections.totalCreated)}`" />
+            <BoStat label="WiredTiger önbelleği" :value="formatPercent(d.server.cache.fillRatio, 0)" :hint="`${formatBytes(d.server.cache.usedBytes)} / ${formatBytes(d.server.cache.maxBytes)}`" :tone="fill >= 0.95 ? 'warning' : 'success'" />
+            <BoStat label="Havuzlar" :value="`${d.pools.appPoolSize} + ${d.pools.openTenantHandles}`" hint="uygulama + müşteri bağlantısı" info="Uygulama havuzu + açık müşteri bağlantısı" />
+          </BoTileGrid>
         </template>
+      </StateBlock>
+    </BoSection>
 
-        <EkCard title="Veritabanları" subtitle="Koleksiyonları görmek için bir satır seçin" icon="mdi-database-outline" flush>
-          <EkDataTable tabindex="0" :items="dbRows" :columns="DB_COLUMNS" row-key="key">
-            <template #cell-label="{ item }">
+    <template v-if="res.data.value && res.phase.value === 'ready'">
+      <BoTileGrid v-if="d.server" :cols="2">
+        <BoSection title="İşlem sayaçları" description="Sunucu başlangıcından beri" icon="mdi-counter" fill>
+          <MeterList label="İşlem sayaçları" :rows="opRows" />
+        </BoSection>
+        <BoSection title="WiredTiger önbelleği" icon="mdi-memory" fill>
+          <MeterList label="Önbellek doluluk oranı" :max="1" :rows="[{ key: 'fill', label: 'Dolu', value: fill, display: formatPercent(d.server.cache.fillRatio, 0), tone: fill >= 0.95 ? 'warning' : 'success' }]" />
+          <dl class="bo-kv">
+            <div><dt>Kullanılan</dt><dd>{{ formatBytes(d.server.cache.usedBytes) }}</dd></div>
+            <div><dt>Üst sınır</dt><dd>{{ formatBytes(d.server.cache.maxBytes) }}</dd></div>
+            <div><dt>Yazılmamış (dirty)</dt><dd>{{ formatBytes(d.server.cache.dirtyBytes) }}</dd></div>
+          </dl>
+        </BoSection>
+      </BoTileGrid>
+
+      <BoSection title="Veritabanları" description="Koleksiyonları görmek için bir satır seçin" icon="mdi-database-outline" flush>
+        <BoDataTable :items="dbRows as unknown as Array<Record<string, unknown>>" :columns="DB_COLUMNS" row-key="key" label="Veritabanları">
+          <template #cell-label="{ item }">
               <button v-if="item.available" type="button" class="bo-link-btn bo-mongo__pick" :aria-pressed="selectedKey === item.key" :data-db="item.key" @click="pick(item as unknown as DbRow)">{{ item.label }}</button>
               <span v-else class="bo-cell-stack"><span>{{ item.label }}</span><EkStatusChip tone="warning" label="Okunamadı" title="Bu veritabanının istatistiği alınamadı" /></span>
             </template>
@@ -44,25 +43,30 @@
             <template #cell-dataSize="{ item }"><span class="ek-num">{{ item.available ? formatBytes(item.dataSize as number) : '—' }}</span></template>
             <template #cell-storageSize="{ item }"><span class="ek-num">{{ item.available ? formatBytes(item.storageSize as number) : '—' }}</span></template>
             <template #cell-indexes="{ item }"><span class="ek-num">{{ item.available ? `${formatCount(item.indexes as number)} · ${formatBytes(item.indexSize as number)}` : '—' }}</span></template>
-          </EkDataTable>
-          <p v-if="d.skippedNotAllowlisted > 0" class="bo-mongo__skipped" data-testid="skipped">
+          </BoDataTable>
+        <template v-if="d.skippedNotAllowlisted > 0" #footer>
+          <p class="bo-mongo__skipped" data-testid="skipped">
             <v-icon icon="mdi-shield-lock-outline" size="small" aria-hidden="true" />
             {{ d.skippedNotAllowlisted }} veritabanı izinli listede olmadığı için okunmadı ve adı gösterilmez. Bu bilinçli bir güvenlik kısıtıdır.
           </p>
-        </EkCard>
+        </template>
+      </BoSection>
 
-        <MongoCollections v-if="selected" :key="selectedKey ?? ''" :db="selected.db" :title="selected.label" @close="selectedKey = null" />
-      </div>
-    </StateBlock>
-  </section>
+      <MongoCollections v-if="selected" :key="selectedKey ?? ''" :db="selected.db" :title="selected.label" @close="selectedKey = null" />
+    </template>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { EkAlert, EkCard, EkDataTable, EkMetricCard, EkRefreshButton, EkStatusChip, type EkTableColumn } from '@entegrasyonik/ui/components'
+import { EkAlert, EkRefreshButton, EkStatusChip, type EkTableColumn } from '@entegrasyonik/ui/components'
 import { api } from '@bo/api'
 import type { MongoDbStats, MongoStatus } from '@bo/api/contract'
 import { useResource } from '@bo/composables/useResource'
+import BoSection from '@bo/components/r2/BoSection.vue'
+import BoTileGrid from '@bo/components/r2/BoTileGrid.vue'
+import BoStat from '@bo/components/r2/BoStat.vue'
+import BoDataTable from '@bo/components/r2/BoDataTable.vue'
 import StateBlock from '@bo/components/kit/StateBlock.vue'
 import MeterList, { type MeterRow } from '@bo/components/kit/MeterList.vue'
 import MongoCollections from './MongoCollections.vue'
@@ -113,14 +117,6 @@ function pick(r: DbRow) {
   gap: var(--ek-space-4);
   min-width: 0;
 }
-.bo-mongo__kpis {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-  gap: var(--ek-space-4);
-}
-.bo-mongo__kv {
-  margin-top: var(--ek-space-4);
-}
 .bo-mongo__pick {
   font-weight: var(--ek-font-weight-semibold);
 }
@@ -133,9 +129,7 @@ function pick(r: DbRow) {
   align-items: center;
   gap: var(--ek-space-2);
   margin: 0;
-  padding: var(--ek-space-3) var(--ek-space-4);
-  border-top: 1px solid var(--ek-color-border-subtle);
   color: var(--ek-color-content-muted);
-  font-size: var(--ek-type-label-size);
+  font-size: var(--ek-type-caption-size);
 }
 </style>

@@ -66,14 +66,13 @@ for (const cfg of CONFIGS) {
 
     if (want('52-log-suzgec')) {
       await spaGo(page, '/loglar')
-      await expect(page.getByTestId('facets-toggle')).toBeVisible()
-      await page.getByTestId('facets-toggle').click()
-      await page.getByTestId('facets-toggle').scrollIntoViewIfNeeded()
+      await expect(page.getByRole('search', { name: 'Log süzgeçleri' })).toBeVisible()
+      await page.locator('[data-category="integration"]').click()
       await shot(page, '52-log-suzgec-acik', cfg)
     }
 
     if (want('53-diyalog')) {
-      await spaGo(page, '/motor?sekme=basarisiz')
+      await spaGo(page, '/motor?sekme=basarisiz&gorunum=ayrinti')
       await page.getByTestId('retry').first().click()
       await expect(page.getByRole('dialog')).toBeVisible()
       await shot(page, '53-diyalog-yeniden-dene', cfg)

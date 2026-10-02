@@ -2,10 +2,12 @@
  * `_platform` ayarları için TEK yayın akışı (ADR-0031 BO-CFG-1): bakım kartı, platform ayarları ve bayraklar aynı
  * yerel form + aynı taslağı paylaşır.
  *   değiştir → `saveDraft` (VALIDATION alanın altında) → `previewPublish` (fark) → GuardedDialog ile `publish` (step-up + gerekçe)
- *   Vazgeç → `discardDraft`. Geçmişten `rollback` de aynı diyalog kalıbıyla.
+ *   Taslağı at → onay diyaloğu (DraftBar) → `discardDraft`. Geçmişten `rollback` de aynı diyalog kalıbıyla.
  * Ortam (E) değerleri burada YOK: salt okunur, kaydetme isteğine girmez.
+ * BO-WDG: yenileme kaydedilmemiş düzenlemeleri SİLMEZ (değişen alanlar yeni veriye taşınır); sunucu alan hatasında odak ilk
+ * hatalı alana gider; sayfadan ayrılırken ekran `useLeaveGuard(changedKeys > 0)` ile sorar.
  */
-import { computed, reactive, ref, shallowRef, watch, type UnwrapNestedRefs } from 'vue'
+import { computed, nextTick, reactive, ref, shallowRef, watch, type UnwrapNestedRefs } from 'vue'
 import { api } from '@bo/api'
 import { PLATFORM_TARGET, type CatalogItem, type ConfigRevision, type EffectiveValue, type PreviewPublishResponse } from '@bo/api/contract'
 import { useResource } from '@bo/composables/useResource'
@@ -53,11 +55,45 @@ export function usePlatformConfig() {
     for (const k of Object.keys(form)) delete form[k]
     for (const c of res.data.value?.catalog ?? []) form[c.key] = res.data.value?.values[c.key]?.value ?? c.default
   }
-  watch(res.data, resetForm)
+  /**
+   * Veri yenilenince form yeni yayın değerlerine kurulur, ama önceki veriye göre DEĞİŞTİRİLMİŞ alanlar korunur (Yenile / Alt+R
+   * kaydedilmemiş işi sessizce silmesin). Bilinçli atma yalnız "Taslağı at" (onaylı) ile → `resetForm`.
+   */
+  const baseOf = (d: PlatformData, key: string) => d.values[key]?.value ?? d.catalog.find((c) => c.key === key)?.default
+  /** Taslak atma çakışmasında yeniden yükleme düzenlemeleri de atmalı (kullanıcı atmayı onayladı). */
+  let dropEditsOnLoad = false
+  watch(res.data, (next, prev) => {
+    const kept: Record<string, unknown> = {}
+    if (prev && next && !dropEditsOnLoad) {
+      for (const k of Object.keys(form)) {
+        if (!isSame(form[k], baseOf(prev, k)) && next.catalog.some((c) => c.key === k)) kept[k] = form[k]
+      }
+    }
+    dropEditsOnLoad = false
+    resetForm()
+    Object.assign(form, kept)
+    const keptCount = next ? Object.keys(kept).filter((k) => !isSame(kept[k], baseOf(next, k))).length : 0
+    if (keptCount) notify('info', `Değerler yenilendi; kaydedilmemiş ${keptCount} değişikliğiniz korundu.`)
+  })
 
   const changedKeys = computed(() => Object.keys(form).filter((k) => !isSame(form[k], res.data.value?.values[k]?.value)))
   const isChanged = (key: string) => changedKeys.value.includes(key)
   const hasDraft = computed(() => draftRev.value !== null)
+
+  /** Sunucu alan hatası → ilk hatalı alana odak (alanlar `[data-setting="<anahtar>"]` sarmalayıcısında). */
+  async function focusFirstInvalid(keys: string[]) {
+    await nextTick()
+    if (typeof document === 'undefined') return
+    for (const k of keys) {
+      const sel = `[data-setting="${k.replace(/["\\]/g, '\\$&')}"]`
+      const el = document.querySelector<HTMLElement>(`${sel} input:not([type="hidden"]), ${sel} textarea`)
+      if (el) {
+        el.scrollIntoView({ block: 'center' })
+        el.focus({ preventScroll: true })
+        return
+      }
+    }
+  }
 
   function clearDraft() {
     draftRev.value = null
@@ -97,6 +133,7 @@ export function usePlatformConfig() {
       if (d.kind === 'validation' && d.fields?.length) {
         for (const f of d.fields) fieldErrors[f.path] = f.message
         saveError.value = { ...d, message: 'Bazı değerler geçersiz — işaretli alanları düzeltip yeniden deneyin.' }
+        void focusFirstInvalid(d.fields.map((f) => f.path))
       } else {
         saveError.value = d
         if (d.kind === 'conflict') draftRev.value = null
@@ -120,6 +157,7 @@ export function usePlatformConfig() {
       saveError.value = d
       if (d.kind === 'conflict' || d.kind === 'notFound') {
         clearDraft()
+        dropEditsOnLoad = true
         await res.load()
       }
     } finally {

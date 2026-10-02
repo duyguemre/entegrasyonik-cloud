@@ -62,7 +62,7 @@
   background: var(--ek-color-surface-muted);
   color: var(--ek-color-content-default);
   font-family: var(--ek-font-mono);
-  font-size: 0.86em;
+  font-size: var(--ek-type-caption-size);
   overflow-wrap: anywhere;
 }
 

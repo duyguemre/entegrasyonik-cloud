@@ -1,6 +1,7 @@
 <!--
   SavedViewsMenu — BE-05 kayıtlı görünümler: bu ekranın (route.meta.screen) süzgeç/sekme sorgusunu adla kaydeder, listeler, açar, siler.
   Kişisel tercihtir: step-up/gerekçe yok. Yalnız URL sorgusu kaydedilir (NT-03). `CopyViewLink` "Görünüm" grubunun parçasıdır.
+  bo-wdg: silme onaysızdır ama geri alınabilir (toast "Geri al" aynı adla yeniden kaydeder); odak sonraki satıra geçer.
 -->
 <template>
   <v-menu v-if="screen" v-model="open" :close-on-content-click="false" location="bottom end" :offset="6">
@@ -9,7 +10,7 @@
         <span class="bo-views__text">Görünümler</span>
       </EkButton>
     </template>
-    <div class="bo-views" data-testid="saved-views-menu" role="group" aria-label="Kayıtlı görünümler">
+    <div ref="menuEl" class="bo-views" data-testid="saved-views-menu" role="group" aria-label="Kayıtlı görünümler">
       <p class="bo-views__label">Bu ekranın görünümleri</p>
 
       <p v-if="loading" class="bo-views__note" role="status">Görünümler okunuyor…</p>
@@ -32,9 +33,19 @@
       <form v-if="saving" class="bo-views__form" @submit.prevent="save">
         <label class="bo-views__field">
           <span>Görünüm adı</span>
-          <input ref="nameInput" v-model="name" class="bo-views__input" type="text" maxlength="60" autocomplete="off" data-testid="saved-view-name" :aria-invalid="!!error" />
+          <input
+            ref="nameInput"
+            v-model="name"
+            class="bo-views__input"
+            type="text"
+            maxlength="60"
+            autocomplete="off"
+            data-testid="saved-view-name"
+            :aria-invalid="!!error"
+            :aria-describedby="error ? errorId : undefined"
+          />
         </label>
-        <p v-if="error" class="bo-views__error" role="alert" data-testid="saved-view-error">{{ error }}</p>
+        <p v-if="error" :id="errorId" class="bo-views__error" role="alert" data-testid="saved-view-error">{{ error }}</p>
         <div class="bo-views__actions">
           <EkButton tone="ghost" size="sm" @click="cancel">Vazgeç</EkButton>
           <EkButton type="submit" tone="primary" size="sm" :loading="busy" data-testid="saved-view-submit">Kaydet</EkButton>
@@ -50,9 +61,10 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, nextTick, ref, useId, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { EkButton } from '@entegrasyonik/ui/components'
+import { useToast } from '@entegrasyonik/ui/composables/useToast'
 import { api } from '@bo/api'
 import { AdminApiError } from '@bo/api/client'
 import { SAVED_VIEW_LIMIT, type SavedView } from '@bo/api/contracts/ops'
@@ -77,6 +89,9 @@ const busy = ref(false)
 const busyId = ref<string | null>(null)
 const error = ref('')
 const nameInput = ref<HTMLInputElement | null>(null)
+const menuEl = ref<HTMLElement | null>(null)
+const errorId = `bo-views-err-${useId()}`
+const { showToast } = useToast()
 
 const LIMIT_TEXT = `En çok ${SAVED_VIEW_LIMIT} görünüm kaydedebilirsiniz — eskilerden birini silin.`
 
@@ -130,6 +145,7 @@ async function save() {
   const trimmed = name.value.trim()
   if (!trimmed) {
     error.value = 'Görünüme bir ad verin (en çok 60 karakter).'
+    nameInput.value?.focus()
     return
   }
   busy.value = true
@@ -146,17 +162,44 @@ async function save() {
         : e instanceof AdminApiError && e.code === 'VALIDATION'
           ? 'Bu görünüm kaydedilemedi — ad ya da süzgeç değerlerini kontrol edin.'
           : 'Görünüm kaydedilemedi — birazdan yeniden deneyin.'
+    // Hata alana bağlı (`aria-describedby`); odak düzeltme için alana döner.
+    void nextTick(() => nameInput.value?.focus())
   } finally {
     busy.value = false
   }
 }
 
+/** Silinen satırın yerine odak: aynı sıradaki (sonraki) satır, yoksa bir önceki, liste boşsa "kaydet" düğmesi. */
+function focusAfterRemove(index: number) {
+  void nextTick(() => {
+    const root = menuEl.value
+    if (!root) return
+    const rows = root.querySelectorAll<HTMLButtonElement>('.bo-views__list .bo-views__item')
+    const target = rows[Math.min(index, rows.length - 1)] ?? root.querySelector<HTMLElement>('[data-testid="saved-view-add"]')
+    target?.focus()
+  })
+}
+
+/** "Geri al": aynı ad + sorguyla yeniden kaydeder (kimlik değişir; kişisel tercih olduğu için yeterli). */
+async function restore(v: SavedView) {
+  try {
+    await api.call('BackofficePrefsService/saveView', { screen: v.screen, name: v.name, query: v.query })
+    showToast({ tone: 'success', message: `"${v.name}" görünümü geri yüklendi.` })
+    if (open.value) await load()
+  } catch {
+    showToast({ tone: 'error', message: `"${v.name}" geri yüklenemedi — görünümü yeniden kaydedin.` })
+  }
+}
+
 async function remove(v: SavedView) {
+  const index = items.value.findIndex((x) => x.id === v.id)
   busyId.value = v.id
   error.value = ''
   try {
     await api.call('BackofficePrefsService/deleteView', { id: v.id })
     await load()
+    focusAfterRemove(Math.max(index, 0))
+    showToast({ tone: 'success', message: `"${v.name}" görünümü silindi.`, actionLabel: 'Geri al', onAction: () => void restore(v), duration: 8000 })
   } catch {
     error.value = 'Görünüm silinemedi — birazdan yeniden deneyin.'
   } finally {

@@ -86,7 +86,7 @@ test.describe('BO-ELEV', () => {
   })
 
   test('tehlikeli işlem diyaloğu ilk satırda ortamı söyler', async ({ page }) => {
-    await page.goto('/motor?sekme=basarisiz')
+    await page.goto('/motor?sekme=basarisiz&gorunum=ayrinti')
     await settle(page)
     await page.getByTestId('retry').first().click()
     const env = page.getByRole('dialog').getByTestId('danger-env')

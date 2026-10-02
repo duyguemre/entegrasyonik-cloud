@@ -39,7 +39,7 @@ for (const cfg of CONFIGS) {
     await expect(page.getByTestId('usage-verdict')).toBeVisible()
     await page.getByTestId('platform-subtypes').first().locator('summary').click()
     await shot(page, '01-kullanim', cfg)
-    await page.locator('[data-platform="mobile"]').first().click()
+    await page.locator('[data-value="mobile"]').first().click()
     await expect(page.getByTestId('usage-filter-note')).toBeVisible()
     await shot(page, '02-kullanim-mobil-suzgec', cfg)
 

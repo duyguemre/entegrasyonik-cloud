@@ -28,6 +28,7 @@ import {
   cobalt,
   statusSteps,
   inkDark,
+  chromeSoftDark,
 } from './palette'
 
 /**
@@ -96,6 +97,12 @@ export type WorkspaceColorKey =
   | 'chrome-border'
   | 'chrome-text'
   | 'chrome-text-muted'
+  // FE-R4 A1 (ek): bir ton AÇIK kabuk — uygulama üst barı (`EkAppHeader tone="soft"`); backoffice `chrome*` ile kalır
+  | 'chrome-soft'
+  | 'chrome-soft-end'
+  | 'chrome-soft-raised'
+  | 'chrome-soft-border'
+  | 'chrome-soft-text-muted'
   // Sidebar
   | 'sidebar-bg'
   | 'sidebar-border'
@@ -154,6 +161,12 @@ export const workspaceColorsLight: Record<WorkspaceColorKey, string> = {
   'chrome-border': navy[600],
   'chrome-text': ink[0],
   'chrome-text-muted': navy[200],
+  // FE-R4 A1: "üst bar çok koyu, biraz aç" — 900→600 yerine 700→500; ikincil metin navy-100 (AA ≥ 5:1).
+  'chrome-soft': navy[700],
+  'chrome-soft-end': navy[500],
+  'chrome-soft-raised': navy[600],
+  'chrome-soft-border': navy[400],
+  'chrome-soft-text-muted': navy[100],
   // FR3 madde 1 (fe-r3a): menü yüzeyi BEYAZ (kart dili) — gri çalışma alanından ince kenarlıkla ayrışır; önce menü ile
   // çalışma alanı aynı griye yakındı (ink-50 ↔ ink-100), sınır belirsiz ve "seçkin değil" geri bildirimi.
   'sidebar-bg': ink[0],
@@ -209,6 +222,11 @@ export const workspaceColorsDark: Record<WorkspaceColorKey, string> = {
   'chrome-border': inkDark.chromeBorder,
   'chrome-text': inkDark.textStrong,
   'chrome-text-muted': navy[200],
+  'chrome-soft': chromeSoftDark.start,
+  'chrome-soft-end': chromeSoftDark.end,
+  'chrome-soft-raised': chromeSoftDark.raised,
+  'chrome-soft-border': chromeSoftDark.border,
+  'chrome-soft-text-muted': navy[200],
   // FR3 madde 1: koyu temada menü canvas'tan bir kademe yüksek yüzey (light'taki beyaz menü ↔ gri alan ilişkisinin aynısı).
   'sidebar-bg': inkDark.surface,
   'sidebar-border': inkDark.borderSubtle,

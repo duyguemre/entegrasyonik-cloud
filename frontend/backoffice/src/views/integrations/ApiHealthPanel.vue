@@ -1,19 +1,13 @@
 <template>
-  <section class="bo-panel" aria-labelledby="bo-health-title">
-    <header class="bo-panel__bar">
-      <div>
-        <h2 id="bo-health-title" class="bo-panel__title">API sağlığı</h2>
-        <p class="bo-panel__hint">Dış servis çağrıları, hata oranı ve gecikme. Gecikme değeri kova üst sınırıdır (yaklaşık); ölçüm 30 gün saklanır.</p>
-      </div>
+  <BoSection id="bo-health" title="API sağlığı" description="Dış servis çağrıları, hata oranı ve gecikme. Gecikme değeri kova üst sınırıdır (yaklaşık); ölçüm 30 gün saklanır." icon="mdi-heart-pulse">
+    <template #actions>
       <EkRefreshButton quiet-success :loading="res.refreshing.value || res.phase.value === 'loading'" :last-updated="res.loadedAt.value" :error="res.stale.value ? res.error.value?.title : null" @refresh="res.load()" />
-    </header>
+    </template>
 
-    <div class="bo-toolbar">
-      <div class="bo-seg" role="radiogroup" aria-label="Zaman aralığı">
-        <button v-for="o in RANGES" :key="o.value" type="button" role="radio" class="bo-seg__opt" :aria-checked="range === o.value" :data-range="o.value" @click="range = o.value">{{ o.label }}</button>
-      </div>
+    <BoFilterBar label="API sağlığı süzgeçleri" :active="code ? 1 : 0" @clear="code = ''">
+      <BoSegmented v-model="range" :options="RANGES" label="Zaman aralığı" />
       <v-select v-model="code" :items="codeItems" item-title="title" item-value="value" label="Entegrasyon" density="compact" hide-details class="bo-toolbar__field" />
-    </div>
+    </BoFilterBar>
 
     <StateBlock
       :phase="phase"
@@ -25,48 +19,54 @@
       @retry="res.load()"
     >
       <div v-if="res.data.value" class="bo-stack">
-        <div class="bo-health__kpis">
-          <EkMetricCard label="Toplam çağrı" :value="formatCount(totals.total)" icon="mdi-swap-horizontal" tone="info" />
-          <EkMetricCard label="Hatalı çağrı" :value="formatCount(totals.errors)" icon="mdi-alert-circle-outline" :tone="totals.errors ? 'warning' : 'success'" />
-          <EkMetricCard label="Genel hata oranı" :value="formatPercent(totals.rate)" :description="totals.total ? 'hata ÷ toplam çağrı' : 'çağrı yok'" icon="mdi-percent-outline" :tone="kpiTone" />
-          <EkMetricCard label="Hata alan entegrasyon" :value="`${totals.failing} / ${res.data.value.items.length}`" icon="mdi-transit-connection-variant" :tone="totals.failing ? 'warning' : 'success'" />
-        </div>
+        <BoTileGrid :min="200" dense>
+          <BoStat label="Toplam çağrı" :value="formatCount(totals.total)" />
+          <BoStat label="Hatalı çağrı" :value="formatCount(totals.errors)" :tone="totals.errors ? 'warning' : 'success'" />
+          <BoStat label="Genel hata oranı" :value="formatPercent(totals.rate)" :hint="totals.total ? 'hata ÷ toplam çağrı' : 'çağrı yok'" :tone="kpiTone" />
+          <BoStat label="Hata alan entegrasyon" :value="`${totals.failing} / ${res.data.value.items.length}`" :tone="totals.failing ? 'warning' : 'success'" />
+        </BoTileGrid>
 
-        <EkCard flush>
-          <EkDataTable tabindex="0" :items="rows" :columns="COLUMNS" row-key="integrationCode">
-            <template #cell-integrationCode="{ item }">
-              <EkChannelDot :code="String(item.integrationCode)" :name="CHANNEL[String(item.integrationCode)] ?? String(item.integrationCode)" variant="plain" />
-            </template>
-            <template #cell-total="{ item }"><span class="ek-num">{{ formatCount(item.total as number) }}</span></template>
-            <template #cell-errors="{ item }"><span class="ek-num">{{ formatCount(item.errors as number) }}</span></template>
-            <template #cell-errorRate="{ item }">
-              <EkStatusChip v-if="item.errorRate !== null" :tone="rateTone(item.errorRate as number)" :label="formatPercent(item.errorRate as number)" dot />
-              <span v-else class="bo-muted">—</span>
-            </template>
-            <template #cell-errorsByCode="{ item }">
-              <MeterList v-if="(item as unknown as ApiHealthItem).errorsByCode.length" :label="`${item.integrationCode} hata kodu dağılımı`" :rows="meter(item as unknown as ApiHealthItem)" class="bo-health__meter" />
-              <span v-else class="bo-muted">Hata yok</span>
-            </template>
-            <template #cell-p95Ms="{ item }">
-              <span class="bo-health__p95"><span class="ek-num">{{ formatApproxMs(item.p95Ms as number | null) }}</span><span class="bo-approx" title="Kova üst sınırı; gerçek değer değildir">yaklaşık</span></span>
-            </template>
-            <template #cell-affectedTenants="{ item }">
-              <span class="ek-num">{{ formatCount(item.affectedTenants as number) }}</span>
-            </template>
-          </EkDataTable>
-        </EkCard>
-        <p class="bo-panel__hint">Etkilenen müşteri, seçili aralıkta bu entegrasyonda en az bir hata alan müşteri sayısıdır; kimlik gösterilmez.</p>
+        <BoDataTable :items="rows" :columns="COLUMNS" row-key="integrationCode" label="Entegrasyon başına API sağlığı">
+          <template #cell-integrationCode="{ item }">
+            <EkChannelDot :code="String(item.integrationCode)" :name="CHANNEL[String(item.integrationCode)] ?? String(item.integrationCode)" variant="plain" />
+          </template>
+          <template #cell-total="{ item }"><span class="ek-num">{{ formatCount(item.total as number) }}</span></template>
+          <template #cell-errors="{ item }"><span class="ek-num">{{ formatCount(item.errors as number) }}</span></template>
+          <template #cell-errorRate="{ item }">
+            <EkStatusChip v-if="item.errorRate !== null" :tone="rateTone(item.errorRate as number)" :label="formatPercent(item.errorRate as number)" dot />
+            <span v-else class="bo-muted">—</span>
+          </template>
+          <template #cell-errorsByCode="{ item }">
+            <MeterList v-if="(item as unknown as ApiHealthItem).errorsByCode.length" :label="`${item.integrationCode} hata kodu dağılımı`" :rows="meter(item as unknown as ApiHealthItem)" class="bo-health__meter" />
+            <span v-else class="bo-muted">Hata yok</span>
+          </template>
+          <template #cell-p95Ms="{ item }">
+            <span class="bo-health__p95"><span class="ek-num">{{ formatApproxMs(item.p95Ms as number | null) }}</span><span class="bo-approx" title="Kova üst sınırı; gerçek değer değildir">yaklaşık</span></span>
+          </template>
+          <template #cell-affectedTenants="{ item }">
+            <span class="ek-num">{{ formatCount(item.affectedTenants as number) }}</span>
+          </template>
+        </BoDataTable>
       </div>
     </StateBlock>
-  </section>
+    <template #footer>
+      <span class="bo-health__note">Etkilenen müşteri, seçili aralıkta bu entegrasyonda en az bir hata alan müşteri sayısıdır; kimlik gösterilmez.</span>
+    </template>
+  </BoSection>
 </template>
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { EkCard, EkChannelDot, EkDataTable, EkMetricCard, EkRefreshButton, EkStatusChip, type EkTableColumn, type StatusTone } from '@entegrasyonik/ui/components'
+import { EkChannelDot, EkRefreshButton, EkStatusChip, type EkTableColumn, type StatusTone } from '@entegrasyonik/ui/components'
 import { api } from '@bo/api'
 import type { ApiHealthItem, ApiHealthRange } from '@bo/api/contract'
 import { useResource } from '@bo/composables/useResource'
+import BoSection from '@bo/components/r2/BoSection.vue'
+import BoTileGrid from '@bo/components/r2/BoTileGrid.vue'
+import BoStat from '@bo/components/r2/BoStat.vue'
+import BoDataTable from '@bo/components/r2/BoDataTable.vue'
+import BoFilterBar from '@bo/components/r2/BoFilterBar.vue'
+import BoSegmented from '@bo/components/r2/BoSegmented.vue'
 import StateBlock from '@bo/components/kit/StateBlock.vue'
 import MeterList, { type MeterRow } from '@bo/components/kit/MeterList.vue'
 import { CHANNEL } from '@bo/utils/labels'
@@ -105,9 +105,9 @@ const totals = computed(() => {
   return { total, errors, rate: total ? errors / total : null, failing: items.filter((i) => i.errors > 0).length }
 })
 
-const kpiTone = computed(() => {
+const kpiTone = computed<'neutral' | 'critical' | 'warning' | 'success'>(() => {
   const t = rateTone(totals.value.rate)
-  return t === 'danger' ? 'error' : t === 'info' ? 'info' : t
+  return t === 'danger' ? 'critical' : t === 'warning' ? 'warning' : t === 'success' ? 'success' : 'neutral'
 })
 function rateTone(r: number | null): StatusTone {
   if (r === null) return 'neutral'
@@ -125,10 +125,10 @@ function meter(i: ApiHealthItem): MeterRow[] {
   gap: var(--ek-space-4);
   min-width: 0;
 }
-.bo-health__kpis {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: var(--ek-space-4);
+.bo-health__note {
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-caption-size);
+  line-height: var(--ek-type-caption-line);
 }
 .bo-health__meter {
   min-width: 240px;

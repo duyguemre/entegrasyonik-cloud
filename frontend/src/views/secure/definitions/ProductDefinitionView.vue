@@ -22,11 +22,9 @@
     <v-form @keydown.enter.prevent @submit.prevent ref="productInfoFormRef" v-model="isProductInfoFormValid">
 
       <div class="pdv-flow">
-        <ProductFormWizardBar class="pdv-wizard" :form="productInfoForm" :current="stepper" save-label="Kaydet" :saving="isSaving"
+        <ProductFormWizardBar :form="productInfoForm" :current="stepper" save-label="Kaydet" :saving="isSaving"
           :category-title="categoriesStore.getCategoryTitle(productInfoForm.category)"
           :brand-title="brandsStore.getBrandTitle(productInfoForm.brand)" @navigate="onNavigate" @save="saveProduct" />
-
-        <div class="pdv-spacer"></div>
 
         <div v-if="stepper == 0" class="pdv-category-step" data-pf-field="category">
           <v-form ref="formStep0Ref" @submit.stop>
@@ -35,7 +33,7 @@
         </div>
 
 
-        <div v-if="stepper == 1">
+        <div v-if="stepper == 1" class="pdv-step">
           <v-form ref="formStep1Ref" @submit.stop>
             <ProductInfoFormComponent :productInfoForm="productInfoForm" :quillToolbar="quillToolbar"
               :galleryDisabled="!productInfoForm.tempId" :imageProductId="productInfoForm.tempId"
@@ -624,10 +622,6 @@ defineExpose({
   overflow-y: auto;
 }
 
-.pdv-spacer {
-  height: var(--ek-space-8);
-}
-
 .pdv-variants {
   transition: opacity var(--ek-motion-overlay) !important;
 }
@@ -643,32 +637,28 @@ defineExpose({
 </style>
 
 <style scoped>
-/* DS-v2 A2 — kategori adımı: kademeli seçici sayfa genişliğinde, okunur en fazla genişlikte ortalı. */
 /* Sayfa kenar boşluğu — başlık/adım şeridi/içerik iş alanı kenarına yapışmasın. */
 .pdv-root {
-  padding: var(--ek-space-2) var(--ek-space-6) var(--ek-space-6);
+  padding: var(--ek-space-2) var(--ek-space-6) var(--ek-space-8);
 }
 
 @media (max-width: 599px) {
   .pdv-root {
-    padding: var(--ek-space-2) var(--ek-space-4) var(--ek-space-4);
+    padding: var(--ek-space-2) var(--ek-space-4) var(--ek-space-6);
   }
+}
+
+/* FE R4 B: sihirbaz şeridi, kayıt çubuğu, adım içeriği ve altbilgi TEK sütunda (önceden adım kartları 880/1200/tam
+   genişlik arasında değişiyordu). Kayıt çubuğu bu sütunda yapışkandır (ProductFormWizardBar). */
+.pdv-flow {
+  max-width: 1280px;
+  margin: var(--ek-space-4) auto 0;
 }
 
 .pdv-category-step,
 .pdv-step,
-.pdv-wizard {
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-/* Başlık açıklaması ile adım şeridi arasında nefes payı. */
-.pdv-flow {
-  margin-top: var(--ek-space-4);
-}
-
-/* Varyant adımı sarmalayıcısı normal akışta blok kapsayıcıdır; konum/yükseklik dayatılmaz (içindeki bileşen yönetir). */
 .pdv-step-variants {
   display: block;
+  margin-top: var(--ek-space-5);
 }
 </style>

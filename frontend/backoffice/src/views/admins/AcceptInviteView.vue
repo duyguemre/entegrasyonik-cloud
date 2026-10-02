@@ -27,9 +27,10 @@
           <h1 id="bo-invite-title" class="bo-invite__title">Yönetici hesabınızı oluşturun</h1>
           <p class="bo-invite__lede">Adınızı ve parolanızı belirleyin. İlk girişte iki adımlı doğrulama kurulumu zorunludur.</p>
         </header>
-        <v-text-field v-model="name" label="Ad" autocomplete="given-name" maxlength="60" :disabled="busy" :error-messages="errors.name" hide-details="auto" autofocus />
-        <v-text-field v-model="surname" label="Soyad" autocomplete="family-name" maxlength="60" :disabled="busy" :error-messages="errors.surname" hide-details="auto" />
+        <v-text-field ref="nameEl" v-model="name" label="Ad" autocomplete="given-name" maxlength="60" :disabled="busy" :error-messages="errors.name" hide-details="auto" autofocus />
+        <v-text-field ref="surnameEl" v-model="surname" label="Soyad" autocomplete="family-name" maxlength="60" :disabled="busy" :error-messages="errors.surname" hide-details="auto" />
         <v-text-field
+          ref="passwordEl"
           v-model="password"
           label="Parola"
           :type="show ? 'text' : 'password'"
@@ -45,7 +46,7 @@
             </button>
           </template>
         </v-text-field>
-        <v-text-field v-model="confirm" label="Parola (tekrar)" :type="show ? 'text' : 'password'" autocomplete="new-password" :disabled="busy" :error-messages="errors.confirm" hide-details="auto" />
+        <v-text-field ref="confirmEl" v-model="confirm" label="Parola (tekrar)" :type="show ? 'text' : 'password'" autocomplete="new-password" :disabled="busy" :error-messages="errors.confirm" hide-details="auto" />
         <p v-if="formError" class="bo-invite__error" role="alert">{{ formError }}</p>
         <EkButton tone="primary" type="submit" block :loading="busy">Hesabı oluştur</EkButton>
       </form>
@@ -72,6 +73,23 @@ const busy = ref(false)
 const formError = ref('')
 const errors = reactive<Record<string, string>>({})
 const titleEl = ref<HTMLElement | null>(null)
+// Alan başvuruları: doğrulama/sunucu hatasında odak ilk hatalı alana taşınır (form sırasıyla).
+type Focusable = { focus: () => void } | null
+const nameEl = ref<Focusable>(null)
+const surnameEl = ref<Focusable>(null)
+const passwordEl = ref<Focusable>(null)
+const confirmEl = ref<Focusable>(null)
+const FIELD_ORDER = [
+  ['name', nameEl],
+  ['surname', surnameEl],
+  ['password', passwordEl],
+  ['confirm', confirmEl],
+] as const
+
+async function focusFirstError() {
+  await nextTick()
+  FIELD_ORDER.find(([k]) => errors[k])?.[1].value?.focus()
+}
 // Bilet yalnız bellekte: hiçbir depoya, günlüğe ya da iletiye yazılmaz.
 let token = ''
 
@@ -96,7 +114,10 @@ function validate(): boolean {
 async function submit() {
   if (busy.value) return
   formError.value = ''
-  if (!validate()) return
+  if (!validate()) {
+    await focusFirstError()
+    return
+  }
   busy.value = true
   try {
     await api.call('BackofficeAuthService/acceptInvite', { token, name: name.value.trim(), surname: surname.value.trim(), password: password.value })
@@ -124,6 +145,8 @@ async function submit() {
   } finally {
     busy.value = false
   }
+  // Alan hatası varsa odak ilk hatalı alana (alan `busy` bitince yeniden etkinleşir).
+  if (phase.value === 'form' && Object.keys(errors).length) await focusFirstError()
 }
 </script>
 

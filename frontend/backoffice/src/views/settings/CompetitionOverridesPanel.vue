@@ -1,13 +1,9 @@
 <!-- Tenant istisnaları: plan değerini alan alan geçersiz kılan müşteriler. Düzenleme OverrideDialog (gerekçeli, denetime yazılır). -->
 <template>
-  <section class="bo-panel" aria-labelledby="bo-cs-ovr-title" data-testid="competition-overrides">
-    <header class="bo-panel__bar">
-      <div>
-        <h2 id="bo-cs-ovr-title" class="bo-panel__title">Müşteri istisnaları</h2>
-        <p class="bo-panel__hint">Belirli bir müşteri için plan değerini geçersiz kılar; boş bırakılan alan plan değerini kullanır. Kayıt anında etkilidir (taslak/yayın yok), gerekçe ister.</p>
-      </div>
-      <EkButton tone="secondary" icon="mdi-plus" :disabled="cs.comp.phase !== 'ready'" data-testid="override-add" @click="cs.openEditor()">İstisna ekle</EkButton>
-    </header>
+  <BoSection id="bo-cs-ovr" flush title="Müşteri istisnaları" :description="description" data-testid="competition-overrides">
+    <template #actions>
+      <BoAction kind="add" label="İstisna ekle" :disabled="cs.comp.phase !== 'ready'" data-testid="override-add" @click="cs.openEditor()" />
+    </template>
 
     <EkAlert v-if="cs.lastChange" tone="success" live dismissible dense class="bo-co__result" data-testid="override-result" :title="resultTitle" @dismiss="cs.lastChange = null">
       <table class="bo-co__diff">
@@ -21,7 +17,6 @@
       </table>
     </EkAlert>
 
-    <EkCard flush>
       <StateBlock
         :phase="phase"
         :error="cs.comp.error"
@@ -33,21 +28,18 @@
         empty-message="Tüm müşteriler plan varsayılanlarını kullanıyor. Pilot ya da özel anlaşmalı bir müşteri için “İstisna ekle” ile alan bazında değer verebilirsiniz."
         @retry="cs.comp.load()"
       >
-        <div class="bo-table-wrap" tabindex="0" role="region" aria-label="Müşteri istisnaları tablosu">
-          <table class="bo-table" data-density="compact">
-            <caption class="ek-sr-only">Rekabet ayarı istisnası olan müşteriler, etkin değerler ve kaynakları</caption>
-            <thead>
-              <tr>
-                <th scope="col">Müşteri</th>
-                <th scope="col" class="bo-hide-sm">Plan</th>
-                <th scope="col">İstisna</th>
-                <th scope="col">Etkin değerler</th>
-                <th scope="col" class="bo-hide-sm">Not</th>
-                <th scope="col">Güncelleme</th>
-                <th scope="col"><span class="ek-sr-only">Eylem</span></th>
-              </tr>
-            </thead>
-            <tbody>
+        <BoTableFrame label="Müşteri istisnaları" flat>
+          <template #head>
+            <tr>
+              <th scope="col">Müşteri</th>
+              <th scope="col" class="bo-hide-sm">Plan</th>
+              <th scope="col">İstisna</th>
+              <th scope="col">Etkin değerler</th>
+              <th scope="col" class="bo-hide-sm">Not</th>
+              <th scope="col">Güncelleme</th>
+              <th scope="col"><span class="ek-sr-only">Eylem</span></th>
+            </tr>
+          </template>
               <tr v-for="o in overrides" :key="o.tid" :data-tid="o.tid">
                 <th scope="row">
                   <span class="bo-cell-stack">
@@ -68,20 +60,23 @@
                 </td>
                 <td class="bo-hide-sm bo-co__note">{{ o.note || '—' }}</td>
                 <td><EkRelativeTime v-if="o.updatedAt" :value="o.updatedAt" /><span v-else class="bo-muted">—</span></td>
-                <td class="bo-co__act"><EkButton size="sm" tone="secondary" icon="mdi-pencil-outline" :aria-label="`#${o.tid} istisnasını düzenle`" data-testid="override-edit" @click="cs.openEditor(o.tid, o.note)">Düzenle</EkButton></td>
+                <td class="bo-co__act"><BoAction kind="edit" icon-only size="sm" :object="`#${o.tid} istisnasını`" data-testid="override-edit" @click="cs.openEditor(o.tid, o.note)" /></td>
               </tr>
-            </tbody>
-          </table>
-        </div>
-        <p class="bo-table-foot">{{ overrides.length }} istisna{{ overrides.length >= 200 ? ' (en çok 200 gösterilir)' : '' }} · etkin değerlerde kalın yazı istisnayı, düz yazı plan değerini gösterir · kaynak: BackofficeBillingService/getCompetitionSettings</p>
+        </BoTableFrame>
       </StateBlock>
-    </EkCard>
-  </section>
+    <template v-if="overrides.length" #footer>
+      <BoPagination :count="overrides.length" :has-more="false" source="BackofficeBillingService/getCompetitionSettings" />
+    </template>
+  </BoSection>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { EkAlert, EkButton, EkCard, EkRelativeTime, EkStatusChip } from '@entegrasyonik/ui/components'
+import { EkAlert, EkRelativeTime, EkStatusChip } from '@entegrasyonik/ui/components'
+import BoSection from '@bo/components/r2/BoSection.vue'
+import BoAction from '@bo/components/r2/BoAction.vue'
+import BoTableFrame from '@bo/components/r2/BoTableFrame.vue'
+import BoPagination from '@bo/components/r2/BoPagination.vue'
 import StateBlock from '@bo/components/kit/StateBlock.vue'
 import { planLabel } from '@bo/utils/labels'
 import type { CompetitionState } from './useCompetition'
@@ -89,6 +84,9 @@ import { FIELDS, beforeAfterRows, describeOverride, formatFieldValue } from './c
 import '@bo/styles/kit.css'
 
 const props = defineProps<{ cs: CompetitionState }>()
+const description = computed(
+  () => `Belirli bir müşteri için plan değerini geçersiz kılar; boş bırakılan alan plan değerini kullanır. Kayıt anında etkilidir (taslak/yayın yok), gerekçe ister. Etkin değerlerde kalın yazı istisnayı, düz yazı plan değerini gösterir.${overrides.value.length >= 200 ? ' En çok 200 istisna gösterilir.' : ''}`,
+)
 const overrides = computed(() => props.cs.comp.data?.overrides ?? [])
 const phase = computed(() => (props.cs.comp.phase === 'ready' && !overrides.value.length ? 'empty' : props.cs.comp.phase))
 const rows = computed(() => (props.cs.lastChange ? beforeAfterRows(props.cs.lastChange.before, props.cs.lastChange.after, props.cs.lastChange.effective) : []))
@@ -102,7 +100,7 @@ const resultTitle = computed(() => {
 
 <style scoped>
 .bo-co__result {
-  margin: 0;
+  margin: var(--ek-space-4) var(--ek-space-5);
 }
 .bo-co__diff {
   border-collapse: collapse;

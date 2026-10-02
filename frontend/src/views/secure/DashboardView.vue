@@ -2,8 +2,8 @@
   Genel bakış (dashboard) — DS-v2 Aşama 2.
 
   FR3-16 hiyerarşisi: (1) "Bugün sırada" — sıradaki iş + sonra yapılacaklar (DashboardNextActions, nextActions.ts;
-  sipariş bekleyenleri + stok uyarıları + entegrasyon sağlığından), (2) işletme performansı (KPI), (3) sipariş ve kanal
-  durumu, (4) stok ve katalog. Eski "Bekleyen aksiyonlar" kartı (1)'in içine taşındı.
+  sipariş bekleyenleri + stok uyarıları + entegrasyon sağlığından), (2) işletme performansı (KPI), (3) sipariş durumu,
+  (4) stok, kanallar ve katalog (C3/K61: eşit yükseklikli satır ızgarası, kart altında boşluk yok). Eski "Bekleyen aksiyonlar" kartı (1)'in içine taşındı.
 
   Kart ↔ veri kaynağı (YALNIZCA gerçek backend uçları; uydurma sayı/trend yok):
     Bugün sırada, KPI satırı, Son 7 gün, Sipariş durumları → OrderService/getOrderDashboardInsights (member, tek istek)
@@ -52,25 +52,29 @@
           <DashboardKpiRow v-else :data="insights.data.value" :loading="insights.state.value === 'loading'" />
         </section>
 
+        <!-- C3 (K61): satır tabanlı ızgara — aynı satırdaki kartlar eşit yükseklikte (stretch), kolondaki son kart kalan
+             yüksekliği doldurur; kartlar içerik yükseklikleri birbirine yakın olacak biçimde eşlenir, böylece kart ALTINDA
+             boşluk kalmaz. Eşleme: trend ↔ durum dağılımı · stok uyarıları ↔ entegrasyon sağlığı · katalog ↔ son işlemler (eşit
+             kolonlar; tek kart kalırsa tam genişlik). Sağlık kartı yoksa (403) stok ↔ katalog eşlenir. -->
         <section class="dash-section" aria-labelledby="dash-status">
-          <h2 id="dash-status" class="dash-section__label">SİPARİŞ VE KANAL DURUMU</h2>
-          <div class="dash-grid">
-            <OrderTrendCard class="dash-o-trend" v-bind="view(insights)" @retry="insights.load" />
-            <div class="dash-col">
-              <OrderStatusCard class="dash-o-status" v-bind="view(insights)" @retry="insights.load" />
-              <IntegrationHealthCard v-if="healthVisible" class="dash-o-health" v-bind="view(health)" @retry="health.load" />
-            </div>
+          <h2 id="dash-status" class="dash-section__label">SİPARİŞ DURUMU</h2>
+          <div class="dash-row">
+            <OrderTrendCard class="dash-o-trend dash-span-main" v-bind="view(insights)" @retry="insights.load" />
+            <OrderStatusCard class="dash-o-status dash-span-side" v-bind="view(insights)" @retry="insights.load" />
           </div>
         </section>
 
         <section class="dash-section" aria-labelledby="dash-catalog">
-          <h2 id="dash-catalog" class="dash-section__label">STOK VE KATALOG</h2>
-          <div class="dash-grid">
-            <div class="dash-col">
-              <StockAttentionCard v-if="visible(stock)" class="dash-o-stock" v-bind="view(stock)" @retry="stock.load" />
-              <RecentJobsCard v-if="visible(jobs)" class="dash-o-jobs" v-bind="view(jobs)" @retry="jobs.load" />
-            </div>
-            <CatalogSummaryCard class="dash-o-catalog" v-bind="view(catalog)" @retry="catalog.load" />
+          <h2 id="dash-catalog" class="dash-section__label">STOK, KANALLAR VE KATALOG</h2>
+          <div v-if="visible(stock)" class="dash-row">
+            <StockAttentionCard class="dash-o-stock" v-bind="view(stock)" @retry="stock.load" />
+            <IntegrationHealthCard v-if="healthVisible" class="dash-o-health" v-bind="view(health)" @retry="health.load" />
+            <CatalogSummaryCard v-else class="dash-o-catalog" v-bind="view(catalog)" @retry="catalog.load" />
+          </div>
+          <div class="dash-row dash-row--even">
+            <IntegrationHealthCard v-if="!visible(stock) && healthVisible" class="dash-o-health" v-bind="view(health)" @retry="health.load" />
+            <CatalogSummaryCard v-if="!visible(stock) || healthVisible" class="dash-o-catalog" v-bind="view(catalog)" @retry="catalog.load" />
+            <RecentJobsCard v-if="visible(jobs)" class="dash-o-jobs" v-bind="view(jobs)" @retry="jobs.load" />
           </div>
         </section>
       </div>
@@ -162,6 +166,8 @@ onMounted(refreshAll)
   inset: 0;
   overflow-y: auto;
   background: var(--ek-color-app-bg);
+  /* FE-R4-INT: Otopilot yan paneli (≥1280 itme) iş alanını daraltınca ızgaralar görünüm alanına değil iş alanına uyar. */
+  container: ek-dash / inline-size;
 }
 
 .dash-page {
@@ -195,32 +201,37 @@ onMounted(refreshAll)
   background: var(--ek-color-surface);
 }
 
-.dash-grid {
+/* C3: ana kart 2/3, yan kart 1/3; `stretch` → aynı satırdaki kartların alt kenarı hizalı. */
+.dash-row {
   display: grid;
-  grid-template-columns: minmax(0, 8fr) minmax(0, 4fr);
-  align-items: start;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  align-items: stretch;
   gap: var(--ek-space-5);
 }
 
-.dash-col {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ek-space-5);
-  min-width: 0;
+/* Eşit satır: kalan kartlar eşit kolonlarda; tek kart kalırsa tam genişlik (boş kolon bırakmaz). */
+.dash-row--even {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr));
 }
 
-/* Tek kolon (tablet/mobil): kolon kapları kaybolur, kartlar bölüm içi sırayla dizilir. */
+.dash-row + .dash-row {
+  margin-top: calc(var(--ek-space-5) - var(--ek-space-3));
+}
+
+/* Tek kolon (tablet/mobil): kartlar bölüm içi sırayla tam genişlikte dizilir. */
 @media (max-width: 1099px) {
-  .dash-grid {
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
+  .dash-row,
+  .dash-row--even {
+    grid-template-columns: minmax(0, 1fr);
   }
+}
 
-  .dash-col {
-    display: contents;
+/* FE-R4-INT (ek): iş alanı dar (ör. Otopilot paneli açık) → aynı tek kolon; 850 px ≈ 1099 görünüm − 248 menü. */
+@container ek-dash (max-width: 850px) {
+  .dash-row,
+  .dash-row--even {
+    grid-template-columns: minmax(0, 1fr);
   }
-
 }
 
 @media (max-width: 599px) {
@@ -229,8 +240,12 @@ onMounted(refreshAll)
     padding: var(--ek-space-4);
   }
 
-  .dash-grid {
+  .dash-row {
     gap: var(--ek-space-4);
+  }
+
+  .dash-row + .dash-row {
+    margin-top: calc(var(--ek-space-4) - var(--ek-space-3));
   }
 }
 </style>

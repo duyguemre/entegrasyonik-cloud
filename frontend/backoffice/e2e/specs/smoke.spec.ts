@@ -13,7 +13,11 @@ test.describe('giriş', () => {
     await expectNoA11yViolations(page)
     await page.getByLabel('Doğrulama kodu').fill('000000')
     await page.getByRole('button', { name: 'Doğrula', exact: true }).click()
-    await expect(page.getByRole('alert')).toContainText('Doğrulama kodu geçersiz')
+    // Sunucu hatası alana bağlı: aria-invalid + açıklama, odak alana döner.
+    const codeField = page.getByLabel('Doğrulama kodu')
+    await expect(codeField).toHaveAttribute('aria-invalid', 'true')
+    await expect(codeField).toHaveAccessibleDescription(/Doğrulama kodu geçersiz/)
+    await expect(codeField).toBeFocused()
     await page.getByLabel('Doğrulama kodu').fill('123456')
     await page.getByRole('button', { name: 'Doğrula', exact: true }).click()
     await expect(page).toHaveURL(/\/denetim$/)
@@ -190,6 +194,8 @@ test.describe('kabuk ve ekranlar', () => {
     }).toPass()
     const drawer = page.getByRole('dialog').locator('.bo-drawer')
     await expect(drawer.getByRole('img', { name: /eğilimi/ })).toBeVisible()
+    // Kanıtlar ikinci planda: "Son istekler" açılınca iz bağlantıları görünür.
+    await drawer.getByRole('button', { name: /Son istekler/ }).click()
     await drawer.getByRole('button', { name: 'İzi aç' }).first().click()
     const trace = page.getByRole('dialog', { name: 'İstek zinciri' })
     await expect(trace.locator('.bo-trace__item').first()).toBeVisible()

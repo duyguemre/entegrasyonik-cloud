@@ -3,6 +3,7 @@
 // tenant-data/export/download?token=` (owner, tek kullanımlık). Sentetik fixture (Protokol 7: PII yok).
 import { test, expect } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
+import { settleAnimations } from '../fixtures/settle'
 import { appDialogs, suppressTourOffer } from '../fixtures/appDialog'
 import { installApiMocks, mockError, type MockValue } from '../fixtures/mockApi'
 import { userContextFixture } from '../fixtures/apiData'
@@ -155,11 +156,13 @@ test.describe('ADR-0015 B4-P0 — N4 Veri ve gizlilik (KVKK)', () => {
   test('axe: WCAG 2.1 AA — 0 ihlal (ilk durum ve arşiv hazır durumu)', async ({ page }) => {
     await mocks(page, { 'TenantDataService/exportTenantData': EXPORT_OK })
     await openB4Screen(page, 'PrivacyDataView')
+    await settleAnimations(page)
     const first = await new AxeBuilder({ page }).include(ROOT).withTags(AXE_TAGS).analyze()
     expect(first.violations, JSON.stringify(first.violations, null, 2)).toEqual([])
 
     await page.locator(ROOT).getByRole('button', { name: 'Dışa aktarma dosyası hazırla' }).click()
     await expect(page.locator(ROOT).getByText('Arşiviniz hazır')).toBeVisible()
+    await settleAnimations(page)
     const ready = await new AxeBuilder({ page }).include(ROOT).withTags(AXE_TAGS).analyze()
     expect(ready.violations, JSON.stringify(ready.violations, null, 2)).toEqual([])
   })
@@ -336,23 +339,27 @@ test.describe('C1.6 — Mağaza silme talebi (owner)', () => {
   test('axe: WCAG 2.1 AA — 0 ihlal (bölüm, doğrulama diyaloğu, son onay, askı durumu)', async ({ page }) => {
     await mocks(page, { 'TenantDataService/requestDeletion': DELETION_OK })
     await openB4Screen(page, 'PrivacyDataView')
+    await settleAnimations(page)
     const section = await new AxeBuilder({ page }).include(ROOT).withTags(AXE_TAGS).analyze()
     expect(section.violations, JSON.stringify(section.violations, null, 2)).toEqual([])
 
     const dialog = await openDeletionDialog(page)
     await fillVerify(dialog, 'e2e-sentetik-parola', STORE)
     await page.waitForTimeout(400) // açılış geçişi bitsin (opaklık animasyonu kontrastı yanıltır)
+    await settleAnimations(page)
     const verify = await new AxeBuilder({ page }).include('.v-overlay--active .v-overlay__content').withTags(AXE_TAGS).analyze()
     expect(verify.violations, JSON.stringify(verify.violations, null, 2)).toEqual([])
 
     await dialog.getByRole('button', { name: 'Sil', exact: true }).click()
     await expect(appDialogs(page).filter({ hasText: 'silme talebi oluşturulsun mu?' })).toBeVisible()
     await page.waitForTimeout(400)
+    await settleAnimations(page)
     const confirm = await new AxeBuilder({ page }).include('.v-overlay--active .v-overlay__content').withTags(AXE_TAGS).analyze()
     expect(confirm.violations, JSON.stringify(confirm.violations, null, 2)).toEqual([])
 
     await appDialogs(page).getByRole('button', { name: 'Silme talebi oluştur' }).click()
     await expect(page.locator(ROOT).getByText('Silme talebi alındı')).toBeVisible()
+    await settleAnimations(page)
     const done = await new AxeBuilder({ page }).include(ROOT).withTags(AXE_TAGS).analyze()
     expect(done.violations, JSON.stringify(done.violations, null, 2)).toEqual([])
   })

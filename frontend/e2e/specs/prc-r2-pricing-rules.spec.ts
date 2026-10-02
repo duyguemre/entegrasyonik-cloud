@@ -3,6 +3,7 @@
 // İnceleme görüntüleri: PRC_REVIEW=1 PRC_OUT=docs/prc-r2-review/<genişlik> (günlük koşuda görüntü yazılmaz).
 import { test, expect } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
+import { settleAnimations } from '../fixtures/settle'
 import type { Page, Route } from '@playwright/test'
 import { installApiMocks, mockError } from '../fixtures/mockApi'
 import { waitForWorkplaceReady } from '../fixtures/nav'
@@ -32,6 +33,8 @@ async function shot(page: Page, name: string) {
 }
 
 async function seriousAxe(page: Page, include: string) {
+  // fe-r4d D1: renk geçişi sürerken ölçülen ara renk (~#7891e1) sahte kontrast ihlali üretiyordu → yerleşmiş durum ölçülür.
+  await settleAnimations(page)
   const r = await new AxeBuilder({ page }).include(include).withTags(AXE_TAGS).analyze()
   return r.violations.filter((v) => v.impact === 'critical' || v.impact === 'serious')
 }
@@ -214,5 +217,25 @@ test.describe('PRC-R2 — kurallar (K1, K4, K6) ve geçmiş', () => {
     await expect(grid.locator('tbody tr').nth(1)).toContainText('Entegrasyonik dışında')
     await shot(page, '11-fiyat-gecmisi')
     expect(await seriousAxe(page, ROOT)).toEqual([])
+  })
+})
+
+test.describe('PRC-R2 — fe-r4d D1: kaydırılabilir ızgara klavyeyle erişilir', () => {
+  test('taşan geçmiş ızgarası odaklanabilir bölge (adlı) olur ve ok tuşuyla kayar; taşmayan ızgara sekme durağı eklemez', async ({ page }, testInfo) => {
+    const view = await open(page, { 'PricingService/getRules': rulesState(), 'PricingService/listSuggestions': suggestionsOpen(), 'PricingService/getPriceHistory': historyOk() }, '?tab=history')
+    const grid = view.getByTestId('history-grid')
+    await expect(grid.locator('tbody tr')).toHaveCount(2)
+    const overflows = await grid.evaluate((el) => el.scrollWidth > el.clientWidth + 1 || el.scrollHeight > el.clientHeight + 1)
+    if (!overflows) {
+      await expect(grid).not.toHaveAttribute('tabindex', /.*/)
+      return
+    }
+    await expect(grid).toHaveAttribute('tabindex', '0')
+    await expect(grid).toHaveAttribute('role', 'region')
+    await expect(grid).toHaveAccessibleName(/kaydırılabilir/)
+    await grid.focus()
+    const before = await grid.evaluate((el) => el.scrollLeft + el.scrollTop)
+    await page.keyboard.press(testInfo.project.name === 'chromium-mobile' ? 'ArrowDown' : 'ArrowRight')
+    await expect.poll(() => grid.evaluate((el) => el.scrollLeft + el.scrollTop)).toBeGreaterThan(before)
   })
 })

@@ -42,6 +42,7 @@
         </template>
         <template #start>
           <div class="pv-bar__start">
+            <EkIconTile icon="mdi-view-list-outline" size="md" class="pv-bar__icon" />
             <h2 id="pv-title" class="pv-title">Varyantlar</h2>
             <span class="pv-meta ek-num">{{ variantList.length }} varyant<template v-if="groupCount > 1"> · {{ groupCount }} {{ groupNoun }}</template></span>
             <span v-if="changedCount > 0" class="pv-changed" role="status">
@@ -69,7 +70,7 @@
               @click="openBulkEditor('all')"><span class="pv-bulk-btn__label">Toplu düzenle</span></EkButton>
             <v-menu :close-on-content-click="false" v-model="isVariantGeneratorMenu" location="bottom end">
               <template v-slot:activator="{ props: mp }">
-                <EkButton v-bind="mp" size="sm" icon="mdi-plus" id="myfeature-2" aria-label="Varyant oluştur">Varyant oluştur</EkButton>
+                <EkButton v-bind="mp" size="sm" icon="mdi-plus" id="myfeature-2" class="pv-bulk-btn" aria-label="Varyant oluştur"><span class="pv-bulk-btn__label">Varyant oluştur</span></EkButton>
               </template>
               <ProductVariantGeneratorComponent :productInfoForm="productInfoForm"
                 @generate-variants="generateVariants" @close="isVariantGeneratorMenu = false" />
@@ -118,7 +119,7 @@
 </template>
 
 <script setup lang="ts">
-import { EkBulkBar, EkActionButton, EkDialogHost, EkContextMenu, EkButton, EkConfirmDialog, EkEmptyState, EkKbd, EkTooltip } from '@entegrasyonik/ui/components'
+import { EkBulkBar, EkActionButton, EkDialogHost, EkContextMenu, EkButton, EkConfirmDialog, EkEmptyState, EkIconTile, EkKbd, EkTooltip } from '@entegrasyonik/ui/components'
 import type { EkMenuGroup, EkMenuItem } from '@entegrasyonik/ui/components'
 import { ref, inject, watch, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n';
@@ -177,7 +178,9 @@ const groupCount = computed(() => new Set(variantList.value.map((v: any) => v.ch
 const groupNoun = computed(() => {
   const first = variantList.value.find((v: any) => v.choices?.[0])
   const title = first ? choicesStore.getChoiceTitle(first.choices[0].choiceId) : ''
-  return title ? `${String(title).toLocaleLowerCase('tr')} grubu` : 'grup'
+  const lower = title ? String(title).toLocaleLowerCase('tr') : ''
+  // Seçenek adı zaten "… grubu" ise yinelenmez ("renk grubu grubu" değil).
+  return lower ? (/\bgrubu$/.test(lower) ? lower : `${lower} grubu`) : 'grup'
 })
 
 // ── değişen hücre tabanı: bileşen açıldığında / varyantlar yeniden yüklendiğinde (kaydetme sonrası) ──
@@ -467,8 +470,10 @@ void eventBus
 }
 .pv-bar.is-on { background: var(--ek-color-selection); }
 .pv-bar :deep(.ek-bulk__end) { flex: 0 1 auto; justify-content: flex-end; flex-wrap: wrap; }
-.pv-bar__start { display: flex; align-items: baseline; flex-wrap: wrap; gap: var(--ek-space-1) var(--ek-space-3); flex: 1 1 auto; min-width: 0; }
+.pv-bar__start { display: flex; align-items: center; flex-wrap: wrap; gap: var(--ek-space-1) var(--ek-space-3); flex: 1 1 auto; min-width: 0; }
 .pv-bar__tools { display: flex; align-items: center; flex-wrap: wrap; gap: var(--ek-space-2); }
+/* FE R4 B: adım kartlarıyla aynı başlık motifi (ikon kapsülü + başlık). */
+.pv-bar__icon { flex: none; }
 .pv-title {
   margin: 0;
   color: var(--ek-color-content-strong);
@@ -533,7 +538,7 @@ void eventBus
   .pv-foot__keys { display: none; }
 }
 @media (max-width: 480px) {
-  /* dar ekranda "Toplu düzenle" yalnız ikon (aria-label korunur) — araç çubuğu tek satır */
+  /* dar ekranda "Görseller / Toplu düzenle / Varyant oluştur" yalnız ikon (aria-label korunur) — araç çubuğu tek satır */
   .pv-bulk-btn__label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 }
 </style>

@@ -173,7 +173,7 @@ test.describe('ADR-0012 — PII URL\'e YAZILMAZ (Karar 2)', () => {
     })
     await gotoAuthed(page)
 
-    await page.getByPlaceholder('Akıllı arama').first().fill('E2E-100001')
+    await page.getByRole('combobox', { name: 'Akıllı arama' }).fill('E2E-100001')
     await expect(page.getByText('E2E-100001', { exact: false }).first()).toBeVisible({ timeout: 5000 })
     await page.getByText('E2E-100001', { exact: false }).first().click()
 

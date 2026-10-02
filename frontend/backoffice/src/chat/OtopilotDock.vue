@@ -33,7 +33,7 @@
       @pointerdown="startResize"
       @keydown="onResizeKey"
     />
-    <ChatPanel ref="panelRef" :key="panelKey" :controller="otopilot.controllerRef.value" mode="side" @close="otopilot.close()" @expand="otopilot.openPage()" />
+    <ChatPanel ref="panelRef" :key="panelKey" :controller="otopilot.controllerRef.value" mode="side" wide @close="otopilot.close()" @expand="otopilot.openPage()" />
   </v-navigation-drawer>
 </template>
 

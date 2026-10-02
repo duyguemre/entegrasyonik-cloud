@@ -95,6 +95,14 @@ const GENERAL: Array<{ label: string; keys: string[][] }> = [
   cursor: pointer;
 }
 
+/* bo-wdg: dokunmatik katmanda (mobile.css ile aynı sorgu/token) 44 px hedef; diyalog teleport edildiği için burada. */
+@media (pointer: coarse) {
+  .bo-keys__close {
+    width: var(--ek-control-h-touch);
+    height: var(--ek-control-h-touch);
+  }
+}
+
 .bo-keys__close:hover {
   background: var(--ek-color-surface-muted);
 }
@@ -110,6 +118,7 @@ const GENERAL: Array<{ label: string; keys: string[][] }> = [
   gap: var(--ek-space-6);
   max-height: 60vh;
   overflow-y: auto;
+  overscroll-behavior: contain;
   padding: var(--ek-space-4);
 }
 

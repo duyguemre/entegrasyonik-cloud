@@ -34,13 +34,29 @@
             <h1 class="bo-login__title">Yönetim girişi</h1>
             <p class="bo-login__lede">admin.entegrasyonik.com · müşteri hesabınızla değil, yönetici hesabınızla girin.</p>
           </header>
-          <v-text-field v-model="email" label="E-posta" type="email" autocomplete="username" :disabled="busy" autofocus />
           <v-text-field
+            ref="emailEl"
+            v-model="email"
+            label="E-posta"
+            type="email"
+            autocomplete="username"
+            spellcheck="false"
+            autocapitalize="off"
+            autocorrect="off"
+            :disabled="busy"
+            :error-messages="fieldError('email')"
+            :aria-invalid="fieldError('email') ? 'true' : undefined"
+            autofocus
+          />
+          <v-text-field
+            ref="passwordEl"
             v-model="password"
             label="Parola"
             :type="showPassword ? 'text' : 'password'"
             autocomplete="current-password"
             :disabled="busy"
+            :error-messages="fieldError('password')"
+            :aria-invalid="fieldError('password') ? 'true' : undefined"
             :hint="capsLock ? 'Büyük harf kilidi (Caps Lock) açık' : undefined"
             :persistent-hint="capsLock"
             @keydown="detectCaps"
@@ -67,20 +83,40 @@
           </header>
           <v-text-field
             v-if="!useRecovery"
+            ref="codeEl"
             v-model="code"
             label="Doğrulama kodu"
             inputmode="numeric"
             autocomplete="one-time-code"
+            spellcheck="false"
+            autocapitalize="off"
+            autocorrect="off"
             maxlength="6"
             class="bo-login__code"
             :disabled="busy"
+            :error-messages="fieldError('code')"
+            :aria-invalid="fieldError('code') ? 'true' : undefined"
             autofocus
           />
           <div v-if="!useRecovery" class="bo-totp-timer" aria-hidden="true">
             <span class="bo-totp-timer__track"><span class="bo-totp-timer__bar" :style="{ transform: `scaleX(${totpLeft / 30})` }"></span></span>
             <span class="bo-totp-timer__text">Kod <span class="ek-num">{{ totpLeft }}</span> sn sonra yenilenir</span>
           </div>
-          <v-text-field v-else v-model="recoveryCode" label="Kurtarma kodu" placeholder="xxxx-xxxx" autocomplete="off" :disabled="busy" autofocus />
+          <v-text-field
+            v-else
+            ref="recoveryEl"
+            v-model="recoveryCode"
+            label="Kurtarma kodu"
+            placeholder="xxxx-xxxx"
+            autocomplete="off"
+            spellcheck="false"
+            autocapitalize="off"
+            autocorrect="off"
+            :disabled="busy"
+            :error-messages="fieldError('recovery')"
+            :aria-invalid="fieldError('recovery') ? 'true' : undefined"
+            autofocus
+          />
           <p v-if="error" class="bo-login__error" role="alert">{{ error }}</p>
           <EkButton tone="primary" type="submit" block :loading="busy" :disabled="useRecovery ? recoveryCode.length < 8 : !/^\d{6}$/.test(code)">Doğrula</EkButton>
           <div class="bo-login__links">
@@ -104,7 +140,20 @@
             </div>
           </div>
           <EkSkeleton v-else type="form" :rows="2" />
-          <v-text-field v-model="code" label="Uygulamadaki 6 haneli kod" inputmode="numeric" autocomplete="one-time-code" maxlength="6" :disabled="busy || !otpauthUri" />
+          <v-text-field
+            ref="codeEl"
+            v-model="code"
+            label="Uygulamadaki 6 haneli kod"
+            inputmode="numeric"
+            autocomplete="one-time-code"
+            spellcheck="false"
+            autocapitalize="off"
+            autocorrect="off"
+            maxlength="6"
+            :disabled="busy || !otpauthUri"
+            :error-messages="fieldError('code')"
+            :aria-invalid="fieldError('code') ? 'true' : undefined"
+          />
           <p v-if="error" class="bo-login__error" role="alert">{{ error }}</p>
           <EkButton tone="primary" type="submit" block :loading="busy" :disabled="!/^\d{6}$/.test(code)">Kurulumu tamamla</EkButton>
           <div class="bo-login__links"><button type="button" class="bo-login__link" @click="restart">Başa dön</button></div>
@@ -132,7 +181,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, defineAsyncComponent, onBeforeUnmount, ref, watch } from 'vue'
+import { computed, defineAsyncComponent, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { EkAlert, EkBrandLogo, EkButton, EkSkeleton } from '@entegrasyonik/ui/components'
 import QrCode from '@bo/components/QrCode.vue'
 // Örnek hesap ipucu yalnız dev paketinde (üretim derlemesinde import.meta.env.DEV=false → kod atılır).
@@ -143,6 +192,7 @@ import { NOTICE_TEXT } from '@bo/auth/machine'
 import { session } from '@bo/auth/session'
 import { notify } from '@bo/utils/toast'
 import { currentEnv as env } from '@bo/utils/env'
+import { formatDateTime } from '@bo/utils/format'
 
 const status = computed(() => session.state.status)
 const notice = computed(() => session.state.notice)
@@ -155,7 +205,18 @@ const code = ref('')
 const recoveryCode = ref('')
 const useRecovery = ref(false)
 const busy = ref(false)
+// Form düzeyi hata (alana bağlanamayan: ağ, kilit, sunucu) → role=alert. Alana ait hata `fieldErr`'de; alanın
+// altında `:error-messages` + `aria-invalid` olarak çizilir ve odak o alana taşınır.
 const error = ref('')
+type Field = 'email' | 'password' | 'code' | 'recovery'
+const fieldErr = ref<{ field: Field; text: string } | null>(null)
+const fieldError = (f: Field) => (fieldErr.value?.field === f ? fieldErr.value.text : undefined)
+type Focusable = { focus: () => void } | null
+const emailEl = ref<Focusable>(null)
+const passwordEl = ref<Focusable>(null)
+const codeEl = ref<Focusable>(null)
+const recoveryEl = ref<Focusable>(null)
+const FIELD_EL: Record<Field, typeof emailEl> = { email: emailEl, password: passwordEl, code: codeEl, recovery: recoveryEl }
 const otpauthUri = ref('')
 const savedCodes = ref(false)
 const capsLock = ref(false)
@@ -176,14 +237,40 @@ const secret = computed(() => new URL(otpauthUri.value || 'otpauth://x').searchP
 const groupedSecret = computed(() => secret.value.replace(/(.{4})/g, '$1 ').trim())
 const codesText = computed(() => (session.state.recoveryCodes ?? []).join('\n'))
 
+// Sunucu alan yolu → giriş alanı.
+const FIELD_PATH: Record<string, Field> = { email: 'email', password: 'password', code: 'code', recoveryCode: 'recovery' }
+
+/** Hatanın ait olduğu alan: doğrulama hatası alan yolundan; 401 o adımdaki gizli alandan (parola/kod). */
+function fieldFor(e: AdminApiError): Field | null {
+  const path = e.fields?.map((f) => FIELD_PATH[f.path]).find(Boolean)
+  if (path) return path
+  if (e.status !== 401) return null
+  if (status.value === 'signedOut' || status.value === 'booting') return 'password'
+  if (status.value === 'verify') return useRecovery.value ? 'recovery' : 'code'
+  if (status.value === 'enroll') return 'code'
+  return null
+}
+
 function fail(e: unknown) {
-  error.value = e instanceof AdminApiError ? e.message : 'Beklenmeyen bir hata oluştu.'
+  if (!(e instanceof AdminApiError)) {
+    error.value = 'Beklenmeyen bir hata oluştu. Sayfayı yenileyip yeniden deneyin; sürerse platform ekibine yazın.'
+    return
+  }
+  const field = fieldFor(e)
+  if (field) fieldErr.value = { field, text: e.message }
+  else error.value = e.message
+}
+
+async function focusFieldError() {
+  if (!fieldErr.value) return
+  await nextTick()
+  FIELD_EL[fieldErr.value.field].value?.focus()
 }
 
 async function run(action: () => Promise<unknown>) {
   if (busy.value) return
   busy.value = true
-  error.value = ''
+  clearErrors()
   try {
     await action()
   } catch (e) {
@@ -191,7 +278,17 @@ async function run(action: () => Promise<unknown>) {
   } finally {
     busy.value = false
   }
+  // Alan `busy` bitince yeniden etkinleşir; odak ancak o zaman hatalı alana taşınabilir.
+  await focusFieldError()
 }
+
+function clearErrors() {
+  error.value = ''
+  fieldErr.value = null
+}
+
+// Kullanıcı hatalı alanı düzeltmeye başlayınca alan hatası kalkar.
+watch([email, password, code, recoveryCode], () => (fieldErr.value = null))
 
 const submitCredentials = () => run(() => session.login({ email: email.value.trim(), password: password.value }))
 const submitVerify = () => run(() => session.verify(useRecovery.value ? { recoveryCode: recoveryCode.value.trim() } : { code: code.value }))
@@ -199,7 +296,7 @@ const submitEnroll = () => run(() => session.enrollConfirm(code.value))
 
 watch(status, async (s) => {
   code.value = ''
-  error.value = ''
+  clearErrors()
   if (s !== 'signedOut') password.value = ''
   if (s === 'enroll') {
     // `run` KULLANILMAZ: geçiş, parola isteği hâlâ `busy` iken gelir (koruma bu çağrıyı atlardı).
@@ -214,7 +311,7 @@ watch(status, async (s) => {
 
 function toggleRecovery() {
   useRecovery.value = !useRecovery.value
-  error.value = ''
+  clearErrors()
 }
 
 function restart() {
@@ -231,12 +328,15 @@ async function copy(text: string, message: string) {
 }
 
 function download() {
-  const blob = new Blob([`Entegrasyonik Yönetim — kurtarma kodları\n${new Date().toISOString()}\n\n${codesText.value}\n`], { type: 'text/plain' })
+  const blob = new Blob([`Entegrasyonik Yönetim — kurtarma kodları\n${formatDateTime(new Date())}\n\n${codesText.value}\n`], { type: 'text/plain' })
   const a = document.createElement('a')
   a.href = URL.createObjectURL(blob)
   a.download = 'entegrasyonik-yonetim-kurtarma-kodlari.txt'
+  // Bağlantı DOM'a eklenmeden tıklanırsa ya da URL hemen bırakılırsa Safari/Firefox indirmeyi iptal edebilir.
+  document.body.appendChild(a)
   a.click()
-  URL.revokeObjectURL(a.href)
+  a.remove()
+  setTimeout(() => URL.revokeObjectURL(a.href), 0)
 }
 </script>
 
@@ -348,10 +448,10 @@ function download() {
 
 .bo-login__claim {
   margin: 0;
-  font-size: var(--ek-type-metric-size);
-  line-height: 1.3;
-  font-weight: var(--ek-font-weight-semibold);
-  letter-spacing: -0.01em;
+  font-size: var(--ek-type-title-size);
+  line-height: var(--ek-type-title-line);
+  font-weight: var(--ek-type-title-weight);
+  letter-spacing: var(--ek-type-title-tracking);
 }
 
 .bo-login__points {
@@ -468,7 +568,7 @@ function download() {
 
 .bo-login__code :deep(input) {
   font-family: var(--ek-font-mono);
-  font-size: 20px;
+  font-size: var(--ek-type-heading-size);
   letter-spacing: 0.4em;
 }
 
@@ -590,6 +690,14 @@ function download() {
 .bo-codes__actions {
   display: flex;
   gap: var(--ek-space-2);
+}
+
+@media (pointer: coarse) {
+  .bo-login__link,
+  .bo-login__reveal {
+    min-width: 44px;
+    min-height: 44px;
+  }
 }
 
 @media (max-width: 959px) {

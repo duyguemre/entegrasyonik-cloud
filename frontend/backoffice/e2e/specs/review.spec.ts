@@ -122,6 +122,7 @@ for (const cfg of CONFIGS) {
     await expect(page.getByRole('dialog').locator('.bo-drawer')).toBeVisible()
     await page.waitForTimeout(800)
     await shot(page, '06b-sorun-detayi', cfg, false)
+    await page.getByRole('dialog').getByRole('button', { name: /Son istekler/ }).click()
     await page.getByRole('dialog').getByRole('button', { name: 'İzi aç' }).first().click()
     await expect(page.getByRole('dialog', { name: 'İstek zinciri' })).toBeVisible()
     await page.waitForTimeout(700)

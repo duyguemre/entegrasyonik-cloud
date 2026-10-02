@@ -165,11 +165,15 @@ defineExpose({
   color: var(--ek-color-content-muted);
   font-size: var(--ek-type-body-size);
   line-height: var(--ek-type-body-line);
+  /* Uzun kimlik/URL (ör. reqId) açıklamayı yatay taşırmaz; normal metinde etkisiz. */
+  overflow-wrap: anywhere;
 }
 
 .ek-dialog__body {
   flex: 1;
   overflow: auto;
+  /* Gövde sonuna varınca kaydırma arka sayfaya zincirlenmez. */
+  overscroll-behavior: contain;
   /* üst 8px: outlined alanın yüzen etiketi kaydırma alanında kesilmesin */
   padding: var(--ek-space-2) var(--ek-space-6) var(--ek-space-5);
   color: var(--ek-color-content-default);

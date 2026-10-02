@@ -1,0 +1,15 @@
+{
+  "screen": "anasayfa",
+  "theme": "light",
+  "width": 1440,
+  "axe": [
+    {
+      "id": "aria-tooltip-name",
+      "impact": "serious",
+      "nodes": 1,
+      "targets": [
+        "#v-tooltip-v-4 :: Element does not have text that is visible to screen readers"
+      ]
+    }
+  ]
+}

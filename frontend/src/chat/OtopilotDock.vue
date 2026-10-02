@@ -41,6 +41,7 @@
       :key="panelKey"
       :controller="controller"
       mode="side"
+      appearance="refined"
       @close="otopilot.close()"
       @expand="otopilot.openPage()"
     />
@@ -128,7 +129,7 @@ onBeforeUnmount(() => {
 <style scoped>
 .ek-otopilot-dock {
   border-left: 1px solid var(--ek-color-border-default);
-  background: var(--ek-color-surface);
+  background: var(--ek-color-surface-raised);
   overflow: visible;
 }
 

@@ -104,6 +104,8 @@ export const useNotificationDrawerStore = defineStore('notificationDrawer', () =
   const unreadCount = ref(0)
   const isPollingActive = ref(false)
   const loading = ref(false)
+  /** FE-R4 A3: son liste isteği başarısız mı (çekmece hata durumu). Başarılı yanıt temizler. */
+  const listError = ref(false)
   /** SSE bağlantı modu (üst bar/çekmece durum göstergesi ve testler için). */
   const streamMode = ref<StreamMode>('idle')
   let pollTimer: ReturnType<typeof setInterval> | undefined
@@ -134,6 +136,8 @@ export const useNotificationDrawerStore = defineStore('notificationDrawer', () =
    * Bildirimleri backend'den çeker
    */
   async function fetchNotifications() {
+    // FE-R4 A3: çekmecenin ilk açılış iskeleti bu bayrağa bakar (liste boşken); istek/yanıt şekli değişmedi.
+    loading.value = true
     try {
       // Backend'deki get metoduna istek atar
       const response = await restApi.get('NotificationService')
@@ -141,9 +145,16 @@ export const useNotificationDrawerStore = defineStore('notificationDrawer', () =
       if (response && response.result) {
         notifications.value = response.data
         unreadCount.value = response.unreadCount
+        listError.value = false
+      } else {
+        // İstemci katmanı HTTP hatasını yutup boş/başarısız yanıt döndürebilir — liste yine alınamamıştır.
+        listError.value = true
       }
     } catch (error) {
+      listError.value = true
       logger.error('Bildirim listesi alınamadı', { module: 'notificationDrawer', op: 'fetchNotifications', error })
+    } finally {
+      loading.value = false
     }
   }
 
@@ -316,6 +327,7 @@ export const useNotificationDrawerStore = defineStore('notificationDrawer', () =
     notifications.value = []
     unreadCount.value = 0
     loading.value = false
+    listError.value = false
     liveListeners.clear()
   })
 
@@ -371,6 +383,7 @@ export const useNotificationDrawerStore = defineStore('notificationDrawer', () =
     notifications,
     unreadCount,
     loading,
+    listError,
     streamMode,
     isLive,
     getDrawer,

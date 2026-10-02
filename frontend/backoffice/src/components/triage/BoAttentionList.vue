@@ -33,8 +33,15 @@
           <p v-if="checks.length" class="bo-al__checks"><span class="bo-al__checks-k">Denetlenen</span> {{ checks.join(' · ') }}</p>
         </div>
       </div>
-      <ol v-else class="bo-al__list" :aria-label="listLabel" data-testid="attention-list">
-        <li v-for="it in visible" :key="it.id" class="bo-al__item" :class="`is-${it.severity}`" :data-severity="it.severity">
+      <ol v-else ref="listEl" class="bo-al__list" :aria-label="listLabel" data-testid="attention-list">
+        <li
+          v-for="(it, i) in visible"
+          :key="it.id"
+          class="bo-al__item"
+          :class="[`is-${it.severity}`, { 'is-compact': compact }]"
+          :data-severity="it.severity"
+          :tabindex="i === revealFrom ? -1 : undefined"
+        >
           <span class="bo-al__sev" aria-hidden="true"><v-icon :icon="SEVERITY[it.severity].icon" /></span>
           <div class="bo-al__body">
             <component :is="`h${headingLevel}`" class="bo-al__title">{{ it.title }}</component>
@@ -43,7 +50,7 @@
               <span v-if="it.count" class="bo-al__count ek-num">{{ it.count }}</span>
               <span v-if="it.since" class="bo-al__since"><EkRelativeTime :value="it.since" /> başladı</span>
             </p>
-            <p v-if="it.why || it.impact" class="bo-al__why">{{ [it.why, it.impact].filter(Boolean).join(' ') }}</p>
+            <p v-if="!compact && (it.why || it.impact)" class="bo-al__why">{{ [it.why, it.impact].filter(Boolean).join(' ') }}</p>
             <ul v-if="it.subjects?.length" class="bo-al__subjects" :aria-label="`Etkilenen müşteriler: ${it.title}`">
               <li v-for="s in it.subjects.slice(0, 3)" :key="s.tid">
                 <RouterLink class="bo-al__tenant" :to="{ name: 'tenant', params: { tid: String(s.tid) } }">
@@ -52,21 +59,31 @@
               </li>
               <li v-if="it.subjects.length > 3" class="bo-al__subjects-more">+{{ it.subjects.length - 3 }} müşteri</li>
             </ul>
-            <p v-if="it.advice" class="bo-al__advice"><span class="bo-al__advice-k">Ne yapmalı</span>{{ it.advice }}</p>
-            <div v-if="it.action || it.secondary || it.capabilities?.length" class="bo-al__actions">
+            <p v-if="!compact && it.advice" class="bo-al__advice"><span class="bo-al__advice-k">Ne yapmalı</span>{{ it.advice }}</p>
+            <div v-if="it.action || it.secondary || it.capabilities?.length || (compact && (it.why || it.impact || it.advice))" class="bo-al__actions">
               <RouterLink v-if="it.action" :to="it.action.to" class="bo-act-link" :class="{ 'is-primary': it.severity === 'critical' }" data-testid="attention-action">
                 {{ it.action.label }}<v-icon icon="mdi-arrow-right" aria-hidden="true" />
               </RouterLink>
               <RouterLink v-if="it.secondary" :to="it.secondary.to" class="bo-al__secondary">{{ it.secondary.label }}</RouterLink>
-              <span v-for="c in it.capabilities ?? []" :key="c.capabilityId" class="bo-al__cap" :title="`${c.label}: ilgili ekranda kimlik doğrulama ve gerekçeyle yapılır`">
-                <v-icon icon="mdi-shield-lock-outline" aria-hidden="true" />{{ c.label }} — ekranda, gerekçeyle
-              </span>
+              <template v-if="!compact">
+                <span v-for="c in it.capabilities ?? []" :key="c.capabilityId" class="bo-al__cap" :title="`${c.label}: ilgili ekranda kimlik doğrulama ve gerekçeyle yapılır`">
+                  <v-icon icon="mdi-shield-lock-outline" aria-hidden="true" />{{ c.label }} — ekranda, gerekçeyle
+                </span>
+              </template>
+              <!-- BO2-P1: yoğun panoda (compact) açıklama ikinci planda — ne oldu / ne kadar ciddi / eylem görünür kalır. -->
+              <BoCollapsible v-if="compact && (it.why || it.impact || it.advice || it.capabilities?.length)" class="bo-al__more-detail" inline label="Neden ve ne yapmalı" open-label="Açıklamayı gizle">
+                <p v-if="it.why || it.impact" class="bo-al__why">{{ [it.why, it.impact].filter(Boolean).join(' ') }}</p>
+                <p v-if="it.advice" class="bo-al__advice"><span class="bo-al__advice-k">Ne yapmalı</span>{{ it.advice }}</p>
+                <span v-for="c in it.capabilities ?? []" :key="c.capabilityId" class="bo-al__cap">
+                  <v-icon icon="mdi-shield-lock-outline" aria-hidden="true" />{{ c.label }} — ekranda, gerekçeyle
+                </span>
+              </BoCollapsible>
             </div>
           </div>
         </li>
       </ol>
       <p v-if="total > items.length" class="bo-al__truncated">Toplam {{ total }} maddenin en önemli {{ items.length }} tanesi gösteriliyor.</p>
-      <button v-if="hiddenCount > 0" type="button" class="bo-al__more" :aria-expanded="expanded" @click="expanded = true">
+      <button v-if="hiddenCount > 0" type="button" class="bo-al__more" :aria-expanded="expanded" @click="showMore">
         {{ hiddenCount }} madde daha göster <span class="bo-al__more-hint">({{ hiddenText }})</span>
       </button>
     </template>
@@ -74,9 +91,10 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, nextTick, ref } from 'vue'
 import { EkRelativeTime } from '@entegrasyonik/ui/components'
 import BoPanelState from '@bo/components/shell/BoPanelState.vue'
+import BoCollapsible from '@bo/components/r2/BoCollapsible.vue'
 import '@bo/styles/kit.css'
 import { SEVERITY, countText, type AttentionEntry } from './triage'
 
@@ -103,6 +121,8 @@ const props = withDefaults(
     unsupportedTitle?: string
     unsupportedText?: string
     headingLevel?: 3 | 4
+    /** BO2-P1: yoğun pano — açıklama ve öneri "Neden ve ne yapmalı" altında katlanır. */
+    compact?: boolean
   }>(),
   {
     total: 0,
@@ -123,6 +143,15 @@ const shown = computed(() => (expanded.value ? props.items.length : Math.max(pro
 const visible = computed(() => props.items.slice(0, shown.value))
 const hiddenCount = computed(() => props.items.length - visible.value.length)
 const hiddenText = computed(() => countText(props.items.slice(shown.value)))
+
+// bo-wdg: "N madde daha göster" tıklanınca kaybolur → odak ilk yeni maddeye (programla odaklanır, sekme sırasına girmez).
+const listEl = ref<HTMLOListElement | null>(null)
+const revealFrom = ref<number | null>(null)
+function showMore() {
+  revealFrom.value = visible.value.length
+  expanded.value = true
+  void nextTick(() => (listEl.value?.children[revealFrom.value!] as HTMLElement | undefined)?.focus())
+}
 </script>
 
 <style scoped>
@@ -130,6 +159,15 @@ const hiddenText = computed(() => countText(props.items.slice(shown.value)))
   margin: 0;
   padding: 0;
   list-style: none;
+}
+
+.bo-al__item:focus {
+  outline: none;
+}
+
+.bo-al__item:focus-visible {
+  outline: none;
+  box-shadow: var(--ek-focus-ring);
 }
 
 .bo-al__item {
@@ -371,5 +409,20 @@ const hiddenText = computed(() => countText(props.items.slice(shown.value)))
   margin: var(--ek-space-2) 0 0;
   color: var(--ek-color-content-muted);
   font-size: var(--ek-type-caption-size);
+}
+
+/* BO2-P1 yoğun pano: madde başlık + önem + eylem; açıklama katlanır. */
+.bo-al__item.is-compact {
+  padding: var(--ek-space-3) 0;
+}
+
+.bo-al__item.is-compact .bo-al__actions {
+  margin-top: var(--ek-space-1);
+}
+
+.bo-al__more-detail :deep(.bo-collapse__body) {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ek-space-1);
 }
 </style>

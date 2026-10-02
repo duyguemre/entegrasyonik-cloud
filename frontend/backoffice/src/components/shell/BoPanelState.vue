@@ -8,32 +8,36 @@
   - error    → "<ne oldu> — <ne yapılmalı>" + Tekrar dene + istek kimliği (kopyalanabilir). Ham hata metni yok.
   - degraded → bölüm okunamadı (zaman aşımı/servis hatası), diğer bölümler güncel: sarı ton, Tekrar dene.
   - empty    → sakin boş durum (neden boş + ne yapılabilir).
+  bo-wdg: hata/bozulma kalıcı canlı kabın içinde çizilir → yüklemeden SONRA çıkan sorun bir kez duyurulur (metin
+  kopyalanmaz; EkProblemState kendi bölgesinde yalnız yeniden deneme sonucunu söyler → çift duyuru yok).
 -->
 <template>
   <div class="bo-state" :class="`is-${state}`" :aria-busy="state === 'loading' || undefined">
     <EkSkeleton v-if="state === 'loading'" :type="skeleton" :rows="rows" />
-    <EkProblemState
-      v-else-if="state === 'error'"
-      size="compact"
-      tone="error"
-      :title="errorTitle"
-      :action="errorAction"
-      :details="details"
-      :retrying="retrying"
-      @retry="$emit('retry')"
-    />
-    <EkProblemState
-      v-else-if="state === 'degraded'"
-      size="compact"
-      tone="warning"
-      icon="mdi-lan-disconnect"
-      :title="degradedTitle"
-      :cause="degradedCause"
-      action="Diğer bölümler güncel. Birkaç saniye sonra yeniden deneyin; sürerse Loglar ve sorunlar ekranına bakın."
-      :retrying="retrying"
-      @retry="$emit('retry')"
-    />
-    <div v-else-if="state === 'empty'" class="bo-state__empty">
+    <div class="bo-state__live" aria-live="polite" data-testid="state-live">
+      <EkProblemState
+        v-if="state === 'error'"
+        size="compact"
+        tone="error"
+        :title="errorTitle"
+        :action="errorAction"
+        :details="details"
+        :retrying="retrying"
+        @retry="$emit('retry')"
+      />
+      <EkProblemState
+        v-else-if="state === 'degraded'"
+        size="compact"
+        tone="warning"
+        icon="mdi-lan-disconnect"
+        :title="degradedTitle"
+        :cause="degradedCause"
+        action="Diğer bölümler güncel. Birkaç saniye sonra yeniden deneyin; sürerse Loglar ve sorunlar ekranına bakın."
+        :retrying="retrying"
+        @retry="$emit('retry')"
+      />
+    </div>
+    <div v-if="state === 'empty'" class="bo-state__empty">
       <v-icon :icon="emptyIcon" aria-hidden="true" />
       <p class="bo-state__empty-title">{{ emptyTitle }}</p>
       <p v-if="emptyText" class="bo-state__empty-text">{{ emptyText }}</p>

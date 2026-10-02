@@ -39,6 +39,8 @@ test.describe('rekabet ayarları', () => {
     await expect(status).toContainText('yerelde doğrulanana kadar özellik kapalı')
     await expect(status.getByTestId('competition-attention')).toContainText('2 tenant istisnası var ama özellik kapalı')
 
+    // BO2-70: Durum üstte sabit; plan / istisna / fiyat kuralı / geçmiş sekmelerde (varsayılan: Planlar).
+    await expect(page.getByRole('tab', { name: /Plan varsayılanları/ })).toHaveAttribute('aria-selected', 'true')
     const plans = page.getByTestId('competition-plans')
     await expect(plans.getByRole('row')).toHaveCount(4) // başlık + 3 plan
     await expect(plans.getByTestId('plan-starter-skuCap').locator('input')).toHaveValue('100')
@@ -48,9 +50,11 @@ test.describe('rekabet ayarları', () => {
     await expect(plans).toContainText('~15 sn')
     await expect(plans).toContainText('Trendyol buybox çağrı bütçesi')
 
+    await page.getByRole('tab', { name: /Müşteri istisnaları/ }).click()
     const ovr = page.getByTestId('competition-overrides')
     await expect(ovr.locator('tbody tr')).toHaveCount(2)
     await expect(ovr.locator('[data-tid="101"]')).toContainText('SKU tavanı: 2.500 SKU')
+    await page.getByRole('tab', { name: /Geçmiş ve denetim/ }).click()
     await expect(page.getByTestId('competition-audit-note')).toContainText('subscription.competition_override')
     await expect(page.getByRole('heading', { level: 2, name: 'Yayın geçmişi' })).toBeVisible()
     await expectNoA11yViolations(page)
@@ -70,7 +74,7 @@ test.describe('rekabet ayarları', () => {
     const att = status.getByTestId('competition-attention')
     await expect(att).toContainText('Trendyol bütçesi çok düşük: dakikada 10 istek')
     await expect(att).toContainText('Bildirim gölge modu 30 gündür açık')
-    await expect(status.getByRole('link', { name: 'Bayrağı Platform ayarlarında değiştir' })).toHaveAttribute('href', '/sistem/bayraklar')
+    await expect(status.getByRole('link', { name: 'Bayrağı Platform ayarlarında değiştir' })).toHaveAttribute('href', '/sistem/bayraklar?sekme=bayraklar')
     await expectNoA11yViolations(page)
   })
 
@@ -105,6 +109,7 @@ test.describe('rekabet ayarları', () => {
     await expect(plans.getByTestId('plan-enterprise-skuCap').locator('input')).toHaveValue('8000')
     await expect(plans).toContainText('Değişiklik yok')
     // Ayrıntı: yeni sürüm yayın geçmişinde gerekçesiyle görünür.
+    await page.getByRole('tab', { name: /Geçmiş ve denetim/ }).click()
     await expect(page.getByRole('heading', { level: 2, name: 'Yayın geçmişi' })).toBeVisible()
     await expect(page.getByText(REASON)).toBeVisible()
   })
@@ -113,6 +118,7 @@ test.describe('rekabet ayarları', () => {
     await page.goto('/sistem/rekabet')
     await settle(page)
     await call(page, '(m) => m.expireReauth()') // istisna ucu step-up istemez
+    await page.getByRole('tab', { name: /Müşteri istisnaları/ }).click()
     await page.getByTestId('override-add').click()
     const dlg = page.getByRole('dialog', { name: 'Müşteri istisnası ekle' })
     await expect(dlg).toBeVisible()
@@ -159,7 +165,7 @@ test.describe('rekabet ayarları', () => {
   })
 
   test('istisnayı düzenle ve kaldır: satırdan açılır, mevcut değerler dolu; kaldırınca plan değerine döner', async ({ page }) => {
-    await page.goto('/sistem/rekabet')
+    await page.goto('/sistem/rekabet?sekme=istisnalar')
     await settle(page)
     await page.getByTestId('competition-overrides').locator('[data-tid="101"]').getByTestId('override-edit').click()
     const dlg = page.getByRole('dialog', { name: 'Müşteri istisnasını düzenle' })
@@ -180,7 +186,7 @@ test.describe('rekabet ayarları', () => {
     await page.goto('/abonelikler/103')
     await settle(page)
     await page.getByTestId('competition-link').click()
-    await expect(page).toHaveURL(/\/sistem\/rekabet$/) // sorgu tüketildi
+    await expect(page).toHaveURL(/\/sistem\/rekabet\?sekme=istisnalar$/) // tid sorgusu tüketildi; sonuç şeridi istisnalar sekmesinde
     const dlg = page.getByRole('dialog', { name: 'Müşteri istisnası ekle' })
     await expect(dlg.getByTestId('override-tid').locator('input')).toHaveValue('103')
     await expect(dlg.getByTestId('override-current')).toBeVisible()
@@ -194,10 +200,13 @@ test.describe('rekabet ayarları', () => {
     await settle(page)
     await call(page, `(m) => m.failOps('BackofficeBillingService/getCompetitionSettings')`)
     await openFromMenu(page)
+    await page.getByRole('tab', { name: /Müşteri istisnaları/ }).click()
     const ovr = page.getByTestId('competition-overrides')
     await expect(ovr).toContainText('Müşteri istisnaları yüklenemedi')
     await expect(ovr.getByRole('button', { name: 'İstisna ekle' })).toBeDisabled()
+    await page.getByRole('tab', { name: /Plan varsayılanları/ }).click()
     await expect(page.getByTestId('competition-plans').getByTestId('plan-starter-skuCap')).toBeVisible()
+    await page.getByRole('tab', { name: /Müşteri istisnaları/ }).click()
     await expect(ovr).not.toContainText('INTERNAL')
     await call(page, `(m) => m.failOps(null)`)
     await ovr.getByRole('button', { name: /Tekrar dene/ }).click()

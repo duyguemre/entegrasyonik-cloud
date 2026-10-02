@@ -62,6 +62,12 @@ export interface FailedBullJob {
   /** BE-04: işi kuyruğa alan akışın korelasyon kimliği → BackofficeLogService/trace|list { correlationId }. */
   reqId?: string | null
   traceId?: string | null
+  /** BO2-P6 (BE isteği, opsiyonel): iş TÜRÜ kodu (BullMQ iş adı, örn. `fetch-orders`). Yoksa önyüz `operation`dan türetir. */
+  jobType?: string
+  /** BO2-P6 (BE isteği, opsiyonel): `failed` = denemeler tükendi / kalıcı hata; `retrying` = hata aldı, otomatik yeniden deneme sırada. Yoksa `failed`. */
+  state?: 'failed' | 'retrying'
+  /** BO2-P6 (BE isteği, opsiyonel): ilk hatanın zamanı. Son hata = `failedAt`. */
+  firstFailedAt?: string
 }
 export interface DlqRecord {
   id: string
@@ -75,6 +81,20 @@ export interface DlqRecord {
   /** BE-04 */
   reqId?: string | null
   traceId?: string | null
+  /** BO2-P6 (BE isteği, opsiyonel) */
+  jobType?: string
+  attemptsMade?: number
+  maxAttempts?: number
+  firstFailedAt?: string
+}
+/** BO2-P6 (BE isteği, opsiyonel): süzgeçe uyan TÜM kayıtların (sayfa değil) hata kodu × iş türü özeti; "Özet" görünümü bunu okur. */
+export interface FailedJobGroup {
+  errorCode: string
+  /** İş türü kodu; bilinmiyorsa null. */
+  jobType: string | null
+  count: number
+  oldestFailedAt: string
+  newestFailedAt?: string
 }
 export interface ListFailedJobsResponse<T = FailedBullJob | DlqRecord> {
   source: FailedJobSource
@@ -85,6 +105,8 @@ export interface ListFailedJobsResponse<T = FailedBullJob | DlqRecord> {
   filter?: { tid?: number | null; integrationCode?: string | null; errorCode?: string | null }
   /** BE-03: yalnız `bullmq` + süzgeç varken; kesin sayı. */
   total?: number
+  /** BO2-P6 (BE isteği, opsiyonel): bkz. `FailedJobGroup`. Yoksa önyüz yüklenen örneklemden gruplar. */
+  groups?: FailedJobGroup[]
 }
 /** BE-03 toplu yeniden deneme: 1..50 iş, step-up + gerekçe, idempotent (iş başına sonuç; çağrı 200). */
 export interface RetryJobsRequest {

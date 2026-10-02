@@ -358,7 +358,7 @@ const narrow = computed(() => xs.value)
   background: var(--ek-color-action);
   color: var(--ek-color-action-contrast);
   font-size: var(--ek-type-caption-size);
-  font-weight: var(--ek-font-weight-bold);
+  font-weight: var(--ek-font-weight-semibold);
 }
 
 .bo-top__user-text {

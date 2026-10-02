@@ -109,7 +109,7 @@ for (const cfg of CONFIGS) {
 
     // Tehlikeli işlem diyaloğu.
     if (want('70-diyalog')) {
-      await page.goto('/motor?sekme=basarisiz')
+      await page.goto('/motor?sekme=basarisiz&gorunum=ayrinti')
       await page.getByTestId('retry').first().click()
       await expect(page.getByRole('dialog')).toBeVisible()
       await page.waitForTimeout(400)

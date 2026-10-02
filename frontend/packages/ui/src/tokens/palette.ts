@@ -283,6 +283,17 @@ export const statusSteps = {
 } as const
 
 /**
+ * FE-R4 A1 (ek) — dark profilde AÇIK üst bar tonu (`chrome-soft*`): mevcut `chromeStart → chromeEnd`'den bir kademe
+ * aydınlık; üzerindeki metin `textStrong` / `navy.200` AA (test: ds-v2 kontrast çiftleri).
+ */
+export const chromeSoftDark = {
+  start: '#132550',
+  end: '#223A72',
+  raised: '#2A4180',
+  border: '#3B5598',
+} as const
+
+/**
  * Dark profil yüzeyleri ve durum dolguları (dark mode kapısı KAPALI —
  * ADR-0011 Karar 3; değerler token katmanında TAM tanımlıdır, TS tipi
  * zorlar). Koyu zeminde durum/aksiyon dolgusu açık tondadır; üzerindeki

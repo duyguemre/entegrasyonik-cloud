@@ -52,7 +52,7 @@ const tone = computed<StatusTone>(() => (props.calm ? 'neutral' : HEALTH_BADGE[p
 .bo-ts {
   display: flex;
   flex-direction: column;
-  gap: var(--ek-space-2);
+  gap: var(--ek-space-3);
   min-width: 0;
   padding: var(--ek-space-4) var(--ek-space-5);
   border: 1px solid var(--ek-color-border-default);
@@ -83,11 +83,12 @@ const tone = computed<StatusTone>(() => (props.calm ? 'neutral' : HEALTH_BADGE[p
 }
 
 .bo-ts__q {
+  /* BO2-30: bölüm başlığı tek ölçekte `heading` (16/600) — sayfa başlığıyla (h1, `title`) yarışmaz. */
   margin: 0;
   color: var(--ek-color-content-strong);
-  font-size: var(--ek-type-title-size);
-  font-weight: var(--ek-font-weight-semibold);
-  line-height: var(--ek-type-title-line);
+  font-size: var(--ek-type-heading-size);
+  font-weight: var(--ek-type-heading-weight);
+  line-height: var(--ek-type-heading-line);
 }
 
 .bo-ts__spacer {
@@ -137,8 +138,6 @@ const tone = computed<StatusTone>(() => (props.calm ? 'neutral' : HEALTH_BADGE[p
   .bo-ts__q {
     flex: 1 1 calc(100% - 22px - var(--ek-space-3));
     min-width: 0;
-    font-size: var(--ek-type-body-size);
-    line-height: var(--ek-type-body-line);
   }
 }
 </style>

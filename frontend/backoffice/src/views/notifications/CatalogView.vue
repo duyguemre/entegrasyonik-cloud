@@ -2,79 +2,68 @@
   <div class="bo-page">
     <BoPageHeader :updated-at="cat.loadedAt.value ?? undefined" :stale="cat.stale.value">
       <template #actions>
-        <EkButton tone="secondary" icon="mdi-email-check-outline" data-testid="test-email" @click="testMail.open('self')">Test e-postası gönder</EkButton>
-        <EkButton tone="secondary" icon="mdi-refresh" :loading="cat.refreshing.value" data-page-refresh @click="cat.load()">Yenile</EkButton>
+        <BoAction kind="send" label="Test e-postası gönder" data-testid="test-email" @click="testMail.open('self')" />
+        <BoAction kind="refresh" :loading="cat.refreshing.value" data-page-refresh @click="cat.load()" />
       </template>
     </BoPageHeader>
 
     <PageVerdict :verdict="verdict" />
 
-    <div class="bo-grid-2 bo-ncat">
-      <section class="bo-panel" aria-labelledby="bo-ncat-list">
-        <header class="bo-panel__bar">
-          <div>
-            <h2 id="bo-ncat-list" class="bo-panel__title">Bildirim kodları</h2>
-            <p class="bo-panel__hint">Kod tek kaynaktır (backend kataloğu); varsayılan kanal müşterinin tercihleriyle değişebilir.</p>
-          </div>
-        </header>
-        <div class="bo-toolbar">
-          <div class="bo-seg" role="radiogroup" aria-label="Yüzey">
-            <button v-for="o in SURFACES" :key="o.value" type="button" role="radio" class="bo-seg__opt" :aria-checked="surface === o.value" @click="surface = o.value">{{ o.label }}</button>
-          </div>
-          <v-text-field v-model="search" label="Kod ya da kategori ara" density="compact" hide-details clearable prepend-inner-icon="mdi-magnify" class="bo-toolbar__field" />
-        </div>
-        <EkCard flush>
-          <StateBlock
-            :phase="catPhase"
-            :error="cat.error.value"
-            :empty-title="search || surface !== 'all' ? 'Aramaya uyan kod yok' : 'Katalog boş'"
-            :empty-message="search || surface !== 'all' ? 'Aramayı ya da yüzey süzgecini değiştirin.' : 'Backend kataloğunda tanımlı bildirim yok.'"
-            :empty-variant="search || surface !== 'all' ? 'no-results' : 'no-data'"
-            @retry="cat.load()"
-          >
-            <div class="bo-table-wrap" tabindex="0" role="region" aria-label="Bildirim kataloğu" style="--bo-table-max-h: 70vh">
-              <table class="bo-table" data-density="compact">
-                <caption class="ek-sr-only">Bildirim kataloğu ({{ items.length }} kod)</caption>
-                <thead>
-                  <tr>
-                    <th scope="col">Kod</th>
-                    <th scope="col" class="bo-hide-sm">Kategori</th>
-                    <th scope="col">E-posta</th>
-                    <th scope="col" class="bo-hide-sm">Önem</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="c in items" :key="c.code" class="is-link" :class="{ 'is-selected': c.code === selected?.code }" @click="select(c)">
-                    <th scope="row">
-                      <button type="button" class="bo-link-btn bo-mono bo-ncat__code" :aria-pressed="c.code === selected?.code" :data-code="c.code" @click.stop="select(c)">{{ c.code }}</button>
-                      <span v-if="c.mandatory" class="bo-ncat__tag">zorunlu</span>
-                      <span v-if="c.surface === 'platform'" class="bo-ncat__tag">platform</span>
-                    </th>
-                    <td class="bo-hide-sm">{{ NOTIFY_CATEGORY[c.category] ?? c.category }}</td>
-                    <td>{{ EMAIL_MODE[c.defaultChannels.email] }}</td>
-                    <td class="bo-hide-sm">
-                      <span class="bo-ncat__sev">
-                        <EkStatusChip v-for="s in c.severities" :key="s" :tone="(NOTIFY_SEVERITY[s] ?? { tone: 'neutral' }).tone" :label="(NOTIFY_SEVERITY[s] ?? { label: s }).label" />
-                      </span>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </StateBlock>
-        </EkCard>
-      </section>
+    <BoTileGrid :cols="2" class="bo-ncat">
+      <BoSection id="bo-ncat-list" title="Bildirim kodları" description="Kod tek kaynaktır (backend kataloğu); varsayılan kanal müşterinin tercihleriyle değişebilir." icon="mdi-format-list-bulleted" fill>
+        <BoFilterBar label="Katalog süzgeçleri" :active="activeFilters" @clear="clearFilters">
+          <template #search>
+            <v-text-field v-model="search" label="Kod ya da kategori ara" density="compact" hide-details clearable prepend-inner-icon="mdi-magnify" class="bo-toolbar__field" />
+          </template>
+          <BoSegmented v-model="surface" label="Yüzey" :options="SURFACES" />
+        </BoFilterBar>
+        <StateBlock
+          :phase="catPhase"
+          :error="cat.error.value"
+          :empty-title="search || surface !== 'all' ? 'Aramaya uyan kod yok' : 'Katalog boş'"
+          :empty-message="search || surface !== 'all' ? 'Aramayı ya da yüzey süzgecini değiştirin.' : 'Backend kataloğunda tanımlı bildirim yok.'"
+          :empty-variant="search || surface !== 'all' ? 'no-results' : 'no-data'"
+          @retry="cat.load()"
+        >
+          <BoTableFrame :label="`Bildirim kataloğu (${items.length} kod)`" max-height="70vh">
+            <template #head>
+              <tr>
+                <th scope="col">Kod</th>
+                <th scope="col" class="bo-hide-sm">Kategori</th>
+                <th scope="col">E-posta</th>
+                <th scope="col" class="bo-hide-sm">Önem</th>
+              </tr>
+            </template>
+            <tr v-for="c in items" :key="c.code" class="is-link" :class="{ 'is-selected': c.code === selected?.code }" @click="select(c)">
+              <th scope="row">
+                <button type="button" class="bo-link-btn bo-mono bo-ncat__code" :aria-pressed="c.code === selected?.code" :data-code="c.code" @click.stop="select(c)">{{ c.code }}</button>
+                <span v-if="c.mandatory" class="bo-ncat__tag">zorunlu</span>
+                <span v-if="c.surface === 'platform'" class="bo-ncat__tag">platform</span>
+              </th>
+              <td class="bo-hide-sm">{{ NOTIFY_CATEGORY[c.category] ?? c.category }}</td>
+              <td>{{ EMAIL_MODE[c.defaultChannels.email] }}</td>
+              <td class="bo-hide-sm">
+                <span class="bo-ncat__sev">
+                  <EkStatusChip v-for="s in c.severities" :key="s" :tone="(NOTIFY_SEVERITY[s] ?? { tone: 'neutral' }).tone" :label="(NOTIFY_SEVERITY[s] ?? { label: s }).label" />
+                </span>
+              </td>
+            </tr>
+          </BoTableFrame>
+        </StateBlock>
+      </BoSection>
 
-      <EkCard class="bo-ncat__preview" :title="selected ? selected.code : 'Şablon önizleme'" :subtitle="selected ? `${NOTIFY_CATEGORY[selected.category] ?? selected.category} · izin ${selected.permission} · saklama ${selected.retention}` : 'Soldan bir kod seçin'" icon="mdi-eye-outline">
+      <BoSection
+        class="bo-ncat__preview"
+        :title="selected ? selected.code : 'Şablon önizleme'"
+        :description="selected ? `${NOTIFY_CATEGORY[selected.category] ?? selected.category} · izin ${selected.permission} · saklama ${selected.retention}` : 'Soldan bir kod seçin'"
+        icon="mdi-eye-outline"
+        fill
+      >
         <EkEmptyState v-if="!selected" variant="first-run" title="Önizlemek için kod seçin" message="Seçtiğiniz kodun uygulama içi ve e-posta şablonu katalog örneğiyle çizilir. Gönderim yapılmaz." />
         <template v-else>
           <div class="bo-ncat__opts">
-            <div class="bo-seg" role="radiogroup" aria-label="Kanal">
-              <button v-for="o in CHANNELS" :key="o.value" type="button" role="radio" class="bo-seg__opt" :aria-checked="channel === o.value" :data-channel="o.value" @click="channel = o.value">{{ o.label }}</button>
-            </div>
-            <div class="bo-seg" role="radiogroup" aria-label="Dil">
-              <button v-for="o in LOCALES" :key="o.value" type="button" role="radio" class="bo-seg__opt" :aria-checked="locale === o.value" @click="locale = o.value">{{ o.label }}</button>
-            </div>
+            <BoSegmented v-model="channel" label="Kanal" :options="CHANNELS" />
+            <BoSegmented v-model="locale" label="Dil" :options="LOCALES" />
           </div>
 
           <fieldset class="bo-ncat__params">
@@ -100,8 +89,8 @@
           </div>
           <EkAlert v-if="pvError && pv" tone="warning" dense :title="pvError.title" :text="pvError.action" />
         </template>
-      </EkCard>
-    </div>
+      </BoSection>
+    </BoTileGrid>
 
     <GuardedDialog
       :action="testMail"
@@ -120,12 +109,18 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, reactive, ref, shallowRef, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { EkAlert, EkButton, EkCard, EkEmptyState, EkStatusChip } from '@entegrasyonik/ui/components'
+import { EkAlert, EkEmptyState, EkStatusChip } from '@entegrasyonik/ui/components'
 import { api } from '@bo/api'
 import type { NotificationCatalogItem, TemplatePreview } from '@bo/api/contract'
 import { useResource } from '@bo/composables/useResource'
 import { useGuardedAction } from '@bo/composables/useGuardedAction'
 import BoPageHeader from '@bo/components/shell/BoPageHeader.vue'
+import BoAction from '@bo/components/r2/BoAction.vue'
+import BoSection from '@bo/components/r2/BoSection.vue'
+import BoTileGrid from '@bo/components/r2/BoTileGrid.vue'
+import BoFilterBar from '@bo/components/r2/BoFilterBar.vue'
+import BoSegmented, { type BoSegmentOption } from '@bo/components/r2/BoSegmented.vue'
+import BoTableFrame from '@bo/components/r2/BoTableFrame.vue'
 import PageVerdict from '@bo/components/verdict/PageVerdict.vue'
 import { catalogVerdict } from './notificationsVerdict'
 import StateBlock from '@bo/components/kit/StateBlock.vue'
@@ -136,19 +131,19 @@ import { notifyAudited } from '@bo/utils/toast'
 import EmailFrame from './EmailFrame.vue'
 import '@bo/styles/kit.css'
 
-const SURFACES = [
+const SURFACES: Array<BoSegmentOption<'all' | 'tenant' | 'platform'>> = [
   { value: 'all', label: 'Tümü' },
   { value: 'tenant', label: 'Müşteri' },
   { value: 'platform', label: 'Platform' },
-] as const
-const CHANNELS = [
+]
+const CHANNELS: Array<BoSegmentOption<'inApp' | 'email'>> = [
   { value: 'inApp', label: 'Uygulama içi' },
   { value: 'email', label: 'E-posta' },
-] as const
-const LOCALES = [
+]
+const LOCALES: Array<BoSegmentOption<'tr' | 'en'>> = [
   { value: 'tr', label: 'Türkçe' },
   { value: 'en', label: 'English' },
-] as const
+]
 const EMAIL_MODE: Record<string, string> = { off: 'Kapalı', instant: 'Anlık', digest: 'Özet' }
 
 const router = useRouter()
@@ -169,6 +164,11 @@ const items = computed(() => {
     (c) => (surface.value === 'all' || c.surface === surface.value) && (!q || c.code.toLocaleLowerCase('tr').includes(q) || (NOTIFY_CATEGORY[c.category] ?? c.category).toLocaleLowerCase('tr').includes(q)),
   )
 })
+const activeFilters = computed(() => (search.value?.trim() ? 1 : 0) + (surface.value !== 'all' ? 1 : 0))
+function clearFilters() {
+  search.value = ''
+  surface.value = 'all'
+}
 const catPhase = computed(() => (cat.phase.value === 'ready' && !items.value.length ? 'empty' : cat.phase.value))
 
 const selected = shallowRef<NotificationCatalogItem | null>(null)
@@ -244,12 +244,7 @@ onMounted(() => cat.load())
 </script>
 
 <style scoped>
-.bo-ncat {
-  align-items: start;
-}
 .bo-ncat__preview {
-  position: sticky;
-  top: var(--ek-space-5);
   min-width: 0;
 }
 .bo-ncat__code {
@@ -309,6 +304,7 @@ onMounted(() => cat.load())
   font-size: var(--ek-type-caption-size);
 }
 .bo-ncat__out {
+  min-width: 0;
   transition: opacity var(--ek-duration-fast) var(--ek-easing-standard);
 }
 .bo-ncat__out[aria-busy='true'] {
@@ -324,6 +320,11 @@ onMounted(() => cat.load())
   border-radius: var(--ek-radius-md);
   background: var(--ek-color-surface-raised);
 }
+.bo-ncat__notif > * {
+  /* Parametreli önizleme (uzun URL / kimlik) dar ekranda kırılır, taşmaz. */
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
 .bo-ncat__notif h3 {
   margin: 0;
   font-size: var(--ek-type-label-size);
@@ -331,11 +332,6 @@ onMounted(() => cat.load())
 }
 .bo-ncat__notif p {
   margin: 0;
-}
-@media (max-width: 959px) {
-  .bo-ncat__preview {
-    position: static;
-  }
 }
 @media (max-width: 599px) {
   .bo-ncat__params {

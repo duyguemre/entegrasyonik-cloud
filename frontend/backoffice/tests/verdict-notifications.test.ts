@@ -42,8 +42,8 @@ describe('uyarılar hükmü', () => {
     expect(v.attention[0].id).toBe('unreadable-alerts')
   })
   it('susturma bitişi: aynı gün saat, değilse gün + saat', () => {
-    expect(muteUntilText(new Date(NOW + 2 * 3600_000).toISOString(), NOW)).toMatch(/^12:00'ye dek$/)
-    expect(muteUntilText(new Date(NOW + 30 * 3600_000).toISOString(), NOW)).toMatch(/^2 Eki \d\d:\d\d'ye dek$/)
+    expect(muteUntilText(new Date(NOW + 2 * 3600_000).toISOString(), NOW)).toMatch(/^bitiş 12:00$/)
+    expect(muteUntilText(new Date(NOW + 30 * 3600_000).toISOString(), NOW)).toMatch(/^bitiş 2 Eki \d\d:\d\d$/)
   })
 })
 

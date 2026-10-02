@@ -1,28 +1,18 @@
 <!-- KARAR/EYLEM: plan varsayılanları + Trendyol bütçesi + gölge mod. Düzenleme mevcut `_platform` taslak → yayın akışıyla (PublishDialogs). -->
 <template>
-  <section class="bo-panel" aria-labelledby="bo-cs-plans-title" data-testid="competition-plans">
-    <header class="bo-panel__bar">
-      <div>
-        <h2 id="bo-cs-plans-title" class="bo-panel__title">Plan varsayılanları</h2>
-        <p class="bo-panel__hint">Her abonelik planının buybox izleme kapsamı. Tek tek müşteri için aşağıdaki istisnalar bu değerleri alan alan geçersiz kılar.</p>
-      </div>
-    </header>
-    <EkCard flush>
+  <BoSection id="bo-cs-plans" title="Plan varsayılanları" description="Her abonelik planının buybox izleme kapsamı. Tek tek müşteri için “Müşteri istisnaları” bölümü bu değerleri alan alan geçersiz kılar." data-testid="competition-plans">
       <StateBlock v-if="!cs.hasCatalog" phase="empty" empty-title="Rekabet ayarları katalogda yok" empty-message="Sunucu sürümü bu ayar grubunu henüz içermiyor; sunucuyu güncelleyin ve sayfayı yenileyin." />
       <div v-else class="bo-cp">
-        <div class="bo-table-wrap" tabindex="0" role="region" aria-label="Plan varsayılanları tablosu">
-          <table class="bo-table" data-density="compact">
-            <caption class="ek-sr-only">Plan başına SKU tavanı, tazeleme aralığı, tazelik eşiği ve öncelik politikası</caption>
-            <thead>
-              <tr>
-                <th scope="col">Plan</th>
-                <th v-for="f in FIELDS" :key="f" scope="col">{{ FIELD_LABEL[f] }}<span v-if="FIELD_UNIT[f]" class="bo-cp__unit"> ({{ FIELD_UNIT[f] }})</span></th>
-              </tr>
-            </thead>
-            <tbody>
+        <BoTableFrame label="Plan varsayılanları">
+          <template #head>
+            <tr>
+              <th scope="col">Plan</th>
+              <th v-for="f in FIELDS" :key="f" scope="col">{{ FIELD_LABEL[f] }}<span v-if="FIELD_UNIT[f]" class="bo-cp__unit"> ({{ FIELD_UNIT[f] }})</span></th>
+            </tr>
+          </template>
               <tr v-for="plan in plans" :key="plan" :data-plan="plan">
                 <th scope="row">{{ PLAN_NAME[plan] }}</th>
-                <td v-for="f in FIELDS" :key="f" class="bo-cp__cell" :class="{ 'is-changed': cfg.isChanged(keyOf(plan, f)) }">
+                <td v-for="f in FIELDS" :key="f" class="bo-cp__cell" :class="{ 'is-changed': cfg.isChanged(keyOf(plan, f)) }" :data-setting="keyOf(plan, f)">
                   <v-select
                     v-if="f === 'priority'"
                     :model-value="cfg.form[keyOf(plan, f)]"
@@ -33,6 +23,8 @@
                     hide-details
                     single-line
                     :error="!!errorOf(keyOf(plan, f))"
+                    :aria-invalid="errorOf(keyOf(plan, f)) ? 'true' : undefined"
+                    :aria-describedby="errorOf(keyOf(plan, f)) ? errIdOf(keyOf(plan, f)) : undefined"
                     :aria-label="`${PLAN_NAME[plan]}: ${FIELD_LABEL[f]}`"
                     :data-testid="`plan-${plan}-${f}`"
                     @update:model-value="(v) => (cfg.form[keyOf(plan, f)] = v)"
@@ -46,6 +38,8 @@
                       hide-details
                       single-line
                       :error="!!errorOf(keyOf(plan, f))"
+                    :aria-invalid="errorOf(keyOf(plan, f)) ? 'true' : undefined"
+                    :aria-describedby="errorOf(keyOf(plan, f)) ? errIdOf(keyOf(plan, f)) : undefined"
                       :aria-label="`${PLAN_NAME[plan]}: ${FIELD_LABEL[f]} (${FIELD_UNIT[f]})`"
                       :data-testid="`plan-${plan}-${f}`"
                       @update:model-value="(v) => (cfg.form[keyOf(plan, f)] = v === '' || v === null ? null : Number(v))"
@@ -55,9 +49,7 @@
                   </template>
                 </td>
               </tr>
-            </tbody>
-          </table>
-        </div>
+        </BoTableFrame>
         <p class="bo-panel__hint">
           Tazeleme aralığı: bir barkodun buybox bilgisi en erken bu kadar dakikada bir okunur (360 dk = günde 4). Tazelik eşiği: bundan eski gözlem “eski veri” etiketi alır ve bildirim üretmez.
           Öncelik politikası bütçe dar kaldığında hangi SKU’ların önce okunacağını belirler.
@@ -76,27 +68,32 @@
           />
         </div>
 
-        <ul v-if="messages.length" class="bo-cp__errors" role="alert" data-testid="plans-errors">
-          <li v-for="m in messages" :key="m">{{ m }}</li>
-        </ul>
-        <EkAlert v-if="cfg.saveError && !messages.length" tone="error" live dense :text="cfg.saveError.message" data-testid="save-error" />
-
-        <div class="bo-cp__actions">
-          <EkButton tone="primary" icon="mdi-file-eye-outline" :loading="cfg.saving" :disabled="saveDisabled" data-testid="competition-save" @click="cfg.saveAndPreview()">Taslak kaydet ve önizle</EkButton>
-          <span class="bo-panel__hint" aria-live="polite">{{ hint }}</span>
+        <!-- Her tuşta yeniden okunmasın: kibar canlı bölge; hücre iletisine aria-describedby ile bağlı (id). -->
+        <div class="bo-cp__live" aria-live="polite">
+          <ul v-if="messages.length" class="bo-cp__errors" data-testid="plans-errors">
+            <li v-for="m in messages" :id="m.id" :key="m.key">{{ m.text }}</li>
+          </ul>
         </div>
+
         <p class="bo-panel__hint bo-cp__effect">
           <v-icon icon="mdi-timer-sand" aria-hidden="true" />
           Yayınlanan değerler en geç ~15 sn içinde tüm sunucularda etkinleşir; yeniden başlatma gerekmez. Yayın gerekçe ister, geçmişten geri alınabilir.
         </p>
       </div>
-    </EkCard>
-  </section>
+    <template v-if="cs.hasCatalog" #footer>
+      <div class="bo-cp__actions">
+        <BoAction kind="save" label="Taslak kaydet ve önizle" :loading="cfg.saving" :disabled="saveDisabled" data-testid="competition-save" @click="cfg.saveAndPreview()" />
+        <span class="bo-panel__hint" aria-live="polite">{{ hint }}</span>
+      </div>
+    </template>
+  </BoSection>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import { EkAlert, EkButton, EkCard } from '@entegrasyonik/ui/components'
+import { computed, useId } from 'vue'
+import BoSection from '@bo/components/r2/BoSection.vue'
+import BoAction from '@bo/components/r2/BoAction.vue'
+import BoTableFrame from '@bo/components/r2/BoTableFrame.vue'
 import StateBlock from '@bo/components/kit/StateBlock.vue'
 import SettingField from './SettingField.vue'
 import type { CompetitionState } from './useCompetition'
@@ -114,9 +111,15 @@ const sharedItems = computed(() => props.cs.pricingItems.filter((i) => i.key ===
 /** İstemci tarafı erken denetim (yalnız değişen alanlar) + sunucunun alan hataları (VALIDATION → alanın yanında). */
 const localErrors = computed(() => (props.cs.limits ? validatePricingForm(props.cs.cfg.form, props.cs.limits, props.cs.priorities) : {}))
 const errorOf = (key: string): string | undefined => props.cs.cfg.fieldErrors[key] ?? (props.cs.cfg.isChanged(key) ? localErrors.value[key] : undefined)
+const uid = useId()
+/** Hata iletisinin kimliği (hücre `aria-describedby` hedefi). */
+const errIdOf = (key: string) => `bo-cp-err-${uid}-${key.replace(/[^\w-]/g, '-')}`
 const messages = computed(() => {
   const keys = new Set([...Object.keys(props.cs.cfg.fieldErrors), ...Object.keys(localErrors.value).filter((k) => props.cs.cfg.isChanged(k))])
-  return [...keys].map((k) => errorOf(k)).filter((m): m is string => !!m)
+  return [...keys].flatMap((k) => {
+    const text = errorOf(k)
+    return text ? [{ key: k, id: errIdOf(k), text }] : []
+  })
 })
 const pending = computed(() => props.cs.pendingKeys.length)
 const saveDisabled = computed(() => (!pending.value && !props.cs.cfg.hasDraft) || messages.value.length > 0)
@@ -128,7 +131,6 @@ const hint = computed(() => (messages.value.length ? 'Geçersiz değer var; düz
   display: flex;
   flex-direction: column;
   gap: var(--ek-space-4);
-  padding: var(--ek-space-5);
 }
 .bo-cp__unit {
   text-transform: none;
@@ -152,6 +154,10 @@ const hint = computed(() => (messages.value.length ? 'Geçersiz değer var; düz
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: var(--ek-space-2) var(--ek-space-4);
+}
+.bo-cp__live:empty {
+  /* Kalıcı canlı bölge boşken ızgara boşluğunu ikiletmesin (bölge DOM'da kalır → ilk hata da duyurulur). */
+  margin-top: calc(-1 * var(--ek-space-4));
 }
 .bo-cp__errors {
   margin: 0;

@@ -3,7 +3,7 @@
     <BoPageHeader :updated-at="loadedAt ?? undefined" :stale="stale" :auto-refresh="30">
       <template #actions>
         <CopyViewLink />
-        <EkButton tone="secondary" icon="mdi-refresh" :loading="list.refreshing.value || list.phase.value === 'loading' || firingSrc.refreshing.value" data-page-refresh @click="refresh">Yenile</EkButton>
+        <BoAction kind="refresh" :loading="list.refreshing.value || list.phase.value === 'loading' || firingSrc.refreshing.value" data-page-refresh @click="refresh" />
       </template>
     </BoPageHeader>
 
@@ -19,76 +19,71 @@
 
     <PushCard />
 
-    <div class="bo-toolbar">
-      <div class="bo-seg" role="radiogroup" aria-label="Uyarı durumu">
-        <button v-for="o in STATUS_OPTS" :key="o.value" type="button" role="radio" class="bo-seg__opt" :aria-checked="status === o.value" :data-status="o.value" @click="status = o.value">{{ o.label }}</button>
-      </div>
-      <div class="bo-seg" role="radiogroup" aria-label="Önem">
-        <button v-for="o in LEVEL_OPTS" :key="o.value" type="button" role="radio" class="bo-seg__opt" :aria-checked="level === o.value" @click="level = o.value">{{ o.label }}</button>
-      </div>
-      <v-select v-model="rule" :items="RULE_OPTS" label="Kural" density="compact" hide-details clearable class="bo-toolbar__field" />
-    </div>
-
-    <EkCard flush>
-      <StateBlock
+    <BoSection id="bo-al-list" title="Uyarılar" description="Kurallara göre üretilen etkin ve çözülmüş uyarılar." icon="mdi-bell-alert-outline">
+      <BoFilterBar label="Uyarı süzgeçleri" :active="activeFilters" @clear="clearFilters">
+        <BoSegmented v-model="status" label="Uyarı durumu" :options="STATUS_OPTS" />
+        <BoSegmented v-model="level" label="Önem" :options="LEVEL_OPTS" />
+        <v-select v-model="rule" :items="RULE_OPTS" label="Kural" density="compact" hide-details clearable class="bo-toolbar__field" />
+      </BoFilterBar>
+      <BoDataTable
+        :items="rows"
+        :columns="COLUMNS"
+        row-key="id"
+        label="Uyarılar"
         :phase="list.phase.value"
         :error="list.error.value"
-        :retrying="list.phase.value === 'loading'"
         :empty-title="status === 'firing' ? 'Etkin uyarı yok' : 'Uyarı yok'"
         :empty-message="status === 'firing' ? 'Tüm kurallar eşiklerin altında. Çözülen uyarılar 30 gün saklanır.' : 'Süzgece uyan uyarı bulunmuyor.'"
-        :empty-variant="status === 'firing' && level === 'all' && !rule ? 'no-data' : 'no-results'"
         @retry="list.reload()"
       >
-        <EkDataTable :items="rows" :columns="COLUMNS" row-key="id">
-          <template #cell-rule="{ item }">
-            <span class="bo-cell-stack">
-              <span class="bo-al__rule"><code class="bo-code">{{ item.ruleId }}</code> {{ ruleInfo(item as AlertRow).label }}</span>
-              <span class="bo-mono bo-muted">{{ item.scopeKey }}</span>
+        <template #cell-rule="{ item }">
+          <span class="bo-cell-stack">
+            <span class="bo-al__rule"><code class="bo-code">{{ item.ruleId }}</code> {{ ruleInfo(item as AlertRow).label }}</span>
+            <span class="bo-mono bo-muted">{{ item.scopeKey }}</span>
+          </span>
+        </template>
+        <template #cell-state="{ item }">
+          <span class="bo-cell-stack">
+            <span class="bo-al__chips">
+              <EkStatusChip :tone="ALERT_LEVEL[(item as AlertRow).level].tone" :label="ALERT_LEVEL[(item as AlertRow).level].label" dot />
+              <EkStatusChip v-if="item.status === 'resolved'" tone="success" label="Çözüldü" />
             </span>
-          </template>
-          <template #cell-state="{ item }">
-            <span class="bo-cell-stack">
-              <span class="bo-al__chips">
-                <EkStatusChip :tone="ALERT_LEVEL[(item as AlertRow).level].tone" :label="ALERT_LEVEL[(item as AlertRow).level].label" dot />
-                <EkStatusChip v-if="item.status === 'resolved'" tone="success" label="Çözüldü" />
-              </span>
-              <!-- NT-08: gölge/susturma rozet değil, ikinci satır metin (satır 2 satırı geçmez). -->
-              <span v-if="item.shadow || isMuted(item as AlertRow)" class="bo-muted bo-al__sub">
-                <span v-if="item.shadow" data-testid="shadow-note">Gölge</span>
-                <span v-if="item.shadow && isMuted(item as AlertRow)" aria-hidden="true"> · </span>
-                <span v-if="isMuted(item as AlertRow)" data-testid="muted-chip">Susturuldu · {{ muteUntilText((item as AlertRow).mutedUntil!) }}</span>
-              </span>
+            <!-- NT-08: gölge/susturma rozet değil, ikinci satır metin (satır 2 satırı geçmez). -->
+            <span v-if="item.shadow || isMuted(item as AlertRow)" class="bo-muted bo-al__sub">
+              <span v-if="item.shadow" data-testid="shadow-note">Gölge</span>
+              <span v-if="item.shadow && isMuted(item as AlertRow)" aria-hidden="true"> · </span>
+              <span v-if="isMuted(item as AlertRow)" data-testid="muted-chip">Susturuldu · {{ muteUntilText((item as AlertRow).mutedUntil!) }}</span>
             </span>
-          </template>
-          <template #cell-detail="{ item }">
-            <span class="bo-al__detail">{{ detailText(item as AlertRow) }}</span>
-            <RouterLink v-if="tidOf(item as AlertRow)" :to="`/musteriler/${tidOf(item as AlertRow)}`" class="ek-num bo-al__tid">#{{ tidOf(item as AlertRow) }}</RouterLink>
-          </template>
-          <template #cell-time="{ item }">
-            <span class="bo-cell-stack bo-al__time">
-              <span v-if="item.status === 'resolved' && item.resolvedAt">Çözüldü <EkRelativeTime :value="(item as AlertRow).resolvedAt!" /></span>
-              <span v-else>Başladı <EkRelativeTime :value="(item as AlertRow).firstFiredAt" /></span>
-              <span>son görülme <EkRelativeTime :value="(item as AlertRow).lastSeenAt" /></span>
-            </span>
-          </template>
-          <template #cell-actions="{ item }">
-            <span v-if="item.status === 'firing'" class="bo-row-actions">
-              <EkButton v-if="isMuted(item as AlertRow)" size="sm" tone="ghost" icon="mdi-bell-ring-outline" data-testid="unmute" @click="openMute(item as AlertRow, 0)">Susturmayı kaldır</EkButton>
-              <EkButton v-else size="sm" tone="secondary" icon="mdi-bell-off-outline" data-testid="mute" @click="openMute(item as AlertRow, 4)">Sustur</EkButton>
-            </span>
-          </template>
-        </EkDataTable>
-        <LoadMore :count="list.items.value.length" :has-more="list.hasMore.value" :loading="list.loadingMore.value" :error="list.moreError.value" @more="list.loadMore()" />
-      </StateBlock>
-    </EkCard>
+          </span>
+        </template>
+        <template #cell-detail="{ item }">
+          <span class="bo-al__detail ek-num">{{ detailText(item as AlertRow) }}</span>
+          <RouterLink v-if="tidOf(item as AlertRow)" :to="`/musteriler/${tidOf(item as AlertRow)}`" class="ek-num bo-al__tid">#{{ tidOf(item as AlertRow) }}</RouterLink>
+        </template>
+        <template #cell-time="{ item }">
+          <span class="bo-cell-stack bo-al__time">
+            <span v-if="item.status === 'resolved' && item.resolvedAt">Çözüldü <EkRelativeTime :value="(item as AlertRow).resolvedAt!" /></span>
+            <span v-else>Başladı <EkRelativeTime :value="(item as AlertRow).firstFiredAt" /></span>
+            <span>son görülme <EkRelativeTime :value="(item as AlertRow).lastSeenAt" /></span>
+          </span>
+        </template>
+        <template #cell-actions="{ item }">
+          <span v-if="item.status === 'firing'" class="bo-row-actions">
+            <EkButton v-if="isMuted(item as AlertRow)" size="sm" tone="ghost" icon="mdi-bell-ring-outline" :aria-label="`Susturmayı kaldır: ${rowName(item as AlertRow)}`" data-testid="unmute" @click="openMute(item as AlertRow, 0)">Susturmayı kaldır</EkButton>
+            <EkButton v-else size="sm" tone="secondary" icon="mdi-bell-off-outline" :aria-label="`Sustur: ${rowName(item as AlertRow)}`" data-testid="mute" @click="openMute(item as AlertRow, 4)">Sustur</EkButton>
+          </span>
+        </template>
+        <template v-if="list.phase.value === 'ready'" #footer>
+          <BoPagination :count="list.items.value.length" :has-more="list.hasMore.value" :loading="list.loadingMore.value" :error="list.moreError.value" @more="list.loadMore()" />
+        </template>
+      </BoDataTable>
+    </BoSection>
 
-    <section class="bo-panel bo-al__rules" aria-labelledby="bo-al-rules">
-      <h2 id="bo-al-rules" class="bo-panel__title">Kurallar</h2>
+    <BoSection id="bo-al-rules" title="Kurallar" description="Susturma ve bakım modu bildirimi bastırır, kayıt sürer. Aynı uyarı için yeniden bildirim kritikte 4 saat, uyarıda 24 saat sonra gider." icon="mdi-format-list-checks">
       <dl class="bo-kv">
         <div v-for="(r, k) in ALERT_RULE" :key="k"><dt><code class="bo-code">{{ k }}</code> {{ r.label }}</dt><dd>{{ r.hint }}</dd></div>
       </dl>
-      <p class="bo-muted bo-al__note">Susturma ve bakım modu bildirimi bastırır, kayıt sürer. Aynı uyarı için yeniden bildirim kritikte 4 saat, uyarıda 24 saat sonra gider.</p>
-    </section>
+    </BoSection>
 
     <GuardedDialog
       :action="mute"
@@ -110,32 +105,37 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { EkAlert, EkButton, EkCard, EkDataTable, EkRelativeTime, EkStatusChip, type EkTableColumn } from '@entegrasyonik/ui/components'
+import { EkAlert, EkButton, EkRelativeTime, EkStatusChip, type EkTableColumn } from '@entegrasyonik/ui/components'
 import { api } from '@bo/api'
 import type { AlertLevel, AlertRow, AlertStatus } from '@bo/api/contract'
 import { useCursorList } from '@bo/composables/useCursorList'
 import { useGuardedAction } from '@bo/composables/useGuardedAction'
 import BoPageHeader from '@bo/components/shell/BoPageHeader.vue'
+import BoAction from '@bo/components/r2/BoAction.vue'
 import PageVerdict from '@bo/components/verdict/PageVerdict.vue'
 import CopyViewLink from '@bo/components/CopyViewLink.vue'
 import { useVerdictSources } from '@bo/composables/useVerdictSources'
 import { alertsVerdict, muteUntilText } from './notificationsVerdict'
 import PushCard from '@bo/pwa/PushCard.vue'
-import StateBlock from '@bo/components/kit/StateBlock.vue'
-import LoadMore from '@bo/components/kit/LoadMore.vue'
+import BoPagination from '@bo/components/r2/BoPagination.vue'
+import BoSection from '@bo/components/r2/BoSection.vue'
+import BoFilterBar from '@bo/components/r2/BoFilterBar.vue'
+import BoSegmented, { type BoSegmentOption } from '@bo/components/r2/BoSegmented.vue'
+import BoDataTable from '@bo/components/r2/BoDataTable.vue'
 import GuardedDialog from '@bo/components/kit/GuardedDialog.vue'
 import { ALERT_LEVEL, ALERT_RULE, CHANNEL } from '@bo/utils/labels'
 import { formatDateTime } from '@bo/utils/format'
+import { formatCount } from '@bo/utils/units'
 import { notifyAudited } from '@bo/utils/toast'
 import '@bo/styles/kit.css'
 
 const POLL_MS = 30_000
-const STATUS_OPTS: Array<{ value: AlertStatus | 'all'; label: string }> = [
+const STATUS_OPTS: Array<BoSegmentOption<AlertStatus | 'all'>> = [
   { value: 'firing', label: 'Etkin' },
   { value: 'resolved', label: 'Çözüldü' },
   { value: 'all', label: 'Tümü' },
 ]
-const LEVEL_OPTS: Array<{ value: AlertLevel | 'all'; label: string }> = [
+const LEVEL_OPTS: Array<BoSegmentOption<AlertLevel | 'all'>> = [
   { value: 'all', label: 'Tüm önemler' },
   { value: 'critical', label: 'Kritik' },
   { value: 'warning', label: 'Uyarı' },
@@ -201,19 +201,29 @@ const list = useCursorList<AlertRow>(async (cursor) => {
   return res
 })
 const rows = computed(() => list.items.value as unknown as Array<Record<string, unknown>>)
+const activeFilters = computed(() => (status.value !== 'firing' ? 1 : 0) + (level.value !== 'all' ? 1 : 0) + (rule.value ? 1 : 0))
+function clearFilters() {
+  status.value = 'firing'
+  level.value = 'all'
+  rule.value = null
+}
 const hasShadow = computed(() => list.items.value.some((a) => a.shadow && a.status === 'firing'))
 
 const ruleInfo = (a: AlertRow) => ALERT_RULE[a.ruleId] ?? { label: 'Kural', hint: '' }
+/** Satır düğmesinin benzersiz adı (görünen fiil başta + kural + kapsam): "Sustur: Entegrasyon hata oranı · R1:trendyol". */
+const rowName = (a: AlertRow) => `${ruleInfo(a).label} · ${a.scopeKey}`
 const isMuted = (a: AlertRow) => !!a.mutedUntil && Date.parse(a.mutedUntil) > Date.now()
 const tidOf = (a: AlertRow) => (typeof a.detail.tid === 'number' && a.detail.tid > 0 ? a.detail.tid : null)
 const integ = (v: unknown) => (typeof v === 'string' ? (CHANNEL[v] ?? v) : '—')
 function detailText(a: AlertRow): string {
   const d = a.detail
-  if (a.ruleId === 'R1') return `${integ(d.integ)}: ${d.errors}/${d.total} çağrı hatalı (%${Math.round(Number(d.rate) * 100)})`
-  if (a.ruleId === 'R2' && 'authErrors' in d) return `${integ(d.integ)}: ${d.authErrors} kimlik hatası (15 dk)`
-  if (a.ruleId === 'R2') return `${integ(d.integ)}: ${d.openCircuits} devre kesici açık · ${Math.round(Number(d.openForSec) / 60)} dk`
-  if (a.ruleId === 'R4') return `${d.wait} bekleyen iş · en eski ${Math.round(Number(d.oldestWaitSec) / 60)} dk`
-  if (a.ruleId === 'R7') return `Son saatte ${d.dead} kalıcı hatalı teslim`
+  // Sayılar binlik ayırıcıyla (formatCount); hücre `ek-num` (eşit genişlikli rakam).
+  const n = (v: unknown) => formatCount(Number(v))
+  if (a.ruleId === 'R1') return `${integ(d.integ)}: ${n(d.errors)}/${n(d.total)} çağrı hatalı (%${Math.round(Number(d.rate) * 100)})`
+  if (a.ruleId === 'R2' && 'authErrors' in d) return `${integ(d.integ)}: ${n(d.authErrors)} kimlik hatası (15 dk)`
+  if (a.ruleId === 'R2') return `${integ(d.integ)}: ${n(d.openCircuits)} devre kesici açık · ${n(Math.round(Number(d.openForSec) / 60))} dk`
+  if (a.ruleId === 'R4') return `${n(d.wait)} bekleyen iş · en eski ${n(Math.round(Number(d.oldestWaitSec) / 60))} dk`
+  if (a.ruleId === 'R7') return `Son saatte ${n(d.dead)} kalıcı hatalı teslim`
   return Object.entries(d)
     .map(([k, v]) => `${k}=${v}`)
     .join(' · ')
@@ -298,13 +308,6 @@ onBeforeUnmount(() => clearInterval(poll))
   margin-right: var(--ek-space-2);
 }
 .bo-al__tid {
-  font-size: var(--ek-type-caption-size);
-}
-.bo-al__rules {
-  margin-top: var(--ek-space-2);
-}
-.bo-al__note {
-  margin: var(--ek-space-3) 0 0;
   font-size: var(--ek-type-caption-size);
 }
 </style>

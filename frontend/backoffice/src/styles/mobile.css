@@ -22,6 +22,17 @@
     min-height: var(--ek-control-h-touch);
   }
 
+  /* bo-wdg: ortak `EkRefreshButton` çip boyuna (28 px) indi (main eşitlemesi); backoffice'te dokunma hedefi 44 px kalır.
+     Loglar sorun satırı düğmesi (başlık + meta) dokunmada en az 44 px. */
+  #app .ek-refresh {
+    min-width: var(--ek-control-h-touch);
+    height: var(--ek-control-h-touch);
+  }
+
+  #app .bo-issue {
+    min-height: var(--ek-control-h-touch);
+  }
+
   /* Segment, sekme, seçim kontrolleri */
   #app .bo-seg__opt {
     height: var(--ek-control-h-touch);
@@ -87,7 +98,11 @@
   #app .bo-us__link,
   #app .bo-trace-cell__link,
   #app .bo-tenants__sort,
-  #app .bo-subs__link {
+  #app .bo-subs__link,
+  /* BO-R2a: grafik sarmalayıcısı ve genel bakış kullanım sayıları */
+  #app .bo-chart__toggle,
+  #app .bo-chart__retry,
+  #app .bo-us__num {
     position: relative;
   }
 
@@ -118,7 +133,10 @@
   #app .bo-us__link::after,
   #app .bo-trace-cell__link::after,
   #app .bo-tenants__sort::after,
-  #app .bo-subs__link::after {
+  #app .bo-subs__link::after,
+  #app .bo-chart__toggle::after,
+  #app .bo-chart__retry::after,
+  #app .bo-us__num::after {
     content: '';
     position: absolute;
     top: min(0px, calc((100% - var(--ek-control-h-touch)) / 2));
@@ -129,6 +147,12 @@
 
   /* Log merkezinde süzgeç seçenekleri tam satır dokunma alanı */
   #app .bo-facet__opt {
+    min-height: var(--ek-control-h-touch);
+  }
+
+  /* BO-R2a: dar yan boşlukla tek satıra sığan satır bağlantıları ve sözlük bağlantı-düğmesi de 44 px. */
+  #app .bo-now__row,
+  #app .bo-action-link {
     min-height: var(--ek-control-h-touch);
   }
 }

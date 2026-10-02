@@ -117,6 +117,16 @@ html[data-theme='dark'] {
   --ek-app-nav-reveal: 0ms;
 }
 
+/* bo-wdg — Windows yüksek karşıtlık (`forced-colors`): bileşenlerin çoğu odağı `outline: none` + `box-shadow` halkasıyla
+ * çizer; bu kipte gölge çizilmez → odak görünmez olur. Tek genel kural sistem rengiyle çerçeve verir. Yalnız
+ * forced-colors altında etkin — normal görünüm değişmez. */
+@media (forced-colors: active) {
+  :focus-visible {
+    outline: 2px solid CanvasText !important;
+    outline-offset: 2px;
+  }
+}
+
 /* ADR-0015 Karar 1.2 — para/adet/tarih/kimlik değerleri için tek yardımcı
  * sınıf: sabit genişlikli rakamlar (tablo sayı sütunları hizalanır,
  * KPI değerleri titremez). */

@@ -1,12 +1,5 @@
 <template>
-  <section class="bo-panel" aria-labelledby="bo-flags-title">
-    <header class="bo-panel__bar">
-      <div>
-        <h2 id="bo-flags-title" class="bo-panel__title">Özellik bayrakları</h2>
-        <p class="bo-panel__hint">Bayrak, varsayılanı kapalı bir ayardır. Yüzde/kademeli açılım yoktur; tenant listesi boşsa herkes için geçerlidir.</p>
-      </div>
-    </header>
-    <EkCard flush>
+  <BoSection id="bo-flags" flush title="Özellik bayrakları" description="Bayrak, varsayılanı kapalı bir ayardır. Yüzde/kademeli açılım yoktur; tenant listesi boşsa herkes için geçerlidir.">
       <div v-if="!flags.length" class="bo-flags__empty" data-testid="flags-empty">
         <EkEmptyState variant="no-data" title="Henüz özellik bayrağı yok" message="Kod kataloğunda (FEATURE_FLAGS) bayrak yok; ilk bayrak eklendiğinde burada görünür. Katalogda olmayan bayrak yazılamaz." />
       </div>
@@ -40,16 +33,17 @@
           />
         </li>
       </ul>
-      <div v-if="flags.length" class="bo-flags__actions">
-        <EkButton tone="primary" icon="mdi-file-eye-outline" :loading="cfg.saving" :disabled="!cfg.changedKeys.length && !cfg.hasDraft" @click="cfg.saveAndPreview()">Taslak kaydet ve önizle</EkButton>
-      </div>
-    </EkCard>
-  </section>
+    <template v-if="flags.length" #footer>
+      <BoAction kind="save" label="Taslak kaydet ve önizle" :loading="cfg.saving" :disabled="!cfg.changedKeys.length && !cfg.hasDraft" @click="cfg.saveAndPreview()" />
+    </template>
+  </BoSection>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { EkButton, EkCard, EkEmptyState, EkStatusChip } from '@entegrasyonik/ui/components'
+import { EkEmptyState, EkStatusChip } from '@entegrasyonik/ui/components'
+import BoSection from '@bo/components/r2/BoSection.vue'
+import BoAction from '@bo/components/r2/BoAction.vue'
 import type { PlatformConfig } from './usePlatformConfig'
 import '@bo/styles/kit.css'
 
@@ -102,9 +96,6 @@ const tenantList = (key: string): string[] => {
 .bo-flag__name {
   color: var(--ek-color-content-strong);
   font-weight: var(--ek-font-weight-semibold);
-}
-.bo-flags__actions {
-  padding: var(--ek-space-4) var(--ek-space-5);
 }
 .bo-flags__empty {
   padding: var(--ek-space-4);

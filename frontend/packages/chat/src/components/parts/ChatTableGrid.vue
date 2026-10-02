@@ -13,7 +13,7 @@
       </thead>
       <tbody>
         <tr v-for="(row, index) in rows" :key="rowId(row, index)" :ref="(el) => setRow(el, index)" tabindex="-1">
-          <td v-for="col in columns" :key="col.key" :class="`is-${columnAlign(col)}`">
+          <td v-for="col in columns" :key="col.key" :class="`is-${columnAlign(col)}`" :data-label="col.label">
             <template v-if="isEntityRef(row[col.key])">
               <a v-if="entityTarget(row[col.key])" class="ek-chat-link" :href="entityTarget(row[col.key])!.href" @click.prevent="openEntity(row[col.key])">{{ (row[col.key] as EntityRef).label }}</a>
               <span v-else>{{ (row[col.key] as EntityRef).label }}</span>

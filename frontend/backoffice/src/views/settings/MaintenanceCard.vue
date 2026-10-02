@@ -1,17 +1,12 @@
 <template>
-  <section class="bo-panel" aria-labelledby="bo-maint-title" data-testid="maintenance-card">
-    <EkCard flush>
-      <div class="bo-maint">
-        <header class="bo-panel__bar">
-          <div>
-            <h2 id="bo-maint-title" class="bo-panel__title">Bakım modu</h2>
-            <p class="bo-panel__hint">Açıkken müşteri uygulamasında bakım şeridi görünür ve veri yazan istekler reddedilir.</p>
-          </div>
-          <span class="bo-maint__status">
-            <EkStatusChip :tone="isOn ? 'warning' : 'success'" :label="isOn ? 'Bakım modu açık' : 'Bakım modu kapalı'" dot data-testid="maintenance-status" />
-            <span class="bo-panel__hint ek-num">Yayın sürümü: {{ cfg.data?.published ? cfg.data.published : 'yok (varsayılanlar)' }}</span>
-          </span>
-        </header>
+  <BoSection id="bo-maint" title="Bakım modu" description="Açıkken müşteri uygulamasında bakım şeridi görünür ve veri yazan istekler reddedilir." :tone="isOn ? 'warning' : undefined" data-testid="maintenance-card">
+    <template #actions>
+      <span class="bo-maint__status">
+        <EkStatusChip :tone="isOn ? 'warning' : 'success'" :label="isOn ? 'Bakım modu açık' : 'Bakım modu kapalı'" dot data-testid="maintenance-status" />
+        <span class="bo-panel__hint ek-num">Yayın sürümü: {{ cfg.data?.published ? cfg.data.published : 'yok (varsayılanlar)' }}</span>
+      </span>
+    </template>
+    <div class="bo-maint">
 
         <div class="bo-maint__form">
           <SettingField v-if="enabledItem" :item="enabledItem" :model-value="cfg.form['maintenance.enabled']" :effective="cfg.data?.values['maintenance.enabled']" :changed="cfg.isChanged('maintenance.enabled')" :error="cfg.fieldErrors['maintenance.enabled']" @update:model-value="(v) => (cfg.form['maintenance.enabled'] = v)" />
@@ -38,18 +33,21 @@
           <p class="bo-panel__hint">Yayından sonra değer ~15 sn içinde tüm sunucularda etkinleşir; müşteri uygulaması ek olarak en çok 30 sn önbellekten okuyabilir.</p>
         </div>
 
-        <div class="bo-maint__actions">
-          <EkButton tone="primary" icon="mdi-file-eye-outline" :loading="cfg.saving" :disabled="!cfg.changedKeys.length && !cfg.hasDraft" data-testid="maintenance-save" @click="cfg.saveAndPreview()">Taslak kaydet ve önizle</EkButton>
-          <span v-if="cfg.changedKeys.length" class="bo-panel__hint">{{ cfg.changedKeys.length }} değişiklik bekliyor (bakım ve diğer ayarlar aynı taslağı paylaşır).</span>
-        </div>
+    </div>
+    <template #footer>
+      <div class="bo-maint__actions">
+        <BoAction kind="save" label="Taslak kaydet ve önizle" :loading="cfg.saving" :disabled="!cfg.changedKeys.length && !cfg.hasDraft" data-testid="maintenance-save" @click="cfg.saveAndPreview()" />
+        <span v-if="cfg.changedKeys.length" class="bo-panel__hint">{{ cfg.changedKeys.length }} değişiklik bekliyor (bakım ve diğer ayarlar aynı taslağı paylaşır).</span>
       </div>
-    </EkCard>
-  </section>
+    </template>
+  </BoSection>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { EkButton, EkCard, EkStatusChip } from '@entegrasyonik/ui/components'
+import { EkStatusChip } from '@entegrasyonik/ui/components'
+import BoSection from '@bo/components/r2/BoSection.vue'
+import BoAction from '@bo/components/r2/BoAction.vue'
 import SettingField from './SettingField.vue'
 import type { PlatformConfig } from './usePlatformConfig'
 import '@bo/styles/kit.css'
@@ -65,7 +63,6 @@ const isOn = computed(() => props.cfg.data?.values['maintenance.enabled']?.value
   display: flex;
   flex-direction: column;
   gap: var(--ek-space-4);
-  padding: var(--ek-space-5);
 }
 .bo-maint__status {
   display: flex;

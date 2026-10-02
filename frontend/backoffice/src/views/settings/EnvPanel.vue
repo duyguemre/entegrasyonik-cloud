@@ -1,13 +1,6 @@
 <template>
-  <section class="bo-panel" aria-labelledby="bo-env-title">
-    <header class="bo-panel__bar">
-      <div>
-        <h2 id="bo-env-title" class="bo-panel__title">Ortam (salt okunur)</h2>
-        <p class="bo-panel__hint">Bu değerler sunucu ortam değişkenlerinden gelir; burada düzenlenemez ve hiçbir kaydetme isteğine girmez. Sır, CORS ve bağlantı dizesi gösterilmez.</p>
-      </div>
-      <EkRefreshButton quiet-success :loading="env.refreshing.value" @refresh="env.load()" />
-    </header>
-    <EkCard flush>
+  <BoSection id="bo-env" flush class="bo-flushed" title="Ortam (salt okunur)" description="Bu değerler sunucu ortam değişkenlerinden gelir; burada düzenlenemez ve hiçbir kaydetme isteğine girmez. Sır, CORS ve bağlantı dizesi gösterilmez.">
+    <template #actions><EkRefreshButton quiet-success :loading="env.refreshing.value" @refresh="env.load()" /></template>
       <StateBlock :phase="env.phase.value" :error="env.error.value" skeleton="form" :rows="3" error-title="Ortam bilgisi okunamadı" @retry="env.load()">
         <dl class="bo-env">
           <div v-for="r in rows" :key="r.label" class="bo-env__row" :data-env="r.key">
@@ -18,14 +11,14 @@
             </dd>
           </div>
         </dl>
-      </StateBlock>
-    </EkCard>
-  </section>
+    </StateBlock>
+  </BoSection>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'
-import { EkCard, EkRefreshButton } from '@entegrasyonik/ui/components'
+import BoSection from '@bo/components/r2/BoSection.vue'
+import { EkRefreshButton } from '@entegrasyonik/ui/components'
 import { ADMIN_API_BASE, USE_MOCK } from '@bo/api'
 import { AdminApiError, apiOriginOf } from '@bo/api/client'
 import type { PublicConfig } from '@bo/api/contract'
@@ -67,6 +60,9 @@ onMounted(() => env.load())
 </script>
 
 <style scoped>
+.bo-flushed :deep(.bo-section__body) {
+  padding-top: var(--ek-space-3);
+}
 .bo-env {
   display: flex;
   flex-direction: column;

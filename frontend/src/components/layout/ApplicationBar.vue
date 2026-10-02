@@ -7,6 +7,7 @@
   yardım, hesap).
   Menüler `EkMenuPanel` ile (ikonlu, gruplu, kısayollu; tehlikeli öğe en sonda).
   Aşama 5: "Genel | Seçili kayıt" anahtarı kaldırıldı — kayıt sekmeleri şeritte.
+  FE-R4 A1/A2: üst bar bir ton açık (`tone="soft"`, `chrome-soft*` token'ları); profil koyu blok taşımaz.
 -->
 <template>
   <v-app-bar tag="div" :model-value="visible" height="56" flat class="ek-shell-bar" color="transparent">
@@ -14,6 +15,7 @@
     <EkAppHeader
       id="tour-homepage-topmenu"
       class="ek-shell-bar__header"
+      tone="soft"
       :user-name="identityName"
       :store-name="identityMeta"
       :notification-count="notificationDrawer.unreadCount"
@@ -24,7 +26,7 @@
       @notifications="notificationDrawer.toggleDrawer()"
     >
       <template #search>
-        <ShellSearch id="tour-homepage-smartsearch" ref="searchRef" @dismiss="$emit('search-dismiss')" @focusout="$emit('search-blur')" />
+        <ShellSearch ref="searchRef" @dismiss="$emit('search-dismiss')" @focusout="$emit('search-blur')" />
       </template>
       <!-- ADR-0034: Otopilot girişi (DISABLED iken çizilmez). -->
       <template #end-start>

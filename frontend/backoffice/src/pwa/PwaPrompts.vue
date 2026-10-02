@@ -15,7 +15,7 @@
       @dismiss="dismiss"
     >
       <template v-if="hint === 'ios'">
-        Safari'de <strong>Paylaş</strong> <v-icon icon="mdi-export-variant" size="16" aria-label="Paylaş simgesi" /> düğmesine,
+        Safari'de <strong>Paylaş</strong> <v-icon icon="mdi-export-variant" size="16" aria-hidden="true" /><span class="ek-sr-only">(kare içinde yukarı ok simgesi)</span> düğmesine,
         ardından <strong>Ana Ekrana Ekle</strong>'ye dokunun.
       </template>
       <template v-else>Ayrı bir uygulama gibi tam ekran açılır; platform ve müşteri verisi cihazda saklanmaz.</template>
