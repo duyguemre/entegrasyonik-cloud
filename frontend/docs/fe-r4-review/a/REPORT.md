@@ -65,7 +65,7 @@ Karakterizasyon: `e2e/specs/fe-r4a-shell.spec.ts` ilk 8 testi DEĞİŞMEMİŞ ko
 
 ## Değişen win32 görsel tabanları
 
-Yöntem: tabanın (199628a5) ve bu dalın **chromium-desktop** linux ekran görüntüleri aynı makinede üretilip karşılaştırıldı (`--update-snapshots=none`); farklı çıkan **44 görüntü** aşağıda. Ortak neden üst bar tonu (A1) ve profil (A2) — kabuk içeren her ekran; `otopilot-empty-*` A4 değil, tezgâhtaki üst bar/zemin farkı. Aynı görüntülerin tablet/mobil win32 tabanları da kabuğu içerdiği için birlikte değişir (bulutta yalnız masaüstü karşılaştırıldı — 17 dk/proje). Not: tarih/saat içeren ekranlarda (ör. pano "Son güncelleme") fark kısmen zaman kaynaklı olabilir; yerelde tabanı yenilerken gözle onaylanmalı.
+Yöntem: tabanın (199628a5) ve bu dalın **chromium-desktop** linux ekran görüntüleri aynı makinede üretilip karşılaştırıldı (`--update-snapshots=none`); farklı çıkan **44 görüntü** aşağıda. Ortak neden üst bar tonu (A1) ve profil (A2) — kabuk içeren her ekran; `otopilot-empty-*` istisna: tezgâh ChatPanel'i VARSAYILAN görünümle çizer (refined katman orada etkin değil, üst bar yok) — fark büyük olasılıkla tezgâhın zaman/akış oynaklığı; yerelde yeniden koşup gözle doğrulanmalı, gerekmedikçe taban yenilenmemeli. Aynı görüntülerin tablet/mobil win32 tabanları da kabuğu içerdiği için birlikte değişir (bulutta yalnız masaüstü karşılaştırıldı — 17 dk/proje). Not: tarih/saat içeren ekranlarda (ör. pano "Son güncelleme") fark kısmen zaman kaynaklı olabilir; yerelde tabanı yenilerken gözle onaylanmalı.
 
 Toplam yenilenecek win32 dosyası: **122**.
 
