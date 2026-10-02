@@ -46,7 +46,7 @@ Karar etiketleri: **[U]** uygulandı · **[A]** atlandı (gerekçe satırda) · 
 - src/views/LogCenterView.vue:480 - `getIssueTrend` hatası yakalanmıyor: iskelet sonsuza döner, yakalanmamış ret; hızlı seçimde eski yanıt üste yazar → **[U]** hata + Tekrar dene + yarış koruması.
 - src/views/LoginView.vue:55,84,108 - sunucu hatası serbest `role=alert`; alan `aria-invalid` olmaz, odak alana dönmez → **[U]**.
 - src/views/admins/AcceptInviteView.vue:87,116 - doğrulama/sunucu alan hatasında odak ilk hatalı alana gitmez → **[U]**.
-- src/views/admins/AcceptInviteView.vue:25 - `new-password` formunda kullanıcı adı alanı yok (parola yöneticisi) → **[U]** gizli `autocomplete="username"` (davet e-postası biliniyorsa).
+- src/views/admins/AcceptInviteView.vue:25 - `new-password` formunda kullanıcı adı alanı yok (parola yöneticisi) → **[A]** sayfa davet e-postasını bilmiyor (yalnız URL bileti; `acceptInvite` yanıtı `{accepted}`; önizleme ucu yok) → PROPOSALS_PENDING.
 - TenantDetailView.vue:228,237 · SubscriptionDetailView.vue:92,119,133 · FailedJobsPanel.vue:188,207 · StateMachinePanel.vue:59 · CacheView.vue:49 - `GuardedDialog`'a `tenant`/`scope` verilmiyor → §6 "Etkilenen" satırı yok → **[U]**.
 - SubscriptionDetailView.vue:275,297,328 · FailedJobsPanel.vue:446,453 · StateMachinePanel.vue:122 · CacheView.vue:128 - korumalı yazma sonrası düz `notify`; §6 "Denetim kaydını aç" bağlantısı yok → **[U]** ortak `notifyAuditedAt`.
 - src/views/usage/TenantUsagePanel.vue:17 (UsageVerdictBlock.vue) - yerel hüküm bloğu; `UsageView` aynı model için ortak `PageVerdict` kullanıyor → **[U]**.
@@ -54,13 +54,18 @@ Karar etiketleri: **[U]** uygulandı · **[A]** atlandı (gerekçe satırda) · 
 - src/views/TenantDetailView.vue:98 - `ruleId · scopeKey` kırılmıyor → 390 px taşma → **[U]**.
 - src/views/engine/EngineView.vue:12 - doğrudan `EkPageTabs` (§12.1 `BoTabs`) → **[U]**.
 - src/views/settings/usePlatformConfig.ts:58 - ayarlarda kaydedilmemiş değişiklikle çıkışta uyarı yok → **[U]** `useLeaveGuard`.
-- src/views/settings/usePlatformConfig.ts:56 - Yenile (Alt+R) kaydedilmemiş düzenlemeleri sessizce siler → **[U]** değişiklik varken form sıfırlanmaz, Yenile önce sorar.
+- src/views/settings/usePlatformConfig.ts:56 - Yenile (Alt+R) kaydedilmemiş düzenlemeleri sessizce siler → **[U]** yenilemede değiştirilen alanlar yeni veriye taşınır + "kaydedilmemiş N değişikliğiniz korundu" bildirimi (sormak yerine kayıpsız).
 - src/views/notifications/AnnouncementEditorView.vue:9,23,349 - Kaydet geçersizken kapalı, `touched` yalnız diyalogda → satır içi hatalar hiç görünmez → **[U]** Kaydet etkin; tıklanınca hatalar görünür + ilk hataya odak.
 - src/views/settings/usePlatformConfig.ts:96 - sunucu alan hatasında odak ilk hatalı alana gitmez → **[U]**.
 - src/views/settings/MaintenanceCard.vue:37 · FeatureFlagsPanel.vue:36 · PricingRulesPanel.vue:22 - `cfg.saveError` bu sekmelerde hiç çizilmez → **[U]** tek yer: taslak çubuğu.
 - src/views/settings/CompetitionPlansPanel.vue:23,36 - hücre hatası yalnız kırmızı kenar; ileti alana bağlı değil → **[U]** `aria-invalid` + `aria-describedby`.
 - src/views/otopilot/OtopilotSettingsView.vue:294 - zorunlu gerekçe alanının satır içi hatası/sayacı yok → **[U]**.
 - src/views/otopilot/OtopilotView.vue:20 · packages/chat/src/components/ChatPanel.vue:45 - `setup-required` + `canConfigure` → gerekçesiz kurulum formu; kayıt hiç başarılı olamaz → **[U]** backoffice sohbet sayfasında kurulum yerine ayar sayfası bağlantısı.
+
+### Test sırasında bulunanlar (main eşitlemesi `199628a5` ortak bileşen değişiklikleri, bo-wdg'de backoffice'e özgü düzeltildi)
+- packages/ui/src/components/EkSidebarNav.vue:442 - menü bölüm etiketi `content-subtle` → backoffice'te axe `color-contrast` (her ekran, iki tema; 116 e2e) → **[U]** `styles/backoffice.css` backoffice kapsamlı `content-muted` (müşteri uygulaması değişmez). *(KRİTİK)*
+- packages/ui/src/components/EkRefreshButton.vue:175 · src/views/LogCenterView.vue:708 - Yenile düğmesi 28 px çipe indi; Loglar sorun düğmesi 40 px → dokunmatik 44 px altı (mobile.spec) → **[U]** `styles/mobile.css`. *(YÜKSEK)*
+- src/components/kit/SeriesBars.vue:17 - bo-r2b son commit'i `info` tonunu kullanıyor, tür izin vermiyor (vue-tsc hatası) → **[U]** tür `ChartTone`. *(YÜKSEK — derleme)*
 
 ## ORTA
 - packages/ui/src/components/EkDialogCard.vue:170 · CommandPalette.vue:328 · ShortcutsDialog.vue:107 - `overscroll-behavior: contain` yok → **[U]**.
