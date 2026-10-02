@@ -10,9 +10,15 @@
   anlaşılmıyordu; kayıt bağlamına sekme şeridinden zaten erişilir).
   Ek (geri uyumlu): menü düğmesinde kısayollu ipucu; `data-header-action`
   çapaları (kabuk, v-menu'leri bu düğmelere bağlar); `#end-start` slot'u.
+  FE-R4 (ek, geri uyumlu — varsayılan `tone="brand"` görünümü DEĞİŞMEZ):
+    A1 `tone="soft"` — bir ton AÇIK kabuk: bu ağaçta `chrome*` rolleri `chrome-soft*` rollerine yeniden bağlanır
+       (token: `--ek-gradient-chrome-soft`, AA her iki temada `roles.ts` kontrast çiftlerinde). Yuvadaki öğeler (arama,
+       Otopilot girişi) aynı tonu kendiliğinden alır.
+    A2 `tone="soft"` iken profil düğmesi KOYU BLOK taşımaz: dinlenirken zeminsiz/çerçevesiz (avatar + ad), yalnız
+       üzerine gelince/odakta hafif zemin. (Koyu kapsül yalnız Otopilot girişinde — tek vurgulu öğe.)
 -->
 <template>
-  <header class="ek-header">
+  <header class="ek-header" :class="{ 'ek-header--soft': tone === 'soft' }">
     <div class="ek-header__start">
       <v-tooltip :eager="false" transition="fade-transition" location="bottom" :open-delay="400">
         <template #activator="{ props: tip }">
@@ -74,8 +80,11 @@ const props = withDefaults(
     menuShortcut?: string[]
     /** Sol menü açık mı (menü düğmesi `aria-expanded`). */
     menuExpanded?: boolean
+    /** FE-R4 A1: `brand` = kimlik degradesi (varsayılan), `soft` = bir ton açık kabuk + sade profil (A2). */
+    tone?: 'brand' | 'soft'
   }>(),
   {
+    tone: 'brand',
     notificationCount: 0,
     compact: false,
     menuShortcut: () => ['Ctrl', 'B'],
@@ -267,6 +276,35 @@ const initials = computed(() =>
 .ek-header__user-chevron {
   color: var(--ek-color-chrome-text-muted);
   font-size: var(--ek-icon-md);
+}
+
+/* ---------- FE-R4 A1/A2 — `tone="soft"` (yalnız ek kurallar) ---------- */
+.ek-header--soft {
+  --ek-gradient-chrome: var(--ek-gradient-chrome-soft);
+  --ek-color-chrome: var(--ek-color-chrome-soft);
+  --ek-color-chrome-end: var(--ek-color-chrome-soft-end);
+  --ek-color-chrome-raised: var(--ek-color-chrome-soft-raised);
+  --ek-color-chrome-border: var(--ek-color-chrome-soft-border);
+  --ek-color-chrome-text-muted: var(--ek-color-chrome-soft-text-muted);
+}
+
+/* A2: profil — zemin ve çerçeve yok; avatar yuvarlak, kabuğun kontrol tonunda; ad/mağaza iki satır. */
+.ek-header--soft .ek-header__user {
+  padding: 0 var(--ek-space-2) 0 var(--ek-space-1);
+  border-color: transparent;
+  border-radius: var(--ek-radius-chip);
+  background: transparent;
+}
+
+.ek-header--soft .ek-header__user:hover {
+  border-color: transparent;
+  background: var(--ek-color-chrome-raised);
+}
+
+.ek-header--soft .ek-header__avatar {
+  border-radius: 50%;
+  background: var(--ek-color-chrome-raised);
+  box-shadow: inset 0 0 0 1px var(--ek-color-chrome-border);
 }
 
 @media (max-width: 767px) {

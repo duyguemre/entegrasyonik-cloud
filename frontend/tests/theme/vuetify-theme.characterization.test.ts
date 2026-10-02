@@ -52,14 +52,14 @@ describe('vuetify.ts tema characterization ("sonra" durumu — ADR-0015 A1, kas�
     expect(darkTheme).toEqual(baseline.darkTheme)
   })
 
-  it('lightTheme 119 anahtar üretir (DS-v2: 75 semantik [13 çekirdek + 15 ADR-0015 + 47 DS-v2] + 43 legacy anahtarın TAMAMI + Vuetify\'ın override edilmeyen tek çekirdek varsayılanı "on-surface-variant")', async () => {
+  it('lightTheme 124 anahtar üretir (DS-v2: 80 semantik [13 çekirdek + 15 ADR-0015 + 47 DS-v2 + 5 FE-R4 A1 chrome-soft] + 43 legacy anahtarın TAMAMI + Vuetify\'ın override edilmeyen tek çekirdek varsayılanı "on-surface-variant")', async () => {
     const { lightTheme } = await loadNormalizedThemes()
-    expect(Object.keys(lightTheme)).toHaveLength(119)
+    expect(Object.keys(lightTheme)).toHaveLength(124)
   })
 
-  it('darkTheme 119 anahtar üretir (ADR-0026: paketin TAM dark teması — light ile AYNI anahtar kümesi: 75 semantik + 43 legacy [rol eşlemesinden] + "on-surface-variant")', async () => {
+  it('darkTheme 124 anahtar üretir (ADR-0026: paketin TAM dark teması — light ile AYNI anahtar kümesi: 80 semantik + 43 legacy [rol eşlemesinden] + "on-surface-variant")', async () => {
     const { darkTheme } = await loadNormalizedThemes()
-    expect(Object.keys(darkTheme)).toHaveLength(119)
+    expect(Object.keys(darkTheme)).toHaveLength(124)
   })
 
   it('ADR-0026: darkTheme anahtar kümesi lightTheme ile birebir aynı (eski "alt küme" kırık kalıbı kapandı: koyu temaya geçildiğinde tanımsız anahtar kalmaz)', async () => {
