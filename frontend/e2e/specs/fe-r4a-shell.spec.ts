@@ -201,3 +201,42 @@ test.describe('FE-R4A — erişilebilirlik', () => {
     expect(result.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`)).toEqual([])
   })
 })
+
+// ---------- Yeni iddialar (FE-R4 A1–A5) — karakterizasyondan SONRA eklendi ----------
+test.describe('FE-R4A — yeni: bildirim penceresi durumları', () => {
+  test('A3: liste alınamazsa problem durumu; Tekrar dene başarılı olunca liste gelir', async ({ page }) => {
+    let fail = true
+    const m = mocks()
+    const ok = m.routes.NotificationService
+    m.routes.NotificationService = (route: Route, headers: Record<string, string>) =>
+      fail ? route.fulfill({ status: 500, contentType: 'application/json', headers, body: '{}' }) : ok(route, headers)
+    await page.addInitScript(() => {
+      try {
+        localStorage.setItem('ek.help.v1.tour', 'dismissed')
+      } catch {
+        /* depolama kapalı */
+      }
+    })
+    await installApiMocks(page, m.routes)
+    await gotoAuthed(page)
+    await bell(page).click()
+    await expect(drawer(page).getByText('Bildirimler yüklenemedi')).toBeVisible()
+    fail = false
+    await drawer(page).getByRole('button', { name: 'Tekrar dene' }).click()
+    await expect(drawer(page).getByText('R4 aşırı satış')).toBeVisible()
+    await expect(drawer(page).getByText('Bildirimler yüklenemedi')).toHaveCount(0)
+  })
+
+  test('A3: klavye — satıra Tab ile gelince eylemler görünür; okunmamış sekmesi boşsa nazik boş durum', async ({ page }) => {
+    await start(page)
+    await bell(page).click()
+    await expect(drawer(page).getByText('R4 aşırı satış')).toBeVisible()
+    const action = drawer(page).getByRole('button', { name: 'Okundu işaretle: R4 aşırı satış' })
+    await action.focus()
+    await expect(action).toBeVisible()
+    await expect.poll(() => action.evaluate((el) => getComputedStyle(el.closest('.ek-nd-item__actions')!).opacity)).toBe('1')
+    await drawer(page).getByRole('button', { name: 'Tümünü okundu işaretle' }).click()
+    await drawer(page).getByRole('tab', { name: /Okunmamış/ }).click()
+    await expect(drawer(page).getByText('Okunmamış bildiriminiz yok')).toBeVisible()
+  })
+})
