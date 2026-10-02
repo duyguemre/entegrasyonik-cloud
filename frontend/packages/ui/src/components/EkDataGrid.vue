@@ -29,6 +29,7 @@
     class="ek-grid"
     :class="{ 'is-overflow-start': overflowStart, 'is-overflow-end': overflowEnd }"
     :aria-busy="loading || undefined"
+    v-bind="scrollRegionAttrs"
     @scroll.passive="measure"
   >
     <table class="ek-grid__table" role="table" :aria-label="label" :aria-rowcount="loading ? undefined : rows.length + 1">
@@ -196,6 +197,10 @@ const props = withDefaults(
     expandedKeys?: Array<string | number>
     /** Kısmi seçili (ör. varyantlarının bir kısmı seçili ürün) satır anahtarları — onay kutusu belirsiz. */
     indeterminateKeys?: Array<string | number>
+    /** fe-r4d D1 (WCAG 2.1.1, axe `scrollable-region-focusable`): taşma varken kap klavyeyle odaklanabilir
+     *  kaydırma bölgesi olur — yatay ya da dikey (`tabindex=0`, `role=region`, ad = `label`) — hücrelerinde odaklanabilir öğe olmayan
+     *  ızgaralar (ör. salt okunur geçmiş) ok tuşlarıyla kaydırılabilsin. Taşma yokken öznitelik eklenmez. */
+    focusableScroll?: boolean
   }>(),
   {
     rowKey: 'id',
@@ -226,6 +231,14 @@ const allRef = ref<HTMLInputElement | null>(null)
 const rootRef = ref<HTMLElement | null>(null)
 const overflowStart = ref(false)
 const overflowEnd = ref(false)
+/** fe-r4d D1: dikey taşma (yalnız `focusableScroll` için ölçülür). */
+const overflowY = ref(false)
+
+const scrollRegionAttrs = computed(() =>
+  props.focusableScroll && (overflowStart.value || overflowEnd.value || overflowY.value)
+    ? { tabindex: 0, role: 'region', 'aria-label': `${props.label} — kaydırılabilir` }
+    : {},
+)
 
 /** Yatay kaydırma durumu: solda/sağda gizli içerik var mı (yapışık kenar gölgeleri). */
 function measure() {
@@ -233,6 +246,7 @@ function measure() {
   if (!el) return
   overflowStart.value = el.scrollLeft > 1
   overflowEnd.value = el.scrollLeft + el.clientWidth < el.scrollWidth - 1
+  overflowY.value = el.scrollHeight > el.clientHeight + 1
 }
 
 let resizeObserver: ResizeObserver | undefined
@@ -403,6 +417,12 @@ function toggleSort(key: string) {
 
 .ek-grid__sort:hover {
   color: var(--ek-color-content-strong);
+}
+
+/* fe-r4d D1: odaklanabilir kaydırma bölgesi (focusableScroll) — kartın içine çizilen odak halkası. */
+.ek-grid[role='region']:focus-visible {
+  outline: 2px solid var(--ek-color-border-focus);
+  outline-offset: -2px;
 }
 
 .ek-grid__sort:focus-visible {

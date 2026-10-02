@@ -6,6 +6,7 @@
 //     error tonunda açıklayıcı metin; metin alana aria-describedby ile bağlı
 import { test, expect, type Page } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
+import { settleAnimations } from '../fixtures/settle'
 import { installApiMocks } from '../fixtures/mockApi'
 import { buildProduct, brandsDoluFixture, choicesDoluFixture } from '../fixtures/apiData'
 import { gotoAuthed, menuFixture, openScreen } from '../fixtures/nav'
@@ -126,6 +127,7 @@ test.describe('DS-v2 A2 — kademeli kategori seçici (ürün kategori adımı)'
   test('axe WCAG 2.1 AA = 0 (kategori seçici)', async ({ page }) => {
     const picker = await openCategoryStep(page)
     await picker.getByRole('option', { name: /Moda/ }).click()
+    await settleAnimations(page)
     const results = await new AxeBuilder({ page }).include('.productDefinitionView .ek-cascade').withTags(AXE_TAGS).analyze()
     expect(results.violations.map((v) => `${v.id}: ${v.nodes.length}`)).toEqual([])
   })
@@ -167,6 +169,7 @@ test.describe('DS-v2 A2 — tehlikeli onay diyaloğu (ürün silme)', () => {
     expect(confirmBg).toBe(errorToken)
 
     if (testInfo.project.name === 'chromium-desktop') {
+      await settleAnimations(page)
       const axe = await new AxeBuilder({ page }).include('.v-overlay--active .v-overlay__content').withTags(AXE_TAGS).analyze()
       expect(axe.violations.map((v) => v.id)).toEqual([])
     }

@@ -4,6 +4,7 @@
 // oturum yokken giriş dönüşü, klavye akışı, axe AA (light + dark), yatay taşma yok, görsel taban.
 import { test, expect, type Page } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
+import { settleAnimations } from '../fixtures/settle'
 import { AXE_TAGS, forceDarkTheme, installMcpMocks, openBarePage } from '../fixtures/mcp'
 
 const ROOT = '.OAuthConsentView'
@@ -185,12 +186,14 @@ test.describe('MCP-6 S1 — onay (consent) ekranı', () => {
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)
     expect(overflow).toBeLessThanOrEqual(0)
 
+    await settleAnimations(page)
     const light = await new AxeBuilder({ page }).include(ROOT).withTags(AXE_TAGS).analyze()
     expect(light.violations, JSON.stringify(light.violations.map((v) => [v.id, v.nodes.map((n) => n.target)]))).toEqual([])
 
     await expect(page).toHaveScreenshot('mcp-consent.png', { fullPage: true, animations: 'disabled' })
 
     await forceDarkTheme(page)
+    await settleAnimations(page)
     const dark = await new AxeBuilder({ page }).include(ROOT).withTags(AXE_TAGS).analyze()
     expect(dark.violations, JSON.stringify(dark.violations.map((v) => [v.id, v.nodes.map((n) => n.target)]))).toEqual([])
   })

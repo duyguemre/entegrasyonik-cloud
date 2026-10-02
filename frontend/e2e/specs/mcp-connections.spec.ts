@@ -5,6 +5,7 @@
 // yükleme hatası, axe AA (light + dark), yatay taşma yok, görsel taban (dolu).
 import { test, expect } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
+import { settleAnimations } from '../fixtures/settle'
 import { AXE_TAGS, forceDarkTheme, grantClipboard, installMcpMocks, openMcpScreen } from '../fixtures/mcp'
 import { mcpSettings } from '../../src/mocks/mcp'
 
@@ -162,10 +163,12 @@ test.describe('MCP-6 S3 — Bağlı uygulamalar', () => {
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)
     expect(overflow).toBeLessThanOrEqual(0)
     const fmt = (r: any) => JSON.stringify(r.violations.map((v: any) => [v.id, v.nodes.map((n: any) => n.target)]))
+    await settleAnimations(page)
     let res = await new AxeBuilder({ page }).include('.connectedAppsView:not(.hide-tab-component)').withTags(AXE_TAGS).analyze()
     expect(res.violations, fmt(res)).toEqual([])
     await expect(page).toHaveScreenshot('mcp-connections.png', { fullPage: true, animations: 'disabled', mask: [root.locator('.ek-apps-pending__meta')] })
     await forceDarkTheme(page)
+    await settleAnimations(page)
     res = await new AxeBuilder({ page }).include('.connectedAppsView:not(.hide-tab-component)').withTags(AXE_TAGS).analyze()
     expect(res.violations, fmt(res)).toEqual([])
   })

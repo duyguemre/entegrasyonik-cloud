@@ -2,6 +2,7 @@
 // denetimli, §7 adları) gelir; ağ katmanı `installApiMocks` (uygulama açılışı) + ÜSTÜNE `oauth/**` ve `mcp/**` için
 // yöntem + sorgu duyarlı ikinci bir route (Playwright'ta sonra kaydedilen route önce çalışır).
 // Sentetik veri (Protokol 7): PII yok, alan adları `.invalid`.
+import { settleAnimations } from './settle'
 import type { Page } from '@playwright/test'
 import { expect } from '@playwright/test'
 import { installApiMocks, type MockValue } from './mockApi'
@@ -136,6 +137,8 @@ export async function forceDarkTheme(page: Page) {
   // Kanıt: tema sınıfı gerçekten koyu (aksi hâlde "dark axe" sahte yeşil olurdu).
   await expect(page.locator('.v-theme--darkTheme').first()).toBeAttached({ timeout: 5000 })
   await page.waitForTimeout(300)
+  // fe-r4d D3: sabit 300ms yük altında yetmiyordu (tema renk geçişi sürerken axe ara rengi ölçer) → geçişler de beklenir.
+  await settleAnimations(page)
 }
 
 /** `navigator.clipboard` izinleri (kopyala düğmesi). */
