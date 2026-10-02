@@ -848,7 +848,7 @@ defineExpose({ focus: () => inputRef.value?.focus(), blur: () => inputRef.value?
   color: var(--ek-color-content-muted);
   font-size: var(--ek-icon-md);
   opacity: 0;
-  transition: var(--ek-transition-colors), opacity var(--ek-duration-fast) var(--ek-easing-standard);
+  transition: var(--ek-transition-colors), opacity var(--ek-motion-feedback);
 }
 
 .ek-search__more :deep(.v-icon) {

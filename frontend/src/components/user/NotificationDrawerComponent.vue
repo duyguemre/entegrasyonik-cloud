@@ -556,7 +556,7 @@ const formatTime = (dateStr?: string) => (dateStr ? formatRelative(dateStr) : ''
   font-size: var(--ek-type-caption-size);
   line-height: var(--ek-type-caption-line);
   white-space: nowrap;
-  transition: opacity var(--ek-duration-fast) var(--ek-easing-standard);
+  transition: opacity var(--ek-motion-feedback);
 }
 
 .ek-nd-item__dot {
