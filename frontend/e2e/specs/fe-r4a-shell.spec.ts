@@ -5,6 +5,7 @@ import { test, expect, type Page, type Route } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
 import { installApiMocks } from '../fixtures/mockApi'
 import { gotoAuthed, menuFixture } from '../fixtures/nav'
+import { gotoWithOtopilot, launcher, composer, ask } from '../fixtures/otopilot'
 
 const AA = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']
 const iso = (minutesAgo: number) => new Date(Date.now() - minutesAgo * 60_000).toISOString()
@@ -302,6 +303,60 @@ test.describe('FE-R4A — yeni: üst bar tonu ve arama bağlam menüsü', () => 
     await page.getByRole('option', { name: /R4-100231/ }).click({ button: 'right' })
     await expect(page.getByRole('menu', { name: 'Sonuç işlemleri' })).toBeVisible()
     const result = await new AxeBuilder({ page }).withTags(AA).include('.ek-shell-bar').include('.v-overlay--active').analyze()
+    expect(result.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`)).toEqual([])
+  })
+})
+
+test.describe('FE-R4A — yeni: Otopilot penceresi (A4)', () => {
+  test('pencere premium katmanda; öneri kartları gönderir; sayaç ekran okuyucuda kalır; axe AA = 0', async ({ page }) => {
+    test.skip((page.viewportSize()?.width ?? 0) < 768, 'dar ekranda panel yok (tam sayfa sekmesi)')
+    await gotoWithOtopilot(page)
+    await launcher(page).click()
+    const panel = page.locator('.ek-otopilot-dock .ek-chat')
+    await expect(panel).toHaveClass(/ek-chat--refined/)
+    await expect(composer(page)).toBeFocused()
+    // Görsel sayaç sınıra yaklaşana dek gizli; aria-describedby sayacı her zaman var.
+    const described = await composer(page).getAttribute('aria-describedby')
+    expect(described).toMatch(/-count/)
+    const axe = await new AxeBuilder({ page }).withTags(AA).include('.ek-otopilot-dock').analyze()
+    expect(axe.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`)).toEqual([])
+    await page.locator('.ek-chat-suggestion').first().click()
+    await expect(page.locator('.ek-chat-msg.is-user').first()).toBeVisible()
+  })
+
+  test('onay kartı akışı değişmedi: Reddet / onayla düğmeleri ve kalan süre', async ({ page }) => {
+    test.skip((page.viewportSize()?.width ?? 0) < 768, 'dar ekranda panel yok')
+    await gotoWithOtopilot(page)
+    await launcher(page).click()
+    await ask(page, 'ilk 3 siparişi onayla')
+    await expect(page.getByText('Kalan süre').first()).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Reddet' })).toBeVisible()
+    await expect(page.getByRole('button', { name: /3 siparişi onayla/ })).toBeVisible()
+    const axe = await new AxeBuilder({ page }).withTags(AA).include('.ek-otopilot-dock').analyze()
+    expect(axe.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`)).toEqual([])
+  })
+})
+
+test.describe('FE-R4A — koyu tema erişilebilirliği', () => {
+  test('axe (koyu): üst bar + bildirim penceresi + arama sonuçları WCAG 2.1 AA = 0', async ({ page }) => {
+    await page.addInitScript(() => {
+      try {
+        localStorage.setItem('ek-theme', 'dark')
+      } catch {
+        /* depolama kapalı */
+      }
+    })
+    await start(page)
+    await bell(page).click()
+    await expect(drawer(page).getByText('R4 aşırı satış')).toBeVisible()
+    await page.waitForTimeout(400)
+    let result = await new AxeBuilder({ page }).withTags(AA).include('.ek-shell-bar').include('.ek-notification-drawer').analyze()
+    expect(result.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`)).toEqual([])
+    await drawer(page).getByRole('button', { name: 'Kapat' }).click()
+    await page.keyboard.press('Control+k')
+    await page.getByRole('combobox', { name: 'Akıllı arama' }).fill('R4')
+    await expect(page.getByRole('option', { name: /R4 pamuklu tişört/ })).toBeVisible()
+    result = await new AxeBuilder({ page }).withTags(AA).include('.ek-shell-bar').analyze()
     expect(result.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`)).toEqual([])
   })
 })

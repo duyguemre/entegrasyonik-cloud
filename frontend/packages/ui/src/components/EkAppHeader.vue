@@ -304,6 +304,8 @@ const initials = computed(() =>
 .ek-header--soft .ek-header__avatar {
   border-radius: 50%;
   background: var(--ek-color-chrome-raised);
+  /* Kabuk kontrol zemininde birincil kabuk metni (AA iki temada — roles.ts chrome-text × chrome-soft-raised). */
+  color: var(--ek-color-chrome-text);
   box-shadow: inset 0 0 0 1px var(--ek-color-chrome-border);
 }
 
