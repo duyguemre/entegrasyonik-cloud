@@ -313,3 +313,9 @@ html {
 #bo-main [data-kb-row]:focus {
   outline: none;
 }
+
+/* bo-wdg: menü bölüm etiketi (ortak `EkSidebarNav`, main eşitlemesi `content-subtle`) backoffice yüzeyinde AA kontrastın
+   altında kalıyordu (axe color-contrast) → okunur ikincil ton. Müşteri uygulaması etkilenmez. */
+.bo-shell .ek-side .ek-side__section-label {
+  color: var(--ek-color-content-muted);
+}

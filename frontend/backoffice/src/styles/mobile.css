@@ -22,6 +22,17 @@
     min-height: var(--ek-control-h-touch);
   }
 
+  /* bo-wdg: ortak `EkRefreshButton` çip boyuna (28 px) indi (main eşitlemesi); backoffice'te dokunma hedefi 44 px kalır.
+     Loglar sorun satırı düğmesi (başlık + meta) dokunmada en az 44 px. */
+  #app .ek-refresh {
+    min-width: var(--ek-control-h-touch);
+    height: var(--ek-control-h-touch);
+  }
+
+  #app .bo-issue {
+    min-height: var(--ek-control-h-touch);
+  }
+
   /* Segment, sekme, seçim kontrolleri */
   #app .bo-seg__opt {
     height: var(--ek-control-h-touch);
