@@ -65,7 +65,58 @@ Karakterizasyon: `e2e/specs/fe-r4a-shell.spec.ts` ilk 8 testi DEĞİŞMEMİŞ ko
 
 ## Değişen win32 görsel tabanları
 
-WIN32_LIST_PLACEHOLDER
+Yöntem: tabanın (199628a5) ve bu dalın **chromium-desktop** linux ekran görüntüleri aynı makinede üretilip karşılaştırıldı (`--update-snapshots=none`); farklı çıkan **44 görüntü** aşağıda. Ortak neden üst bar tonu (A1) ve profil (A2) — kabuk içeren her ekran; `otopilot-empty-*` A4 değil, tezgâhtaki üst bar/zemin farkı. Aynı görüntülerin tablet/mobil win32 tabanları da kabuğu içerdiği için birlikte değişir (bulutta yalnız masaüstü karşılaştırıldı — 17 dk/proje). Not: tarih/saat içeren ekranlarda (ör. pano "Son güncelleme") fark kısmen zaman kaynaklı olabilir; yerelde tabanı yenilerken gözle onaylanmalı.
+
+Toplam yenilenecek win32 dosyası: **122**.
+
+| Spec | Görüntü | win32 projeleri |
+|---|---|---|
+| `account-security.spec.ts` | `account-security` | desktop, mobile, tablet |
+| `admin-clients.spec.ts` | `admin-clients-list` | desktop, mobile, tablet |
+| `admin-effective-config.spec.ts` | `admin-effective-config` | desktop, mobile, tablet |
+| `admin-engine-settings.spec.ts` | `admin-engine-settings` | desktop, mobile, tablet |
+| `admin-integration-compliance.spec.ts` | `admin-integration-compliance` | desktop, mobile, tablet |
+| `admin-integration-compliance.spec.ts` | `admin-integration-compliance-detail` | desktop, mobile, tablet |
+| `admin-integration-compliance.spec.ts` | `admin-integration-compliance-empty` | desktop, mobile, tablet |
+| `admin-integration-config-list.spec.ts` | `admin-integration-config-list` | desktop, mobile, tablet |
+| `admin-integration-settings.spec.ts` | `admin-integration-settings` | desktop, mobile, tablet |
+| `admin-system.spec.ts` | `admin-system-export-detail` | desktop, mobile, tablet |
+| `admin-system.spec.ts` | `admin-system-top` | desktop, mobile, tablet |
+| `admin-tickets.spec.ts` | `admin-tickets-list` | desktop, mobile, tablet |
+| `audit-log.spec.ts` | `audit-log` | desktop, mobile, tablet |
+| `category-definitions.spec.ts` | `category-definitions` | desktop, mobile, tablet |
+| `claims.spec.ts` | `claims-detail` | desktop |
+| `claims.spec.ts` | `claims-list` | desktop, mobile, tablet |
+| `customers.spec.ts` | `customers-list` | desktop, mobile, tablet |
+| `dashboard.spec.ts` | `dashboard` | desktop, mobile, tablet |
+| `integration-health.spec.ts` | `integration-health` | desktop, mobile, tablet |
+| `integrations-common.spec.ts` | `integration-ECommerceView` | desktop, mobile, tablet |
+| `integrations-common.spec.ts` | `integration-ErpView` | desktop, mobile, tablet |
+| `integrations-common.spec.ts` | `integration-MarketplaceView` | desktop, mobile, tablet |
+| `integrations-common.spec.ts` | `integration-ShippingView` | desktop, mobile, tablet |
+| `integrations-einvoice.spec.ts` | `integration-EInvoiceView` | desktop, mobile, tablet |
+| `invoices.spec.ts` | `invoices-list` | desktop, mobile, tablet |
+| `logs.spec.ts` | `logs-export-list` | desktop, mobile, tablet |
+| `logs.spec.ts` | `logs-import-detail` | desktop |
+| `logs.spec.ts` | `logs-import-list` | desktop, mobile, tablet |
+| `messages.spec.ts` | `messages-list` | desktop, mobile, tablet |
+| `orders.spec.ts` | `orders-list` | desktop, mobile, tablet |
+| `otopilot-harness.spec.ts` | `otopilot-empty-dark` | — (win32 tabanı yok) |
+| `otopilot-harness.spec.ts` | `otopilot-empty-light` | — (win32 tabanı yok) |
+| `privacy-data.spec.ts` | `privacy-data` | desktop, mobile, tablet |
+| `privacy-data.spec.ts` | `privacy-deletion-verify` | desktop, mobile, tablet |
+| `product-batch-actions.spec.ts` | `batch-action-menu` | desktop, mobile, tablet |
+| `product-variant-dialogs.spec.ts` | `variant-batch-prices` | desktop, mobile, tablet |
+| `product-variant-dialogs.spec.ts` | `variant-generator` | desktop, mobile, tablet |
+| `product-variant-dialogs.spec.ts` | `variant-platform-prices` | desktop, mobile, tablet |
+| `product-variant-list.spec.ts` | `product-variant-list` | desktop, mobile, tablet |
+| `product-variants.spec.ts` | `product-variants` | desktop, mobile, tablet |
+| `shell.spec.ts` | `shell-dashboard` | desktop, mobile, tablet |
+| `stock-health.spec.ts` | `stock-health` | desktop, mobile, tablet |
+| `stock-policy.spec.ts` | `stock-policy` | desktop, mobile, tablet |
+| `subscription.spec.ts` | `subscription` | desktop, mobile, tablet |
+
+Değişmeyenler (masaüstünde aynı çıktı): giriş/kayıt/şifre/doğrulama ekranları (kabuksuz) ve kabuğu içermeyen bileşen görüntüleri.
 
 Yerel (Windows) onay: `npx playwright test <spec> --update-snapshots` ile yenilenmeli. `*-linux.png` commit'lenmedi.
 
