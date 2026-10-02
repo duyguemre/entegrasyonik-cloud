@@ -703,6 +703,14 @@ const go = (a: NextAction) => open(a.screen, a.params)
   }
 }
 
+/* FE-R4-INT (ek): iş alanı dar (Otopilot paneli açık) → aynı tek kolon (DashboardView `ek-dash` kabı). */
+@container ek-dash (max-width: 850px) {
+  .dna__body {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--ek-space-5);
+  }
+}
+
 @media (max-width: 599px) {
   .dna__head {
     flex-direction: column;

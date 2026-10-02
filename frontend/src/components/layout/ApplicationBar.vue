@@ -26,7 +26,7 @@
       @notifications="notificationDrawer.toggleDrawer()"
     >
       <template #search>
-        <ShellSearch id="tour-homepage-smartsearch" ref="searchRef" @dismiss="$emit('search-dismiss')" @focusout="$emit('search-blur')" />
+        <ShellSearch ref="searchRef" @dismiss="$emit('search-dismiss')" @focusout="$emit('search-blur')" />
       </template>
       <!-- ADR-0034: Otopilot girişi (DISABLED iken çizilmez). -->
       <template #end-start>

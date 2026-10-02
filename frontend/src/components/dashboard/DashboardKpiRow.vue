@@ -93,6 +93,13 @@ const revenueTrend = computed(() => trendOf(props.data?.trend.revenueChange, yes
   }
 }
 
+/* FE-R4-INT (ek): iş alanı dar (Otopilot paneli açık) → 2 sütun; 950 px ≈ 1199 görünüm − 248 menü. */
+@container ek-dash (max-width: 950px) {
+  .dash-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 @media (max-width: 599px) {
   .dash-kpis {
     /* Aşama 4: 2 sütun (kart dar ekranda sütun düzenine geçer). */

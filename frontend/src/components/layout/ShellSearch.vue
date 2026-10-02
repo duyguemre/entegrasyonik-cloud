@@ -19,10 +19,19 @@
   sonuçlar açık kalır; Esc menüyü kapatıp odağı aramaya döndürür.
 -->
 <template>
-  <v-tooltip :open-on-focus="false" :open-on-click="false" location="bottom" :open-delay="600" transition="fade-transition">
+  <v-tooltip
+    :open-on-focus="false"
+    :open-on-click="false"
+    :disabled="inUse"
+    aria-label="Akıllı arama kısayolu: Ctrl+K"
+    location="bottom"
+    :open-delay="600"
+    transition="fade-transition"
+  >
     <template #activator="{ props: tip }">
       <EkSmartSearch
         v-bind="tip"
+        :id="TOUR_ANCHOR_ID"
         ref="searchRef"
         v-model="query"
         class="ek-shell-search"
@@ -40,6 +49,8 @@
         @select="onSelect"
         @dismiss="$emit('dismiss')"
         @item-menu="onItemMenu"
+        @focusin="inUse = true"
+        @focusout="onSearchFocusOut"
       />
       <!-- FE-R4 A5: satır bağlam menüsü (konum = sağ tık / satır noktası; içerik teleport edilir). -->
       <v-menu v-model="ctxOpen" :target="ctxPoint" location="bottom start" :offset="4" :close-on-content-click="false">
@@ -313,6 +324,22 @@ function onSelect(item: EkSearchItem) {
 type SearchEntry = EkSearchItem & { __kind: string; __ref: any }
 const { showToast } = useToast()
 const ctxOpen = ref(false)
+
+/**
+ * FE-R4-INT: tur/ipucu çapası aramanın KENDİSİNDE (kök `v-tooltip` olduğu için `id` önceden ipucu katmanına düşüyordu →
+ * axe `aria-tooltip-name`, tur hedefi görünmez katman). "Ara Ctrl+K" ipucu arama kullanılırken (odak/sonuç paneli/bağlam
+ * menüsü) açılmaz — sonuç panelinin başlığını örtüyordu.
+ */
+const TOUR_ANCHOR_ID = 'tour-homepage-smartsearch'
+const inUse = ref(false)
+function onSearchFocusOut(e: FocusEvent) {
+  const next = e.relatedTarget as Node | null
+  if (next && (e.currentTarget as HTMLElement | null)?.contains(next)) return
+  inUse.value = ctxOpen.value
+}
+watch(ctxOpen, (open) => {
+  if (!open && !searchRef.value?.$el?.contains?.(document.activeElement)) inUse.value = false
+})
 const ctxPoint = ref<[number, number]>([0, 0])
 const ctxItem = shallowRef<SearchEntry | null>(null)
 const ctxTitle = computed(() => ctxItem.value?.title ?? '')

@@ -61,7 +61,7 @@
         <!-- 1 · Mağaza kimliği -->
         <section v-show="groupShown(1)" :id="'sl-group-1'" class="sl-group" role="tabpanel" aria-labelledby="sl-group-1-title">
           <header class="sl-group__head">
-            <span class="sl-group__icon" aria-hidden="true"><v-icon :icon="GROUPS[0].icon" /></span>
+            <EkIconTile :icon="GROUPS[0].icon" size="md" />
             <div class="sl-group__titles">
               <h2 id="sl-group-1-title" class="sl-group__title">{{ GROUPS[0].label }}</h2>
               <p class="sl-group__desc">{{ GROUPS[0].description }}</p>
@@ -136,7 +136,7 @@
         <!-- 2 · Fatura & yasal bilgiler -->
         <section v-show="groupShown(2)" :id="'sl-group-2'" class="sl-group" role="tabpanel" aria-labelledby="sl-group-2-title">
           <header class="sl-group__head">
-            <span class="sl-group__icon" aria-hidden="true"><v-icon :icon="GROUPS[1].icon" /></span>
+            <EkIconTile :icon="GROUPS[1].icon" size="md" />
             <div class="sl-group__titles">
               <h2 id="sl-group-2-title" class="sl-group__title">{{ GROUPS[1].label }}</h2>
               <p class="sl-group__desc">{{ GROUPS[1].description }}</p>
@@ -216,7 +216,7 @@
         <!-- 3 · Lojistik & operasyon -->
         <section v-show="groupShown(3)" :id="'sl-group-3'" class="sl-group" role="tabpanel" aria-labelledby="sl-group-3-title">
           <header class="sl-group__head">
-            <span class="sl-group__icon" aria-hidden="true"><v-icon :icon="GROUPS[2].icon" /></span>
+            <EkIconTile :icon="GROUPS[2].icon" size="md" />
             <div class="sl-group__titles">
               <h2 id="sl-group-3-title" class="sl-group__title">{{ GROUPS[2].label }}</h2>
               <p class="sl-group__desc">{{ GROUPS[2].description }}</p>
@@ -275,7 +275,7 @@
         <!-- 4 · İletişim & bildirimler -->
         <section v-show="groupShown(4)" :id="'sl-group-4'" class="sl-group" role="tabpanel" aria-labelledby="sl-group-4-title">
           <header class="sl-group__head">
-            <span class="sl-group__icon" aria-hidden="true"><v-icon :icon="GROUPS[3].icon" /></span>
+            <EkIconTile :icon="GROUPS[3].icon" size="md" />
             <div class="sl-group__titles">
               <h2 id="sl-group-4-title" class="sl-group__title">{{ GROUPS[3].label }}</h2>
               <p class="sl-group__desc">{{ GROUPS[3].description }}</p>
@@ -336,7 +336,7 @@
 </template>
 
 <script setup lang="ts">
-import { EkAlert, EkButton, EkKbd } from '@entegrasyonik/ui/components'
+import { EkAlert, EkButton, EkIconTile, EkKbd } from '@entegrasyonik/ui/components'
 import SettingRow from '@/components/settings/SettingRow.vue'
 import SettingsStorePreview from '@/components/settings/SettingsStorePreview.vue'
 import { validateSettings } from '@/components/settings/settingsValidation'
@@ -888,31 +888,14 @@ onBeforeUnmount(() => {
   box-shadow: var(--ek-shadow-card);
 }
 
+/* FE-R4-INT: bölüm kartı başlığı ürün formu adım kartı (`ProductStepCard`) ile aynı dil — ortak `EkIconTile` (md),
+   aynı iç boşluk/aralık, açıklama altyazı rolünde; zemin bandı yok. */
 .sl-group__head {
   display: flex;
   align-items: center;
-  gap: var(--ek-space-4);
-  padding: var(--ek-space-5) var(--ek-space-6);
+  gap: var(--ek-space-3);
+  padding: var(--ek-space-4) var(--ek-space-6);
   border-bottom: 1px solid var(--ek-color-border-subtle);
-  background: var(--ek-color-surface-muted);
-}
-
-.sl-group__icon {
-  display: inline-flex;
-  flex: none;
-  align-items: center;
-  justify-content: center;
-  width: 44px;
-  height: 44px;
-  border: 1px solid var(--ek-color-action-border);
-  border-radius: var(--ek-radius-tile);
-  background: var(--ek-color-action-subtle);
-  color: var(--ek-color-action);
-  font-size: var(--ek-icon-xl);
-}
-
-.sl-group__icon .v-icon {
-  font-size: inherit;
 }
 
 .sl-group__titles {
@@ -931,8 +914,8 @@ onBeforeUnmount(() => {
 .sl-group__desc {
   margin: 0;
   color: var(--ek-color-content-muted);
-  font-size: var(--ek-type-body-size);
-  line-height: var(--ek-type-body-line);
+  font-size: var(--ek-type-caption-size);
+  line-height: var(--ek-type-caption-line);
 }
 
 .sl-group__badge {
@@ -1315,12 +1298,6 @@ onBeforeUnmount(() => {
   .sl-group__head {
     align-items: flex-start;
     padding: var(--ek-space-4);
-  }
-
-  .sl-group__icon {
-    width: 36px;
-    height: 36px;
-    font-size: var(--ek-icon-md);
   }
 
   .sl-group__badge {

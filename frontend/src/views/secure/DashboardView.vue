@@ -166,6 +166,8 @@ onMounted(refreshAll)
   inset: 0;
   overflow-y: auto;
   background: var(--ek-color-app-bg);
+  /* FE-R4-INT: Otopilot yan paneli (≥1280 itme) iş alanını daraltınca ızgaralar görünüm alanına değil iş alanına uyar. */
+  container: ek-dash / inline-size;
 }
 
 .dash-page {
@@ -218,6 +220,14 @@ onMounted(refreshAll)
 
 /* Tek kolon (tablet/mobil): kartlar bölüm içi sırayla tam genişlikte dizilir. */
 @media (max-width: 1099px) {
+  .dash-row,
+  .dash-row--even {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* FE-R4-INT (ek): iş alanı dar (ör. Otopilot paneli açık) → aynı tek kolon; 850 px ≈ 1099 görünüm − 248 menü. */
+@container ek-dash (max-width: 850px) {
   .dash-row,
   .dash-row--even {
     grid-template-columns: minmax(0, 1fr);
