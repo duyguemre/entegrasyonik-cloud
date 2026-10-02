@@ -22,51 +22,56 @@
     <v-form @keydown.enter.prevent @submit.prevent ref="productInfoFormRef" v-model="isProductInfoFormValid">
 
       <div class="pdv-flow">
-        <ProductFormWizardBar :form="productInfoForm" :current="stepper" save-label="Kaydet" :saving="isSaving"
-          :category-title="categoriesStore.getCategoryTitle(productInfoForm.category)"
-          :brand-title="brandsStore.getBrandTitle(productInfoForm.brand)" @navigate="onNavigate" @save="saveProduct" />
+        <div class="pdv-grid">
+          <!-- FE R5 B: ürün rayı (önizleme · adımlar · durum/Kaydet) — geniş kapta solda yapışkan, dar kapta üst + alt çubuk. -->
+          <div class="pdv-rail">
+            <ProductFormWizardBar :form="productInfoForm" :current="stepper" save-label="Kaydet" :saving="isSaving"
+              :category-title="categoriesStore.getCategoryTitle(productInfoForm.category)"
+              :brand-title="brandsStore.getBrandTitle(productInfoForm.brand)" :cover-src="preview.coverSrc.value"
+              :category-path="preview.categoryPath.value" :feedback="saveFeedback" @navigate="onNavigate" @save="saveProduct" />
+          </div>
 
-        <div v-if="stepper == 0" class="pdv-category-step" data-pf-field="category">
-          <v-form ref="formStep0Ref" @submit.stop>
-            <CategorySelectBoxLevelComponent v-model="productInfoForm.category" />
-          </v-form>
+          <div class="pdv-main">
+            <div v-if="stepper == 0" class="pdv-category-step" data-pf-field="category">
+              <v-form ref="formStep0Ref" @submit.stop>
+                <ProductCategoryStep v-model="productInfoForm.category" />
+              </v-form>
+            </div>
+
+            <div v-if="stepper == 1" class="pdv-step">
+              <v-form ref="formStep1Ref" @submit.stop>
+                <ProductInfoFormComponent :productInfoForm="productInfoForm" :quillToolbar="quillToolbar"
+                  :galleryDisabled="!productInfoForm.tempId" :imageProductId="productInfoForm.tempId"
+                  @openGallery="isImagesDialog = true" />
+              </v-form>
+            </div>
+
+            <div v-if="stepper == 2" class="pdv-step-variants">
+              <v-form ref="formStep2Ref" @submit.stop>
+                <template v-if="productInfoForm.hasVariant">
+                  <ProductVariantsComponent v-model="isVariantsDialog1" :productInfoForm="productInfoForm"
+                    class="pdv-variants" :class="{ 'pdv-variants--dim': !isVariantsDialog1 }" key="ProductVariantsComponent"
+                    @close="isVariantsDialog1 = false" v-if="isVariantsDialog1 == true" @refresh-images="refreshImages"
+                    :dialogAttach="'.productDefinitionView'" @refresh-variants="refreshVariants" />
+                </template>
+                <template v-else>
+                  <ProductSingleVariantComponent v-model="isVariantsDialog1" :productInfoForm="productInfoForm"
+                    :single-variant="productInfoForm.variants[0]" class="pdv-variants" :class="{ 'pdv-variants--dim': !isVariantsDialog1 }" key="ProductVariantsComponent"
+                    @close="isVariantsDialog1 = false" v-if="isVariantsDialog1 == true" @refresh-images="refreshImages"
+                    :dialogAttach="'.productDefinitionView'" @refresh-variants="refreshVariants" />
+                </template>
+              </v-form>
+            </div>
+
+            <div v-if="stepper == 3" class="pdv-step">
+              <v-form ref="formStep3Ref" @submit.stop>
+                <ProductDetailsComponent :productInfoForm="productInfoForm" />
+              </v-form>
+            </div>
+
+            <ProductFormStepFooter :form="productInfoForm" :current="stepper" @navigate="onNavigate" />
+          </div>
         </div>
-
-
-        <div v-if="stepper == 1" class="pdv-step">
-          <v-form ref="formStep1Ref" @submit.stop>
-            <ProductInfoFormComponent :productInfoForm="productInfoForm" :quillToolbar="quillToolbar"
-              :galleryDisabled="!productInfoForm.tempId" :imageProductId="productInfoForm.tempId"
-              @openGallery="isImagesDialog = true" />
-          </v-form>
-        </div>
-
-
-        <div v-if="stepper == 2" class="pdv-step-variants">
-          <v-form ref="formStep2Ref" @submit.stop>
-            <template v-if="productInfoForm.hasVariant">
-              <ProductVariantsComponent v-model="isVariantsDialog1" :productInfoForm="productInfoForm"
-                class="pdv-variants" :class="{ 'pdv-variants--dim': !isVariantsDialog1 }" key="ProductVariantsComponent"
-                @close="isVariantsDialog1 = false" v-if="isVariantsDialog1 == true" @refresh-images="refreshImages"
-                :dialogAttach="'.productDefinitionView'" @refresh-variants="refreshVariants" />
-            </template>
-            <template v-else>
-
-              <ProductSingleVariantComponent v-model="isVariantsDialog1" :productInfoForm="productInfoForm"
-                :single-variant="productInfoForm.variants[0]" class="pdv-variants" :class="{ 'pdv-variants--dim': !isVariantsDialog1 }" key="ProductVariantsComponent"
-                @close="isVariantsDialog1 = false" v-if="isVariantsDialog1 == true" @refresh-images="refreshImages"
-                :dialogAttach="'.productDefinitionView'" @refresh-variants="refreshVariants" />
-            </template>
-          </v-form>
-        </div>
-
-        <div v-if="stepper == 3" class="pdv-step">
-          <v-form ref="formStep3Ref" @submit.stop>
-            <ProductDetailsComponent :productInfoForm="productInfoForm" />
-          </v-form>
-        </div>
-
-        <ProductFormStepFooter :form="productInfoForm" :current="stepper" @navigate="onNavigate" />
       </div>
     </v-form>
   </div>
@@ -80,6 +85,9 @@ import { useDisplay } from 'vuetify'
 import EkPageHeader from '@/components/page/EkPageHeader.vue'
 import ProductFormWizardBar from '@/components/productDefinitions/crud/ProductFormWizardBar.vue'
 import ProductFormStepFooter from '@/components/productDefinitions/crud/ProductFormStepFooter.vue'
+import ProductCategoryStep from '@/components/productDefinitions/crud/ProductCategoryStep.vue'
+import type { ProductFormFeedback } from '@/components/productDefinitions/crud/ProductFormWizardBar.vue'
+import { useProductFormPreview } from '@/composables/useProductFormPreview'
 import { focusProductField } from '@/composables/productFormFocus'
 import type { StepIndex } from '@/composables/useProductFormProgress'
 import ProductCompetitivePricesComponent from '@/components/productDefinitions/crud/ProductCompetitivePricesComponent.vue'
@@ -99,7 +107,6 @@ import { useBrandsStore } from '@/stores/brandsStore';
 import { useCategoriesStore } from '@/stores/categoriesStore';
 import { useIntegrationStore } from '@/stores/integrationStore';
 import { EkDialogHost } from '@entegrasyonik/ui/components';
-import CategorySelectBoxLevelComponent from '@/components/CategorySelectBoxLevelComponent.vue';
 import ProductSingleVariantComponent from '@/components/productDefinitions/variants/ProductSingleVariantComponent.vue';
 import ProductDetailsComponent from '@/components/productDefinitions/variants/ProductDetailsComponent.vue';
 import ProductInfoFormComponent from '@/components/productDefinitions/crud/ProductInfoFormComponent.vue';
@@ -192,8 +199,19 @@ const initSingleVariant = () => {
 const rootRef = ref<HTMLElement | null>(null)
 const isSaving = ref(false)
 
+// FE R5 B: rayın önizleme kartı + son kayıt denemesinin satır içi geri bildirimi (toast'a ek).
+const preview = useProductFormPreview(productInfoForm, () => productInfoForm.value?.tempId)
+const saveFeedback = ref<ProductFormFeedback | null>(null)
+let feedbackTimer: ReturnType<typeof setTimeout> | undefined
+const showFeedback = (value: ProductFormFeedback | null) => {
+  clearTimeout(feedbackTimer)
+  saveFeedback.value = value
+  if (value?.tone === 'success') feedbackTimer = setTimeout(() => { saveFeedback.value = null }, 8000)
+}
+
 // Sihirbaz şeridi/altbilgi/eksikler paneli ortak gezinti noktası: adım değişir, isteniyorsa alana odaklanılır.
 const onNavigate = async ({ step, field }: { step: StepIndex; field?: string }) => {
+  if (saveFeedback.value?.tone === 'error') showFeedback(null)
   if (step === 2) checkSingleVariant()
   stepper.value = step
   await focusProductField(rootRef.value, field)
@@ -411,14 +429,23 @@ const saveProduct = async () => {
   // PRC-R0: yeni varyantların maliyeti genel kayda GİTMEZ (backend süzer); kayıttan sonra barkodla ayrı yazılır.
   const costDiff = costSave.plan({}, productInfoForm.value.variants)
   let response: any
+  const savedTitle = productInfoForm.value.title
+  showFeedback(null)
   try {
     response = await restApi.post("ProductService/saveProduct", { productInfo: productRequest })
+  } catch (error) {
+    showFeedback({ tone: 'error', title: 'Ürün kaydedilemedi', message: 'Bağlantı kurulamadı — bilgileriniz korunuyor, birazdan yeniden deneyin.' })
+    throw error
   } finally {
     loadingComponentRef.value.remove(guid)
     isSaving.value = false
   }
 
+  if (response != true) {
+    showFeedback({ tone: 'error', title: 'Ürün kaydedilemedi', message: 'Bilgileriniz korunuyor — eksik ya da hatalı alanları düzeltip yeniden deneyin.' })
+  }
   if (response == true) {
+    showFeedback({ tone: 'success', title: 'Ürün eklendi', message: savedTitle ? `“${savedTitle}” kataloğa kaydedildi; yeni ürün için form temizlendi.` : 'Yeni ürün için form temizlendi.' })
     snackbarStore.addSnackbar({
       show: true,
       text: 'Ürün eklendi',
@@ -477,6 +504,7 @@ onDeactivated(() => {
 })
 
 onBeforeUnmount(() => {
+  clearTimeout(feedbackTimer)
   productInfoForm.value = null
 })
 
@@ -648,17 +676,60 @@ defineExpose({
   }
 }
 
-/* FE R4 B: sihirbaz şeridi, kayıt çubuğu, adım içeriği ve altbilgi TEK sütunda (önceden adım kartları 880/1200/tam
-   genişlik arasında değişiyordu). Kayıt çubuğu bu sütunda yapışkandır (ProductFormWizardBar). */
+/* FE R5 B — ürün rayı + geniş içerik. Kap sorgusu (`pform`): kabuk menüsü açık/kapalı fark etmez, iş alanının
+   GERÇEK genişliğine göre düzen seçilir. Dar kap: önizleme → adım şeridi → içerik; durum kartı içeriğin altında
+   yapışkan çubuk (ProductFormWizardBar `grid-area: main`, `align-self: end`). Geniş kap (≥ 960px): solda 288px yapışkan
+   ray (önizleme · adımlar · durum/Kaydet), sağda içerik. */
 .pdv-flow {
-  max-width: 1280px;
+  container: pform / inline-size;
+  max-width: 1440px;
   margin: var(--ek-space-4) auto 0;
 }
 
-.pdv-category-step,
-.pdv-step,
-.pdv-step-variants {
-  display: block;
-  margin-top: var(--ek-space-5);
+.pdv-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: "preview" "nav" "main";
+  gap: var(--ek-space-3);
+}
+
+.pdv-rail {
+  display: contents;
+}
+
+.pdv-main {
+  grid-area: main;
+  min-width: 0;
+  /* alttaki yapışkan kayıt çubuğu son içeriği örtmesin */
+  padding-bottom: calc(var(--ek-control-h-lg) + var(--ek-space-12));
+}
+
+@container pform (max-width: 599px) {
+  .pdv-main {
+    padding-bottom: calc(var(--ek-control-h-lg) * 2 + var(--ek-space-16));
+  }
+}
+
+@container pform (min-width: 960px) {
+  .pdv-grid {
+    grid-template-columns: 288px minmax(0, 1fr);
+    grid-template-areas: "rail main";
+    align-items: start;
+    gap: var(--ek-space-6);
+  }
+
+  .pdv-rail {
+    position: sticky;
+    top: var(--ek-space-4);
+    z-index: var(--ek-z-sticky);
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-3);
+    grid-area: rail;
+  }
+
+  .pdv-main {
+    padding-bottom: 0;
+  }
 }
 </style>

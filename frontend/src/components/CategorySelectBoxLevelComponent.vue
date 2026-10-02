@@ -19,7 +19,7 @@
     embedded
     class="ek-category-picker"
     :nodes="tree"
-    title="Ürün kategorisi"
+    title="Kategori ağacı"
     :subtitle="subtitle"
     icon="mdi-file-tree-outline"
     root-label="Ana kategoriler"

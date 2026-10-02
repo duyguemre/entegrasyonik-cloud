@@ -11,80 +11,97 @@
   nesnesi doğrudan düzenlenir).
 -->
 <template>
-  <ProductStepCard title="Ürün tanımı" icon="mdi-text-box-edit-outline"
-    description="Ürün tipi, marka, başlık ve açıklama; görseller galeriden yönetilir.">
-  <div class="pif-layout">
-    <div class="pif-gallery">
+  <ProductStepCard :step="2" title="Ürün tanımı" icon="mdi-text-box-edit-outline"
+    description="Ürünün kimliği: tipi, markası, başlığı, görselleri ve açıklaması.">
+    <ProductFormSection title="Ürün tipi" icon="mdi-shape-outline" description="Satış biçimini seçin; sonraki adım buna göre şekillenir." bare>
+      <v-radio-group inline hide-details v-model="productInfoForm.hasVariant" class="pif-radios" aria-label="Ürün tipi">
+        <v-radio :value="false" :label="$t('productDefinitions.product.define.withoutVariant')">
+          <template #label>
+            <span class="pif-choice">
+              <v-icon class="pif-choice__icon" icon="mdi-package-variant-closed" aria-hidden="true" />
+              <span class="pif-choice__text">
+                <span class="pif-choice__title">{{ $t('productDefinitions.product.define.withoutVariant') }}</span>
+                <span class="pif-choice__desc">Tek stok kodu ve barkodla satılır.</span>
+              </span>
+            </span>
+          </template>
+        </v-radio>
+        <v-radio :value="true" :label="$t('productDefinitions.product.define.withVariant')">
+          <template #label>
+            <span class="pif-choice">
+              <v-icon class="pif-choice__icon" icon="mdi-palette-swatch-outline" aria-hidden="true" />
+              <span class="pif-choice__text">
+                <span class="pif-choice__title">{{ $t('productDefinitions.product.define.withVariant') }}</span>
+                <span class="pif-choice__desc">Renk, beden gibi her birleşim ayrı kod, fiyat ve stok taşır.</span>
+              </span>
+            </span>
+          </template>
+        </v-radio>
+      </v-radio-group>
+    </ProductFormSection>
+
+    <ProductFormSection title="Temel bilgiler" icon="mdi-card-text-outline"
+      description="Marka, listenizdeki ana marka olarak önceden seçilir; başka bir markaya aitse değiştirin.">
+      <div :class="productInfoForm.hasVariant ? '' : 'ek-span-full'" data-pf-field="brand">
+        <BrandSelectBoxComponent v-model="productInfoForm.brand" :mandatory="true" />
+      </div>
+      <v-text-field v-if="productInfoForm.hasVariant" clearable maxlength="32" counter data-pf-field="maincode"
+        :rules="formRules.stockcodeRules" v-model="productInfoForm.maincode"
+        :label="`${$t('productDefinitions.product.define.maincode')} *`"
+        :hint="$t('productDefinitions.product.define.maincodeDesc')" persistent-hint />
+      <v-text-field class="ek-span-full" clearable :rules="formRules.titleRules" maxlength="160" counter
+        data-pf-field="title" v-model="productInfoForm.title" :label="`${$t('productDefinitions.product.define.productTitle')} *`"
+        :hint="$t('productDefinitions.product.define.productTitleDesc')" persistent-hint />
+    </ProductFormSection>
+
+    <ProductFormSection title="Görseller" icon="mdi-image-multiple-outline"
+      :description="galleryDisabled ? 'Galeri, ürün taslağı oluşunca açılır.' : 'İlk görsel kapaktır; sıralama ve varyant görselleri galeriden yönetilir.'" bare>
+      <template #aside>
+        <span v-if="images.length" class="pif-count ek-num">{{ images.length }} görsel</span>
+      </template>
       <!-- FR2-PFORM 27: kapak + sıradaki görseller görünür; düğmenin ne yaptığı yazılı. -->
-      <button type="button" class="pif-gallery__tile" data-pf-field="gallery" :disabled="galleryDisabled"
+      <button type="button" class="pif-gallery" :class="{ 'is-empty': !images.length }" data-pf-field="gallery" :disabled="galleryDisabled"
         :aria-label="images.length ? `Resim galerisini düzenle — ${images.length} görsel` : 'Resim galerisine görsel ekle'"
         @click="emit('openGallery')">
-        <span class="pif-gallery__cover">
-          <GalleryThumb v-if="images[0]" :src="thumb(images[0])" alt="Kapak görseli" />
-          <span v-else class="pif-gallery__empty">
-            <v-icon icon="mdi-image-plus-outline" aria-hidden="true" />
-            <span>Henüz görsel yok</span>
+        <template v-if="images.length">
+          <span class="pif-gallery__grid" aria-hidden="true">
+            <span v-for="(img, i) in images.slice(0, 6)" :key="img._id ?? i" class="pif-thumb" :class="{ 'is-cover': i === 0 }">
+              <GalleryThumb :src="thumb(img)" :alt="i === 0 ? 'Kapak görseli' : ''" />
+              <span v-if="i === 0" class="pif-thumb__badge"><v-icon icon="mdi-star" aria-hidden="true" />Kapak</span>
+              <span v-if="i === 5 && images.length > 6" class="pif-thumb__more ek-num">+{{ images.length - 6 }}</span>
+            </span>
+            <span v-if="images.length < 6" class="pif-thumb pif-thumb--add">
+              <v-icon icon="mdi-plus" aria-hidden="true" />
+              <span>Ekle</span>
+            </span>
           </span>
-          <span v-if="images[0]" class="pif-gallery__badge"><v-icon icon="mdi-star" aria-hidden="true" />Kapak</span>
-        </span>
-        <span v-if="images.length > 1" class="pif-gallery__strip" aria-hidden="true">
-          <span v-for="(img, i) in images.slice(1, 4)" :key="img._id" class="pif-gallery__mini">
-            <GalleryThumb :src="thumb(img)" />
-            <span v-if="i === 2 && images.length > 4" class="pif-gallery__more ek-num">+{{ images.length - 4 }}</span>
+          <span class="pif-gallery__cta">
+            <v-icon icon="mdi-image-edit-outline" size="18" aria-hidden="true" />
+            Galeriyi düzenle
           </span>
-        </span>
-        <span class="pif-gallery__label">
-          <v-icon :icon="images.length ? 'mdi-image-edit-outline' : 'mdi-image-plus-outline'" size="18" aria-hidden="true" />
-          {{ images.length ? 'Galeriyi düzenle' : 'Görsel ekle' }}
-          <span v-if="images.length" class="pif-gallery__count ek-num">{{ images.length }}</span>
+        </template>
+        <span v-else class="pif-drop">
+          <span class="pif-drop__icon" aria-hidden="true"><v-icon icon="mdi-cloud-upload-outline" /></span>
+          <span class="pif-drop__title">Görsel ekle</span>
+          <span class="pif-drop__sub">Galeride görselleri sürükleyip bırakabilir, sıralayabilir ve kapağı seçebilirsiniz.</span>
         </span>
       </button>
-      <p class="pif-gallery__hint">{{ galleryDisabled ? 'Galeri, ürün taslağı oluşunca açılır.' : 'Sıralama, kapak ve varyant görselleri galeriden yönetilir.' }}</p>
-    </div>
+    </ProductFormSection>
 
-    <div class="pif-fields">
-      <EkFormSection title="Ürün tipi" icon="mdi-shape-outline">
-        <div class="ek-span-full">
-          <v-radio-group inline hide-details v-model="productInfoForm.hasVariant" class="pif-radios" aria-label="Ürün tipi">
-            <v-radio :value="false" :label="$t('productDefinitions.product.define.withoutVariant')" />
-            <v-radio :value="true" :label="$t('productDefinitions.product.define.withVariant')" />
-          </v-radio-group>
-          <p class="pif-type-hint">{{ productInfoForm.hasVariant
-            ? 'Renk, beden gibi seçeneklerin her birleşimi ayrı stok kodu, barkod, fiyat ve stok taşır.'
-            : 'Tek stok kodu ve barkodla satılan ürün.' }}</p>
-        </div>
-        <v-text-field v-if="productInfoForm.hasVariant" clearable maxlength="32" counter data-pf-field="maincode"
-          :rules="formRules.stockcodeRules" v-model="productInfoForm.maincode"
-          :label="`${$t('productDefinitions.product.define.maincode')} *`"
-          :hint="$t('productDefinitions.product.define.maincodeDesc')" persistent-hint />
-      </EkFormSection>
-
-      <EkFormSection title="Temel bilgiler" icon="mdi-text-box-outline"
-        description="Marka, listenizdeki ana marka (yoksa ilk marka) olarak önceden seçilir; ürününüz başka bir markaya aitse değiştirin.">
-        <div class="ek-span-full" data-pf-field="brand">
-          <BrandSelectBoxComponent v-model="productInfoForm.brand" :mandatory="true" />
-        </div>
-        <v-text-field class="ek-span-full" clearable :rules="formRules.titleRules" maxlength="160" counter
-          data-pf-field="title" v-model="productInfoForm.title" :label="`${$t('productDefinitions.product.define.productTitle')} *`"
-          :hint="$t('productDefinitions.product.define.productTitleDesc')" persistent-hint />
-      </EkFormSection>
-
-      <EkFormSection title="Ürün açıklaması" icon="mdi-text-long" :columns="1">
-        <div class="pif-editor">
-          <QuillEditor v-model:content="productInfoForm.description" content-type="html" theme="snow"
-            :toolbar="quillToolbar" @ready="labelToolbar" />
-        </div>
-      </EkFormSection>
-    </div>
-  </div>
+    <ProductFormSection title="Ürün açıklaması" icon="mdi-text-long" description="Kanallarda ürün sayfasında görünür; başlık, liste ve bağlantı kullanılabilir." bare>
+      <div class="pif-editor">
+        <QuillEditor v-model:content="productInfoForm.description" content-type="html" theme="snow"
+          :toolbar="quillToolbar" @ready="labelToolbar" />
+      </div>
+    </ProductFormSection>
   </ProductStepCard>
 </template>
 
 <script setup lang="ts">
 import { QuillEditor } from '@vueup/vue-quill'
 import '@vueup/vue-quill/dist/vue-quill.snow.css'
-import { EkFormSection } from '@entegrasyonik/ui/components'
 import ProductStepCard from './ProductStepCard.vue'
+import ProductFormSection from './ProductFormSection.vue'
 import BrandSelectBoxComponent from '@/components/common/BrandSelectBoxComponent.vue'
 import { computed } from 'vue'
 import GalleryThumb from '@/components/productDefinitions/images/GalleryThumb.vue'
@@ -133,168 +150,20 @@ function labelToolbar(quill: any) {
 </script>
 
 <style scoped>
-.pif-layout {
-  display: grid;
-  grid-template-columns: 248px minmax(0, 1fr);
-  gap: var(--ek-space-8);
-  align-items: start;
-}
-
-.pif-gallery {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ek-space-2);
-}
-
-.pif-gallery__tile {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 0;
-  width: 100%;
-  padding: 0;
-  overflow: hidden;
-  border: 1px solid var(--ek-color-border-default);
-  border-radius: var(--ek-radius-card);
-  background: var(--ek-color-surface);
-  color: var(--ek-color-content-default);
-  font-family: inherit;
-  text-align: left;
-  cursor: pointer;
-  transition: var(--ek-transition-colors);
-}
-
-.pif-gallery__tile:hover:not(:disabled) {
-  border-color: var(--ek-color-action-border);
-  box-shadow: var(--ek-shadow-card);
-}
-
-.pif-gallery__tile:focus-visible {
-  outline: none;
-  box-shadow: var(--ek-focus-ring);
-}
-
-.pif-gallery__tile:disabled {
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
-.pif-gallery__cover {
-  position: relative;
-  display: block;
-  aspect-ratio: 1;
-  background: var(--ek-color-surface-sunken);
-}
-
-.pif-gallery__empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: var(--ek-space-2);
-  height: 100%;
-  color: var(--ek-color-content-subtle);
-  font-size: var(--ek-type-caption-size);
-}
-
-.pif-gallery__empty :deep(.v-icon) {
-  font-size: 40px;
-}
-
-.pif-gallery__badge {
-  position: absolute;
-  bottom: var(--ek-space-2);
-  left: var(--ek-space-2);
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  height: 22px;
-  padding: 0 var(--ek-space-2);
-  border: 1px solid var(--ek-color-action-border);
-  border-radius: var(--ek-radius-full);
-  background: var(--ek-color-action-subtle);
-  color: var(--ek-color-action-emphasis);
-  font-size: var(--ek-type-caption-size);
-  font-weight: 600;
-}
-
-.pif-gallery__badge :deep(.v-icon) {
-  font-size: 13px;
-}
-
-.pif-gallery__strip {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--ek-space-1);
-  padding: var(--ek-space-1);
-  border-top: 1px solid var(--ek-color-border-subtle);
-}
-
-.pif-gallery__mini {
-  position: relative;
-  display: block;
-  aspect-ratio: 1;
-  overflow: hidden;
-  border-radius: var(--ek-radius-sm);
-}
-
-.pif-gallery__more {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  background: var(--ek-color-surface-inverse);
-  color: var(--ek-color-content-inverse);
-  font-weight: 600;
-  opacity: 0.86;
-}
-
-.pif-gallery__label {
-  display: flex;
-  align-items: center;
-  gap: var(--ek-space-2);
-  padding: var(--ek-space-2) var(--ek-space-3);
-  border-top: 1px solid var(--ek-color-border-subtle);
-  color: var(--ek-color-action-emphasis);
-  font-size: var(--ek-type-label-size);
-  font-weight: var(--ek-type-label-weight);
-}
-
-.pif-gallery__count {
-  margin-left: auto;
-  min-width: 22px;
-  padding: 0 6px;
-  border-radius: var(--ek-radius-full);
-  background: var(--ek-color-surface-muted);
-  color: var(--ek-color-content-muted);
-  font-size: var(--ek-type-caption-size);
-  text-align: center;
-}
-
-.pif-gallery__hint {
-  margin: 0;
-  color: var(--ek-color-content-muted);
-  font-size: var(--ek-type-caption-size);
-  line-height: var(--ek-type-caption-line);
-}
-
-.pif-fields {
-  min-width: 0;
-}
-
-/* Ürün tipi: iki seçim kutucuğu (radyo + etiket tek tıklama alanı); seçili kutucuk aksiyon tonunda. */
+/* ── ürün tipi: iki seçim kartı (radyo + ikon + başlık + açıklama tek tıklama alanı) ───────────────────────── */
 .pif-radios :deep(.v-selection-control-group) {
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--ek-space-3);
 }
 
 .pif-radios :deep(.v-radio) {
-  flex: 1 1 200px;
-  max-width: 320px;
-  min-height: 48px;
-  padding: 0 var(--ek-space-4) 0 var(--ek-space-1);
+  align-items: flex-start;
+  min-height: 72px;
+  margin: 0;
+  padding: var(--ek-space-3) var(--ek-space-4) var(--ek-space-3) var(--ek-space-2);
   border: 1px solid var(--ek-color-border-default);
-  border-radius: var(--ek-radius-control);
+  border-radius: var(--ek-radius-tile);
   background: var(--ek-color-surface);
   transition: var(--ek-transition-colors);
 }
@@ -311,27 +180,218 @@ function labelToolbar(quill: any) {
 
 .pif-radios :deep(.v-radio .v-label) {
   flex: 1 1 auto;
-  min-height: 46px;
-  color: var(--ek-color-content-strong);
-  font-weight: var(--ek-font-weight-medium);
+  align-self: stretch;
   opacity: 1;
   cursor: pointer;
 }
 
-.pif-type-hint {
-  margin: var(--ek-space-1) 0 0;
+.pif-choice {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ek-space-3);
+  padding-top: var(--ek-space-2);
+}
+
+.pif-choice__icon {
+  flex: none;
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-icon-lg);
+}
+
+.pif-radios :deep(.v-selection-control--dirty) .pif-choice__icon {
+  color: var(--ek-color-action);
+}
+
+.pif-choice__text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.pif-choice__title {
+  color: var(--ek-color-content-strong);
+  font-size: var(--ek-type-label-size);
+  line-height: var(--ek-type-label-line);
+  font-weight: var(--ek-font-weight-semibold);
+}
+
+.pif-choice__desc {
   color: var(--ek-color-content-muted);
   font-size: var(--ek-type-caption-size);
   line-height: var(--ek-type-caption-line);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .pif-radios :deep(.v-radio),
-  .pif-gallery__tile {
-    transition: none;
-  }
+/* ── görseller ───────────────────────────────────────────────────────────────────────────────────────── */
+.pif-count {
+  padding: 2px var(--ek-space-2);
+  border-radius: var(--ek-radius-full);
+  background: var(--ek-color-surface-muted);
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-caption-size);
+  font-weight: var(--ek-font-weight-semibold);
 }
 
+.pif-gallery {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ek-space-3);
+  width: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: var(--ek-radius-tile);
+  background: transparent;
+  color: var(--ek-color-content-default);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.pif-gallery:focus-visible {
+  outline: none;
+  box-shadow: var(--ek-focus-ring);
+}
+
+.pif-gallery:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.pif-gallery__grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: var(--ek-space-2);
+}
+
+.pif-thumb {
+  position: relative;
+  display: block;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border: 1px solid var(--ek-color-border-subtle);
+  border-radius: var(--ek-radius-tile);
+  background: var(--ek-color-surface-sunken);
+  transition: var(--ek-transition-colors);
+}
+
+.pif-thumb.is-cover {
+  grid-column: span 2;
+  grid-row: span 2;
+  border-color: var(--ek-color-action-border);
+}
+
+.pif-gallery:hover:not(:disabled) .pif-thumb {
+  border-color: var(--ek-color-border-strong);
+}
+
+.pif-thumb__badge {
+  position: absolute;
+  top: var(--ek-space-2);
+  left: var(--ek-space-2);
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  height: 22px;
+  padding: 0 var(--ek-space-2);
+  border-radius: var(--ek-radius-full);
+  background: var(--ek-color-action);
+  color: var(--ek-color-action-contrast);
+  font-size: var(--ek-type-caption-size);
+  font-weight: var(--ek-font-weight-semibold);
+  box-shadow: var(--ek-shadow-raised);
+}
+
+.pif-thumb__badge :deep(.v-icon) {
+  font-size: 13px;
+}
+
+.pif-thumb__more {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: var(--ek-color-surface-inverse);
+  color: var(--ek-color-content-inverse);
+  font-weight: var(--ek-font-weight-semibold);
+  opacity: 0.86;
+}
+
+.pif-thumb--add {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  border: 1px dashed var(--ek-color-border-strong);
+  background: var(--ek-color-surface);
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-caption-size);
+}
+
+.pif-gallery:hover:not(:disabled) .pif-thumb--add {
+  border-color: var(--ek-color-action);
+  color: var(--ek-color-action-emphasis);
+}
+
+.pif-gallery__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ek-space-2);
+  color: var(--ek-color-action-emphasis);
+  font-size: var(--ek-type-label-size);
+  font-weight: var(--ek-type-label-weight);
+}
+
+.pif-drop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ek-space-1);
+  min-height: 176px;
+  padding: var(--ek-space-6);
+  border: 1.5px dashed var(--ek-color-border-strong);
+  border-radius: var(--ek-radius-tile);
+  background: var(--ek-color-surface-sunken);
+  text-align: center;
+  transition: var(--ek-transition-colors);
+}
+
+.pif-gallery:hover:not(:disabled) .pif-drop {
+  border-color: var(--ek-color-action);
+  background: var(--ek-color-action-subtle);
+}
+
+.pif-drop__icon {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  margin-bottom: var(--ek-space-2);
+  border-radius: var(--ek-radius-full);
+  background: var(--ek-color-surface);
+  color: var(--ek-color-action);
+  box-shadow: var(--ek-shadow-card);
+}
+
+.pif-drop__icon :deep(.v-icon) {
+  font-size: var(--ek-icon-xl);
+}
+
+.pif-drop__title {
+  color: var(--ek-color-content-strong);
+  font-size: var(--ek-type-subheading-size);
+  line-height: var(--ek-type-subheading-line);
+  font-weight: var(--ek-type-subheading-weight);
+}
+
+.pif-drop__sub {
+  max-width: 46ch;
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-caption-size);
+  line-height: var(--ek-type-caption-line);
+}
+
+/* ── açıklama editörü ────────────────────────────────────────────────────────────────────────────────── */
 .pif-editor {
   height: 360px;
   display: flex;
@@ -341,6 +401,7 @@ function labelToolbar(quill: any) {
 .pif-editor :deep(.ql-toolbar) {
   border-color: var(--ek-color-border-input);
   border-radius: var(--ek-radius-control) var(--ek-radius-control) 0 0;
+  background: var(--ek-color-surface-muted);
 }
 
 .pif-editor :deep(.ql-container) {
@@ -351,20 +412,26 @@ function labelToolbar(quill: any) {
   font-family: inherit;
 }
 
-@media (max-width: 1023px) {
-  .pif-layout {
+@container pform (max-width: 599px) {
+  .pif-radios :deep(.v-selection-control-group) {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .pif-gallery {
-    max-width: 260px;
+  .pif-gallery__grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .pif-drop {
+    min-height: 140px;
+    padding: var(--ek-space-4);
   }
 }
 
-@media (max-width: 599px) {
-  .pif-gallery {
-    max-width: 200px;
+@media (prefers-reduced-motion: reduce) {
+  .pif-radios :deep(.v-radio),
+  .pif-thumb,
+  .pif-drop {
+    transition: none;
   }
 }
-
 </style>
