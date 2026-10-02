@@ -141,9 +141,11 @@ const option = computed(() => {
   padding-top: var(--ek-space-4);
 }
 
+/* C3: satır komşusu (durum dağılımı) daha uzunsa grafik kalan yüksekliği doldurur (autoresize); en az 248px. */
 .dash-trend__chart {
+  flex: 1 1 248px;
   width: 100%;
-  height: 248px;
+  min-height: 248px;
 }
 
 .dash-trend__legend {
