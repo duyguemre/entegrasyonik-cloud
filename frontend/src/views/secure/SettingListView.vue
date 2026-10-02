@@ -36,7 +36,7 @@
           <div class="sl-nav__list" role="tablist" aria-orientation="vertical" aria-label="Ayar bölümleri">
             <button v-for="g in GROUPS" :key="g.value" type="button" role="tab" class="sl-nav__item"
               :class="{ 'is-active': !searching && activeTab === g.value }"
-              :aria-selected="!searching && activeTab === g.value" :aria-controls="`sl-group-${g.value}`" @click="selectGroup(g.value)">
+              :aria-selected="!searching && activeTab === g.value" :aria-controls="`sl-group-${g.value}`" @click="onNavClick(g.value, $event)">
               <span class="sl-nav__icon" aria-hidden="true"><v-icon :icon="g.icon" /></span>
               <span class="sl-nav__text">
                 <span class="sl-nav__label">{{ g.label }}</span>
@@ -454,6 +454,11 @@ const rowShown = (key: string) => !searching.value || hit(key)
 const cardShown = (keys: string[]) => keys.some(rowShown)
 const groupShown = (g: GroupId) => (searching.value ? hitsByGroup.value[g] > 0 : activeTab.value === g)
 const selectGroup = (g: GroupId) => { query.value = ''; activeTab.value = g }
+/** Dar ekranda yatay şeritte seçilen bölüm tam görünür olsun. */
+const onNavClick = (g: GroupId, e: MouseEvent) => {
+  selectGroup(g)
+  ;(e.currentTarget as HTMLElement | null)?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' })
+}
 
 // Değişiklik izi: son yüklenen/kaydedilen anlık görüntü ile karşılaştırma.
 const snapshot = ref<string>('')
@@ -1344,9 +1349,15 @@ onBeforeUnmount(() => {
     line-height: var(--ek-type-caption-line);
   }
 
-  .sl-savebar__actions {
+  /* Temizken tek satır (durum + Kaydet); değişiklik/hata varken eylemler alt satırda tam genişlik. */
+  .sl-savebar.is-dirty .sl-savebar__actions,
+  .sl-savebar.is-invalid .sl-savebar__actions {
     flex: 1 1 100%;
     justify-content: flex-end;
+  }
+
+  .sl-savebar__state {
+    flex-basis: 0;
   }
 
   .settingListView__upload {
