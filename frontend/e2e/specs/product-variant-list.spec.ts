@@ -113,13 +113,23 @@ test.describe('P3 (B5-2) — Ürün listesi varyant açılımı (ProductVariantL
     await expect(card.getByText('Pazaryeri Stoğu')).toBeVisible()
   })
 
-  test('kanal durumu (veri yok): gönderilmemiş kanal pasif karo, tıklanmaz ve ekran okuyucuya "gönderilmedi" der', async ({ page }) => {
+  // fe-r4d D3: FR2 madde 21 (ürün satırıyla aynı dil) gönderilmeyen kanalları kanal başına pasif karo yerine TEK
+  // soluk "+n" hapında topladı; bu test eski 4 karoyu (`.pvl-ch.is-unsent`) arıyordu → tabanda da kırmızıydı.
+  // Sözleşme aynı: gönderilmemiş kanalın durum karosu/ayrıntı düğmesi YOK, ekran okuyucu "gönderilmedi" duyar;
+  // "+n" bilgi kartı hangi kanallara gönderilmediğini ve nasıl gönderileceğini söyler.
+  test('kanal durumu (veri yok): gönderilmemiş kanallar tek "+n" hapında; durum karosu yok, ekran okuyucuya "gönderilmedi" der', async ({ page }) => {
     const list = await openVariantList(page)
 
     const row = list.locator('tbody tr').filter({ hasText: 'VL-E2E-BEYAZ' })
-    await expect(row.locator('.pvl-ch.is-unsent')).toHaveCount(4)
-    await expect(row.locator('.pvl-ch.is-unsent').first()).toContainText('gönderilmedi')
     await expect(row.locator('button.pvl-ch')).toHaveCount(0)
+    const absent = row.getByRole('button', { name: '4 kanala gönderilmedi. Ayrıntı' })
+    await expect(absent).toHaveText('+4')
+    await absent.click()
+    const card = page.getByRole('dialog', { name: 'VL-E2E-BEYAZ — gönderilmeyen kanallar' })
+    await expect(card).toBeVisible()
+    await expect(card.locator('.pvl-absent-card__list li')).toHaveCount(4)
+    await expect(card.getByText('Gönderilmedi')).toHaveCount(4)
+    await expect(card).toContainText('Kanallara yükle')
   })
 
   test('ekran görüntüsü tabanı (varyant açılımı)', async ({ page }) => {
