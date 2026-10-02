@@ -1619,3 +1619,20 @@
 .ek-chat--refined .ek-chat-confirm.is-expired {
   border-color: var(--ek-color-border-default);
 }
+
+/* Kurulum (panel): karşılama başlığı nefes alsın — başlık rolü + ara boşluk; açıklama okunur genişlikte. */
+.ek-chat--refined .ek-chat-setup__intro {
+  gap: var(--ek-space-2);
+  padding-top: var(--ek-space-2);
+}
+
+.ek-chat--refined .ek-chat-setup__title {
+  font-size: var(--ek-type-heading-size);
+  line-height: var(--ek-type-heading-line);
+}
+
+.ek-chat--refined .ek-chat-setup__intro .ek-chat-setup__text {
+  font-size: var(--ek-type-label-size);
+  line-height: var(--ek-type-body-line);
+  text-wrap: pretty;
+}
