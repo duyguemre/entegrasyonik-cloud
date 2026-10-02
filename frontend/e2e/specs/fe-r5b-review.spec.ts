@@ -94,6 +94,14 @@ for (const v of VIEWS) {
       await root.getByRole('button', { name: /Eksikleri göster|Kayıt özeti/ }).first().click().catch(() => undefined)
       await page.waitForTimeout(300)
       await shot(page, 'ekle-eksikler', v)
+      // panel kapanır, başlık girilir → 3. ve 4. adım açılır (ekleme akışının tamamı)
+      await root.getByRole('button', { name: /Eksikleri göster|Kayıt özeti/ }).first().click().catch(() => undefined)
+      await root.getByLabel(/Ürün Başlığı/).first().fill('Örnek Keten Gömlek')
+      await page.waitForTimeout(300)
+      await step(root, page, /Tekil Ürün Bilgisi/)
+      await shot(page, 'ekle-3-tekil', v)
+      await step(root, page, /Detay Bilgiler/)
+      await shot(page, 'ekle-4-detay', v)
     })
 
     test(`duzenleme tekil ${v.w} ${v.theme}`, async ({ page }) => {

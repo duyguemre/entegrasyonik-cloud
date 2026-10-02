@@ -1190,18 +1190,14 @@ function onIssue(item: ProgressItem) {
     white-space: normal;
   }
 
+  /* Kaydet üstte tam genişlik (tek birincil eylem), Eksikler/Kayıt özeti altında — her durumda aynı düzen. */
   .pfw-actions {
-    flex-wrap: wrap;
+    flex-direction: column-reverse;
     align-items: stretch;
+    gap: var(--ek-space-1);
   }
 
   .pfw-save {
-    flex: 1 1 auto;
-    min-height: var(--ek-control-h-lg);
-  }
-
-  .pfw-toggle {
-    flex: 0 1 auto;
     min-height: var(--ek-control-h-lg);
   }
 
