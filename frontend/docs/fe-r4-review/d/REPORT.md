@@ -45,10 +45,17 @@ Görüntüler: `sonra/` (1440 açık + koyu, 390; D1 ayrıca 800 tablet odak kar
 | prc-r2 `--repeat-each=2/3` mobil+tablet | 54/54 (düzeltme öncesi tablet 6/6 kırmızı) |
 | list-standard yapışkan `--repeat-each=3`, 4 işçi | yeşil |
 | D5 e2e (7 ekran × 3 proje, axe dahil) | 21/21 |
-| Frontend Playwright tam koşu (tek sefer) | TAM_KOSU |
+| Frontend Playwright tam koşu (tek sefer, 4 proje, 4 işçi, 1.4 sa) | **3210 test: 1831 geçti, 1173 atlandı, 206 kırmızı** — 179'u yalnız "`-linux.png` tabanı yok, yazıldı" (bulut ilk koşusu; tabanlar Windows), 27 davranış kırmızısı aşağıda sınıflı. D kapsamındaki spec'lerden **hiçbiri** kırmızı değil |
 
 ## Kalan kırmızılar (sınıflı)
-KALAN_KIRMIZILAR
+27 davranış kırmızısı ayrıca 2 işçiyle yeniden koşuldu; aynı 22'si `199628a` tabanının ayrı çalışma ağacında da koşuldu.
+
+| Sınıf | Testler | Kanıt / not |
+|---|---|---|
+| **Taban** (tabanda birebir aynı kırmızı; bu dalın dokunmadığı dosyalar) — 22 | `dark-mode:102` ×8 (axe `aria-tooltip-name: #tour-homepage-smartsearch` — üst bar akıllı arama, kabuk/Şerit A); `design-system:29` ×4 (axe `color-contrast` `#ek-side-v-*` — EkSidebarNav, kabuk); `category-definitions:67` mobil+tablet; `financial:447` ×3 (P03 başlık araçları); `navigation:161` tablet+masaüstü (zaman aşımı); `admin-characterization:50`; `logs-characterization:79` (strict mode çift "Ürün adı" kutusu); `logs:84` mobil | Taban koşusu: 24 kırmızı / 1 geçti (aynı seçim). Kabuk ve tema dosyaları DOKUNMA kapsamında → Şerit A / ilgili sahiplere |
+| **Ortam** (yük; 4 çekirdekli bulutta 4 işçi + vite) — 5 | `settings` mobil ×4, `logs:28` mobil | 2 işçiyle yeniden koşuda yeşil. Yerelde (12 çekirdek) beklenmez |
+| **Gerçek** (bu dal) | — | Yok |
+| Ek: vitest 18 / stil mandalı / vue-tsc 2 | yukarıdaki tabloda | Tabanda birebir aynı |
 
 ## Değişen win32 tabanları
 Yok. Bu dal hiçbir `*-win32.png` tabanını değiştirmedi; görünür değişiklik yalnız D5 diyalogları (taban testi yok) ve
