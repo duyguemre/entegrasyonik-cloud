@@ -1,5 +1,5 @@
 <template>
-  <div class="legacy-definition-root">
+  <div ref="rootEl" class="legacy-definition-root">
     <EkPageHeader
       section="Siparişler"
       :title="$t('definitions.return.title')"
@@ -39,7 +39,7 @@
 
   
   <div class="d-flex scroll-element expand-element no-expand">
-    <v-data-table :items="items" fixed-header :headers="headers"
+    <v-data-table :items="rows.items.value" item-value="_rowKey" fixed-header :headers="headers"
       class="pa-0 ma-0" show-select>
       <template #bottom></template>
       <template v-slot:header.actions>
@@ -78,21 +78,22 @@
       </template>
 
       <template v-slot:item.actions="{ item, index }">
-        <EkRowActions label="Satır işlemleri" :items="[
-          { key: 'edit', action: 'edit', label: 'Düzenle', onClick: () => {} },
-          { key: 'delete', action: 'delete', label: 'Sil', onClick: () => {} },
-        ]" />
+        <!-- fe-r4d D5: eylemler bağlı (Düzenle → form diyaloğu, Sil → tehlikeli onay); örnek veri, istek yok. -->
+        <EkRowActions :label="`${item.customer.name} satırı işlemleri`" :items="rows.actionsFor(item)" />
       </template>
     </v-data-table>
     <ScrollComponent id=".scroll-element .v-table__wrapper" />
   </div>
   <PaginationComponent />
   </div>
+  <LegacyDefinitionRowDialogs :rows="rows" :attach="rootEl ?? false" />
   </div>
 </template>
 
 <script setup lang="ts">
 import EkPageHeader from '@/components/page/EkPageHeader.vue'
+import LegacyDefinitionRowDialogs from '@/components/definitions/LegacyDefinitionRowDialogs.vue'
+import { useLegacyDefinitionRows, type LegacyDefinitionRow } from '@/components/definitions/legacyDefinitionRows'
 import { EkRowActions } from '@entegrasyonik/ui/components'
 import { useI18n } from 'vue-i18n';
 import { ref,inject, onMounted, watch } from 'vue'
@@ -159,7 +160,7 @@ const headers = [
 
 ]
 
-const items = [
+const items: LegacyDefinitionRow[] = [
   {
     id: 1,
     customer: {
@@ -282,6 +283,8 @@ const items = [
   },
 
 ]
+const rows = useLegacyDefinitionRows(items)
+const rootEl = ref<HTMLElement | null>(null)
 
 onMounted(() => {
 
