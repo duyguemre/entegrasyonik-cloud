@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "sha256": "6e8fa4b79ae44ab34bbd7943131b6c44771955de673800309e50afc454d81fc8",
-  "generatedAt": "2026-10-01T19:13:35.674Z",
+  "sha256": "3fd17eb0c246990263e6a1b5144fa9cbe7c0abdd352fbdb261b7e8d54e7e6df7",
+  "generatedAt": "2026-10-03T21:46:14.719Z",
   "stage": "A",
-  "totalCapabilities": 300,
-  "totalBindings": 341,
+  "totalCapabilities": 302,
+  "totalBindings": 343,
   "capabilities": [
     {
       "id": "account.email_verification.resend",
@@ -4722,6 +4722,44 @@
       "mcp": {
         "exposed": true,
         "toolset": "catalog"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "products.channel_explain.get",
+      "version": "1.0",
+      "domain": "catalog",
+      "effect": "read",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "IntegrationService/explainChannelProduct"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
+      },
+      "agent": {
+        "allowed": false
+      }
+    },
+    {
+      "id": "products.channel_preflight.run",
+      "version": "1.0",
+      "domain": "catalog",
+      "effect": "read",
+      "minTier": "member",
+      "scope": "tenant",
+      "rpc": [
+        "IntegrationService/preflightExport"
+      ],
+      "mcp": {
+        "exposed": false,
+        "reason": "deferred",
+        "until": "later"
       },
       "agent": {
         "allowed": false

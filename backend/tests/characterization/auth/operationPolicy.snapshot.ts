@@ -143,6 +143,8 @@ export const OPERATION_POLICY_SNAPSHOT: SnapshotPolicy = {
         getIntegrationHealth: A,
         // [INT-01] bağlantı testi (okuma, dış çağrı; integrations:manage => admin+; dakikada 3/tenant+entegrasyon)
         testConnection: A,
+        // [eslesme-fiyat WP1] gönderim öncesi ön kontrol + açıklama (SALT OKUMA, catalog:read => member)
+        preflightExport: M, explainChannelProduct: M,
     },
 
     // --- Katalog ---

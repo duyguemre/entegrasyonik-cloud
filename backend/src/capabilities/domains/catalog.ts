@@ -386,6 +386,26 @@ export const CATALOG_CAPABILITIES = [
         review: 'Metrik etiketi tenant taşımaz -> platform kapsamı (admin+). Histogram üst kovası 60 sn: p95 >60 sn ise null+overflow (X12).',
     }),
     c({
+        id: 'products.channel_preflight.run', domain: 'catalog', summary: { tr: 'Gönderim öncesi ön kontrol (ürün × kanal eksikleri ve gidecek değerler)', en: 'Pre-export check (per product × channel issues and resolved preview)' },
+        effect: 'read', minTier: 'member', permission: 'catalog:read', bindings: [{ rpc: 'IntegrationService/preflightExport' }],
+        input: z.object({
+            variantIds: z.array(z.string().regex(/^[a-f0-9]{24}$/i)).max(200).optional(),
+            productIds: z.array(z.string().regex(/^[a-f0-9]{24}$/i)).max(200).optional(),
+            integrationCodes: z.array(z.string().regex(/^[a-z0-9_-]{2,32}$/)).min(1).max(10),
+            mode: z.enum(['TRANSFER', 'UPDATE', 'UPDATE_VARIANT', 'UPDATE_PRICE', 'UPDATE_STOCK', 'UPDATE_DELIVERY']).optional(),
+        }).strict().refine((v) => (v.variantIds?.length ?? 0) + (v.productIds?.length ?? 0) > 0, { message: 'variantIds ya da productIds gerekli' }),
+        ui: noUi('Backend-only (eslesme-fiyat WP1): FE "Hazırlık durumu" paneli WP2/WP8 (BACKEND_ONLY_NOT_YET_IN_FE).'),
+        mcp: deferred('later', 'Salt okuma ön kontrol; ürün/kanal eksik listesi ajan için yararlı, toolset genişlemesinde (catalog) değerlendirilir.'), agent: NO_AGENT,
+        review: 'Kuru çalıştırma: AttributeResolver bellekte çalışır, DB\'ye yazılmaz; adaptör validate yan etkisizdir (ağ yok). En çok 200 varyant (truncated bayrağı).',
+    }),
+    c({
+        id: 'products.channel_explain.get', domain: 'catalog', summary: { tr: 'Kanal değerinin kaynağını açıkla (bu neden böyle)', en: 'Explain where a channel value comes from' },
+        effect: 'read', minTier: 'member', permission: 'catalog:read', bindings: [{ rpc: 'IntegrationService/explainChannelProduct' }],
+        input: z.object({ variantId: z.string().regex(/^[a-f0-9]{24}$/i), integrationCode: z.string().regex(/^[a-z0-9_-]{2,32}$/) }).strict(),
+        ui: noUi('Backend-only (eslesme-fiyat WP1): FE ürün formu kanal sekmesi "Gönderilecek" önizlemesi WP2/WP8 (BACKEND_ONLY_NOT_YET_IN_FE).'),
+        mcp: deferred('later', 'Salt okuma açıklama zinciri; toolset genişlemesinde (catalog) değerlendirilir.'), agent: NO_AGENT,
+    }),
+    c({
         id: 'stock.policy.get', domain: 'catalog', summary: { tr: 'Stok politikasını getir (birincil kanal, tampon, grace, oto-iptal)', en: 'Get stock policy (primary channel, buffer, grace, auto-cancel)' },
         effect: 'read', minTier: 'admin', permission: 'settings:manage', bindings: [{ rpc: 'IntegrationService/getStockPolicy' }],
         ui: noUi('Backend-only: FE ekranı ADR-0015 sonrası (BACKEND_ONLY_NOT_YET_IN_FE; API_TENANT_SURFACE §1).'),

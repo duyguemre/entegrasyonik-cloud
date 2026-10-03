@@ -14,6 +14,9 @@ import * as stockPolicy from '@operations/integrations/stockPolicy'
 import * as lookup from '@operations/integrations/platformLookup'
 import * as importJobs from '@operations/integrations/importJobs'
 import * as exportJobs from '@operations/integrations/exportJobs'
+import * as preflight from '@operations/integrations/preflight'
+import IntegrationFactory from '@integration/modules/IntegrationFactory'
+import { PlatformMappingProvider } from '@integration/modules/provider/PlatformMappingProvider'
 import { eventLog } from '@platform/core/logger';
 
 const log = eventLog('api', 'integration-service');
@@ -132,6 +135,33 @@ export default class IntegrationService extends BaseApi implements IService {
             clientDB: this.clientDB,
             clientId: Number(this.currentClientId),
         })
+    }
+
+    // ---- Gönderim öncesi ön kontrol / açıklama (operations/integrations/preflight; SALT OKUMA, eslesme-fiyat WP1) ----
+
+    private get preflightDeps(): preflight.PreflightDeps {
+        const db = this.clientDB
+        const clientId = this.currentClientId
+        const factory = new IntegrationFactory(Number(clientId))
+        return {
+            findVariants: (q, limit) => {
+                const or: any[] = []
+                if (q.variantIds?.length) or.push({ _id: { $in: q.variantIds } })
+                if (q.productIds?.length) or.push({ productId: { $in: q.productIds } })
+                return or.length ? db.getVariantModel().find({ $or: or }).limit(limit).lean() : Promise.resolve([])
+            },
+            findProducts: (ids) => (ids.length ? db.getProductModel().find({ _id: { $in: ids } }).lean() : Promise.resolve([])),
+            mappingSource: (code) => new PlatformMappingProvider(db, clientId, code),
+            adapterValidate: async (code, variant) => (await factory.getInstance(code)).validate(variant),
+        }
+    }
+
+    async preflightExport(): Promise<any> {
+        return preflight.preflightExport(this.request, this.preflightDeps)
+    }
+
+    async explainChannelProduct(): Promise<any> {
+        return preflight.explainChannelProduct(this.request, this.preflightDeps)
     }
 
     // ---- Pazaryeri vekil okumaları (operations/integrations/platformLookup) ----

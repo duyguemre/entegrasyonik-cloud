@@ -85,3 +85,7 @@ buraya tarihli bir blok ekler (ADR-0019 §4.1). Kademe değişiklikleri HER ZAMA
 
 - Eklenen: `finance.commission.drift`
 
+## 2026-10-03 — sha256 3fd17eb0c246…
+
+- Eklenen: `products.channel_explain.get`, `products.channel_preflight.run`
+

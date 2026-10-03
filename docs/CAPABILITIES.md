@@ -3,15 +3,15 @@
 **ÜRETİLMİŞ BELGE — ELLE DÜZENLENMEZ.** Kaynak: `backend/src/capabilities/**` (zod-şemalı TypeScript kaydı).
 Yeniden üretmek için: `cd backend && npm run capabilities:docs`. Bu belge `docs/OPERATION_POLICY.md`'nin yerine geçer (ADR-0019 §2).
 
-Üretim zamanı: 2026-10-01T19:13:35.624Z · Kaynak commit bilgisi bu betiğin dışında (git) tutulur.
+Üretim zamanı: 2026-10-03T21:46:14.700Z · Kaynak commit bilgisi bu betiğin dışında (git) tutulur.
 
 ## Özet
 
-- Toplam yetenek: **300** (toplam RPC bağı: 341)
-- `effect`: write=126, read=143, destructive=28, propose=3
-- `minTier`: platformAdmin=105, member=151, owner=4, admin=40
-- MCP: `exposed`=13, `notExposed`=287 (bunun `deferred`=101)
-- Yetim (ui.none + mcp.notExposed + agent.allowed:false): 128 (bkz. `capability-baseline.json`, artamaz mandalı)
+- Toplam yetenek: **302** (toplam RPC bağı: 343)
+- `effect`: write=126, read=145, destructive=28, propose=3
+- `minTier`: platformAdmin=105, member=153, owner=4, admin=40
+- MCP: `exposed`=13, `notExposed`=289 (bunun `deferred`=103)
+- Yetim (ui.none + mcp.notExposed + agent.allowed:false): 130 (bkz. `capability-baseline.json`, artamaz mandalı)
 
 **Operasyon/yetenek sayısı tutarsızlığı çözümü (ADR-0019 Bağlam):** `operationPolicy.ts`nin bugünkü mekanik sayımı 
 (ImageApi sözde-servisi DAHİL, `OPEN_OPERATIONS` HARİÇ) **174** `(servis, operasyon)` çiftidir (member 137, admin 19, owner 2, 
@@ -110,7 +110,7 @@ metodu yok (bugün de 403/çalışmıyor; `operation-policy.test.ts` `FE_CALLS_W
 | `billing.plans.list` | read | member | BillingService/getPlans | notExposed:deferred→later | user/SubscriptionView | allowed:false |  |
 | `billing.subscription.get` | read | member | BillingService/getMySubscription | notExposed:deferred→later | user/SubscriptionView | allowed:false |  |
 
-### catalog (64)
+### catalog (66)
 
 | id | effect | minTier | RPC bağları | mcp | ui | agent | review |
 |---|---|---|---|---|---|---|---|
@@ -159,6 +159,8 @@ metodu yok (bugün de 403/çalışmıyor; `operation-policy.test.ts` `FE_CALLS_W
 | `pricing.rules.settings` | write | admin | PricingService/setPricingSettings | notExposed:irreversible | pricing/PricingRulesView#setPricingSettings | allowed:false |  |
 | `pricing.suggestions.apply` | write | admin | PricingService/applySuggestions, PricingService/dismissSuggestions | exposed (catalog) | pricing/PricingRulesView#applySuggestions, pricing/PricingRulesView#dismissSuggestions | allowed:false |  |
 | `pricing.suggestions.list` | read | member | PricingService/listSuggestions, PricingService/getPriceHistory | exposed (catalog) | pricing/PricingRulesView | allowed:false |  |
+| `products.channel_explain.get` | read | member | IntegrationService/explainChannelProduct | notExposed:deferred→later | none (Backend-only (eslesme-fiyat WP1): FE ürün formu kanal sekmesi "Gönderilecek" önizlemesi WP2/WP8 (BACKEND_ONLY_NOT_YET_IN_FE).) | allowed:false |  |
+| `products.channel_preflight.run` | read | member | IntegrationService/preflightExport | notExposed:deferred→later | none (Backend-only (eslesme-fiyat WP1): FE "Hazırlık durumu" paneli WP2/WP8 (BACKEND_ONLY_NOT_YET_IN_FE).) | allowed:false | Kuru çalıştırma: AttributeResolver bellekte çalışır, DB'ye yazılmaz; adaptör validate yan etkisizdir (ağ yok). En çok 200 varyant (truncated bayrağı). |
 | `products.create` | write | member | ProductService/saveProduct | notExposed:deferred→later | definitions/ProductDefinitionView#save | allowed:false |  |
 | `products.delete` | destructive | member | ProductService/deleteProduct | notExposed:deferred→later | productDefinitions/ProductListView#delete | allowed:false | OPERATION_POLICY.md Belirsiz: yıkıcı silme; member bırakıldı. |
 | `products.export` | read | member | ProductService/exportExcel | notExposed:binary_file | productDefinitions/ProductListView#exportExcel | allowed:false | OPERATION_POLICY.md Belirsiz: toplu veri çıkarma; gerekirse admin (tüm-tenant dışa aktarma DEĞİL, o owner: account.tenant.data.export). |

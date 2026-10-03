@@ -81,6 +81,7 @@ export const INTEGRATION_ISSUES = {
     STOCK_INVALID: { severity: 'error', module: 'stock', reason: 'Stok geçersiz (boş ya da negatif).', solution: 'Stok adedini düzelt.', screen: SCR.PRODUCTS },
     // --- bağlantı / kanal ---
     AUTH_FAILED: { severity: 'error', module: 'auth', reason: 'Kanal kimlik bilgilerini reddetti.', solution: 'Entegrasyon ayarlarında API bilgilerini kontrol et.', screen: SCR.MARKETPLACE },
+    INTEGRATION_NOT_CONFIGURED: { severity: 'error', module: 'auth', reason: 'Bu kanal hesapta kurulu ya da etkin değil.', solution: 'Entegrasyon ayarlarını tamamla.', screen: SCR.MARKETPLACE },
     RATE_LIMITED: { severity: 'warning', module: 'rate', reason: 'Kanal istek sınırına ulaşıldı.', solution: 'Bekle; işlem otomatik tekrar denenecek.' },
     PLATFORM_UNAVAILABLE: { severity: 'warning', module: 'rate', reason: 'Kanal şu an yanıt vermiyor.', solution: 'Bekle; işlem otomatik tekrar denenecek.' },
     PLATFORM_REJECTED: { severity: 'error', module: 'product', reason: 'Kanal kaydı reddetti.', solution: 'Teknik ayrıntıdaki kanal mesajına göre ürünü düzelt.', screen: SCR.PRODUCTS },
