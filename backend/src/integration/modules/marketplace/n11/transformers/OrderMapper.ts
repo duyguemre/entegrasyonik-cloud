@@ -36,14 +36,12 @@ export class OrderMapper {
 
         const parseDate = (dateStr: string) => {
             if (!dateStr) return new Date();
-            // N11 Format: dd/MM/yyyy HH:mm
+            // N11 Format: dd/MM/yyyy HH:mm — Türkiye saati (UTC+3, DST yok). Süreç TZ'inden bağımsız yorumlanır
+            // (eskiden `new Date(y, m, d, h, mi)` yerel TZ kullanıyordu: UTC sunucuda 3 saat kayma; REST yolu ile aynı desen).
             const [datePart, timePart] = dateStr.split(' ');
             const [day, month, year] = datePart.split('/').map(Number);
-            if (timePart) {
-                const [hour, minute] = timePart.split(':').map(Number);
-                return new Date(year, month - 1, day, hour, minute);
-            }
-            return new Date(year, month - 1, day);
+            const [hour, minute] = timePart ? timePart.split(':').map(Number) : [0, 0];
+            return new Date(Date.UTC(year, month - 1, day, hour - 3, minute || 0));
         };
 
         return ordersArray.filter((o: any) => o && o.orderNumber).map((o: any) => {
