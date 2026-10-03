@@ -57,10 +57,11 @@ describe('Hepsiburada özellik yükü (WP9)', () => {
 describe('Pazarama özellik yükü (WP9)', () => {
     const m = new PazMapper();
     const build = (attrs: any, cats: any[] = []) => m.toPlatformBatch(staged(variantFor('pazarama', attrs)), PLATFORM_PROCESS.TRANSFER, cats, [], { catId: 1, brandId: 2, settings: {} });
-    it('boş değerli kayıt gönderilmez; kimlik + metin mevcut biçimle korunur', () => {
+    // [BİLİNÇLİ DÜZELTME - eslesme-fiyat WP4 C-6/D-PZ-6] kimlik varsa YALNIZ attributeValueId (eskiden kimlik + metin birlikte).
+    it('boş değerli kayıt gönderilmez; kimlik varsa yalnız kimlik, yoksa serbest metin', () => {
         const item = build({ A1: { attributeValueId: 'V1', attributeValue: 'Kırmızı' }, A2: { attributeValueId: 'undefined', attributeValue: '' }, A3: { attributeValue: 'Serbest' } });
         expect(item.attributes).toEqual([
-            { attributeId: 'A1', attributeValueId: 'V1', customAttributeValue: 'Kırmızı' },
+            { attributeId: 'A1', attributeValueId: 'V1' },
             { attributeId: 'A3', customAttributeValue: 'Serbest' },
         ]);
     });

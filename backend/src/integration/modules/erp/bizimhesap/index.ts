@@ -16,7 +16,7 @@ import { ProductService } from './services/ProductService';
 import { OrderService } from './services/OrderService';
 
 export default class Bizimhesap implements IPlatform {
-    public requiredSettings = ['key', 'secret'];
+    public requiredSettings = ['secret']; // [eslesme-fiyat WP4, D-BH-1] Key ve Token başlıkları aynı API anahtarı
 
     private service: Service;
     private categoryService: CategoryService;

@@ -98,10 +98,24 @@ export class ProductTransformer {
         mappingProvider: any
     ): Promise<any[]> {
         const productMap = new Map<string, any>();
+        // [eslesme-fiyat WP4, 02-ekler/bizimhesap C-5 / D-BH-2] varyantlar AYNI `id` ile gelir; başlık yazımı farklı olabilir
+        // (`Gömlek`/`GÖMLEK Mavi`) → gruplama anahtarı `id` (yoksa başlık). `maincode` biçimi korunur (grubun ilk başlığının slug'ı;
+        // mevcut içe aktarılmış ürünlerle eşleşme bozulmasın).
+        const groupKeyOf = (p: any) => (p?.id !== undefined && p?.id !== null && String(p.id) !== '' ? `id:${p.id}` : `t:${this.toUrlFriendly(p?.title)}`);
+        // Farklı `id`'li iki ürün aynı başlık slug'ına düşerse ikincisine `-<id>` eklenir (eskiden birleşiyorlardı).
+        const maincodeOfGroup = new Map<string, string>();
+        const usedMaincodes = new Set<string>();
 
         for (const p of platformProducts) {
-            const maincode = this.toUrlFriendly(p.title);
-            if (!maincode) continue;
+            const gk = groupKeyOf(p);
+            let maincode = maincodeOfGroup.get(gk);
+            if (!maincode) {
+                const slug = this.toUrlFriendly(p.title);
+                if (!slug) continue;
+                maincode = usedMaincodes.has(slug) && p?.id !== undefined && p?.id !== null ? `${slug}-${this.toUrlFriendly(String(p.id))}` : slug;
+                maincodeOfGroup.set(gk, maincode);
+                usedMaincodes.add(maincode);
+            }
 
             if (!productMap.has(maincode)) {
                 const [brandId, categoryId] = await Promise.all([

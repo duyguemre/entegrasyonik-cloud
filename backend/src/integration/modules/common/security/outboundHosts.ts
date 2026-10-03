@@ -38,7 +38,7 @@ export const ALLOWED_OUTBOUND_HOSTS: Readonly<Record<string, readonly string[]>>
     pazarama: ['isortagim.pazarama.com', 'isortagimapi.pazarama.com', 'isortagimgiris.pazarama.com'],
     // Ideasoft: kod varsayılanı (eslesme-fiyat WP4, D-IS-1) `<STORENAME>.myideasoft.com/admin-api`; eski varsayılan `.ideasoft.com.tr`; yerel DB kopyasındaki `Integrations.urls` (2026-09-28) `<STORENAME>.myideasoft.com`.
     ideasoft: ['*.ideasoft.com.tr', '*.myideasoft.com'],
-    // Bizimhesap: kod varsayılanı `api.bizimhesap.com`; yerel DB kopyasındaki `Integrations.urls` `bizimhesap.com`.
+    // Bizimhesap: kod varsayılanı (eslesme-fiyat WP4, D-BH-1) `bizimhesap.com/api/b2b`; eski `api.bizimhesap.com` canlı doğrulanana dek izinli kalır.
     bizimhesap: ['api.bizimhesap.com', 'bizimhesap.com'],
     // ADR-0034 BR-5: sohbet LLM saglayicilari (BYOK). Host'lar `platform/llm/catalog.ts`'te SABIT (tenant yazamaz); bunlar ADAPTOR degildir
     // (`llm-` oneki; adapterKeys tablosunda yer almaz, mock oneki yok). Yalniz cikarim uclari icin POST: liveReadonlyPolicy.LLM_POST_PATHS.

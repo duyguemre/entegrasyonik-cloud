@@ -18,9 +18,10 @@ export default class Service extends AdapterHttpService {
     }
 
     protected authConfig(): AuthConfig {
+        // [eslesme-fiyat WP4, 02-ekler/bizimhesap C-2 / D-BH-1] resmî: `Key` ve `Token` başlıklarının İKİSİ de aynı API anahtarı.
+        // Eskiden `Key` = "Bizimhesap ID" (settings.key) gidiyordu. API anahtarı `secret` (ön yüz "API Anahtarı"); yoksa eski `key`.
         const s = this.params.integrationSettings?.settings || {};
-        const key = (s.key || s.APIKEY || s.apikey || '').trim();
-        const token = (s.secret || s.APISECRET || s.token || '').trim();
-        return { headers: { key, token, 'Content-Type': 'application/json' } };
+        const apiKey = String(s.secret || s.APISECRET || s.token || s.key || s.APIKEY || s.apikey || '').trim();
+        return { headers: { key: apiKey, token: apiKey, 'Content-Type': 'application/json' } };
     }
 }

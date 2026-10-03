@@ -10,8 +10,8 @@
         <EkFormSection title="Bağlantı bilgileri" icon="mdi-key-outline"
           description="Bizimhesap panelindeki API erişim bilgilerinden alınır.">
           <template #legend-extra><EkHelpHint hint="integration.credentials.bizimhesap" /></template>
-          <v-text-field clearable v-model="editingClientIntegration.settings.key" label="Bizimhesap ID" />
-          <v-text-field clearable v-model="editingClientIntegration.settings.secret" label="API Key" />
+          <v-text-field clearable v-model="editingClientIntegration.settings.secret" label="API Anahtarı" hint="Bizimhesap Key ve Token başlıklarının ikisinde de bu anahtar kullanılır." persistent-hint />
+          <v-text-field clearable v-model="editingClientIntegration.settings.key" label="Firma ID (isteğe bağlı)" />
           <v-switch class="ek-span-full" hide-details color="primary"
             v-model="editingClientIntegration.settings.status" :label="$t('integrations.status')" />
         </EkFormSection>

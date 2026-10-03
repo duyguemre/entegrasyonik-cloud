@@ -36,7 +36,14 @@ export class OrderService {
             const settings = this.params.integrationSettings?.settings || {};
             const orderListUrl = urls.orderListUrl;
 
-            if (!orderListUrl) return [];
+            // [eslesme-fiyat WP4, 02-ekler/bizimhesap C-3 / D-BH-3] Bizimhesap'ta sipariş LİSTELEME ucu hiçbir kaynakta yok (yalnız
+            // addinvoice yazma). Eskiden `orderListUrl` yoksa sessizce `[]` dönüyordu (çağıranın imleci "başarılı" ilerlerdi) → artık
+            // NOT_SUPPORTED. Tenant/mock açıkça `orderListUrl` verdiyse eski okuma korunur.
+            if (!orderListUrl) {
+                throw new IntegrationError('NOT_SUPPORTED', 'Bizimhesap sipariş listeleme ucu sağlamıyor (yalnız fatura ekleme dokümante).', {
+                    integrationCode, operation: 'fetchOrders', clientId: this.clientId,
+                });
+            }
 
             const finalUrl = orderListUrl.replace('<SELLERID>', settings.sellerId || '');
             // [faz4-conf-close C6b] ortak paginate: sayfa tavanı (BIZIMHESAP_MAX_PAGES) / tekrar eden sayfa => sessiz kesme YOK, `incomplete` işareti.

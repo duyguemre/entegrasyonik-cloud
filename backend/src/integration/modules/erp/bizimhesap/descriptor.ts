@@ -14,7 +14,7 @@ const BizimhesapDescriptor: IntegrationDescriptor = {
     protocol: 'rest',
     auth: {
         type: 'api_key_header',
-        requiredSettings: ['key', 'secret'],
+        requiredSettings: ['secret'], // [WP4 D-BH-1] Key+Token aynı API anahtarı
         tokenLifecycle: 'none',
     },
     brandMapping: 'none', // [eslesme-fiyat WP2, K-C]
@@ -32,7 +32,7 @@ const BizimhesapDescriptor: IntegrationDescriptor = {
         orders: {
             level: 'limited',
             methods: ['retrieveOrders'],
-            note: 'Siparişler yalnızca okunur; sipariş üreticisi (OrderQueueProducer.ts) ERP tipini taramadığı için otomatik zamanlanmış sipariş çekimine dahil değildir.',
+            note: 'Bizimhesap resmî API\'sinde sipariş listeleme ucu yok; sipariş okuma yalnız tenant ayarında sipariş listesi adresi tanımlıysa yapılır, aksi halde NOT_SUPPORTED. Sipariş üreticisi (OrderQueueProducer.ts) ERP tipini taramaz (otomatik zamanlanmış çekim yok).',
             evidence: ['erp/bizimhesap/index.ts retrieveOrders'],
         },
         categories: {

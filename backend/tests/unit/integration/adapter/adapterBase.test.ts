@@ -38,7 +38,7 @@ afterEach(async () => {
 describe('AdapterHttpService', () => {
     it('göreli yol: urls.baseUrl varsa o, yoksa key.fallbackBaseUrl', () => {
         expect(new TestService({ integrationSettings: { urls: { baseUrl: 'https://x.test/api/' } } }).resolveUrl('/a/b')).toBe('https://x.test/api/a/b');
-        expect(new TestService({}).resolveUrl('a')).toBe('https://api.bizimhesap.com/a');
+        expect(new TestService({}).resolveUrl('a')).toBe('https://bizimhesap.com/api/b2b/a'); // [BİLİNÇLİ - eslesme-fiyat WP4 D-BH-1] resmî taban
     });
 
     it('mock AÇIK: göreli yol mock tabanına gider; yabancı mutlak URL fail-closed reddedilir', () => {

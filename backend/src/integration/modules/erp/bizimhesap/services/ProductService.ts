@@ -10,6 +10,28 @@ import { BIZIMHESAP_PRODUCTS_LIST } from '../contracts';
 export const platformProductId = (channelState: any): string | undefined =>
     channelState?.mapping?.productId ?? channelState?.mappings?.productId;
 
+/**
+ * [eslesme-fiyat WP4, 02-ekler/bizimhesap C-4 / D-BH-1] Zarf `{resultCode, errorText, data:{products}}`; iş hatası HTTP 200 + `resultCode:0`.
+ * Eskiden hata zarfı (nesne) "ürün listesi" diye dönüyordu (sahte başarı / TypeError). Dizi değilse VALIDATION fırlatılır.
+ */
+export function readProductsEnvelope(body: any, clientId: string): any[] {
+    if (Array.isArray(body)) return body;
+    if (body && typeof body === 'object') {
+        if (body.resultCode !== undefined && Number(body.resultCode) === 0) {
+            throw new IntegrationError('VALIDATION', `Bizimhesap hata döndürdü: ${String(body.errorText || 'resultCode=0').slice(0, 200)}`, {
+                integrationCode, operation: 'fetchProducts', clientId, platformCode: 'BIZIMHESAP_RESULT_ERROR',
+            });
+        }
+        const list = body.data?.products ?? body.products ?? body.data;
+        if (Array.isArray(list)) return list;
+        if (list === undefined || list === null) return [];
+    }
+    if (body === undefined || body === null || body === '') return [];
+    throw new IntegrationError('VALIDATION', 'Bizimhesap ürün yanıtı beklenen zarfta değil (data.products dizi değil).', {
+        integrationCode, operation: 'fetchProducts', clientId, platformCode: 'BIZIMHESAP_ENVELOPE',
+    });
+}
+
 export class ProductService {
     private transformer: ProductTransformer;
     private clientId: string;
@@ -27,7 +49,7 @@ export class ProductService {
 
         const response = await this.service.get(productListUrl);
         observeResponseSchema(BIZIMHESAP_PRODUCTS_LIST, response?.data, { clientId: this.params.clientId }); // F-09: yalnız gözlem (C7a)
-        return response?.data?.data?.products || response?.data?.products || response?.data || [];
+        return readProductsEnvelope(response?.data, this.clientId);
     }
 
     public async streamProducts(callback: (chunk: any[]) => Promise<void>, query?: Record<string, any>): Promise<IFetchProductsResult> {

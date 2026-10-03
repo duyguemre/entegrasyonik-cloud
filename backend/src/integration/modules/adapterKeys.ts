@@ -21,7 +21,7 @@ export const ADAPTER_KEYS = [
     { code: 'pazarama', category: 'marketplace', mockPrefix: 'PAZARAMA', envPrefix: 'PAZARAMA', mockDefaultBase: 'http://localhost:3006/apigateway' },
     { code: 'ideasoft', category: 'ecommerce', mockPrefix: 'IDEASOFT', envPrefix: 'IDEASOFT', mockDefaultBase: 'http://localhost:6015/ideasoft',
         mockDefaultEndpoints: MOCK_ENDPOINTS_IDEASOFT },
-    { code: 'bizimhesap', category: 'erp', mockPrefix: 'BIZIMHESAP', envPrefix: 'BIZIMHESAP', mockDefaultBase: 'http://localhost:6015/bizimhesap', fallbackBaseUrl: 'https://api.bizimhesap.com',
+    { code: 'bizimhesap', category: 'erp', mockPrefix: 'BIZIMHESAP', envPrefix: 'BIZIMHESAP', mockDefaultBase: 'http://localhost:6015/bizimhesap', fallbackBaseUrl: 'https://bizimhesap.com/api/b2b', // [eslesme-fiyat WP4, D-BH-1] resmî taban (eskiden api.bizimhesap.com)
         mockDefaultEndpoints: MOCK_ENDPOINTS_BIZIMHESAP },
 ] as const;
 
