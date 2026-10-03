@@ -7,6 +7,10 @@ import { IIntegrationEngineProvider } from "../provider/IIntegrationEngineProvid
 import { AttributeResolver } from '@integration/catalog/attributeResolver';
 import { getSetting } from '@integration/config/ConfigResolver';
 import { eventLog } from '@platform/core/logger';
+import { IntegrationIssue, IssueError, hasBlockingIssue, issuesToMessage, makeIssue } from '@platform/core/errors/integrationIssues';
+import { issuesFromError, mapPlatformMessage } from '@integration/modules/common/errors/errorMap';
+import { errorRulesFor } from '@integration/modules/common/errors/registry';
+import { checkChannelReadiness } from '@integration/catalog/preflight/readiness';
 
 const log = eventLog('worker', 'Validator');
 
@@ -109,16 +113,22 @@ export default class Validator extends BaseWorker {
             .select(`_id ${matchKey} mode targetPublishQty`)
             .lean();
 
+        const errorRules = errorRulesFor(this.integrationCode);
+
         for (const entry of entries) {
             const now = new Date();
             const matchValue = entry[matchKey];
+            // [eslesme-fiyat WP1] issue bağlamı; varyant/ürün bulundukça zenginleşir.
+            const issueCtx: { integrationCode: string; barcode: unknown; variantId?: unknown; productId?: unknown } = { integrationCode: this.integrationCode, barcode: matchValue };
             try {
                 // Varyantı ana koleksiyondan gelen map'ten alıyoruz
                 const variant = variantMap[matchValue];
                 if (!variant) {
                     log.error('VALIDATOR_VARIANT_NOT_FOUND', `Variant not found for matchValue: ${matchValue} (MatchKey: ${matchKey}). Entry:`, { detail: JSON.stringify(entry) });
-                    throw new Error(`${matchValue} değerine sahip varyant ana tabloda bulunamadı.`);
+                    throw new IssueError(`${matchValue} değerine sahip varyant ana tabloda bulunamadı.`, [makeIssue('VARIANT_NOT_FOUND', issueCtx)]);
                 }
+                issueCtx.variantId = variant._id;
+                issueCtx.productId = variant.productId;
 
                 // [ADR-0004 Karar 6, Aşama C] `StockPublishTrigger`'ın önceden hesapladığı yayın adedi
                 // (available - tampon, kanal sınırına clamp'lenmiş) varsa MUTLAK `variant.stock` yerine bu
@@ -140,21 +150,28 @@ export default class Validator extends BaseWorker {
                     product = await this.engineProvider.getProductModel().findById(prodId).lean();
                     if (product) productCache.set(prodId, product);
                 }
-                if (!product) throw new Error("Ürünün ana kaydı bulunamadı.");
+                if (!product) throw new IssueError("Ürünün ana kaydı bulunamadı.", [makeIssue('PRODUCT_NOT_FOUND', issueCtx)]);
 
                 // Varyant objesini validasyon ve gönderim için zenginleştiriyoruz
                 variant.product = product;
 
                 // --- Lokal Validasyon ---
-                if (!variant.product.category) throw new Error("Ürünün kategorisi bulunamadı.");
-                if (!variant.product.brand) throw new Error("Ürünün markası bulunamadı.");
+                // [eslesme-fiyat WP1, D-VAL-1/2] Tek kaynak hazırlık denetimi (preflightExport ile AYNI fonksiyon). Eski iki kural
+                // (kategori/marka) aynı sırada ve aynı metinle ilk sıradadır; hata düzeyindeki sorun gönderimi durdurur.
+                const readiness = checkChannelReadiness({ variant, product, integrationCode: this.integrationCode, mode: entry.mode });
+                const blocking = readiness.filter((i) => i.severity === 'error');
+                if (blocking.length) throw new IssueError(issuesToMessage(blocking), readiness);
+                const warnings: IntegrationIssue[] = readiness.filter((i) => i.severity !== 'error');
 
                 // [WP12, ADR-0025] Yerel seçeneklerden platform özelliklerini TEK noktada çöz (dolu olanlara dokunmaz).
                 // Çözümleyici hatası yayını durdurmaz (eski davranış); zorunlu özellik eksikse dönüştürücü VALIDATION verir.
                 if (this.attrResolver) {
                     try {
                         const r = await this.attrResolver.resolveInto(variant, product.category);
-                        if (r.warnings.length) log.warn('VALIDATOR_OZELLIK_UYARISI', `${matchValue} özellik uyarısı: ${r.warnings.join('; ')}`);
+                        if (r.warnings.length) {
+                            log.warn('VALIDATOR_OZELLIK_UYARISI', `${matchValue} özellik uyarısı: ${r.warnings.join('; ')}`);
+                            for (const w of r.warnings) warnings.push(makeIssue('MAP_ATTR_WARNING', { ...issueCtx, field: 'attributes', params: { detail: w } }));
+                        }
                     } catch (resErr: any) {
                         log.warn('VALIDATOR_OZELLIK_COZUMLENEMEDI', `${matchValue} özellik çözümlenemedi: ${resErr?.message}`);
                     }
@@ -181,6 +198,7 @@ export default class Validator extends BaseWorker {
                             choices: variant.choices,
                             stockcode: variant.stockcode,
                             message: "Doğrulama başarılı, yayınlanma sırasına alındı.",
+                            issues: warnings,
                             updatedAt: now
                         })
                     );
@@ -192,21 +210,25 @@ export default class Validator extends BaseWorker {
                             this.integrationCode,
                             entry.mode,
                             nextStatus,
-                            { updatedAt: now, matchKey: matchKey }
+                            { updatedAt: now, matchKey: matchKey, issues: warnings }
                         )
                     );
                 } else {
-                    throw new Error(validation.reason || "Platform kurallarına uymuyor.");
+                    const reason = validation.reason || "Platform kurallarına uymuyor.";
+                    throw new IssueError(reason, [mapPlatformMessage(reason, issueCtx, errorRules), ...warnings]);
                 }
 
             } catch (entryErr: any) {
                 const cleanError = this.formatUserMessage(entryErr.message);
+                const issues = issuesFromError(entryErr, issueCtx, errorRules);
+                if (!hasBlockingIssue(issues)) issues.unshift(makeIssue('PLATFORM_REJECTED', { ...issueCtx, platformMessage: cleanError }));
 
                 stagingBulkOps.push(
                     this.engineProvider.prepareStagingUpdateOp(entry._id, this.workerName, 'FAILED', {
                         priorityScore: 0,
                         errorMessage: cleanError,
                         errorType: "VALIDATION_ERROR",
+                        issues,
                         updatedAt: now
                     })
                 );
@@ -218,7 +240,7 @@ export default class Validator extends BaseWorker {
                         this.integrationCode,
                         entry.mode,
                         'FAILED',
-                        { messages: [cleanError], updatedAt: now, matchKey: matchKey }
+                        { messages: [cleanError], updatedAt: now, matchKey: matchKey, issues }
                     )
                 );
             }

@@ -23,7 +23,9 @@ export class QueryBuilderOperations {
             messages?: string | string[],
             batchProcessId?: string | null,
             updatedAt?: Date,
-            matchKey?: string
+            matchKey?: string,
+            /** [eslesme-fiyat WP1] Yapılandırılmış sorunlar (IntegrationIssue[]); verilirse `upload.<MODE>.issues` yazılır ([] = temizle). */
+            issues?: any[]
         } = {}
     ) {
         const now = options.updatedAt || new Date();
@@ -45,6 +47,10 @@ export class QueryBuilderOperations {
 
         if (mapping) {
             updateFields[`${pathMapping}`] = mapping;
+        }
+
+        if (options.issues !== undefined) {
+            updateFields[`${path}.issues`] = options.issues;
         }
 
         // Eğer bir takip numarası (batchId) varsa ekle (Publisher tarafında gerekebilir)
@@ -120,6 +126,7 @@ export class QueryBuilderOperations {
             brand?: string,
             choices?: any[],
             stockcode?: string,
+            issues?: any[], // [eslesme-fiyat WP1] IntegrationIssue[] ([] = temizle)
         } = {}
     ) {
         const now = options.updatedAt || new Date();
@@ -136,7 +143,7 @@ export class QueryBuilderOperations {
             'priorityScore', 'errorMessage', 'payload', 'productId',
             'trackingId', 'nextRunAt', 'completedAt', 'title',
             'price', 'stock', 'image', 'category', 'brand',
-            'choices', 'stockcode'
+            'choices', 'stockcode', 'issues'
         ];
 
         optionalFields.forEach(field => {

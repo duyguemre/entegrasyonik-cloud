@@ -78,7 +78,7 @@ export function checkChannelReadiness({ variant, product, integrationCode, mode 
     if (rules.titleMax && len(title) > rules.titleMax) issues.push(makeIssue('TITLE_TOO_LONG', { ...ctx, field: 'title', params: { max: rules.titleMax, length: len(title) } }));
 
     const images: string[] = (Array.isArray(variant?.images) ? variant.images : []).map(imageUrl).filter(Boolean);
-    if (mode === PLATFORM_PROCESS.TRANSFER && images.length === 0) issues.push(makeIssue('IMAGE_MISSING', { ...ctx, field: 'images' }));
+    if (rules.imagesMax && mode === PLATFORM_PROCESS.TRANSFER && images.length === 0) issues.push(makeIssue('IMAGE_MISSING', { ...ctx, field: 'images' }));
     if (rules.imagesMax && images.length > rules.imagesMax) issues.push(makeIssue('IMAGE_TOO_MANY', { ...ctx, field: 'images', params: { max: rules.imagesMax, count: images.length } }));
     // Yalnız açıkça `http://` olanlar işaretlenir (depolama anahtarı gibi URL olmayan değerler dönüştürücüde çözülür).
     const insecure = rules.imagesHttps ? images.filter((u) => /^http:\/\//i.test(u)).length : 0;

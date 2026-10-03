@@ -2,7 +2,7 @@
  * [eslesme-fiyat WP1, D-ERR-1] Kanal hata metni/kodu → `IntegrationIssue` çevirisi (ortak çekirdek).
  *
  * Her adaptör `modules/<tür>/<kanal>/errorMap.ts` içinde kendi kural listesini tutar (pazaryeri mesajı/kodu → issue kodu);
- * ortak kurallar (dönüştürücülerin yerel `validate` gerekçeleri) her kanala eklenir. Eşleşmeyen metin → `PLATFORM_REJECTED`
+ * ortak kurallar (dönüştürücülerin yerel `validate` gerekçeleri) her kanala ÖNCE uygulanır. Eşleşmeyen metin → `PLATFORM_REJECTED`
  * + maskeli ham metin (`platformMessage`). `IntegrationError` kodları (AUTH/RATE_LIMITED/UNAVAILABLE) doğrudan çevrilir.
  */
 import { IntegrationIssue, IntegrationIssueCode, IssueContext, IssueError, makeIssue } from '@platform/core/errors/integrationIssues';
@@ -35,10 +35,10 @@ const INTEGRATION_ERROR_CODES: Partial<Record<string, IntegrationIssueCode>> = {
 /** `[CODE] ` önekleri atılır (IntegrationError/Validator biçimi). */
 const stripPrefixes = (msg: string) => msg.replace(/^(\[.*?\]\s*)+/, '');
 
-/** Tek kanal metnini issue'ya çevirir; önce kanal kuralları, sonra ortak kurallar. */
+/** Tek kanal metnini issue'ya çevirir; önce ortak (kesin metinli yerel gerekçe) kurallar, sonra kanalın genel desenleri. */
 export function mapPlatformMessage(message: unknown, ctx: IssueContext, rules: readonly ErrorMapRule[] = [], platformCode?: string): IntegrationIssue {
     const text = stripPrefixes(typeof message === 'string' ? message : String(message ?? ''));
-    for (const rule of [...rules, ...COMMON_ERROR_RULES]) {
+    for (const rule of [...COMMON_ERROR_RULES, ...rules]) {
         if (rule.match.test(text) || (platformCode && rule.match.test(platformCode))) {
             return makeIssue(rule.code, { ...ctx, field: ctx.field ?? rule.field, platformMessage: text });
         }

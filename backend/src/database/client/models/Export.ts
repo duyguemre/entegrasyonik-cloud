@@ -28,6 +28,8 @@ export const ExportStagedProductSchema = new Schema({
     stockcode: { type: String, required: false },
 
     payload: { type: Object, required: false },
+    // [eslesme-fiyat WP1, ADR-0038 taslağı] Yapılandırılmış sorunlar (IntegrationIssue[]); errorMessage düz metni bundan türetilir.
+    issues: { type: [Schema.Types.Mixed], required: false, default: undefined },
     // ARŞİVLEME ALANLARI
     isArchived: {
         type: Boolean,

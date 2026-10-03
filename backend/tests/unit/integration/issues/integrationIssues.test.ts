@@ -54,9 +54,10 @@ describe('errorMap', () => {
     expect(mapPlatformMessage('Ürün zaten gönderilmiş.', {}).code).toBe('ALREADY_SENT');
   });
 
-  it('kanal kuralı ortak kuraldan önce; eşleşmeyen → PLATFORM_REJECTED + ham metin', () => {
+  it('ortak kesin kurallar önce (TY "barkod" deseni "Barkod eksik"i yutmaz), sonra kanal kuralı; eşleşmeyen → PLATFORM_REJECTED + ham metin', () => {
     expect(mapPlatformMessage('Marka bulunamadı: XYZ', { integrationCode: 'hepsiburada' }, errorRulesFor('hepsiburada')).code).toBe('HB_BRAND_UNMATCHED');
     expect(mapPlatformMessage('origin alanı zorunludur', {}, errorRulesFor('trendyol')).code).toBe('TY_ORIGIN_REQUIRED');
+    expect(mapPlatformMessage('Barkod eksik.', {}, errorRulesFor('trendyol')).code).toBe('BARCODE_MISSING');
     const u = mapPlatformMessage('beklenmeyen', {}, errorRulesFor('trendyol'));
     expect(u).toMatchObject({ code: 'PLATFORM_REJECTED', platformMessage: 'beklenmeyen' });
   });
@@ -99,6 +100,7 @@ describe('checkChannelReadiness (D-VAL-1/2)', () => {
     expect(codes(variant({ images: [], barcode: 'A'.repeat(50) }), 'UPDATE_PRICE')).toEqual([]);
     expect(codes(variant({ images: [] }))).toEqual(['IMAGE_MISSING']);
     expect(codes(variant({ images: [] }), 'UPDATE')).toEqual([]);
+    expect(codes(variant({ images: [] }), 'TRANSFER', 'n11')).toEqual([]); // görsel kuralı tanımsız kanal
     expect(codes(variant({ stockcode: 'x'.repeat(256) }), 'UPDATE', 'n11')).toEqual(['STOCKCODE_INVALID']);
   });
 });

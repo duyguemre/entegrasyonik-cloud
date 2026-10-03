@@ -196,3 +196,45 @@ describe('Validator.runOnce — hata yolu (eslesme-fiyat WP1 öncesi sabitlendi)
     expect(variantUpdateOpCalls[0].messages).toEqual(['Barkod eksik.']);
   });
 });
+
+describe('Validator.runOnce — YENİ (eslesme-fiyat WP1): issues[] taşınır, errorMessage geriye uyumlu', () => {
+  it('kategori yoksa issues[0] PRODUCT_CATEGORY_MISSING + ekran bağlantısı; staging ve varyant op\'una aynı liste', async () => {
+    productModel.findById = anyFn().mockReturnValue({ lean: async () => ({ ...PRODUCT, _id: 'P2', category: null }) });
+    setupModels([makeEntry({ mode: 'TRANSFER' })], [makeVariant({ productId: 'P2' })]);
+    await new Validator(provider).runOnce('1', 'trendyol', 'TRANSFER' as any, BATCH_ID);
+
+    const issues = stagingUpdateOpCalls[0].issues;
+    expect(issues[0]).toMatchObject({ code: 'PRODUCT_CATEGORY_MISSING', severity: 'error', integrationCode: 'trendyol', barcode: 'B1', variantId: 'v1', productId: 'P2', link: { screen: 'productDefinitions/ProductListView' } });
+    expect(variantUpdateOpCalls[0].issues).toBe(issues);
+  });
+
+  it('adaptör gerekçesi errorMap ile koda çevrilir (Barkod eksik → BARCODE_MISSING)', async () => {
+    instance.validate = anyFn().mockResolvedValue({ result: false, reason: 'Barkod eksik.' });
+    setupModels([makeEntry({ mode: 'UPDATE_STOCK' })], [makeVariant()]);
+    await new Validator(provider).runOnce('1', 'trendyol', 'UPDATE_STOCK' as any, BATCH_ID);
+
+    expect(stagingUpdateOpCalls[0].issues.map((i: any) => i.code)).toEqual(['BARCODE_MISSING']);
+  });
+
+  it('D-VAL-1: TY barkod >40 karakter TRANSFER\'de gönderilmez (BARCODE_INVALID); UPDATE_STOCK\'ta denetlenmez', async () => {
+    const long = 'B'.repeat(41);
+    setupModels([makeEntry({ mode: 'TRANSFER', barcode: long })], [makeVariant({ barcode: long })]);
+    await new Validator(provider).runOnce('1', 'trendyol', 'TRANSFER' as any, BATCH_ID);
+    expect(stagingUpdateOpCalls[0]).toMatchObject({ status: 'FAILED', errorType: 'VALIDATION_ERROR' });
+    expect(stagingUpdateOpCalls[0].issues.map((i: any) => i.code)).toEqual(['BARCODE_INVALID']);
+    expect(instance.validate).not.toHaveBeenCalled();
+
+    stagingUpdateOpCalls.length = 0;
+    setupModels([makeEntry({ mode: 'UPDATE_STOCK', barcode: long })], [makeVariant({ barcode: long })]);
+    await new Validator(provider).runOnce('1', 'trendyol', 'UPDATE_STOCK' as any, BATCH_ID);
+    expect(stagingUpdateOpCalls[0]).toMatchObject({ status: 'PENDING', issues: [] });
+  });
+
+  it('başarıda uyarılar (ör. görsel > 8) issues olarak taşınır, gönderim durmaz', async () => {
+    setupModels([makeEntry({ mode: 'TRANSFER' })], [makeVariant({ images: Array(9).fill('https://cdn/x.jpg') })]);
+    await new Validator(provider).runOnce('1', 'trendyol', 'TRANSFER' as any, BATCH_ID);
+    expect(stagingUpdateOpCalls[0].status).toBe('PENDING');
+    expect(stagingUpdateOpCalls[0].issues.map((i: any) => i.code)).toEqual(['IMAGE_TOO_MANY']);
+    expect(variantUpdateOpCalls[0].issues).toEqual(stagingUpdateOpCalls[0].issues);
+  });
+});
