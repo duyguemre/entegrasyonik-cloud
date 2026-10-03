@@ -13,8 +13,9 @@ export class OrderMapper {
     public toInternalOrderPackages(orders: any[]): IOrderPackage[] {
         return orders.map((order: any) => {
             const shipAddr = order.ShipmentAddress || order.shipmentAddress || {};
-            const cFirstName = (shipAddr.NameSurname?.split(' ')[0] || shipAddr.nameSurname?.split(' ')[0] || order.CustomerName?.split(' ')[0] || order.customerName?.split(' ')[0] || "MUSTERI").trim();
-            const cLastName = (shipAddr.NameSurname?.split(' ').slice(1).join(' ') || shipAddr.nameSurname?.split(' ').slice(1).join(' ') || order.CustomerName?.split(' ').slice(1).join(' ') || order.customerName?.split(' ').slice(1).join(' ') || "").trim();
+            const fullName = String(shipAddr.NameSurname || shipAddr.nameSurname || shipAddr.FullName || shipAddr.fullName || order.CustomerName || order.customerName || '').trim(); // [D-PZ-8] takma adlar
+            const cFirstName = (fullName.split(' ')[0] || "MUSTERI").trim();
+            const cLastName = fullName.split(' ').slice(1).join(' ').trim();
             const orderNumber = String(order.OrderNumber || order.orderNumber || order.OrderId || order.orderId || '');
             const safeExternalCustomerId = String(order.CustomerId || order.customerId || `PAZ-GUEST-${orderNumber}`);
 
@@ -25,7 +26,7 @@ export class OrderMapper {
                 firstName: cFirstName,
                 lastName: cLastName,
                 email: order.customerEmail || shipAddr.customerEmail || "",
-                phone: shipAddr.phoneNumber || "",
+                phone: shippingAddr.phone || "",
                 isEmailMasked: false,
                 isPhoneMasked: false,
                 externalIdentities: [{ integrationCode, externalCustomerId: safeExternalCustomerId }],
@@ -147,8 +148,11 @@ export class OrderMapper {
     }
 
     private mapToIAddress(addr: any, fallbackFirstName?: string, fallbackLastName?: string): IAddress {
-        const nameSurname = addr?.NameSurname || addr?.nameSurname || "";
+        // [eslesme-fiyat WP4, 02-ekler/pazarama C-10 / D-PZ-8] iki sözlük: kodun `NameSurname/AddressDetail/CityName/...` ve bağımsız
+        // DTO'nun `fullName/address/city/district/phone` adları (canlı örnek yanıt yok) — ikisi de okunur.
+        const nameSurname = addr?.NameSurname || addr?.nameSurname || addr?.FullName || addr?.fullName || "";
         const nameParts = nameSurname.split(' ') || [];
+        const neighborhood = addr?.NeighborhoodName || addr?.neighborhoodName || addr?.neighborhood;
         return {
             firstName: (nameParts[0] || fallbackFirstName || "Müşteri").trim(),
             lastName: (nameParts.slice(1).join(' ') || fallbackLastName || "").trim(),
@@ -156,12 +160,12 @@ export class OrderMapper {
             isCorporate: !!(addr?.TaxNumber || addr?.taxNumber),
             taxNumber: addr?.TaxNumber || addr?.taxNumber || "",
             taxOffice: addr?.TaxOffice || addr?.taxOffice || "",
-            email: addr?.CustomerEmail || addr?.customerEmail || "",
-            phone: addr?.PhoneNumber || addr?.phoneNumber || "",
-            addressLine1: addr?.AddressDetail || addr?.addressDetail || "Adres Bilgisi Yok",
-            addressLine2: (addr?.NeighborhoodName || addr?.neighborhoodName) ? `${addr.NeighborhoodName || addr.neighborhoodName} Mah.` : "",
-            city: addr?.CityName || addr?.cityName || "",
-            state: addr?.DistrictName || addr?.districtName || "",
+            email: addr?.CustomerEmail || addr?.customerEmail || addr?.email || "",
+            phone: addr?.PhoneNumber || addr?.phoneNumber || addr?.phone || "",
+            addressLine1: addr?.AddressDetail || addr?.addressDetail || addr?.Address || addr?.address || "Adres Bilgisi Yok",
+            addressLine2: neighborhood ? `${neighborhood} Mah.` : "",
+            city: addr?.CityName || addr?.cityName || addr?.City || addr?.city || "",
+            state: addr?.DistrictName || addr?.districtName || addr?.District || addr?.district || "",
             postalCode: addr?.PostalCode || addr?.postalCode || "",
             countryCode: 'TR'
         };

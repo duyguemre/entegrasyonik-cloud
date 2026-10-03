@@ -232,7 +232,7 @@ exports[`Pazarama internal order snapshot full-cancelled 1`] = `
       "isEmailMasked": false,
       "isPhoneMasked": false,
       "lastName": "Can",
-      "phone": "",
+      "phone": "555",
     },
     "order": {
       "billingAddress": {

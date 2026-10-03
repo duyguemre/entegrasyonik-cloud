@@ -345,7 +345,9 @@ async function syncInvoiceToPlatform(deps: InvoiceDeps, order: any, invoice: any
                 invoiceAmount: order.financials?.grandTotal || 0,
                 pdfUrl: invoice.pdfUrl || invoice.invoiceLink,
                 documentType: invoice.documentType as 'E_ARSIV' | 'E_FATURA',
-                currency: order.currency || 'TRY'
+                currency: order.currency || 'TRY',
+                // [eslesme-fiyat WP4, D-PZ-11] adaptörün ham sipariş alanlarına (ör. Pazarama GUID `OrderId`) erişimi; ayrı anahtar.
+                meta: { platformOrder: order.meta }
             });
 
             // Platform hareketini logla

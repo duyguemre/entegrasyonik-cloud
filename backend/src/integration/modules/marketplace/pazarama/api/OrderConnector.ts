@@ -6,6 +6,13 @@ import { fromHttpError } from '@integration/modules/common/IntegrationError';
 import { integrationCode } from '../constants';
 import { paginatePage } from './paginatePage';
 
+const GUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+/** [D-PZ-11] Ham siparişin GUID kimliği (`OrderId`/`orderId`); GUID değilse undefined. */
+export function pazaramaOrderGuid(raw: any): string | undefined {
+    const v = raw?.OrderId ?? raw?.orderId;
+    return typeof v === 'string' && GUID_RE.test(v) ? v : undefined;
+}
+
 export class OrderConnector {
     constructor(private service: Service, private params: any) { }
 
@@ -88,7 +95,9 @@ export class OrderConnector {
             // If we have shipment info in meta, we send it as a Package update
             const body = {
                 invoiceLink: payload.pdfUrl,
-                orderid: payload.orderId,
+                // [eslesme-fiyat WP4, 02-ekler/pazarama C-12 / D-PZ-11] `orderid` sipariş GUID'i (`OrderId`) bekler; eskiden
+                // OrderNumber gidiyordu. Ham siparişte GUID yoksa (eski kayıt) OrderNumber'a düşülür.
+                orderid: pazaramaOrderGuid(payload.meta?.platformOrder) ?? payload.orderId,
                 deliveryCompanyId: payload.meta?.carrierId || payload.meta?.deliveryCompanyId || null,
                 trackingNumber: payload.meta?.trackingNumber || payload.meta?.trackingCode || null
             };

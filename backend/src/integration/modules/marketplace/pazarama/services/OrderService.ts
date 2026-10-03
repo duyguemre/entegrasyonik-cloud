@@ -1,4 +1,4 @@
-import { carryIncomplete } from '@integration/contracts/IncompleteFetch';
+import { carryIncomplete, getIncomplete, markIncomplete } from '@integration/contracts/IncompleteFetch';
 import { IOrderPackage, IOrderRejectParams, IPlatformResponse, ISendInvoicePayload, ISendTrackingPayload, OrderInternalStatusEnum } from '@interfaces/index';
 import { OrderConnector } from '../api/OrderConnector';
 import { OrderMapper } from '../transformers/OrderTransformer';
@@ -10,6 +10,18 @@ import { integrationCode } from '../constants';
 const log = eventLog('adapter-pazarama', 'OrderService');
 /** Kayıtların TÜMÜ kimliksizse ve en az bu kadar kayıt varsa şema kayması varsayılır (Trendyol/HB DRIFT_MIN_RECORDS ile aynı eşik). */
 const DRIFT_MIN_RECORDS = 3;
+
+/** [D-PZ-8] Sipariş sorgu dilimi (30 gün). */
+export const PZ_ORDER_WINDOW_MS = 30 * 24 * 60 * 60 * 1000;
+
+export function splitWindows(start: Date, end: Date, maxMs: number): { start: Date; end: Date }[] {
+    const out: { start: Date; end: Date }[] = [];
+    let s = start.getTime();
+    const e = end.getTime();
+    if (!(Number.isFinite(s) && Number.isFinite(e)) || s >= e) return [{ start, end }];
+    while (s < e) { const n = Math.min(s + maxMs, e); out.push({ start: new Date(s), end: new Date(n) }); s = n; }
+    return out;
+}
 
 export class OrderService {
     private connector: OrderConnector;
@@ -25,19 +37,22 @@ export class OrderService {
     public async fetchOrders(query?: Record<string, any>): Promise<IOrderPackage[]> {
         try {
             // Pazarama API expects startDate and endDate
-            const apiQuery: any = {};
-            if (query?.lastSyncTimestamp) {
-                apiQuery.startDate = new Date(query.lastSyncTimestamp).toISOString();
-                apiQuery.endDate = new Date().toISOString();
-            } else {
-                // Fallback to last 24 hours if no sync date
-                const yesterday = new Date();
-                yesterday.setDate(yesterday.getDate() - 1);
-                apiQuery.startDate = yesterday.toISOString();
-                apiQuery.endDate = new Date().toISOString();
-            }
+            const end = query?.endDate ? new Date(query.endDate) : new Date();
+            const start = query?.lastSyncTimestamp
+                ? new Date(query.lastSyncTimestamp)
+                : new Date(end.getTime() - 24 * 60 * 60 * 1000); // Fallback to last 24 hours if no sync date
 
-            const rawOrders = await this.connector.fetchOrdersFromPlatform(apiQuery);
+            // [eslesme-fiyat WP4, 02-ekler/pazarama C-14 / D-PZ-8] aralık en çok 30 günlük dilimlere bölünür ([İKİNCİL]: StartDate/
+            // EndDate ≤31 gün). Eskiden `lastSyncTimestamp→now` sınırsızdı: uzun kesinti sonrası API reddi/kesik sonuç riski.
+            const rawOrders: any[] = [];
+            let incomplete: ReturnType<typeof getIncomplete>;
+            for (const w of splitWindows(start, end, PZ_ORDER_WINDOW_MS)) {
+                const part = await this.connector.fetchOrdersFromPlatform({ startDate: w.start.toISOString(), endDate: w.end.toISOString() });
+                incomplete ??= getIncomplete(part);
+                rawOrders.push(...part);
+            }
+            if (incomplete) markIncomplete(rawOrders, { reason: incomplete.reason, collected: rawOrders.length });
+
             return carryIncomplete(rawOrders, this.mapper.toInternalOrderPackages(this.dropMissingIdentity(rawOrders)));
         } catch (error: any) {
             if (IntegrationError.isIntegrationError(error)) throw error;

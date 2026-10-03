@@ -46,7 +46,7 @@ describe('N11 OrderService isaretleme', () => {
     return svc;
   };
   it('sayfa tavani -> donen paket dizisi incomplete', async () => {
-    const svc = build((p) => ({ totalElements: 999999, content: Array.from({ length: 100 }, (_, i) => ({ id: p.currentPage * 100 + i, orderNumber: `N${p.currentPage * 100 + i}`, lines: [] })) }));
+    const svc = build((p) => ({ totalElements: 999999, content: Array.from({ length: 100 }, (_, i) => ({ id: p.page * 100 + i, orderNumber: `N${p.page * 100 + i}`, lines: [] })) }));
     const r = await svc.fetchOrders();
     expect(getIncomplete(r)?.reason).toBe('PAGINATION_PAGE_CAP');
   });
