@@ -13,6 +13,7 @@ jest.mock('@integration/modules/IntegrationFactory', () => ({
 }));
 
 import AttributeMappingService from '@api/rpc/handlers/attributeMapping-service';
+import { AuditLogger } from '@services/audit/AuditLogger';
 import ChoiceService from '@api/rpc/handlers/choice-service';
 import CategoryService from '@api/rpc/handlers/category-service';
 
@@ -136,6 +137,19 @@ describe('AttributeMappingService.saveCategoryMapping / deleteFullMapping [WP11]
         expect(amModel.updateOne.mock.calls[0][1].$set.platformCategoryId).toBe('999');
         expect(amModel.deleteMany).toHaveBeenCalledWith({ localCategoryId: new ObjectId(local), integrationCode: 'trendyol', platformAttributeId: { $ne: null }, platformCategoryId: { $ne: '999' } });
     });
+    it('[eslesme-fiyat WP2] kayıt kişi/kaynak damgası (updatedBy, source=manual, stale=false) + mapping.category.save denetim kaydı (değer içeriği yok)', async () => {
+        const spy = jest.spyOn(AuditLogger, 'log').mockResolvedValue(undefined as any);
+        const local = new ObjectId().toString();
+        await svc({ localCategoryId: local, integrationCode: 'trendyol', platformCategoryId: 5 }).saveCategoryMapping();
+        expect(amModel.updateOne.mock.calls[0][1].$set).toMatchObject({ source: 'manual', stale: false, updatedBy: null });
+        expect(spy).toHaveBeenCalledWith(expect.objectContaining({ event: 'mapping.category.save', result: 'ok', tid: 42, meta: expect.objectContaining({ integrationCode: 'trendyol', localCategoryId: local, platformCategoryId: '5' }) }));
+        spy.mockRestore();
+    });
+    it('[eslesme-fiyat WP2] saveAttributeMapping allowCustom/isMultiple SAKLAR (eskiden atılıyordu)', async () => {
+        jest.spyOn(AuditLogger, 'log').mockResolvedValue(undefined as any);
+        await svc({ localCategoryId: new ObjectId().toString(), integrationCode: 'trendyol', platformCategoryId: '1', platformAttributeId: '2', localChoiceId: new ObjectId().toString(), isAllowCustom: true, isMultiple: false, values: [] }).saveAttributeMapping();
+        expect(amModel.updateOne.mock.calls[0][1].$set).toMatchObject({ allowCustom: true, isMultiple: false, source: 'manual' });
+    });
     it('keepAttributeMappings=true: temizlik YOK', async () => {
         const r = await svc({ localCategoryId: new ObjectId().toString(), integrationCode: 'trendyol', platformCategoryId: '9', keepAttributeMappings: true }).saveCategoryMapping();
         expect(amModel.deleteMany).not.toHaveBeenCalled();
@@ -231,6 +245,46 @@ describe('AttributeMappingService.autoMatchAllCategories [WP11]', () => {
         const r = await svc().autoMatchAllCategories();
         expect(r).toMatchObject({ matchedCount: 0, attributeMappingCount: 0 });
         expect(amModel.bulkWrite).not.toHaveBeenCalled();
+    });
+
+    // --- [eslesme-fiyat WP2] Ek A P0-3 / P1-4 düzeltmeleri + öneri modu ---
+    it('[P0-3] gömülü değer listesi BOŞ dizi ise ayrı değer ucu çağrılır; eşleşen değerle yazılır', async () => {
+        factoryState.instance.retrieveCategoryAttributes.mockResolvedValue([{ _id: 338, title: 'Beden', values: [] }]);
+        factoryState.instance.retrieveCategoryAttributeValues = jest.fn(async () => [{ id: 7, title: 'M' }]);
+        const r = await svc().autoMatchAllCategories();
+        expect(factoryState.instance.retrieveCategoryAttributeValues).toHaveBeenCalledWith('411', '338');
+        expect(r.attributeMappingCount).toBe(1);
+        expect(amModel.bulkWrite.mock.calls[1][0][0].updateOne.update.$setOnInsert.values).toEqual([{ localValueId: valId.toString(), platformValueId: '7', platformValueName: 'M' }]);
+    });
+    it('[P0-3] değer ucu da boş/eşleşme yok ise BOŞ eşleme YAZILMAZ (sonradan doldurulabilir kalır); skipped nedeni raporlanır', async () => {
+        factoryState.instance.retrieveCategoryAttributes.mockResolvedValue([{ _id: 338, title: 'Beden', values: [] }]);
+        factoryState.instance.retrieveCategoryAttributeValues = jest.fn(async () => [{ id: 9, title: 'XXL Özel' }]);
+        const r = await svc().autoMatchAllCategories();
+        expect(r.attributeMappingCount).toBe(0);
+        expect(r.skipped).toEqual([expect.objectContaining({ platformAttributeId: '338', reason: 'NO_VALUE_MATCH' })]);
+        factoryState.instance.retrieveCategoryAttributeValues = jest.fn(async () => { throw new Error('down'); });
+        const r2 = await svc().autoMatchAllCategories();
+        expect(r2.skipped).toEqual([expect.objectContaining({ reason: 'PLATFORM_VALUES_FETCH_FAILED' })]);
+    });
+    it('[P1-4] yalnız YAPRAK yerel kategoriler eşlenir (parentId ile türetilir; belgede children alanı yok)', async () => {
+        const root = { _id: new ObjectId(), title: 'Ayakkabi' };
+        const leaf = { _id: new ObjectId(), title: 'Ayakkabi', parentId: root._id };
+        catModel.find.mockResolvedValue([root, leaf]);
+        const r = await svc().autoMatchAllCategories();
+        expect(r.matchedCount).toBe(1);
+        expect(String(amModel.bulkWrite.mock.calls[0][0][0].updateOne.filter.localCategoryId)).toBe(String(leaf._id));
+    });
+    it('öneri modu (mode=suggest): HİÇ yazmaz; kategori/özellik önerilerini skorla döner', async () => {
+        const r = await svc({ mode: 'suggest' }).autoMatchAllCategories();
+        expect(amModel.bulkWrite).not.toHaveBeenCalled();
+        expect(r).toMatchObject({ result: true, mode: 'suggest', matchedCount: 1, attributeMappingCount: 1 });
+        expect(r.suggestions.categories[0]).toMatchObject({ localCategoryId: String(localCat._id), platformCategoryId: '411', score: expect.any(Number) });
+        expect(r.suggestions.attributes[0]).toMatchObject({ platformAttributeId: '338', localChoiceId: choiceId.toString(), values: [expect.objectContaining({ platformValueId: '1' })] });
+    });
+    it('yazılan kayıtlar kaynak/kişi damgası taşır (updatedBy=autoMatch, source=auto)', async () => {
+        await svc().autoMatchAllCategories();
+        expect(amModel.bulkWrite.mock.calls[0][0][0].updateOne.update.$setOnInsert).toMatchObject({ updatedBy: 'autoMatch', source: 'auto' });
+        expect(amModel.bulkWrite.mock.calls[1][0][0].updateOne.update.$setOnInsert).toMatchObject({ updatedBy: 'autoMatch', source: 'auto' });
     });
 });
 

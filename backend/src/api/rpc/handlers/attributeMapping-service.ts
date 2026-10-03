@@ -11,6 +11,7 @@ import { AttributeMappingRepository } from '@database/repositories/tenant/Attrib
 import { CategoryRepository } from '@database/repositories/tenant/CategoryRepository'
 import { ChoiceRepository } from '@database/repositories/tenant/ChoiceRepository'
 import { eventLog } from '@platform/core/logger';
+import { AuditLogger } from '@services/audit/AuditLogger';
 
 const log = eventLog('api', 'attributeMapping-service');
 
@@ -23,6 +24,17 @@ const oid = (v: any, field: string): ObjectId => {
 }
 
 export default class AttributeMappingService extends BaseApi implements IService {
+
+    /** [eslesme-fiyat WP2] Eşleme yazımlarının kişi damgası (Users._id); kimliksiz/iç çağrıda undefined. */
+    private actorSub(): string | undefined {
+        try { return this.ctxOrUndefined?.actor?.sub || undefined } catch { return undefined }
+    }
+
+    /** [eslesme-fiyat WP2, Ek A P2-15] `mapping.*` denetim kaydı (best-effort; istek düşmez). Değer/metin içeriği yazılmaz, yalnız kimlikler. */
+    private audit(event: string, meta: Record<string, string | number | boolean | undefined>): void {
+        const clean = Object.fromEntries(Object.entries(meta).filter(([, v]) => v !== undefined)) as Record<string, string | number | boolean>;
+        void AuditLogger.log({ event, result: 'ok', sub: this.actorSub(), tid: Number(this.currentClientId) || undefined, meta: clean });
+    }
 
     // Getter: test, servisi kurduktan SONRA `svc.clientDB` atar (BrandService deseni).
     private get mappings() { return new AttributeMappingRepository(this.clientDB) }
@@ -66,6 +78,11 @@ export default class AttributeMappingService extends BaseApi implements IService
             categories: this.categories,
             choices: this.choices,
             getIntegration: (code) => factory.getInstance(code),
+            mode: this.request?.mode === 'suggest' ? 'suggest' : 'apply',
+            actor: this.actorSub(),
+        }).then((r: any) => {
+            if (r?.mode !== 'suggest') this.audit('mapping.autoMatch', { integrationCode: platformCode, categories: r?.matchedCount, attributes: r?.attributeMappingCount, skipped: r?.skippedCount });
+            return r;
         });
     }
 
@@ -112,7 +129,10 @@ export default class AttributeMappingService extends BaseApi implements IService
             $set: {
                 platformCategoryId: platformCatStr,
                 isCategoryMapping: true,
-                updatedAt: new Date()
+                updatedAt: new Date(),
+                updatedBy: this.actorSub() ?? null,
+                source: 'manual',
+                stale: false
             }
         };
 
@@ -121,6 +141,7 @@ export default class AttributeMappingService extends BaseApi implements IService
         const clearedAttributeMappings = keepAttributeMappings === true
             ? 0
             : await deleteStaleAttributeMappings(mappings, String(localCategoryId), String(integrationCode), platformCatStr);
+        this.audit('mapping.category.save', { integrationCode: String(integrationCode), localCategoryId: String(localCategoryId), platformCategoryId: platformCatStr, cleared: clearedAttributeMappings });
         return { result: resp.upsertedCount > 0 || resp.modifiedCount > 0, clearedAttributeMappings };
     }
 
@@ -154,6 +175,8 @@ export default class AttributeMappingService extends BaseApi implements IService
             isVarianter,
             isSlicer,
             isRequired,
+            isAllowCustom,
+            isMultiple,
             values // Array<{ localValueId, platformValueId, platformValueName }>
         } = this.request;
 
@@ -186,11 +209,18 @@ export default class AttributeMappingService extends BaseApi implements IService
                 isRequired: isRequired,
                 values: formattedValues,
                 isCategoryMapping: false,
-                updatedAt: new Date()
+                updatedAt: new Date(),
+                // [eslesme-fiyat WP2, Ek A (B)] allowCustom/isMultiple artık SAKLANIR (eskiden zod kabul edip servis atıyordu).
+                ...(typeof isAllowCustom === 'boolean' ? { allowCustom: isAllowCustom } : {}),
+                ...(typeof isMultiple === 'boolean' ? { isMultiple } : {}),
+                updatedBy: this.actorSub() ?? null,
+                source: 'manual',
+                stale: false
             }
         };
 
         const resp = await this.mappings.upsertOne(updateQuery, updateSet);
+        this.audit('mapping.attribute.save', { integrationCode: String(integrationCode), localCategoryId: String(localCategoryId), platformAttributeId: String(platformAttributeId), values: formattedValues?.length ?? 0 });
         return { result: resp.upsertedCount > 0 || resp.modifiedCount > 0 };
     }
 
@@ -231,7 +261,8 @@ export default class AttributeMappingService extends BaseApi implements IService
                 isVarianter,
                 isSlicer,
                 isRequired,
-                isAllowCustom
+                isAllowCustom,
+                isMultiple
             } = this.request;
 
             if (isBlank(platformAttributeId) || isBlank(localValueId) || isBlank(integrationCode) || isBlank(platformCategoryId) || isBlank(localChoiceId)) {
@@ -265,6 +296,11 @@ export default class AttributeMappingService extends BaseApi implements IService
             if (typeof isVarianter === 'boolean') meta.isVarianter = lit(isVarianter);
             if (typeof isSlicer === 'boolean') meta.isSlicer = lit(isSlicer);
             if (typeof isRequired === 'boolean') meta.isRequired = lit(isRequired);
+            if (typeof isAllowCustom === 'boolean') meta.allowCustom = lit(isAllowCustom);
+            if (typeof isMultiple === 'boolean') meta.isMultiple = lit(isMultiple);
+            meta.updatedBy = lit(this.actorSub() ?? null);
+            meta.source = lit('manual');
+            meta.stale = lit(false);
 
             const sameLocalValue = { $eq: ['$$v.localValueId', lit(localValueOid)] };
             const dropCond = valueId === null ? sameLocalValue : { $or: [sameLocalValue, { $eq: ['$$v.platformValueId', lit(valueId)] }] };
@@ -288,6 +324,7 @@ export default class AttributeMappingService extends BaseApi implements IService
 
             // Aynı anahtarla eşzamanlı ilk yazmada benzersiz indeks yarışı (11000) depo içinde bir kez yeniden denenir.
             const resp = await this.mappings.upsertWithRaceRetry(query, pipeline);
+            this.audit('mapping.value.save', { integrationCode: String(integrationCode), localCategoryId, platformAttributeId: String(platformAttributeId), custom: valueId === null });
             return { result: resp.modifiedCount > 0 || resp.upsertedCount > 0 };
 
         } catch (error) {
@@ -305,6 +342,8 @@ export default class AttributeMappingService extends BaseApi implements IService
     async deleteFullMapping(): Promise<any> {
         const { localCategoryId, integrationCode } = this.request;
         if (typeof integrationCode !== 'string' || !integrationCode) return { acknowledged: true, deletedCount: 0 };
-        return await this.mappings.deleteAllOfCategory(oid(localCategoryId, 'localCategoryId'), integrationCode);
+        const res = await this.mappings.deleteAllOfCategory(oid(localCategoryId, 'localCategoryId'), integrationCode);
+        this.audit('mapping.delete', { integrationCode, localCategoryId: String(localCategoryId), deleted: Number(res?.deletedCount) || 0 });
+        return res;
     }
 }

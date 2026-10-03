@@ -1762,6 +1762,14 @@
     ],
     "AttributeMappings": [
       {
+        "name": "integration_platformCategory",
+        "fields": {
+          "integrationCode": 1,
+          "platformCategoryId": 1
+        },
+        "options": {}
+      },
+      {
         "name": "localCategoryId_1",
         "fields": {
           "localCategoryId": 1

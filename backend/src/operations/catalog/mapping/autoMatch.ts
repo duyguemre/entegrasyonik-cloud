@@ -4,6 +4,11 @@
 //  - Hata YUTULMAZ (ADR-0006): platform çağrısı/yazma hatası fırlar. Tek tek kategori hataları yanıtın `failed` listesinde raporlanır;
 //    HEPSİ başarısızsa 502 fırlatılır.
 //  - V2'de değerleri gömülü gelmeyen (allowCustom olmayan) özelliklerde eşleme YAZILMAZ; `skipped` listesinde raporlanır.
+//  - [eslesme-fiyat WP2, Ek A P0-3] Gömülü liste boş/yoksa adaptörün AYRI değer ucu (`retrieveCategoryAttributeValues`) denenir;
+//    yine eşleşen değer yoksa BOŞ eşleme YAZILMAZ (eskiden `values: []` yazılıp `existingAttrKeys` yüzünden kalıcılaşıyordu).
+//  - [Ek A P1-4] Yalnız YAPRAK yerel kategoriler (başka bir kategorinin `parentId`'si olmayan); belgede `children` alanı yok.
+//  - Öneri modu (`mode: 'suggest'`): hiçbir şey yazılmaz; skorlu öneriler döner (kullanıcı onayıyla FE kaydeder).
+//  - Yazılan kayıtlar `updatedBy`/`source: 'auto'` damgası taşır (audit; WP2).
 import stringSimilarity from 'string-similarity'
 import { ApplicationError } from '@platform/core/security/Security'
 import type { AttributeMappingRepository } from '@database/repositories/tenant/AttributeMappingRepository'
@@ -20,10 +25,17 @@ export interface AutoMatchDeps {
     choices: ChoiceRepository
     /** Platform adaptörünü verir (okumalardan SONRA çağrılır; hata yutulmaz). */
     getIntegration: (code: string) => Promise<any>
+    /** 'apply' (varsayılan): eksik eşlemeleri yazar. 'suggest': yazmaz, önerileri döner. */
+    mode?: 'apply' | 'suggest'
+    /** Kayıt damgası (varsayılan 'autoMatch'). */
+    actor?: string
 }
 
 export async function autoMatchAllCategories(deps: AutoMatchDeps): Promise<any> {
     const { platformCode, mappings, categories, choices, getIntegration } = deps
+    const suggestOnly = deps.mode === 'suggest'
+    const stamp = { updatedBy: deps.actor || 'autoMatch', source: 'auto' }
+    const suggestions: { categories: any[]; attributes: any[] } = { categories: [], attributes: [] }
     // 1. Verileri toplu çek (tek seferde DB okuma)
     const [rawChoices, allLocalCategories] = await Promise.all([
         choices.findAll(),
@@ -40,7 +52,9 @@ export async function autoMatchAllCategories(deps: AutoMatchDeps): Promise<any> 
     }));
     const allChoiceTitles = allMyChoices.map((c: any) => c.title.toLocaleUpperCase('tr'));
     const localCatMap = new Map(allLocalCategories.map((c: any) => [c._id.toString(), c]));
-    const localLeafCategories = allLocalCategories.filter((c: any) => !c.children || c.children.length === 0);
+    // [P1-4] Yaprak = başka bir kategorinin parentId'si olmayan (ve varsa `children` alanı boş) kategori.
+    const parentIds = new Set(allLocalCategories.map((c: any) => (c.parentId === undefined || c.parentId === null || c.parentId === '' ? null : String(c.parentId))).filter(Boolean));
+    const localLeafCategories = allLocalCategories.filter((c: any) => !parentIds.has(String(c._id)) && (!c.children || c.children.length === 0));
 
     // Mevcut eşlemeler hafızada (döngü içinde sorgu yok)
     const existingMappings: any[] = await mappings.listByIntegration(platformCode);
@@ -144,10 +158,13 @@ export async function autoMatchAllCategories(deps: AutoMatchDeps): Promise<any> 
                 categoryOps.push({
                     updateOne: {
                         filter: { localCategoryId: localCat._id, integrationCode: platformCode, platformAttributeId: null },
-                        update: { $setOnInsert: { platformCategoryId, isCategoryMapping: true, updatedAt: new Date() } },
+                        update: { $setOnInsert: { platformCategoryId, isCategoryMapping: true, updatedAt: new Date(), ...stamp } },
                         upsert: true
                     }
                 });
+                if (suggestions.categories.length < REPORT_CAP) {
+                    suggestions.categories.push({ localCategoryId: String(localCat._id), localTitle: localCat.title, platformCategoryId, platformPath: (bestMatchNode as any).fullPath, score: Math.round(highestScore * 100) / 100 });
+                }
                 matchedCount++;
             }
         }
@@ -168,8 +185,23 @@ export async function autoMatchAllCategories(deps: AutoMatchDeps): Promise<any> 
 
             if (existingAttrKeys.has(`${localCat._id}|${String(pAttr._id)}`)) continue;
 
-            const pValues = pAttr.values;
+            let pValues = pAttr.values;
             const matchedValues: any[] = [];
+            const skip = (reason: string) => {
+                skippedCount++;
+                if (skipped.length < REPORT_CAP) skipped.push({ localCategoryId: String(localCat._id), platformCategoryId, platformAttributeId: String(pAttr._id), reason });
+            };
+
+            // [P0-3] Gömülü liste boş/yoksa ayrı değer ucu (varsa) denenir.
+            if (matchedChoice.values?.length > 0 && pAttr.allowCustom !== true && !(Array.isArray(pValues) && pValues.length > 0)
+                && typeof integration.retrieveCategoryAttributeValues === 'function') {
+                try {
+                    pValues = await integration.retrieveCategoryAttributeValues(String(platformCategoryId), String(pAttr._id));
+                } catch {
+                    skip('PLATFORM_VALUES_FETCH_FAILED');
+                    continue;
+                }
+            }
 
             if (matchedChoice.values?.length > 0) {
                 if (pAttr.allowCustom === true) {
@@ -189,11 +221,13 @@ export async function autoMatchAllCategories(deps: AutoMatchDeps): Promise<any> 
                         }
                     }
                 } else {
-                    // V2: değerler ayrı uçta; gömülü değil -> boş eşleme YAZMA, raporla.
-                    skippedCount++;
-                    if (skipped.length < REPORT_CAP) {
-                        skipped.push({ localCategoryId: String(localCat._id), platformCategoryId, platformAttributeId: String(pAttr._id), reason: 'PLATFORM_VALUES_NOT_EMBEDDED' });
-                    }
+                    // V2: değerler ayrı uçta; gömülü değil ve ayrı uç yok -> boş eşleme YAZMA, raporla.
+                    skip('PLATFORM_VALUES_NOT_EMBEDDED');
+                    continue;
+                }
+                // [P0-3] Hiç değer eşleşmediyse boş eşleme YAZILMAZ (yazılırsa existingAttrKeys yüzünden bir daha doldurulmaz).
+                if (matchedValues.length === 0) {
+                    skip('NO_VALUE_MATCH');
                     continue;
                 }
             }
@@ -211,12 +245,20 @@ export async function autoMatchAllCategories(deps: AutoMatchDeps): Promise<any> 
                             isRequired: !!pAttr.required,
                             isCategoryMapping: false,
                             values: matchedValues,
-                            updatedAt: new Date()
+                            updatedAt: new Date(),
+                            ...stamp
                         }
                     },
                     upsert: true
                 }
             });
+            if (suggestions.attributes.length < REPORT_CAP) {
+                suggestions.attributes.push({
+                    localCategoryId: String(localCat._id), platformCategoryId: String(platformCategoryId), platformAttributeId: String(pAttr._id),
+                    platformAttributeName: pAttr.title, localChoiceId: matchedChoice._id, localChoiceTitle: matchedChoice.title,
+                    score: Math.round(attrMatch.bestMatch.rating * 100) / 100, isRequired: !!pAttr.required, values: matchedValues,
+                });
+            }
         }
     };
 
@@ -235,6 +277,13 @@ export async function autoMatchAllCategories(deps: AutoMatchDeps): Promise<any> 
 
     if (localLeafCategories.length > 0 && failed.length === localLeafCategories.length) {
         throw new ApplicationError(`Otomatik eşleme başarısız (${platformCode}): ${failed[0].reason}`, 502);
+    }
+
+    if (suggestOnly) {
+        return {
+            result: true, mode: 'suggest', matchedCount, attributeMappingCount: attributeOps.length,
+            skippedCount, skipped, failedCount: failed.length, failed: failed.slice(0, REPORT_CAP), suggestions,
+        };
     }
 
     // Toplu yazma (yazma hatası fırlar). Kategori kayıtları önce: özellik kayıtları onlara referans verir.

@@ -26,7 +26,17 @@ export const AttributeMappingSchema = new mongoose.Schema({
         platformValueId: { type: String },
         platformValueName: { type: String, required: true }
     }],
-    updatedAt: { type: Date, default: Date.now }
+    updatedAt: { type: Date, default: Date.now },
+
+    // [eslesme-fiyat WP2, Ek A (B)/P2-15] Eskiden zod kabul edip servis atıyordu; artık saklanır. Göç gerekmez (eski kayıtta yok = varsayılan).
+    allowCustom: { type: Boolean },
+    isMultiple: { type: Boolean },
+    /** Son yazan kullanıcı (Users._id) ya da 'autoMatch'; eski kayıtlarda yok. */
+    updatedBy: { type: String, default: null },
+    /** 'manual' (ekran) | 'auto' (autoMatch). */
+    source: { type: String },
+    /** Platform kataloğu yenilemesinde eşlenen kategori/özellik/değer platformda bulunamadıysa true (catalog.mappingStaleness). */
+    stale: { type: Boolean, default: false }
 }, {
     collection: 'AttributeMappings',
     strict: false
@@ -34,4 +44,7 @@ export const AttributeMappingSchema = new mongoose.Schema({
 
 // Aynı kategori ve aynı entegrasyon içinde aynı nitelikten iki tane olamaz
 AttributeMappingSchema.index({ localCategoryId: 1, integrationCode: 1, platformAttributeId: 1 }, { unique: true });
+// [eslesme-fiyat WP2, Ek A P2-13] (entegrasyon, platform kategorisi) sorguları (resolveLocalCategoryId, Stager kategori haritası, bayatlık işi)
+// için; uygulama: migrations/0026-attribute-mappings-indexes-tenant.js (yalnız yazıldı, ÇALIŞTIRILMADI).
+AttributeMappingSchema.index({ integrationCode: 1, platformCategoryId: 1 }, { name: 'integration_platformCategory' });
 

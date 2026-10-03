@@ -94,7 +94,8 @@ export const CATALOG_RPC_INPUT: Partial<Record<RpcRef, z.ZodType<any>>> = {
     'StockService/getPublishLagSummary': strictBody({ window: z.enum(['1h', '24h']).optional() }),
     // --- Özellik eşleme ---
     'AttributeMappingService/get': readPaging,
-    'AttributeMappingService/autoMatchAllCategories': strictBody({ integrationCode: integrationCode.optional() }),
+    // [eslesme-fiyat WP2] mode=suggest: yazmaz, skorlu öneri döner (varsayılan apply).
+    'AttributeMappingService/autoMatchAllCategories': strictBody({ integrationCode: integrationCode.optional(), mode: z.enum(['apply', 'suggest']).optional() }),
     'AttributeMappingService/saveCategoryMapping': strictBody({
         localCategoryId: objectIdStr, integrationCode, platformCategoryId: platformId,
         isCategoryMapping: flag,
