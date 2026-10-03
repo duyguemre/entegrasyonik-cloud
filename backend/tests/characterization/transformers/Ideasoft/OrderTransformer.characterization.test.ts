@@ -181,3 +181,20 @@ describe('Ideasoft OrderTransformer statü eşlemesi (mapOrderStatus / mapLineSt
         expect(st('returned')).toBe('RETURNED');
     });
 });
+
+// [eslesme-fiyat WP4, D-IS-5 (P0)] Resmî Order.cs düz alanları (API_IDEASOFT.md K-3) okunur.
+describe('Ideasoft OrderTransformer — resmî alan adları (WP4 D-IS-5)', () => {
+  it('customerFirstname/Surname, finalAmount, shippingAmount, orderItems[product*], shippingTrackingCode', () => {
+    const { OrderTransformer: T } = require('@integration/modules/ecommerce/ideasoft/transformers/OrderTransformer');
+    const [pkg] = new T(1).toInternalOrderPackages([{
+      id: 77, status: 'approved', currency: 'TL', customerFirstname: 'Ali', customerSurname: 'Veli Kaya', customerEmail: 'a@x', customerPhone: '555',
+      generalAmount: 260, finalAmount: 250, shippingAmount: 30, shippingProviderName: 'Yurtiçi', shippingTrackingCode: 'YT1',
+      orderItems: [{ id: 5, productName: 'Kupa', productSku: 'K1', productBarcode: '869', productPrice: 110, productQuantity: 2, productTax: 20 }],
+      createdAt: '2026-10-01T10:00:00Z',
+    }]);
+    expect(pkg.customer).toMatchObject({ firstName: 'Ali', lastName: 'Veli Kaya', email: 'a@x', phone: '555' });
+    expect(pkg.order.financials).toMatchObject({ currencyCode: 'TRY', grandTotal: 250, shippingFee: 30, subTotal: 220 });
+    expect(pkg.order.items[0]).toMatchObject({ externalLineItemId: '5', sku: 'K1', barcode: '869', quantity: 2, unitPrice: 110, taxRate: 20, productName: 'Kupa' });
+    expect(pkg.order.fulfillment[0]).toMatchObject({ trackingCode: 'YT1', carrierName: 'Yurtiçi' });
+  });
+});

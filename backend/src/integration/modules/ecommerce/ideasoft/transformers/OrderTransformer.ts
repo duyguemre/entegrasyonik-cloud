@@ -37,7 +37,8 @@ export class OrderTransformer {
             const itemStatus = this.mapItemStatus(internalStatus);
 
             // [satır kimliği] id'siz satır "undefined"/sentetik kimlikle kaydedilmez: atla + logla; TÜM satırlar kimliksizse sipariş atlanır.
-            const rawLines: any[] = order.orderLines || order.lines || order.items || [];
+            // [eslesme-fiyat WP4, D-IS-5 (P0), API_IDEASOFT K-3] resmî model `orderItems[]`; eski adlar geriye uyumlu.
+            const rawLines: any[] = order.orderItems || order.orderLines || order.lines || order.items || [];
             const goodLines = rawLines.filter(l => l != null && l.id);
             if (goodLines.length < rawLines.length) {
                 log.error('ORDERTRANSFORMER_IDEASOFT_SATIR_KIMLIGI_EKSIK', `Ideasoft siparişi ${externalOrderId}: ${rawLines.length - goodLines.length}/${rawLines.length} satır kimlik (id) eksikliği nedeniyle ATLANDI.`);
@@ -45,18 +46,18 @@ export class OrderTransformer {
             }
             const items = goodLines.map((line: any): IOrderItem => {
                 const lineId = String(line.id);
-                const sku = line.product?.sku || line.sku || '';
-                const quantity = Number(line.quantity || 1);
-                const unitPrice = Number(line.price || line.salePrice || 0);
+                const sku = line.productSku || line.product?.sku || line.sku || '';
+                const quantity = Number(line.productQuantity || line.quantity || 1);
+                const unitPrice = Number(line.productPrice ?? line.price ?? line.salePrice ?? 0) || 0;
                 return {
                     externalLineItemId: lineId,
                     externalItemId: String(sku || lineId),
-                    productName: line.product?.name || line.productName || '',
+                    productName: line.productName || line.product?.name || '',
                     sku,
-                    barcode: line.product?.barcode || line.barcode || '',
+                    barcode: line.productBarcode || line.product?.barcode || line.barcode || '',
                     quantity,
                     unitPrice,
-                    taxRate: 0,
+                    taxRate: Number(line.productTax ?? 0) || 0,
                     totalPrice: unitPrice * quantity,
                     itemStatus,
                 };
@@ -64,13 +65,14 @@ export class OrderTransformer {
 
             const shipping = order.shippingAddress || order.deliveryAddress || {};
             const billing = order.billingAddress || order.invoiceAddress || shipping;
-            const fullName = `${shipping.firstName || ''} ${shipping.lastName || ''}`.trim() || order.customer?.name || '';
+            const fullName = `${shipping.firstName || ''} ${shipping.lastName || ''}`.trim()
+                || `${order.customerFirstname || ''} ${order.customerSurname || ''}`.trim() || order.customer?.name || '';
             const [firstName, ...rest] = fullName.split(' ');
             const lastName = rest.join(' ');
             const email = order.customer?.email || order.customerEmail || '';
-            const phone = shipping.phone || order.customer?.phone || '';
-            const grandTotal = Number(order.totalPrice || order.total || 0);
-            const shippingFee = Number(order.shippingPrice || 0);
+            const phone = shipping.phone || order.customerPhone || order.customer?.phone || '';
+            const grandTotal = Number(order.finalAmount ?? order.generalAmount ?? order.totalPrice ?? order.total ?? 0) || 0;
+            const shippingFee = Number(order.shippingAmount ?? order.shippingPrice ?? 0) || 0;
 
             const toAddress = (a: any, name: string) => {
                 const [f, ...r] = name.split(' ');
@@ -89,7 +91,7 @@ export class OrderTransformer {
                 externalIdentities: [{ integrationCode, externalCustomerId: String(order.customer?.id || `IDEASOFT-GUEST-${externalOrderId}`) }],
             };
 
-            const trackingCode = order.cargo?.trackingNumber || order.trackingNumber || '';
+            const trackingCode = order.shippingTrackingCode || order.cargo?.trackingNumber || order.trackingNumber || '';
             const internalOrder = buildInternalOrder({
                 integrationCode,
                 externalOrderId,
@@ -100,9 +102,9 @@ export class OrderTransformer {
                 customerLastName: customer.lastName,
                 dates: { orderDate: new Date(order.createdAt || order.orderDate || Date.now()) },
                 billingAddress, shippingAddress,
-                financials: { currencyCode: 'TRY', subTotal: grandTotal - shippingFee, shippingFee, grandTotal },
+                financials: { currencyCode: String(order.currency || 'TRY').toUpperCase() === 'TL' ? 'TRY' : String(order.currency || 'TRY').toUpperCase(), subTotal: grandTotal - shippingFee, shippingFee, grandTotal },
                 items,
-                fulfillment: trackingCode ? [{ shipmentMethod: 'MARKETPLACE', status: 'SUCCESS', carrierName: order.cargo?.company || order.cargoCompany || '', trackingCode }] : [],
+                fulfillment: trackingCode ? [{ shipmentMethod: 'MARKETPLACE', status: 'SUCCESS', carrierName: order.shippingProviderName || order.cargo?.company || order.cargoCompany || '', trackingCode }] : [],
                 meta: { ...order },
             });
             return { order: internalOrder, customer, claims: [] };
