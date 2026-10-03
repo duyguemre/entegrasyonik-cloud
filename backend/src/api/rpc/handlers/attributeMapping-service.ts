@@ -30,6 +30,11 @@ export default class AttributeMappingService extends BaseApi implements IService
         try { return this.ctxOrUndefined?.actor?.sub || undefined } catch { return undefined }
     }
 
+    private updatedBy(): { userId: string } | null {
+        const sub = this.actorSub();
+        return sub ? { userId: sub } : null;
+    }
+
     /** [eslesme-fiyat WP2, Ek A P2-15] `mapping.*` denetim kaydı (best-effort; istek düşmez). Değer/metin içeriği yazılmaz, yalnız kimlikler. */
     private audit(event: string, meta: Record<string, string | number | boolean | undefined>): void {
         const clean = Object.fromEntries(Object.entries(meta).filter(([, v]) => v !== undefined)) as Record<string, string | number | boolean>;
@@ -130,9 +135,9 @@ export default class AttributeMappingService extends BaseApi implements IService
                 platformCategoryId: platformCatStr,
                 isCategoryMapping: true,
                 updatedAt: new Date(),
-                updatedBy: this.actorSub() ?? null,
+                updatedBy: this.updatedBy(),
                 source: 'manual',
-                stale: false
+                stale: null
             }
         };
 
@@ -213,9 +218,9 @@ export default class AttributeMappingService extends BaseApi implements IService
                 // [eslesme-fiyat WP2, Ek A (B)] allowCustom/isMultiple artık SAKLANIR (eskiden zod kabul edip servis atıyordu).
                 ...(typeof isAllowCustom === 'boolean' ? { allowCustom: isAllowCustom } : {}),
                 ...(typeof isMultiple === 'boolean' ? { isMultiple } : {}),
-                updatedBy: this.actorSub() ?? null,
+                updatedBy: this.updatedBy(),
                 source: 'manual',
-                stale: false
+                stale: null
             }
         };
 
@@ -298,9 +303,9 @@ export default class AttributeMappingService extends BaseApi implements IService
             if (typeof isRequired === 'boolean') meta.isRequired = lit(isRequired);
             if (typeof isAllowCustom === 'boolean') meta.allowCustom = lit(isAllowCustom);
             if (typeof isMultiple === 'boolean') meta.isMultiple = lit(isMultiple);
-            meta.updatedBy = lit(this.actorSub() ?? null);
+            meta.updatedBy = lit(this.updatedBy());
             meta.source = lit('manual');
-            meta.stale = lit(false);
+            meta.stale = lit(null);
 
             const sameLocalValue = { $eq: ['$$v.localValueId', lit(localValueOid)] };
             const dropCond = valueId === null ? sameLocalValue : { $or: [sameLocalValue, { $eq: ['$$v.platformValueId', lit(valueId)] }] };

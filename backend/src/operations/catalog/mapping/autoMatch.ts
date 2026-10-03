@@ -34,7 +34,7 @@ export interface AutoMatchDeps {
 export async function autoMatchAllCategories(deps: AutoMatchDeps): Promise<any> {
     const { platformCode, mappings, categories, choices, getIntegration } = deps
     const suggestOnly = deps.mode === 'suggest'
-    const stamp = { updatedBy: deps.actor || 'autoMatch', source: 'auto' }
+    const stamp = { updatedBy: { userId: deps.actor ?? null, name: 'autoMatch' }, source: 'auto', stale: null }
     const suggestions: { categories: any[]; attributes: any[] } = { categories: [], attributes: [] }
     // 1. Verileri toplu çek (tek seferde DB okuma)
     const [rawChoices, allLocalCategories] = await Promise.all([

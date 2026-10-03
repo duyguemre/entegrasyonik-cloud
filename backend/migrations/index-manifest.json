@@ -1770,6 +1770,20 @@
         "options": {}
       },
       {
+        "name": "integration_staleDetectedAt",
+        "fields": {
+          "integrationCode": 1,
+          "stale.detectedAt": 1
+        },
+        "options": {
+          "partialFilterExpression": {
+            "stale.detectedAt": {
+              "$exists": true
+            }
+          }
+        }
+      },
+      {
         "name": "localCategoryId_1",
         "fields": {
           "localCategoryId": 1

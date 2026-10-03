@@ -137,11 +137,11 @@ describe('AttributeMappingService.saveCategoryMapping / deleteFullMapping [WP11]
         expect(amModel.updateOne.mock.calls[0][1].$set.platformCategoryId).toBe('999');
         expect(amModel.deleteMany).toHaveBeenCalledWith({ localCategoryId: new ObjectId(local), integrationCode: 'trendyol', platformAttributeId: { $ne: null }, platformCategoryId: { $ne: '999' } });
     });
-    it('[eslesme-fiyat WP2] kayıt kişi/kaynak damgası (updatedBy, source=manual, stale=false) + mapping.category.save denetim kaydı (değer içeriği yok)', async () => {
+    it('[eslesme-fiyat WP2] kayıt kişi/kaynak damgası (updatedBy, source=manual, stale=null) + mapping.category.save denetim kaydı (değer içeriği yok)', async () => {
         const spy = jest.spyOn(AuditLogger, 'log').mockResolvedValue(undefined as any);
         const local = new ObjectId().toString();
         await svc({ localCategoryId: local, integrationCode: 'trendyol', platformCategoryId: 5 }).saveCategoryMapping();
-        expect(amModel.updateOne.mock.calls[0][1].$set).toMatchObject({ source: 'manual', stale: false, updatedBy: null });
+        expect(amModel.updateOne.mock.calls[0][1].$set).toMatchObject({ source: 'manual', stale: null, updatedBy: null });
         expect(spy).toHaveBeenCalledWith(expect.objectContaining({ event: 'mapping.category.save', result: 'ok', tid: 42, meta: expect.objectContaining({ integrationCode: 'trendyol', localCategoryId: local, platformCategoryId: '5' }) }));
         spy.mockRestore();
     });
@@ -281,10 +281,10 @@ describe('AttributeMappingService.autoMatchAllCategories [WP11]', () => {
         expect(r.suggestions.categories[0]).toMatchObject({ localCategoryId: String(localCat._id), platformCategoryId: '411', score: expect.any(Number) });
         expect(r.suggestions.attributes[0]).toMatchObject({ platformAttributeId: '338', localChoiceId: choiceId.toString(), values: [expect.objectContaining({ platformValueId: '1' })] });
     });
-    it('yazılan kayıtlar kaynak/kişi damgası taşır (updatedBy=autoMatch, source=auto)', async () => {
+    it('yazılan kayıtlar kaynak/kişi damgası taşır (updatedBy.name=autoMatch, source=auto)', async () => {
         await svc().autoMatchAllCategories();
-        expect(amModel.bulkWrite.mock.calls[0][0][0].updateOne.update.$setOnInsert).toMatchObject({ updatedBy: 'autoMatch', source: 'auto' });
-        expect(amModel.bulkWrite.mock.calls[1][0][0].updateOne.update.$setOnInsert).toMatchObject({ updatedBy: 'autoMatch', source: 'auto' });
+        expect(amModel.bulkWrite.mock.calls[0][0][0].updateOne.update.$setOnInsert).toMatchObject({ updatedBy: { userId: null, name: 'autoMatch' }, source: 'auto' });
+        expect(amModel.bulkWrite.mock.calls[1][0][0].updateOne.update.$setOnInsert).toMatchObject({ updatedBy: { name: 'autoMatch' }, source: 'auto' });
     });
 });
 

@@ -31,12 +31,12 @@ export const AttributeMappingSchema = new mongoose.Schema({
     // [eslesme-fiyat WP2, Ek A (B)/P2-15] Eskiden zod kabul edip servis atıyordu; artık saklanır. Göç gerekmez (eski kayıtta yok = varsayılan).
     allowCustom: { type: Boolean },
     isMultiple: { type: Boolean },
-    /** Son yazan kullanıcı (Users._id) ya da 'autoMatch'; eski kayıtlarda yok. */
-    updatedBy: { type: String, default: null },
+    /** Son yazan: `{ userId (Users._id) | null, name? ('autoMatch') }`; eski kayıtlarda yok. */
+    updatedBy: { type: Object, default: null },
     /** 'manual' (ekran) | 'auto' (autoMatch). */
     source: { type: String },
-    /** Platform kataloğu yenilemesinde eşlenen kategori/özellik/değer platformda bulunamadıysa true (catalog.mappingStaleness). */
-    stale: { type: Boolean, default: false }
+    /** Bayatlık (catalog.mappingStaleness): `{ reason: CATEGORY_GONE|ATTRIBUTE_GONE|VALUES_GONE, detectedAt, missingValueIds? }`; güncel = null. */
+    stale: { type: Object, default: null }
 }, {
     collection: 'AttributeMappings',
     strict: false
@@ -47,4 +47,6 @@ AttributeMappingSchema.index({ localCategoryId: 1, integrationCode: 1, platformA
 // [eslesme-fiyat WP2, Ek A P2-13] (entegrasyon, platform kategorisi) sorguları (resolveLocalCategoryId, Stager kategori haritası, bayatlık işi)
 // için; uygulama: migrations/0026-attribute-mappings-indexes-tenant.js (yalnız yazıldı, ÇALIŞTIRILMADI).
 AttributeMappingSchema.index({ integrationCode: 1, platformCategoryId: 1 }, { name: 'integration_platformCategory' });
+// Bayat eşleme listesi/bildirimi için kısmi indeks (yalnız stale kayıtlar).
+AttributeMappingSchema.index({ integrationCode: 1, 'stale.detectedAt': 1 }, { name: 'integration_staleDetectedAt', partialFilterExpression: { 'stale.detectedAt': { $exists: true } } });
 
