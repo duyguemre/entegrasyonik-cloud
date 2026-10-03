@@ -224,6 +224,15 @@ export class OrderConnector {
             .replace("<SELLERID>", sellerId)
             .replace("<PACKAGEID>", packageId);
 
+        // [eslesme-fiyat WP4, 02-ekler/trendyol C-11] `reasonId` SAYISAL olmalı; eskiden `Number('OUT_OF_STOCK')` = NaN sessizce
+        // gidiyordu. Sayı değilse ağa yazmadan VALIDATION (sebep kodu kataloğu resmî sayfadan doğrulanamadı).
+        const reasonId = Number(params.reasonId);
+        if (params.reasonId === undefined || params.reasonId === null || String(params.reasonId).trim() === '' || !Number.isInteger(reasonId)) {
+            throw new IntegrationError('VALIDATION', `Trendyol tedarik edememe: reasonId sayısal olmalı ('${String(params.reasonId ?? '').slice(0, 30)}').`, {
+                integrationCode, operation: 'rejectOrder', clientId: this.params.clientId,
+            });
+        }
+
         // 2. Payload (Body) Hazırlığı
         // Verdiğin örnek formata göre (lines dizisi ve reasonId)
         const payload = {
@@ -231,7 +240,7 @@ export class OrderConnector {
                 lineId: Number(line.externalLineId), // Örnekte 0 (number) bekliyor
                 quantity: line.quantity
             })) || [],
-            reasonId: Number(params.reasonId) // Örnekte 0 (number) bekliyor
+            reasonId // Örnekte 0 (number) bekliyor
         };
 
         // Trendyol dokümanına göre bu endpoint PUT çalışır
@@ -330,6 +339,22 @@ export class OrderConnector {
             shipmentPackageId,
         };
         if (payload.invoiceNumber) payloadBody.invoiceNumber = String(payload.invoiceNumber);
+        // [eslesme-fiyat WP4, 02-ekler/trendyol C-6 / D-TY-8] mikro ihracat / Cross-Border (micro, etgbNo) paketlerinde
+        // `invoiceNumber` (3 alfanümerik + 13 rakam) ve `invoiceDateTime` (epoch ms) ZORUNLU → eksikse ağa yazmadan VALIDATION.
+        const po = payload.meta?.platformOrder ?? payload.meta ?? {};
+        const invoiceTs = payload.invoiceDate !== undefined && payload.invoiceDate !== null && payload.invoiceDate !== '' ? new Date(payload.invoiceDate as any).getTime() : NaN;
+        if (po.micro === true || (po.etgbNo !== undefined && po.etgbNo !== null && String(po.etgbNo) !== '')) {
+            const errs: string[] = [];
+            if (!/^[A-Za-z0-9]{3}\d{13}$/.test(String(payload.invoiceNumber ?? ''))) errs.push('invoiceNumber (3 harf/rakam + 13 rakam)');
+            if (!Number.isFinite(invoiceTs)) errs.push('invoiceDateTime (fatura tarihi)');
+            if (errs.length) {
+                throw new IntegrationError('VALIDATION', `Trendyol mikro ihracat faturası: zorunlu alan eksik/geçersiz: ${errs.join(', ')}.`, {
+                    integrationCode, operation: 'sendOrderInvoice', clientId: this.params.clientId,
+                });
+            }
+            // Yalnız zorunlu olduğu pakette gönderilir (genel akışta tipi/birimi doğrulanmadı; [İKİNCİL] epoch ms).
+            payloadBody.invoiceDateTime = invoiceTs;
+        }
 
         try {
             const response = await this.service.post(baseUrl, payloadBody);
@@ -342,6 +367,12 @@ export class OrderConnector {
             };
 
         } catch (error: any) {
+            // [C-6] 409: link başka pakete atanmış ([İKİNCİL]) → anlamlı VALIDATION (sahte başarı yok).
+            if ((error?.response?.status ?? error?.status) === 409) {
+                throw new IntegrationError('VALIDATION', 'Trendyol fatura linki reddedildi (409): bu link/fatura başka bir pakete atanmış olabilir.', {
+                    integrationCode, operation: 'sendOrderInvoice', clientId: this.params.clientId, platformCode: 'INVOICE_LINK_CONFLICT',
+                });
+            }
             // [ADR-0006 adım 2]
             throw fromHttpError(error, {
                 integrationCode, operation: 'sendOrderInvoice', clientId: this.params.clientId, idempotent: false,

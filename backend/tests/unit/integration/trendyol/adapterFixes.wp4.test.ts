@@ -140,3 +140,32 @@ describe('Trendyol WP4 — kargo modeli (K-D)', () => {
     await expect(os.sendOrderShipping({ orderId: 'P1', trackingCode: '' } as any)).rejects.toMatchObject({ code: 'VALIDATION' });
   });
 });
+
+describe('Trendyol tedarik edememe reasonId + mikro ihracat faturası (WP4 C-11 / C-6)', () => {
+  const { OrderConnector } = require('@integration/modules/marketplace/trendyol/api/OrderConnector');
+  const make = (put: any = jest.fn(async () => ({})), post: any = jest.fn(async () => ({ data: {} }))) => {
+    const c = new OrderConnector({ put, post } as any, { clientId: 1, integrationSettings: { settings: { SELLERID: '9' }, urls: {} } });
+    return { c, put, post };
+  };
+
+  it('reasonId sayı değilse ağa yazmadan VALIDATION; sayıysa number olarak gider', async () => {
+    const { c, put } = make();
+    await expect(c.rejectOrder('P1', { reasonId: 'OUT_OF_STOCK', lineItems: [{ externalLineId: '5', quantity: 1 }] } as any)).rejects.toMatchObject({ code: 'VALIDATION' });
+    expect(put).not.toHaveBeenCalled();
+    await c.rejectOrder('P1', { reasonId: '500', lineItems: [{ externalLineId: '5', quantity: 1 }] } as any);
+    expect((put.mock.calls[0] as any[])[1]).toEqual({ lines: [{ lineId: 5, quantity: 1 }], reasonId: 500 });
+  });
+
+  it('mikro ihracat: invoiceNumber biçimi + invoiceDateTime zorunlu; normal pakette invoiceDateTime gönderilmez; 409 anlamlı hata', async () => {
+    const { c, post } = make();
+    const base = { orderId: '123', pdfUrl: 'https://f/x.pdf', invoiceDate: '2026-10-01T10:00:00Z', invoiceAmount: 1, documentType: 'E_ARSIV', currency: 'TRY' };
+    await expect(c.sendOrderInvoice({ ...base, invoiceNumber: 'X1', meta: { platformOrder: { micro: true } } } as any)).rejects.toMatchObject({ code: 'VALIDATION' });
+    expect(post).not.toHaveBeenCalled();
+    await c.sendOrderInvoice({ ...base, invoiceNumber: 'ABC2026000000001', meta: { platformOrder: { etgbNo: 'E1' } } } as any);
+    expect((post.mock.calls[0] as any[])[1]).toMatchObject({ shipmentPackageId: 123, invoiceNumber: 'ABC2026000000001', invoiceDateTime: Date.parse('2026-10-01T10:00:00Z') });
+    await c.sendOrderInvoice({ ...base, invoiceNumber: 'N1' } as any);
+    expect((post.mock.calls[1] as any[])[1].invoiceDateTime).toBeUndefined();
+    const conflict = make(undefined, jest.fn(async () => { const e: any = new Error('409'); e.response = { status: 409 }; throw e; }));
+    await expect(conflict.c.sendOrderInvoice({ ...base, invoiceNumber: 'N1' } as any)).rejects.toMatchObject({ code: 'VALIDATION', platformCode: 'INVOICE_LINK_CONFLICT' });
+  });
+});
