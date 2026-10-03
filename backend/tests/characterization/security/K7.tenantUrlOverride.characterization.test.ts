@@ -204,7 +204,7 @@ describe('K8 IntegrationService.get (member yanıtı)', () => {
 
 describe('[eslesme-fiyat WP3, K-16] Hepsiburada servis host\'ları + SIT (yalnız tenant HB_ENV=sit)', () => {
   beforeEach(() => { for (const k of MOCK_ENVS) delete process.env[k]; });
-  afterEach(() => jest.restoreAllMocks());
+  afterEach(() => { jest.restoreAllMocks(); });
 
   it('finans transactions → mpfinance-external, soru issues → api-asktoseller-merchant, lineitems → oms-external', async () => {
     const spy = jest.spyOn(axios, 'get').mockResolvedValue({ status: 200, data: {} } as any);
