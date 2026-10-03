@@ -157,6 +157,89 @@ export class ProductMapper {
         return { attributes, errors };
     }
 
+    /**
+     * [eslesme-fiyat WP4, D-N11-2 / C-3] `ms/product-query` `content[]` kaydı → Stager'a giden DÜZ ham kayıt (HB `toImportRecord` kalıbı).
+     * Alan adları resmî özetten (10493: stockCode, productMainId, salePrice, listPrice, productStatus, attributes{attributeId,
+     * attributeName, attributeValue}); tam şema canlıda doğrulanmadı → bilinen takma adlarla hoşgörülü okuma.
+     */
+    public toImportRecord(p: any): any {
+        const attrsRaw = Array.isArray(p?.attributes) ? p.attributes : (Array.isArray(p?.attributes?.attribute) ? p.attributes.attribute : []);
+        const attributes = attrsRaw.map((a: any) => ({
+            attributeId: String(a.attributeId ?? a.id ?? ''),
+            attributeName: a.attributeName ?? a.name,
+            attributeValue: a.attributeValue ?? a.value ?? a.customValue,
+            attributeValueId: a.attributeValueId ?? a.valueId ?? null,
+        })).filter((a: any) => a.attributeId !== '');
+        const brand = attributes.find((a: any) => a.attributeId === N11_BRAND_ATTRIBUTE_ID || String(a.attributeName || '').toLocaleLowerCase('tr') === 'marka');
+        const imgs = Array.isArray(p?.images) ? p.images : (Array.isArray(p?.imageUrls) ? p.imageUrls : []);
+        const stockCode = p?.stockCode ?? p?.sellerStockCode ?? p?.productSellerCode;
+        return {
+            id: p?.id ?? p?.n11ProductId ?? p?.productId ?? stockCode,
+            stockCode,
+            barcode: p?.barcode ?? p?.gtin,
+            title: p?.title ?? p?.productName ?? '',
+            description: p?.description ?? '',
+            categoryId: p?.categoryId ?? p?.category?.id,
+            productMainId: p?.productMainId ?? p?.groupId ?? stockCode,
+            salePrice: Number(p?.salePrice ?? p?.price ?? 0),
+            listPrice: Number(p?.listPrice ?? p?.salePrice ?? p?.price ?? 0),
+            quantity: Number(p?.quantity ?? p?.stock ?? 0),
+            vatRate: p?.vatRate !== undefined && p?.vatRate !== null ? Number(p.vatRate) : undefined,
+            productStatus: p?.productStatus ?? p?.status,
+            images: imgs.map((i: any) => (typeof i === 'string' ? i : i?.url)).filter(filled),
+            attributes,
+            brandName: brand?.attributeValue,
+        };
+    }
+
+    /** [D-N11-2] Düz ham kayıt → iç varyant (round-trip: Marka metni `mapping.brandName`, özellikler kimlik anahtarlı). */
+    public toInternalVariant(r: any): any {
+        const vat = Number.isFinite(r.vatRate) ? r.vatRate : 20;
+        const salePrice = Number(r.salePrice || 0);
+        const marketPrice = Number(r.listPrice || salePrice);
+        const attributes: Record<string, any> = {};
+        for (const a of r.attributes || []) {
+            if (String(a.attributeId) === N11_BRAND_ATTRIBUTE_ID) continue; // marka ayrı (yerel Brands)
+            attributes[String(a.attributeId)] = {
+                attributeName: a.attributeName,
+                attributeValue: a.attributeValue,
+                ...(a.attributeValueId !== null && a.attributeValueId !== undefined ? { attributeValueId: String(a.attributeValueId) } : {}),
+            };
+        }
+        return {
+            code: integrationCode,
+            maincode: r.productMainId || r.stockCode,
+            title: r.title,
+            description: r.description,
+            barcode: r.barcode,
+            stockcode: r.stockCode,
+            stock: Number(r.quantity || 0),
+            prices: { isPlatformBasedPrice: false, price: salePrice * (100 / (100 + vat)), salePrice, marketPrice },
+            images: r.images || [],
+            choices: [],
+            platforms: {
+                [integrationCode]: {
+                    prices: { salePrice, marketPrice },
+                    upload: { TRANSFER: { status: 'COMPLETED', messages: ['Ürün çekimi tamamlandı.'], updatedAt: new Date() } },
+                    attributes,
+                    mapping: { id: r.id, categoryId: r.categoryId, brandName: r.brandName, taxPercentage: vat },
+                },
+            },
+            taxPercentage: vat,
+            onSale: r.productStatus === undefined ? true : r.productStatus === 'Active',
+            uniqueId: String(r.id ?? r.stockCode ?? ''),
+            choiceId: '-', choiceValueId: '-', choiceValueTitle: '-',
+        };
+    }
+
+    /** [C-4] Resmî `productStatus` (10493) → yayın durumu. */
+    public mapProductStatus(status: unknown): 'COMPLETED' | 'WAITING' | 'FAILED' {
+        const s = String(status ?? '');
+        if (s === 'Active' || s === 'Approved') return 'COMPLETED';
+        if (s === 'CatalogRejected' || s === 'Prohibited' || s === 'Suspended') return 'FAILED';
+        return 'WAITING'; // InCatalogApproval, InApproval, Unlisted, bilinmeyen
+    }
+
     /** Eski gövde: yalnız `updateProduct` (product-update; resmî güncelleme alan listesi görülemedi, C-13) için korunur. */
     public mapToRestBulkCreate(stagedProducts: any[], integrator: string) {
         return {

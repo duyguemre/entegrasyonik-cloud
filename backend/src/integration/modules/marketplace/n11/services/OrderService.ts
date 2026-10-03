@@ -43,7 +43,8 @@ export class OrderService {
         }
         let shapeMissing = false;
         const raw = await paginatePage(async (page, limit) => {
-            const response = await this.connector.fetchOrdersRest({ pageSize: limit, currentPage: page, ...window });
+            // [eslesme-fiyat WP4, C-5] resmî `page`/`size` (max 100; 10413) — eskiden `currentPage`/`pageSize`.
+            const response = await this.connector.fetchOrdersRest({ page, size: limit, ...window });
             if (!Array.isArray(response?.content)) {
                 if (page === 0) {
                     log.warn('N11_REST_UNEXPECTED_SHAPE', `REST yanıtı beklenen şekilde değil (content[] yok), SOAP'a düşülüyor. Yanıt anahtarları: ${Object.keys(response ?? {}).join(',') || '(boş)'}`);

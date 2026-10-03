@@ -22,7 +22,7 @@ const N11Descriptor: IntegrationDescriptor = {
         products: {
             level: 'supported',
             methods: ['streamProducts', 'transferProducts', 'updateProduct', 'updateProductVariant', 'updateProductDelivery', 'updateProductStatuses', 'checkBatchProduct'],
-            note: 'Ürün aktarımı ve güncelleme toplu görev akışıyla (ms/product/tasks) yapılır. Ürün listesi tüm sayfalar dolaşılarak akıtılır (sayfa başına 100; tavan 1000 sayfa / 100.000 kayıt, aşılırsa ya da sayfa tekrar ederse akış FAILED olur, sessiz kesilmez); sayfa parametre adları canlı API ile doğrulanmadı.',
+            note: 'Ürün aktarımı ve güncelleme toplu görev akışıyla (ms/product/tasks) yapılır. Oluşturma gövdesi özellikleri (Marka = özellik 1), kargo şablonu, KDV (0/1/10/20), ana ürün kodu ve hazırlık süresini taşır; eksik alanlı ürün gönderilmez (alan bazlı mesaj). Ürün listesi resmî page/size ve content[] ile tüm sayfalar dolaşılarak akıtılır (sayfa başına 100; tavan 1000 sayfa / 100.000 kayıt, aşılırsa ya da sayfa tekrar ederse akış FAILED olur, sessiz kesilmez); içe aktarılan ürün iç modele dönüştürülür. Ürün sorgusu alan adları canlı API ile doğrulanmadı.',
             evidence: ['marketplace/n11/index.ts transferProducts'],
         },
         stockPrice: {
@@ -86,7 +86,7 @@ const N11Descriptor: IntegrationDescriptor = {
         'Sipariş onaylama ve reddetme bu sürümde desteklenmez; işlem NOT_SUPPORTED hatası olarak bildirilir.',
         'Soru ve hakediş listeleri ilk sayfa ile sınırlıdır.',
         'Marka bilgisi ve ödeme emri sorgusu sağlanmıyor.',
-        'Sipariş sayfalaması (currentPage/pageSize/totalElements) ve ürün sorgusu sayfa alanları canlı API ile doğrulanmadı; SOAP yedek yolu sayfalanmaz.',
+        'Sipariş ve ürün sorgusu sayfalaması resmî page/size adlarıyla yapılır ancak canlı API ile doğrulanmadı; SOAP yedek yolu sayfalanmaz.',
         'SOAP servislerinin (ProductSellingService/ProductStockService dahil) gelecekteki kapanış takvimi doğrulanamadı (BACKLOG P2).',
     ],
     rateLimits: {

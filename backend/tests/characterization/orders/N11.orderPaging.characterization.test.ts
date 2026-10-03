@@ -25,12 +25,12 @@ beforeEach(() => { cap = captureLogs(); });
 afterEach(() => { cap.restore(); });
 
 describe('(A) karakterizasyon — mevcut davranış korunur', () => {
-    it('tek sayfa (<100) -> tek REST isteği, pageSize:100 currentPage:0, SOAP çağrılmaz', async () => {
+    it('tek sayfa (<100) -> tek REST isteği, size:100 page:0 (WP4 C-5), SOAP çağrılmaz', async () => {
         const { svc, rest, soap } = build([mkPage(3)]);
         const r = await svc.fetchOrders();
         expect(r).toHaveLength(3);
         expect(rest).toHaveBeenCalledTimes(1);
-        expect(rest.mock.calls[0][0]).toMatchObject({ pageSize: 100, currentPage: 0 });
+        expect(rest.mock.calls[0][0]).toMatchObject({ size: 100, page: 0 });
         expect(soap).not.toHaveBeenCalled();
     });
     it('content[] yoksa SOAP yedeğine düşülür', async () => {
@@ -47,10 +47,10 @@ describe('(A) karakterizasyon — mevcut davranış korunur', () => {
 });
 
 describe('(B) sayfalama + zaman penceresi (F-02)', () => {
-    it('100+100+20 -> 3 istek, currentPage 0/1/2, 220 paket', async () => {
+    it('100+100+20 -> 3 istek, page 0/1/2, 220 paket', async () => {
         const { svc, rest } = build([mkPage(100), mkPage(100, 100), mkPage(20, 200)]);
         expect(await svc.fetchOrders()).toHaveLength(220);
-        expect(rest.mock.calls.map(c => c[0].currentPage)).toEqual([0, 1, 2]);
+        expect(rest.mock.calls.map(c => c[0].page)).toEqual([0, 1, 2]);
     });
     it('totalElements varsa ona göre durur (fazladan istek yok)', async () => {
         const { svc, rest } = build([mkPage(100, 0, 200), mkPage(100, 100, 200)]);

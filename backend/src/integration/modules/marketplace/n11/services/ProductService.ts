@@ -31,9 +31,13 @@ export class ProductService {
         let platformTotal: number | undefined;
         try {
             const collected = await paginatePage(async (page, limit) => {
-                const response = await this.connector.fetchProductListRest({ pageSize: limit, currentPage: page });
-                platformTotal = readTotal(response.pagingData?.totalCount) ?? platformTotal;
-                return { items: response.products || [], total: readTotal(response.pagingData?.totalCount) };
+                // [eslesme-fiyat WP4, C-3 / D-N11-2] resmî parametreler `page`/`size` (≤250) ve yanıt `content[]`/`totalElements`
+                // (10493); eskiden `currentPage`/`pageSize` + `products[]` → sunucu yok sayınca aynı sayfa döner, akış FAILED olurdu.
+                const response = await this.connector.fetchProductListRest({ page, size: limit });
+                const total = readTotal(response?.totalElements) ?? readTotal(response?.pagingData?.totalCount);
+                platformTotal = total ?? platformTotal;
+                const raw = Array.isArray(response?.content) ? response.content : (response?.products || []);
+                return { items: raw.map((p: any) => this.mapper.toImportRecord(p)), total };
             }, {
                 operation: 'streamProducts', clientId: this.clientId,
                 maxPages: N11_STREAM_MAX_PAGES, maxRecords: N11_STREAM_MAX_RECORDS,
@@ -262,22 +266,23 @@ export class ProductService {
             if (identifiers.length === 0) return [];
 
             const response = await this.connector.fetchProductListRest({ page: 0, size: 250 });
-            const products = response.products || [];
+            // [eslesme-fiyat WP4, C-4] resmî yanıt `content[]` + `productStatus` + `stockCode` (10493); eski alanlar yedek okuma.
+            const products = (Array.isArray(response?.content) ? response.content : (response?.products || [])).map((p: any) => ({ raw: p, rec: this.mapper.toImportRecord(p) }));
 
             return identifiers.map(id => {
-                const product = products.find((p: any) => 
-                    p.productSellerCode === id || p.barcode === id || p.sellerStockCode === id
-                );
+                const found = products.find(({ rec }: any) => rec.stockCode === id || rec.barcode === id);
 
-                if (!product) return { matchValue: id, status: 'WAITING', messages: ['Ürün N11 listesinde henüz bulunamadı.'] } as IInternalResult;
+                if (!found) return { matchValue: id, status: 'WAITING', messages: ['Ürün N11 listesinde henüz bulunamadı.'] } as IInternalResult;
 
-                const isApproved = product.approvalStatus === 'Approved';
+                const { raw, rec } = found;
+                const status = this.mapper.mapProductStatus(raw.productStatus ?? raw.approvalStatus);
+                const msg = status === 'COMPLETED' ? 'Ürün yayında.' : status === 'FAILED' ? `Ürün N11'de yayında değil (${raw.productStatus}).` : 'Ürün onay bekliyor.';
                 return {
                     matchValue: id,
-                    barcode: product.barcode,
-                    status: isApproved ? 'COMPLETED' : 'WAITING',
-                    messages: [isApproved ? 'Ürün yayında.' : 'Ürün onay bekliyor.'],
-                    mapping: { id: product.productSellerCode, stockcode: product.productSellerCode }
+                    barcode: rec.barcode,
+                    status,
+                    messages: [msg],
+                    mapping: { id: rec.id, stockcode: rec.stockCode }
                 } as IInternalResult;
             });
         } catch (error: any) {
@@ -287,12 +292,39 @@ export class ProductService {
         }
     }
 
+    /**
+     * [eslesme-fiyat WP4, D-N11-2] Stager'ın düz ham kaydı (`toImportRecord`) → iç model. ÖNCEKİ DAVRANIŞ boş iskelet dönüyordu (içe
+     * aktarım round-trip yoktu). Yerel kategori Stager'ın `localCategoryId`'si, yoksa AttributeMappings (platform → yerel). Marka N11'de
+     * özellik metni → yerel marka kimliği çözülmez (null; marka adı `mapping.brandName`'de, gönderimde yedek olarak kullanılır).
+     */
     public async convertToInternalModel(stagedProduct: any): Promise<IInternalConversionResult> {
-        return { product: { title: '', brand: null, category: null, maincode: '', hasVariant: false }, variant: {} as any };
+        const r = stagedProduct?.rawData ?? stagedProduct ?? {};
+        if (r.categoryId === undefined || r.categoryId === null || r.categoryId === '') {
+            throw new Error(`N11 kategori kimliği eksik. Ürün: ${r.barcode || r.stockCode || r.title}`);
+        }
+        const mp = this.params.mappingProvider;
+        let category: string | null = stagedProduct?.localCategoryId ? String(stagedProduct.localCategoryId) : null;
+        if (!category && mp) category = (await mp.getLocalCategoryId(r.categoryId)) ?? null;
+        const variant = this.mapper.toInternalVariant(r) as IVariant;
+        const maincode = r.productMainId || r.stockCode;
+        return { product: { title: r.title, brand: null, category, maincode, hasVariant: !!r.productMainId && r.productMainId !== r.stockCode }, variant };
     }
 
     public async getSummaryFromRaw(rawData: any): Promise<IPlatformProductSummary> {
-        return { category: '', salePrice: 0, marketPrice: 0, quantity: 0, images: [], barcode: '', stockcode: '', maincode: '', productId: '', platformCategoryId: '', requiredAttributes: [] };
+        const r = rawData ?? {};
+        return {
+            category: r.categoryId ?? '',
+            salePrice: Number(r.salePrice || 0),
+            marketPrice: Number(r.listPrice || r.salePrice || 0),
+            quantity: Number(r.quantity || 0),
+            images: Array.isArray(r.images) ? r.images : [],
+            barcode: r.barcode || '',
+            stockcode: r.stockCode || '',
+            maincode: r.productMainId || r.stockCode || '',
+            productId: r.id ?? '',
+            platformCategoryId: r.categoryId ?? '',
+            requiredAttributes: []
+        };
     }
 
     public async validate(variant: IVariant): Promise<IValidationResult> {

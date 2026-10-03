@@ -1,5 +1,5 @@
 // INT-05: N11 conformance bağlantısı (pazaryeri; AdapterHttpService tabanında, REST + SOAP karışık). Gerçek ağ YOK (yerel sunucu).
-// Okuma yolu REST `rest/delivery/v1/shipmentPackages` (sayfa 0 tabanlı `currentPage`, sayfa boyutu 100: `dönen < 100` = son sayfa); hata durumunda
+// Okuma yolu REST `rest/delivery/v1/shipmentPackages` (sayfa 0 tabanlı `page`/`size` — WP4 C-5, sayfa boyutu 100: `dönen < 100` = son sayfa); hata durumunda
 // REST->SOAP yedeği (UNAVAILABLE/NOT_SUPPORTED) kitin tüm senaryolarında ayrıca sınanır (yerel sunucu her yola aynı yanıtı verir).
 import N11 from '@integration/modules/marketplace/n11';
 import Service from '@integration/modules/marketplace/n11/services/Service';
@@ -42,7 +42,7 @@ const spec: ConformanceSpec = {
         page: (i, count, per) => pageBody(i, count, per),
         pageSize: PAGE_SIZE,
         c6aTotal: PAGE_SIZE * 2 + 2,
-        pageIndexOf: (url) => Number(new URL(url, 'http://x').searchParams.get('currentPage') ?? 0),
+        pageIndexOf: (url) => Number(new URL(url, 'http://x').searchParams.get('page') ?? 0),
         ids: (r) => ({
             orders: r.map((p: any) => String(p.order.externalOrderId)),
             lines: r.flatMap((p: any) => p.order.items.map((l: any) => String(l.externalLineItemId))),

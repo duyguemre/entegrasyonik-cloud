@@ -214,7 +214,7 @@ describe('N11 OrderService - kimliksiz (orderNumber yok) REST kaydı', () => {
 
 describe('N11 ProductService.streamProducts - tüm sayfalar (F-02)', () => {
     const serve = (perPage: (cur: number) => number) => serveWith((req, res) => {
-        const cur = Number(new URL(req.url ?? '/', 'http://x').searchParams.get('currentPage') ?? 0);
+        const cur = Number(new URL(req.url ?? '/', 'http://x').searchParams.get('page') ?? 0);
         json(200, { products: Array.from({ length: perPage(cur) }, (_, i) => ({ productSellerCode: `S-${cur}-${i}` })), pagingData: { totalCount: 250 } })(req, res);
     });
 
