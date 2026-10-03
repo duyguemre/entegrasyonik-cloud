@@ -55,8 +55,10 @@ export const N11_BATCH_STATUS: ResponseContract = {
             stockCode: z.string().optional(),
             barcode: z.string().optional(),
             productSellerCode: z.string().optional(),
+            itemCode: z.string().optional(), // [D-N11-3] resmî kalem anahtarı
             reasons: z.array(z.any()).optional(),
         }).passthrough()).optional(),
+        content: z.array(z.any()).optional(), // [D-N11-3] sarmalayıcı doğrulanmadı (items[] | content[])
     }).passthrough(),
 };
 

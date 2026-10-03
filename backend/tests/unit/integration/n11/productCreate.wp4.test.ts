@@ -109,3 +109,29 @@ describe('N11 ürün oluşturma gövdesi (WP4 C-1)', () => {
     expect(res.failedVariants[0].reason).toMatch(/kategori eşlemesi/);
   });
 });
+
+describe('N11 görev sonucu (WP4 D-N11-3)', () => {
+  it('POST gövdesi + itemCode + REJECT → FAILED, IN_QUEUE → bekle', async () => {
+    const { PLATFORM_PROCESS } = require('@interfaces/index');
+    const { ProductConnector } = require('@integration/modules/marketplace/n11/api/ProductConnector');
+    const post = jest.fn(async (..._a: any[]) => ({ content: [{ id: 1, itemCode: 'SKU1', status: 'SUCCESS' }, { id: 2, itemCode: 'SKU2', status: 'REJECT', reasons: ['shipmentTemplate alanı geçersizdir'] }] }));
+    const conn = new ProductConnector({ rest: { post } } as any, { integrationSettings: { urls: {} } });
+    const svc = new ProductService({ clientId: 1, integrationSettings: { settings: {} } }, {} as any);
+    (svc as any).connector = conn;
+    const r: any = await svc.checkBatchProduct({ trackingId: '77', mode: PLATFORM_PROCESS.UPDATE_PRICE } as any);
+    expect(post.mock.calls[0][0]).toBe('ms/product/task-details/page-query');
+    expect(post.mock.calls[0][1]).toEqual({ taskId: 77, page: 0, size: 1000 });
+    expect(post.mock.calls[0][2]).toMatchObject({ idempotent: true });
+    expect(r.map((x: any) => [x.matchValue, x.status])).toEqual([['SKU1', 'COMPLETED'], ['SKU2', 'FAILED']]);
+    expect(r[1].messages).toEqual(['shipmentTemplate alanı geçersizdir']);
+    post.mockResolvedValueOnce({ content: [{ itemCode: 'S', status: 'IN_QUEUE' }] } as any);
+    await expect(svc.checkBatchProduct({ trackingId: '77', mode: PLATFORM_PROCESS.UPDATE_PRICE } as any)).resolves.toBeUndefined();
+  });
+
+  it('salt-okuma politikası task-details POST\'una izin verir, ürün yazma POST\'unu bloklar', () => {
+    const { evaluateLiveRequest } = require('@integration/modules/common/security/liveReadonlyPolicy');
+    const req = (path: string) => ({ method: 'POST', protocol: 'https:', host: 'api.n11.com', port: '', path });
+    expect(evaluateLiveRequest(req('/ms/product/task-details/page-query'))).toMatchObject({ action: 'allow', reason: 'read-post' });
+    expect(evaluateLiveRequest(req('/ms/product/tasks/product-create'))).toMatchObject({ action: 'block' });
+  });
+});

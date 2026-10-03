@@ -223,30 +223,34 @@ export class ProductService {
             if (payload.trackingId) {
                 const response = await this.connector.checkBatchProductRest(payload.trackingId);
                 
-                const items = response.items || [];
+                // [eslesme-fiyat WP4, D-N11-3] sarmalayıcı `items[]` ya da `content[]`; kalem anahtarı resmî `itemCode`. Statüler:
+                // IN_QUEUE/PROCESSING → bekle; SUCCESS/COMPLETED → tamam; REJECT/FAIL(ED)/ERROR → ret (resmî 10173 + eski kodlar).
+                const items: any[] = Array.isArray(response?.items) ? response.items : (Array.isArray(response?.content) ? response.content : []);
                 if (items.length === 0) return undefined;
 
-                const terminalStatuses = ['COMPLETED', 'FAILED', 'REJECTED', '0', '2', 'SUCCESS', 'SUCCESSFUL', 'FAILURE', 'ERROR'];
-                const isTerminal = items.every((item: any) => terminalStatuses.includes(String(item.status).toUpperCase()));
+                const done = ['COMPLETED', '0', 'SUCCESS', 'SUCCESSFUL'];
+                const failed = ['FAILED', 'FAIL', 'REJECTED', 'REJECT', 'FAILURE', 'ERROR', '2'];
+                const isTerminal = items.every((item: any) => { const st = String(item.status).toUpperCase(); return done.includes(st) || failed.includes(st); });
 
                 if (!isTerminal) return undefined;
 
                 return items.map((item: any) => {
                     const status = String(item.status).toUpperCase();
                     let internalStatus: 'COMPLETED' | 'FAILED' | 'WAITING' = 'WAITING';
-                    if (['COMPLETED', '0', 'SUCCESS', 'SUCCESSFUL'].includes(status)) {
+                    if (done.includes(status)) {
                         internalStatus = (payload.mode === PLATFORM_PROCESS.TRANSFER) ? 'WAITING' : 'COMPLETED';
-                    } else if (['FAILED', 'REJECTED', 'FAILURE', 'ERROR', '2'].includes(status)) {
+                    } else if (failed.includes(status)) {
                         internalStatus = 'FAILED';
                     }
-                    
-                    const matchIdentifier = item.stockCode || item.barcode || item.productSellerCode;
+
+                    const matchIdentifier = item.itemCode || item.stockCode || item.barcode || item.productSellerCode;
+                    const reasons = Array.isArray(item.reasons) ? item.reasons.map((r: any) => (typeof r === 'string' ? r : r?.message ?? JSON.stringify(r))) : [];
                     return {
                         matchValue: matchIdentifier,
                         barcode: item.barcode,
                         status: internalStatus,
-                        messages: item.reasons || [(internalStatus === 'FAILED' ? 'İşlem başarısız' : 'İşlem tamamlandı')],
-                        mapping: { taskId: item.id, stockCode: item.stockCode, barcode: item.barcode }
+                        messages: reasons.length ? reasons : [(internalStatus === 'FAILED' ? 'İşlem başarısız' : 'İşlem tamamlandı')],
+                        mapping: { taskId: item.id, stockCode: item.itemCode || item.stockCode, barcode: item.barcode }
                     };
                 });
             }

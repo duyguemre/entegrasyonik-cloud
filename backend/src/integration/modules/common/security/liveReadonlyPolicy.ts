@@ -21,6 +21,9 @@ export const N11_READ_OPERATIONS: readonly string[] = [
     'GetSettlementListRequest', 'GetShipmentCompaniesRequest',
 ];
 
+/** [eslesme-fiyat WP4, D-N11-3] N11 REST: okuma amaçlı POST (görev sonucu sorgusu). Yazma uçları (ms/product/tasks/*, rest/order/*) YOK. */
+export const N11_READ_POST_PATHS: readonly RegExp[] = [/\/ms\/product\/task-details\/page-query$/i];
+
 /** Pazarama: filtreli okuma için POST kullanan uçlar (yol SONU, büyük/küçük harf duyarsız). Yazma uçları (updateOrderStatus, sellerAnswer, updateRefund, invoice-link, product create/price/stock) YOK. */
 export const PAZARAMA_READ_POST_PATHS: readonly RegExp[] = [
     /\/order\/getOrdersForApi$/i, /\/order\/getRefund$/i, /\/order\/paymentAgreement$/i,
@@ -141,6 +144,7 @@ export function evaluateLiveRequest(req: LiveRequest, opts: LivePolicyOptions = 
                 ? { action: 'allow', reason: 'oauth-token', operation: 'token' }
                 : { action: 'block', reason: 'token-refresh-disabled', operation: 'token' };
         }
+        if (adapter === 'n11' && N11_READ_POST_PATHS.some(r => r.test(path))) return { action: 'allow', reason: 'read-post', operation: 'task-details' };
         if (adapter === 'n11' && /^\/ws\//i.test(path)) {
             if (req.body === undefined) return { action: 'inspect-body', reason: 'n11-soap' };
             const ops = soapOperationsOf(req.body);

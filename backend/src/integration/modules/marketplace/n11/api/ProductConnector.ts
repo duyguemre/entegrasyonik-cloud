@@ -37,7 +37,10 @@ export class ProductConnector {
 
     public async checkBatchProductRest(taskId: string): Promise<any> {
         const url = this.getUrl('checkTransferUrl');
-        const data = await this.service.rest.get(url, { taskId });
+        // [eslesme-fiyat WP4, 02-ekler/n11 C-2 / D-N11-3] resmî: POST + JSON gövde (eskiden GET + query). Okuma → idempotent;
+        // canlı salt-okuma politikası bu yolu `N11_READ_POST_PATHS` ile izinli sayar.
+        const numeric = Number(taskId);
+        const data = await this.service.rest.post(url, { taskId: Number.isFinite(numeric) ? numeric : taskId, page: 0, size: 1000 }, { idempotent: true, operation: 'checkBatchProductRest' });
         observeResponseSchema(N11_BATCH_STATUS, data, { clientId: this.params.clientId });
         return data;
     }
