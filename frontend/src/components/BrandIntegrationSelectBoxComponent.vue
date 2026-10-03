@@ -65,7 +65,7 @@ const props = defineProps<{
 }>()
 
 const formRules: any = useFormRules()
-const searchText = ref<string | null>('')
+const searchText = ref<string | undefined>('')
 const results = ref<any[]>([])
 const searching = ref(false)
 const failed = ref(false)

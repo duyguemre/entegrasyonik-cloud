@@ -10,6 +10,9 @@ export const useAttributeMappingStore = defineStore('attributeMappingStore', () 
   const mappings = ref<any[]>([])
   /** Son `retrieveAttributeMappings` başarısızsa neden (yoksa undefined). Boş liste hata DEĞİLDİR. */
   const loadError = ref<IntegrationErrorInfo | undefined>(undefined)
+  /** İlk başarılı yükleme yapıldı mı (ürün formu gibi tüketiciler `ensureLoaded` ile tembel yükler). */
+  const loaded = ref(false)
+  let inflight: Promise<void> | null = null
 
   // --- GETTERS & HELPERS ---
 
@@ -21,6 +24,7 @@ export const useAttributeMappingStore = defineStore('attributeMappingStore', () 
       if (Array.isArray(response)) {
         mappings.value = response
         loadError.value = undefined
+        loaded.value = true
       } else {
         const info = classifyIntegrationError(response, { service: 'AttributeMappingService', subject: 'generic' }, { expectArray: true })
         loadError.value = info && !info.empty ? info : undefined
@@ -86,6 +90,34 @@ export const useAttributeMappingStore = defineStore('attributeMappingStore', () 
     })
   }
 
+  /** Henüz yüklenmediyse bir kez yükler (eşzamanlı çağrılar aynı isteği bekler). */
+  const ensureLoaded = async () => {
+    if (loaded.value) return
+    inflight ??= retrieveAttributeMappings().finally(() => { inflight = null })
+    await inflight
+  }
+
+  /**
+   * [eslesme-fiyat WP2, Ek C P0-1] Yerel kategorinin bu kanaldaki platform kategori kimliği — TEK KAYNAK `AttributeMappings`
+   * (`isCategoryMapping: true`). Eski `Categories.platforms` alanının yazıcısı yok (ADR-0032 Karar 3).
+   */
+  const platformCategoryIdFor = (integrationCode: string, localCategoryId: unknown): string | undefined => {
+    if (!integrationCode || localCategoryId === undefined || localCategoryId === null || localCategoryId === '') return undefined
+    const row = mappings.value.find((m: any) => m.integrationCode === integrationCode && m.isCategoryMapping === true && String(m.localCategoryId) === String(localCategoryId))
+    return row?.platformCategoryId === undefined || row?.platformCategoryId === null ? undefined : String(row.platformCategoryId)
+  }
+
+  /** Yerel kategorinin bu kanaldaki ÖZELLİK eşlemeleri (kategori kaydı hariç). */
+  const attributeMappingsFor = (integrationCode: string, localCategoryId: unknown): any[] =>
+    mappings.value.filter((m: any) => m.integrationCode === integrationCode && m.isCategoryMapping !== true && String(m.localCategoryId) === String(localCategoryId))
+
+  /** [eslesme-fiyat WP2] Üst (ya da başka) kategoriden kopyala; başarıda liste tazelenir. Yanıt `{result,total,copied,skipped}` ya da hata nesnesi. */
+  const copyMappingsFromCategory = async (payload: { sourceLocalCategoryId: string; targetLocalCategoryId: string; integrationCode: string; overwrite?: boolean }) => {
+    const res: any = await restApi.post('AttributeMappingService/copyMappingsFromCategory', payload)
+    if (res?.result === true) await retrieveAttributeMappings()
+    return res
+  }
+
   // --- ACTION METHODS (Taşınan Metodlar) ---
 
   /**
@@ -136,12 +168,17 @@ export const useAttributeMappingStore = defineStore('attributeMappingStore', () 
   }
 
   // R9b: çıkış sonrası önceki kiracının özellik eşlemeleri kalmasın.
-  registerStoreReset('attributeMappingStore', () => { mappings.value = []; loadError.value = undefined })
+  registerStoreReset('attributeMappingStore', () => { mappings.value = []; loadError.value = undefined; loaded.value = false })
 
   return {
     mappings,
     loadError,
+    loaded,
     retrieveAttributeMappings,
+    ensureLoaded,
+    platformCategoryIdFor,
+    attributeMappingsFor,
+    copyMappingsFromCategory,
     getMappingDefinition,
     isIntegrationAttributeValueMapped,
     isIntegrationAttributeMapped,

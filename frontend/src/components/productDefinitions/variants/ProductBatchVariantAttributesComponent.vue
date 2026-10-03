@@ -32,7 +32,11 @@
       </div>
 
       <EkAlert v-if="mappingState.code === 'PLATFORM'" tone="warning" dense :title="`${activeTitle} kategori eşleştirmesi eksik`"
-        :text="`Kategoriler ekranında “${categoryTitle}” kategorisini ${activeTitle} kategorisiyle eşleştirin; özellik listesi eşleştirmeden sonra gelir.`" />
+        :text="`Kategoriler ekranında “${categoryTitle}” kategorisini ${activeTitle} kategorisiyle eşleştirin; özellik listesi eşleştirmeden sonra gelir.`">
+        <template v-if="canOpenScreen(CATEGORY_SCREEN)" #actions>
+          <EkButton tone="secondary" size="sm" @click="openScreen(CATEGORY_SCREEN)">{{ t('channelAttributes.goCategoryMapping') }}</EkButton>
+        </template>
+      </EkAlert>
       <EkAlert v-else-if="mappingState.code === 'CHOICE'" tone="warning" dense :title="`${activeTitle} seçenek eşleştirmesi eksik`"
         :text="`“${categoryTitle}” kategorisinin ${activeTitle} ayarlarında şu seçenekleri eşleştirin: ${mappingState.choices.map((c: string) => choicesStore.getChoiceTitle(c as any)).join(', ')}.`" />
 
@@ -93,7 +97,9 @@
                   <td class="bva-valuecell">
                     <AttrValueField :attribute="a" :model-value="draft[active]?.attributes[a._id]" :loading="lazyLoading.has(a._id)"
                       :placeholder="a.allowCustom ? 'Değişiklik yok · yazın ya da seçin' : 'Değişiklik yok'"
-                      @open="loadLazyValues(active, a)" @update:model-value="(v) => setValue(a, v)" />
+                      :error="valueErrors.get(a._id)" :mapped="isAttributeMapped(active, a)" :channel-title="activeTitle"
+                      @open="loadLazyValues(active, a)" @retry="retryValues(active, a)" @go-mapping="openScreen(CATEGORY_SCREEN)"
+                      @update:model-value="(v) => setValue(a, v)" />
                   </td>
                   <td class="bva-now"><span class="bva-now__txt" :class="{ 'is-empty': nowOf(a).empty }" :title="nowOf(a).title">{{ nowOf(a).text }}</span></td>
                 </tr>
@@ -184,6 +190,8 @@ import IntegrationErrorPanel from '@/components/integrations/IntegrationErrorPan
 import AttrTableSkeleton from './AttrTableSkeleton.vue'
 import VariantInfoComponent from './platformInfos/VariantInfoComponent.vue'
 import AttrValueField from './AttrValueField.vue'
+import { useI18n } from 'vue-i18n'
+import { useHelpNavigation } from '@/help/useHelpNavigation'
 import {
   INFO_LABELS, attrValueText, infoDisplay, isFilled, platformInfoComponents, useChannelAttributes, type StoredAttr,
 } from './channelAttributes'
@@ -197,7 +205,12 @@ const choicesStore = useChoicesStore()
 // Varyant ekseni (varianter) ve zorunlu ayırıcı (slicer) seçeneklerden gelir; toplu düzenlenmez.
 const {
   channels, channelTitle, categoryTitle, mappingState: mappingOf, attrs, attrErrors, retrying, loadAttrs, retry, loadLazyValues, lazyLoading,
+  retryValues, valueErrors, isAttributeMapped,
 } = useChannelAttributes({ category: () => props.productInfoForm.category, keep: (a) => !a.varianter && !(a.required && a.slicer) })
+/** [eslesme-fiyat WP2, Ek C P1-3] Eşleme uyarıları/değer alanı ilgili ekrana götürür (Kategoriler: kanal eşleme satırı orada). */
+const CATEGORY_SCREEN = 'productDefinitions/CategoryListView'
+const { openScreen, canOpenScreen } = useHelpNavigation()
+const { t } = useI18n()
 
 // ── kanal + taslak ──
 const active = ref<string>(channels.value[0]?.code || '')

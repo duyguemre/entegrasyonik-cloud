@@ -214,7 +214,7 @@ export const useIntegrationStore = defineStore('integrationStore', () => {
     return { ok: true, data: processed }
   }
 
-  const loadIntegrationCategoryChoices = async (integrationCode: string, integrationCategoryId: number): Promise<IntegrationFetchResult<any[]>> => {
+  const loadIntegrationCategoryChoices = async (integrationCode: string, integrationCategoryId: number | string): Promise<IntegrationFetchResult<any[]>> => {
     const key = integrationCode + '_' + integrationCategoryId
     const cached = integrationCategoryAttributes.value.get(key)
     if (cached) return { ok: true, data: cached }
@@ -224,7 +224,7 @@ export const useIntegrationStore = defineStore('integrationStore', () => {
     return result
   }
 
-  const loadIntegrationCategoryAttributeValues = async (integrationCode: string, integrationCategoryId: number, integrationCategoryAttributeId: string): Promise<IntegrationFetchResult<any[]>> => {
+  const loadIntegrationCategoryAttributeValues = async (integrationCode: string, integrationCategoryId: number | string, integrationCategoryAttributeId: string): Promise<IntegrationFetchResult<any[]>> => {
     const resp = await restApi.post("IntegrationService/retrieveCategoryAttributeValuesFromIntegration", { integrationCode, integrationCategoryId, integrationCategoryAttributeId })
     return toFetchResult<any[]>(resp, errorContext(integrationCode, 'retrieveCategoryAttributeValuesFromIntegration', 'attributeValues'))
   }

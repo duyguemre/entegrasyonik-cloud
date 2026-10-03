@@ -1126,5 +1126,20 @@
     },
     "legalNote": "This tool is not legal advice. Consult your adviser on pricing regulations.",
     "adminOnly": "Rule and approval actions are for admins; you can view suggestions."
+  },
+  "channelAttributes": {
+    "loading": "Loading values…",
+    "noMatch": "No value matches your search (values containing the text are shown).",
+    "channelEmpty": "{channel} returned no value list for this attribute.",
+    "channelError": "Could not load {channel} values: {cause}",
+    "customEmpty": "No values — type to add",
+    "retry": "Retry",
+    "goMapping": "Go to mapping",
+    "notMapped": "This attribute is not mapped to a local option; it will not be filled from product options.",
+    "goCategoryMapping": "Go to category mapping",
+    "fillFromMappingsDone": "{count} channel attributes filled from mappings",
+    "fillFromMappingsNone": "No value found to fill from mappings",
+    "fillFromMappingsNoCategory": "Product category not found — select a category first",
+    "fillFromMappingsUnmapped": "{count} options are not mapped to any channel attribute"
   }
 }

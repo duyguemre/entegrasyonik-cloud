@@ -130,8 +130,11 @@ import { BASE_COLUMNS, channelColumns, rowId, snapshot, type Snapshot } from './
 import { useIntegrationStore } from '@/stores/integrationStore';
 import { useCategoriesStore } from '@/stores/categoriesStore';
 import { useSnackbarStore } from '@/stores/snackbarStore';
+import { useAttributeMappingStore } from '@/stores/site/attributeMapping'
+import { fillFromMappings } from './mappingFill'
 
 const categoriesStore = useCategoriesStore()
+const attributeMappingStore = useAttributeMappingStore()
 const integrationStore = useIntegrationStore()
 const snackbarStore = useSnackbarStore()
 const choicesStore = useChoicesStore()
@@ -260,51 +263,25 @@ function onBatchAttrsApplied(count: number) {
 
 // ── seçenek eşleme (kanal özellik değerleri seçenek eşlemesinden) ──
 const mapAllChoices = async () => {
-  const platforms = integrationStore.getClientPlatforms()
-  const variants = props.productInfoForm.variants || []
-  const choices = choicesStore.getChoices().value
-  const currentCategory = categoriesStore.getCategory(props.productInfoForm.category)
-  if (currentCategory == undefined) {
-    snackbarStore.addSnackbar({ show: true, text: 'Ürünün kategorisi bulunamadı — önce kategori seçin', timeout: 4000, color: 'warning' })
+  // [eslesme-fiyat WP2, Ek C P0-1/B-3c] Tek kaynak AttributeMappings (eski `Categories.platforms`/`Choices.platforms` backend'de yok).
+  const categoryId = props.productInfoForm.category
+  if (!categoryId) {
+    snackbarStore.addSnackbar({ show: true, text: t('channelAttributes.fillFromMappingsNoCategory'), timeout: 4000, color: 'warning' })
     return
   }
-  let mapped = 0
-  for (const platform of platforms) {
-    const integrationCategoryId = currentCategory.platforms?.[platform.code]
-    const integrationCategoryAttributes = await integrationStore.retrieveIntegrationCategoryChoices(platform.code, integrationCategoryId)
-    if (!Array.isArray(integrationCategoryAttributes)) continue
-    for (const variant of variants) {
-      variant.platforms = variant.platforms || {}
-      const variantAttributes = variant.platforms[platform.code]?.attributes
-      if (variantAttributes) {
-        for (const variantIntegrationAttributeId in variantAttributes) {
-          const integrationCategoryAttribute = integrationCategoryAttributes.find((item: any) => item._id == variantIntegrationAttributeId)
-          let deleteFlag = false
-          if (integrationCategoryAttribute?.allowCustom == false) {
-            const found = integrationCategoryAttribute?.values?.find((item: any) => item.id == variantAttributes[variantIntegrationAttributeId])
-            if (!found) deleteFlag = true
-          }
-          if (deleteFlag || !integrationCategoryAttribute || !variantAttributes[variantIntegrationAttributeId]) {
-            delete variant.platforms[platform.code].attributes[variantIntegrationAttributeId]
-          }
-        }
-      }
-      for (const integrationCategoryAttribute of integrationCategoryAttributes) {
-        for (const variantChoice of variant.choices) {
-          const currentChoice = choices.find((item: any) => item._id == variantChoice.choiceId)
-          if (!currentChoice) continue
-          const integrationAttributeValueId = currentChoice.platforms?.[platform.code]?.[integrationCategoryId + '_' + integrationCategoryAttribute._id]?.[variantChoice.choiceValueId]
-          if (integrationAttributeValueId) {
-            variant.platforms[platform.code] = variant.platforms[platform.code] || {}
-            variant.platforms[platform.code].attributes = variant.platforms[platform.code].attributes || {}
-            variant.platforms[platform.code].attributes[integrationCategoryAttribute._id] = integrationAttributeValueId
-            mapped++
-          }
-        }
-      }
-    }
+  await attributeMappingStore.ensureLoaded()
+  const variants = props.productInfoForm.variants || []
+  let filledCount = 0
+  const unmapped = new Set<string>()
+  for (const platform of integrationStore.getClientPlatforms() || []) {
+    const r = fillFromMappings(variants, platform.code, categoryId, attributeMappingStore.mappings)
+    filledCount += r.filled
+    r.unmappedChoiceIds.forEach((id) => unmapped.add(id))
   }
-  snackbarStore.addSnackbar({ show: true, text: mapped ? `${mapped} kanal özelliği seçenek eşlemesinden dolduruldu` : 'Eşlenecek seçenek değeri bulunamadı', timeout: 3000, color: mapped ? 'success' : 'info' })
+  const text = filledCount
+    ? t('channelAttributes.fillFromMappingsDone', { count: filledCount })
+    : unmapped.size ? t('channelAttributes.fillFromMappingsUnmapped', { count: unmapped.size }) : t('channelAttributes.fillFromMappingsNone')
+  snackbarStore.addSnackbar({ show: true, text, timeout: 3500, color: filledCount ? 'success' : 'info' })
 }
 
 // ── kod üretimi (önceki başlık menülerindeki davranış aynen) ──

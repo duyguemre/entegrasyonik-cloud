@@ -39,7 +39,7 @@
       @update:sort="(s) => { gridSort = s; pagination.page = 1 }"
       @update:page="(p) => (pagination.page = p)"
       @update:page-size="(n) => { pagination.limit = n; pagination.page = 1 }"
-      @row-click="(r) => !r.__new && emit('select', r)"
+      @row-click="(r: any) => !r.__new && emit('select', r)"
       @refresh="reload()"
     >
       <!-- FE-LOCAL-1052: Liste | Özet — sayaç çipleri Özet görünümüne taşındı (sayılar bellekteki marka listesinden). -->

@@ -2741,5 +2741,20 @@
     },
     "legalNote": "Bu araç hukuki danışmanlık değildir. Fiyat mevzuatına uyum için danışmanınıza başvurun.",
     "adminOnly": "Kural ve onay işlemleri yöneticiye açıktır; siz önerileri görüntüleyebilirsiniz."
+  },
+  "channelAttributes": {
+    "loading": "Değerler yükleniyor…",
+    "noMatch": "Aramanıza uyan değer yok (aranan metni içeren değerler gösterilir).",
+    "channelEmpty": "{channel} bu özellik için değer listesi döndürmedi.",
+    "channelError": "{channel} değer listesi alınamadı: {cause}",
+    "customEmpty": "Değer yok — yazarak ekleyin",
+    "retry": "Tekrar dene",
+    "goMapping": "Eşlemeye git",
+    "notMapped": "Bu özellik yerel bir seçenekle eşlenmemiş; ürün seçeneklerinden otomatik dolmaz.",
+    "goCategoryMapping": "Kategori eşlemesine git",
+    "fillFromMappingsDone": "{count} kanal özelliği eşlemeden dolduruldu",
+    "fillFromMappingsNone": "Eşlemeden doldurulacak değer bulunamadı",
+    "fillFromMappingsNoCategory": "Ürünün kategorisi bulunamadı — önce kategori seçin",
+    "fillFromMappingsUnmapped": "{count} seçenek hiçbir kanal özelliğine eşlenmemiş"
   }
 }
