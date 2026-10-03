@@ -3,6 +3,7 @@ import { normalizePagination, pickSortField } from '@utils/search';
 import { EVENTS, integrationEventBus } from '@platform/runtime/events/IntegrationEventBus';
 import type { ImportJobRepository } from '@database/repositories/app/ImportJobRepository';
 import type { ImportStagingRepository } from '@database/repositories/tenant/ImportStagingRepository';
+import { IntegrationIssue, makeIssue } from '@platform/core/errors/integrationIssues';
 
 /** [DB-02] ImportJobs sıralama alanı izin listesi (Import.ts şeması; FE: startedAt/completedAt/processedCount). */
 export const IMPORT_JOB_SORT_FIELDS: readonly string[] = [
@@ -117,5 +118,27 @@ export async function archiveImportJobs(jobs: ImportJobRepository, ids: any): Pr
 export async function getImportJobReport(staging: ImportStagingRepository, jobId: any): Promise<any> {
     if (!jobId) return { success: false, message: "JobId required" };
     const report = await staging.findReport(jobId);
-    return { success: report ? true : false, data: report || null };
+    // [eslesme-fiyat WP1] mevcut alanlar AYNEN kalır; `issues[]` okumada türetilir (şema/göç gerekmez).
+    return { success: report ? true : false, data: report ? { ...report, issues: importReportIssues(report) } : null };
+}
+
+/** [eslesme-fiyat WP1, ADR-0038 taslağı] ImportJobReport alanları → IntegrationIssue[] (eksik kategori/özellik, yinelenen barkod). */
+export function importReportIssues(report: any): IntegrationIssue[] {
+    if (!report) return [];
+    const integrationCode = typeof report.integrationCode === 'string' ? report.integrationCode : undefined;
+    const counts = new Map<string, number>(
+        (Array.isArray(report.missingCategoryProductCounts) ? report.missingCategoryProductCounts : [])
+            .map((c: any) => [String(c?.platformCategoryId ?? ''), Number(c?.productCount) || 0]),
+    );
+    const issues: IntegrationIssue[] = [];
+    for (const cat of Array.isArray(report.missingCategories) ? report.missingCategories : []) {
+        issues.push(makeIssue('IMPORT_CATEGORY_UNMAPPED', { integrationCode, field: 'category', params: { category: cat, count: counts.get(String(cat)) ?? '?' } }));
+    }
+    for (const a of Array.isArray(report.missingAttributes) ? report.missingAttributes : []) {
+        issues.push(makeIssue('IMPORT_ATTRIBUTE_UNMAPPED', { integrationCode, field: 'attributes', params: { category: a?.category ?? a?.localCategoryId ?? '', attribute: a?.attributeName ?? a?.attributeId ?? '' } }));
+    }
+    for (const barcode of Array.isArray(report.duplicateBarcodes) ? report.duplicateBarcodes : []) {
+        issues.push(makeIssue('IMPORT_DUPLICATE_BARCODE', { integrationCode, barcode, field: 'barcode', params: { barcode } }));
+    }
+    return issues;
 }
