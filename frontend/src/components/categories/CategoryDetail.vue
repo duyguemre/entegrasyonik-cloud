@@ -61,7 +61,8 @@
         </p>
         <ul v-else class="cat-detail__rows" aria-label="Kanal eşlemeleri">
           <CategoryChannelRow v-for="ch in channels" :key="`${node.id}-${ch.code}`" :channel="ch" :category="node"
-            :mapped-id="mappingFor(ch.code)" :ready="mappingReady" @saved="emit('mapping-saved')" />
+            :mapped-id="mappingFor(ch.code)" :ready="mappingReady" :copy-sources="copySourcesFor(tree, node, ch.code, mappings)"
+            @saved="emit('mapping-saved')" />
         </ul>
       </template>
 
@@ -98,7 +99,7 @@ import { EkActionButton, EkButton, EkContextMenu, EkErrorState } from '@entegras
 import type { EkMenuGroup, EkMenuItem } from '@entegrasyonik/ui/components'
 import EkHelpHint from '@/components/page/EkHelpHint.vue'
 import CategoryChannelRow from '@/components/categories/CategoryChannelRow.vue'
-import { leavesOf, type CatCoverage, type CatNode, type CatTree, type CategoryMappingIndex } from '@/composables/categoryTree'
+import { leavesOf, type CatCoverage, type CatNode, type CatTree, type CategoryMappingIndex, copySourcesFor } from '@/composables/categoryTree'
 
 type ActionKey = 'add-child' | 'move-up' | 'move-down' | 'move-to' | 'delete'
 

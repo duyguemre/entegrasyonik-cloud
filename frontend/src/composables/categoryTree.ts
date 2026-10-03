@@ -156,31 +156,56 @@ export function indexCategoryMappings(docs: any[] | undefined | null): CategoryM
   return index
 }
 
+/**
+ * [eslesme-fiyat WP2, Ek C P1-9] Özellik/değer düzeyi sorun dizini: yerel kategori → kanal → sorun sayısı. Sorun = kayıt `stale`
+ * (platform kataloğunda kategori/özellik/değer kalktı; backend `catalog.platformRefresh`) ya da ZORUNLU özellik eşlemesinde değer yok
+ * (serbest değerli değilse). Platformun tüm zorunlu özellik listesi burada bilinmez (eşlenmemiş zorunlu özellik formda/preflight'ta görünür).
+ */
+export type AttributeIssueIndex = Map<string, Map<string, number>>
+export function indexAttributeIssues(docs: any[] | undefined | null): AttributeIssueIndex {
+  const index: AttributeIssueIndex = new Map()
+  for (const m of Array.isArray(docs) ? docs : []) {
+    if (!m || m.localCategoryId == null || !m.integrationCode) continue
+    const isCategory = m.isCategoryMapping === true || m.platformAttributeId == null
+    const emptyRequired = !isCategory && m.isRequired === true && m.allowCustom !== true && !(Array.isArray(m.values) && m.values.length)
+    if (!m.stale && !emptyRequired) continue
+    const key = String(m.localCategoryId)
+    if (!index.has(key)) index.set(key, new Map())
+    const byCode = index.get(key)!
+    byCode.set(String(m.integrationCode), (byCode.get(String(m.integrationCode)) ?? 0) + 1)
+  }
+  return index
+}
+
 export interface CatCoverage {
   leaf: boolean
   /** Yaprak için: eşli / eksik kanal kodları. Üst kategoride boş. */
   mapped: string[]
   missing: string[]
+  /** [P1-9] Kategori eşli ama özellik/değer sorunu olan kanallar (bkz. `indexAttributeIssues`); `mapped`'in alt kümesi. */
+  partial: string[]
   /** Altındaki yaprak sayısı (yaprakta 1) ve eksik eşlemesi olan yaprak sayısı. */
   leafCount: number
   incompleteLeafCount: number
 }
 
-export function computeCoverage(tree: CatTree, channelCodes: string[], mappings: CategoryMappingIndex): Map<string, CatCoverage> {
+export function computeCoverage(tree: CatTree, channelCodes: string[], mappings: CategoryMappingIndex, attrIssues: AttributeIssueIndex = new Map()): Map<string, CatCoverage> {
   const out = new Map<string, CatCoverage>()
   const visit = (node: CatNode): CatCoverage => {
     if (!node.children.length) {
       const own = mappings.get(node.id)
       const mapped = channelCodes.filter((c) => own?.has(c))
       const missing = channelCodes.filter((c) => !own?.has(c))
-      const cov: CatCoverage = { leaf: true, mapped, missing, leafCount: 1, incompleteLeafCount: missing.length ? 1 : 0 }
+      const issues = attrIssues.get(node.id)
+      const partial = mapped.filter((c) => (issues?.get(c) ?? 0) > 0)
+      const cov: CatCoverage = { leaf: true, mapped, missing, partial, leafCount: 1, incompleteLeafCount: missing.length ? 1 : 0 }
       out.set(node.id, cov)
       return cov
     }
     let leafCount = 0
     let incomplete = 0
     for (const c of node.children) { const cc = visit(c); leafCount += cc.leafCount; incomplete += cc.incompleteLeafCount }
-    const cov: CatCoverage = { leaf: false, mapped: [], missing: [], leafCount, incompleteLeafCount: incomplete }
+    const cov: CatCoverage = { leaf: false, mapped: [], missing: [], partial: [], leafCount, incompleteLeafCount: incomplete }
     out.set(node.id, cov)
     return cov
   }
@@ -248,4 +273,26 @@ export function siblingOf(tree: CatTree, node: CatNode, dir: -1 | 1): CatNode | 
   const list = node.parentId ? tree.byId.get(node.parentId)?.children : tree.nodes
   if (!list) return undefined
   return list[list.findIndex((n) => n.id === node.id) + dir]
+}
+
+/**
+ * [eslesme-fiyat WP2, PLAN §3.1 "kalıtım yok, kopyala var"] Bir kategoriye kanal eşlemesi KOPYALANABİLECEK kaynaklar: bu kanalda eşli
+ * kategoriler; sıra = üst kategoriler (yakından uzağa) → kardeşler → diğerleri (başlığa göre). Kendisi hariç; en çok `limit`.
+ */
+export interface CopySource { id: string; title: string; pathText: string; relation: 'parent' | 'sibling' | 'other' }
+export function copySourcesFor(tree: CatTree, node: CatNode, code: string, mappings: CategoryMappingIndex, limit = 8): CopySource[] {
+  const has = (id: string) => id !== node.id && !!mappings.get(id)?.has(code)
+  const out: CopySource[] = []
+  const seen = new Set<string>()
+  const push = (n: CatNode | undefined, relation: CopySource['relation']) => {
+    if (!n || seen.has(n.id) || !has(n.id)) return
+    seen.add(n.id)
+    out.push({ id: n.id, title: n.title, pathText: n.path.join(' › '), relation })
+  }
+  for (const id of [...node.pathIds].reverse()) push(tree.byId.get(id), 'parent')
+  const parent = node.parentId ? tree.byId.get(node.parentId) : undefined
+  for (const s of parent ? parent.children : tree.nodes) push(s, 'sibling')
+  const rest = [...tree.byId.values()].filter((n) => !seen.has(n.id) && has(n.id)).sort((a, b) => a.title.localeCompare(b.title, 'tr'))
+  for (const n of rest) push(n, 'other')
+  return out.slice(0, limit)
 }

@@ -154,7 +154,7 @@ import { useAttributeMappingStore } from '@/stores/site/attributeMapping'
 import { useSnackbarStore } from '@/stores/snackbarStore'
 import {
   buildCategoryTree, canMoveInto, computeCoverage, countDescendants, fold, flattenVisible, incompleteVisibleIds,
-  indexCategoryMappings, searchCategories, siblingOf, type CatNode,
+  indexCategoryMappings, indexAttributeIssues, searchCategories, siblingOf, type CatNode,
 } from '@/composables/categoryTree'
 
 const restApi = useRestApi()
@@ -187,11 +187,19 @@ const mappingLoaded = ref(false)
 const mappingFailed = computed(() => !!attributeMappingStore.loadError)
 const mappingReady = computed(() => mappingLoaded.value && !mappingFailed.value)
 const mappingIndex = computed(() => indexCategoryMappings(attributeMappingStore.mappings))
-const coverage = computed(() => computeCoverage(tree.value, channels.value.map((c) => c.code), mappingIndex.value))
+const attributeIssues = computed(() => indexAttributeIssues(attributeMappingStore.mappings))
+const coverage = computed(() => computeCoverage(tree.value, channels.value.map((c) => c.code), mappingIndex.value, attributeIssues.value))
 const missingCount = computed(() => {
   if (!mappingReady.value || !channels.value.length) return 0
   let n = 0
   for (const c of coverage.value.values()) if (c.leaf && c.missing.length) n++
+  return n
+})
+/** [eslesme-fiyat WP2, Ek C P1-9] Kategori her kanalda eşli ama özellik/değer sorunu (bayat ya da zorunlu özellikte değer yok) olan uç kategoriler. */
+const partialCount = computed(() => {
+  if (!mappingReady.value || !channels.value.length) return 0
+  let n = 0
+  for (const c of coverage.value.values()) if (c.leaf && !c.missing.length && c.partial.length) n++
   return n
 })
 
@@ -209,7 +217,8 @@ const dashCells = computed<ListSummaryCell[]>(() => {
     cell('total', 'Kategori', totalCount.value, 'mdi-shape-outline', 'action', 'Tanımlı tüm kategoriler'),
     cell('parents', 'Üst kategori', parents, 'mdi-folder-outline', 'neutral', 'Alt kategorisi olan'),
     cell('leaves', 'Uç kategori', leaves, 'mdi-tag-outline', 'info', 'Ürün atanabilen, eşlenen'),
-    cell('complete', 'Tam eşli', known ? leaves - missingCount.value : null, 'mdi-check-circle-outline', 'success', 'Tüm kanallarda eşli uç kategori'),
+    cell('complete', 'Tam eşli', known ? leaves - missingCount.value - partialCount.value : null, 'mdi-check-circle-outline', 'success', 'Tüm kanallarda kategori ve özellik/değer eşlemesi tamam'),
+    cell('partial', 'Kısmi eşli', known ? partialCount.value : null, 'mdi-alert-circle-outline', 'warning', 'Kategori eşli; özellik/değer eşlemesi bayat ya da zorunlu özellikte değer yok'),
     cell('missing', 'Eksik eşlemeli', known ? missingCount.value : null, 'mdi-minus-circle-outline', 'warning', 'Listede göstermek için tıklayın', known && missingCount.value > 0),
   ]
 })

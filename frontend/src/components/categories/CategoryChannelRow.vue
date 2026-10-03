@@ -23,6 +23,17 @@
         <!-- FE-LOCAL-1048: eşleme durumu ortak durum çipiyle (renk ekranda seçilmez). -->
         <EkStatusChip v-else tone="warning" icon="mdi-minus-circle-outline" label="Eşlenmedi" />
       </div>
+      <!-- [eslesme-fiyat WP2] Eşlenmemiş kanalda: bu kanalda eşli üst/kardeş kategorinin kategori+özellik+değer eşlemesini kopyala. -->
+      <v-menu v-if="ready && !mappedId && !editing && copySources?.length" location="bottom end">
+        <template #activator="{ props: mp }">
+          <EkButton v-bind="mp" tone="ghost" size="sm" icon="mdi-content-copy" :loading="copying" :aria-describedby="nameId">Kopyala</EkButton>
+        </template>
+        <v-list density="compact" :aria-label="`${channel.title} eşlemesini kopyalanacak kategori`">
+          <v-list-subheader>Eşlemeyi şuradan kopyala</v-list-subheader>
+          <v-list-item v-for="s in copySources" :key="s.id" :title="s.title" :subtitle="s.relation === 'parent' ? 'Üst kategori' : s.relation === 'sibling' ? 'Kardeş kategori' : s.pathText"
+            @click="copyFrom(s)" />
+        </v-list>
+      </v-menu>
       <EkButton v-if="ready" :tone="mappedId ? 'ghost' : 'secondary'" size="sm" :aria-expanded="editing" :aria-describedby="nameId"
         @click="editing ? cancel() : startEdit()">{{ editing ? 'Kapat' : mappedId ? 'Değiştir' : 'Eşle' }}</EkButton>
     </div>
@@ -93,7 +104,7 @@ import { useAttributeMappingStore } from '@/stores/site/attributeMapping'
 import { useSnackbarStore } from '@/stores/snackbarStore'
 import useRestApi from '@/composables/restapi'
 import { channelIndexFor } from '@/composables/channelCategoryIndex'
-import type { CatNode } from '@/composables/categoryTree'
+import type { CatNode, CopySource } from '@/composables/categoryTree'
 
 const props = defineProps<{
   channel: { code: string; title: string }
@@ -102,6 +113,8 @@ const props = defineProps<{
   mappedId?: string
   /** Eşleme verisi yüklendi mi (yüklenmeden "Eşlenmedi" gösterilmez). */
   ready: boolean
+  /** Bu kanalda eşli, eşlemesi kopyalanabilecek kategoriler (bkz. `copySourcesFor`). */
+  copySources?: CopySource[]
 }>()
 const emit = defineEmits<{ saved: [] }>()
 
@@ -158,6 +171,24 @@ async function save() {
     saveError.value = `${props.channel.title} eşleşmesi kaydedilemedi — bağlantınızı kontrol edip tekrar deneyin.`
   } finally {
     saving.value = false
+  }
+}
+
+// ---- Kopyala (eslesme-fiyat WP2) ---------------------------------------------------------------------------------------
+const copying = ref(false)
+async function copyFrom(source: CopySource) {
+  copying.value = true
+  try {
+    const res: any = await attributeMappingStore.copyMappingsFromCategory({ sourceLocalCategoryId: source.id, targetLocalCategoryId: props.category.id, integrationCode: props.channel.code })
+    if (res?.result === true) {
+      snackbarStore.addSnackbar({ show: true, text: `${props.channel.title}: “${source.title}” eşlemesinden ${res.copied} kayıt kopyalandı.`, timeout: 3500, color: 'success' })
+      emit('saved')
+    } else {
+      const msg = res?.response?.data?.error || 'bağlantınızı kontrol edip tekrar deneyin'
+      snackbarStore.addSnackbar({ show: true, text: `${props.channel.title} eşlemesi kopyalanamadı — ${msg}.`, timeout: 5000, color: 'error' })
+    }
+  } finally {
+    copying.value = false
   }
 }
 

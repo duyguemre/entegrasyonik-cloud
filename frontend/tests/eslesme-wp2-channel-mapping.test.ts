@@ -104,3 +104,30 @@ describe('marka eşleme kanalı (P1-10, K-C)', () => {
     expect(out.map((e) => e.brandMapping)).toEqual(['id', undefined])
   })
 })
+
+describe('kategori kapsamı özellik/değer boyutu (P1-9) ve kopya kaynakları', () => {
+  it('stale ya da değersiz zorunlu özellik → partial; kategori eşli olmayan kanal partial sayılmaz', async () => {
+    const { buildCategoryTree, indexCategoryMappings, indexAttributeIssues, computeCoverage } = await import('@/composables/categoryTree')
+    const tree = buildCategoryTree([{ _id: 'root', title: 'Ana', isMain: true, children: [{ _id: 'c1', title: 'Elbise', parentId: 'root', children: [] }, { _id: 'c2', title: 'Etek', parentId: 'root', children: [] }] }])
+    const docs = [
+      { integrationCode: 'trendyol', localCategoryId: 'c1', isCategoryMapping: true, platformAttributeId: null, platformCategoryId: 1 },
+      { integrationCode: 'trendyol', localCategoryId: 'c1', platformAttributeId: '47', isRequired: true, values: [] },
+      { integrationCode: 'trendyol', localCategoryId: 'c2', isCategoryMapping: true, platformAttributeId: null, platformCategoryId: 2 },
+      { integrationCode: 'trendyol', localCategoryId: 'c2', platformAttributeId: '48', isRequired: true, allowCustom: true, values: [] },
+      { integrationCode: 'n11', localCategoryId: 'c2', platformAttributeId: '9', stale: { reason: 'ATTRIBUTE_GONE' } },
+    ]
+    const cov = computeCoverage(tree, ['trendyol', 'n11'], indexCategoryMappings(docs), indexAttributeIssues(docs))
+    expect(cov.get('c1')).toMatchObject({ mapped: ['trendyol'], partial: ['trendyol'], missing: ['n11'] })
+    expect(cov.get('c2')).toMatchObject({ mapped: ['trendyol'], partial: [] })
+  })
+  it('copySourcesFor: bu kanalda eşli üst → kardeş → diğer; kendisi hariç', async () => {
+    const { buildCategoryTree, indexCategoryMappings, copySourcesFor } = await import('@/composables/categoryTree')
+    const tree = buildCategoryTree([{ _id: 'root', title: 'Ana', isMain: true, children: [
+      { _id: 'p', title: 'Giyim', parentId: 'root', children: [{ _id: 'a', title: 'Elbise', parentId: 'p', children: [] }, { _id: 'b', title: 'Etek', parentId: 'p', children: [] }] },
+      { _id: 'z', title: 'Ayakkabı', parentId: 'root', children: [] }] }])
+    const idx = indexCategoryMappings(['p', 'b', 'z', 'a'].map((id) => ({ integrationCode: 'trendyol', localCategoryId: id, isCategoryMapping: true, platformCategoryId: 1 })))
+    const node = tree.byId.get('a')!
+    expect(copySourcesFor(tree, node, 'trendyol', idx).map((s) => [s.id, s.relation])).toEqual([['p', 'parent'], ['b', 'sibling'], ['z', 'other']])
+    expect(copySourcesFor(tree, node, 'n11', idx)).toEqual([])
+  })
+})
