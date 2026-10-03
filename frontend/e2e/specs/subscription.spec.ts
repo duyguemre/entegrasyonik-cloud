@@ -12,7 +12,7 @@ import { gotoAuthed, openScreen } from '../fixtures/nav'
 // aynı gerekçe) — yalnızca ekranın İLK görünürlük beklemelerinde cömert zaman aşımı kullanılır.
 const SCREEN_READY = { timeout: 20_000 }
 
-test.describe('P1-yeni — Abonelik ve planlar (SubscriptionView)', () => {
+test.describe('P1-yeni — Abonelik ve Planlar (SubscriptionView)', () => {
   test('smoke: durum bandı + 3 plan kartı render olur, mevcut plan işaretlenir', async ({ page }) => {
     await installApiMocks(page)
     await gotoAuthed(page)
@@ -23,16 +23,16 @@ test.describe('P1-yeni — Abonelik ve planlar (SubscriptionView)', () => {
     await expect(page.getByText('Başlangıç')).toBeVisible(SCREEN_READY)
     await expect(page.getByText('Büyüme')).toBeVisible()
     await expect(page.getByText('Kurumsal')).toBeVisible()
-    await expect(page.getByText('Mevcut planınız').first()).toBeVisible()
-    await expect(page.getByText('Özel teklif')).toBeVisible()
+    await expect(page.getByText('Mevcut Planınız').first()).toBeVisible()
+    await expect(page.getByText('Özel Teklif')).toBeVisible()
   })
 
-  test('boş durum: satışa açık plan yoksa "Plan tanımları henüz yayınlanmadı" gösterilir', async ({ page }) => {
+  test('boş durum: satışa açık plan yoksa "Plan Tanımları Henüz Yayınlanmadı" gösterilir', async ({ page }) => {
     await installApiMocks(page, { 'BillingService/getPlans': plansBosFixture })
     await gotoAuthed(page)
     await openScreen(page, 'SubscriptionView')
 
-    await expect(page.getByText('Plan tanımları henüz yayınlanmadı')).toBeVisible(SCREEN_READY)
+    await expect(page.getByText('Plan Tanımları Henüz Yayınlanmadı')).toBeVisible(SCREEN_READY)
   })
 
   test('hata durumu: planlar 500 döndüğünde aksiyon alınabilir hata kartı gösterilir, ham hata sızmaz', async ({ page }) => {
@@ -40,7 +40,7 @@ test.describe('P1-yeni — Abonelik ve planlar (SubscriptionView)', () => {
     await gotoAuthed(page)
     await openScreen(page, 'SubscriptionView')
 
-    await expect(page.getByText('Planlar yüklenemedi')).toBeVisible(SCREEN_READY)
+    await expect(page.getByText('Planlar Yüklenemedi')).toBeVisible(SCREEN_READY)
     await expect(page.getByRole('button', { name: 'Tekrar Dene' })).toBeVisible()
     await expect(page.locator('.subscriptionView')).not.toContainText('500')
     await expect(page.locator('.subscriptionView')).not.toContainText('Internal Server Error')
@@ -70,7 +70,7 @@ test.describe('P1-yeni — Abonelik ve planlar (SubscriptionView)', () => {
     await gotoAuthed(page)
     await openScreen(page, 'SubscriptionView')
 
-    await page.getByRole('button', { name: /Başlangıç planı için: Bu plana geç/ }).click()
+    await page.getByRole('button', { name: /Başlangıç planı için: Bu Plana Geç/ }).click()
 
     const dialog = page.getByRole('dialog').filter({ hasText: 'Plan Seçimini Onayla' })
     await expect(dialog).toBeVisible(SCREEN_READY)
@@ -88,7 +88,7 @@ test.describe('P1-yeni — Abonelik ve planlar (SubscriptionView)', () => {
     await gotoAuthed(page)
     await openScreen(page, 'SubscriptionView')
 
-    await page.getByRole('button', { name: /Başlangıç planı için: Bu plana geç/ }).click()
+    await page.getByRole('button', { name: /Başlangıç planı için: Bu Plana Geç/ }).click()
     const dialog = page.getByRole('dialog').filter({ hasText: 'Plan Seçimini Onayla' })
     await dialog.getByRole('button', { name: 'Devam Et' }).click()
 

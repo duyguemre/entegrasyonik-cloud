@@ -1,5 +1,5 @@
 /**
- * CHARACTERIZATION: InvoiceService (backend/src/api/rpc/handlers/invoice-service.ts)
+ * CHARACTERIZATION: InvoiceService (backend/src/api/services/invoice-service.ts)
  *
  * Kapsam: createManualInvoice, getInvoices, deleteInvoice, createInvoice, bulkCreateInvoice,
  * resolveAndReissueInvoice, syncInvoiceToPlatform (private, createInvoice üzerinden dolaylı).
@@ -33,14 +33,8 @@ jest.mock('@database/DatabaseManager', () => ({
 }));
 jest.mock('@integration/modules/IntegrationFactory', () => ({ __esModule: true, default: jest.fn() }));
 
-import InvoiceService from '@api/rpc/handlers/invoice-service';
+import InvoiceService from '@api/services/invoice-service';
 import IntegrationFactory from '@integration/modules/IntegrationFactory';
-import { captureLogs, type LogCapture } from '../../helpers/logCapture';
-
-// F-06 (ADR-0024 P4): api/** console -> eventLog; loglar stdout JSON satırlarından doğrulanır.
-let cap: LogCapture;
-beforeEach(() => { cap = captureLogs(); });
-afterEach(() => { cap.restore(); });
 
 const factoryCtor = IntegrationFactory as unknown as jest.Mock<any>;
 
@@ -364,7 +358,7 @@ describe('InvoiceService.createInvoice', () => {
       message: 'Fatura oluşturuldu ancak pazaryerine iletilemedi: adapter crashed',
       data: { invoice: expect.anything() },
     });
-    expect(cap.lines).toContainEqual(expect.objectContaining({ level: 'error' })); // F-06: console.error -> eventLog
+    expect(console.error).toHaveBeenCalled();
   });
 
   it('[MEVCUT DAVRANIŞ] Mongo 11000 (aynı sipariş için fatura kaydı) özel mesajla YENİDEN fırlatılır (orijinal hata mesajı DEĞİL)', async () => {
@@ -464,6 +458,6 @@ describe('InvoiceService.resolveAndReissueInvoice', () => {
   it('[MEVCUT DAVRANIŞ] hata console.error ile loglanıp yeniden fırlatılır', async () => {
     orderModel.findById.mockRejectedValue(new Error('db down'));
     await expect(makeService({ orderId: 'o1' }).resolveAndReissueInvoice()).rejects.toThrow('db down');
-    expect(cap.lines).toContainEqual(expect.objectContaining({ level: 'error' })); // F-06: console.error -> eventLog
+    expect(console.error).toHaveBeenCalled();
   });
 });

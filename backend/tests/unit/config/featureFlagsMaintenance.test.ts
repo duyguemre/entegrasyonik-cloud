@@ -29,9 +29,8 @@ afterAll(() => { for (const f of FLAGS) catalog.splice(catalog.indexOf(f), 1); }
 afterEach(() => resetPlatformOverrideStoreForTests());
 
 describe('özellik bayrağı kataloğu', () => {
-  it('başlangıç kataloğu `agent` (ADR-0034 kill-switch) + `competition` (PRC-R1 buybox işi, tenant listeli pilot); üretilen bayraklar platform kapsamlı, varsayılan kapalı, şemayı geçer', () => {
-    expect(FEATURE_FLAGS.map((f) => f.name)).toEqual(['agent', 'competition', 'pricingRules']);
-    expect(FEATURE_FLAGS.find((f) => f.name === 'competition')?.tenantScoped).toBe(true);
+  it('başlangıç kataloğu yalnız `agent` (ADR-0034 kill-switch); üretilen bayraklar platform kapsamlı, varsayılan kapalı, şemayı geçer', () => {
+    expect(FEATURE_FLAGS.map((f) => f.name)).toEqual(['agent']);
     for (const d of FLAGS) {
       expect(d.scope).toBe('platform');
       expect(d.schema.safeParse(d.default).success).toBe(true);

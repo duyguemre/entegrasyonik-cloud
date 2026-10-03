@@ -1,71 +1,133 @@
 <template>
-  <div class="adminClientListView">
+  <div class="adminClientListView d-flex flex-column">
     <LoadingComponent :attach="dialogAttach" ref="loadingComponentRef" />
 
-    <EkListScreen
-      section="Yönetim"
-      title="Mağaza yönetimi"
-      description="Platformdaki tüm mağaza kayıtlarını görüntüleyin, oluşturun ve yönetin."
-      label="Mağazalar tablosu"
-      noun="mağaza"
-      row-key="_id"
-      label-key="name"
-      :columns="columns"
-      :rows="clients"
-      :loading="loading"
-      :error="loadError"
-      error-title="Mağazalar yüklenemedi"
-      :search="search"
-      search-placeholder="Mağaza adı veya kodu ara"
-      :chips="activeChips"
-      :sort="gridSort"
-      :page="pagination.page"
-      :page-size="pagination.limit"
-      :total="pagination.total"
-      empty-title="Mağaza bulunamadı"
-      empty-text="Listelenecek mağaza kaydı bulunamadı. Arama ölçütünü değiştirin veya listeyi yenileyin."
-      empty-icon="mdi-store-outline"
-      filtered-empty-title="Mağaza bulunamadı"
-      filtered-empty-text="Listelenecek mağaza kaydı bulunamadı. Arama ölçütünü değiştirin veya listeyi yenileyin."
-      refresh-label="Listeyi yenile"
-      @update:search="(v: string) => (search = v)"
-      @search-submit="loadClients(true)"
-      @update:sort="onGridSort"
-      @update:page="onPageChange"
-      @update:page-size="onPageSizeChange"
-      @remove-chip="removeChip"
-      @clear-filters="removeChip"
-      @refresh="loadClients()"
-      @row-click="viewDetail"
-    >
-      <template #create>
-        <EkButton tone="primary" icon="mdi-plus" @click="openCreateDialog()">Yeni mağaza oluştur</EkButton>
-      </template>
+    <!-- ek-pattern-exception: EkListPage/EkDataTable — admin-characterization.spec.ts "gizli davranış" olarak
+         v-data-table-server'ın @update:options ile limit 10 gönderdiğini, admin-clients.spec.ts ise
+         `thead button:has(.mdi-plus)` ve `tbody tr` kancalarını sabitliyor; EkDataTable istemci-taraflı
+         olduğundan bu sözleşmeyi taşıyamaz. Sunucu-taraflı EkDataTable varyantı gelince (Aşama C) geçilecek. -->
+    <EkPageHeader class="ek-admin-clients-header" section="Yönetim" title="Mağaza Yönetimi"
+      description="Platformdaki tüm mağaza kayıtlarını görüntüleyin, oluşturun ve yönetin." />
 
-      <template #toolbar-start>
-        <span class="ek-admin-summary">
-          <span class="ek-admin-summary__item">Toplam mağaza <strong>{{ clients.length }}</strong></span>
-          <span class="ek-admin-summary__item">Aktif mağaza <strong class="is-success">{{ activeCount }}</strong></span>
-          <span class="ek-admin-summary__item">Pasif <strong class="is-danger">{{ (pagination.total || 0) - activeCount }}</strong></span>
-        </span>
-      </template>
+    <!-- Search & Filter Bar -->
+    <div class="d-flex align-start flex-wrap search-section">
 
-      <template #cell-name="{ row }">
-        <span class="ek-admin-name">
-          <span class="ek-admin-name__title">{{ row.name }}</span>
-          <span class="ek-muted ek-num">ID: {{ row.order }}</span>
-        </span>
-      </template>
-      <template #cell-status="{ row }">
-        <EkStatusChip :tone="row.status === 'ACTIVE' ? 'success' : 'neutral'" :label="row.status === 'ACTIVE' ? 'Aktif' : 'Pasif'" />
-      </template>
-      <template #cell-actions="{ row }">
-        <EkRowActions :label="`${row.name} işlemleri`" :items="[
-          { key: 'view', action: 'view', label: `${row.name} mağaza detaylarını görüntüle`, onClick: () => viewDetail(row) },
-          { key: 'delete', action: 'delete', label: `${row.name} mağazasını sil`, onClick: () => confirmDelete(row) },
-        ]" />
-      </template>
-    </EkListScreen>
+      <v-text-field clearable density="compact" label="Müşteri / Mağaza Ara" variant="outlined" v-model="search"
+        class="customTextField flex-grow-1" hide-details placeholder="Mağaza adı veya ID giriniz..."
+        @keyup.enter.stop="loadClients()">
+        <template #append-inner>
+          <v-btn icon variant="text" density="comfortable" @click.stop="loadClients()"
+            aria-label="Mağazaları ara">
+            <v-icon>mdi-magnify</v-icon>
+          </v-btn>
+        </template>
+      </v-text-field>
+
+      <div class="d-flex align-center flex-wrap gap-2">
+        <v-btn @click="loadClients()" icon variant="outlined" density="comfortable"
+          aria-label="Listeyi yenile">
+          <v-icon>mdi-refresh</v-icon>
+          <v-tooltip activator="parent" location="top">Yenile</v-tooltip>
+        </v-btn>
+      </div>
+    </div>
+
+    <!-- Table Section -->
+    <div class="table-wrapper ">
+      <v-data-table-server v-model:sort-by="sortBy" :items="clients" :items-length="pagination.total"
+        :loading="loading" :headers="headers" class="pa-0 ma-0 custom-table desktop-table" fixed-header
+        aria-label="Mağazalar tablosu" @update:options="onOptionsUpdate">
+
+        <template v-slot:no-data>
+          <EmptyState title="Mağaza Bulunamadı"
+            message="Listelenecek mağaza kaydı bulunamadı. Arama ölçütünü değiştirin veya listeyi yenileyin." />
+        </template>
+
+        <!-- Summary Bar inside Table Top Slot -->
+        <template v-slot:top>
+          <div class="table-summary-bar">
+            <div class="summary-stat">
+              <v-icon size="14" color="primary" class="mr-1">mdi-store-outline</v-icon>
+              <span class="summary-label">Toplam Mağaza</span>
+              <span class="summary-value">{{ clients.length }}</span>
+            </div>
+            <v-divider vertical class="mx-3 summary-divider" />
+            <div class="summary-stat">
+              <v-icon size="14" color="content-muted" class="mr-1">mdi-check-circle-outline</v-icon>
+              <span class="summary-label">Aktif Mağaza</span>
+              <span class="summary-value ek-text-success">{{ activeCount }}</span>
+            </div>
+            <v-divider vertical class="mx-3 summary-divider" />
+            <div class="summary-stat">
+              <v-icon size="14" color="content-muted" class="mr-1">mdi-minus-circle-outline</v-icon>
+              <span class="summary-label">Pasif</span>
+              <span class="summary-value ek-text-danger">{{ (pagination.total || 0) - activeCount }}</span>
+            </div>
+            <v-spacer />
+          </div>
+        </template>
+
+        <template v-slot:header.actions>
+          <div class="d-flex justify-end">
+            <v-btn @click="openCreateDialog()" color="primary" icon density="comfortable"
+              aria-label="Yeni mağaza oluştur">
+              <v-icon>mdi-plus</v-icon>
+              <v-tooltip activator="parent" location="top">Yeni Mağaza Oluştur</v-tooltip>
+            </v-btn>
+          </div>
+        </template>
+
+        <template v-slot:item="{ item }: any">
+          <tr :key="item._id" class="row-hover cursor-pointer" @click="viewDetail(item)">
+            <td class="text-left py-2">
+              <div class="d-flex align-center">
+                <v-avatar size="32" color="surface-sunken" class="mr-3 border">
+                  <span class="text-micro font-weight-black color-slate-700">{{ item.name?.[0] || 'C' }}</span>
+                </v-avatar>
+                <div class="d-flex flex-column">
+                  <span class="text-subtitle-2 font-weight-black color-slate-900 leading-tight">
+                    {{ item.name }}
+                  </span>
+                  <span class="text-micro font-weight-bold color-slate-500 mt-1 uppercase">
+                    ID: {{ item.order }}
+                  </span>
+                </div>
+              </div>
+            </td>
+
+            <td class="text-left font-weight-bold color-slate-700">{{ item.title }}</td>
+
+            <td class="text-left">
+              <EkStatusChip :tone="item.status === 'ACTIVE' ? 'success' : 'neutral'"
+                :label="item.status === 'ACTIVE' ? 'AKTİF' : 'PASİF'" />
+            </td>
+
+            <td class="text-right">
+              <div class="d-flex justify-end gap-2 pr-1">
+                <v-btn icon variant="text" density="comfortable" @click.stop="viewDetail(item)"
+                  :aria-label="`${item.name} mağaza detaylarını görüntüle`">
+                  <v-icon>mdi-eye-outline</v-icon>
+                  <v-tooltip activator="parent" location="top">Detaylar</v-tooltip>
+                </v-btn>
+                <v-btn icon variant="text" density="comfortable"
+                  @click.stop="confirmDelete(item)" :aria-label="`${item.name} mağazasını sil`">
+                  <v-icon>mdi-delete-sweep-outline</v-icon>
+                  <v-tooltip activator="parent" location="top">Sil</v-tooltip>
+                </v-btn>
+              </div>
+            </td>
+          </tr>
+        </template>
+
+        <template v-slot:bottom>
+          <div class="sticky-pagination-wrapper">
+            <PaginationComponent v-model="pagination.page"
+              :totalNumberOfPages="Math.ceil(pagination.total / pagination.limit)" :pagination="pagination"
+              :static="true" @setPage="loadClients" />
+          </div>
+        </template>
+      </v-data-table-server>
+    </div>
 
     <!-- Modals -->
     <AdminClientDetailComponent v-model="detailDialog.show" :client="selectedClient"
@@ -75,26 +137,22 @@
 
     <ConfirmationDialogComponent v-model="deleteDialog" title="Müşteri Sil"
       message="Bu müşteriyi silmek istediğinizden emin misiniz? Bu işlem geri alınamaz." confirmText="Evet, Sil"
-      color="error" icon="mdi-trash-can-outline" @confirm="doDelete" />
+      color="error" icon="mdi-delete-alert" @confirm="doDelete" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { EkRowActions, EkButton, EkStatusChip } from '@entegrasyonik/ui/components'
-import type { EkGridColumn, EkGridSort, EkActiveFilterChip } from '@entegrasyonik/ui/components'
 import { ref, reactive, computed, onMounted } from 'vue';
 import useRestApi from '@/composables/restapi';
 import { useSnackbarStore } from '@/stores/snackbarStore';
 import LoadingComponent from '@/components/LoadingComponent.vue';
+import PaginationComponent from '@/components/PaginationComponent.vue';
 import ConfirmationDialogComponent from '@/components/layout/ConfirmationDialogComponent.vue';
 import AdminClientDetailComponent from '@/components/adminPanel/AdminClientDetailComponent.vue';
 import AdminClientCreateComponent from '@/components/adminPanel/AdminClientCreateComponent.vue';
-import EkListScreen from '@/components/page/templates/EkListScreen.vue';
-;
-;
-;
-;
-import { isRequestError } from '@entegrasyonik/ui/components/listStandard';
+import EmptyState from '@/components/layout/EmptyState.vue';
+import EkPageHeader from '@/components/ds/EkPageHeader.vue';
+import EkStatusChip from '@/components/ds/EkStatusChip.vue';
 
 const restApi = useRestApi();
 const snackbarStore = useSnackbarStore();
@@ -102,10 +160,8 @@ const loadingComponentRef = ref<any>(null);
 const dialogAttach = ref(".adminClientListView");
 
 const search = ref('');
-const appliedSearch = ref('');
 const clients = ref<any[]>([]);
 const loading = ref(false);
-const loadError = ref(false);
 const deleteDialog = ref(false);
 const detailDialog = ref({ show: false });
 const createDialog = ref({ show: false });
@@ -114,46 +170,33 @@ const selectedClient = ref<any>(null);
 const sortBy = ref<any[]>([{ key: 'order', order: 'asc' }]);
 const pagination = reactive({
   page: 1,
-  // Eski v-data-table-server ilk istekte Vuetify varsayılanı 10'u yazıyordu; sunucuya giden limit AYNI kalsın.
-  limit: 10,
+  limit: 50,
   total: 0,
+  totalNumberOfRecords: 0 // PaginationComponent range calculation requires this
 });
 
-// DS-v2 liste standardı. Sıralama SUNUCUDA: AdminService.getClients `sortField`i
-// CLIENT_SORT_FIELDS izin listesinden (order, clientId, title, name, status, …) alır.
-const columns: EkGridColumn[] = [
-  { key: 'name', label: 'Mağaza adı / ID', sortable: true },
-  { key: 'title', label: 'Başlık', sortable: true },
-  { key: 'status', label: 'Durum', sortable: true },
-  { key: 'actions', label: 'İşlemler', align: 'end', hideLabel: true, pin: 'end' },
+const headers: any = [
+  { title: 'MAĞAZA ADI / ID', key: 'name', align: 'start', sortable: true },
+  { title: 'BAŞLIK', key: 'title', align: 'start', sortable: true },
+  { title: 'DURUM', key: 'status', align: 'start', sortable: true },
+  { title: '', key: 'actions', align: 'end', sortable: false },
 ];
-
-const gridSort = computed<EkGridSort>(() => {
-  const current = sortBy.value[0];
-  return current?.key ? { key: current.key, dir: current.order === 'desc' ? 'desc' : 'asc' } : null;
-});
-
-function onGridSort(sort: EkGridSort) {
-  sortBy.value = sort ? [{ key: sort.key, order: sort.dir }] : [{ key: 'order', order: 'asc' }];
-  loadClients(true);
-}
-
-const activeChips = computed<EkActiveFilterChip[]>(() =>
-  appliedSearch.value ? [{ key: 'search', label: 'Arama', value: appliedSearch.value }] : []
-);
-
-function removeChip() {
-  search.value = '';
-  loadClients(true);
-}
 
 const activeCount = computed(() => clients.value.filter(c => c.status === 'ACTIVE').length);
 
-async function loadClients(resetPage: boolean = false) {
-  if (resetPage === true) pagination.page = 1;
+const filteredClients = computed(() => {
+  if (!search.value) return clients.value;
+  const s = search.value.toLowerCase();
+  return clients.value.filter(c =>
+    c.name?.toLowerCase().includes(s) ||
+    c.title?.toLowerCase().includes(s) ||
+    c.order?.toString().includes(s)
+  );
+});
+
+async function loadClients() {
   loading.value = true;
-  loadError.value = false;
-  appliedSearch.value = (search.value || '').trim();
+  const guid = loadingComponentRef.value?.info("Müşteriler yükleniyor...") || "loading";
   try {
     const payload = {
       search: search.value,
@@ -163,27 +206,21 @@ async function loadClients(resetPage: boolean = false) {
       sortOrder: sortBy.value[0]?.order === 'desc' ? -1 : 1
     };
     const res = await restApi.post('AdminService/getClients', payload);
-    if (isRequestError(res)) {
-      loadError.value = true;
-    } else if (res?.success) {
+    if (res?.success) {
       clients.value = res.clients;
       pagination.total = res.total;
+      pagination.totalNumberOfRecords = res.total;
     }
-  } catch (e) {
-    loadError.value = true;
   } finally {
+    loadingComponentRef.value?.remove(guid);
     loading.value = false;
   }
 }
 
-function onPageChange(page: number) {
-  pagination.page = page;
+function onOptionsUpdate(options: any) {
+  sortBy.value = options.sortBy;
+  pagination.limit = options.itemsPerPage;
   loadClients();
-}
-
-function onPageSizeChange(size: number) {
-  pagination.limit = size;
-  loadClients(true);
 }
 
 function openCreateDialog() {
@@ -222,61 +259,143 @@ onMounted(() => {
 });
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .adminClientListView {
   position: absolute;
-  inset: 0;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  padding: var(--ek-space-5) var(--ek-space-6);
+  padding: var(--ek-space-6);
+  gap: var(--ek-space-4);
 }
 
-@media (max-width: 767px) {
-  .adminClientListView {
-    overflow-y: auto;
-    padding: var(--ek-space-4);
+.ek-text-success { color: var(--ek-color-success); }
+.ek-text-danger { color: var(--ek-color-error); }
+
+.search-section {
+  max-width: 1200px;
+  gap: var(--ek-space-2);
+  background: transparent;
+  z-index: 10;
+}
+
+.table-summary-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--ek-space-1);
+  padding: var(--ek-space-2) var(--ek-space-4);
+  background: var(--ek-color-surface-muted);
+  border-bottom: 1px solid var(--ek-color-border-default);
+}
+
+.summary-stat {
+  display: flex;
+  align-items: center;
+  gap: var(--ek-space-1);
+  white-space: nowrap;
+}
+
+.summary-label {
+  font-size: var(--ek-font-size-xs);
+  font-weight: var(--ek-font-weight-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ek-color-content-muted);
+  margin-right: var(--ek-space-1);
+}
+
+.summary-value {
+  font-size: var(--ek-font-size-xs);
+  font-weight: var(--ek-font-weight-bold);
+  color: var(--ek-color-content-strong);
+}
+
+.summary-divider {
+  opacity: 0.25;
+  height: var(--ek-space-5) !important;
+  align-self: center;
+}
+
+.table-wrapper {
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-md);
+  overflow: hidden;
+  flex-grow: 1;
+  position: relative;
+  min-height: 0;
+}
+
+.sticky-pagination-wrapper {
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+  background: var(--ek-color-surface);
+  border-top: 1px solid var(--ek-color-border-default);
+}
+
+.desktop-table {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--ek-color-surface) !important;
+}
+
+.row-hover {
+  transition: background-color var(--ek-duration-base) var(--ek-easing-standard);
+
+  &:hover {
+    // Eski değer: slate-100 %60 opaklık.
+    background-color: color-mix(in srgb, var(--ek-color-surface-sunken) 60%, transparent) !important;
   }
 }
 
-.ek-muted {
+.cursor-pointer {
+  cursor: pointer;
+}
+
+.color-slate-900 {
+  color: var(--ek-color-content-strong);
+}
+
+.color-slate-700 {
+  color: var(--ek-color-content-default);
+}
+
+.color-slate-500 {
   color: var(--ek-color-content-muted);
 }
 
-.ek-admin-summary {
-  display: inline-flex;
-  flex-wrap: wrap;
-  gap: var(--ek-space-4);
-  color: var(--ek-color-content-muted);
-  font-size: var(--ek-type-caption-size);
+.text-micro {
+  font-size: var(--ek-font-size-xs);
 }
 
-.ek-admin-summary strong {
-  margin-left: var(--ek-space-1);
-  color: var(--ek-color-content-strong);
-  font-weight: var(--ek-font-weight-semibold);
+.uppercase {
+  text-transform: uppercase;
 }
 
-.ek-admin-summary strong.is-success {
-  color: var(--ek-color-success-emphasis);
+.gap-2 {
+  gap: var(--ek-space-2);
 }
 
-.ek-admin-summary strong.is-danger {
-  color: var(--ek-color-error-emphasis);
+:deep(.v-data-table-footer) {
+  display: none !important;
 }
 
-.ek-admin-name {
-  display: inline-flex;
-  flex-direction: column;
-}
-
-.ek-admin-name__title {
-  color: var(--ek-color-content-strong);
-  font-weight: var(--ek-font-weight-semibold);
-}
-
-.ek-row-actions {
-  display: inline-flex;
-  gap: var(--ek-space-1);
+// Tablo başlık metni: `content-muted` (slate-500) tablo başlık zemininde ~4,2:1'de kalıp AA'yı
+// (4,5:1) geçemiyordu → `content-default` (slate-700).
+:deep(.v-data-table-header__content) {
+  span {
+    font-size: var(--ek-font-size-xs) !important;
+    font-weight: 800 !important;
+    color: var(--ek-color-content-default) !important;
+    letter-spacing: 0.5px;
+  }
 }
 </style>

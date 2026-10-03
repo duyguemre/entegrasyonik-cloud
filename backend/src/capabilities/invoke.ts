@@ -9,7 +9,7 @@ import { logger } from '@platform/core/logger';
 import { config } from '@config';
 import { getPlatformSetting } from '@integration/config/platformSettings';
 import type { TenantEntry } from '@database/TenantRegistry';
-import runOperation from '../api/rpc/RunOperation';
+import runOperation from '../api/RunOperation';
 import { CAPABILITY_BY_ID } from './index';
 import { chatBindingOf, hiddenReasonFor, hiddenReasonForAdminChat, needsConfirmation, type AvailabilityEnv, type HiddenReason } from './availability';
 import type { CapabilityDef, ExposedCapability } from './types';

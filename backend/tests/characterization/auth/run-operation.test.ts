@@ -2,8 +2,8 @@ import { describe, it, expect, jest, beforeEach } from '@jest/globals';
 import * as fs from 'fs';
 import * as path from 'path';
 
-// Characterization: backend/src/api/rpc/RunOperation.ts (+ ApiWrapper.ts)
-// Servis kayıt defteri (src/api/rpc/index.ts) sahte bir servis kümesiyle değiştirilir; DB/Redis yok.
+// Characterization: backend/src/api/RunOperation.ts (+ ApiWrapper.ts)
+// Servis kayıt defteri (src/api/index.ts) sahte bir servis kümesiyle değiştirilir; DB/Redis yok.
 
 const calls: any[] = [];
 
@@ -22,8 +22,8 @@ const PR = { sub: 'u1', tid: 1, ga: false, tv: 0, imp: false }; // doğrulanmı�
 function loadRun(apis: any = { FakeService }, extraPolicy: Record<string, Record<string, string>> = {}) {
   let run: any;
   jest.isolateModules(() => {
-    jest.doMock('../../../src/api/rpc/index', () => ({ __esModule: true, default: apis }));
-    const policy = require('../../../src/api/rpc/operationPolicy');
+    jest.doMock('../../../src/api/index', () => ({ __esModule: true, default: apis }));
+    const policy = require('../../../src/api/operationPolicy');
     Object.assign(policy.OPERATION_POLICY, {
       FakeService: { echo: 'member' },
       Late: { echo: 'member' },
@@ -32,7 +32,7 @@ function loadRun(apis: any = { FakeService }, extraPolicy: Record<string, Record
       SecurityService: { selectStore: 'member' },
       ...extraPolicy,
     });
-    run = require('../../../src/api/rpc/RunOperation').default;
+    run = require('../../../src/api/RunOperation').default;
   });
   return run as (userContext: any, service: string, operation: string, request: any, principal?: any) => Promise<any>;
 }
@@ -196,9 +196,9 @@ describe('RunOperation: operasyon çözümleme (ADR-0001 adım 5: izinli liste =
   });
 });
 
-describe('src/api/rpc/index.ts: servis kaydı (statik metin kontrolü)', () => {
+describe('src/api/index.ts: servis kaydı (statik metin kontrolü)', () => {
   it('[MEVCUT DAVRANIŞ] AdminService ve SecurityService servis kayıt defterindedir (ADR-0001 adım 5: AdminService yalnızca platformAdmin kademesiyle çağrılabilir)', () => {
-    const src = fs.readFileSync(path.join(__dirname, '../../../src/api/rpc/index.ts'), 'utf8');
+    const src = fs.readFileSync(path.join(__dirname, '../../../src/api/index.ts'), 'utf8');
     const exportBlock = src.slice(src.indexOf('export default'));
     expect(exportBlock).toMatch(/^\s*AdminService,?$/m);
     expect(exportBlock).toMatch(/^\s*SecurityService,?$/m);

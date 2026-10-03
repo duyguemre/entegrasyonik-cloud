@@ -2,7 +2,7 @@
 // `app.config.errorHandler` / `unhandledrejection` / `window.onerror` / `router.onError`
 // hepsi ortak `reportUnexpectedError`'ı çağırır (bkz. `src/composables/errorReporting.ts`);
 // bu test o ortak fonksiyonu doğrudan sınar: (1) `logger.error` çağrılıyor mu (teknik log),
-// (2) tek toast deseniyle (Aşama 6b) kullanıcıya nazik bir bildirim + Destek kodu gösteriliyor mu,
+// (2) mevcut Snackbar deseniyle kullanıcıya nazik bir bildirim + Destek kodu gösteriliyor mu,
 // (3) `silent` seçeneğinde bildirim bastırılıyor ama log YİNE yazılıyor mu.
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
@@ -16,17 +16,13 @@ vi.mock('../src/composables/logger', () => {
 })
 
 import logger from '../src/composables/logger'
-import { useToast } from '@entegrasyonik/ui/composables/useToast'
-import { reportUnexpectedError, resetUnexpectedErrorCoalescing } from '../src/composables/errorReporting'
+import { useSnackbarStore } from '../src/stores/snackbarStore'
+import { reportUnexpectedError } from '../src/composables/errorReporting'
 
 describe('reportUnexpectedError (ADR-0017 Karar 1.8)', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
-    resetUnexpectedErrorCoalescing()
-    vi.useRealTimers()
     vi.mocked(logger.error).mockClear()
-    const { toasts, dismissToast } = useToast()
-    for (const t of [...toasts]) dismissToast(t.id)
   })
 
   it('teknik ayrıntıyı logger.error ile yazar (context + üretilen Destek kodu)', () => {
@@ -43,40 +39,41 @@ describe('reportUnexpectedError (ADR-0017 Karar 1.8)', () => {
     )
   })
 
-  // Aşama 6b (Standart 1): eski snackbar görünümü kaldırıldı; `snackbarStore.addSnackbar` tek toast kaynağına
-  // (`useToast`) yönlenir — iddialar aynı (ton, Destek kodu, ham ayrıntı sızmaz), yalnız okunan durum değişti.
-  it('kullanıcıya tek toast deseniyle nazik bir bildirim + Destek kodu gösterir', () => {
-    const { toasts } = useToast()
-    expect(toasts).toHaveLength(0)
+  it('kullanıcıya mevcut Snackbar deseniyle nazik bir bildirim + Destek kodu gösterir', () => {
+    const snackbarStore = useSnackbarStore()
+    expect(snackbarStore.snackbars).toHaveLength(0)
 
     reportUnexpectedError('Yakalanmamış promise reddi', { module: 'errorHandler' })
 
-    expect(toasts).toHaveLength(1)
-    const toast = toasts[0]
-    expect(toast.tone).toBe('error')
-    expect(toast.message).toContain('c-testcode')
+    expect(snackbarStore.snackbars).toHaveLength(1)
+    const snackbar = snackbarStore.snackbars[0]
+    expect(snackbar.color).toBe('error')
+    expect(snackbar.text).toContain('c-testcode')
     // Ham teknik ayrıntı (yığın/izleme) kullanıcı iletisine SIZMAZ.
-    expect(toast.message).not.toMatch(/stack|Error:/i)
+    expect(snackbar.text).not.toMatch(/stack|Error:/i)
   })
 
   it('özel `userMessage`/`color` verilirse kullanıcı iletisi ona göre değişir (ör. router chunk hatası)', () => {
-    const { toasts } = useToast()
+    const snackbarStore = useSnackbarStore()
 
     reportUnexpectedError('Router hata yakaladı', { module: 'router', isChunkError: true }, {
       userMessage: 'Uygulama güncellendi, sayfa yenileniyor…',
       color: 'info',
     })
 
-    expect(toasts).toHaveLength(1)
-    expect(toasts[0]).toMatchObject({ message: 'Uygulama güncellendi, sayfa yenileniyor…', tone: 'info' })
+    expect(snackbarStore.snackbars).toHaveLength(1)
+    expect(snackbarStore.snackbars[0]).toMatchObject({
+      text: 'Uygulama güncellendi, sayfa yenileniyor…',
+      color: 'info',
+    })
   })
 
   it('`silent: true` ile kullanıcı bildirimi bastırılır ama teknik log YİNE yazılır', () => {
-    const { toasts } = useToast()
+    const snackbarStore = useSnackbarStore()
 
     reportUnexpectedError('Sessiz hata', { module: 'test' }, { silent: true })
 
-    expect(toasts).toHaveLength(0)
+    expect(snackbarStore.snackbars).toHaveLength(0)
     expect(logger.error).toHaveBeenCalledTimes(1)
   })
 
@@ -86,35 +83,5 @@ describe('reportUnexpectedError (ADR-0017 Karar 1.8)', () => {
 
     expect(() => reportUnexpectedError('Erken hata', { module: 'test' })).not.toThrow()
     expect(logger.error).toHaveBeenCalledTimes(1)
-  })
-
-  // P16: menü 500'de aynı kökten üç hata → tek bildirim, tek Destek kodu; teknik log her biri için yazılır.
-  it('kısa pencerede ardışık beklenmeyen hatalar tek bildirimde toplanır (P16)', () => {
-    vi.useFakeTimers()
-    const { toasts } = useToast()
-
-    const a = reportUnexpectedError('Router hata yakaladı', { module: 'router' })
-    const b = reportUnexpectedError('Yakalanmamış promise reddi', { module: 'errorHandler' })
-    const c = reportUnexpectedError('Vue hata sınırı yakaladı', { module: 'errorHandler' })
-
-    expect(toasts).toHaveLength(1)
-    expect(b).toBe(a)
-    expect(c).toBe(a)
-    expect(logger.error).toHaveBeenCalledTimes(3)
-    expect(logger.error).toHaveBeenLastCalledWith('Vue hata sınırı yakaladı', expect.objectContaining({ coalesced: true }))
-
-    // Pencere geçtikten sonraki hata yeni bildirim olur.
-    vi.advanceTimersByTime(5000)
-    reportUnexpectedError('Sonraki hata', { module: 'x' })
-    expect(toasts.length).toBeGreaterThanOrEqual(1)
-    expect(logger.error).toHaveBeenLastCalledWith('Sonraki hata', expect.not.objectContaining({ coalesced: true }))
-    vi.useRealTimers()
-  })
-
-  it('özel iletili hata toplanmaz, her zaman gösterilir (P16)', () => {
-    const { toasts } = useToast()
-    reportUnexpectedError('İlk', { module: 'x' })
-    reportUnexpectedError('Chunk', { module: 'router' }, { userMessage: 'Uygulama güncellendi, sayfa yenileniyor…', color: 'info' })
-    expect(toasts).toHaveLength(2)
   })
 })

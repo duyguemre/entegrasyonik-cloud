@@ -11,7 +11,7 @@ const tourConfigs = {
         {
             element: '#tour-homepage-smartsearch',
             popover: {
-                title: 'Akıllı arama',
+                title: 'Akıllı Arama',
                 description: 'Ürünleri, siparişleri vs aramam için kullanabilirsiniz.',
             },
         },

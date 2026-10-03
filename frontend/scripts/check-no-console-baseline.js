@@ -28,8 +28,7 @@ const shouldWrite = process.argv.includes('--write');
 async function measure() {
   const { ESLint } = require('eslint');
   const eslint = new ESLint({ cwd: repoRoot });
-  // ADR-0034: sohbet paketi (packages/chat/src) de taranır; taban 0.
-  const results = await eslint.lintFiles(['src', 'packages/chat/src']);
+  const results = await eslint.lintFiles(['src']);
   const byFile = {};
   let errors = 0;
   for (const r of results) {

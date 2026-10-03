@@ -4,7 +4,7 @@
   yapıştır kalıntısıydı (araştırma bulgusu, BACKLOG'a taşındı).
 -->
 <template>
-  <IntegrationComingSoonPanel platform-name="Aras Kargo" category="kargo" alternative-capability="shippingNotice" />
+  <IntegrationComingSoonPanel platform-name="Aras Kargo" category="kargo" />
 </template>
 
 <script setup lang="ts">

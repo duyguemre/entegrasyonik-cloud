@@ -14,7 +14,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
    - Pazaryeri/entegrasyon sırları DB'de AES-256-GCM ile şifrelidir (`enc:v1:…`; anahtarlar `FIELD_ENCRYPTION_KEYS` env'inde, yoksa süreç başlamaz); API yanıtlarında 'sensitive' döner. Backend'i **yalnızca `npm run start:local` (egress guard) ile** çalıştır — mock modu fail-open (BACKLOG C19).
 6. **Git hijyeni:** `.env*` dosyaları ve `backup/` git-ignored'dır ve asla commit'lenmez (yalnızca `.env.example` takip edilir). Commit'lerde `git add -A`/`git add .` kullanılmaz; dosyalar yol yol eklenir.
 7. **Bulut oturumu (claude.ai/code, GitHub `entegrasyonik-cloud` kopyası):** Bu depo buluttaysa (kökte `.env`, `gitlab/`, `mockserver/` YOKTUR) bu yalnızca önyüz kopyasıdır (bkz. `docs/CLOUD_BRIEFS.md`):
-   -  site/, frontend/, backend/ ve docs/ (docs/adr hariç) değiştirilebilir (K52). docs/adr/ ve CLAUDE.md salt-okunurdur. DB/Redis/.env YOKTUR: hiçbir veritabanına ya da Redis'e bağlanma, backend'i çalıştırma; yalnız bellek-içi/sahte testler (jest, tsc, lint, depcruise, ratchet) koşulur. Göç betikleri yazılır ama ASLA çalıştırılmaz; gerçek DB doğrulaması yerelde yapılır.
+   - Yalnızca `site/` ve `frontend/` değiştirilir. `backend/`, `docs/adr/`, `CLAUDE.md` salt-okunurdur (site testleri kanıt olarak okur). DB/Redis/`.env` yoktur; bunlara bağlanmaya, backend'i çalıştırmaya çalışma.
    - İş kendi dalında yapılır (`cloud/<kısa-ad>`), `main`'e push edilmez. Küçük adımlarla commit + push (oturum kesilirse iş kaybolmasın).
    - Görsel tabanlar Windows'ta üretilir (`*-win32.png`). Bulutta Playwright'ı `--update-snapshots=missing` ile çalıştır; `*-linux.png` dosyaları git-ignored'dır, commit'leme. Görsel onay yerelde yapılır.
    - Token tasarrufu: ara adımlarda yalnızca ilgili spec'i ve tek viewport'u çalıştır; tam koşu ve tam sayfa ekran görüntüsü yalnızca sonda.
@@ -35,7 +35,7 @@ npm run start        # Build and start: npm run build && node dist/entegrasyonik
 
 ### Frontend (`/frontend`)
 ```bash
-npm run dev          # Vite dev server on port 3020 (3000 kullanıcının başka projesine ayrılmış)
+npm run dev          # Vite dev server on port 3000
 npm run build        # Type-check (vue-tsc) + Vite bundle
 npm run preview      # Preview production build
 npm start            # Launch Electron desktop app
@@ -90,7 +90,7 @@ Vue 3 + TypeScript + Vuetify 3, also packaged as an Electron desktop app.
 - **Auth**: `src/composables/user.ts`
 - **Types**: `src/types/` — ClaimTypes, OrderTypes, InvoiceTypes, MessageTypes, TicketTypes, PlatformProcess
 - **i18n**: Turkish and English, wired in `src/plugins/`
-- **Electron main process**: `frontend/main.js` — loads `http://localhost:3020` in dev, `dist/index.html` in production
+- **Electron main process**: `frontend/main.js` — loads `http://localhost:3000` in dev, `dist/index.html` in production
 
 ### Environment & Deployment
 

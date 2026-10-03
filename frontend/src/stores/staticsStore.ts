@@ -34,22 +34,22 @@ export const useStaticsStore = defineStore('staticsStore', () => {
 
   const STATUS_META: Record<PRODUCT_INTEGRATION_STATUS, { icon: string; order: number; message: string }> = {
     [PRODUCT_INTEGRATION_STATUS.PENDING]: {
-      icon: 'mdi-pencil-outline',
+      icon: 'mdi-pencil-box',
       order: 1,
       message: "Hazırlanıyor"
     },
     [PRODUCT_INTEGRATION_STATUS.SENT]: {
-      icon: 'mdi-play-outline',
+      icon: 'mdi-play',
       order: 2,
       message: "Gönderildi"
     },
     [PRODUCT_INTEGRATION_STATUS.WAITING]: {
-      icon: 'mdi-clock-outline',
+      icon: 'mdi-clock',
       order: 3,
       message: "Bekliyor"
     },
     [PRODUCT_INTEGRATION_STATUS.FAILED]: {
-      icon: 'mdi-close-box-outline',
+      icon: 'mdi-close-box',
       order: 4,
       message: "Reddedildi"
     },
@@ -109,10 +109,10 @@ export const useStaticsStore = defineStore('staticsStore', () => {
 
 
   const TICKET_STATUS_DESCRIPTIONS: any = {
-    [TICKET_STATUS.CREATED]: { text: "İNCELENİYOR", color: "warning" },
-    [TICKET_STATUS.PROCESSING]: { text: "ÇALIŞILIYOR", color: "info" },
-    [TICKET_STATUS.CLOSED]: { text: "KAPANDI", color: "success" },
-    [TICKET_STATUS.WAITING]: { text: "İŞLEM BEKLENİYOR", color: "error" }
+    [TICKET_STATUS.CREATED]: { text: "İNCELENİYOR", color: "orange" },
+    [TICKET_STATUS.PROCESSING]: { text: "ÇALIŞILIYOR", color: "blue" },
+    [TICKET_STATUS.CLOSED]: { text: "KAPANDI", color: "green" },
+    [TICKET_STATUS.WAITING]: { text: "İŞLEM BEKLENİYOR", color: "red" }
   }
 
 

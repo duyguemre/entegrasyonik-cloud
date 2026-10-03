@@ -9,7 +9,7 @@
 <template>
   <div class="engineSettingsView">
    <PlatformAdminGuard :allowed="isPlatformAdmin()">
-    <IntegrationConfigSettingsBody target="_engine" target-label="Motor ayarları" mode="engine" />
+    <IntegrationConfigSettingsBody target="_engine" target-label="Motor Ayarları" mode="engine" />
    </PlatformAdminGuard>
   </div>
 </template>

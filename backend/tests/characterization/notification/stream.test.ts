@@ -10,7 +10,7 @@ import express from 'express';
 jest.mock('@database/DatabaseManager', () => ({ DatabaseManagerInstance: {} }));
 
 import { configureNotificationStreamRoutes } from '@api/http/notificationStream';
-import { isOpenRoute } from '@api/http/authenticate';
+import { isOpenRoute } from '@api/authenticate';
 import { StreamHub, LocalRealtimeBus } from '@platform/runtime/realtime';
 
 let server: http.Server; let port: number; let hub: StreamHub; let bus: LocalRealtimeBus;

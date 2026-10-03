@@ -1,4 +1,4 @@
-// ADR-0029 Karar 1 / docs/NOTIFICATION_PLAN.md §2: TEK olay katalogu (v1: 29 tenant [+ sonradan eklenenler, PRC-R1 BUYBOX_LOST, PRC-R2 PRICE_RULE_PAUSED dahil; sayi testte] + 5 platform kodu + LEGACY_* koprusu).
+// ADR-0029 Karar 1 / docs/NOTIFICATION_PLAN.md §2: TEK olay katalogu (v1: 29 tenant + 5 platform kodu + LEGACY_* koprusu).
 // Kod, kategori, onem, izin, sablon anahtarlari, rota, dedupe/grup kurali, saklama, varsayilan kanallar, zorunluluk burada.
 // Degismezler tests/unit/notifications/catalog.test.ts'te. Kod silme/yeniden adlandirma baseline testinde kirilir (alias zorunlu).
 import { z } from 'zod';
@@ -138,26 +138,6 @@ const TENANT: NotificationDefinition[] = [
         legacyType: 'BATCH_PROCESS', legacyMode: 'TRANSFER',
         example: { integ: 'trendyol', mode: 'TRANSFER', batchId: 'B-2', errorCode: 'BATCH_REJECTED', corrId: 'c-2' },
     }),
-    // PRC-R1 (K57): buybox (Trendyol) bizdeyken başka satıcıya geçti. Soğuma: barkod başına `pricing.buybox.notify.cooldownHours`
-    // (üretici denetler) + gün içi dedupe. Gölge mod `pricing.buybox.notify.shadow` (varsayılan AÇIK: yalnız defter) — ADR-0029 NB8 deseni.
-    defineNotification({
-        code: 'BUYBOX_LOST', category: 'catalog', severity: 'warning', mandatory: false,
-        defaultChannels: { inApp: true, email: 'digest' }, audience: { permission: 'catalog:read', fallbackMinTier: 'member' },
-        params: z.object({ integ: code(), barcode: id(), buyboxOrder: num(), buyboxPrice: num(), day: dateStr() }).strict(),
-        action: (p) => `/products?buybox=losing&barcode=${q(p.barcode)}`, dedupeKey: (p) => `${p.integ}:${p.barcode}:${p.day}`,
-        group: { key: (p) => p.integ, windowMs: HOUR }, retention: 'short', surface: 'tenant',
-        example: { integ: 'trendyol', barcode: '8690000000001', buyboxOrder: 2, buyboxPrice: 249.9, day: '2026-10-01' },
-    }),
-    // PRC-R2 (K12, K17): rekabet fiyat kuralı DURAKLATILDI — fiyat Entegrasyonik dışında değişti (çift motor) ya da salınım (fiyat savaşı).
-    // Kural satıcı yeniden kaydedene kadar öneri üretmez. Dil "fiyat güncellendi/duraklatıldı"dır; "indirim" dili YOK (K11).
-    defineNotification({
-        code: 'PRICE_RULE_PAUSED', category: 'catalog', severity: 'warning', mandatory: false,
-        defaultChannels: { inApp: true, email: 'digest' }, audience: { permission: 'catalog:read', fallbackMinTier: 'member' },
-        params: z.object({ integ: code(), ruleId: id(), reason: z.enum(['external_change', 'oscillation']), day: dateStr() }).strict(),
-        action: (p) => `/catalog/pricing-rules?rule=${q(p.ruleId)}`, dedupeKey: (p) => `${p.ruleId}:${p.reason}:${p.day}`,
-        group: { key: (p) => p.integ, windowMs: HOUR }, retention: 'short', surface: 'tenant',
-        example: { integ: 'trendyol', ruleId: '650000000000000000000001', reason: 'external_change', day: '2026-10-01' },
-    }),
     defineNotification({
         code: 'CATALOG_IMPORT_COMPLETED', category: 'catalog', severity: 'success', mandatory: false,
         defaultChannels: { inApp: true, email: 'off' }, audience: { permission: 'catalog:read', fallbackMinTier: 'member' },
@@ -184,20 +164,6 @@ const TENANT: NotificationDefinition[] = [
         defaultChannels: { inApp: true, email: 'digest' }, audience: { permission: 'finance:read', fallbackMinTier: 'admin' },
         params: z.object({ mismatchCount: num() }).strict(), action: () => '/finance',
         group: { key: () => 'tenant', windowMs: 24 * HOUR }, retention: 'long', surface: 'tenant', example: { mismatchCount: 4 },
-    }),
-    // COM-08: gercek komisyon (hakedis) referanstan (tenant override > statik tablo) esik kadar sapti -> "tablo bayat olabilir".
-    // Kanal + kategori basina takvim ayinda (Europe/Istanbul) EN FAZLA bir kez (dedupeKey). Ayni gun cok kategori -> tek kayitta toplanir (group).
-    // params makinece okunabilir sapma olayidir (ADR-0018): oranlar puan, kaynak enum; ayrinti `FinancialService/getCommissionDrift`.
-    defineNotification({
-        code: 'COMMISSION_RATE_DRIFT', category: 'finance', severity: 'warning', mandatory: false,
-        defaultChannels: { inApp: true, email: 'digest' }, audience: { permission: 'finance:read', fallbackMinTier: 'admin' },
-        params: z.object({
-            integ: code(), categoryId: id(), realizedRate: num(), referenceRate: num(), referenceSource: z.enum(['override', 'estimated']),
-            deltaPoints: num(), thresholdPoints: num(), sampleCount: num(), window: dateStr(),
-        }).strict(),
-        action: () => '/finance', dedupeKey: (p) => `${p.integ}:${p.categoryId}:${p.window}`,
-        group: { key: (p) => p.integ, windowMs: 24 * HOUR }, retention: 'long', surface: 'tenant',
-        example: { integ: 'trendyol', categoryId: '64b000000000000000000001', realizedRate: 21.36, referenceRate: 18, referenceSource: 'estimated', deltaPoints: 3.36, thresholdPoints: 2, sampleCount: 42, window: '2026-10' },
     }),
     // ---- billing ----
     defineNotification({

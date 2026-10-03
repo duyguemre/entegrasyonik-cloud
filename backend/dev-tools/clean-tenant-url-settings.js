@@ -1,7 +1,7 @@
 'use strict';
 /**
  * [K7 / ADR-0020, 2026-09-28] Tenant `ClientIntegrations.<tip>[].settings` içine yazılmış URL/host/endpoint benzeri ÜST DÜZEY alanların
- * (örn. `settings.urls`, `baseUrl`, `*Url`, `host`, `endpoint`; kural: src/platform/core/security/tenantSettingsGuard.ts > isTenantUrlLikeKey) SAYIMI ve
+ * (örn. `settings.urls`, `baseUrl`, `*Url`, `host`, `endpoint`; kural: src/api/tenantSettingsGuard.ts > isTenantUrlLikeKey) SAYIMI ve
  * (isteğe bağlı) TEMİZLİĞİ. Bu alanlar artık ne yazılabilir ne adaptöre ulaşır (K7 düzeltmesi); DB'deki kalıntılar zararsızdır ama temizlenmelidir.
  *
  * VARSAYILAN = DRY-RUN / SALT-OKUNUR: yalnızca SAYILAR ve `<tip>:<entegrasyon kodu>:<anahtar adı>` dökümü yazdırılır — DEĞER ASLA yazdırılmaz.

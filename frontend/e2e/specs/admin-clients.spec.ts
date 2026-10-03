@@ -1,4 +1,4 @@
-// P2 — Admin paneli / Mağaza yönetimi (AdminClientListView + AdminClientDetailComponent +
+// P2 — Admin paneli / Mağaza Yönetimi (AdminClientListView + AdminClientDetailComponent +
 // AdminClientCreateComponent + ClientStatsCard). ADR-0011 Karar 2 tablosu: "admin panel
 // ekranları". platformAdmin-only ekranlar (ADR-0001 OPERATION_POLICY platformAdmin katmanı —
 // backend `AdminService` yalnızca süper yönetici içindir); menü kaydı ApplicationDB `menus`
@@ -18,21 +18,21 @@ function withAdminMenu(overrides: Record<string, any> = {}) {
   return { MenuService: menuFixtureWithAdmin, ...overrides }
 }
 
-test.describe('P2 — Admin / Mağaza yönetimi (AdminClientListView)', () => {
+test.describe('P2 — Admin / Mağaza Yönetimi (AdminClientListView)', () => {
   test('smoke: arama kutusu + özet çubuğu + mağaza satırları render olur', async ({ page }) => {
     await installApiMocks(page, withAdminMenu())
     await gotoAuthed(page)
     await openScreen(page, 'AdminClientListView')
 
     await expect(page.locator('.adminClientListView')).toBeVisible()
-    await expect(page.getByLabel('Mağaza adı veya kodu ara').first()).toBeVisible()
+    await expect(page.getByLabel('Müşteri / Mağaza Ara').first()).toBeVisible()
     await expect(page.getByText('E2E Örnek Mağaza', { exact: true })).toBeVisible()
     await expect(page.getByText('E2E Pasif Mağaza', { exact: true })).toBeVisible()
-    await expect(page.getByText('Toplam mağaza')).toBeVisible()
+    await expect(page.getByText('Toplam Mağaza')).toBeVisible()
     await expect(page.locator('.adminClientListView tbody tr')).toHaveCount(2)
   })
 
-  test('boş durum: sonuç yoksa "Mağaza bulunamadı" kartı gösterilir (BİLİNÇLİ TAMAMLAMA — bkz. BACKLOG.md)', async ({ page }) => {
+  test('boş durum: sonuç yoksa "Mağaza Bulunamadı" kartı gösterilir (BİLİNÇLİ TAMAMLAMA — bkz. BACKLOG.md)', async ({ page }) => {
     // BİLİNÇLİ TAMAMLAMA (characterization AŞAMASINDA bugünkü davranış Vuetify'ın kendi `tr` locale
     // varsayılanıydı — "Bu görünümde veri yok." — `v-slot:no-data` YOKTU; diğer P2 ekranlarındaki
     // (Customer/Claim/Invoice/Message/Log) aynı eksiklik). Token+a11y göçünde `EmptyState` ile
@@ -41,10 +41,10 @@ test.describe('P2 — Admin / Mağaza yönetimi (AdminClientListView)', () => {
     await gotoAuthed(page)
     await openScreen(page, 'AdminClientListView')
 
-    await expect(page.getByText('Mağaza bulunamadı', { exact: true })).toBeVisible()
+    await expect(page.getByText('Mağaza Bulunamadı', { exact: true })).toBeVisible()
   })
 
-  test('hata durumu: 500 alındığında "Mağazalar yüklenemedi" + Tekrar dene gösterilir, ham hata sızmaz', async ({ page }) => {
+  test('hata durumu: 500 alındığında da aynı boş-durumuna düşülür, ham hata sızmaz (gizli davranış — bkz. BACKLOG.md)', async ({ page }) => {
     // GİZLİ DAVRANIŞ (characterization, düzeltilmedi — BACKLOG.md): `restApi.post` HİÇBİR ZAMAN
     // reddetmiyor (bkz. restapi.ts `postService`); `loadClients` yalnızca `try/finally` kullanıyor
     // (catch YOK) ve `res?.success` falsy olunca `clients` başlangıç değeri `[]`'de kalıyor —
@@ -54,9 +54,7 @@ test.describe('P2 — Admin / Mağaza yönetimi (AdminClientListView)', () => {
     await gotoAuthed(page)
     await openScreen(page, 'AdminClientListView')
 
-    // DS-v2 Aşama 2 — BİLİNÇLİ DEĞİŞİKLİK: hata artık boş durumdan AYRI ("Mağazalar yüklenemedi" + "Tekrar dene").
-    await expect(page.getByText('Mağazalar yüklenemedi', { exact: true })).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Tekrar dene' })).toBeVisible()
+    await expect(page.getByText('Mağaza Bulunamadı', { exact: true })).toBeVisible()
     await expect(page.locator('body')).not.toContainText('500')
   })
 
@@ -74,7 +72,7 @@ test.describe('P2 — Admin / Mağaza yönetimi (AdminClientListView)', () => {
     await expect(dialog.getByText('Toplam Ürün')).toBeVisible()
     await expect(dialog.getByText('Aktif Entegrasyonlar')).toBeVisible()
 
-    await dialog.getByRole('tab', { name: /Operasyonel izleme/ }).click()
+    await dialog.getByRole('tab', { name: /OPERASYONEL İZLEME/ }).click()
     await expect(dialog.getByText('EXPORT DURUMU')).toBeVisible()
     await expect(dialog.getByText('IMPORT DURUMU')).toBeVisible()
   })
@@ -84,12 +82,11 @@ test.describe('P2 — Admin / Mağaza yönetimi (AdminClientListView)', () => {
     await gotoAuthed(page)
     await openScreen(page, 'AdminClientListView')
 
-    // DS-v2 Aşama 2 — BİLİNÇLİ DEĞİŞİKLİK: "+" başlık düğmesi yerine başlık eylemi "Yeni mağaza oluştur".
-    await page.getByRole('button', { name: 'Yeni mağaza oluştur' }).click()
+    await page.locator('.adminClientListView thead button:has(.mdi-plus)').click()
 
     const dialog = page.getByRole('dialog').filter({ hasText: 'Yeni Mağaza Oluştur' })
     await expect(dialog).toBeVisible()
-    await expect(dialog.getByLabel('Mağaza adı')).toBeVisible()
+    await expect(dialog.getByLabel('Mağaza Adı')).toBeVisible()
     await expect(dialog.getByLabel('E-Posta Adresi')).toBeVisible()
   })
 
@@ -104,7 +101,7 @@ test.describe('P2 — Admin / Mağaza yönetimi (AdminClientListView)', () => {
     await gotoAuthed(page)
     await openScreen(page, 'AdminClientListView')
 
-    await page.locator('.adminClientListView tbody tr').first().getByRole('button', { name: /mağazasını sil/ }).click()
+    await page.locator('.adminClientListView tbody tr').first().locator('button:has(.mdi-delete-sweep-outline)').click()
     const dialog = page.getByRole('dialog').filter({ hasText: 'Müşteri Sil' })
     await expect(dialog).toBeVisible()
     await expect(dialog).toContainText('Bu işlem geri alınamaz')

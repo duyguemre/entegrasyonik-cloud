@@ -9,14 +9,15 @@
 
     <MessageDetailComponent v-model="detailDialog.show" :message="selectedMessage" @reply="handleReply" />
 
-    <div class="d-flex pa-2 pt-2 pb-0 mt-0 mb-1 align-start flex-wrap search-section">
-      <v-text-field clearable density="compact" label="Mesaj içeriği, ürün adı veya sipariş no" variant="outlined"
-        v-model="searchForm.data.globalSearch" class="customTextField flex-grow-1" hide-details
+    <div class="d-flex pa-2 pt-2 pb-0 mt-0 mb-1 align-start flex-wrap search-section"
+      style="max-width:1200px; gap: 8px;">
+      <v-text-field clearable density="compact" label="Mesaj içeriği, Ürün Adı veya Sipariş No" variant="outlined"
+        v-model="searchForm.data.globalSearch" bg-color="white" class="customTextField flex-grow-1" hide-details
         @keyup.enter.stop="getMessages(true)" @click:clear="searchForm.data.globalSearch = ''; getMessages(true)">
         <template #append-inner>
-          <v-btn flat size="40" class="pa-2 search-submit-btn" elevation="0" color="surface" aria-label="Ara"
-            @click.stop="getMessages(true)">
-            <v-icon size="x-large" color="neutral">mdi-magnify</v-icon>
+          <v-btn flat size="40" class="pa-2" elevation="0" color="white" @click.stop="getMessages(true)"
+            style="border:1px solid white">
+            <v-icon size="x-large" color="processButtonColor">mdi-magnify</v-icon>
           </v-btn>
         </template>
       </v-text-field>
@@ -25,43 +26,45 @@
         <v-menu v-model="startDateMenuInline" :close-on-content-click="false">
           <template v-slot:activator="{ props }">
             <v-text-field :model-value="formattedStartDate" label="Başlangıç" variant="outlined" density="compact"
-              prepend-inner-icon="mdi-calendar-start-outline" hide-details readonly clearable
-              @click:clear="searchForm.data.startDate = null" v-bind="props" class="customTextField date-input"></v-text-field>
+              bg-color="white" prepend-inner-icon="mdi-calendar-start" hide-details readonly clearable
+              @click:clear="searchForm.data.startDate = null" v-bind="props" class="customTextField date-input"
+              style="min-width: 160px;"></v-text-field>
           </template>
           <v-card class="rounded-lg">
             <v-date-picker v-model="searchForm.data.startDate" :max="searchForm.data.endDate" hide-header locale="tr"
-              color="content-muted" @update:model-value="startDateMenuInline = false"
-              show-adjacent-months></v-date-picker>
+              color="passiveColor" @update:model-value="startDateMenuInline = false"
+              style="background-color: rgb(var(--v-theme-loginColor))!important;" show-adjacent-months></v-date-picker>
           </v-card>
         </v-menu>
 
         <v-menu v-model="endDateMenuInline" :close-on-content-click="false">
           <template v-slot:activator="{ props }">
             <v-text-field :model-value="formattedEndDate" label="Bitiş" variant="outlined" density="compact"
-              prepend-inner-icon="mdi-calendar-end-outline" hide-details readonly clearable
-              @click:clear="searchForm.data.endDate = null" v-bind="props" class="customTextField date-input"></v-text-field>
+              bg-color="white" prepend-inner-icon="mdi-calendar-end" hide-details readonly clearable
+              @click:clear="searchForm.data.endDate = null" v-bind="props" class="customTextField date-input"
+              style="min-width: 160px;"></v-text-field>
           </template>
           <v-card class="rounded-lg">
             <v-date-picker v-model="searchForm.data.endDate" :min="searchForm.data.startDate" hide-header locale="tr"
-              color="content-muted"
+              color="passiveColor" style="background-color: rgb(var(--v-theme-loginColor))!important;"
               @update:model-value="endDateMenuInline = false" show-adjacent-months></v-date-picker>
           </v-card>
         </v-menu>
 
-        <v-btn @click="searchForm.form.menu = true" size="40" elevation="0" color="surface" class="premium-cube-btn" aria-label="Filtrele">
-          <v-icon size="x-large" color="content-muted">mdi-filter-variant</v-icon>
+        <v-btn @click="searchForm.form.menu = true" size="40" elevation="0" color="white" class="premium-cube-btn">
+          <v-icon size="x-large" color="passiveColor">mdi-filter-variant</v-icon>
           <v-tooltip activator="parent" location="top">Filtrele</v-tooltip>
         </v-btn>
-        <v-btn @click="getMessages(true)" size="40" elevation="0" color="surface" class="premium-cube-btn" aria-label="Yenile">
-          <v-icon size="x-large" color="content-muted">mdi-refresh</v-icon>
+        <v-btn @click="getMessages(true)" size="40" elevation="0" color="white" class="premium-cube-btn">
+          <v-icon size="x-large" color="passiveColor">mdi-refresh</v-icon>
           <v-tooltip activator="parent" location="top">Yenile</v-tooltip>
         </v-btn>
       </div>
     </div>
 
-    <ActionDialogComponent v-model="searchForm.form.menu" title="Mesaj filtreleme" attach=".messageListView"
-      subtitle="Kategori ve durum bazlı filtreleme" icon="mdi-filter-cog-outline" color="content-muted" maxWidth="600px"
-      confirmText="Filtreleri uygula" @confirm="getMessages(true); searchForm.form.menu = false"
+    <ActionDialogComponent v-model="searchForm.form.menu" title="MESAJ FİLTRELEME" attach=".messageListView"
+      subtitle="Kategori ve durum bazlı filtreleme" icon="mdi-filter-cog" color="passiveColor" maxWidth="600px"
+      confirmText="FİLTRELERİ UYGULA" @confirm="getMessages(true); searchForm.form.menu = false"
       @cancel="resetFilters()">
       <v-row dense>
         <v-col cols="12" md="6">
@@ -97,20 +100,21 @@
             'rejected-row': item.isRejected || item.status === 'REJECTED'
           }">
             <td>
-              <v-checkbox-btn :model-value="isMessageSelected(item)" color="content-muted"
-                aria-label="Mesajı seç" @update:model-value="val => onMessageSelectionUpdate(item, !!val)" density="compact"></v-checkbox-btn>
+              <v-checkbox-btn :model-value="isMessageSelected(item)" color="passiveColor"
+                @update:model-value="val => onMessageSelectionUpdate(item, !!val)" density="compact"></v-checkbox-btn>
             </td>
             <td class="text-left py-2">
               <div class="d-flex align-center">
                 <v-icon :icon="MESSAGE_TYPE_ICONS[item.type as MessageTypeEnum]" size="24"
-                  :color="statusRole(item)"
+                  :color="item.isRejected || item.status === 'REJECTED' ? 'error' : (item.status === 'WAITING_SELLER' ? 'warning' : MESSAGE_STATUS_COLORS[item.status as MessageStatusEnum])"
                   class="mr-3" />
                 <div class="d-flex flex-column">
-                  <span class="font-weight-black text-body-2 text-strong ek-leading-tight">
+                  <span class="font-weight-black text-body-2 color-slate-900 leading-tight">
                     {{ MESSAGE_TYPE_LABELS[item.type as MessageTypeEnum] }}
                   </span>
                   <div class="d-flex align-center gap-1 mt-1">
-                    <span class="text-micro font-weight-black text-uppercase" :class="`text-${statusRole(item)}`">
+                    <span class="text-micro font-weight-black text-uppercase"
+                      :class="`text-${MESSAGE_STATUS_COLORS[item.status as MessageStatusEnum]}`">
                       {{ item.integrationCode }}
                     </span>
                   </div>
@@ -118,18 +122,18 @@
               </div>
             </td>
 
-            <td class="text-left py-2 message-cell">
+            <td class="text-left py-2" style="max-width: 300px;">
               <div class="d-flex flex-column position-relative">
                 <div v-if="item.status === 'UNREAD'" class="unread-dot"></div>
-                <span class="text-caption text-default"
+                <span class="text-caption color-slate-700"
                   :class="item.status === 'UNREAD' ? 'font-weight-black' : 'font-weight-bold'">
                   {{ item.text }}
                 </span>
                 <span v-if="item.context?.productName"
-                  class="text-micro font-weight-medium text-muted text-truncate">
+                  class="text-micro font-weight-medium color-slate-500 text-truncate">
                   Ürün: {{ item.context.productName }}
                 </span>
-                <span v-if="item.context?.orderNumber" class="text-micro font-weight-bold text-primary">
+                <span v-if="item.context?.orderNumber" class="text-micro font-weight-bold color-primary">
                   Sipariş: {{ item.context.orderNumber }}
                 </span>
               </div>
@@ -137,49 +141,57 @@
 
             <td class="text-left py-2">
               <div v-if="item.customer" class="d-flex align-center">
-                <v-avatar color="surface-sunken" size="28" class="mr-2">
-                  <span class="text-micro font-weight-black text-default">{{ item.customer.firstName?.[0] }}{{
+                <v-avatar color="slate-100" size="28" class="mr-2">
+                  <span class="text-micro font-weight-black color-slate-700">{{ item.customer.firstName?.[0] }}{{
                     item.customer.lastName?.[0] }}</span>
                 </v-avatar>
                 <div class="d-flex flex-column">
-                  <span class="text-micro font-weight-bold text-strong">{{ item.customer.firstName }} {{
+                  <span class="text-micro font-weight-bold color-slate-900">{{ item.customer.firstName }} {{
                     item.customer.lastName }}</span>
-                  <span class="text-micro text-muted">{{ item.customer.phone || 'Telefon Yok' }}</span>
+                  <span class="text-micro color-slate-500">{{ item.customer.phone || 'Telefon Yok' }}</span>
                 </div>
               </div>
-              <span v-else class="text-micro text-muted">
+              <span v-else class="text-micro color-slate-400">
                 {{ item.externalUserName || 'Anonim Müşteri' }}
               </span>
             </td>
 
             <td class="text-center py-2">
-              <EkStatusChip :tone="statusTone(item)" :label="statusLabel(item)"
-                :title="item.rejectionReason ? `Red Sebebi: ${item.rejectionReason}` : undefined" />
+              <v-chip
+                :color="item.isRejected || item.status === 'REJECTED' ? 'error' : (item.status === 'WAITING_SELLER' ? 'warning' : MESSAGE_STATUS_COLORS[item.status as MessageStatusEnum])"
+                size="small" variant="flat" class="font-weight-black">
+                <v-icon v-if="item.isRejected || item.status === 'REJECTED'" start size="14">mdi-cancel</v-icon>
+                <v-icon v-else-if="item.status === 'WAITING_SELLER'" start size="14">mdi-alert-circle</v-icon>
+                {{ (item.isRejected || item.status === 'REJECTED') ? 'REDDEDİLDİ' : MESSAGE_STATUS_LABELS[item.status as
+                  MessageStatusEnum] }}
+
+                <v-tooltip v-if="item.rejectionReason" activator="parent" location="top">
+                  Red Sebebi: {{ item.rejectionReason }}
+                </v-tooltip>
+              </v-chip>
             </td>
 
             <td class="text-right py-2">
               <div class="d-flex flex-column align-end">
-                <span class="text-caption font-weight-bold text-strong">{{ formatDate(item.date) }}</span>
-                <span class="text-micro text-muted">{{ formatTime(item.date) }}</span>
+                <span class="text-caption font-weight-bold color-slate-900">{{ formatDate(item.date) }}</span>
+                <span class="text-micro color-slate-500">{{ formatTime(item.date) }}</span>
               </div>
             </td>
 
             <td>
               <div class="d-flex justify-end gap-2 pr-1">
-                <v-btn flat size="35" color="surface" class="premium-cube-btn"
-                  :aria-label="(item.status === 'WAITING_SELLER' || item.isRejected) ? 'Cevapla / Düzenle' : 'Görüntüle'"
-                  @click="openDetail(item)">
+                <v-btn flat size="35" color="white" class="premium-cube-btn" @click="openDetail(item)">
                   <v-icon size="large"
-                    :color="(item.status === 'WAITING_SELLER' || item.isRejected) ? 'warning' : 'content-muted'">
-                    {{ (item.status === 'WAITING_SELLER' || item.isRejected) ? 'mdi-message-reply-text-outline' : 'mdi-eye-outline' }}
+                    :color="(item.status === 'WAITING_SELLER' || item.isRejected) ? 'warning' : 'passiveColor'">
+                    {{ (item.status === 'WAITING_SELLER' || item.isRejected) ? 'mdi-message-reply-text' : 'mdi-eye' }}
                   </v-icon>
                   <v-tooltip activator="parent" location="top">{{ (item.status === 'WAITING_SELLER' || item.isRejected)
                     ? 'Cevapla / Düzenle' : 'Görüntüle' }}</v-tooltip>
                 </v-btn>
 
-                <v-btn flat size="35" variant="flat" color="error" class="premium-cube-btn ml-2" aria-label="Mesajı sil"
+                <v-btn flat size="35" variant="tonal" class="bg-danger premium-cube-btn ml-2"
                   @click="triggerDelete(item)">
-                  <v-icon size="large" color="error-contrast">mdi-trash-can-outline</v-icon>
+                  <v-icon size="large" color="white">mdi-delete-sweep-outline</v-icon>
                 </v-btn>
               </div>
             </td>
@@ -188,82 +200,87 @@
 
         <template v-slot:bottom>
           <PaginationComponent :totalNumberOfPages="pagination.totalNumberOfPages" :pagination="pagination"
-            @setPage="handlePageChange" v-model="pagination.page" class="table-pagination" />
+            @setPage="handlePageChange" v-model="pagination.page" style="position:relative;border-top:1px solid #ddd" />
         </template>
       </v-data-table-server>
 
-      <div v-else class="mobile-list d-flex flex-column h-100">
-        <div class="pa-2 overflow-y-auto flex-grow-1 mobile-list__scroll">
+      <div v-else class="mobile-list d-flex flex-column h-100 bg-slate-50">
+        <div class="pa-2 overflow-y-auto flex-grow-1" style="padding-bottom: 80px !important;">
           <v-card v-for="item in messages" :key="item._id" class="mobile-card mb-3 border-subtle" elevation="0" :class="{
             'unanswered-row': item.status === 'WAITING_SELLER',
             'rejected-row': item.isRejected || item.status === 'REJECTED'
           }" rounded="lg" @click="openDetail(item)">
             <div class="pa-3 border-bottom-dashed d-flex justify-space-between align-center">
               <div class="d-flex align-center">
-                <v-checkbox-btn :model-value="isMessageSelected(item)" color="content-muted" aria-label="Mesajı seç"
+                <v-checkbox-btn :model-value="isMessageSelected(item)" color="passiveColor"
                   @update:model-value="val => onMessageSelectionUpdate(item, !!val)" density="compact" class="mr-2"
                   @click.stop></v-checkbox-btn>
                 <v-icon :icon="MESSAGE_TYPE_ICONS[item.type as MessageTypeEnum]" size="18"
-                  :color="statusRole(item)"
+                  :color="item.isRejected || item.status === 'REJECTED' ? 'error' : (item.status === 'WAITING_SELLER' ? 'warning' : MESSAGE_STATUS_COLORS[item.status as MessageStatusEnum])"
                   class="mr-2" />
-                <span class="font-weight-black text-micro text-strong">{{ MESSAGE_TYPE_LABELS[item.type as
+                <span class="font-weight-black text-micro color-slate-900">{{ MESSAGE_TYPE_LABELS[item.type as
                   MessageTypeEnum] }}</span>
               </div>
-              <EkStatusChip :tone="statusTone(item)" :label="statusLabel(item)" />
+              <v-chip
+                :color="item.isRejected || item.status === 'REJECTED' ? 'error' : (item.status === 'WAITING_SELLER' ? 'warning' : MESSAGE_STATUS_COLORS[item.status as MessageStatusEnum])"
+                size="x-small" variant="flat" class="font-weight-black">
+                {{ (item.isRejected || item.status === 'REJECTED') ? 'REDDEDİLDİ' : MESSAGE_STATUS_LABELS[item.status as
+                  MessageStatusEnum] }}
+              </v-chip>
             </div>
 
             <div class="pa-3">
-              <div class="text-caption text-default mb-2 truncate-2-lines position-relative"
+              <div class="text-caption color-slate-700 mb-2 truncate-2-lines position-relative"
                 :class="item.status === 'UNREAD' ? 'font-weight-black' : 'font-weight-bold'">
                 <div v-if="item.status === 'UNREAD'" class="unread-dot-mobile"></div>
                 {{ item.text }}
               </div>
 
-              <EkAlert v-if="(item.isRejected || item.status === 'REJECTED') && item.rejectionReason" tone="error" dense class="mb-2" :text="`Red: ${item.rejectionReason}`" />
+              <v-alert v-if="(item.isRejected || item.status === 'REJECTED') && item.rejectionReason" type="error"
+                density="compact" variant="tonal" class="text-micro pa-1 mb-2">
+                Red: {{ item.rejectionReason }}
+              </v-alert>
 
               <div class="d-flex justify-space-between align-end">
                 <div class="d-flex flex-column">
-                  <span v-if="item.context?.productName" class="text-micro font-weight-bold text-muted">Ürün: {{
+                  <span v-if="item.context?.productName" class="text-micro font-weight-bold color-slate-500">Ürün: {{
                     item.context.productName }}</span>
-                  <span v-if="item.customer" class="text-micro font-weight-black text-strong">{{
+                  <span v-if="item.customer" class="text-micro font-weight-black color-slate-900">{{
                     item.customer.firstName
                     }} {{ item.customer.lastName }}</span>
                 </div>
                 <div class="d-flex flex-column align-end">
-                  <span class="text-micro font-weight-bold text-muted">{{ formatDate(item.date) }}</span>
+                  <span class="text-micro font-weight-bold color-slate-400">{{ formatDate(item.date) }}</span>
                 </div>
               </div>
             </div>
           </v-card>
         </div>
-        <div class="mobile-pagination-wrapper pa-2 shadow-top">
+        <div class="mobile-pagination-wrapper pa-2 bg-white shadow-top">
           <PaginationComponent :totalNumberOfPages="pagination.totalNumberOfPages" :pagination="pagination"
             @setPage="handlePageChange" v-model="pagination.page" />
         </div>
       </div>
     </div>
     <BatchProcessMenu :model-value="selectedMessages" title="Mesaj Seçildi" :actions="[
-      { id: 'DELETE', label: 'Toplu Sil', icon: 'mdi-trash-can-outline', color: 'error', badgeCount: bulkActionCounts.DELETE }
+      { id: 'DELETE', label: 'Toplu Sil', icon: 'mdi-delete-sweep-outline', color: 'error', badgeCount: bulkActionCounts.DELETE }
     ]" @action="triggerBulkDelete" @clear="selectedMessages = []" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { EkAlert, EkStatusChip } from '@entegrasyonik/ui/components'
 import { ref, onMounted, reactive, computed } from 'vue';
 import useRestApi from '@/composables/restapi';
 import { useSnackbarStore } from '@/stores/snackbarStore';
 import {
   MessageStatusEnum,
   MESSAGE_STATUS_LABELS,
+  MESSAGE_STATUS_COLORS,
   MessageTypeEnum,
   MESSAGE_TYPE_LABELS,
   MESSAGE_TYPE_ICONS
 } from '@/types/MessageTypes';
 
-import { formatDate, formatDateTime } from '@entegrasyonik/ui/format';
-import { MESSAGE_STATUS_TONE, type StatusTone } from '@/design/status-map';
-;
 import LoadingComponent from '@/components/LoadingComponent.vue';
 import PaginationComponent from '@/components/PaginationComponent.vue';
 import ActionDialogComponent from '@/components/layout/ActionDialogComponent.vue';
@@ -290,8 +307,8 @@ const actionDialog = ref<any>({ show: false });
 const startDateMenuInline = ref(false);
 const endDateMenuInline = ref(false);
 
-const formattedStartDate = computed(() => searchForm.data.startDate ? formatDate(searchForm.data.startDate) : '');
-const formattedEndDate = computed(() => searchForm.data.endDate ? formatDate(searchForm.data.endDate) : '');
+const formattedStartDate = computed(() => searchForm.data.startDate ? new Date(searchForm.data.startDate).toLocaleDateString('tr-TR') : '');
+const formattedEndDate = computed(() => searchForm.data.endDate ? new Date(searchForm.data.endDate).toLocaleDateString('tr-TR') : '');
 
 const pagination = reactive({
   page: 1,
@@ -420,7 +437,7 @@ const triggerDelete = (item: any) => {
     title: "Mesajı Sil",
     subtitle: "Bu işlem geri alınamaz",
     message: "Seçili mesajı sistemden silmek istediğinize emin misiniz?",
-    icon: "mdi-trash-can-outline",
+    icon: "mdi-delete-alert",
     color: "error",
     confirmText: "EVET, SİL",
     onConfirm: async () => {
@@ -445,7 +462,7 @@ const triggerBulkDelete = () => {
     title: "Mesajları Toplu Sil",
     subtitle: "Seçilen tüm mesajlar kalıcı olarak silinecektir.",
     message: [text('Seçili olan '), emphasis(selectedMessages.value.length), text(' mesajı silmek istediğinize emin misiniz?')],
-    icon: "mdi-trash-can-outline",
+    icon: "mdi-delete-sweep",
     color: "error",
     confirmText: "EVET, TOPLU SİL",
     onConfirm: async () => {
@@ -472,16 +489,8 @@ const onMessageSelectionUpdate = (item: any, isSelected: boolean) => {
 
 const isMessageSelected = (item: any) => selectedMessages.value.includes(item._id);
 
-const formatTime = (date: any) => date ? (formatDateTime(date).split(' ')[1] ?? '') : '';
-
-const isRejectedMessage = (item: any) => !!item.isRejected || item.status === 'REJECTED';
-const statusTone = (item: any): StatusTone =>
-  isRejectedMessage(item) ? 'danger' : (MESSAGE_STATUS_TONE[item.status as MessageStatusEnum]?.tone ?? 'neutral');
-const statusLabel = (item: any) =>
-  isRejectedMessage(item) ? 'REDDEDİLDİ' : (MESSAGE_STATUS_LABELS[item.status as MessageStatusEnum] ?? item.status);
-/** Durum tonu → Vuetify tema rolü (ikon/metin rengi). */
-const TONE_ROLE: Record<StatusTone, string> = { danger: 'error', warning: 'warning', success: 'success', info: 'info', neutral: 'content-muted' };
-const statusRole = (item: any) => TONE_ROLE[statusTone(item)];
+const formatDate = (date: any) => date ? new Date(date).toLocaleDateString('tr-TR') : '-';
+const formatTime = (date: any) => date ? new Date(date).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) : '';
 
 // onMounted(() => getMessages()); // Removed to avoid race condition with initialize
 
@@ -526,28 +535,14 @@ defineExpose({
 
 .search-section {
   background: transparent;
-  z-index: var(--ek-z-sticky);
-  max-width: 1200px;
-  gap: var(--ek-space-2);
-}
-
-.search-submit-btn {
-  border: 1px solid var(--ek-color-surface);
-}
-
-.date-input {
-  min-width: 160px;
-}
-
-.message-cell {
-  max-width: 300px;
+  z-index: 10;
 }
 
 .table-wrapper {
   flex-grow: 1;
   position: relative;
   min-height: 0;
-  background: var(--ek-color-surface);
+  background: white;
 }
 
 .desktop-table {
@@ -558,51 +553,30 @@ defineExpose({
   right: 0;
 }
 
-.table-pagination {
-  position: relative;
-  border-top: 1px solid var(--ek-color-border-default);
-}
-
 .row-hover {
-  transition: background-color var(--ek-motion-reveal);
+  transition: background-color 0.2s ease;
   cursor: pointer;
 
   &:hover {
-    background-color: var(--ek-color-surface-muted) !important;
+    background-color: #f1f5f9 !important;
   }
 }
 
-.mobile-list {
-  background: var(--ek-color-surface-muted);
-}
-
-.mobile-list__scroll {
-  padding-bottom: 80px !important;
-}
-
 .border-subtle {
-  border: 1px solid var(--ek-color-border-default) !important;
+  border: 1px solid #e2e8f0 !important;
 }
 
 .border-bottom-dashed {
-  border-bottom: 1px dashed var(--ek-color-border-default);
-}
-
-.mobile-pagination-wrapper {
-  background: var(--ek-color-surface);
+  border-bottom: 1px dashed #e2e8f0;
 }
 
 .shadow-top {
-  border-top: 1px solid var(--ek-color-border-default);
+  box-shadow: 0 -4px 6px -1px rgb(0 0 0 / 0.1);
 }
 
 .text-micro {
-  font-size: var(--ek-type-micro-size);
-  line-height: var(--ek-line-height-tight);
-}
-
-.ek-leading-tight {
-  line-height: var(--ek-line-height-tight);
+  font-size: 11px;
+  line-height: 1.2;
 }
 
 .truncate-2-lines {
@@ -611,16 +585,20 @@ defineExpose({
   overflow: hidden;
 }
 
-.text-strong {
-  color: var(--ek-color-content-strong);
+.color-slate-900 {
+  color: #0f172a;
 }
 
-.text-default {
-  color: var(--ek-color-content-default);
+.color-slate-700 {
+  color: #334155;
 }
 
-.text-muted {
-  color: var(--ek-color-content-muted);
+.color-slate-500 {
+  color: #64748b;
+}
+
+.color-slate-400 {
+  color: #94a3b8;
 }
 
 .unread-dot {
@@ -629,8 +607,8 @@ defineExpose({
   top: 6px;
   width: 8px;
   height: 8px;
-  background-color: var(--ek-color-info);
-  border-radius: var(--ek-radius-full);
+  background-color: #3b82f6;
+  border-radius: 50%;
 }
 
 .unread-dot-mobile {
@@ -639,24 +617,24 @@ defineExpose({
   top: 6px;
   width: 6px;
   height: 6px;
-  background-color: var(--ek-color-info);
-  border-radius: var(--ek-radius-full);
+  background-color: #3b82f6;
+  border-radius: 50%;
 }
 
 .unanswered-row {
-  background-color: var(--ek-color-warning-subtle) !important;
+  background-color: #fffbeb !important;
 }
 
 .rejected-row {
-  background-color: var(--ek-color-error-subtle) !important;
+  background-color: #fef2f2 !important;
 }
 
 :deep(.v-data-table-header__content) {
   span {
-    font-size: var(--ek-type-micro-size) !important;
-    font-weight: var(--ek-font-weight-semibold) !important;
-    color: var(--ek-color-content-muted) !important;
-    letter-spacing: 0.04em;
+    font-size: 11px !important;
+    font-weight: 800 !important;
+    color: #64748b !important;
+    letter-spacing: 0.5px;
   }
 }
 

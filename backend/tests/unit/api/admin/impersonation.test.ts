@@ -9,8 +9,8 @@ const redisHolder: { redis: any } = { redis: undefined };
 jest.mock('@services/redis', () => ({ RedisService: { isReady: () => !!redisHolder.redis, getInstance: () => redisHolder.redis } }));
 
 import { issueImpersonationTicket, redeemImpersonationTicket, hashTicket, IMPERSONATION_SESSION_SECONDS } from '../../../../src/api/admin/impersonationTicket';
-import SecurityService from '../../../../src/api/rpc/handlers/security-service';
-import Security, { SESSION_COOKIE_NAME } from '../../../../src/platform/core/security/Security';
+import SecurityService from '../../../../src/api/services/security-service';
+import Security, { SESSION_COOKIE_NAME } from '../../../../src/api/Security';
 import { AuditLogger } from '../../../../src/services/audit/AuditLogger';
 import { Clock, FakeRedis, FakeUserModel, FakeClientModel, makeUser } from '../../../helpers/adminFakes';
 import { makeRes } from '../../../characterization/auth/_helpers';

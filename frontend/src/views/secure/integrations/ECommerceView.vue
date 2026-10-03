@@ -3,27 +3,19 @@
     <div class="workarea-scroll screen-scroll-inset">
       <LoadingComponent attach=".ecommerceView" ref="loadingComponentRef"></LoadingComponent>
 
-      <div class="ek-integration-head">
+      <div class="pa-6 pb-0">
         <EkPageHeader section="Entegrasyonlar" title="E-Ticaret"
-          description="E-ticaret altyapınızı bağlayın ve API ayarlarını buradan yönetin.">
-          <template #tools><EkViewSwitch v-model="view" /></template>
-        </EkPageHeader>
+          description="E-ticaret altyapınızı bağlayın ve API ayarlarını buradan yönetin." />
       </div>
 
-      <div class="ek-integration-page">
-        <!-- FE-LOCAL-1048: Liste | Özet — özet, bağlantı ayarlarının YERİNE açılır (ikisi aynı sayfada durmaz). -->
-        <IntegrationOverview v-if="view === 'summary' && clientECommerces?.length" title="E-Ticaret" noun="e-ticaret platformu" :items="clientECommerces" :live-codes="liveCodes"
-          :active-codes="activeCodes" list-label="E-ticaret platformları" :current="editingClientIntegration.code"
-          @select="(code: string) => { setAndRetrieveEditingClientECommerce(code); view = 'list' }" />
-      <div v-show="view === 'list'" class="ek-integration-layout">
-        <div class="ek-integration-layout__main">
-          <ListDashSection label="E-ticaret platformları">
+      <v-row class="ma-0">
+        <v-col cols="12" lg="8" class="pa-0">
+          <div class="pa-6">
             <IntegrationPlatformRail :items="clientECommerces" :model-value="editingClientIntegration.code"
-              :live-codes="liveCodes" :active-codes="activeCodes" ariaLabel="E-ticaret platformu seçimi"
+              :live-codes="LIVE_CODES" ariaLabel="E-ticaret platformu seçimi"
               @select="setAndRetrieveEditingClientECommerce" />
-          </ListDashSection>
-          <ListDashSection label="Bağlantı ayarları">
-          <div class="ek-integration-stack">
+            <DividerComponent />
+          </div>
           <v-form ref="newVariantFormRef" v-model="isFormValid">
             <v-card-text class="pa-0 px-0" role="tabpanel"
               :aria-label="editingClientIntegration.code ? `${editingClientIntegration.code} ayarları` : 'Seçim bekleniyor'">
@@ -65,26 +57,38 @@
                     category="e-ticaret" />
                 </template>
               </div>
-              <EkEmptyState v-else variant="not-connected" title="Başlamak için seçim yapın"
+              <EkEmptyState v-else variant="not-connected" title="Başlamak İçin Seçim Yapın"
                 message="Yukarıdaki listeden bir e-ticaret platformu seçerek ayarları yönetmeye başlayabilirsiniz." />
             </v-card-text>
           </v-form>
-          <!-- FE-LOCAL-1048: kapsam ikincil bilgi — ayar formunun ALTINDA, katlanır sakin satır. -->
-          <IntegrationCapabilityChips v-if="isLive(editingClientIntegration.code)" :code="editingClientIntegration.code"
-            category="ecommerce" :show-health-link="!!healthLink" @open-health="openHealth" />
-          </div>
-          </ListDashSection>
-        </div>
+        </v-col>
 
-        <aside class="ek-integration-layout__aside">
-          <ListDashSection label="Rehber">
-          <!-- C1.2: kodu olmayan sağlayıcı seçiliyken "API anahtarını girin" adımları gösterilmez. -->
-          <IntegrationGuideCard v-if="!editingClientIntegration.code || isLive(editingClientIntegration.code)" :steps="guideSteps" />
-          <IntegrationGuideCard v-else :steps="comingSoonGuide" note="" />
-          </ListDashSection>
-        </aside>
-      </div>
-      </div>
+        <v-col cols="12" lg="4" class="pa-6">
+          <CardComponent>
+            <div class="d-flex align-center mb-6">
+              <v-icon color="passiveColor" class="mr-2">mdi-lightbulb-on-outline</v-icon>
+              <span class="text-subtitle-1 font-weight-bold">Hızlı Başlangıç Rehberi</span>
+            </div>
+
+            <div v-for="(step, i) in guideSteps" :key="i" class="mb-5 d-flex">
+              <div class="step-number mr-4">{{ i + 1 }}</div>
+              <div>
+                <div class="text-subtitle-2 font-weight-bold mb-1">{{ step.title }}</div>
+                <div class="text-caption opacity-60">{{ step.text }}</div>
+              </div>
+            </div>
+
+            <v-divider class="my-6 opacity-10"></v-divider>
+
+            <v-alert variant="tonal" color="passiveColor" density="compact" class="rounded-lg border-opacity-25">
+              <template v-slot:prepend>
+                <v-icon size="small">mdi-help-circle-outline</v-icon>
+              </template>
+              <div class="text-caption">API bilgileriniz hatalı ise bağlantı "Pasif" görünecektir.</div>
+            </v-alert>
+          </CardComponent>
+        </v-col>
+      </v-row>
     </div>
   </div>
 </template>
@@ -103,21 +107,15 @@ import LoadingComponent from '@/components/LoadingComponent.vue'
 import useRestApi from '@/composables/restapi'
 import { useIntegrationStore } from '@/stores/integrationStore'
 import { useI18n } from 'vue-i18n'
-import IntegrationGuideCard from '@/components/integrations/IntegrationGuideCard.vue'
-import EkPageHeader from '@/components/page/EkPageHeader.vue'
-import { EkEmptyState } from '@entegrasyonik/ui/components'
+import CardComponent from '@/components/CardComponent.vue'
+import DividerComponent from '@/components/layout/DividerComponent.vue'
+import EkPageHeader from '@/components/ds/EkPageHeader.vue'
+import EkEmptyState from '@/components/ds/EkEmptyState.vue'
 import IntegrationPlatformRail from '@/components/integrations/IntegrationPlatformRail.vue'
-import IntegrationOverview from '@/components/integrations/IntegrationOverview.vue'
-import EkViewSwitch, { type EkViewMode } from '@/components/page/EkViewSwitch.vue'
-import ListDashSection from '@/components/page/ListDashSection.vue'
 import IntegrationComingSoonPanel from '@/components/integrations/IntegrationComingSoonPanel.vue'
-import IntegrationCapabilityChips from '@/components/integrations/IntegrationCapabilityChips.vue'
-import { useIntegrationScreen } from '@/components/integrations/useIntegrationScreen'
 
-// C1.2 — canlı küme `getCatalog` manifestosundan (yedek: `FALLBACK_LIVE_CODES`, bkz. `integrationCatalog.ts`).
-const { liveCodes, isLive, healthLink, openHealth, comingSoonGuide, noteSettings, activeCodesOf } = useIntegrationScreen('ecommerce')
-// FE-LOCAL-1048: Liste | Özet — varsayılan ayarlar; Özet ayar düzeninin yerine açılır.
-const view = ref<EkViewMode>('list')
+// `docs/INTEGRATIONS_REGISTRY.md` §3.1 — yalnızca Ideasoft'un gerçek backend bağlantısı var.
+const LIVE_CODES = ['ideasoft']
 
 const integrationStore: any = useIntegrationStore()
 const { t } = useI18n()
@@ -127,8 +125,8 @@ const restApi = useRestApi()
 const editingClientIntegration: any = ref({ settings: {} })
 
 const guideSteps = [
-  { title: 'Kanalı seçin', text: 'Üstteki ikonlara tıklayarak işlem yapacağınız e-ticaret sitesini seçin.' },
-  { title: 'API bağlantısı', text: 'E-ticaret panelinden aldığınız API anahtarlarını ilgili alanlara girin.' },
+  { title: 'Platformu Belirleyin', text: 'Üstteki ikonlara tıklayarak işlem yapacağınız e-ticaret sitesini seçin.' },
+  { title: 'API Bağlantısı', text: 'E-ticaret panelinden aldığınız API anahtarlarını ilgili alanlara girin.' },
   { title: 'Senkronizasyon', text: 'Bağlantı sağlandıktan sonra ürün ve sipariş verileriniz otomatik olarak eşitlenecektir.' }
 ]
 
@@ -136,9 +134,6 @@ onMounted(() => {
   if (clientECommerces.value && clientECommerces.value.length > 0)
     setAndRetrieveEditingClientECommerce(clientECommerces.value[0].code)
 })
-
-// FE-LOCAL-1048: özet şeridi + kanal kartlarındaki Etkin / Pasif durumu (kayıtlı ayardan).
-const activeCodes = computed(() => activeCodesOf(clientECommerces.value))
 
 const clientECommerces = computed(() => integrationStore.getClientECommerces())
 
@@ -152,7 +147,6 @@ const saveClientECommerceSettings = async (clientECommerce: any) => {
   loadingComponentRef.value.remove(guid)
   if (response && response._id) {
     editingClientIntegration.value.settings = response.settings
-    noteSettings(clientECommerce?.code ?? editingClientIntegration.value.code, response.settings)
   }
 }
 
@@ -162,7 +156,6 @@ const setAndRetrieveEditingClientECommerce = async (integrationCode: string) => 
   loadingComponentRef.value.remove(guid)
   if (response && response.settings) {
     editingClientIntegration.value = response
-    noteSettings(response.code ?? integrationCode, response.settings)
   }
 }
 </script>
@@ -177,9 +170,28 @@ const setAndRetrieveEditingClientECommerce = async (integrationCode: string) => 
   bottom: var(--ek-space-1);
 }
 
+.step-number {
+  min-width: var(--ek-space-6);
+  height: var(--ek-space-6);
+  background: var(--ek-color-passive-color);
+  color: white;
+  border-radius: var(--ek-radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--ek-font-size-xs);
+  font-weight: var(--ek-font-weight-bold);
+}
+
+.opacity-60 {
+  opacity: 0.6;
+}
+
+.opacity-10 {
+  opacity: 0.1;
+}
+
 .opacity-40 {
   opacity: 0.4;
 }
 </style>
-
-<style scoped src="@/components/integrations/integration-layout.css"></style>

@@ -18,7 +18,7 @@ jest.mock('@database/DatabaseManager', () => ({
   },
 }));
 
-import UserService from '../../../src/api/rpc/handlers/user-service';
+import UserService from '../../../src/api/services/user-service';
 import { AuditLogger } from '../../../src/services/audit/AuditLogger';
 
 const OID = '507f1f77bcf86cd799439011';

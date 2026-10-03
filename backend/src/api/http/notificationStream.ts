@@ -9,7 +9,7 @@ import { logger } from '@platform/core/logger';
 import { metricsRegistry } from '@platform/runtime/metrics';
 import { getRealtimeBus, StreamHub, type StreamSink } from '@platform/runtime/realtime';
 import { buildUnreadFilter } from '@operations/notifications/inAppRepository';
-import { isOriginAllowed } from './originCheck';
+import { isOriginAllowed } from '../originCheck';
 
 const log = logger.child({ module: 'notifications.stream' });
 

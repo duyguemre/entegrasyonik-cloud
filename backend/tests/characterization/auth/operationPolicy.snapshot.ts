@@ -1,11 +1,11 @@
 // ADR-0019 §7 Aşama A geri alma fixture'ı: bu dosya, Yetenek Kaydı'na geçmeden ÖNCEKİ
-// `backend/src/api/rpc/operationPolicy.ts`'teki `OPERATION_POLICY` LİTERALİNİN BİREBİR KOPYASIDIR
+// `backend/src/api/operationPolicy.ts`'teki `OPERATION_POLICY` LİTERALİNİN BİREBİR KOPYASIDIR
 // (2026-09-28, `faz3-arayuz` @ 0ed7d4c). DÜZENLENMEZ. Yalnızca iki amaçla kullanılır:
 //   1. `capability-parity.test.ts` P1: `derivePolicy(CAPABILITIES)` bu tabloyla DERİN EŞİT olmalı
 //      ("türetilen politika = Aşama A öncesi politikanın anlık görüntüsü").
 //   2. Geri alma: bir regresyon olursa bu literal `operationPolicy.ts`'e geri yapıştırılır (tek commit).
 // Yeni operasyon eklemek İÇİN BU DOSYA DEĞİL `backend/src/capabilities/domains/<alan>.ts` değiştirilir.
-import type { Tier } from '../../../src/api/rpc/operationPolicy';
+import type { Tier } from '../../../src/api/operationPolicy';
 
 export type SnapshotPolicy = Record<string, Record<string, Tier>>;
 
@@ -69,7 +69,6 @@ export const OPERATION_POLICY_SNAPSHOT: SnapshotPolicy = {
         get: M, markAsRead: M, delete: M, getUnreadCount: M /* §6: hafif rozet sorgusu (salt-okunur sayım) */,
         // ADR-0029 NB4: kişisel (M) + tenant varsayılanı (A, settings:manage)
         archive: M, unarchive: M, getCatalog: M, getPreferences: M, updatePreferences: M, getTenantDefaults: A, updateTenantDefaults: A,
-        getPushConfig: M, subscribePush: M, unsubscribePush: M, // MOB-04 web push (self:manage)
     },
     MessageService: { getMessages: M, replyMessage: M, markAsRead: M, deleteMessage: M, bulkDeleteMessages: M },
     TicketService: { getTickets: M, openTicket: M, sendTicketMessage: M, closeTicket: M },
@@ -98,10 +97,10 @@ export const OPERATION_POLICY_SNAPSHOT: SnapshotPolicy = {
     // B12: platform yöneticisi yönetimi (invite/disable/enable/resetMfa step-up ister)
     BackofficeAdminUserService: { list: P, invite: P, disable: P, enable: P, resetMfa: P },
     // B2/B4: abonelik + gelir + tenant yaşam döngüsü (yazmalar step-up ister)
-    BackofficeBillingService: { listSubscriptions: P, getSubscription: P, extendTrial: P, cancelSubscription: P, changePlan: P, getRevenueMetrics: P, getCompetitionSettings: P, getTenantCompetition: P, setCompetitionOverride: P, getPricingRulesOverview: P },
-    BackofficeTenantService: { getLifecycle: P, cancelDeletion: P, listTenants: P, getHealthSummary: P, getUsage: P },
+    BackofficeBillingService: { listSubscriptions: P, getSubscription: P, extendTrial: P, cancelSubscription: P, changePlan: P, getRevenueMetrics: P },
+    BackofficeTenantService: { getLifecycle: P, cancelDeletion: P, listTenants: P, getHealthSummary: P },
     // K51 (BO1) + BE-05: kayıtlı görünümler (yönetici başına)
-    BackofficePrefsService: { listViews: P, saveView: P, deleteView: P, getPushConfig: P, subscribePush: P, unsubscribePush: P },
+    BackofficePrefsService: { listViews: P, saveView: P, deleteView: P },
     // B5/B6/B8/B9: entegrasyon sağlığı + altyapı gözlemi + cache (flushCacheFamily step-up ister)
     BackofficeIntegrationService: { getApiHealth: P, getResilienceState: P },
     // ADR-0029 NB7/NB8: tenant duyuru bandi (member) + backoffice bildirim/duyuru/uyari (yazmalar step-up ister)
@@ -192,7 +191,7 @@ export const OPERATION_POLICY_SNAPSHOT: SnapshotPolicy = {
         resolveAndReissueInvoice: M, deleteInvoice: M,
     },
     // §6: finans özet/kargo faturası/ödeme emri dökümü — getTransactionData ile AYNI kademe ve aynı tenant DB'si (salt-okunur)
-    FinancialService: { getTransactionData: M, getFinancialSummary: M, getCargoInvoices: M, getPayoutDetails: M, getOrderCommissionSummary: M, getCommissionByBarcodes: M, getNetRevenuePreview: M, getRealizedCommissionByCategory: M, getCommissionDrift: M, listCommissionOverrides: M, setCommissionOverride: A, deleteCommissionOverride: A },
+    FinancialService: { getTransactionData: M, getFinancialSummary: M, getCargoInvoices: M, getPayoutDetails: M, getOrderCommissionSummary: M, getCommissionByBarcodes: M, getNetRevenuePreview: M, getRealizedCommissionByCategory: M, listCommissionOverrides: M, setCommissionOverride: A, deleteCommissionOverride: A },
 
     // --- Abonelik/plan (ADR-0008 Aşama A + frontend SONUÇ) ---
     // getPlans/getMySubscription: her tenant kullanıcısı kendi abonelik durumunu görebilmeli
@@ -204,12 +203,6 @@ export const OPERATION_POLICY_SNAPSHOT: SnapshotPolicy = {
     // --- Tenant-yüzlü yeni uçlar (docs/API_TENANT_SURFACE.md; FE ekranları ADR-0015 sonrası) ---
     // §2 stok sağlığı özeti (OVERSOLD/UNMAPPED, rezervasyon toplamları): operatörün günlük görünürlüğü -> member (getOrders ile aynı)
     StockService: { getStockOverview: M, listLowStock: M, listMovements: M, getPublishLagSummary: A },
-    // PRC-R0/R1 (2026-10-01): maliyet + buybox görünürlüğü (salt okuma) + kâr önizlemesi.
-    PricingService: {
-        listCosts: M, setVariantCosts: M, listBuybox: M, getBuyboxHistory: M, previewMargin: M,
-        // PRC-R2: kural/öneri okuma member; kural yazma, tenant anahtarı ve öneri uygulama/ret admin (`pricing:manage`).
-        getRules: M, listSuggestions: M, getPriceHistory: M, saveRule: A, deleteRule: A, setPricingSettings: A, applySuggestions: A, dismissSuggestions: A,
-    },
     // §4 denetim günlüğü: kim-ne-zaman kaydı yönetim bilgisidir -> admin+ (owner dahil); yalnızca kendi tenant'ı
     AuditService: { getAuditLogs: A },
 

@@ -1,5 +1,4 @@
 import { reactive, ref } from 'vue';
-import { defaultListPageSize } from '@/stores/publicConfig'
 
 export const useCustomerFilters = (fetchCallback: Function) => {
 
@@ -20,7 +19,7 @@ export const useCustomerFilters = (fetchCallback: Function) => {
     // 2. SAYFALAMA STATE
     const pagination = reactive({
         page: 1,
-        limit: defaultListPageSize(),
+        limit: 15,
         totalNumberOfRecords: 0,
         totalNumberOfPages: 1
     });

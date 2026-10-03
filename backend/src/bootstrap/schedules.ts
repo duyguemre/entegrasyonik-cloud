@@ -1,4 +1,4 @@
-// ADR-0024 P0-LIFE (D5) / ADR-0016 §2: zamanlayici isinin TEK kaydi. Onceki 10 ince `*Scheduler.ts` sarmalayicisinin
+// ADR-0024 P0-LIFE (D5) / ADR-0016 §2: 11 zamanlayici isinin TEK kaydi. Onceki 10 ince `*Scheduler.ts` sarmalayicisinin
 // (ad, aralik, sure siniri, kritiklik, ilk-kosu, lease, kapsam) davranisi BIREBIR korunur
 // (tests/unit/bootstrap/schedules.characterization.test.ts). Dagitik kilit + POD_NAME `platform/runtime/scheduler`
 // icindedir (degismedi). Rol kapisi: 'worker' -> yalniz worker/all (IntegrationEngine ile ayni kapi); 'any' -> HER rol.
@@ -21,20 +21,12 @@ import { runConfigHeadPoll, CONFIG_HEAD_POLL_JOB_NAME } from '@integration/confi
 import { runExportSignalPoll } from '@integration/engine/catalog/export/exportSignalPoll';
 import { createEmailDispatcher } from '@operations/notifications/delivery/createEmailDispatcher';
 import type { EmailDispatcher } from '@operations/notifications/delivery/EmailDispatcher';
-import { createPushDispatcher } from '@operations/notifications/push/createPushDispatcher';
-import type { PushDispatcher } from '@operations/notifications/push/PushDispatcher';
-import type { PlatformAttentionPusher } from '@operations/notifications/push/platformAttentionPush';
-import { createAttentionPusher } from '@api/admin/createAttentionPusher';
 import { runAnnouncementFanout, type FanoutDeps } from '@operations/notifications/announcements';
 import { createAnnouncementFanoutDeps } from '@operations/notifications/createAnnouncementFanout';
 import { createAlertEvaluator } from '@operations/alerts/createAlertEvaluator';
 import type { AlertEvaluator } from '@operations/alerts/AlertEvaluator';
-import { createBuyboxRefreshJob } from '@operations/pricing/createBuyboxRefreshJob';
-import { BUYBOX_JOB_NAME, type BuyboxRefreshJob } from '@operations/pricing/BuyboxRefreshJob';
 import { writeResilienceSnapshot } from '@integration/modules/common/http/resilienceSnapshot';
 import { RedisService } from '@services/redis/RedisService';
-import { AUDIT_IP_MASK_JOB_NAME, runAuditIpMaskProd } from '@operations/retention/auditIpMask';
-import { COMMISSION_DRIFT_JOB_NAME, createCommissionDriftDeps, runCommissionDrift, type CommissionDriftJobDeps } from '@operations/finance/commissionDriftJob';
 import { runsWorker } from './roles';
 
 const log = logger.child({ module: 'bootstrap.schedules' });
@@ -97,20 +89,6 @@ export const SCHEDULES: readonly ScheduleSpec[] = [
       name: 'notifications.email-dispatch', everyMs: 15 * 1000, maxDurationMs: 60 * 1000, criticality: 'normal', runOnStart: 'always',
       run: async () => { d ??= createEmailDispatcher(); const r = await d.runOnce(); return { skipped: r.skipped, processed: r.processed, failed: r.failed, note: r.note }; } });
   } },
-  // MOB-04: web push outbox gondericisi (anlik). Kanal kapaliyken (NOTIFY_V2_ENABLED / WEBPUSH_VAPID_*) DB'ye dokunmadan doner.
-  { id: 'notifications.push-dispatch', runsOn: 'worker', build: (impl?: PushDispatcher) => {
-    let d: PushDispatcher | undefined = impl;
-    return defineJob({
-      name: 'notifications.push-dispatch', everyMs: 10 * 1000, maxDurationMs: 60 * 1000, criticality: 'normal', runOnStart: 'always',
-      run: async () => { d ??= createPushDispatcher(); const r = await d.runOnce(); return { skipped: r.skipped, processed: r.processed, failed: r.failed, note: r.note }; } });
-  } },
-  // MOB-06: backoffice kritik dikkat maddeleri -> abone platform yoneticisi cihazlari (web push). Kanal kapaliysa DB'ye dokunmaz; abone yoksa dikkat hesaplanmaz.
-  { id: 'notifications.platform-attention-push', runsOn: 'worker', build: (impl?: PlatformAttentionPusher) => {
-    let d: PlatformAttentionPusher | undefined = impl;
-    return defineJob({
-      name: 'notifications.platform-attention-push', everyMs: 2 * 60 * 1000, maxDurationMs: 60 * 1000, criticality: 'normal', runOnStart: 'always',
-      run: async () => { d ??= createAttentionPusher(); const r = await d.runOnce(); return { skipped: r.skipped, processed: r.processed, failed: r.failed, note: r.note }; } });
-  } },
   // ADR-0029 NB7: duyuru durum gecisleri + inApp/e-posta fan-out. NOTIFY_V2_ENABLED=false iken DB'ye dokunmadan doner (`skipped:'notify_disabled'`).
   { id: 'notifications.announcements', runsOn: 'worker', build: (deps?: FanoutDeps) => {
     let d: FanoutDeps | undefined = deps;
@@ -133,36 +111,6 @@ export const SCHEDULES: readonly ScheduleSpec[] = [
         return { skipped: r.skipped, processed: r.evaluated, failed: 0, note: `firing=${r.evaluated} new=${r.newFirings} resolved=${r.resolved} renotified=${r.renotified} platform=${r.platformNotified} tenant=${r.tenantNotified} shadow=${r.shadow} maint=${r.maintenance}` };
       } });
   } },
-  // PRC-R1/PRC-CFG: Trendyol buybox SALT OKUMA isi. `features.competition` kapaliyken (varsayilan) DB/agla hic konusmadan doner.
-  // Dakikalik cagri butcesi (`pricing.buybox.budget.trendyol.perMin`) tenant'lar arasinda adil paylastirilir; LIVE_READONLY'de BASLAMAZ (K57-S8 acik).
-  { id: BUYBOX_JOB_NAME, runsOn: 'worker', build: (impl?: BuyboxRefreshJob) => {
-    let j: BuyboxRefreshJob | undefined = impl;
-    return defineJob({
-      name: BUYBOX_JOB_NAME, everyMs: MIN, maxDurationMs: 50 * 1000, criticality: 'normal', runOnStart: 'always',
-      run: async () => {
-        j ??= createBuyboxRefreshJob();
-        const r = await j.runOnce();
-        return { skipped: r.skipped, processed: r.observed, failed: r.failedTenants, note: `tenants=${r.tenants} calls=${r.calls} lost=${r.lost} notified=${r.notified} deferred=${r.deferred}` };
-      } });
-  } },
-  // COM-08: komisyon sapma taramasi (gunluk, ifDue). NOTIFY_V2_ENABLED=false iken DB'ye dokunmadan doner (`notify_disabled`).
-  { id: COMMISSION_DRIFT_JOB_NAME, runsOn: 'worker', build: (impl?: CommissionDriftJobDeps) => {
-    let d: CommissionDriftJobDeps | undefined = impl;
-    return defineJob({
-      name: COMMISSION_DRIFT_JOB_NAME, everyMs: DAY, maxDurationMs: 15 * MIN, criticality: 'normal', runOnStart: 'ifDue',
-      run: async (ctx) => {
-        d ??= createCommissionDriftDeps();
-        const r = await runCommissionDrift(d, { signal: ctx.signal });
-        return { skipped: r.skipped, processed: r.evaluated, failed: r.failedTenants, note: `tenants=${r.tenants} drifted=${r.drifted} notified=${r.notified}` };
-      } });
-  } },
-  // RET-02: 90 gunden eski AuditLogs IP maskeleme (gunluk; deploy'da yeniden kosmaz -> 'ifDue'). Yalniz kendi DB'mize yazar; LIVE_READONLY'de baslamaz (varsayilan liste).
-  { id: AUDIT_IP_MASK_JOB_NAME, runsOn: 'worker', build: (impl?: typeof runAuditIpMaskProd) => defineJob({
-    name: AUDIT_IP_MASK_JOB_NAME, everyMs: DAY, maxDurationMs: 15 * MIN, criticality: 'normal', runOnStart: 'ifDue',
-    run: async (ctx) => {
-      const r = await (impl ?? runAuditIpMaskProd)({ signal: ctx.signal, heartbeat: ctx.heartbeat });
-      return { processed: r.processed, failed: r.failed, note: `batches=${r.batches} more=${r.more}` };
-    } }) },
   // Metrik flush: HER rolde; lease KASITLI kapali (her pod kendi surec-ici kayit defterini flush eder, ADR-0017 Karar 2.1).
   { id: 'observability.metrics-flush', runsOn: 'any', leaseOff: true, build: () => defineJob({
     name: 'observability.metrics-flush', everyMs: MIN, maxDurationMs: 30 * 1000, criticality: 'normal', runOnStart: 'always',

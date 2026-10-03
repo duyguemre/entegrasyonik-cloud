@@ -71,49 +71,18 @@ export const useMenuStore = defineStore('menu', () => {
     ['user/InvoiceInfoView', shallowRef(defineAsyncComponent(() => import('@/views/secure/user/InvoiceInfoView.vue')))],
     ['user/ChangePasswordView', shallowRef(defineAsyncComponent(() => import('@/views/secure/user/ChangePasswordView.vue')))],
     ['user/SubscriptionView', shallowRef(defineAsyncComponent(() => import('@/views/secure/user/SubscriptionView.vue')))],
+    ['user/EducationView', shallowRef(defineAsyncComponent(() => import('@/views/secure/user/SubscriptionView.vue')))],
     ['user/ExitView', shallowRef(defineAsyncComponent(() => import('@/views/secure/user/ExitView.vue')))],
 
     ['AuthorizationListView', shallowRef(defineAsyncComponent(() => import('@/views/secure/user/AuthorizationListView.vue')))],
-    ['NotificationCenterView', shallowRef(defineAsyncComponent(() => import('@/views/secure/NotificationCenterView.vue')))],
-    ['NotificationPreferencesView', shallowRef(defineAsyncComponent(() => import('@/views/secure/settings/NotificationPreferencesView.vue')))],
-    // MCP-6 (ADR-0035) — bağlı uygulamalar (S3) + yapay zekâ bağlantısı ayarı (S4). Menü kaydı yerel iştir (screens.ts notu).
-    ['ConnectedAppsView', shallowRef(defineAsyncComponent(() => import('@/views/secure/user/ConnectedAppsView.vue')))],
-    ['settings/AiConnectionView', shallowRef(defineAsyncComponent(() => import('@/views/secure/settings/AiConnectionView.vue')))],
-
-    // ADR-0015 B4-P1c — yeni ekranlar (yalnızca EKLEME; `screens.ts` ile birebir anahtar, register-intent testi eşliği korur).
-    // Gerçek menü ağacı kaydı (ApplicationDB `menus`) bu bulut görevinin kapsamı dışı — B4-P0 ile aynı emsal.
-    ['integrations/IntegrationHealthView', shallowRef(defineAsyncComponent(() => import('@/views/secure/integrations/IntegrationHealthView.vue')))],
-    ['AuditLogView', shallowRef(defineAsyncComponent(() => import('@/views/secure/settings/AuditLogView.vue')))],
 
     // ADR-0015 B4-P0 — yeni ekranlar (yalnızca EKLEME; `screens.ts` ile birebir anahtar). Gerçek menü ağacı kaydı
     // (ApplicationDB `menus`) bu bulut görevinin kapsamı dışı — ADR-0020 ekranlarıyla aynı emsal (yukarıda).
     ['AccountSecurityView', shallowRef(defineAsyncComponent(() => import('@/views/secure/user/AccountSecurityView.vue')))],
     ['PrivacyDataView', shallowRef(defineAsyncComponent(() => import('@/views/secure/user/PrivacyDataView.vue')))],
     ['StockPolicyView', shallowRef(defineAsyncComponent(() => import('@/views/secure/integrations/StockPolicyView.vue')))],
-    ['StockHealthView', shallowRef(defineAsyncComponent(() => import('@/views/secure/StockHealthView.vue')))],
-    // PRC-R2: rekabet fiyat kuralları + öneriler + onaylı uygulama + fiyat geçmişi (yetenekler pricing.rules.* / pricing.suggestions.*).
-    ['pricing/PricingRulesView', shallowRef(defineAsyncComponent(() => import('@/views/secure/pricing/PricingRulesView.vue')))],
-    // Yardım merkezi (statik içerik; menü ağacına bağlı değil — bağlantı `help/helpLink.ts`).
-    ['HelpCenterView', shallowRef(defineAsyncComponent(() => import('@/views/secure/HelpCenterView.vue')))],
-    // ADR-0034 — Otopilot tam sayfa + ayarlar (menü ağacına bağlı değil — bağlantı `chat/chatLinks.ts`).
-    ['chat', shallowRef(defineAsyncComponent(() => import('@/views/secure/OtopilotView.vue')))],
-    ['OtopilotSettingsView', shallowRef(defineAsyncComponent(() => import('@/views/secure/settings/OtopilotSettingsView.vue')))],
 
   ]);
-
-  /**
-   * FR2-SHELL madde 8 (fe-r2a): menü kaydının bileşeni. Önce `parent/Code` (kayıtlı iç içe ekranlar), yoksa yalnız `Code`.
-   * Üretim menüsünde "Ayarlar" grubunun çocukları (`settings/SettingListView` …) haritada yalnız kök anahtarla kayıtlı —
-   * bileşen `undefined` kalıyor, sekme açılınca uygulama BEYAZ ekrana düşüyordu ("Uygulama Ayarları çalışmıyor").
-   */
-  const resolveView = (link: any) => {
-    if (!link?.code) return undefined
-    if (link.parent) {
-      const nested = views.get(link.parent + '/' + link.code)
-      if (nested) return nested
-    }
-    return views.get(link.code)
-  }
 
   const restApi = useRestApi()
   const data = {
@@ -141,48 +110,37 @@ export const useMenuStore = defineStore('menu', () => {
   var leftMenu = ref(false)
   var menu: any = ref()
 
-  /** FR3 madde 2: menü düğümlerindeki `isFavorite` bayrağını favori listesiyle eşitler (yıldız durumu). */
-  const syncFavoriteFlags = () => {
-    if (!menu.value) return
-    findByCodeInMenu("", true)
-    for (const favorite of favorites.value) {
-      const temp = findByCodeInMenu(favorite.code)
-      if (temp) temp.isFavorite = true
-    }
-  }
-
   const retrieveFavorites = async () => {
     const resp = await restApi.post("MenuService/retrieveFavorites", {})
-    if (Array.isArray(resp)) {
+    if (resp) {
       favorites.value = resp
-      syncFavoriteFlags()
+      findByCodeInMenu("", true)
     }
-  }
-
-  // FR3 madde 2: ekle/çıkar/sırala İYİMSER — menüdeki Favoriler bölümü anında güncellenir, sunucu reddederse geri alınır.
-  const optimistic = async (next: any[], call: () => Promise<any>) => {
-    const prev = favorites.value
-    favorites.value = next
-    syncFavoriteFlags()
-    const resp = await call().catch(() => undefined)
-    if (resp) return retrieveFavorites()
-    favorites.value = prev
-    syncFavoriteFlags()
+    if (resp && resp.length > 0) {
+      for (const favorite of favorites.value) {
+        const temp = findByCodeInMenu(favorite.code)
+        if (temp)
+          temp.isFavorite = true
+      }
+    }
   }
 
   const addFavorite = async (code: string) => {
-    if (favorites.value.some((f: any) => f.code === code)) return
-    return optimistic([...favorites.value, { code, order: favorites.value.length + 1 }], () => restApi.post("MenuService/addFavorite", { code: code }))
+    const resp = await restApi.post("MenuService/addFavorite", { code: code })
+    if (resp)
+      retrieveFavorites()
   }
 
   const deleteFavorite = async (code: string) => {
-    return optimistic(favorites.value.filter((f: any) => f.code !== code), () => restApi.post("MenuService/deleteFavorite", { code: code }))
+    const resp = await restApi.post("MenuService/deleteFavorite", { code: code })
+    if (resp)
+      retrieveFavorites()
   }
 
   const sortFavorites = async (sortedCodes: any) => {
-    const byCode = new Map(favorites.value.map((f: any) => [f.code, f]))
-    const next = (sortedCodes as string[]).map((code, i) => ({ ...(byCode.get(code) as any ?? { code }), order: i + 1 }))
-    return optimistic(next, () => restApi.post("MenuService/sortFavorites", { sortedCodes: sortedCodes }))
+    const resp = await restApi.post("MenuService/sortFavorites", { sortedCodes: sortedCodes })
+    if (resp)
+      retrieveFavorites()
   }
 
 
@@ -266,7 +224,10 @@ export const useMenuStore = defineStore('menu', () => {
       var processMenu = (parent: any, links: any) => {
         links.forEach((menuLink: any) => {
           menuLink.fullPath = parent + '.' + menuLink.title
-          menuLink.component = resolveView(menuLink)
+          if (menuLink.parent == "")
+            menuLink.component = views.get(menuLink.code)
+          else
+            menuLink.component = views.get(menuLink.parent + '/' + menuLink.code)
           menuLink.id = tempId++
           if (menuLink.children) {
             processMenu(menuLink.fullPath, menuLink.children)
@@ -299,6 +260,7 @@ export const useMenuStore = defineStore('menu', () => {
 
       supportMenu.push(getMenuLinkWithTitle('ticketDefinition'))
       supportMenu.push(getMenuLinkWithTitle('ticketList'))
+      supportMenu.push(getMenuLinkWithTitle('educationCenter'))
 
       systemMenu.push(getMenuLinkWithTitle('subscription'))
       systemMenu.push(getMenuLinkWithTitle('changePassword'))

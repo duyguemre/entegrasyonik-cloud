@@ -39,18 +39,17 @@ test.describe('ADR-0015 B5-3 — AuthorizationListView + UserAddComponent', () =
     await expect(page.locator('.authorizationListView tbody tr')).toHaveCount(3)
   })
 
-  test('rol rozeti rol adını gösterir (getRoles), ham kod görünmez', async ({ page }) => {
+  test('karakterizasyon: rol rozeti ham `roleCode` metnini gösterir (rol adına ÇEVRİLMİYOR)', async ({ page }) => {
     await installApiMocks(page, withAccountMenu({ 'UserService/getUsers': usersDoluFixture, 'UserService/getRoles': rolesFixture }))
     await gotoAuthed(page)
     await openScreen(page, 'AuthorizationListView')
 
-    // fe-r2d (FR2-SCREENS 36) — BİLİNÇLİ DEĞİŞİKLİK: rozet rol ADINI gösterir (getRoles: MANAGER → "Yönetici").
-    await expect(page.locator('.v-table, table').getByText('Yönetici', { exact: true }).first()).toBeVisible()
-    await expect(page.getByText('MANAGER', { exact: true })).toHaveCount(0)
-    // Deniz: owner=true -> "Mağaza sahibi".
-    await expect(page.getByText('Mağaza sahibi', { exact: true })).toBeVisible()
-    // Aylin: isGlobalAdmin=true -> "Süper yönetici".
-    await expect(page.getByText('Süper yönetici', { exact: true })).toBeVisible()
+    // Elif: roleCode='MANAGER', owner=false, isGlobalAdmin=false -> rozet ham kodu gösterir ("Yönetici" DEĞİL).
+    await expect(page.getByText('MANAGER', { exact: true })).toBeVisible()
+    // Deniz: owner=true -> "MAĞAZA YÖNETİCİSİ".
+    await expect(page.getByText('MAĞAZA YÖNETİCİSİ')).toBeVisible()
+    // Aylin: isGlobalAdmin=true -> "SÜPER YÖNETİCİ".
+    await expect(page.getByText('SÜPER YÖNETİCİ')).toBeVisible()
   })
 
   test('karakterizasyon: mağaza yöneticisinin (owner) silme düğmesi devre dışıdır', async ({ page }) => {
@@ -58,35 +57,31 @@ test.describe('ADR-0015 B5-3 — AuthorizationListView + UserAddComponent', () =
     await gotoAuthed(page)
     await openScreen(page, 'AuthorizationListView')
 
-    // EkRowActions: "Düzenle" satırda, "Sil" ⋯ bağlam menüsünde (aria-disabled menuitem).
-    const view = page.locator('.authorizationListView')
-    await view.getByRole('button', { name: 'Deniz işlemleri' }).click()
-    const denizMenu = page.getByRole('menu', { name: 'Deniz işlemleri' })
-    await expect(denizMenu.getByRole('menuitem', { name: 'Mağaza yöneticisi silinemez' })).toHaveAttribute('aria-disabled', 'true')
-    await page.keyboard.press('Escape')
-    await expect(denizMenu).toBeHidden()
-    await view.getByRole('button', { name: 'Elif işlemleri' }).click()
-    const elifMenu = page.getByRole('menu', { name: 'Elif işlemleri' })
-    await expect(elifMenu.getByRole('menuitem', { name: 'Sil', exact: true })).not.toHaveAttribute('aria-disabled', 'true')
+    const denizRow = page.locator('.authorizationListView tbody tr', { hasText: 'Deniz Kaya' })
+    await expect(denizRow.locator('button:has(.mdi-delete)')).toBeDisabled()
+    const elifRow = page.locator('.authorizationListView tbody tr', { hasText: 'Elif Yıldız' })
+    await expect(elifRow.locator('button:has(.mdi-delete)')).toBeEnabled()
   })
 
-  test('boş durum: "Personel bulunamadı" mesajı gösterilir', async ({ page }) => {
+  test('boş durum: "Personel Bulunamadı" mesajı gösterilir', async ({ page }) => {
     await installApiMocks(page, withAccountMenu({ 'UserService/getUsers': usersBosFixture, 'UserService/getRoles': rolesFixture }))
     await gotoAuthed(page)
     await openScreen(page, 'AuthorizationListView')
 
-    await expect(page.getByText('Personel bulunamadı')).toBeVisible()
+    await expect(page.getByText('Personel Bulunamadı')).toBeVisible()
+    await expect(page.getByRole('button', { name: 'TÜMÜNÜ GÖSTER' })).toBeVisible()
   })
 
-  // DS-v2 Aşama 2 — BİLİNÇLİ DEĞİŞİKLİK: 500 artık boş duruma DÜŞMEZ; "Personel listesi yüklenemedi" + "Tekrar dene" gösterilir.
-  // (Boş durumdaki "TÜMÜNÜ GÖSTER" eylemi de kalktı: filtre sonucu boşsa "Filtreleri temizle" çıkar.)
-  test('hata durumu: 500 alındığında "Personel listesi yüklenemedi" + "Tekrar dene" gösterilir, ham hata sızmaz', async ({ page }) => {
+  test('hata durumu: 500 alındığında da liste boş kalır, ham hata sızmaz (gizli davranış — bkz. BACKLOG önerisi)', async ({ page }) => {
+    // Karakterizasyon (`restapi.ts` `postService` HİÇBİR ZAMAN reddetmiyor, admin-tickets.spec.ts
+    // ile AYNI gizli davranış): `getUsers`'ın try/catch'i tetiklenmiyor, `response.users` undefined
+    // olduğu için `users.value` başlangıç değerinde ([]) kalıyor — "Personel Bulunamadı" görünür,
+    // ayrı bir hata banner'ı YOK, snackbar TETİKLENMİYOR.
     await installApiMocks(page, withAccountMenu({ 'UserService/getUsers': mockError(500), 'UserService/getRoles': rolesFixture }))
     await gotoAuthed(page)
     await openScreen(page, 'AuthorizationListView')
 
-    await expect(page.getByText('Personel listesi yüklenemedi')).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Tekrar dene' })).toBeVisible()
+    await expect(page.getByText('Personel Bulunamadı')).toBeVisible()
   })
 
   test('yeni kullanıcı ekle: "+" ile diyalog açılır, form gönderilince UserService/createUser çağrılır', async ({ page }) => {
@@ -120,7 +115,8 @@ test.describe('ADR-0015 B5-3 — AuthorizationListView + UserAddComponent', () =
     await gotoAuthed(page)
     await openScreen(page, 'AuthorizationListView')
 
-    await page.locator('.authorizationListView').getByRole('row').filter({ hasText: 'Elif Yıldız' }).getByRole('button', { name: 'Düzenle' }).click()
+    const elifRow = page.locator('.authorizationListView tbody tr', { hasText: 'Elif Yıldız' })
+    await elifRow.locator('button:has(.mdi-pencil)').click()
 
     const dialog = page.getByRole('dialog').filter({ hasText: 'Kullanıcı Düzenle' })
     await expect(dialog).toBeVisible()

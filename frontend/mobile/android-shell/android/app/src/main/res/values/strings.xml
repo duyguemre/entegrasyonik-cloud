@@ -1,6 +1,0 @@
-<?xml version='1.0' encoding='utf-8'?>
-<resources>
-    <!-- app_name / title_activity_main flavor başına (app/build.gradle productFlavors resValue). -->
-    <string name="package_name">com.entegrasyonik.app</string>
-    <string name="custom_url_scheme">com.entegrasyonik.app</string>
-</resources>

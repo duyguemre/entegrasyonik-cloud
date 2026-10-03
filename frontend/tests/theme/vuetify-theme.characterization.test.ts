@@ -18,15 +18,6 @@ import { normalizeColorMap } from './normalizeColor'
  *      13 çekirdek + dark'ta "yeni" anahtar YOKTU) — bu yüzden anahtar
  *      SAYILARI da değişti (bkz. aşağıdaki 2 test).
  *
- * **DS-v2 Aşama 1 (2026-09-29) — ikinci bilinçli yeniden tabanlama:** tema
- * `tokens/workspace.ts` uygulama profilinden beslenir (47 yeni rol anahtarı +
- * paylaşılan/legacy anahtarların uygulama değerleri DS-v2'ye eşlendi; site
- * profili değişmedi). Ayrıntı: `theme-snapshot.baseline.json` `_meta`,
- * `frontend/DESIGN_SYSTEM.md`.
- *
- * **ADR-0026 Aşama 0 (2026-09-30):** tema artık `@entegrasyonik/ui/theme` paketinden gelir (backoffice ile TEK
- * kaynak); light taban AYNEN korundu, dark taban paketin TAM dark temasıdır (müşteri uygulamasında dark kapısı kapalı).
- *
  * Normalize adımı (`normalizeColorMap`) Vuetify'ın `parseColor`/`RGBtoHex`
  * (node_modules/vuetify/lib/util/colorUtils.js) ile aynı mantığı taşır:
  * baştaki `#` isteğe bağlıdır, 3 haneli kısaltmalar 6 haneye açılır.
@@ -52,19 +43,24 @@ describe('vuetify.ts tema characterization ("sonra" durumu — ADR-0015 A1, kas�
     expect(darkTheme).toEqual(baseline.darkTheme)
   })
 
-  it('lightTheme 124 anahtar üretir (DS-v2: 80 semantik [13 çekirdek + 15 ADR-0015 + 47 DS-v2 + 5 FE-R4 A1 chrome-soft] + 43 legacy anahtarın TAMAMI + Vuetify\'ın override edilmeyen tek çekirdek varsayılanı "on-surface-variant")', async () => {
+  it('lightTheme 72 anahtar üretir (ADR-0015 A1: 28 semantik [13 çekirdek + 15 yeni] + 43 legacy anahtarın TAMAMI + Vuetify\'ın override edilmeyen tek çekirdek varsayılanı "on-surface-variant")', async () => {
     const { lightTheme } = await loadNormalizedThemes()
-    expect(Object.keys(lightTheme)).toHaveLength(124)
+    expect(Object.keys(lightTheme)).toHaveLength(72)
   })
 
-  it('darkTheme 124 anahtar üretir (ADR-0026: paketin TAM dark teması — light ile AYNI anahtar kümesi: 80 semantik + 43 legacy [rol eşlemesinden] + "on-surface-variant")', async () => {
+  it('darkTheme 41 anahtar üretir (ADR-0015 A1: 28 semantik [13 çekirdek + 15 yeni, TÜMÜ artık dark\'ta da kablı] + yalnızca DARK_WIRED_LEGACY_KEYS\'teki 12 legacy anahtar + "on-surface-variant")', async () => {
     const { darkTheme } = await loadNormalizedThemes()
-    expect(Object.keys(darkTheme)).toHaveLength(124)
+    expect(Object.keys(darkTheme)).toHaveLength(41)
   })
 
-  it('ADR-0026: darkTheme anahtar kümesi lightTheme ile birebir aynı (eski "alt küme" kırık kalıbı kapandı: koyu temaya geçildiğinde tanımsız anahtar kalmaz)', async () => {
+  it('GİZLİ DAVRANIŞ (şüpheli, BACKLOG.md\'de kayıtlı): darkTheme anahtar kümesi lightTheme\'in bir ALT KÜMESİ değil — ör. lightTheme\'deki "smartSearchColor", "borderColor", "amber" gibi ~35 özel anahtar darkTheme\'de HİÇ tanımlı değil (dark\'a geçildiğinde bu anahtarları kullanan sınıflar/CSS değişkenleri tanımsız kalır — ADR Bağlam madde 5, "loginColor" ile aynı kırık kalıbı). Kullanıcı anahtarı zaten kapalı (Karar 3) olduğu için bugün gözlemlenebilir bir etkisi yok; token omurgası bu anahtar kümesi eşitliğini TS tipiyle zorlayacak (Karar 1).', async () => {
     const { lightTheme, darkTheme } = await loadNormalizedThemes()
-    expect(Object.keys(darkTheme).sort()).toEqual(Object.keys(lightTheme).sort())
+    const lightOnlyKeys = Object.keys(lightTheme).filter((k) => !(k in darkTheme))
+    // Bugünkü (2026-09-27) gerçek sayı: değişirse bu ADR bulgusu yeniden
+    // doğrulanmalı, testin kendisi "olması gereken" bir sayı iddia etmiyor.
+    expect(lightOnlyKeys.length).toBeGreaterThan(0)
+    expect(lightOnlyKeys).toContain('smartSearchColor')
+    expect(lightOnlyKeys).toContain('borderColor')
   })
 
   it('[ADR-0015 Karar 3.3, A1 — KASITLI ters çevirme] "danger" ve "info" artık YENİ durum paletinin değerlerini taşıyor (eski AA-altı "#E53935"/"#00ACC1" DEĞİL); yazım biçimi hâlâ "#" ile normalize (6 haneli), normalize idempotent kalır', async () => {

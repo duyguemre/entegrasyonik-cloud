@@ -17,7 +17,7 @@ jest.mock('@integration/modules/IntegrationFactory', () => ({ __esModule: true, 
 jest.mock('@integration/engine/IntegrationEventBus', () => ({ EVENTS: {}, integrationEventBus: { emit: jest.fn(), on: jest.fn() } }));
 jest.mock('@services/notification/NotificationService', () => ({ NotificationService: {} }));
 
-import IntegrationService from '../../../src/api/rpc/handlers/integration-service';
+import IntegrationService from '../../../src/api/services/integration-service';
 import { AuditLogger } from '../../../src/services/audit/AuditLogger';
 import { AUTO_CANCEL_SUPPORTED_CHANNELS, validateChannelStockPolicyPatch, StockPolicyValidationError } from '../../../src/operations/stock/stockPolicyValidation';
 

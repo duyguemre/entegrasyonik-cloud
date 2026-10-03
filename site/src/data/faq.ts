@@ -29,7 +29,7 @@ export interface FaqCategory {
 export const FAQ_CATEGORIES: FaqCategory[] = [
   { id: 'baslangic', label: 'Başlangıç ve kurulum', lead: 'Hesap açılışından ilk kanal bağlantısına kadar bilmeniz gerekenler.' },
   { id: 'kanallar', label: 'Pazaryeri ve kanal uyumu', lead: 'Hangi kanallarla çalıştığınız ve her kanalda neleri yönetebildiğiniz.' },
-  { id: 'stok-siparis', label: 'Stok ve sipariş yönetimi', lead: 'Merkezi stok yönetimi, aşırı satış koruması ve sipariş akışınız.' },
+  { id: 'stok-siparis', label: 'Stok ve sipariş yönetimi', lead: 'Merkezi stok yönetimi, overselling koruması ve sipariş akışınız.' },
   { id: 'guvenlik-veri', label: 'Güvenlik ve veri', lead: 'API anahtarlarınızın, verilerinizin ve ekibinizin erişiminin nasıl korunduğu.' },
   { id: 'fiyat-plan', label: 'Fiyatlandırma ve plan', lead: 'Ücretsiz deneme, plan seçimi ve kurumsal teklifler.' },
   { id: 'destek-olcek', label: 'Destek ve ölçeklenme', lead: 'Büyürken yanınızda olan destek ve kapasite seçenekleri.' },
@@ -118,7 +118,7 @@ export const faq: FaqItem[] = [
         'Bağlantı ekranı yönergesi',
         'Pazar yeri panelinden aldığınız API anahtarlarını ilgili alanlara girin.',
       ),
-      evidence('frontend/src/components/integrations/IntegrationGuideCard.vue', 'Hatalı bilgi: pasif bağlantı', 'API bilgileriniz hatalı ise bağlantı "Pasif" görünecektir.'),
+      evidence('frontend/src/views/secure/integrations/MarketplaceView.vue', 'Hatalı bilgi: pasif bağlantı', 'API bilgileriniz hatalı ise bağlantı "Pasif" görünecektir.'),
     ],
   },
   {
@@ -170,7 +170,7 @@ export const faq: FaqItem[] = [
   {
     id: 'iade-soru',
     category: 'kanallar',
-    question: 'İade taleplerini ve alıcı sorularını da yönetebilir miyim?',
+    question: 'İade taleplerini ve müşteri sorularını da yönetebilir miyim?',
     answer: `Evet. ${capability('returns').summary} ${capability('questions').summary} Kapsam kanala göre değişir; ayrıntılar entegrasyon sayfalarındadır.`,
     evidence: [registry('§2.1', '### 2.1 Trendyol'), registry('§2.4', '### 2.4 Pazarama')],
   },
@@ -180,7 +180,7 @@ export const faq: FaqItem[] = [
     question: 'Satış yaptığım bir kanal listede yoksa ne yapabilirim?',
     answer:
       'İhtiyacınızı iletişim sayfasından bize iletin; talebinizi ekibimizle birlikte değerlendirelim. Güncel olarak desteklenen tüm kanallar ve her birinin kapsamı entegrasyonlar sayfasında yer alır.',
-    evidence: [evidence('site/src/data/navigation.ts', 'İletişim sayfası yayımlı', "{ label: 'İletişim', href: '/iletisim', published: true, group: 'resources'")],
+    evidence: [evidence('site/src/data/navigation.ts', 'İletişim sayfası yayımlı', "{ label: 'İletişim', href: '/iletisim', published: true }")],
     internalNotes: ['Yeni kanal için süre/taahhüt VERİLMEZ (yol haritası gizli, ADR-0014 Açık Soru 5).'],
   },
 
@@ -188,7 +188,7 @@ export const faq: FaqItem[] = [
   {
     id: 'asiri-satis',
     category: 'stok-siparis',
-    question: 'Aşırı satışı nasıl önlüyorsunuz?',
+    question: 'Overselling\'i (aşırı satışı) nasıl önlüyorsunuz?',
     answer: `Merkezi stok yönetiminin kalbinde stok rezervasyonu vardır. ${reservation().summary} ${reservation().caveat ?? ''}`.trim(),
     evidence: [
       evidence(
@@ -242,7 +242,7 @@ export const faq: FaqItem[] = [
     answer: `${capability('secrets-encryption').summary} ${capability('secrets-masked').summary} Anahtarlarınız yalnızca bağlantıyı kurmak için sunucu tarafında kullanılır.`,
     evidence: [
       evidence('backend/src/utils/FieldCrypto.ts', 'FieldCrypto AES-256-GCM', 'aes-256-gcm'),
-      evidence('backend/src/platform/core/security/responseSanitizer.ts', 'responseSanitizer maskeleme', 'sensitive'),
+      evidence('backend/src/api/responseSanitizer.ts', 'responseSanitizer maskeleme', 'sensitive'),
     ],
   },
   {
@@ -250,24 +250,12 @@ export const faq: FaqItem[] = [
     category: 'guvenlik-veri',
     question: 'Verilerim diğer işletmelerin verileriyle aynı yerde mi tutulur?',
     answer:
-      'Hayır. Ürün, stok ve sipariş verileriniz yalnızca size ait, izole bir alanda tutulur ve başka bir işletmenin verisiyle karışmaz. Kullanıcı hesabı ve yapılandırma gibi platform genelindeki bilgiler ayrıca yönetilir.',
+      'Hayır. Her müşteri hesabı için ayrı bir veritabanı kullanılır; ürün, stok ve sipariş verileriniz hesabınıza ayrılmış bu veritabanında tutulur. Kullanıcı hesabı, yapılandırma ve sistem kayıtları gibi platform genelindeki bilgiler ise ortak platform veritabanında yer alır.',
     evidence: [
       evidence(PATHS.adr0003, 'ADR-0003 kiracı DB adlandırma', 'entegrasyonikClient_1'),
       evidence('CLAUDE.md', 'CLAUDE.md mimari: platform geneli veri ApplicationDB', 'platform-wide metadata (users, configs, logs)'),
       evidence(PATHS.adr0004, 'ADR-0004: stok kiracı veritabanında', 'Stokun tek doğruluk kaynağı tenant ClientDB'),
     ],
-  },
-  {
-    id: 'fiyat-karari',
-    category: 'guvenlik-veri',
-    question: 'Entegrasyonik fiyatlarıma karar verir mi, verilerim başka işletmelerin kararında kullanılır mı?',
-    answer:
-      'Hayır. Kanallarınıza giden fiyatı siz belirlersiniz; Entegrasyonik sizin yerinize fiyat koymaz. Fiyat, maliyet ve satış verileriniz kendi hesabınızda kalır; başka bir işletmenin kararında kullanılmaz, başka işletmelerle paylaşılmaz.',
-    evidence: [
-      evidence('backend/src/database/client/models/Variant.ts', 'Fiyat alanları satıcının girdiği değerlerdir', 'isPlatformBasedPrice'),
-      evidence(PATHS.adr0003, 'ADR-0003 kiracı DB adlandırma', 'entegrasyonikClient_1'),
-    ],
-    internalNotes: ['PRC-MKT (K58): adil rekabet ilkesi; metin src/data/fair-play.ts ile aynı tutum. Fiyatlama özelliği vaat edilmez (K43).'],
   },
   {
     id: 'ekip-yetki',
@@ -277,7 +265,7 @@ export const faq: FaqItem[] = [
       'Evet. Ekip arkadaşlarınızı hesabınıza kullanıcı olarak ekler, her birine üye, yönetici veya ana yönetici kademesi atarsınız. Entegrasyon bilgilerini değiştirmek gibi hassas işlemler üst kademe gerektirir ve yetki kontrolü sunucu tarafında yapılır.',
     evidence: [
       evidence('frontend/src/views/secure/user/AuthorizationListView.vue', 'Kullanıcı ekleme ekranı', 'UserService/createUser'),
-      evidence('backend/src/api/rpc/operationPolicy.ts', 'operationPolicy yetki kademeleri', 'member < admin < owner'),
+      evidence('backend/src/api/operationPolicy.ts', 'operationPolicy yetki kademeleri', 'member < admin < owner'),
       evidence(PATHS.adr0008, 'ADR-0008: kimlik bilgisi yazma yönetici işlemi', 'entegrasyon kimlik bilgisi yazmayla aynı gerekçe'),
     ],
   },
@@ -286,7 +274,7 @@ export const faq: FaqItem[] = [
     category: 'guvenlik-veri',
     question: 'Entegrasyon yazılımı seçerken nelere dikkat etmeliyim?',
     answer:
-      "Karşılaştırırken dört ölçüte bakmanızı öneririz: verilerinizin size ayrılmış, izole bir alanda tutulması, pazaryeri API anahtarlarının şifreli saklanması, eşzamanlı siparişlerde stok rezervasyonu ve yetkisiz işlemi varsayılan olarak engelleyen bir yetki modeli. Entegrasyonik'te verileriniz yalnızca size ait, izole bir alanda tutulur ve pazaryeri anahtarlarınız güçlü şifrelemeyle saklanır. Stok yalnızca mevcut adet kadar rezerve edilir; sunucuda tanımlı işlem listesinde olmayan her işlem reddedilir. Son olarak her kanalda hangi işlemlerin desteklendiğini entegrasyon sayfalarındaki kapsam tablolarından kontrol edin.",
+      "Karşılaştırırken dört ölçüte bakmanızı öneririz: verilerinizin hesabınıza ayrılmış bir veritabanında tutulması, pazaryeri API anahtarlarının şifreli saklanması, eşzamanlı siparişlerde stok rezervasyonu ve tanımlı olmayan işlemleri varsayılan olarak reddeden bir yetkilendirme modeli. Entegrasyonik'te her müşteri hesabı için ayrı bir veritabanı kullanılır ve API anahtarları AES-256-GCM ile şifrelenerek saklanır. Stok yalnızca mevcut adet kadar rezerve edilir; sunucuda tanımlı işlem listesinde olmayan her işlem reddedilir. Son olarak her kanalda hangi işlemlerin desteklendiğini entegrasyon sayfalarındaki kapsam tablolarından kontrol edin.",
     evidence: [
       evidence(PATHS.adr0003, 'ADR-0003 kiracı DB adlandırma', 'entegrasyonikClient_1'),
       evidence('backend/src/utils/FieldCrypto.ts', 'FieldCrypto AES-256-GCM', 'aes-256-gcm'),
@@ -295,7 +283,7 @@ export const faq: FaqItem[] = [
         'eşzamanlılık testi: yalnızca stok kadarı rezerve',
         'tam 10 RESERVED + 40 OVERSOLD',
       ),
-      evidence('backend/src/api/rpc/operationPolicy.ts', 'operationPolicy varsayılan red', 'varsayılan olarak REDDEDİLİR'),
+      evidence('backend/src/api/operationPolicy.ts', 'operationPolicy varsayılan red', 'varsayılan olarak REDDEDİLİR'),
     ],
     internalNotes: ['S14: rakip adı VERİLMEZ; ölçütler yalnızca kayıtlı yeteneklerdir (tenant-database, secrets-encryption, stock-reservation, default-deny).'],
   },
@@ -304,7 +292,7 @@ export const faq: FaqItem[] = [
     category: 'guvenlik-veri',
     question: 'Kart bilgilerim Entegrasyonik\'te saklanır mı?',
     answer:
-      'Hayır. Ödeme, ödeme sağlayıcısının barındırdığı formda alınacak şekilde tasarlanmıştır; kart verisi Entegrasyonik sistemlerine gelmez. Ödeme akışı bu sürümde test aşamasındadır.',
+      'Hayır. Ödeme, ödeme sağlayıcısının barındırdığı formda alınacak şekilde tasarlanmıştır; kart verisi Entegrasyonik sistemlerine gelmez. Ödeme akışı bu sürümde test (sandbox) aşamasındadır.',
     evidence: [evidence(PATHS.adr0008, 'ADR-0008 barındırılan ödeme formu', 'kart verisi bize gelmez')],
     internalNotes: ['Canlı ödeme sağlayıcısı adaptörü yok; mock checkout (ADR-0008). Cevap bu yüzden "test aşamasında" der.'],
   },
@@ -315,13 +303,13 @@ export const faq: FaqItem[] = [
     category: 'fiyat-plan',
     question: 'Ücretsiz deneme nasıl işler?',
     answer: `${trialSentence()}${trialPlanName() ? ` Deneme, ${trialPlanName()} planının limitleriyle çalışır;` : ''} devam etmek istediğinizde uygulama içinden işinize uygun planı seçersiniz.`,
-    evidence: [...trialEvidence(), evidence(SUBSCRIPTION_VIEW, 'Abonelik ekranı plan geçişi', 'Bu plana geç')],
+    evidence: [...trialEvidence(), evidence(SUBSCRIPTION_VIEW, 'Abonelik ekranı plan geçişi', 'Bu Plana Geç')],
   },
   {
     id: 'plan-secimi',
     category: 'fiyat-plan',
     question: 'Hangi plan işletmeme uygun?',
-    answer: `Planlar bağlamak istediğiniz kanal sayısına, yönettiğiniz ürün varyantı hacmine ve ekibinizdeki kullanıcı sayısına göre ayrılır. ${joinTr(fixedPlanNames())} planları sabit aylık fiyatlıdır${quotePlanName() ? `; özel limitlere ihtiyaç duyan işletmeler için ${quotePlanName()} planında size özel teklif hazırlanır` : ''}.`,
+    answer: `Planlar bağlamak istediğiniz kanal sayısına, yönettiğiniz ürün varyantı (SKU) hacmine ve ekibinizdeki kullanıcı sayısına göre ayrılır. ${joinTr(fixedPlanNames())} planları sabit aylık fiyatlıdır${quotePlanName() ? `; özel limitlere ihtiyaç duyan işletmeler için ${quotePlanName()} planında size özel teklif hazırlanır` : ''}.`,
     evidence: [evidence(PLAN_SEED, 'Plans seed: limit alanları', '"limits": { "channels"')],
   },
   {
@@ -340,8 +328,8 @@ export const faq: FaqItem[] = [
     answer:
       'Uygulamadaki destek ekranından talep oluşturabilir, süreci aynı ekranda mesajlaşarak takip edebilirsiniz. Satış öncesi sorularınız için iletişim sayfasından bize ulaşabilirsiniz.',
     evidence: [
-      evidence('backend/src/api/rpc/handlers/ticket-service.ts', 'Destek talebi açma', 'async openTicket'),
-      evidence('backend/src/api/rpc/handlers/ticket-service.ts', 'Destek talebi mesajlaşma', 'async sendTicketMessage'),
+      evidence('backend/src/api/services/ticket-service.ts', 'Destek talebi açma', 'async openTicket'),
+      evidence('backend/src/api/services/ticket-service.ts', 'Destek talebi mesajlaşma', 'async sendTicketMessage'),
     ],
     internalNotes: ['Destek saatleri / yanıt süresi / kanal (telefon, canlı sohbet) iddiası YAPILMAZ — ürün sahibi kararı.'],
   },
@@ -352,7 +340,7 @@ export const faq: FaqItem[] = [
     answer:
       'Evet. Kanal, ürün veya ekip sayınız arttığında uygulamadaki Abonelik ve Planlar ekranından daha kapsamlı bir plana geçebilirsiniz. Standart limitlerin ötesine geçtiğinizde size özel teklif hazırlarız.',
     evidence: [
-      evidence(SUBSCRIPTION_VIEW, 'Abonelik ekranı plan geçişi', 'Bu plana geç'),
+      evidence(SUBSCRIPTION_VIEW, 'Abonelik ekranı plan geçişi', 'Bu Plana Geç'),
       evidence(PLAN_SEED, 'Plans seed: özel teklif limitleri', 'Özel teklif: limitler'),
     ],
   },
@@ -361,7 +349,7 @@ export const faq: FaqItem[] = [
     category: 'destek-olcek',
     question: 'Satış hacmim arttıkça Entegrasyonik benimle birlikte ölçeklenir mi?',
     answer:
-      'Entegrasyonik çok kanallı operasyonları büyütmek için tasarlandı. Pazaryerlerinde yaşanan geçici aksaklıklar kontrollü biçimde yönetilir; işlemler bağlantı toparlandığında yeniden denenir. Kanal, ürün veya kullanıcı kapasitesine ihtiyaç duyduğunuzda planınızı yükseltmeniz yeterlidir.',
+      'Entegrasyonik çok kanallı operasyonları büyütmek için tasarlandı. Kanallarla iletişim zaman aşımı, kontrollü yeniden deneme ve devre kesici içeren bir dayanıklılık katmanından geçer; geçici hatalar kontrollü biçimde yönetilir. Kanal, ürün veya kullanıcı kapasitesine ihtiyaç duyduğunuzda planınızı yükseltmeniz yeterlidir.',
     evidence: [
       evidence('backend/src/integration/modules/common/http/ResilientHttpClient.ts', 'ResilientHttpClient devre kesici', 'circuitBreaker'),
       evidence('docs/adr/0006-dayaniklilik-katmani-ve-surec-topolojisi.md', 'ADR-0006 dayanıklılık katmanı', 'Dayanıklılık katmanı'),
@@ -372,8 +360,7 @@ export const faq: FaqItem[] = [
     id: 'pazaryeri-kesinti',
     category: 'destek-olcek',
     question: 'Pazaryeri tarafında bir kesinti olursa ne olur?',
-    // S27c (K44): SSS'de fayda dili; teknik özet (zaman aşımı, devre kesici) yalnız /guvenlik "Ayrıntı" panelinde.
-    answer: `Geçici bir aksaklıkta işlemler kontrollü biçimde yeniden denenir; art arda hata veren bir bağlantı kısa süre bekletilir, ardından tekrar denenir. Bu yaklaşım geçici hataları yönetir; pazaryeri tarafındaki kesintiyi ortadan kaldırmaz.`,
+    answer: `${capability('integration-resilience').summary} ${capability('integration-resilience').caveat ?? ''}`.trim(),
     evidence: [
       evidence('backend/src/integration/modules/common/http/ResilientHttpClient.ts', 'ResilientHttpClient devre kesici', 'circuitBreaker'),
       evidence('docs/adr/0006-dayaniklilik-katmani-ve-surec-topolojisi.md', 'ADR-0006 dayanıklılık katmanı', 'Dayanıklılık katmanı'),
@@ -473,7 +460,7 @@ export const SUPPORT_CATEGORIES: SupportCategory[] = [
     label: 'Hesap ve güvenlik',
     lead: 'API anahtarlarınızın, verilerinizin ve ekip yetkilerinizin nasıl korunduğu.',
     icon: 'shield',
-    faqIds: ['anahtar-saklama', 'veri-ayrimi', 'fiyat-karari', 'ekip-yetki', 'kart-bilgisi', 'secim-kriterleri'],
+    faqIds: ['anahtar-saklama', 'veri-ayrimi', 'ekip-yetki', 'kart-bilgisi', 'secim-kriterleri'],
     links: [{ label: 'Güvenlik yaklaşımımız', href: '/guvenlik' }],
   },
   {

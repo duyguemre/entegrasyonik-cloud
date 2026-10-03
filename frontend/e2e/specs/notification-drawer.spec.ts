@@ -1,7 +1,7 @@
 // ADR-0015 B5-3 — components/user/NotificationDrawerComponent.vue.
 // Protokol 13: bu spec önce DEĞİŞMEMİŞ bileşene karşı yazıldı (karakterizasyon).
 //
-// KARAKTERİZASYON NOTU (C1.5 ile DÜZELTİLDİ — ilk test bilinçli olarak güncellendi): `stores/
+// KARAKTERİZASYON NOTU (şüpheli davranış, DÜZELTİLMEDİ — final rapora yazıldı): `stores/
 // notificationDrawer.ts`'in `startPolling()`'i (10sn'de bir `fetchNotifications()` çağıran
 // polling) HİÇBİR YERDEN çağrılmıyor (grep ile doğrulandı — yalnızca kendi tanımında var);
 // `fetchNotifications()` de shell açılışında/`drawer` açılışında DOĞRUDAN ÇAĞRILMIYOR. Yani
@@ -52,17 +52,13 @@ async function openNotificationDrawer(page: any) {
 }
 
 test.describe('ADR-0015 B5-3 — NotificationDrawerComponent', () => {
-  // C1.5 (F-06) BİLİNÇLİ DAVRANIŞ DEĞİŞİKLİĞİ (brif: "tam liste YALNIZ çekmece açıldığında çekilsin"):
-  // eski karakterizasyon ("çekmece açılışında veri ÇEKİLMİYOR — boş durum") artık geçersiz; iddia
-  // tersine çevrildi. Menüde bildirim merkezi kaydı yoksa "Tümünü gör" gösterilmez.
-  test('C1.5: çekmece açılınca tam liste çekilir ve kartlar render olur; merkez menüde yoksa "Tümünü gör" yok', async ({ page }) => {
+  test('karakterizasyon: çekmece açılışında otomatik veri ÇEKİLMİYOR — boş durum gösterilir', async ({ page }) => {
     await installApiMocks(page, withNotifications())
     await gotoAuthed(page)
     await openNotificationDrawer(page)
 
-    await expect(page.getByText('E2E içe aktarma tamamlandı')).toBeVisible()
-    await expect(page.getByText('Henüz bildiriminiz yok')).toHaveCount(0)
-    await expect(page.getByRole('button', { name: 'Tümünü gör' })).toHaveCount(0)
+    await expect(page.getByText('Henüz bildiriminiz yok')).toBeVisible()
+    await expect(page.getByText('E2E içe aktarma tamamlandı')).toHaveCount(0)
   })
 
   test('"Tümünü Okundu İşaretle" tıklanınca fetchNotifications tetiklenir ve kartlar render olur', async ({ page }) => {
@@ -70,7 +66,7 @@ test.describe('ADR-0015 B5-3 — NotificationDrawerComponent', () => {
     await gotoAuthed(page)
     await openNotificationDrawer(page)
 
-    await page.getByRole('button', { name: 'Tümünü okundu işaretle' }).click()
+    await page.locator('button:has(.mdi-check-all)').click()
 
     await expect(page.getByText('E2E içe aktarma tamamlandı')).toBeVisible()
     await expect(page.getByText('Trendyol kataloğunuzdan 42 ürün aktarıldı.')).toBeVisible()
@@ -90,11 +86,7 @@ test.describe('ADR-0015 B5-3 — NotificationDrawerComponent', () => {
     await gotoAuthed(page)
     await openNotificationDrawer(page)
 
-    // Tümünü sil artık ⋯ "Bildirim işlemleri" menüsünde ve onay diyaloğu ister (tehlikeli eylem).
-    await page.getByRole('button', { name: 'Bildirim işlemleri' }).click()
-    await page.getByRole('menuitem', { name: 'Tümünü sil' }).click()
-    const confirm = page.getByRole('dialog').filter({ hasText: 'Tüm bildirimler silinsin mi?' })
-    await confirm.getByRole('button', { name: 'Tümünü sil' }).click()
+    await page.locator('button:has(.mdi-trash-can-outline)').click()
 
     await expect.poll(() => deletePayload).not.toBeNull()
     expect(deletePayload.all).toBe(true)

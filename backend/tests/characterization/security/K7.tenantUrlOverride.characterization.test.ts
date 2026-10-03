@@ -24,7 +24,7 @@ jest.mock('@services/notification/NotificationService', () => ({ NotificationSer
 import HbService from '@integration/modules/marketplace/hepsiburada/services/Service';
 import IdeasoftService from '@integration/modules/ecommerce/ideasoft/services/Service';
 import { ResilientHttpClient } from '@integration/modules/common/http/ResilientHttpClient';
-import IntegrationService from '../../../src/api/rpc/handlers/integration-service';
+import IntegrationService from '../../../src/api/services/integration-service';
 import { AuditLogger } from '@services/audit/AuditLogger';
 
 const MOCK_ENVS = ['HEPSIBURADA_MOCK_MODE', 'IDEASOFT_MOCK_MODE'];

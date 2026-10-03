@@ -2,7 +2,6 @@ import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import useRestApi from '@/composables/restapi'
 import { registerStoreReset } from '@/stores/resetRegistry'
-import { toFetchResult, type IntegrationFetchResult, type IntegrationSubject } from '@/composables/useIntegrationError'
 import { get } from 'sortablejs'
 export const useIntegrationStore = defineStore('integrationStore', () => {
   const restApi = useRestApi()
@@ -191,45 +190,6 @@ export const useIntegrationStore = defineStore('integrationStore', () => {
 
 
 
-  // ---- Hata bilgisini yüzeye çıkaran EK yükleyiciler (geriye uyumlu; yukarıdaki retrieve*/get* aynen durur) ----
-  // `restApi` hatada axios hata nesnesini DÖNER (fırlatmaz); eski çağıranlar bunu sessizce yutuyordu.
-  // Bu yükleyiciler aynı istekleri yapar, ama sonucu `{ ok, data } | { ok:false, error }` olarak döner
-  // (`error`: bkz. composables/useIntegrationError.ts). Boş liste `ok:false` + `error.empty:true` olur.
-  // Önbellek davranışı eski yöntemlerle AYNI anahtarı paylaşır (yalnız boş olmayan yanıt önbelleğe girer).
-  const errorContext = (integrationCode: string, operation: string, subject: IntegrationSubject) => ({
-    service: 'IntegrationService/' + operation,
-    integrationCode,
-    platformTitle: integrationList.value?.find((item: any) => item.code == integrationCode)?.title,
-    subject,
-  })
-
-  const loadIntegrationCategories = async (integrationCode: string, reset = false): Promise<IntegrationFetchResult<any[]>> => {
-    const cached = integrationCategories.value.get(integrationCode)
-    if (!reset && cached) return { ok: true, data: cached }
-    const resp = await restApi.post("IntegrationService/retrieveCategoriesFromIntegration", { integrationCode })
-    const result = toFetchResult<any[]>(resp, errorContext(integrationCode, 'retrieveCategoriesFromIntegration', 'categories'))
-    if (!result.ok) return result
-    const processed = processCategories(result.data, [])
-    integrationCategories.value.set(integrationCode, processed)
-    return { ok: true, data: processed }
-  }
-
-  const loadIntegrationCategoryChoices = async (integrationCode: string, integrationCategoryId: number): Promise<IntegrationFetchResult<any[]>> => {
-    const key = integrationCode + '_' + integrationCategoryId
-    const cached = integrationCategoryAttributes.value.get(key)
-    if (cached) return { ok: true, data: cached }
-    const resp = await restApi.post("IntegrationService/retrieveCategoryAttributesFromIntegration", { integrationCode, integrationCategoryId })
-    const result = toFetchResult<any[]>(resp, errorContext(integrationCode, 'retrieveCategoryAttributesFromIntegration', 'attributes'))
-    if (result.ok) integrationCategoryAttributes.value.set(key, result.data)
-    return result
-  }
-
-  const loadIntegrationCategoryAttributeValues = async (integrationCode: string, integrationCategoryId: number, integrationCategoryAttributeId: string): Promise<IntegrationFetchResult<any[]>> => {
-    const resp = await restApi.post("IntegrationService/retrieveCategoryAttributeValuesFromIntegration", { integrationCode, integrationCategoryId, integrationCategoryAttributeId })
-    return toFetchResult<any[]>(resp, errorContext(integrationCode, 'retrieveCategoryAttributeValuesFromIntegration', 'attributeValues'))
-  }
-
-
   const retrieveCommisionForCategoryFromIntegration = async (integrationCode: string, integrationCategoryId: number) => {
     if (integrationCode && integrationCategoryId && integrationCategoryId != -1)
       return await restApi.post("IntegrationService/retrieveCommisionForCategoryFromIntegration", { integrationCode, integrationCategoryId })
@@ -338,6 +298,5 @@ export const useIntegrationStore = defineStore('integrationStore', () => {
 
   return {
     init, getIntegrationImagePathByCode, getClientErps, getClientECommerces, getIntegrationImagePathWithIntegrationCode, getClientShipments, getClientIntegration, retrievePlatformInfos, getIntegrationTitle, getPlatforms, getIntegrationCustomMap, getIntegrationCategory2, retrieveIntegrationBrands, retrieveIntegrationCategoryChoices, getIntegration, getIntegrationCategories, getIntegrationImagePath, retrieveCommisionForCategoryFromIntegration, integrationList, integrationTypes, getClientMarketplaces, isClientHasIntegration, hasBrandMapping, sortClientMarketplaces, clientInit, retrieveIntegrationCategoryAttributeValues, getClientPlatforms, getIntegrationCategory3,
-    loadIntegrationCategories, loadIntegrationCategoryChoices, loadIntegrationCategoryAttributeValues,
   }
 })

@@ -13,8 +13,8 @@ Proje sahibinin yönergesi (2026-09-28): "Entegrasyon" yalnız pazaryeri demek d
 | marketplace | Trendyol, Hepsiburada, N11, Pazarama | `backend/src/integration/modules/IntegrationFactory.ts:207-216` (switch, 6 kod) | 5 form (Amazon'un yalnız formu var) |
 | ecommerce | Ideasoft (gerçek modda token akışı kopuk, C10) | aynı switch; `INTEGRATIONS_REGISTRY.md` §3.1 | 9 form (8'i yalnız form) |
 | erp | Bizimhesap (yalnız okuma) | aynı switch; `INTEGRATIONS_REGISTRY.md` §4.1 | 1 form |
-| shipping | **YOK** | `api/rpc/handlers/shipment-service.ts:80` `hasShipmentIntegration = false` | 9 form (PTT, Aras, Yurtiçi, MNG, Hepsijet, Sürat, Sendeo, Oplog, UPS) |
-| einvoice | **YOK** | `api/rpc/handlers/invoice-service.ts:190` `hasIntegratedProvider = false`; `EInvoiceView.onUpdate` yalnız `console.log` | 4 form (GİB, e-Logo, Turkcell e-Şirket, Trendyol e-Faturam) |
+| shipping | **YOK** | `api/services/shipment-service.ts:80` `hasShipmentIntegration = false` | 9 form (PTT, Aras, Yurtiçi, MNG, Hepsijet, Sürat, Sendeo, Oplog, UPS) |
+| einvoice | **YOK** | `api/services/invoice-service.ts:190` `hasIntegratedProvider = false`; `EInvoiceView.onUpdate` yalnız `console.log` | 4 form (GİB, e-Logo, Turkcell e-Şirket, Trendyol e-Faturam) |
 
 Bunun yapısal nedenleri şunlar:
 - Tek sözleşme olan `IPlatform` (`backend/src/interfaces/platforms/index.ts:217-315`) pazaryeri odaklıdır. ERP ve e-ticaret adaptörleri desteklemedikleri metotlarda `NOT_SUPPORTED` fırlatarak bu sözleşmeyi taşıyor.

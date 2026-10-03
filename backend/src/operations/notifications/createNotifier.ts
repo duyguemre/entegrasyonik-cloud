@@ -7,9 +7,6 @@ import { Notifier, NotifyDeps } from './notify';
 import { memberTier, type Member } from './audience';
 import { can } from '@platform/core/authz/can';
 import { getRealtimeBus } from '@platform/runtime/realtime';
-import { PushSubscriptionRepository } from '@database/repositories/app/PushSubscriptionRepository';
-import { isPushEnabled } from './push/pushConfig';
-import { filterPushRecipients } from './push/pushRecipients';
 
 const MEMBER_TTL_MS = 30_000;
 
@@ -37,15 +34,7 @@ export function createNotifierDeps(): NotifyDeps {
         hasPermission: (m, permission) => can({ tier: memberTier(m), platformAdmin: false }, permission).allowed,
         // ADR-0029 NB6: gercek zamanli zil sinyali (yalniz kimlik+kategori/onem; asla firlatmaz).
         publish: (e) => getRealtimeBus().publish(e),
-        flags: () => ({ v2Enabled: config.notify.v2Enabled, emailEnabled: config.notify.emailEnabled, pushEnabled: isPushEnabled() }),
-        // MOB-04: yalniz push acikken cagrilir; abonelik + tercih iki sorgu (abonesi olmayan tenant'ta ikincisi yok).
-        async pushRecipients(tid, def, userIds) {
-            const app = await DatabaseManagerInstance.getApplicationDB();
-            const subscribed = await new PushSubscriptionRepository(app).usersWithSubscriptions(tid, userIds);
-            if (!subscribed.length) return [];
-            const rows: any[] = await app.getNotificationPreferencesModel().find({ tid, userId: { $in: [...subscribed, null] } }, { userId: 1, matrix: 1 }).lean();
-            return filterPushRecipients(def, subscribed, rows);
-        },
+        flags: () => ({ v2Enabled: config.notify.v2Enabled, emailEnabled: config.notify.emailEnabled }),
     };
 }
 

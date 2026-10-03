@@ -22,7 +22,7 @@ jest.mock('@database/index', () => ({ DatabaseManagerInstance: { getApplicationD
 import { Worker } from 'bullmq';
 import { startOrderWorkerConsumer, closeOrderWorkerConsumer } from '@integration/engine/order/worker-runner';
 import { OrderWorker } from '@integration/engine/order/OrderWorker';
-import { OrderRepository } from '@database/repositories/tenant/OrderRepository';
+import { OrderRepository } from '@integration/engine/order/OrderRepository';
 import { DatabaseManagerInstance } from '@database/index';
 import { IntegrationError } from '@integration/modules/common/IntegrationError';
 

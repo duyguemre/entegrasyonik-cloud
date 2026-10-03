@@ -8,14 +8,12 @@ interface Props {
   id: string
   eyebrow?: string
   title: string
-  /** Başlık içinde vurgu rengiyle işaretlenecek birebir alt dize (varsa ve title içinde geçiyorsa uygulanır). */
+  /** Başlık içinde gradyan vurguyla işaretlenecek birebir alt dize (varsa ve title içinde geçiyorsa uygulanır). */
   accent?: string
   lead?: string
   tone?: 'light' | 'dark'
   align?: 'start' | 'center'
 }
-
-import Eyebrow from '../Eyebrow.astro'
 
 const { id, eyebrow, title, accent, lead, tone = 'light', align = 'start' } = Astro.props
 const parts = accent && title.includes(accent) ? title.split(accent) : null
@@ -24,7 +22,10 @@ const parts = accent && title.includes(accent) ? title.split(accent) : null
 <header class:list={['sh', `sh--${tone}`, `sh--${align}`]} data-scene="section-head">
   {
     eyebrow && (
-      <Eyebrow data-reveal>{eyebrow}</Eyebrow>
+      <p class="sh__eyebrow" data-reveal>
+        <span class="sh__eyebrow-mark" aria-hidden="true" />
+        {eyebrow}
+      </p>
     )
   }
   <h2 id={id} class="sh__title" data-reveal>
@@ -53,12 +54,34 @@ const parts = accent && title.includes(accent) ? title.split(accent) : null
     align-items: center;
     text-align: center;
   }
-  /* SITE-DL: vurgulu kelime düz renk (degrade metin yok) — açık zeminde eylem mavisi, koyu zeminde açık eşleniği. */
+  .sh__eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ek-space-2);
+    color: var(--ek-color-primary-darken-1);
+    font-size: var(--ek-font-size-md);
+    font-weight: var(--ek-font-weight-semibold);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .sh__eyebrow-mark {
+    width: var(--ek-space-5);
+    height: var(--ek-space-1);
+    border-radius: var(--ek-radius-full);
+    background: var(--site-gradient-accent);
+  }
+  .sh--dark .sh__eyebrow {
+    color: var(--ek-color-secondary);
+  }
   .sh__accent {
-    color: var(--site-action);
+    background: var(--site-gradient-accent);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: var(--ek-color-secondary-darken-1);
   }
   .sh--dark .sh__accent {
-    color: var(--site-accent-on-dark);
+    color: var(--ek-color-secondary);
   }
   .sh__title {
     font-size: var(--site-font-display-md);

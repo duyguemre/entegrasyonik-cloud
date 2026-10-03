@@ -9,7 +9,7 @@ jest.mock('axios', () => require('./_axiosMock').axiosModuleFactory());
 import Ideasoft from '@integration/modules/ecommerce/ideasoft';
 import { SecurityService } from '@integration/modules/ecommerce/ideasoft/services/SecurityService';
 import { ResilientHttpClient } from '@integration/modules/common/http/ResilientHttpClient';
-import { encryptSecrets } from '../../../src/platform/core/security/integrationSecrets';
+import { encryptSecrets } from '../../../src/api/integrationSecrets';
 import { getIncomplete } from '@integration/contracts/IncompleteFetch';
 import { http, resetHttp } from './_axiosMock';
 

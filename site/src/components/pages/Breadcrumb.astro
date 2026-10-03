@@ -51,8 +51,6 @@ const { items, inverse = false } = Astro.props
   }
   .breadcrumb__item + .breadcrumb__item::before {
     content: '/';
-    /* site-wdg: ayırıcı görsel; ekran okuyucu "eğik çizgi" okumasın (alt metin boş; desteklemeyen tarayıcı üst satırı kullanır). */
-    content: '/' / '';
     color: var(--ek-color-content-subtle);
   }
   .breadcrumb__link {
@@ -64,7 +62,8 @@ const { items, inverse = false } = Astro.props
     transition: color var(--ek-duration-base) var(--ek-easing-standard);
   }
   .breadcrumb__link:hover {
-    color: var(--site-action-emphasis);
+    color: var(--ek-color-primary);
+    text-decoration: underline;
   }
   .breadcrumb__current {
     color: var(--ek-color-content-strong);

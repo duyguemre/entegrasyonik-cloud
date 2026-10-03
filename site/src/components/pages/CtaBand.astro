@@ -14,15 +14,13 @@ interface Props {
   text?: string
   primary: Action
   secondary?: Action
-  eyebrow?: string
 }
 
-const { id, title, text, primary, secondary, eyebrow = 'Başlamaya hazır mısınız?' } = Astro.props
+const { id, title, text, primary, secondary } = Astro.props
 ---
 
 <Section tone="stage" labelledby={id} class="cta-band">
   <div class="cta-band__body">
-    <p class="cta-band__eyebrow">{eyebrow}</p>
     <h2 id={id}>{title}</h2>
     {text && <p>{text}</p>}
     <div class="cta-band__actions">
@@ -33,61 +31,28 @@ const { id, title, text, primary, secondary, eyebrow = 'Başlamaya hazır mısı
 </Section>
 
 <style>
-  :global(.section.cta-band) {
-    padding-block: calc(var(--site-section-y) * 0.85);
+  .cta-band:global(.section) {
+    padding-block: calc(var(--site-section-y) * 0.7);
   }
   .cta-band__body {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: var(--ek-space-5);
+    gap: var(--ek-space-4);
     max-width: var(--site-container-narrow);
-    margin-inline: auto;
-    text-align: center;
   }
-  .cta-band__body .cta-band__eyebrow {
-    color: var(--site-accent-on-dark);
-    font-size: var(--ek-font-size-sm);
-    font-weight: var(--ek-font-weight-semibold);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
-  /* site-wdg W10: `.cta-band` öğesi Section'ın kapsamını taşır — `.cta-band h2` kapsamlı seçicisi hiç eşleşmiyordu;
-     başlık ve gövde ölçeği kendi gövde kabından uygulanır. */
-  .cta-band__body h2 {
-    text-wrap: balance;
-    font-size: var(--site-font-display-md);
+  .cta-band h2 {
+    font-size: var(--site-font-display-sm);
     font-weight: var(--site-font-display-weight);
     line-height: var(--site-font-display-line-height);
     letter-spacing: var(--site-font-display-tracking);
   }
-  .cta-band__body p {
+  .cta-band p {
     font-size: var(--ek-font-size-xl);
-    text-wrap: pretty;
   }
   .cta-band__actions {
     display: flex;
     flex-wrap: wrap;
-    justify-content: center;
     gap: var(--ek-space-3);
     margin-top: var(--ek-space-2);
-  }
-
-  /* SITE-DL-03: bölüm etiketi = 12×2 çizgi + mikro büyük harf (Eyebrow ile aynı tokenlar). */
-  .cta-band__body .cta-band__eyebrow {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--site-eyebrow-gap);
-    color: var(--site-eyebrow-color);
-    font-size: var(--site-eyebrow-size);
-    font-weight: var(--site-eyebrow-weight);
-    letter-spacing: var(--site-eyebrow-tracking);
-  }
-  .cta-band__body .cta-band__eyebrow::before {
-    content: '';
-    flex: none;
-    width: var(--site-eyebrow-mark-width);
-    height: var(--site-eyebrow-mark-height);
-    background: var(--site-eyebrow-mark-color);
   }
 </style>

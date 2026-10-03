@@ -52,7 +52,7 @@
 import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AuthShell from '@/components/login/AuthShell.vue'
-import { EkEmptyState } from '@entegrasyonik/ui/components'
+import EkEmptyState from '@/components/ds/EkEmptyState.vue'
 import { apiCode, apiStatus, isApiError } from '@/composables/apiErrors'
 import { useAccountSecurityApi, verifyEmailResultKey } from '@/composables/useAccountSecurityApi'
 

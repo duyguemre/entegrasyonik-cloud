@@ -2,33 +2,10 @@
 import vue from '@vitejs/plugin-vue'
 import vuetify, { transformAssetUrls } from 'vite-plugin-vuetify'
 import { resolve } from 'path';
-import { readFileSync, writeFileSync, existsSync } from 'node:fs'
-import { createHash } from 'node:crypto'
 
 // Utilities
-import { defineConfig, searchForWorkspaceRoot, type Plugin } from 'vite'
+import { defineConfig } from 'vite'
 import { fileURLToPath, URL } from 'node:url'
-
-// MOB-01 — `dist/service-worker.js` içindeki `__EK_SW_VERSION__` yer tutucusu derleme içeriğinin karmasıyla değişir:
-// her yeni derlemede SW dosyası değişir → tarayıcı güncellemeyi görür → "Yeni sürüm hazır" bildirimi (registerServiceWorker.ts).
-function swVersionPlugin(): Plugin {
-  let outDir = 'dist'
-  const hash = createHash('sha256')
-  return {
-    name: 'ek-sw-version',
-    apply: 'build',
-    configResolved(c) { outDir = c.build.outDir },
-    generateBundle(_o, bundle) {
-      for (const name of Object.keys(bundle).sort()) hash.update(name)
-    },
-    closeBundle() {
-      const file = resolve(__dirname, outDir, 'service-worker.js')
-      if (!existsSync(file)) return
-      const version = hash.digest('hex').slice(0, 12)
-      writeFileSync(file, readFileSync(file, 'utf8').replace(/__EK_SW_VERSION__/g, version))
-    },
-  }
-}
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -87,28 +64,19 @@ export default defineConfig({
         configFile: './src/styles/integrator.scss'
       }
  */    }),
-    swVersionPlugin(),
   ],
   define: { 
     'process.env': {},
-    // DESK-00 / CSP: vue-i18n iletileri `new Function` yerine AST ile derlenir → CSP'de `unsafe-eval` gerekmez
-    // (Electron kabuğu zorunlu CSP uygular; web'in Report-Only CSP'si de ihlal üretmez).
-    __INTLIFY_JIT_COMPILATION__: true,
 /*     __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: false, */
   },
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
-      // Yasal metinlerin tek kanonik kaynağı site (ADR-0014 Karar 5): uygulama içi /legal/:slug aynı veriyi okur.
-      '@site': fileURLToPath(new URL('../site/src', import.meta.url)),
     },
     extensions: ['.js', '.json', '.jsx', '.mjs', '.ts', '.tsx', '.vue'],
   },
   server: {
-    port: 3020,
-    host:"0.0.0.0",
-    fs: {
-      allow: [searchForWorkspaceRoot(process.cwd()), fileURLToPath(new URL('../site/src', import.meta.url))],
-    },
+    port: 3000,
+    host:"0.0.0.0"
   },
 })

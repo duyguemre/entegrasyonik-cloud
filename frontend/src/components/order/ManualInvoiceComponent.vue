@@ -1,24 +1,35 @@
 <template>
     <ActionDialogComponent v-model="show" title="Manuel Fatura Girişi"
-        subtitle="E-Fatura entegrasyonu bulunmayan siparişler için belge kaydı" icon="mdi-pencil-outline"
+        subtitle="E-Fatura entegrasyonu bulunmayan siparişler için belge kaydı" icon="mdi-file-document-edit-outline"
         color="primary" confirm-buttom-color="primary" confirm-text="Faturayı Kaydet" cancel-text="Vazgeç"
         hint="Girilen bilgiler sipariş detayına işlenecek ve pazar yerine iletilecektir." max-width="600px"
         :is-confirm-disabled="isFormInvalid" @confirm="handleSubmit" @close="handleClose" attach="orderListView">
         <v-form ref="formRef" @submit.prevent="handleSubmit">
-            <EkFormGrid :columns="2">
-                    <v-text-field class="ek-span-full" v-model="form.invoiceNumber" label="Fatura Numarası"
-                        placeholder="Örn: GİB202600000012"
+            <v-row dense>
+                <v-col cols="12">
+                    <v-text-field v-model="form.invoiceNumber" class="customTextField" label="Fatura Numarası"
+                        placeholder="Örn: GİB202600000012" variant="outlined" density="comfortable"
                         :rules="[v => !!v || 'Fatura numarası zorunludur']" autofocus></v-text-field>
-                    <v-text-field class="ek-span-full" v-model="form.invoiceLink" label="Fatura PDF Linki"
-                        placeholder="https://..."
+                </v-col>
+
+                <v-col cols="12">
+                    <v-text-field v-model="form.invoiceLink" class="customTextField" label="Fatura PDF Linki"
+                        placeholder="https://..." variant="outlined" density="comfortable"
                         prepend-inner-icon="mdi-link-variant"></v-text-field>
-                    <v-select v-model="form.documentType" :items="['E_ARSIV', 'E_FATURA']"
-                        label="Belge Türü"></v-select>
+                </v-col>
+
+                <v-col cols="6">
+                    <v-select v-model="form.documentType" class="customTextField" :items="['E_ARSIV', 'E_FATURA']"
+                        label="Belge Türü" variant="outlined" density="comfortable"></v-select>
+                </v-col>
+
+                <v-col cols="6">
                     <v-menu v-model="invoiceDateMenuInline" :close-on-content-click="false">
                         <template v-slot:activator="{ props }">
                             <v-text-field :model-value="formatDisplayDate(form.issueDate)" label="Fatura Tarihi"
-                                prepend-inner-icon="mdi-calendar-outline" readonly v-bind="props"
-                                append-inner-icon="mdi-close-circle-outline"
+                                variant="outlined" density="comfortable" class="customTextField"
+                                prepend-inner-icon="mdi-calendar" readonly v-bind="props"
+                                append-inner-icon="mdi-close-circle"
                                 @click:append-inner.stop="resetDateToToday"></v-text-field>
                         </template>
                         <v-card class="rounded-lg">
@@ -26,14 +37,14 @@
                                 color="primary" @update:model-value="onDateSelected"></v-date-picker>
                         </v-card>
                     </v-menu>
-            </EkFormGrid>
+                </v-col>
+            </v-row>
         </v-form>
     </ActionDialogComponent>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, computed } from 'vue';
-import { EkFormGrid } from '@entegrasyonik/ui/components'
 import ActionDialogComponent from '@/components/layout/ActionDialogComponent.vue';
 
 // State yönetimi

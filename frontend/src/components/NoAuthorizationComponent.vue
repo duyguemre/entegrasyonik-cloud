@@ -1,8 +1,8 @@
 <template>
-  <div class="ma-12 align-center justify-center d-flex no-auth">
+  <div class=" ma-12  align-center justify-center d-flex" style="font-size:2em;">
     <CardComponent class="pa-6">
-      <v-icon class="mr-2 " color="error">mdi-cancel</v-icon>
-      <span class="no-auth__text">İşlem Yapma Yetkiniz Bulunmamaktadır.</span>
+      <v-icon class="mr-2 " color="danger">mdi-cancel</v-icon>
+      <span style="opacity:.8">İşlem Yapma Yetkiniz Bulunmamaktadır.</span>
     </CardComponent>
   </div>
 </template>
@@ -10,12 +10,4 @@
 import { watch, ref } from 'vue'
 import CardComponent from './CardComponent.vue';
 </script>
-<style scoped>
-.no-auth {
-  font-size: var(--ek-type-display-size);
-}
-
-.no-auth__text {
-  color: var(--ek-color-content-default);
-}
-</style>
+<style scoped></style>

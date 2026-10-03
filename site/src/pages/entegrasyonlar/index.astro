@@ -4,26 +4,22 @@
  * Yalnızca `getPublicIntegrations()` seçicisi: `available` entegrasyonlar; yol haritası öğeleri hiçbir koşulda yok
  * (`ROADMAP_VISIBLE=false`). Kapsam ve farklar sakin bir dille "Kanal bazında kapsam" bölümünde (S12: ana sayfadaki
  * kapsam matrisi buraya taşındı; `CoverageMatrix`) ve kartlarda eksiksiz gösterilir.
- * 2026-10-02 pazarlama düzeni: hero'da merkez diyagramı (Entegrasyonik + bağlı kanallar), ferah çip'li kartlar,
- * sayfa sonunda kanıtlı "Geliştirme listemizde" kanal başlıkları (DevelopmentList, BACKLOG kanıtlı).
  */
 import BaseLayout from '../../layouts/BaseLayout.astro'
-import { crumbsFor } from '../../data/seo'
 import Section from '../../components/Section.astro'
 import PageHero from '../../components/pages/PageHero.astro'
+import PageMeta from '../../components/pages/PageMeta.astro'
 import IntegrationCard from '../../components/pages/IntegrationCard.astro'
 import CoverageMatrix from '../../components/pages/CoverageMatrix.astro'
 import CtaBand from '../../components/pages/CtaBand.astro'
-import HeroActions from '../../components/pages/HeroActions.astro'
-import StatPanel from '../../components/pages/StatPanel.astro'
-import Eyebrow from '../../components/Eyebrow.astro'
-import DevelopmentList from '../../components/pages/DevelopmentList.astro'
-import ChannelMono from '../../components/pages/ChannelMono.astro'
-import Logo from '../../components/Logo.astro'
 import { getPublicIntegrations, COVERAGE_LABELS, type CoverageLevel, type IntegrationKind } from '../../data/integrations'
+import { breadcrumbJsonLd } from '../../lib/seo'
 import { appUrls } from '../../lib/site-config'
 
-const crumbs = crumbsFor('/entegrasyonlar')
+const title = 'Entegrasyonlar'
+const description =
+  'Entegrasyonik pazaryerlerini, e-ticaret altyapınızı ve ERP sisteminizi tek panelde buluşturur; her entegrasyonun kapsamı kanal bazında açıkça yazılıdır.'
+const crumbs = [{ label: 'Ana sayfa', href: '/' }, { label: 'Entegrasyonlar' }]
 
 const all = getPublicIntegrations()
 const groups: Array<{ kind: IntegrationKind; id: string; heading: string; note: string }> = [
@@ -50,52 +46,58 @@ const stats = [
 
 const COVERAGE_METER: Record<CoverageLevel, number> = { broad: 3, partial: 2, limited: 1 }
 const coverageLevels = Object.keys(COVERAGE_LABELS) as CoverageLevel[]
-// Merkez diyagramı: kanallar iki yana bölünür (yalnızca görsel; anlam aşağıdaki kartlarda).
-const half = Math.ceil(all.length / 2)
-const sides = [all.slice(0, half), all.slice(half)]
 ---
 
-<BaseLayout>
+<BaseLayout title={title} description={description}>
+  <PageMeta
+    slot="head"
+    title={title}
+    description={description}
+    jsonLd={[breadcrumbJsonLd([{ label: 'Ana sayfa', path: '/' }, { label: title, path: '/entegrasyonlar' }])]}
+  />
 
   <PageHero
-    title="Sattığınız her yer, aynı merkezde"
-    accent="aynı merkezde"
-    eyebrow="Entegrasyonlar"
-    lead="Pazaryerleriniz, e-ticaret siteniz ve ERP'niz aynı ekranda buluşur. Her kanalın hangi işlemleri desteklediğini kanal kanal açıkça gösteriyoruz."
+    title="Entegrasyonlar"
+    eyebrow="Kanallar"
+    lead="Pazaryerlerinizi, e-ticaret altyapınızı ve ERP sisteminizi tek panelde buluşturun. Her kanalın hangi işlemleri desteklediğini kanal bazında şeffafça gösteriyoruz."
     crumbs={crumbs}
   >
-    <HeroActions
-      actions={[
-        { label: 'Kataloğa göz atın', href: '#katalog' },
-        { label: 'Kanal bazında kapsam', href: '#kapsam' },
-      ]}
-    />
+    <div class="hero-links">
+      <a class="hero-link" href="#katalog">Kataloğa göz atın</a>
+      <a class="hero-link hero-link--ghost" href="#kapsam">Kanal bazında kapsam</a>
+    </div>
     <Fragment slot="visual">
-      <div class="hub" aria-hidden="true">
+      <p class="stat-panel__tag">Kapsam özeti</p>
+      <dl class="stats" data-testid="integration-stats">
         {
-          sides.map((side, si) => (
-            <ul class:list={['hub__side', `hub__side--${si === 0 ? 'start' : 'end'}`]} role="list">
-              {side.map((c) => (
-                <li data-code={c.code}>
-                  <ChannelMono code={c.code} name={c.name} size="sm" />
-                  <span>{c.name}</span>
-                </li>
-              ))}
-            </ul>
+          stats.map((st) => (
+            <div class="stat">
+              <dt class="stat__label">{st.label}</dt>
+              <dd class="stat__value" data-stat={st.id}>
+                {st.value}
+              </dd>
+            </div>
           ))
         }
-        <div class="hub__core">
-          <Logo tone="inverse" />
-        </div>
-      </div>
-      <StatPanel tag="Kapsam özeti" stats={stats} testid="integration-stats" />
+      </dl>
+      <ul class="hero-chans" role="list" aria-label="Kullanılabilir kanallar">
+        {
+          all.map((i) => (
+            <li>
+              <a href={`/entegrasyonlar/${i.code}`} class="hero-chan" data-code={i.code}>
+                <span class="hero-chan__dot" aria-hidden="true" />
+                {i.name}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
     </Fragment>
   </PageHero>
 
   <Section id="katalog" labelledby="katalog-title" class="tight-section">
     <div class="cat-head">
       <div class="cat-head__text">
-        <Eyebrow>Katalog</Eyebrow>
         <h2 id="katalog-title">Entegrasyon kataloğu</h2>
         <p>Kategoriye göre süzün; her kartta desteklenen işlemler ve kapsam düzeyi yer alır.</p>
       </div>
@@ -141,7 +143,6 @@ const sides = [all.slice(0, half), all.slice(half)]
 
   <Section id="kapsam" labelledby="kapsam-title" tone="muted" class="tight-section">
     <div class="group__head">
-      <Eyebrow>Kapsam</Eyebrow>
       <h2 id="kapsam-title">Kanal bazında kapsam</h2>
       <p>
         Her kanalın desteklediği işlemler bir bakışta. Kapsam, kanalın sunduğu olanaklara göre farklılaşır; ayrıntılar
@@ -151,20 +152,11 @@ const sides = [all.slice(0, half), all.slice(half)]
     <CoverageMatrix integrations={all} labelledby="kapsam-title" />
   </Section>
 
-  <Section labelledby="gelistirme-baslik" class="tight-section">
-    <DevelopmentList
-      area="channels"
-      id="gelistirme-baslik"
-      title="Bağlantı ağımız büyüyor"
-      lead="Geliştirme listemizdeki yeni kanal ve sistem bağlantıları."
-    />
-  </Section>
-
   <CtaBand
     id="entegrasyon-cta"
-    title="Kanallarınızı bugün bağlayın"
-    text="Hesabınızı oluşturun, kanal bilgilerinizi girin; ürün, stok ve siparişleriniz ilk günden aynı akışta ilerlesin."
-    primary={{ label: 'Ücretsiz deneyin', href: appUrls.register() }}
+    title="Kanallarınızı tek panelde toplayın"
+    text="Hesabınızı oluşturun, kanal kimlik bilgilerinizi bağlayın ve ürün, stok ve siparişlerinizi tek yerden yönetin."
+    primary={{ label: 'Ücretsiz dene', href: appUrls.register() }}
     secondary={{ label: 'Sık sorulan sorular', href: '/sss' }}
   />
 </BaseLayout>
@@ -175,8 +167,114 @@ const sides = [all.slice(0, half), all.slice(half)]
 </script>
 
 <style>
-  :global(.section.tight-section) {
+  .tight-section:global(.section) {
     padding-block: calc(var(--site-section-y) * 0.72);
+  }
+
+  /* --- Hero --- */
+  .hero-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ek-space-3);
+  }
+  .hero-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--site-tap-target);
+    padding-inline: var(--ek-space-5);
+    border: var(--site-border-width) solid transparent;
+    border-radius: var(--ek-radius-lg);
+    background: var(--ek-color-surface);
+    color: var(--ek-color-primary);
+    font-weight: var(--ek-font-weight-semibold);
+    text-decoration: none;
+    transition: background-color var(--ek-duration-base) var(--ek-easing-standard), border-color var(--ek-duration-base) var(--ek-easing-standard);
+  }
+  .hero-link:hover {
+    background: color-mix(in srgb, var(--ek-color-surface) 88%, var(--ek-color-secondary));
+  }
+  .hero-link--ghost {
+    border-color: var(--site-glass-border);
+    background: var(--site-glass-bg);
+    color: var(--site-color-on-primary);
+  }
+  .hero-link--ghost:hover {
+    border-color: var(--site-color-on-primary-muted);
+    background: color-mix(in srgb, var(--ek-color-background) 12%, transparent);
+  }
+  .hero-link:focus-visible {
+    outline-color: var(--site-color-on-primary);
+  }
+  .stat-panel__tag {
+    margin: 0 0 var(--ek-space-4);
+    color: var(--site-text-on-dark-meta);
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--ek-font-weight-semibold);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--site-border-width);
+    margin: 0;
+    overflow: hidden;
+    border-radius: var(--ek-radius-lg);
+    background: var(--site-glass-border);
+  }
+  .stat {
+    display: flex;
+    flex-direction: column-reverse;
+    justify-content: flex-end;
+    gap: var(--ek-space-1);
+    padding: var(--ek-space-4);
+    background: color-mix(in srgb, var(--site-stage-deep) 55%, transparent);
+  }
+  .stat__value {
+    margin: 0;
+    color: var(--site-text-on-dark-heading);
+    font-size: var(--site-font-display-sm);
+    font-weight: var(--site-font-display-weight);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: var(--site-font-display-tracking);
+    line-height: 1;
+  }
+  .stat__label {
+    color: var(--site-text-on-dark-body);
+    font-size: var(--ek-font-size-sm);
+  }
+  .hero-chans {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ek-space-2);
+    margin: var(--ek-space-5) 0 0;
+    padding: 0;
+    list-style: none;
+  }
+  .hero-chan {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ek-space-2);
+    min-height: calc(var(--ek-space-8) + var(--ek-space-1));
+    padding-inline: var(--ek-space-3);
+    border: var(--site-border-width) solid var(--site-glass-border);
+    border-radius: var(--ek-radius-full);
+    background: var(--site-glass-bg);
+    color: var(--site-text-on-dark-heading);
+    font-size: var(--ek-font-size-sm);
+    font-weight: var(--ek-font-weight-medium);
+    text-decoration: none;
+    transition: border-color var(--ek-duration-base) var(--ek-easing-standard);
+  }
+  .hero-chan:hover {
+    border-color: var(--chan);
+  }
+  .hero-chan__dot {
+    width: var(--ek-space-2);
+    height: var(--ek-space-2);
+    border-radius: var(--ek-radius-full);
+    background: var(--chan);
+    box-shadow: 0 0 0 calc(var(--site-border-width) * 3) color-mix(in srgb, var(--chan) 30%, transparent);
   }
 
   /* --- Katalog başlığı + gösterge --- */
@@ -202,8 +300,8 @@ const sides = [all.slice(0, half), all.slice(half)]
     line-height: var(--site-font-display-line-height);
     letter-spacing: var(--site-font-display-tracking);
   }
-  .cat-head p:not(.eyebrow),
-  .group__head p:not(.eyebrow) {
+  .cat-head p,
+  .group__head p {
     color: var(--site-text-body);
     font-size: var(--ek-font-size-lg);
   }
@@ -229,25 +327,24 @@ const sides = [all.slice(0, half), all.slice(half)]
   .legend__meter span {
     width: var(--ek-space-3);
     height: var(--ek-space-1);
-    border-radius: var(--ek-radius-sm);
+    border-radius: var(--ek-radius-full);
     background: var(--ek-color-border-default);
   }
   .legend__meter[data-level='1'] span:nth-child(1),
   .legend__meter[data-level='2'] span:nth-child(-n + 2),
   .legend__meter[data-level='3'] span {
-    background: var(--site-accent);
+    background: var(--ek-color-secondary-darken-1);
   }
 
   /* --- Süzgeç çipleri --- */
   .filters {
-    /* SITE-DL-03: köşeli süzgeç şeridi; seçili = lacivert ton (gölge yok). */
     display: flex;
     flex-wrap: wrap;
     gap: var(--ek-space-2);
     margin-bottom: var(--ek-space-8);
     padding: var(--ek-space-1);
     border: var(--site-border-width) solid var(--ek-color-border-default);
-    border-radius: var(--ek-radius-tile);
+    border-radius: var(--ek-radius-xl);
     background: var(--ek-color-surface-muted);
     width: fit-content;
     max-width: 100%;
@@ -259,17 +356,17 @@ const sides = [all.slice(0, half), all.slice(half)]
     min-height: var(--site-tap-target);
     padding-inline: var(--ek-space-4);
     border: var(--site-border-width) solid transparent;
-    border-radius: var(--ek-radius-md);
+    border-radius: var(--ek-radius-lg);
     background: transparent;
     color: var(--site-text-body);
     font: inherit;
     font-size: var(--ek-font-size-md);
     font-weight: var(--ek-font-weight-medium);
     cursor: pointer;
-    transition: 
+    transition:
       background-color var(--ek-duration-fast) var(--ek-easing-standard),
-      border-color var(--ek-duration-fast) var(--ek-easing-standard),
-      color var(--ek-duration-fast) var(--ek-easing-standard);
+      color var(--ek-duration-fast) var(--ek-easing-standard),
+      box-shadow var(--ek-duration-fast) var(--ek-easing-standard);
   }
   .filter:hover {
     color: var(--site-text-heading);
@@ -280,9 +377,10 @@ const sides = [all.slice(0, half), all.slice(half)]
     outline-offset: var(--site-focus-ring-offset);
   }
   .filter[aria-pressed='true'] {
-    border-color: var(--site-action-border);
-    background: var(--site-action-subtle);
-    color: var(--site-action-emphasis);
+    border-color: var(--ek-color-border-default);
+    background: var(--ek-color-surface);
+    box-shadow: var(--site-shadow-card);
+    color: var(--site-text-heading);
     font-weight: var(--ek-font-weight-semibold);
   }
   .filter__count {
@@ -292,19 +390,16 @@ const sides = [all.slice(0, half), all.slice(half)]
     min-width: var(--ek-space-6);
     height: var(--ek-space-6);
     padding-inline: var(--ek-space-1);
-    border-radius: var(--ek-radius-sm);
-    background: var(--ek-color-surface);
+    border-radius: var(--ek-radius-full);
+    background: var(--ek-color-surface-sunken);
     color: var(--site-text-body);
     font-size: var(--ek-font-size-xs);
     font-weight: var(--ek-font-weight-semibold);
     font-variant-numeric: tabular-nums;
-    box-sizing: border-box;
-    border: var(--site-border-width) solid var(--ek-color-border-default);
   }
   .filter[aria-pressed='true'] .filter__count {
-    background: var(--ek-color-surface);
-    color: var(--site-action-emphasis);
-    border-color: var(--site-action-border);
+    background: var(--ek-color-primary);
+    color: var(--site-color-on-primary);
   }
 
   /* --- Kart ızgarası --- */
@@ -350,70 +445,5 @@ const sides = [all.slice(0, half), all.slice(half)]
     flex-direction: column;
     gap: var(--ek-space-2);
     margin-bottom: var(--ek-space-6);
-  }
-  /* --- Hero görsel: merkez diyagramı (düz yüzeyler; degrade yok) --- */
-  .hub {
-    position: relative;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-    align-items: center;
-    gap: var(--ek-space-4);
-    margin-bottom: var(--ek-space-6);
-    padding-bottom: var(--ek-space-6);
-    border-bottom: var(--site-border-width) solid var(--site-glass-border);
-  }
-  .hub__side {
-    display: flex;
-    flex-direction: column;
-    gap: var(--ek-space-3);
-  }
-  .hub__side--end {
-    grid-column: 3;
-    grid-row: 1;
-  }
-  .hub__side li {
-    position: relative;
-    display: flex;
-    align-items: center;
-    gap: var(--ek-space-2);
-    padding: var(--ek-space-2);
-    border: var(--site-border-width) solid var(--site-glass-border);
-    border-radius: var(--ek-radius-tile);
-    background: var(--site-glass-bg);
-    color: var(--site-text-on-dark-heading);
-    font-size: var(--ek-font-size-sm);
-    font-weight: var(--ek-font-weight-medium);
-  }
-  /* Bağlantı çizgisi: kanal kutusundan merkeze doğru (kanal renginde ince hat). */
-  .hub__side li::after {
-    content: '';
-    position: absolute;
-    top: 50%;
-    width: var(--ek-space-4);
-    height: var(--site-border-width);
-    background: color-mix(in srgb, var(--chan) 70%, transparent);
-  }
-  .hub__side--start li::after {
-    left: 100%;
-  }
-  .hub__side--end li::after {
-    right: 100%;
-  }
-  .hub__core {
-    grid-column: 2;
-    grid-row: 1;
-    display: grid;
-    place-items: center;
-    padding: var(--ek-space-4);
-    border: var(--site-border-width) solid var(--ek-color-chrome-soft-border);
-    border-radius: var(--ek-radius-card);
-    background: var(--ek-color-chrome);
-  }
-  .hub__core :global(.logo__word) {
-    display: none;
-  }
-  .hub__core :global(.logo__mark) {
-    width: var(--ek-space-12);
-    height: var(--ek-space-12);
   }
 </style>

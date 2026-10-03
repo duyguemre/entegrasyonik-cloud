@@ -1,6 +1,6 @@
 import { DatabaseManagerInstance } from '@database/DatabaseManager';
 import { ROLE_PERMISSIONS, type Role } from '../../capabilities/roles';
-import { legacyRoleOf, membershipSource } from '../http/membershipAuthz';
+import { legacyRoleOf, membershipSource } from '../membershipAuthz';
 
 // ADR-0035 Karar 2 / ADR-0010 madde 5-6: OAuth kimlik/tenant dogrulama PORTU. Onay ekraninin tenant listesi ve kod/refresh yenilemede
 // "kullanici hala gecerli mi" karari burada. Kurallar authenticate hattiyla AYNI kaynaklardan: Users (tokenVersion, isActive, lockUntil),

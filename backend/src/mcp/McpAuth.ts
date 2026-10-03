@@ -8,7 +8,7 @@ import { resolveTier } from '@platform/core/authz/tier';
 import { ApplicationError } from '@platform/core/errors';
 import type { AgentCtx } from '@operations/agent/types';
 import type { McpAccess } from '@operations/mcp/mcpSettings';
-import type { AuthResult } from '../api/http/authenticate';
+import type { AuthResult } from '../api/authenticate';
 
 export type McpFailure = 'invalid_token' | 'insufficient_scope' | 'none';
 

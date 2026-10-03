@@ -4,7 +4,7 @@ import { config } from '@config';
 import { getPlatformSetting } from '@integration/config/platformSettings';
 import { NotificationService } from '@services/notification/NotificationService';
 import { getAgentKv } from '@operations/agent/kv';
-import { dbPreviewChanges, dbVerifyRefs } from '@operations/agent/refVerifiers';
+import { dbVerifyRefs } from '@operations/agent/refVerifiers';
 import { createToolRuntime } from '@operations/agent/tools';
 import { McpApprovals } from '@operations/mcp/mcpApprovals';
 import { getOAuthRuntime } from '../api/oauth/routes';
@@ -16,7 +16,7 @@ let singleton: McpApprovals | undefined;
 export function getMcpApprovals(): McpApprovals {
     return (singleton ??= new McpApprovals({
         kv: getAgentKv,
-        tools: createToolRuntime({ isMaintenance, verifyRefs: dbVerifyRefs, previewChanges: dbPreviewChanges }),
+        tools: createToolRuntime({ isMaintenance, verifyRefs: dbVerifyRefs }),
         isMaintenance,
         familyActive: (fam) => getOAuthRuntime().gate.isActive(fam),
         access: getMcpAccess,

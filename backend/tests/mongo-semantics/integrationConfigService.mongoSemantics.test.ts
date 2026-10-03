@@ -11,7 +11,7 @@ import crypto from 'crypto';
 
 jestGlobal.setTimeout(120000);
 
-import IntegrationConfigService from '../../src/api/rpc/handlers/integration-config-service';
+import IntegrationConfigService from '../../src/api/services/integration-config-service';
 import { IntegrationConfigRevisionSchema, IntegrationConfigHeadSchema } from '@database/application/models/IntegrationConfig';
 import { IntegrationFindingSchema } from '@database/application/models/IntegrationFinding';
 import { AuditLogger } from '@services/audit/AuditLogger';

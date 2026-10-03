@@ -103,86 +103,6 @@ export const PRESENT_SPECS: Readonly<Record<string, PresentSpec>> = {
         cells: (v) => ({ sku: ref('variant', v.variantId, v.sku ?? v.barcode ?? v.variantId) }),
         openIn: () => ({ screen: 'productDefinitions/ProductListView' }),
     },
-    // ---- PRC-R0/R1: maliyet ve buybox (yalniz Trendyol) ----
-    'pricing.cost.list': {
-        kind: 'table', title: { tr: 'Ürün maliyetleri', en: 'Product costs' }, itemsKey: 'items', rowKey: 'variantId',
-        columns: [
-            { key: 'sku', label: { tr: 'Stok kodu', en: 'SKU' }, type: 'entity', untrusted: true },
-            { key: 'barcode', label: { tr: 'Barkod', en: 'Barcode' }, type: 'text', untrusted: true },
-            { key: 'costPrice', label: { tr: 'Maliyet (KDV hariç)', en: 'Cost (excl. VAT)' }, type: 'money' },
-            { key: 'costUpdatedAt', label: { tr: 'Güncellendi', en: 'Updated' }, type: 'datetime' },
-            { key: 'stale', label: { tr: 'Eski', en: 'Stale' }, type: 'boolean' },
-        ],
-        cells: (v) => ({ sku: ref('variant', v.variantId, v.sku ?? v.barcode ?? v.variantId) }),
-        openIn: () => ({ screen: 'productDefinitions/ProductListView' }),
-    },
-    'pricing.buybox.list': {
-        kind: 'table', title: { tr: 'Trendyol buybox durumu', en: 'Trendyol buybox status' }, itemsKey: 'items', rowKey: 'variantId',
-        columns: [
-            { key: 'sku', label: { tr: 'Stok kodu', en: 'SKU' }, type: 'entity', untrusted: true },
-            { key: 'barcode', label: { tr: 'Barkod', en: 'Barcode' }, type: 'text', untrusted: true },
-            { key: 'status', label: { tr: 'Buybox', en: 'Buybox' }, type: 'status', statusDomain: 'buybox' },
-            { key: 'buyboxOrder', label: { tr: 'Sıra', en: 'Rank' }, type: 'number' },
-            { key: 'ownPrice', label: { tr: 'Fiyatım', en: 'My price' }, type: 'money' },
-            { key: 'buyboxPrice', label: { tr: 'Buybox fiyatı', en: 'Buybox price' }, type: 'money' },
-            { key: 'gapPercent', label: { tr: 'Fark (%)', en: 'Gap (%)' }, type: 'percent' },
-            { key: 'checkedAt', label: { tr: 'Son güncelleme', en: 'Last update' }, type: 'datetime' },
-        ],
-        cells: (v) => ({ sku: ref('variant', v.variantId, v.sku ?? v.barcode ?? v.variantId) }),
-        openIn: (i) => ({ screen: 'productDefinitions/ProductListView', ...(i?.status ? { params: { buybox: String(i.status) } } : {}) }),
-    },
-    // PRC-R2: kural listesi ve öneriler. Fiyatı KOD hesaplar (K15); tablo sunucu verisidir, model rakamları değiştiremez.
-    'pricing.rules.list': {
-        kind: 'table', title: { tr: 'Rekabet fiyat kuralları', en: 'Competition pricing rules' }, itemsKey: 'rules', rowKey: 'id',
-        columns: [
-            { key: 'name', label: { tr: 'Kural', en: 'Rule' }, type: 'text', untrusted: true },
-            { key: 'enabled', label: { tr: 'Açık', en: 'On' }, type: 'boolean' },
-            { key: 'mode', label: { tr: 'Yön', en: 'Mode' }, type: 'text' },
-            { key: 'pausedReason', label: { tr: 'Duraklatma nedeni', en: 'Pause reason' }, type: 'text' },
-            { key: 'open', label: { tr: 'Açık öneri', en: 'Open suggestions' }, type: 'number' },
-            { key: 'version', label: { tr: 'Sürüm', en: 'Version' }, type: 'number' },
-        ],
-        cells: (r) => ({ mode: r.competition.mode === 'below' ? 'below / altında' : 'above / üstünde', open: r.suggestions.open }),
-        openIn: () => ({ screen: 'pricing/PricingRulesView' }),
-    },
-    'pricing.suggestions.list': {
-        kind: 'table', title: { tr: 'Fiyat önerileri (Trendyol)', en: 'Price suggestions (Trendyol)' }, itemsKey: 'items', rowKey: 'id',
-        columns: [
-            { key: 'sku', label: { tr: 'Stok kodu', en: 'SKU' }, type: 'entity', untrusted: true },
-            { key: 'barcode', label: { tr: 'Barkod', en: 'Barcode' }, type: 'text', untrusted: true },
-            { key: 'beforePrice', label: { tr: 'Şimdiki fiyat', en: 'Current price' }, type: 'money' },
-            { key: 'afterPrice', label: { tr: 'Önerilen fiyat', en: 'Suggested price' }, type: 'money' },
-            { key: 'buyboxPrice', label: { tr: 'Buybox fiyatı', en: 'Buybox price' }, type: 'money' },
-            { key: 'profitAfter', label: { tr: 'Tahmini kâr', en: 'Est. profit' }, type: 'money' },
-            { key: 'floor', label: { tr: 'Taban', en: 'Floor' }, type: 'money' },
-            { key: 'status', label: { tr: 'Durum', en: 'Status' }, type: 'text' },
-        ],
-        cells: (v) => ({ sku: ref('variant', v.variantId, v.sku ?? v.barcode ?? v.variantId), status: v.blockedReason ? `${v.status}: ${v.blockedReason}` : v.status }),
-        openIn: () => ({ screen: 'pricing/PricingRulesView' }),
-    },
-    'pricing.margin.preview': {
-        kind: 'table', title: { tr: 'Kâr önizlemesi (Trendyol)', en: 'Profit preview (Trendyol)' }, itemsKey: 'items', rowKey: 'variantId',
-        columns: [
-            { key: 'sku', label: { tr: 'Stok kodu', en: 'SKU' }, type: 'entity', untrusted: true },
-            { key: 'ownPrice', label: { tr: 'Fiyat', en: 'Price' }, type: 'money' },
-            { key: 'profitNow', label: { tr: 'Kâr (bu fiyatta)', en: 'Profit (this price)' }, type: 'money' },
-            { key: 'buyboxPrice', label: { tr: 'Buybox fiyatı', en: 'Buybox price' }, type: 'money' },
-            { key: 'profitAtBuybox', label: { tr: 'Kâr (buybox fiyatında)', en: 'Profit (at buybox)' }, type: 'money' },
-            { key: 'breakEvenPrice', label: { tr: 'Başa baş fiyat', en: 'Break-even price' }, type: 'money' },
-            { key: 'commissionSource', label: { tr: 'Komisyon kaynağı', en: 'Commission source' }, type: 'text' },
-            { key: 'note', label: { tr: 'Not', en: 'Note' }, type: 'text' },
-        ],
-        // Hücreler sunucu çıktısından (model sayı üretmez): iç içe kâr alanları düz kolonlara indirilir.
-        cells: (v) => ({
-            sku: ref('variant', v.variantId ?? v.barcode, v.sku ?? v.barcode ?? v.variantId),
-            profitNow: v.current?.profit ?? null,
-            buyboxPrice: v.buybox?.price ?? null,
-            profitAtBuybox: v.atBuybox?.profit ?? null,
-            commissionSource: v.commission?.source ?? null,
-            note: !v.found ? 'not_found' : v.buyboxBelowFloor ? 'buybox_below_break_even' : (v.ineligibleReasons?.length ? v.ineligibleReasons.join(',') : null),
-        }),
-        openIn: () => ({ screen: 'productDefinitions/ProductListView' }),
-    },
     'integrations.health.get': {
         kind: 'table', title: { tr: 'Entegrasyon sağlığı', en: 'Integration health' }, itemsKey: 'integrations', rowKey: 'code',
         columns: [
@@ -271,43 +191,7 @@ export interface ConfirmSpec {
     confirmLabel?: (input: any, loc: Locale) => string;
 }
 
-const money2 = (n: unknown) => (typeof n === 'number' ? n.toFixed(2) : '-');
-
 export const CONFIRM_SPECS: Readonly<Record<string, ConfirmSpec>> = {
-    'pricing.cost.set': {
-        summary: (i, loc) => (loc === 'tr'
-            ? `${i.items.length} varyantın birim maliyeti (KDV hariç) güncellenecek. Pazaryeri fiyatları DEĞİŞMEZ.`
-            : `The unit cost (excl. VAT) of ${i.items.length} variant(s) will be updated. Marketplace prices do NOT change.`),
-        affected: (i) => ({ count: i.items.length, sample: (i.items as any[]).slice(0, 10).map((x) => ref('variant', x.variantId ?? x.barcode, x.barcode ?? `#${String(x.variantId).slice(-6)}`)) }),
-        changes: (i, loc) => (i.items as any[]).slice(0, 10).map((x) => ({
-            label: String(x.barcode ?? `#${String(x.variantId).slice(-6)}`), to: x.costPrice === null ? (loc === 'tr' ? 'silinecek' : 'cleared') : `${money2(x.costPrice)} TRY`,
-        })),
-        result: (o, loc) => ({
-            ok: o.updated > 0 || o.unchanged > 0,
-            message: loc === 'tr'
-                ? `${o.updated} maliyet güncellendi, ${o.unchanged} değişmedi, ${o.notFound.length} bulunamadı. Maliyet kapsamı: %${o.coverage.percent}.`
-                : `${o.updated} cost(s) updated, ${o.unchanged} unchanged, ${o.notFound.length} not found. Cost coverage: ${o.coverage.percent}%.`,
-        }),
-        openIn: { screen: 'productDefinitions/ProductListView' },
-        confirmLabel: (i, loc) => (loc === 'tr' ? `${i.items.length} maliyeti kaydet` : `Save ${i.items.length} cost(s)`),
-    },
-    // PRC-R2: onay kartı. Önizleme (önce/sonra) yürütme anında sunucuda TAZE veriyle sigortadan yeniden geçer; geçmeyen uygulanmaz.
-    // Dil "fiyat güncellendi"dir; "indirim" ifadesi kullanılmaz (K11).
-    'pricing.suggestions.apply': {
-        summary: (i, loc) => (loc === 'tr'
-            ? `${i.suggestionIds.length} fiyat önerisi onaylanırsa Trendyol satış fiyatı güncellenecek. Uygulamadan hemen önce taban, tavan, eşitleme yasağı, artış ve sıklık sınırları taze veriyle yeniden denetlenir; geçmeyen öneri uygulanmaz. Liste (üstü çizili) fiyat değişmez.`
-            : `If approved, ${i.suggestionIds.length} price suggestion(s) will update the Trendyol sale price. Right before applying, floor, ceiling, no-equalize, increase and frequency limits are re-checked with fresh data; failing suggestions are not applied. The list (strikethrough) price does not change.`),
-        // Örnek kayıtlar yerine sunucu önizlemesi (önce → sonra, `previewChanges`) gösterilir.
-        affected: (i) => ({ count: i.suggestionIds.length, sample: [] }),
-        result: (o, loc) => ({
-            ok: o.applied.length > 0,
-            message: loc === 'tr'
-                ? `${o.applied.length} ürünün fiyatı güncellendi, ${o.rejected.length} öneri sigortadan geçmedi ve uygulanmadı.`
-                : `${o.applied.length} price(s) updated, ${o.rejected.length} suggestion(s) failed the price fuse and were not applied.`,
-        }),
-        openIn: { screen: 'pricing/PricingRulesView' },
-        confirmLabel: (i, loc) => (loc === 'tr' ? `${i.suggestionIds.length} fiyatı güncelle` : `Update ${i.suggestionIds.length} price(s)`),
-    },
     'orders.approve': {
         summary: (i, loc) => (loc === 'tr'
             ? `${i.orderIds.length} sipariş "Onaylandı" durumuna geçecek ve pazaryerine bildirilecek.`

@@ -8,7 +8,7 @@ import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals
 import { ObjectId } from 'mongodb';
 import { observeStockPublishLag } from '../../../src/operations/stock/markStockDirty';
 import { metricsRegistry } from '../../../src/platform/runtime/metrics';
-import ProductService from '../../../src/api/rpc/handlers/product-service';
+import ProductService from '../../../src/api/services/product-service';
 
 let variantModel: any;
 let existingVariants: any[] = [];

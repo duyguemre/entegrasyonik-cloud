@@ -2,19 +2,19 @@
   <template v-if="integrationValues">
 
       <v-select @click.stop="1" v-ripple.stop variant="outlined" prepend-icon="mdi-checkbox-outline"
-        density="compact" type="tel" maxlength="160" width="200" @update:modelValue=""
+        density="compact" type="tel" maxlength="160" width="200" @update:modelValue="" bg-color="textfieldColor"
         item-value="id" :items="computedIntegrationValues" :hint="$t('productDefinitions.category.platformChoiceDesc')"
         persistent-hint v-model="selectedIntegrationChoice" hide-details>
         <template v-slot:label>
-          <span class="font-weight-normal"> <span class="choice-select__brand">Entegrasyonik</span> {{ integrationChoiceValue.title }}
+          <span class="font-weight-normal"> <span style="opacity:.6">Entegrasyonik</span> {{ integrationChoiceValue.title }}
             </span>
         </template>
 
         <template v-slot:prepend-item>
-      <v-list-item class="choice-select__item">
+      <v-list-item class="" style="border:1px solid #ddd;border-top:none">
         <v-text-field append-inner-icon="mdi-magnify" @click.stop="1" v-ripple.stop variant="outlined"
           @mousedown.stop="1" density="compact" type="tel" maxlength="160" class="mt-2" clearable counter
-          :rules="formRules.searchRules" v-model="choiceValueSearchText"
+          bg-color="textfieldColor" :rules="formRules.searchRules" v-model="choiceValueSearchText"
           :hint="$t('productDefinitions.category.searchDesc')">
           <template v-slot:label>
             <span class="font-weight-light">Filtrele</span>
@@ -23,12 +23,12 @@
       </v-list-item>
     </template>
     <template v-slot:item="{item,index,props}:any">
-      <v-list-item role="option" v-bind="props" class="choice-select__item">
+      <v-list-item v-bind="props" class="" style="border:1px solid #ddd;border-top:none">
         <template #title>
         </template>
         <div class="d-flex justify-start align-center ml-6">
           <div v-if="item.raw.level && item.raw.level > 0"
-            v-for="n in item.raw.level" class="choice-select__indent">
+            v-for="n in item.raw.level" style="width:25px">
           </div>
           <div class="mr-2 font-weight-thin">{{ index + 1 }}</div> {{ item.title }}
         </div>
@@ -99,17 +99,4 @@ onBeforeUnmount(async () => {
 
 </script>
 
-<style scoped>
-.choice-select__brand {
-  opacity: 0.6;
-}
-
-.choice-select__item {
-  border: 1px solid var(--ek-color-border-default);
-  border-top: none;
-}
-
-.choice-select__indent {
-  width: 25px;
-}
-</style>
+<style scoped></style>

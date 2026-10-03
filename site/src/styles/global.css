@@ -10,8 +10,6 @@
 }
 
 html {
-  /* site-wdg W15: site yalnız açık temalı — form denetimleri ve kaydırma çubuğu açık çizilir. */
-  color-scheme: light;
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
   scroll-padding-top: calc(var(--site-header-height) + var(--ek-space-4));
@@ -45,9 +43,6 @@ h4 {
   color: var(--site-text-heading);
   font-weight: var(--ek-font-weight-bold);
   line-height: var(--ek-line-height-tight);
-  /* site-wdg W13: çok satırlı başlıklarda dul kelime kalmasın (tüm sayfa/bileşen başlıkları tek kuraldan). Gövde `p`'ye
-     site geneli `text-wrap: pretty` bilerek eklenmedi: her paragrafta ek yerleşim maliyeti, kazancı küçük. */
-  text-wrap: balance;
 }
 
 p {
@@ -56,99 +51,73 @@ p {
 }
 
 /*
- * BAĞLANTI HOVER — TEK GLOBAL KURAL (S27b, SR4-11; S15 "altı çizili olmasın" kararının devamı).
- * Sitede hiçbir bağlantı/öğe hiçbir durumda ALT ÇİZGİ almaz (statik test: tests/link-hover.test.ts). Hover dili:
- *  1) Her bağlantı: renk geçişi (`--site-color-link-hover`; koyu yüzeyde başlık beyazı).
- *  2) Metin içi bağlantı (paragraf, liste, tablo, yasal/rehber gövdesi; sınıfsız `a`): varsayılanda yarı kalın + renk
- *     (renk tek başına değil — WCAG 1.4.1); hover/odakta yumuşak teal "işaret" zemini (satır kırılsa da her satırda).
- *  3) Bağımsız "devam" bağlantısı (`.link` ve ok ikonlu bağlantılar): renk + ok ileri kayar (yalnız transform).
- * Odak göstergesi `:focus-visible` halkasıdır (değişmedi). Reduced-motion / "Hareket" kapalı: ok kaymaz, renk/zemin
- * değişimi anında (geri bildirim korunur). Bileşenler kendi hover'ında yalnız renk/zemin/kenarlık/ok kullanır.
+ * Linkler (S15 — kullanıcı: "linklerin altı çizili olmasın, daha naif kendilerini belli etsinler"):
+ * varsayılan hâlde alt çizgi YOK; link rengiyle ayrışır. Üzerine gelince ince (1 px), yarı saydam bir alt çizgi belirir
+ * (yalnızca renk geçişi — yerleşim değişmez). Paragraf içi gövde linkleri (ve yasal metinler) okunabilirlik için ayrıca
+ * yarı kalındır (renk + kalınlık; alt çizgiye gerek yok). Odak göstergesi `:focus-visible` halkasıdır (değişmedi).
+ * Koyu yüzeylerde link rengi açık teal varyantına döner (AA).
  */
 a {
   color: var(--site-color-link);
-  text-decoration: none;
+  text-decoration-line: underline;
+  text-decoration-color: transparent;
+  text-decoration-thickness: var(--site-border-width);
+  text-underline-offset: 0.25em;
   transition:
     color var(--ek-duration-fast) var(--ek-easing-standard),
-    background-color var(--ek-duration-fast) var(--ek-easing-standard),
-    box-shadow var(--ek-duration-fast) var(--ek-easing-standard);
+    text-decoration-color var(--ek-duration-base) var(--ek-easing-standard);
 }
 a:hover {
-  color: var(--site-color-link-hover);
+  text-decoration-color: color-mix(in srgb, currentColor 45%, transparent);
 }
-:where(p, li, td, dd, figcaption, blockquote, .legal-body, .legal-fields) a:not([class]) {
+:where(p, .legal-body, .legal-fields) a:not([class]) {
   font-weight: var(--ek-font-weight-semibold);
-  border-radius: var(--ek-radius-sm);
-  -webkit-box-decoration-break: clone;
-  box-decoration-break: clone;
-}
-:where(p, li, td, dd, figcaption, blockquote, .legal-body, .legal-fields) a:not([class]):is(:hover, :focus-visible) {
-  background-color: var(--site-link-hover-bg);
-  box-shadow: 0 0 0 0.15em var(--site-link-hover-bg);
-}
-:where(.section--stage, [data-surface='dark']) a:hover {
-  color: var(--site-text-on-dark-heading);
-}
-:where(.section--stage, [data-surface='dark']) :where(p, li, td, dd) a:not([class]):is(:hover, :focus-visible) {
-  background-color: var(--site-link-hover-bg-on-dark);
-  box-shadow: 0 0 0 0.15em var(--site-link-hover-bg-on-dark);
 }
 
-/* `.link` — bağımsız "devam" bağlantısı: vurgu rengi + yarı kalın + ok; hover'da renk koyulaşır, ok ileri kayar. */
+/*
+ * `.link` — bağımsız "devam" linki (ör. "Planları ayrıntılı karşılaştırın →"): vurgu rengi + yarı kalın + ok ikonu.
+ * Hover: alt çizgi soldan sağa ince bir ışık çizgisi olarak açılır (scaleX) ve ok hafifçe ileri kayar (translateX) —
+ * yalnızca transform/opacity. Reduced-motion'da (global kural) dönüşüm geçişi yoktur: çizgi doğrudan görünür.
+ * "Hareket" durdurulmuşken de ok kaymaz; çizgi yine anında görünür (geri bildirim korunur).
+ */
 .link {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: var(--ek-space-2);
   min-height: var(--site-tap-target);
   color: var(--site-link-accent);
   font-weight: var(--ek-font-weight-semibold);
+  text-decoration: none;
 }
-.link:hover {
-  color: var(--site-color-link-hover);
+.link::after {
+  content: '';
+  position: absolute;
+  inset-inline: 0 calc(var(--ek-space-4) + var(--ek-space-2));
+  inset-block-end: calc(50% - 0.8em);
+  height: var(--site-border-width);
+  background: linear-gradient(90deg, currentColor, color-mix(in srgb, currentColor 30%, transparent));
+  opacity: 0.7;
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform var(--ek-duration-slow) var(--ek-easing-standard);
+  pointer-events: none;
 }
-/* Ok ikonlu her bağlantı (Icon `arrow`) aynı ok hareketini paylaşır — bileşen başına ayrı hover kuralı gerekmez. */
-a .icon[data-icon='arrow'],
+.link:hover::after {
+  transform: scaleX(1);
+}
 .link > svg {
   flex: none;
   transition: transform var(--ek-duration-base) var(--ek-easing-standard);
 }
-a:hover .icon[data-icon='arrow'],
 .link:hover > svg {
-  transform: translateX(var(--site-link-arrow-shift));
+  transform: translateX(0.25em);
 }
-html:is([data-motion='paused'], [data-motion='reduced']) :is(a .icon[data-icon='arrow'], .link > svg) {
+html:is([data-motion='paused'], [data-motion='reduced']) .link > svg {
   transform: none;
+}
+html:is([data-motion='paused'], [data-motion='reduced']) .link::after {
   transition: none;
-}
-/*
- * site-wdg W17: "Hareket" anahtarı kapalı ya da reduced-motion → kart/ikon hover hareketleri de durur (önceden yalnız
- * geçiş süresi kısalıyordu, yükselme/dönme/ölçek yine uygulanıyordu). Geri bildirim renk/zemin/gölge ile sürer.
- * Liste: hover'da konum/ölçek değiştiren bileşenler (tek yer; yeni hover hareketi eklenirse buraya da eklenir).
- * Seçiciler düz yazıldı (`:is()` içine karmaşık `:hover` seçicileri gömülmez; özgüllük bileşen kurallarını aşar).
- */
-/* Bireysel dönüşüm özellikleri (translate/rotate/scale) kullananlar. `transform` ile aynı kurala yazılmaz: küçültücü
-   dördünü tek `transform` kısayoluna birleştirip bireysel özellikleri sıfırlamadan bırakıyordu. */
-html[data-motion]:not([data-motion='play']) .tile:hover .tile__icon,
-html[data-motion]:not([data-motion='play']) .tile:hover .tile__icon svg,
-html[data-motion]:not([data-motion='play']) .tile:hover .tile__frame > *,
-html[data-motion]:not([data-motion='play']) .eco__node:hover .eco__icon,
-html[data-motion]:not([data-motion='play']) .plan:hover,
-html[data-motion]:not([data-motion='play']) .others__link:hover,
-html[data-motion]:not([data-motion='play']) .others__link:focus-visible {
-  translate: none;
-  rotate: none;
-  scale: none;
-}
-/* `transform` kullananlar. */
-html[data-motion]:not([data-motion='play']) .topic:hover,
-html[data-motion]:not([data-motion='play']) .featured__card:hover,
-html[data-motion]:not([data-motion='play']) .int-card:hover .int-card__arrow,
-html[data-motion]:not([data-motion='play']) .mega-feature:hover .mega-feature__cta .icon {
-  transform: none;
-}
-html[data-motion]:not([data-motion='play']) .btn--primary::after,
-html[data-motion]:not([data-motion='play']) .btn--inverse::after {
-  display: none;
 }
 
 img,
@@ -184,18 +153,7 @@ ul {
   --site-card-desc-color: var(--site-text-on-dark-meta);
   --site-color-link: var(--site-accent-on-dark);
   --site-link-accent: var(--site-accent-on-dark);
-  /* Türetilmiş tokenlar :root'ta çözülür → koyu yüzeyde ayrıca eşlenir. */
-  --site-eyebrow-color: var(--site-accent-on-dark);
-  --site-eyebrow-mark-color: var(--site-accent-on-dark);
-  --site-color-link-hover: var(--site-text-on-dark-heading);
-  /* site-wdg W01: lacivert odak halkası koyu zeminde ~1,1:1 (görünmez) → açık teal (~6,4:1, WCAG 2.4.7 / 1.4.11). */
-  --site-color-focus-ring: var(--site-accent-on-dark);
 }
-
-/*
- * SITE-DL-01: iç sayfa paleti bloğu (`:root:has(.page-hero)`) kaldırıldı — vurgu artık TÜM sitede eylem mavisi
- * (site-tokens.css "UYGULAMANIN TASARIM DİLİ" bloğu); ana sayfa ile iç sayfalar aynı paleti kullanır.
- */
 
 ::selection {
   background: color-mix(in srgb, var(--ek-color-secondary) 35%, transparent);
@@ -214,44 +172,33 @@ ul {
 }
 
 /*
- * Kanal (pazaryeri/entegrasyon) marka rengi eşlemesi (C1S) — değerler site-tokens.css `--channel-*`
- * (kaynak: docs/cloud-contracts/CHANNEL_BRAND_COLORS.md); kod listesi src/data/channel-colors.ts.
- * `--chan`: resmi marka rengi (değiştirilmeden; nokta/şerit/kenarlık/dolgulu rozet zemini).
- * `--chan-on`: `--chan` zeminindeki metin rengi (siyah/beyaz, ≥4.5:1).
- * Önce özgüllüğü sıfır (:where) nötr varsayılan: eşlenmemiş/yalnız-UI kanal kodları nötr gri alır.
- * Fiyat planı kartları da `data-code` taşır (plan kodu) — kanal değildir, hariç tutulur.
+ * Kanal (pazaryeri/entegrasyon) marka rengi eşlemesi (S8) — bkz. src/data/channel-colors.ts.
+ * `--chan`: ham yaklaşık marka tonu (kenarlık/nokta/ince vurgu; metin taşımaz).
+ * `--chan-fill`: karartılmış, beyaz harfle AA-güvenli dolu monogram zemini.
  */
-:where([data-code]:not([data-part='plan'])) {
-  --chan: var(--channel-neutral);
-  --chan-on: var(--channel-neutral-on);
-  /* S23 kanal rozeti (FR2 11/15): koyu kenarlık + açık iç zemin + koyu harf — yalnız oranlarla türetilir. */
-  --chan-badge-bg: color-mix(in srgb, var(--chan) var(--channel-badge-tint), var(--ek-color-background));
-  --chan-badge-border: color-mix(in srgb, var(--chan) var(--channel-badge-shade), var(--channel-badge-mix-ink));
-  --chan-badge-fg: color-mix(in srgb, var(--chan) var(--channel-badge-ink), var(--channel-badge-mix-ink));
-}
 [data-code='trendyol'] {
-  --chan: var(--channel-trendyol);
-  --chan-on: var(--channel-trendyol-on);
+  --chan: var(--site-channel-trendyol);
+  --chan-fill: var(--site-channel-trendyol-fill);
 }
 [data-code='hepsiburada'] {
-  --chan: var(--channel-hepsiburada);
-  --chan-on: var(--channel-hepsiburada-on);
+  --chan: var(--site-channel-hepsiburada);
+  --chan-fill: var(--site-channel-hepsiburada-fill);
 }
 [data-code='n11'] {
-  --chan: var(--channel-n11);
-  --chan-on: var(--channel-n11-on);
+  --chan: var(--site-channel-n11);
+  --chan-fill: var(--site-channel-n11-fill);
 }
 [data-code='pazarama'] {
-  --chan: var(--channel-pazarama);
-  --chan-on: var(--channel-pazarama-on);
+  --chan: var(--site-channel-pazarama);
+  --chan-fill: var(--site-channel-pazarama-fill);
 }
 [data-code='ideasoft'] {
-  --chan: var(--channel-ideasoft);
-  --chan-on: var(--channel-ideasoft-on);
+  --chan: var(--site-channel-ideasoft);
+  --chan-fill: var(--site-channel-ideasoft-fill);
 }
 [data-code='bizimhesap'] {
-  --chan: var(--channel-bizimhesap);
-  --chan-on: var(--channel-bizimhesap-on);
+  --chan: var(--site-channel-bizimhesap);
+  --chan-fill: var(--site-channel-bizimhesap-fill);
 }
 
 /*
@@ -290,13 +237,9 @@ ul {
   transition: opacity var(--ek-duration-slow) var(--ek-easing-standard);
   pointer-events: none;
 }
-/* SITE-DL-01: imleç ışığı (spotlight) ve 3B eğim kapalı — hover geri bildirimi yalnız çerçeve/zemin tonu. */
 [data-tilt]:hover::before,
 [data-tilt]:focus-within::before {
-  opacity: 0;
-}
-[data-tilt] {
-  transform: none;
+  opacity: 1;
 }
 @media (prefers-reduced-motion: reduce), (pointer: coarse) {
   [data-tilt] {

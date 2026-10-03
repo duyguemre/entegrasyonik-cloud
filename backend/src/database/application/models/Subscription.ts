@@ -6,21 +6,7 @@ import mongoose from "mongoose";
 export const SUBSCRIPTION_STATUSES = ['trialing', 'active', 'past_due', 'suspended', 'canceled', 'expired'] as const;
 export type SubscriptionStatus = typeof SUBSCRIPTION_STATUSES[number];
 
-// PRC-CFG (K57-S5): rekabet modülü tenant istisnası (plan varsayılanı `_platform` kataloğunda, `pricing.buybox.plan.*`). Alan yoksa
-// plan varsayılanı geçerlidir. İç içe isteğe bağlı alan: mevcut belgeler değişmez, göç GEREKMEZ. Yazan: backoffice
-// (`BackofficeBillingService/setCompetitionOverride`, denetim kaydıyla); doğrulama `operations/pricing/competitionSettings.ts`.
-const CompetitionOverridesSchema = new mongoose.Schema({
-    skuCap: { type: Number, required: false },
-    refreshMin: { type: Number, required: false },
-    freshnessMin: { type: Number, required: false },
-    priority: { type: String, required: false },
-    note: { type: String, required: false, maxlength: 280 },
-    updatedBy: { type: String, required: false },
-    updatedAt: { type: Date, required: false },
-}, { _id: false });
-
 const LimitOverridesSchema = new mongoose.Schema({
-    competition: { type: CompetitionOverridesSchema, required: false },
     channels: { type: Number, required: false },
     skus: { type: Number, required: false },
     users: { type: Number, required: false },

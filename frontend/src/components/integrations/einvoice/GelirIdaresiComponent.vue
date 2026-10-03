@@ -8,7 +8,7 @@
   ihlaliydi (BACKLOG'a taşındı); dürüst "Yakında" bildirimiyle değiştirildi.
 -->
 <template>
-  <IntegrationComingSoonPanel platform-name="Gelir İdaresi (GİB)" category="e-fatura" alternative-capability="invoiceNotice" />
+  <IntegrationComingSoonPanel platform-name="Gelir İdaresi (GİB)" category="e-fatura" />
 </template>
 
 <script setup lang="ts">

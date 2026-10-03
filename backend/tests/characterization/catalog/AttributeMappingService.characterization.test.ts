@@ -12,9 +12,9 @@ jest.mock('@integration/modules/IntegrationFactory', () => ({
     default: class { constructor(public id: number) { } async getInstance(code: string) { factoryState.codes.push(code); return factoryState.instance; } },
 }));
 
-import AttributeMappingService from '@api/rpc/handlers/attributeMapping-service';
-import ChoiceService from '@api/rpc/handlers/choice-service';
-import CategoryService from '@api/rpc/handlers/category-service';
+import AttributeMappingService from '@api/services/attributeMapping-service';
+import ChoiceService from '@api/services/choice-service';
+import CategoryService from '@api/services/category-service';
 
 let amModel: any;
 let catModel: any;

@@ -36,7 +36,7 @@ test.describe('R7 — Onay diyaloğu (ConfirmationDialogComponent) characterizat
     await expect(dialog).toContainText('Bu işlem CRM ve Analiz verilerini etkileyecektir.')
 
     // Mesaj gövdesi: <b>Ad Soyad</b> + düz metin + <br><br> + <small>not</small>
-    const body = dialog.locator('.ek-dialog__body')
+    const body = dialog.locator('.v-card-text')
     expect(collapse(await body.textContent())).toBe(
       'Ayşe Yılmaz isimli müşteriyi silmek istediğinize emin misiniz? Not: Sipariş geçmişi veritabanında anonim olarak kalmaya devam edecektir.',
     )
@@ -105,7 +105,7 @@ test.describe('R7 — Onay diyaloğu (ConfirmationDialogComponent) characterizat
     await page.getByRole('button', { name: 'Mesajı sil' }).first().click()
     const dialog = page.getByRole('dialog').filter({ hasText: 'Mesajı Sil' })
     await expect(dialog).toBeVisible()
-    const body = dialog.locator('.ek-dialog__body')
+    const body = dialog.locator('.v-card-text')
     expect(collapse(await body.textContent())).toBe('Seçili mesajı sistemden silmek istediğinize emin misiniz?')
     await expect(body.locator('b, br, small, strong')).toHaveCount(0)
   })
@@ -120,7 +120,7 @@ test.describe('R7 — Onay diyaloğu güvenliği (G-01 depolanmış XSS)', () =>
       buildCustomer({ firstName: PAYLOAD_NAME, lastName: PAYLOAD_LAST }),
     ])
 
-    const body = dialog.locator('.ek-dialog__body')
+    const body = dialog.locator('.v-card-text')
     // Enjekte edilen hiçbir öğe DOM'a girmemeli.
     await expect(body.locator('img')).toHaveCount(0)
     await expect(body.locator('#xss-injected')).toHaveCount(0)

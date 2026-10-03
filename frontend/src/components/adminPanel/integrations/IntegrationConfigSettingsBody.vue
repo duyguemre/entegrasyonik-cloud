@@ -18,8 +18,6 @@
 -->
 <template>
   <EkSettingsTemplate
-    section="Yönetim"
-    :trail="trail"
     :title="targetLabel"
     :description="mode === 'engine' ? 'Tüm entegrasyonlar için geçerli motor parametreleri.' : 'Bu entegrasyona özgü ayarlar.'"
     :dirty="isDirty"
@@ -34,6 +32,7 @@
       <div class="settings-body__toolbar">
         <v-text-field
           v-model="searchQuery"
+          density="comfortable"
           hide-details
           clearable
           prepend-inner-icon="mdi-magnify"
@@ -59,7 +58,7 @@
       </EkSettingsSection>
 
       <EkSettingsSection v-if="mode === 'integration'" title="Uç noktalar" description="Uç nokta host seçimi ve yol şablonları.">
-        <EkEmptyState variant="not-connected" title="Bu bölüm bu sürümde bağlı değil" message="Uç nokta adresi ve yol şablonları henüz yönetim ekranından görüntülenemiyor." />
+        <EkEmptyState variant="not-connected" title="Bu bölüm bu sürümde bağlı değil" message="Uç nokta host/yol verisi hiçbir yönetim ucundan dönmüyor (ADR-0020 Aşama B kapsamı dışı kaldı)." />
       </EkSettingsSection>
 
       <template v-for="entry in visibleGroups" :key="entry.group">
@@ -120,7 +119,7 @@
           <p class="settings-body__rollback-title">Sürüm {{ rollbackTarget }}'e dönülecek</p>
           <p class="settings-body__rollback-note">Bu, seçilen sürümün ayar görüntüsünü YENİ bir sürüm olarak yayınlar (geçmiş silinmez). Gerekçe ve hedef kodu onayı zorunludur.</p>
           <v-textarea v-model="rollbackReason" label="Gerekçe" rows="2" counter="500" maxlength="500" />
-          <v-text-field v-model="rollbackTypedConfirmation" :label="`Hedef kodu: ${target}`" />
+          <v-text-field v-model="rollbackTypedConfirmation" :label="`Hedef kodu: ${target}`" density="comfortable" />
           <p v-if="rollbackError" class="settings-body__conflict" role="alert">{{ rollbackError }}</p>
           <div class="settings-body__rollback-actions">
             <v-btn variant="outlined" :disabled="rollbackLoading" @click="rollbackTarget = null">Vazgeç</v-btn>
@@ -153,13 +152,16 @@
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
-import EkSettingsTemplate from '@/components/page/templates/EkSettingsTemplate.vue'
-import EkSettingsSection from '@/components/page/templates/EkSettingsSection.vue'
-import { EkSkeleton, EkErrorState, EkEmptyState, EkDescriptionList, type EkDescriptionListItem, EkDataTable, type EkTableColumn, EkStatusChip } from '@entegrasyonik/ui/components'
+import EkSettingsTemplate from '@/components/ds/templates/EkSettingsTemplate.vue'
+import EkSettingsSection from '@/components/ds/templates/EkSettingsSection.vue'
+import EkSkeleton from '@/components/ds/EkSkeleton.vue'
+import EkErrorState from '@/components/ds/EkErrorState.vue'
+import EkEmptyState from '@/components/ds/EkEmptyState.vue'
+import EkDescriptionList, { type EkDescriptionListItem } from '@/components/ds/EkDescriptionList.vue'
+import EkDataTable, { type EkTableColumn } from '@/components/ds/EkDataTable.vue'
+import EkStatusChip from '@/components/ds/EkStatusChip.vue'
 import { CONFIG_REVISION_STATUS_TONE, type ConfigRevisionStatus } from '@/design/status-map'
 import SettingField from './SettingField.vue'
-import { useOpenIntegrationConfigTab } from './useOpenIntegrationConfigTab'
-import type { EkCrumb } from '@entegrasyonik/ui/components/pageTrail'
 import PublishConfirmDialog from './PublishConfirmDialog.vue'
 import {
   applicableSettings, resolveDefault, ENGINE_TARGET, GROUP_LABELS, GROUP_DESCRIPTIONS, type SettingGroup, type SettingMeta,
@@ -170,10 +172,6 @@ import {
 } from './useIntegrationConfigApi'
 
 const props = defineProps<{ target: string; targetLabel: string; mode: 'integration' | 'engine' }>()
-
-// A7 breadcrumb: Yönetim / Entegrasyonlar (bağlantı) / <hedef>.
-const openConfigTab = useOpenIntegrationConfigTab()
-const trail: EkCrumb[] = [{ label: 'Entegrasyonlar', icon: 'mdi-connection', onSelect: () => openConfigTab('IntegrationConfigListView') }]
 
 const api = useIntegrationConfigApi()
 

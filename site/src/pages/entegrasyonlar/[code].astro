@@ -25,6 +25,7 @@ import Section from '../../components/Section.astro'
 import Badge from '../../components/Badge.astro'
 import Icon from '../../components/home/Icon.astro'
 import PageHero from '../../components/pages/PageHero.astro'
+import PageMeta from '../../components/pages/PageMeta.astro'
 import LevelBadge from '../../components/pages/LevelBadge.astro'
 import ChannelMono from '../../components/pages/ChannelMono.astro'
 import CtaBand from '../../components/pages/CtaBand.astro'
@@ -32,9 +33,9 @@ import SectionHead from '../../components/pages/SectionHead.astro'
 import { getPublicIntegrations, type PublicIntegration, type CoverageLevel } from '../../data/integrations'
 import { getConnectGuide } from '../../data/connect'
 import { getPublicCapabilities } from '../../data/capabilities'
-import { guideSteps as buildGuideSteps } from '../../lib/seo'
-import { crumbsFor } from '../../data/seo'
-import { appUrls } from '../../lib/site-config'
+import { breadcrumbJsonLd } from '../../lib/seo'
+import { appUrls, siteConfig } from '../../lib/site-config'
+import { trialOffer } from '../../data/plans'
 
 export function getStaticPaths() {
   return getPublicIntegrations().map((integration) => ({
@@ -55,12 +56,38 @@ const coverageTone: Record<CoverageLevel, 'success' | 'info' | 'warning'> = {
 }
 
 const heading = `${i.name} entegrasyonu`
-const crumbs = crumbsFor(`/entegrasyonlar/${i.code}`)
+const title = `${i.name} entegrasyonu: bağlantı rehberi ve kapsam`
+const crumbs = [{ label: 'Ana sayfa', href: '/' }, { label: 'Entegrasyonlar', href: '/entegrasyonlar' }, { label: i.name }]
 
 const guide = getConnectGuide(i.code, i.kind)
-// Rehber adımları (hesap açma + kayıttaki adımlar + pazaryerinde bağlantı durumu kontrolü): HowTo JSON-LD ile AYNI dizi
-// (src/lib/seo.ts `guideSteps`; başlık/açıklama/HowTo src/data/seo.ts kaydından BaseLayout'ta üretilir).
-const guideSteps = buildGuideSteps(i)
+const credentialList = guide ? guide.credentials.map((c) => c.toLocaleLowerCase('tr-TR')).join(', ') : ''
+const description = guide
+  ? `${i.name} entegrasyonunu kod yazmadan adım adım bağlayın: gereken bilgiler (${credentialList}), desteklenen işlemler ve bilinen sınırlar.`
+  : `${i.name} entegrasyonunun kapsamı, sınırlamaları ve bağlantı için gereken bilgiler. ${i.summary}`
+
+// Rehber adımları: hesap açma + kayıttaki adımlar (+ pazaryerlerinde bağlantı durumu kontrolü; SSS `teknik-bilgi` kanıtı).
+const accountStep = trialOffer.cardRequired
+  ? 'Entegrasyonik hesabınızı oluşturun.'
+  : 'Entegrasyonik hesabınızı oluşturun; ücretsiz deneme için kart bilgisi istenmez.'
+const statusStep =
+  i.kind === 'marketplace' ? 'Bağlantı durumunu kontrol edin: bilgiler hatalıysa bağlantı pasif görünür; bilgileri düzeltip yeniden kaydedin.' : undefined
+const guideSteps = guide ? [accountStep, ...guide.steps, ...(statusStep ? [statusStep] : [])] : []
+const abs = (path: string) => (siteConfig.siteUrl ? new URL(path, siteConfig.siteUrl).href : path)
+const howToJsonLd = guide
+  ? {
+      '@context': 'https://schema.org',
+      '@type': 'HowTo',
+      name: `${i.name} entegrasyonu nasıl bağlanır`,
+      description,
+      supply: guide.credentials.map((c) => ({ '@type': 'HowToSupply', name: c })),
+      step: guideSteps.map((text, idx) => ({
+        '@type': 'HowToStep',
+        position: idx + 1,
+        text,
+        url: abs(`/entegrasyonlar/${i.code}#rehber-adim-${idx + 1}`),
+      })),
+    }
+  : undefined
 const secretsSummary = getPublicCapabilities('security').find((c) => c.id === 'secrets-encryption')?.summary
 const others = getPublicIntegrations().filter((x) => x.code !== i.code)
 const hasLimits = i.limitations.length > 0 || i.notProvided.length > 0
@@ -76,20 +103,30 @@ const meterLabel =
   limitedCount > 0
     ? `Yetenek matrisinde bir kısmı destekleniyor, bir kısmı kısmi kapsamlı; ayrıntı aşağıdadır.`
     : `Yetenek matrisindeki tüm işlemler destekleniyor; ayrıntı aşağıdadır.`
-// N2 (S27b, ELEV A9): hero'da güç önce — önizleme desteklenen işlemlerle başlar; kısmi kapsam rozeti ve oran çubuğu
-// hero'da yalnız geniş kapsamda görünür. Kapsam şeffaflığı aynen aşağıda: "Bir bakışta" (Kapsam), matris ve sınırlamalar.
-const previewCapabilities = [...i.capabilities].sort((a, b) => (a.level === 'supported' ? 0 : 1) - (b.level === 'supported' ? 0 : 1)).slice(0, 4)
-const showMeter = i.coverage === 'broad'
+const previewCapabilities = i.capabilities.slice(0, 4)
 ---
 
-<BaseLayout>
+<BaseLayout title={title} description={description}>
+  <PageMeta
+    slot="head"
+    title={title}
+    description={description}
+    jsonLd={[
+      breadcrumbJsonLd([
+        { label: 'Ana sayfa', path: '/' },
+        { label: 'Entegrasyonlar', path: '/entegrasyonlar' },
+        { label: i.name, path: `/entegrasyonlar/${i.code}` },
+      ]),
+      ...(howToJsonLd ? [howToJsonLd] : []),
+    ]}
+  />
 
   <PageHero title={heading} lead={i.summary} crumbs={crumbs} eyebrow={i.kindLabel}>
     <span class="hero-status" data-testid="integration-status">
       <span class="hero-status__dot" aria-hidden="true"></span>
       {i.statusLabel}
     </span>
-    {i.coverage === 'broad' && <Badge tone={coverageTone[i.coverage]}>{i.coverageLabel}</Badge>}
+    <Badge tone={coverageTone[i.coverage]}>{i.coverageLabel}</Badge>
     {guide && <a class="hero-guide-link" href="#baglanti-rehberi">Bağlantı rehberi</a>}
     <Fragment slot="visual">
       <div class="hero-visual" data-code={i.code}>
@@ -97,15 +134,13 @@ const showMeter = i.coverage === 'broad'
           <ChannelMono code={i.code} name={i.name} size="lg" />
           <p class="hero-visual__kind">{i.kindLabel}</p>
         </div>
-        {showMeter && (
-          <div class="hero-meter" role="img" aria-label={meterLabel}>
-            {
-              Array.from({ length: METER_SEGMENTS }).map((_, idx) => (
-                <span class:list={['hero-meter__seg', { 'hero-meter__seg--on': idx < filledSegments }]} />
-              ))
-            }
-          </div>
-        )}
+        <div class="hero-meter" role="img" aria-label={meterLabel}>
+          {
+            Array.from({ length: METER_SEGMENTS }).map((_, idx) => (
+              <span class:list={['hero-meter__seg', { 'hero-meter__seg--on': idx < filledSegments }]} />
+            ))
+          }
+        </div>
         <ul class="hero-preview">
           {
             previewCapabilities.map((c) => (
@@ -121,7 +156,10 @@ const showMeter = i.coverage === 'broad'
   </PageHero>
 
   <Section labelledby="matris-title" class="tight-section">
-    <SectionHead id="matris-title" eyebrow="Kapsam" title="Yetenek matrisi" lead="Bu entegrasyonda hangi işlemlerin tam, hangilerinin temel düzeyde desteklendiği." />
+    <div class="head">
+      <h2 id="matris-title">Yetenek matrisi</h2>
+      <p>Bu entegrasyonda hangi işlemlerin tam, hangilerinin temel düzeyde desteklendiği.</p>
+    </div>
     <div class="matrix-layout matrix-layout--split">
       <div class="matrix">
       <p class="matrix__head" aria-hidden="true"><span>İşlem</span><span>Ne yapılır</span></p>
@@ -261,28 +299,20 @@ const showMeter = i.coverage === 'broad'
         </div>
       )
     }
-    {/* S27a (SR4 madde 8): "Diğer entegrasyonlar" hap satırından kart ızgarasına — rozet + ad + tür + ok; kanal
-        rengi yalnız rozette ve hover'da ince üst çizgide (K13). Başlık satırında "Tüm entegrasyonlar" bağlantısı. */}
-    <div class="related" data-testid="related-integrations">
-      <div class="related__head">
-        <h3 class="related__label">Diğer entegrasyonlar</h3>
-        <a class="related__all" href="/entegrasyonlar">Tüm entegrasyonlar <Icon name="arrow" size="sm" /></a>
-      </div>
+    <div class="related">
+      <h3 class="related__label">Diğer entegrasyonlar</h3>
       <ul class="others" role="list">
         {
           others.map((o) => (
             <li>
               <a class="others__link" href={`/entegrasyonlar/${o.code}`} data-code={o.code}>
-                <ChannelMono code={o.code} name={o.name} size="md" />
-                <span class="others__text">
-                  <span class="others__name">{o.name}</span>
-                  <span class="others__kind">{o.kindLabel}</span>
-                </span>
-                <span class="others__go" aria-hidden="true"><Icon name="arrow" size="sm" /></span>
+                <ChannelMono code={o.code} name={o.name} size="sm" />
+                <span>{o.name}</span>
               </a>
             </li>
           ))
         }
+        <li><a class="others__all" href="/entegrasyonlar">Tüm entegrasyonlar</a></li>
       </ul>
     </div>
   </Section>
@@ -290,8 +320,8 @@ const showMeter = i.coverage === 'broad'
   <CtaBand
     id="detay-cta"
     title={`${i.name} kanalınızı bağlayın`}
-    text="Hesabınızı oluşturun, kanal bilgilerinizi girin; stok ve siparişleriniz ilk günden aynı akışta ilerlesin."
-    primary={{ label: 'Ücretsiz deneyin', href: appUrls.register() }}
+    text="Hesabınızı oluşturun ve kimlik bilgilerinizi girerek başlayın."
+    primary={{ label: 'Ücretsiz dene', href: appUrls.register() }}
     secondary={{ label: 'İletişime geçin', href: '/iletisim' }}
   />
 </BaseLayout>
@@ -301,8 +331,25 @@ const showMeter = i.coverage === 'broad'
 </script>
 
 <style>
+  .head {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-2);
+    margin-bottom: var(--ek-space-8);
+  }
+  .head h2 {
+    font-size: var(--site-font-display-sm);
+    font-weight: var(--site-font-display-weight);
+    line-height: var(--site-font-display-line-height);
+    letter-spacing: var(--site-font-display-tracking);
+  }
+  .head p {
+    color: var(--ek-color-content-muted);
+    font-size: var(--ek-font-size-lg);
+  }
+
   /* Bölümler arası dikey ritim genel olarak sıkılaştırıldı (S11b). */
-  :global(.section.tight-section) {
+  .tight-section:global(.section) {
     padding-block: calc(var(--site-section-y) * 0.72);
   }
 
@@ -314,16 +361,25 @@ const showMeter = i.coverage === 'broad'
     flex-direction: column;
     gap: var(--ek-space-5);
   }
+  /* Kanal rengi ışıması (dekoratif) */
+  .hero-visual::before {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    inset: calc(var(--ek-space-6) * -1);
+    border-radius: inherit;
+    background: radial-gradient(60% 50% at 50% 0%, color-mix(in srgb, var(--chan) 34%, transparent), transparent 70%);
+    pointer-events: none;
+  }
   .hero-status {
-    /* SITE-DL-03: köşeli, düz durum rozeti (yeşil/ışıma yok). */
     display: inline-flex;
     align-items: center;
     gap: var(--ek-space-2);
-    padding: var(--ek-space-1) var(--ek-space-2);
-    border: var(--site-border-width) solid var(--site-glass-border);
-    border-radius: var(--ek-radius-md);
-    background: var(--site-glass-bg);
-    color: var(--site-text-on-dark-heading);
+    padding: var(--ek-space-1) var(--ek-space-3);
+    border: var(--site-border-width) solid color-mix(in srgb, var(--ek-color-success-subtle) 45%, transparent);
+    border-radius: var(--ek-radius-full);
+    background: color-mix(in srgb, var(--ek-color-success) 22%, transparent);
+    color: var(--ek-color-success-subtle);
     font-size: var(--ek-font-size-sm);
     font-weight: var(--ek-font-weight-semibold);
   }
@@ -331,7 +387,8 @@ const showMeter = i.coverage === 'broad'
     width: var(--ek-space-2);
     height: var(--ek-space-2);
     border-radius: var(--ek-radius-full);
-    background: var(--site-accent-on-dark);
+    background: currentColor;
+    box-shadow: 0 0 0 calc(var(--site-border-width) * 3) color-mix(in srgb, currentColor 25%, transparent);
   }
   .hero-visual__id {
     display: flex;
@@ -354,11 +411,11 @@ const showMeter = i.coverage === 'broad'
   .hero-meter__seg {
     flex: 1;
     height: var(--ek-space-2);
-    border-radius: var(--ek-radius-sm);
+    border-radius: var(--ek-radius-full);
     background: color-mix(in srgb, var(--ek-color-background) 22%, transparent);
   }
   .hero-meter__seg--on {
-    background: var(--site-accent-on-dark);
+    background: var(--ek-color-secondary);
   }
   .hero-preview {
     display: flex;
@@ -376,7 +433,7 @@ const showMeter = i.coverage === 'broad'
   }
   .hero-preview :global(svg) {
     flex: none;
-    color: var(--site-accent-on-dark);
+    color: var(--ek-color-secondary);
   }
 
   /* --- Yetenek matrisi + sınırlar yan kutusu --- */
@@ -389,8 +446,9 @@ const showMeter = i.coverage === 'broad'
     min-width: 0;
     overflow: hidden;
     border: var(--site-border-width) solid var(--ek-color-border-default);
-    border-radius: var(--ek-radius-card);
+    border-radius: var(--site-radius-panel);
     background: var(--ek-color-surface);
+    box-shadow: var(--site-shadow-card);
   }
   .matrix__head {
     display: none;
@@ -418,6 +476,7 @@ const showMeter = i.coverage === 'broad'
     grid-template-columns: auto 1fr;
     align-items: start;
     padding: var(--ek-space-5) var(--ek-space-6);
+    border-inline-start: var(--ek-space-1) solid transparent;
   }
   .row {
     transition: background-color var(--ek-duration-fast) var(--ek-easing-standard);
@@ -425,30 +484,28 @@ const showMeter = i.coverage === 'broad'
   .row:hover {
     background: var(--ek-color-surface-muted);
   }
+  .row[data-level='limited'] {
+    border-inline-start-color: var(--ek-color-warning);
+  }
   .row + .row {
     border-top: var(--site-border-width) solid var(--ek-color-border-default);
   }
   .row__icon {
-    /* SITE-DL-03: düzey, satırdaki çerçeveli kare ikon kutusuyla anlatılır (sol şerit yok). */
     display: inline-flex;
     align-items: center;
     justify-content: center;
     width: var(--ek-space-8);
     height: var(--ek-space-8);
     margin-top: var(--ek-space-1);
-    border-radius: var(--ek-radius-tile);
-    box-sizing: border-box;
-    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--ek-radius-full);
   }
   .row[data-level='supported'] .row__icon {
-    background: var(--site-action-subtle);
-    color: var(--site-action);
-    border-color: var(--site-action-border);
+    background: var(--ek-color-success-subtle);
+    color: var(--ek-color-success);
   }
   .row[data-level='limited'] .row__icon {
     background: var(--ek-color-warning-subtle);
-    color: var(--ek-color-warning-emphasis);
-    border-color: var(--ek-color-warning-border);
+    color: var(--ek-color-warning);
   }
   .row__body {
     display: flex;
@@ -478,9 +535,19 @@ const showMeter = i.coverage === 'broad'
     overflow: hidden;
     padding: var(--ek-space-5);
     border: var(--site-border-width) solid var(--ek-color-border-default);
-    /* SITE-DL-03: düz kart — kanal renkli degrade/üst şerit ve gölge yok (kanal kimliği monogramda). */
-    border-radius: var(--ek-radius-card);
-    background: var(--ek-color-surface);
+    border-radius: var(--site-radius-panel);
+    background:
+      radial-gradient(80% 60% at 100% 0%, color-mix(in srgb, var(--chan) 8%, transparent), transparent 70%),
+      var(--ek-color-surface);
+    box-shadow: var(--site-shadow-card);
+  }
+  .glance::before {
+    content: '';
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline: 0;
+    height: calc(var(--site-border-width) * 3);
+    background: var(--chan);
   }
   .glance__head {
     display: flex;
@@ -540,7 +607,7 @@ const showMeter = i.coverage === 'broad'
     display: inline-flex;
     align-items: center;
     gap: var(--ek-space-2);
-    color: var(--site-action-emphasis);
+    color: var(--ek-color-success);
   }
   .glance__link {
     display: inline-flex;
@@ -552,6 +619,9 @@ const showMeter = i.coverage === 'broad'
     font-weight: var(--ek-font-weight-semibold);
     text-decoration: none;
   }
+  .glance__link:hover {
+    text-decoration: underline;
+  }
 
   /* Yan kutu (masaüstü sticky; "Sınırlamalar ve sunulmayanlar" artık ayrı bölüm değil, S11b). */
   .limits-aside {
@@ -560,11 +630,17 @@ const showMeter = i.coverage === 'broad'
     gap: var(--ek-space-5);
   }
   .bound-card {
-    /* SITE-DL-03: sol şerit yok; ton yalnız başlık ikonunda/renginde. */
     padding: var(--ek-space-5);
     border: var(--site-border-width) solid var(--ek-color-border-default);
-    border-radius: var(--ek-radius-card);
+    border-inline-start: var(--ek-space-1) solid var(--ek-color-border-strong);
+    border-radius: var(--ek-radius-lg);
     background: var(--ek-color-surface);
+  }
+  .bound-card--warn {
+    border-inline-start-color: var(--ek-color-warning);
+  }
+  .bound-card--off {
+    border-inline-start-color: var(--ek-color-content-muted);
   }
   .bound-card h3 {
     display: flex;
@@ -573,7 +649,7 @@ const showMeter = i.coverage === 'broad'
     font-size: var(--ek-font-size-lg);
   }
   .bound-card--warn h3 {
-    color: var(--ek-color-warning-emphasis);
+    color: var(--ek-color-warning);
   }
   .bound-card--off h3 {
     color: var(--ek-color-content-muted);
@@ -600,7 +676,7 @@ const showMeter = i.coverage === 'broad'
     top: 0.6em;
     width: var(--ek-space-2);
     height: var(--ek-space-2);
-    border-radius: calc(var(--site-border-width) * 2);
+    border-radius: var(--ek-radius-full);
     background: var(--ek-color-border-strong);
   }
   .bullets--off li::before {
@@ -613,20 +689,16 @@ const showMeter = i.coverage === 'broad'
     align-items: center;
     min-height: var(--site-tap-target);
     padding-inline: var(--ek-space-4);
-    border: var(--site-border-width) solid var(--site-glass-border);
-    border-radius: var(--ek-radius-md);
+    border: var(--site-border-width) solid var(--site-color-on-primary-muted);
+    border-radius: var(--ek-radius-full);
     color: var(--site-color-on-primary);
     font-size: var(--ek-font-size-md);
     font-weight: var(--ek-font-weight-medium);
     text-decoration: none;
-    transition: 
-      background-color var(--ek-duration-base) var(--ek-easing-standard),
-      border-color var(--ek-duration-base) var(--ek-easing-standard);
-    background: var(--site-glass-bg);
+    transition: border-color var(--ek-duration-base) var(--ek-easing-standard);
   }
   .hero-guide-link:hover {
-    border-color: var(--site-color-on-primary-muted);
-    background: color-mix(in srgb, var(--ek-color-background) 12%, transparent);
+    border-color: var(--site-color-on-primary);
   }
 
   /* --- Bağlantı rehberi: numaralı adım rayı + örnek ayar paneli --- */
@@ -647,15 +719,13 @@ const showMeter = i.coverage === 'broad'
     position: relative;
     padding: 0 0 var(--ek-space-5) var(--ek-space-12);
     counter-increment: guide;
-    /* site-wdg W14: üst bar payı html scroll-padding-top’ta; burada yalnız ek boşluk. */
-    scroll-margin-top: var(--ek-space-2);
+    scroll-margin-top: calc(var(--site-header-height) + var(--ek-space-6));
   }
   .guide-step:last-child {
     padding-bottom: 0;
   }
   /* Numara CSS sayacıyla (görünür HTML metninde rakam yok). */
   .guide-step::before {
-    /* SITE-DL-03: adım numarası çerçeveli kare kutuda (dolu daire yok). */
     content: counter(guide);
     position: absolute;
     inset-inline-start: 0;
@@ -665,13 +735,12 @@ const showMeter = i.coverage === 'broad'
     justify-content: center;
     width: var(--ek-space-10);
     height: var(--ek-space-10);
-    border-radius: var(--ek-radius-tile);
-    background: var(--site-action-subtle);
-    color: var(--site-action-emphasis);
+    border-radius: var(--ek-radius-full);
+    background: var(--ek-color-primary);
+    box-shadow: 0 0 0 var(--ek-space-1) var(--ek-color-surface-muted);
+    color: var(--site-color-on-primary);
     font-size: var(--ek-font-size-md);
     font-weight: var(--ek-font-weight-bold);
-    box-sizing: border-box;
-    border: var(--site-border-width) solid var(--site-action-border);
   }
   .guide-step:not(:last-child)::after {
     content: '';
@@ -680,14 +749,15 @@ const showMeter = i.coverage === 'broad'
     top: var(--ek-space-10);
     bottom: 0;
     width: var(--site-border-width);
-    background: var(--ek-color-border-default);
+    background: linear-gradient(180deg, var(--ek-color-primary), var(--ek-color-border-strong));
   }
   .guide-step__text {
     min-height: var(--ek-space-10);
     padding: var(--ek-space-4) var(--ek-space-5);
     border: var(--site-border-width) solid var(--ek-color-border-default);
-    border-radius: var(--ek-radius-card);
+    border-radius: var(--ek-radius-lg);
     background: var(--ek-color-surface);
+    box-shadow: var(--site-shadow-card);
     color: var(--ek-color-content-strong);
     font-size: var(--ek-font-size-lg);
     line-height: var(--ek-line-height-normal);
@@ -702,8 +772,9 @@ const showMeter = i.coverage === 'broad'
     gap: var(--ek-space-5);
     padding: var(--ek-space-6);
     border: var(--site-border-width) solid var(--ek-color-border-default);
-    border-radius: var(--ek-radius-card);
+    border-radius: var(--site-radius-panel);
     background: var(--ek-color-surface);
+    box-shadow: var(--site-shadow-card-hover);
   }
   .cred-panel__head {
     display: flex;
@@ -767,122 +838,65 @@ const showMeter = i.coverage === 'broad'
   .cred-panel__note :global(svg) {
     flex: none;
     margin-top: var(--ek-space-1);
-    color: var(--site-accent);
+    color: var(--ek-color-success);
   }
   .cred-panel__warn {
     padding: var(--ek-space-3) var(--ek-space-4);
-    border-radius: var(--ek-radius-md);
+    border-radius: var(--ek-radius-lg);
     background: var(--ek-color-warning-subtle);
     color: var(--ek-color-content-strong);
     font-size: var(--ek-font-size-md);
-    border: var(--site-border-width) solid var(--ek-color-warning-border);
   }
 
-  /* "Diğer entegrasyonlar" — "Nasıl bağlanırsınız" bölümünün alt şeridi (S11b); S27a: kart ızgarası. */
+  /* "Diğer entegrasyonlar" artık "Nasıl bağlanırsınız" bölümünün alt şeridi (S11b — ayrı tam bölüm değil). */
   .related {
     margin-top: var(--ek-space-10);
     padding-top: var(--ek-space-8);
     border-top: var(--site-border-width) solid var(--ek-color-border-default);
   }
-  .related__head {
+  .related__label {
+    margin: 0 0 var(--ek-space-4);
+    color: var(--ek-color-content-muted);
+    font-size: var(--ek-font-size-sm);
+    font-weight: var(--ek-font-weight-semibold);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .others {
     display: flex;
     flex-wrap: wrap;
-    align-items: baseline;
-    justify-content: space-between;
     gap: var(--ek-space-3);
-    margin-bottom: var(--ek-space-5);
   }
-  .related__label {
-    margin: 0;
-    color: var(--site-text-heading);
-    font-size: var(--ek-font-size-xl);
-    font-weight: var(--ek-font-weight-bold);
-    letter-spacing: -0.01em;
-  }
-  .related__all {
+  .others__link {
     display: inline-flex;
     align-items: center;
     gap: var(--ek-space-2);
     min-height: var(--site-tap-target);
-    color: var(--site-link-accent);
-    font-weight: var(--ek-font-weight-semibold);
+    padding-inline: var(--ek-space-3) var(--ek-space-4);
+    border: var(--site-border-width) solid var(--ek-color-border-strong);
+    border-radius: var(--ek-radius-full);
+    color: var(--ek-color-content-strong);
+    font-weight: var(--ek-font-weight-medium);
     text-decoration: none;
+    transition: border-color var(--ek-duration-base) var(--ek-easing-standard);
   }
-  .others {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
-    gap: var(--ek-space-3);
-    margin: 0;
-    padding: 0;
-    list-style: none;
+  .others__link:hover {
+    border-color: color-mix(in srgb, var(--chan, var(--ek-color-primary)) 60%, transparent);
   }
-  .others__link {
-    /* SITE-DL-03: düz kart; hover = lacivert tonlu zemin + çerçeve (gölge/yükselme/renkli şerit yok). */
-    position: relative;
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    align-items: center;
-    gap: var(--ek-space-3);
-    height: 100%;
-    padding: var(--ek-space-4);
-    overflow: hidden;
-    border: var(--site-border-width) solid var(--ek-color-border-default);
-    border-radius: var(--ek-radius-card);
-    background: var(--ek-color-surface);
-    color: var(--site-text-heading);
-    text-decoration: none;
-    transition: 
-      background-color var(--ek-duration-base) var(--ek-easing-standard),
-      border-color var(--ek-duration-base) var(--ek-easing-standard);
-  }
-  .others__link:hover,
-  .others__link:focus-visible {
-    border-color: var(--site-action-border);
-    background: var(--site-action-subtle);
-  }
-  .others__text {
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-  }
-  .others__name {
-    font-size: var(--ek-font-size-md);
-    font-weight: var(--ek-font-weight-semibold);
-  }
-  .others__kind {
-    color: var(--site-text-meta);
-    font-size: var(--ek-font-size-xs);
-  }
-  .others__go {
+  .others__all {
     display: inline-flex;
-    color: var(--site-text-meta);
-    transition:
-      color var(--ek-duration-base) var(--ek-easing-standard),
-      translate var(--ek-duration-base) var(--ek-easing-standard);
+    align-items: center;
+    min-height: var(--site-tap-target);
+    padding-inline: var(--ek-space-4);
+    border: var(--site-border-width) dashed var(--ek-color-border-strong);
+    border-radius: var(--ek-radius-full);
+    color: var(--ek-color-primary);
+    font-weight: var(--ek-font-weight-medium);
+    text-decoration: none;
+    transition: border-color var(--ek-duration-base) var(--ek-easing-standard);
   }
-  /* site-wdg W16: ok kayması global tek kuraldan (sarmalayıcıdaki ikinci kayma kaldırıldı). */
-  .others__link:hover .others__go {
-    color: var(--site-link-accent);
-  }
-  /* Dar ekran: iki sütun, ok gizli (beş kartlık uzun dikey liste olmasın). */
-  @media (max-width: 479.98px) {
-    .others {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-    .others__link {
-      grid-template-columns: auto minmax(0, 1fr);
-      gap: var(--ek-space-2);
-      padding: var(--ek-space-3);
-    }
-    .others__go {
-      display: none;
-    }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .others__link,
-    .others__go {
-      transition: none;
-    }
+  .others__all:hover {
+    border-color: var(--ek-color-primary);
   }
 
   @media (min-width: 768px) {

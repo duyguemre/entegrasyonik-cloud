@@ -125,19 +125,11 @@ const TrendyolDescriptor: IntegrationDescriptor = {
             note: 'Kategori, nitelik, marka ve komisyon bilgisi pazaryerinden alınır.',
             evidence: ['marketplace/trendyol/index.ts retrieveCategories'],
         },
-        'pricing.buybox.read': {
-            level: 'limited',
-            methods: ['readBuybox'],
-            note: 'Buybox sırası, buybox fiyatı ve çok-satıcı bilgisi salt okunur (≤10 barkod/istek, zamanlanmış). Uç yolu, storeFrontCode değeri ve yanıt alan adları resmi dokümandan doğrudan teyit edilemedi; yerelde doğrulanana kadar iş varsayılan KAPALI (features.competition).',
-            evidence: ['marketplace/trendyol/api/BuyboxConnector.ts mapBuyboxResponse', 'tests/unit/pricing/buyboxConnector.test.ts'],
-            // lastVerifiedAt BİLİNÇLİ OLARAK BOŞ: docs/PRICING_COMPETITION.md §6 (yerel LIVE_READONLY doğrulaması, K57-S8 açık karar).
-        },
     },
     limitations: [
         'Kargo takip bilgisi otomatik değil, elle girilerek iletilir.',
         'Sipariş satır kimliği yeniden adlandırması (`line.id`→`lineId`) adaptörde henüz uygulanmadı (BACKLOG R9, doğruluk riski).',
         '`origin` (menşe) alanı ürün gönderiminde henüz eklenmedi (23.10.2026\'da zorunlu olacak, BACKLOG R6).',
-        'Buybox bilgisi yalnız okunur; rakip satıcı listesi ve fiyat önerisi Trendyol API\'sinde yok. Buybox alanları yerelde doğrulanmadı.',
     ],
     rateLimits: {
         documented: {
@@ -172,12 +164,9 @@ const TrendyolDescriptor: IntegrationDescriptor = {
         available: true,
         prefix: 'TY',
         contractFixtures: [],
-        knownDeviations: [
-            'BACKLOG C20 (mock hâlâ V1 alan adlarını üretiyor; V2 alan adları C22 sonrası mock\'a taşınmadı)',
-            'PRC-R1: buybox ucu mock sunucuda henüz yok; fikstür tests/fixtures/trendyol/buybox-information.json (alanlar doğrulanmadı), mockserver rotası yerelde eklenecek (docs/PRICING_COMPETITION.md §6).',
-        ],
+        knownDeviations: ['BACKLOG C20 (mock hâlâ V1 alan adlarını üretiyor; V2 alan adları C22 sonrası mock\'a taşınmadı)'],
     },
-    contracts: ['trendyol.orders.list@v2', 'trendyol.claims.list@v1', 'trendyol.products.buybox@v1'],
+    contracts: ['trendyol.orders.list@v2', 'trendyol.claims.list@v1'],
     probes: [
         { id: 'trendyol.categories.tree', capability: 'categories', readOnly: true, needs: 'public' },
         { id: 'trendyol.brands.search', capability: 'categories', readOnly: true, needs: 'public' },

@@ -1,8 +1,0 @@
-# MOB-07 — sırlar ve yerel derleme çıktıları ASLA commit'lenmez (android/.gitignore ile birlikte; statik test korur).
-node_modules/
-google-services.json
-*.jks
-*.keystore
-keystore.properties
-*.apk
-*.aab

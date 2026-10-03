@@ -42,12 +42,6 @@ export function buildHeaderBlocks(appUrl) {
       },
     },
     {
-      // S19 markdown alternatifleri (/sayfa.md): doğru tür + arama dizininde HTML'in kopyası olarak görünmesin
-      // (canonical HTML sayfasıdır; LLM/araç erişimi etkilenmez, robots.txt izinlidir).
-      path: '/*.md',
-      headers: { 'Content-Type': 'text/markdown; charset=utf-8', 'X-Robots-Tag': 'noindex' },
-    },
-    {
       // Vite içerik-hash'li çıktılar: değişmez.
       path: '/_astro/*',
       headers: { 'Cache-Control': 'public, max-age=31536000, immutable' },

@@ -85,9 +85,7 @@ export const MENU_SCREENS: Record<string, MenuScreenDef> = {
   InvoiceInfoView: { code: 'InvoiceInfoView', icon: 'mdi-receipt-text-edit-outline', groupIcon: 'mdi-account-circle-outline', subIndex: 1 },
   ChangePasswordView: { code: 'ChangePasswordView', icon: 'mdi-lock-reset', groupIcon: 'mdi-account-circle-outline', subIndex: 2 },
   ExitView: { code: 'ExitView', icon: 'mdi-logout', groupIcon: 'mdi-account-circle-outline', subIndex: 3 },
-  TicketListView: { code: 'TicketListView', icon: 'mdi-lifebuoy' }, // P06: tek yapraklı destek grubu düzleşir
-  // C1.1 stok sağlığı — kök seviye (sentetik menü: e2e/fixtures/stockHealth.ts `menuFixtureWithStockHealth`).
-  StockHealthView: { code: 'StockHealthView', icon: 'mdi-scale-unbalanced' },
+  TicketListView: { code: 'TicketListView', icon: 'mdi-lifebuoy', groupIcon: 'mdi-lifebuoy', subIndex: 0 },
 }
 
 // e2e/fixtures/menuData.ts ile aynı sırayı/ikonları kullanır (bkz. dosyanın altı).
@@ -370,8 +368,6 @@ export async function openScreen(page: Page, screenCode: keyof typeof MENU_SCREE
     if (!(await subItem.isVisible().catch(() => false))) {
       await groupItem.click()
       await expect(subItem).toBeVisible()
-      // Aşama 3 (birleşik kabuk): grup açılış geçişi bitmeden tıklanan 2.+ alt öğe mobil çekmecede kaçabiliyor.
-      await page.waitForTimeout(300)
     }
     await subItem.click()
   } else {

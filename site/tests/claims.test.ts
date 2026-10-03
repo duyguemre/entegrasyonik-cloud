@@ -23,7 +23,7 @@ import {
   ecosystemPromises,
   getEcosystemNodes,
 } from '../src/data/integrations'
-import { productCapabilities, getPublicCapabilities, getStockReservationStory } from '../src/data/capabilities'
+import { productCapabilities, getPublicCapabilities, getHomePillars, homePillars, getStockReservationStory } from '../src/data/capabilities'
 import { faq, getPublicFaq, FAQ_CATEGORIES, getFaqPreview, SUPPORT_CATEGORIES, getSupportCategories } from '../src/data/faq'
 import {
   defaultPlanSource,
@@ -37,17 +37,11 @@ import {
   PROPOSAL_NOTICE,
   PLAN_SEED_PATH,
 } from '../src/data/plans'
-import { developmentItems, getDevelopmentItems, DEVELOPMENT_NOTICE } from '../src/data/in-development'
-import { getPlanCards, getPlanTrustPoints } from '../src/data/plan-cards'
-import { getComparisonRows, getPricingFaq, getPricingFaqRecords, getPlanPitch, getPlanCommonFeatures, getPlanAgentRows, getPlanAgentSummary, planAgentIntro } from '../src/data/pricing'
-import { menuGroups } from '../src/data/nav-menu'
-import { featuresBridge, heroAgentEntry } from '../src/data/assistant'
+import { getComparisonRows, getPricingFaq, getPricingFaqRecords, getPlanPitch, getPlanCommonFeatures } from '../src/data/pricing'
 
 const siteRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const repoRoot = path.resolve(siteRoot, '..')
 const read = (rel: string) => readFileSync(path.join(repoRoot, rel), 'utf8')
-/** Kanıtlı "Geliştirme listemizde" blokları (DevelopmentList.astro) — yol haritası adlarının geçebildiği TEK yer. */
-const stripRoadmapBlocks = (html: string) => html.replace(/<backlog-block\b[\s\S]*?<\/backlog-block>/g, ' ')
 
 // ------------------------------------------------------------------------------------------ yardımcılar
 
@@ -103,6 +97,7 @@ function publicContent() {
     comparison: getComparisonRows(),
     pricingFaq: getPricingFaq(),
     // S12 ana sayfa pazarlama metinleri de aynı yasaklı ifade / sayı taramasından geçer
+    homePillars: getHomePillars(),
     ecosystem: getEcosystemNodes(),
     ecosystemPromises,
     // S12: SSS kategorileri ve plan tanıtım kopyası da görünür metindir (aynı yasaklı ifade/sayı denetimi)
@@ -112,24 +107,6 @@ function publicContent() {
     // S14: stok rezervasyonu anlatısı (sahne etiketleri dahil) ve destek merkezi kategorileri de görünür metindir
     stockStory: getStockReservationStory(),
     support: getSupportCategories().map(({ label, lead, links }) => ({ label, lead, links: links.map((l) => l.label) })),
-    // S18/S24: Özellikler sayfasındaki Otopilot köprüsü katı taramadan geçer (S24: Otopilot'a hiçbir istisna yok)
-    assistantBridge: featuresBridge,
-    // S22: ana sayfa hero'sundaki ajan girişi de katı taramadan geçer
-    heroAgent: heroAgentEntry,
-    // S25: üst menü kopyası (panel başlıkları, fayda satırları, öne çıkan kartlar, alt şeritler) ve K46 fiyat metinleri
-    // de katı taramadan geçer. Rakamlı alanlar (deneme süresi, okuma süresi) `meta` anahtarındadır → sayı denetiminden
-    // muaf (değer kayıttan: plan seed / rehber metni).
-    nav: menuGroups().map((g) => ({ label: g.label, lead: g.lead, links: g.links.map((l) => [l.label, l.description ?? '']), footer: g.footer, feature: g.feature })),
-    // S27b: tek plan kartı kaydı (anasayfa + fiyat sayfası) ve güven şeridi de katı taramadan geçer (rakamlı vurgu `meta`)
-    // Seed değerleri (fiyat, limit, deneme günü) plan testlerinde seed'e karşı doğrulanır; burada yalnız kopya taranır.
-    planCards: getPlanCards().map((c) => ({
-      name: c.name, headline: c.headline, tagline: c.tagline, includesLabel: c.includesLabel, includes: c.includes, addOns: c.addOns,
-      agent: c.agent, limits: c.limits.map((l) => l.label), price: { note: c.price.note },
-      cta: { label: c.cta.label, ariaLabel: c.cta.ariaLabel, ...(c.trial ? { meta: c.cta.note } : { note: c.cta.note }) },
-      ...(c.trial ? { trial: { meta: c.trial.label } } : {}),
-    })),
-    planTrust: getPlanTrustPoints().map(({ source: _s, ...t }) => t),
-    planAgent: { intro: planAgentIntro, rows: getPlanAgentRows(), summary: getPublicPlans().map((p) => getPlanAgentSummary(p.code)) },
   }
 }
 
@@ -173,11 +150,21 @@ describe('(1) available entegrasyonlar === IntegrationFactory kodları', () => {
 // ------------------------------------------------------------------------------------------ S12 pazarlama metinleri
 
 describe('S12 ana sayfa pazarlama metinleri kayıtlı gerçek yeteneklere dayanır', () => {
+  const live = productCapabilities.filter((c) => c.status !== 'roadmap').map((c) => c.id)
 
   it('her çekirdek (görünür) yeteneğin ana sayfa başlığı ve tek satırlık fayda cümlesi var', () => {
     for (const c of getPublicCapabilities('core')) {
       expect(c.home?.title, c.id).toBeTruthy()
       expect(c.home?.line, c.id).toBeTruthy()
+    }
+  })
+
+  it('dört değer sütunu yalnızca roadmap OLMAYAN yeteneklere dayanır; en fazla üç kısa madde', () => {
+    expect(homePillars).toHaveLength(4)
+    for (const p of homePillars) {
+      expect(p.basedOn.length, p.id).toBeGreaterThan(0)
+      for (const id of p.basedOn) expect(live, `${p.id} -> ${id}`).toContain(id)
+      expect(p.points.length, p.id).toBeLessThanOrEqual(3)
     }
   })
 
@@ -424,7 +411,7 @@ const NUMERIC_ALLOWLIST: Array<{ token: string; why: EvidenceRef }> = [
 ]
 
 /** Sayısal-iddia denetiminden muaf anahtarlar (biçimlenmiş fiyat, kimlik/kod, taslak notu). */
-const NON_PROSE_KEYS = new Set(['priceLabel', 'code', 'id', 'notice', 'periodLabel', 'channelCodes', 'basedOn', 'icon', 'meta', 'href'])
+const NON_PROSE_KEYS = new Set(['priceLabel', 'code', 'id', 'notice', 'periodLabel', 'channelCodes', 'basedOn', 'icon'])
 
 describe('(3) görünür içerikte yasaklı ifade / mutlak / kanıtsız sayısal iddia yok', () => {
   const content = publicContent()
@@ -701,82 +688,17 @@ describe('(4) gizli roadmap öğeleri hiçbir yerde görünmez', () => {
   // ("e-fatura mükellefiyeti") içerir; bunlar pazarlama iddiası değildir. Kaynak taramasının `src/data/**`'i
   // dışlamasıyla aynı gerekçe. Yasal sayfalar kendi yasaklı-ifade taramasından geçer: tests/legal.test.ts.
   const distHtml = walk(distDir, ['.html']).filter((f) => !f.includes(`${path.sep}yasal${path.sep}`))
-  // S24 (K45): S18'deki dar istisna (Otopilot sayfasında "MCP" adı) KALDIRILDI — ajan sayfası da tüm ad yasaklarına tabidir.
-  // Otopilot'a özgü ek kurallar (vaat kaydı, aşama/örnek etiketi yok, teknik terim yok): tests/agent-claims.test.ts.
-  // dist/rehber/** (S20 bilgi merkezi): e-Fatura, GİB, Amazon SP-API gibi adlar burada ÜRÜN İDDİASI değil, pazarı anlatan
-  // kaynaklı bilgi konusudur. Bu sayfalar YALNIZCA ad taramasından muaftır (mutlak iddia taraması sürer); ürün bağlamı
-  // (Entegrasyonik cümleleri + bağlam kutusu) tests/rehber.test.ts'te aynı ad/kalıp listeleriyle ayrıca taranır.
-  const isRehber = (f: string) => f.includes(`${path.sep}rehber${path.sep}`)
   it.skipIf(distHtml.length === 0)('derleme çıktısında (dist/**/*.html) roadmap adı ve yasaklı ifade yok', () => {
     const hits: string[] = []
     const names = [...new Set([...STATIC_FORBIDDEN_NAMES, ...integrations.filter((i) => i.status === 'roadmap').flatMap((i) => [i.name, ...i.aliases])])]
     for (const f of distHtml) {
-      const html = stripRoadmapBlocks(readFileSync(f, 'utf8'))
+      const html = readFileSync(f, 'utf8')
         .replace(/<script[\s\S]*?<\/script>/g, '')
         .replace(/<style[\s\S]*?<\/style>/g, '')
         .replace(/<[^>]+>/g, ' ')
       const text = norm(html)
-      if (!isRehber(f)) for (const n of names) if (phraseRe(n).test(text)) hits.push(`${path.relative(siteRoot, f)}: "${n}"`)
-      for (const p of ABSOLUTE_PREFIXES) if (prefixRe(p).test(text)) hits.push(`${path.relative(siteRoot, f)}: "${p}"`)
-    }
-    expect(hits).toEqual([])
-  })
-})
-
-// ------------------------------------------------------------------------------------------ (5) geliştirme listesi
-
-/**
- * 2026-10-02 kullanıcı kararı (ADR-0014 Açık Soru 5 kısmen açıldı): bugün üründe OLMAYAN ama BACKLOG.md'de kayıtlı
- * başlıklar YALNIZCA `<backlog-block data-backlog>` içinde ve her biri BACKLOG kanıtıyla gösterilebilir.
- */
-describe('(5) geliştirme listesi: yalnızca BACKLOG kanıtlı, yalnızca işaretli blokta', () => {
-  const backlogText = read(PATHS.backlog)
-  const distHtml = walk(path.join(siteRoot, 'dist'), ['.html']).filter((f) => !f.includes(`${path.sep}yasal${path.sep}`))
-
-  it('her öğenin kanıtı BACKLOG.md ve birebir metni dosyada geçiyor', () => {
-    expect(developmentItems.length).toBeGreaterThan(0)
-    for (const i of developmentItems) {
-      expect(i.proof.path, i.id).toBe(PATHS.backlog)
-      expect(backlogText.includes(i.proof.contains!), `${i.id}: ${i.proof.contains}`).toBe(true)
-      if (i.namesProof) {
-        expect(i.namesProof.path, i.id).toBe(PATHS.backlog)
-        expect(backlogText.includes(i.namesProof.contains!), `${i.id}: ${i.namesProof.contains}`).toBe(true)
-      }
-    }
-  })
-
-  it('gösterilen her ad kanıt metninde birebir geçiyor (backlog dışı ad eklenemez)', () => {
-    for (const i of developmentItems) {
-      const proofs = [i.proof.contains ?? '', i.namesProof?.contains ?? ''].join(' | ')
-      for (const n of i.names ?? []) expect(proofs.includes(n), `${i.id}: ${n}`).toBe(true)
-    }
-  })
-
-  it('metinlerde tarih/sayı, mutlak iddia ve "yakında/planlanıyor" dili yok; seçici kanıtı sızdırmaz', () => {
-    const pub = getDevelopmentItems()
-    const hits: string[] = []
-    for (const l of leaves({ items: pub.map(({ title, summary }) => ({ title, summary })), notice: DEVELOPMENT_NOTICE })) {
-      if (/\d/.test(l.text)) hits.push(`${l.path}: sayı`)
-      for (const p of ABSOLUTE_PREFIXES) if (prefixRe(p).test(norm(l.text))) hits.push(`${l.path}: "${p}"`)
-      if (FORBIDDEN_PATTERNS[3][1].test(norm(l.text))) hits.push(`${l.path}: yol haritası dili`)
-    }
-    expect(hits).toEqual([])
-    expect(JSON.stringify(pub)).not.toMatch(/"proof"|"namesProof"|BACKLOG/)
-  })
-
-  it('bileşen kök öğesi tekil işaretli blok; dürüstlük notu "bugün üründe yoktur" der', () => {
-    const comp = read('site/src/components/pages/DevelopmentList.astro')
-    expect(comp).toMatch(/<backlog-block[^>]*data-backlog/)
-    expect(DEVELOPMENT_NOTICE).toContain('bugün üründe yoktur')
-  })
-
-  it.skipIf(distHtml.length === 0)('derleme çıktısında blok dışında geliştirme listesi adı geçmez', () => {
-    const names = [...new Set(developmentItems.flatMap((i) => i.names ?? []))]
-    const hits: string[] = []
-    // Rehber (kavram anlatımı) bu taramanın dışındadır — seo.test.ts / fair-play NON_MARKETING ile aynı dar istisna.
-    for (const f of distHtml.filter((x) => !x.includes(`${path.sep}rehber${path.sep}`))) {
-      const text = norm(stripRoadmapBlocks(readFileSync(f, 'utf8')).replace(/<script[\s\S]*?<\/script>/g, '').replace(/<[^>]+>/g, ' '))
       for (const n of names) if (phraseRe(n).test(text)) hits.push(`${path.relative(siteRoot, f)}: "${n}"`)
+      for (const p of ABSOLUTE_PREFIXES) if (prefixRe(p).test(text)) hits.push(`${path.relative(siteRoot, f)}: "${p}"`)
     }
     expect(hits).toEqual([])
   })
@@ -863,7 +785,6 @@ describe('S14: stok rezervasyonu anlatısı, somut akış cümleleri ve destek m
     expect(item).toBeTruthy()
     const t = norm(item.answer)
     for (const w of ['entegra', 'sopyo', 'yengec']) expect(phraseRe(w).test(t), w).toBe(false)
-    // S24 (K46): "ayrı veritabanı" yapı anlatımı yerine üst seviye güven mesajı ("izole") — ölçüt aynı kayıtlı yetenek
-    for (const w of ['izole', 'sifrel', 'stok rezervasyonu', 'varsayilan olarak']) expect(t, w).toContain(w)
+    for (const w of ['veritabani', 'sifrel', 'stok rezervasyonu', 'varsayilan olarak']) expect(t, w).toContain(w)
   })
 })

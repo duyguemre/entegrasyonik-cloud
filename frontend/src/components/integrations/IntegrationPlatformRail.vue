@@ -9,12 +9,6 @@
   3.11) ile birlikte kullanılır; eski `PlatformImageComponent` (retro kart,
   hover'da `translateY`, veri eksikliğinde soluk gri düşüşü) burada KULLANILMAZ.
 
-  FE-LOCAL-1048 — ana sayfa diliyle KANAL KARTI: düz yüzey + ince çerçeve, üstte 2px kanal marka çizgisi
-  (`.ek-ch-<kod>` → `--ek-ch-brand`; "Katalog ve kanal aktarımı" kartıyla aynı kalıp), çerçeveli logo kutusu + ad,
-  sağda durum çipi. Seçili kart = eylem renginin açık tonu + eylem çerçevesi (gölge yok; hover yalnız zemin tonu).
-  `activeCodes` verilirse canlı kanalda "Etkin" / "Pasif" çipi görünür (kayıtlı ayardan — `useIntegrationScreen`);
-  verilmezse canlı kanalda çip yok (eski davranış).
-
   "Yakında" (N13): `liveCodes` listesinde OLMAYAN bir platform kodu, monogramın
   yanında `EkStatusChip tone="neutral" label="Yakında"` ile işaretlenir — asla
   "bağlı/aktif" göstermez (E3 entegrasyon dürüstlüğü).
@@ -35,7 +29,7 @@
       :key="item.code"
       type="button"
       class="ek-integration-rail__item nav-item-wrapper"
-      :class="[channelClass(isLive(item.code) ? item.code : undefined), { 'is-selected': modelValue === item.code }]"
+      :class="{ 'is-selected': modelValue === item.code }"
       role="tab"
       :aria-selected="modelValue === item.code"
       :tabindex="modelValue === item.code ? 0 : -1"
@@ -49,15 +43,13 @@
         size="lg"
       />
       <EkStatusChip v-if="!isLive(item.code)" tone="neutral" label="Yakında" class="ek-integration-rail__badge" />
-      <EkStatusChip v-else-if="activeCodes" :tone="activeCodes.includes(item.code) ? 'success' : 'neutral'"
-        :label="activeCodes.includes(item.code) ? 'Etkin' : 'Pasif'" dot class="ek-integration-rail__badge" />
     </button>
   </div>
 </template>
 
 <script setup lang="ts">
-import { EkPlatformMark, EkStatusChip } from '@entegrasyonik/ui/components'
-import { channelClass } from '@entegrasyonik/ui/tokens'
+import EkPlatformMark from '@/components/ds/EkPlatformMark.vue'
+import EkStatusChip from '@/components/ds/EkStatusChip.vue'
 
 export interface IntegrationRailItem {
   code: string
@@ -90,14 +82,11 @@ const props = withDefaults(
     modelValue?: string
     /** `docs/INTEGRATIONS_REGISTRY.md`'deki 6 gerçek kod (ADR-0014 ile aynı canlı küme). */
     liveCodes?: string[]
-    /** Kayıtlı bağlantı durumu açık olan kodlar; verilirse canlı kartta "Etkin" / "Pasif" çipi. */
-    activeCodes?: string[]
     ariaLabel: string
   }>(),
   {
     modelValue: '',
     liveCodes: () => [],
-    activeCodes: undefined,
   },
 )
 
@@ -139,88 +128,39 @@ function onKeydown(event: KeyboardEvent) {
 
 <style scoped>
 .ek-integration-rail {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+  display: flex;
+  flex-wrap: wrap;
   gap: var(--ek-space-3);
 }
 
-/* Kanal kartı: düz yüzey + ince çerçeve; kimliği üstteki 2px marka çizgisi ve logo kutusu taşır (tint, gölge yok). */
 .ek-integration-rail__item {
-  position: relative;
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: space-between;
+  align-items: center;
   gap: var(--ek-space-2);
-  min-width: 0;
-  min-height: 76px;
-  padding: var(--ek-space-3);
-  overflow: hidden;
+  height: 40px;
+  padding: 0 var(--ek-space-3);
+  background: var(--ek-color-surface-muted);
   border: 1px solid var(--ek-color-border-default);
-  border-radius: var(--ek-radius-card);
-  background: var(--ek-color-surface);
-  color: var(--ek-color-content-default);
-  font: inherit;
-  text-align: left;
-  /* fe-polish: koyu temada koyu marka renkleri (ör. Ideasoft) koyu yüzeyde kaybolur → K13 rozet kenarlığı (marka hex'i
-     değişmez, açık mürekkeple karışır). Açık temada birebir marka rengi; kodu olmayan sağlayıcıda nötr çizgi. */
-  --ek-rail-accent: var(--ek-ch-brand, var(--ek-color-border-strong));
+  border-radius: var(--ek-radius-md);
   cursor: pointer;
-  transition: var(--ek-transition-colors);
-}
-
-.ek-integration-rail__item::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: var(--ek-rail-accent);
+  transition: border-color var(--ek-duration-fast) var(--ek-easing-enter), background-color var(--ek-duration-fast) var(--ek-easing-enter);
 }
 
 .ek-integration-rail__item:hover {
-  background: var(--ek-color-surface-muted);
+  border-color: var(--ek-color-border-strong);
 }
 
 .ek-integration-rail__item:focus-visible {
-  outline: 2px solid var(--ek-color-border-focus);
+  outline: 2px solid var(--ek-color-primary);
   outline-offset: 2px;
 }
 
-/* Seçim yalnız renkle değil: eylem çerçevesi + açık ton zemin + yarı kalın ad + aria-selected. */
 .ek-integration-rail__item.is-selected {
-  border-color: var(--ek-color-action-border);
-  background: var(--ek-color-action-subtle);
-}
-
-:global(:root[data-theme='dark']) .ek-integration-rail__item {
-  --ek-rail-accent: var(--ek-ch-badge-border, var(--ek-color-border-strong));
-}
-
-.ek-integration-rail__item :deep(.ek-platform-mark) {
-  min-width: 0;
-}
-
-/* Uzun sağlayıcı adı kesilmez — iki satıra sarar. */
-.ek-integration-rail__item :deep(.ek-platform-mark__name) {
-  overflow-wrap: anywhere;
-  white-space: normal;
-  line-height: 1.25;
-}
-
-.ek-integration-rail__item.is-selected :deep(.ek-platform-mark__name) {
-  color: var(--ek-color-action-emphasis);
-  font-weight: var(--ek-font-weight-semibold);
+  background: var(--ek-color-surface);
+  border-color: var(--ek-color-primary);
 }
 
 .ek-integration-rail__badge {
   flex: none;
-}
-
-@media (max-width: 599px) {
-  .ek-integration-rail {
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  }
 }
 </style>

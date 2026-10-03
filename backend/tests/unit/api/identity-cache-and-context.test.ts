@@ -20,13 +20,13 @@ jest.mock('@database/DatabaseManager', () => ({
   },
 }));
 
-import { createAuthenticateMiddleware } from '../../../src/api/http/authenticate';
-import { BaseApi } from '../../../src/api/rpc/BaseApi';
-import ApiWrapper from '../../../src/api/rpc/ApiWrapper';
-import { buildRequestContext } from '../../../src/api/rpc/requestContext';
+import { createAuthenticateMiddleware } from '../../../src/api/authenticate';
+import { BaseApi } from '../../../src/api/BaseApi';
+import ApiWrapper from '../../../src/api/ApiWrapper';
+import { buildRequestContext } from '../../../src/api/requestContext';
 import { getTenantRegistry } from '../../../src/database/TenantRegistry';
 import { getIdentityCache, resetIdentityCacheForTests } from '../../../src/platform/core/security/identityCache';
-import AdminService from '../../../src/api/rpc/handlers/admin-service';
+import AdminService from '../../../src/api/services/admin-service';
 import { makeReq, makeRes, signedToken, TEST_USER_ID } from '../../characterization/auth/_helpers';
 
 let userDoc: any;

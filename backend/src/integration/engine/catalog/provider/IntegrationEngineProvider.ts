@@ -2,7 +2,7 @@
 
 import { IIntegrationEngineProvider } from "./IIntegrationEngineProvider";
 import { IApplicationDB, IClientDB } from "@interfaces/index";
-import { StatsOperations } from "@operations/reports/StatsOperations";
+import { StatsOperations } from "@operations/client/StatsOperations";
 import { PlatformMappingProvider } from "@integration/modules/provider/PlatformMappingProvider";
 import { QueryBuilderOperations } from "@operations/integration/QueryBuilderOperations";
 

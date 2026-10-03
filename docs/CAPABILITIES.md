@@ -3,15 +3,15 @@
 **ÜRETİLMİŞ BELGE — ELLE DÜZENLENMEZ.** Kaynak: `backend/src/capabilities/**` (zod-şemalı TypeScript kaydı).
 Yeniden üretmek için: `cd backend && npm run capabilities:docs`. Bu belge `docs/OPERATION_POLICY.md`'nin yerine geçer (ADR-0019 §2).
 
-Üretim zamanı: 2026-10-01T19:13:35.624Z · Kaynak commit bilgisi bu betiğin dışında (git) tutulur.
+Üretim zamanı: 2026-10-01T08:07:49.694Z · Kaynak commit bilgisi bu betiğin dışında (git) tutulur.
 
 ## Özet
 
-- Toplam yetenek: **300** (toplam RPC bağı: 341)
-- `effect`: write=126, read=143, destructive=28, propose=3
-- `minTier`: platformAdmin=105, member=151, owner=4, admin=40
-- MCP: `exposed`=13, `notExposed`=287 (bunun `deferred`=101)
-- Yetim (ui.none + mcp.notExposed + agent.allowed:false): 128 (bkz. `capability-baseline.json`, artamaz mandalı)
+- Toplam yetenek: **280** (toplam RPC bağı: 316)
+- `effect`: write=117, read=132, destructive=28, propose=3
+- `minTier`: platformAdmin=98, member=141, owner=4, admin=37
+- MCP: `exposed`=6, `notExposed`=274 (bunun `deferred`=99)
+- Yetim (ui.none + mcp.notExposed + agent.allowed:false): 120 (bkz. `capability-baseline.json`, artamaz mandalı)
 
 **Operasyon/yetenek sayısı tutarsızlığı çözümü (ADR-0019 Bağlam):** `operationPolicy.ts`nin bugünkü mekanik sayımı 
 (ImageApi sözde-servisi DAHİL, `OPEN_OPERATIONS` HARİÇ) **174** `(servis, operasyon)` çiftidir (member 137, admin 19, owner 2, 
@@ -32,7 +32,7 @@ metodu yok (bugün de 403/çalışmıyor; `operation-policy.test.ts` `FE_CALLS_W
 
 ## Alan (domain) başına yetenekler
 
-### account (65)
+### account (62)
 
 | id | effect | minTier | RPC bağları | mcp | ui | agent | review |
 |---|---|---|---|---|---|---|---|
@@ -74,9 +74,6 @@ metodu yok (bugün de 403/çalışmıyor; `operation-policy.test.ts` `FE_CALLS_W
 | `notifications.mark_read` | write | member | NotificationService/markAsRead | notExposed:ui_plumbing | shell:notifications | allowed:false |  |
 | `notifications.preferences.get` | read | member | NotificationService/getPreferences | notExposed:ui_plumbing | none (Backend-only: bildirim tercihleri ekranı (F-N2) bulut FE işi (BACKEND_ONLY_NOT_YET_IN_FE).) | allowed:false |  |
 | `notifications.preferences.update` | write | member | NotificationService/updatePreferences | notExposed:ui_plumbing | none (Backend-only: bildirim tercihleri ekranı (F-N2) bulut FE işi (BACKEND_ONLY_NOT_YET_IN_FE).) | allowed:false |  |
-| `notifications.push.config` | read | member | NotificationService/getPushConfig | notExposed:ui_plumbing | NotificationPreferencesView | allowed:false |  |
-| `notifications.push.subscribe` | write | member | NotificationService/subscribePush | notExposed:ui_plumbing | NotificationPreferencesView | allowed:false |  |
-| `notifications.push.unsubscribe` | write | member | NotificationService/unsubscribePush | notExposed:ui_plumbing | NotificationPreferencesView | allowed:false |  |
 | `notifications.tenant_defaults.get` | read | admin | NotificationService/getTenantDefaults | notExposed:ui_plumbing | none (Backend-only: tenant varsayılanları ekranı (F-N2) bulut FE işi (BACKEND_ONLY_NOT_YET_IN_FE).) | allowed:false |  |
 | `notifications.tenant_defaults.update` | write | admin | NotificationService/updateTenantDefaults | notExposed:ui_plumbing | none (Backend-only: tenant varsayılanları ekranı (F-N2) bulut FE işi (BACKEND_ONLY_NOT_YET_IN_FE).) | allowed:false |  |
 | `notifications.unread_count` | read | member | NotificationService/getUnreadCount | notExposed:ui_plumbing | none (Backend-only: hafif rozet sorgusu, FE henüz çağırmıyor (BACKEND_ONLY_NOT_YET_IN_FE).) | allowed:false |  |
@@ -110,7 +107,7 @@ metodu yok (bugün de 403/çalışmıyor; `operation-policy.test.ts` `FE_CALLS_W
 | `billing.plans.list` | read | member | BillingService/getPlans | notExposed:deferred→later | user/SubscriptionView | allowed:false |  |
 | `billing.subscription.get` | read | member | BillingService/getMySubscription | notExposed:deferred→later | user/SubscriptionView | allowed:false |  |
 
-### catalog (64)
+### catalog (55)
 
 | id | effect | minTier | RPC bağları | mcp | ui | agent | review |
 |---|---|---|---|---|---|---|---|
@@ -150,15 +147,6 @@ metodu yok (bugün de 403/çalışmıyor; `operation-policy.test.ts` `FE_CALLS_W
 | `mappings.category.save` | write | member | AttributeMappingService/saveCategoryMapping | notExposed:deferred→later | productDefinitions/CategoryListView#saveMapping | allowed:false |  |
 | `mappings.delete` | destructive | member | AttributeMappingService/deleteFullMapping | notExposed:deferred→later | productDefinitions/CategoryListView#deleteMapping | allowed:false | OPERATION_POLICY.md Belirsiz: eşleme silme; yıkıcı, member bırakıldı. |
 | `mappings.list` | read | member | AttributeMappingService/get | notExposed:deferred→later | productDefinitions/CategoryListView | allowed:false |  |
-| `pricing.buybox.list` | read | member | PricingService/listBuybox, PricingService/getBuyboxHistory | exposed (catalog) | productDefinitions/ProductListView, definitions/ProductDefinitionView, definitions/ProductUpdateView | allowed:false |  |
-| `pricing.cost.list` | read | member | PricingService/listCosts | exposed (catalog) | definitions/ProductDefinitionView, definitions/ProductUpdateView, productDefinitions/ProductListView | allowed:false |  |
-| `pricing.cost.set` | write | member | PricingService/setVariantCosts | exposed (catalog) | definitions/ProductDefinitionView#saveCost, definitions/ProductUpdateView#saveCost | allowed:false |  |
-| `pricing.margin.preview` | read | member | PricingService/previewMargin | exposed (catalog) | definitions/ProductDefinitionView, definitions/ProductUpdateView | allowed:false |  |
-| `pricing.rules.list` | read | member | PricingService/getRules | exposed (catalog) | pricing/PricingRulesView | allowed:false |  |
-| `pricing.rules.save` | write | admin | PricingService/saveRule, PricingService/deleteRule | notExposed:deferred→later | pricing/PricingRulesView#saveRule, pricing/PricingRulesView#deleteRule | allowed:false |  |
-| `pricing.rules.settings` | write | admin | PricingService/setPricingSettings | notExposed:irreversible | pricing/PricingRulesView#setPricingSettings | allowed:false |  |
-| `pricing.suggestions.apply` | write | admin | PricingService/applySuggestions, PricingService/dismissSuggestions | exposed (catalog) | pricing/PricingRulesView#applySuggestions, pricing/PricingRulesView#dismissSuggestions | allowed:false |  |
-| `pricing.suggestions.list` | read | member | PricingService/listSuggestions, PricingService/getPriceHistory | exposed (catalog) | pricing/PricingRulesView | allowed:false |  |
 | `products.create` | write | member | ProductService/saveProduct | notExposed:deferred→later | definitions/ProductDefinitionView#save | allowed:false |  |
 | `products.delete` | destructive | member | ProductService/deleteProduct | notExposed:deferred→later | productDefinitions/ProductListView#delete | allowed:false | OPERATION_POLICY.md Belirsiz: yıkıcı silme; member bırakıldı. |
 | `products.export` | read | member | ProductService/exportExcel | notExposed:binary_file | productDefinitions/ProductListView#exportExcel | allowed:false | OPERATION_POLICY.md Belirsiz: toplu veri çıkarma; gerekirse admin (tüm-tenant dışa aktarma DEĞİL, o owner: account.tenant.data.export). |
@@ -197,13 +185,12 @@ metodu yok (bugün de 403/çalışmıyor; `operation-policy.test.ts` `FE_CALLS_W
 | `customers.list` | read | member | CustomerService/getCustomers | notExposed:deferred→later | CustomerListView | allowed:false |  |
 | `customers.update` | write | member | CustomerService/updateCustomer | notExposed:deferred→later | CustomerListView#update | allowed:false |  |
 
-### finance (12)
+### finance (11)
 
 | id | effect | minTier | RPC bağları | mcp | ui | agent | review |
 |---|---|---|---|---|---|---|---|
 | `finance.cargo_invoices.list` | read | member | FinancialService/getCargoInvoices | notExposed:deferred→later | none (Backend-only: FE henüz çağırmıyor (BACKEND_ONLY_NOT_YET_IN_FE).) | allowed:false | OPERATION_POLICY.md Belirsiz: 5000 satır üst sınırı; finansal veri kademe kararı. |
 | `finance.commission.by_barcode` | read | member | FinancialService/getCommissionByBarcodes | notExposed:deferred→later | none (Backend-only: FE henüz çağırmıyor (BACKEND_ONLY_NOT_YET_IN_FE).) | allowed:false | COM-07 ürün liste/detay net fiyat için; en çok 200 barkod. |
-| `finance.commission.drift` | read | member | FinancialService/getCommissionDrift | notExposed:deferred→later | none (Backend-only: FE henüz çağırmıyor (BACKEND_ONLY_NOT_YET_IN_FE).) | allowed:false | COM-08: COMMISSION_RATE_DRIFT bildiriminin ayrıntısı; makinece okunabilir öğe (status enum, puan cinsinden delta). Eşik: finance.commissionDriftThresholdPoints  |
 | `finance.commission.order_summary` | read | member | FinancialService/getOrderCommissionSummary | notExposed:deferred→later | none (Backend-only: FE henüz çağırmıyor (BACKEND_ONLY_NOT_YET_IN_FE).) | allowed:false | COM-03/COM-07: kaynak = gerçekleşen (hakediş) \| tahmini (kanal tablosu) \| bilinmiyor; override COM-04 (kategori > kanal varsayılan). FE net fiyat gösterimi ba |
 | `finance.commission.overrides.delete` | destructive | admin | FinancialService/deleteCommissionOverride | notExposed:deferred→later | none (Backend-only: FE henüz çağırmıyor (BACKEND_ONLY_NOT_YET_IN_FE).) | allowed:false | COM-04: yalnız override kaydı silinir (geri dönüş: gerçekleşen/tahmini oran). |
 | `finance.commission.overrides.list` | read | member | FinancialService/listCommissionOverrides | notExposed:deferred→later | none (Backend-only: FE henüz çağırmıyor (BACKEND_ONLY_NOT_YET_IN_FE).) | allowed:false | COM-04: entegrasyon ayarları "Komisyon oranları" tablosu (bulut FE); oran bilgisi komisyon okuma RPC leriyle aynı kademede. |
@@ -270,7 +257,7 @@ metodu yok (bugün de 403/çalışmıyor; `operation-policy.test.ts` `FE_CALLS_W
 | `orders.mark_printed` | write | member | OrderService/markAsPrinted | notExposed:ui_plumbing | none (Backend-only: FE henüz çağırmıyor (BACKEND_ONLY_NOT_YET_IN_FE); yalnızca yerel bayrak + platformActions kaydı.) | allowed:false |  |
 | `orders.rejection_reasons.list` | read | member | OrderService/getOrderRejectionReasons | notExposed:ui_plumbing | OrderListView#cancel | allowed:false |  |
 
-### platform (105)
+### platform (98)
 
 | id | effect | minTier | RPC bağları | mcp | ui | agent | review |
 |---|---|---|---|---|---|---|---|
@@ -302,8 +289,6 @@ metodu yok (bugün de 403/çalışmıyor; `operation-policy.test.ts` `FE_CALLS_W
 | `platform.clients.list` | read | platformAdmin | AdminService/getClients | notExposed:platform_admin | adminPanel/AdminClientListView, adminPanel/AdminTicketListView | allowed:false |  |
 | `platform.clients.stats` | read | platformAdmin | AdminService/getClientStats | notExposed:platform_admin | adminPanel/AdminClientListView | allowed:false |  |
 | `platform.clients.update` | write | platformAdmin | AdminService/updateClient | notExposed:platform_admin | adminPanel/AdminClientListView#update | allowed:false |  |
-| `platform.competition.override.set` | write | platformAdmin | BackofficeBillingService/setCompetitionOverride | notExposed:platform_admin | none (Backoffice SPA (ayrı depo/yüzey): /admin-api üzerinden çağrılır; müşteri arayüzünde ekranı yok.) | allowed:false |  |
-| `platform.competition.settings` | read | platformAdmin | BackofficeBillingService/getCompetitionSettings, BackofficeBillingService/getTenantCompetition | notExposed:platform_admin | none (Backoffice SPA (ayrı depo/yüzey): /admin-api üzerinden çağrılır; müşteri arayüzünde ekranı yok.) | allowed:false |  |
 | `platform.engine.discard_job` | destructive | platformAdmin | BackofficeEngineService/discardJob | notExposed:platform_admin | none (Backoffice SPA (ayrı depo/yüzey): /admin-api üzerinden çağrılır; müşteri arayüzünde ekranı yok.) | allowed:false |  |
 | `platform.engine.failed_jobs` | read | platformAdmin | BackofficeEngineService/listFailedJobs | notExposed:platform_admin | none (Backoffice SPA (ayrı depo/yüzey): /admin-api üzerinden çağrılır; müşteri arayüzünde ekranı yok.) | allowed:false |  |
 | `platform.engine.job_runs` | read | platformAdmin | BackofficeEngineService/listJobRuns | notExposed:platform_admin | none (Backoffice SPA (ayrı depo/yüzey): /admin-api üzerinden çağrılır; müşteri arayüzünde ekranı yok.) | allowed:false |  |
@@ -356,11 +341,7 @@ metodu yok (bugün de 403/çalışmıyor; `operation-policy.test.ts` `FE_CALLS_W
 | `platform.overview.pulse` | read | platformAdmin | BackofficeOverviewService/getPulse | notExposed:platform_admin | none (Backoffice SPA (ayrı depo/yüzey): /admin-api üzerinden çağrılır; müşteri arayüzünde ekranı yok.) | allowed:false |  |
 | `platform.prefs.delete_view` | write | platformAdmin | BackofficePrefsService/deleteView | notExposed:platform_admin | none (Backoffice SPA (ayrı depo/yüzey): /admin-api üzerinden çağrılır; müşteri arayüzünde ekranı yok.) | allowed:false |  |
 | `platform.prefs.list_views` | read | platformAdmin | BackofficePrefsService/listViews | notExposed:platform_admin | none (Backoffice SPA (ayrı depo/yüzey): /admin-api üzerinden çağrılır; müşteri arayüzünde ekranı yok.) | allowed:false |  |
-| `platform.prefs.push_config` | read | platformAdmin | BackofficePrefsService/getPushConfig | notExposed:platform_admin | none (Backoffice SPA (ayrı depo/yüzey): /admin-api üzerinden çağrılır; müşteri arayüzünde ekranı yok.) | allowed:false |  |
-| `platform.prefs.push_subscribe` | write | platformAdmin | BackofficePrefsService/subscribePush | notExposed:platform_admin | none (Backoffice SPA (ayrı depo/yüzey): /admin-api üzerinden çağrılır; müşteri arayüzünde ekranı yok.) | allowed:false |  |
-| `platform.prefs.push_unsubscribe` | write | platformAdmin | BackofficePrefsService/unsubscribePush | notExposed:platform_admin | none (Backoffice SPA (ayrı depo/yüzey): /admin-api üzerinden çağrılır; müşteri arayüzünde ekranı yok.) | allowed:false |  |
 | `platform.prefs.save_view` | write | platformAdmin | BackofficePrefsService/saveView | notExposed:platform_admin | none (Backoffice SPA (ayrı depo/yüzey): /admin-api üzerinden çağrılır; müşteri arayüzünde ekranı yok.) | allowed:false |  |
-| `platform.pricing_rules.overview` | read | platformAdmin | BackofficeBillingService/getPricingRulesOverview | notExposed:platform_admin | none (Backoffice SPA (ayrı depo/yüzey): /admin-api üzerinden çağrılır; müşteri arayüzünde ekranı yok.) | allowed:false |  |
 | `platform.revenue.metrics` | read | platformAdmin | BackofficeBillingService/getRevenueMetrics | notExposed:platform_admin | none (Backoffice SPA (ayrı depo/yüzey): /admin-api üzerinden çağrılır; müşteri arayüzünde ekranı yok.) | allowed:false |  |
 | `platform.store.select` | write | platformAdmin | SecurityService/selectStore | notExposed:platform_admin | shell:session | allowed:false |  |
 | `platform.subscriptions.cancel` | destructive | platformAdmin | BackofficeBillingService/cancelSubscription | notExposed:platform_admin | none (Backoffice SPA (ayrı depo/yüzey): /admin-api üzerinden çağrılır; müşteri arayüzünde ekranı yok.) | allowed:false |  |
@@ -374,7 +355,6 @@ metodu yok (bugün de 403/çalışmıyor; `operation-policy.test.ts` `FE_CALLS_W
 | `platform.tenant.lifecycle` | read | platformAdmin | BackofficeTenantService/getLifecycle | notExposed:platform_admin | none (Backoffice SPA (ayrı depo/yüzey): /admin-api üzerinden çağrılır; müşteri arayüzünde ekranı yok.) | allowed:false |  |
 | `platform.tenants.health_summary` | read | platformAdmin | BackofficeTenantService/getHealthSummary | notExposed:platform_admin | none (Backoffice SPA (ayrı depo/yüzey): /admin-api üzerinden çağrılır; müşteri arayüzünde ekranı yok.) | allowed:false |  |
 | `platform.tenants.list` | read | platformAdmin | BackofficeTenantService/listTenants | notExposed:platform_admin | none (Backoffice SPA (ayrı depo/yüzey): /admin-api üzerinden çağrılır; müşteri arayüzünde ekranı yok.) | allowed:false |  |
-| `platform.tenants.usage` | read | platformAdmin | BackofficeTenantService/getUsage | notExposed:platform_admin | none (Backoffice SPA (ayrı depo/yüzey): /admin-api üzerinden çağrılır; müşteri arayüzünde ekranı yok.) | allowed:false |  |
 | `platform.tickets.create` | write | platformAdmin | AdminService/createTicket | notExposed:platform_admin | adminPanel/AdminTicketListView#create | allowed:false |  |
 | `platform.tickets.delete` | destructive | platformAdmin | AdminService/deleteTicket | notExposed:platform_admin | adminPanel/AdminTicketListView#delete | allowed:false |  |
 | `platform.tickets.list` | read | platformAdmin | AdminService/getTickets | notExposed:platform_admin | adminPanel/AdminTicketListView | allowed:false |  |

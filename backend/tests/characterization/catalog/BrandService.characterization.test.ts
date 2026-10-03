@@ -1,5 +1,5 @@
 /**
- * CHARACTERIZATION: BrandService (backend/src/api/rpc/handlers/brand-service.ts)
+ * CHARACTERIZATION: BrandService (backend/src/api/services/brand-service.ts)
  *
  * Kapsam: get, addBrand, saveIntegrationBrand, updateBrand, deleteBrand. DB/Redis/ağ YOK; `clientDB` sahte model
  * nesneleridir (ADR-0016 B-R-T1). Kod DEĞİŞTİRİLMEDİ, yalnızca mevcut davranış sabitlenir.
@@ -11,7 +11,7 @@
 import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals';
 import { ObjectId } from 'mongodb';
 
-import BrandService from '@api/rpc/handlers/brand-service';
+import BrandService from '@api/services/brand-service';
 
 let brandModel: any;
 

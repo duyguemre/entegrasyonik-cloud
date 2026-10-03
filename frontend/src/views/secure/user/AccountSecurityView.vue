@@ -23,7 +23,6 @@
 <template>
   <div class="accountSecurityView">
     <EkSettingsTemplate
-      section="Hesap"
       :title="$t('accountSecurity.title')"
       :description="$t('accountSecurity.description')"
     >
@@ -84,6 +83,7 @@
               :label="$t('accountSecurity.password.current')"
               type="password"
               autocomplete="current-password"
+              density="comfortable"
               :error-messages="fieldErrors.current"
               @update:model-value="fieldErrors.current = ''"
             />
@@ -92,6 +92,7 @@
               :label="$t('accountSecurity.password.new')"
               type="password"
               autocomplete="new-password"
+              density="comfortable"
               aria-describedby="account-security-password-hints"
               :error-messages="fieldErrors.new"
               @update:model-value="fieldErrors.new = ''"
@@ -103,7 +104,7 @@
                 class="accountSecurityView__hint"
                 :class="{ 'accountSecurityView__hint--met': hint.met }"
               >
-                <v-icon size="16" aria-hidden="true">{{ hint.met ? 'mdi-check-circle-outline' : 'mdi-circle-outline' }}</v-icon>
+                <v-icon size="16" aria-hidden="true">{{ hint.met ? 'mdi-check-circle' : 'mdi-circle-outline' }}</v-icon>
                 <span>{{ $t(hint.labelKey) }}</span>
                 <span class="accountSecurityView__sr">{{ hint.met ? $t('accountSecurity.password.hintMet') : $t('accountSecurity.password.hintUnmet') }}</span>
               </li>
@@ -113,6 +114,7 @@
               :label="$t('accountSecurity.password.confirm')"
               type="password"
               autocomplete="new-password"
+              density="comfortable"
               :error-messages="fieldErrors.confirm"
               @update:model-value="fieldErrors.confirm = ''"
             />
@@ -141,10 +143,13 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import EkSettingsTemplate from '@/components/page/templates/EkSettingsTemplate.vue'
-import EkSettingsSection from '@/components/page/templates/EkSettingsSection.vue'
-import { EkSkeleton, EkErrorState, EkStatusChip, EkDescriptionList, type EkDescriptionListItem } from '@entegrasyonik/ui/components'
-import { useToast } from '@entegrasyonik/ui/composables/useToast'
+import EkSettingsTemplate from '@/components/ds/templates/EkSettingsTemplate.vue'
+import EkSettingsSection from '@/components/ds/templates/EkSettingsSection.vue'
+import EkSkeleton from '@/components/ds/EkSkeleton.vue'
+import EkErrorState from '@/components/ds/EkErrorState.vue'
+import EkStatusChip from '@/components/ds/EkStatusChip.vue'
+import EkDescriptionList, { type EkDescriptionListItem } from '@/components/ds/EkDescriptionList.vue'
+import { useToast } from '@/composables/useToast'
 import { apiCode, apiStatus, isApiError } from '@/composables/apiErrors'
 import { passwordHints } from '@/composables/passwordPolicyHints'
 import {

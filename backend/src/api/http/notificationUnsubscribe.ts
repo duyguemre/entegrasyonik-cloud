@@ -2,7 +2,7 @@
 // yetki = imzali, sureli belirtec). GET yalniz onay sayfasi gosterir (posta tarayicilarinin on-getirmesi tercihi DEGISTIRMEZ);
 // POST tercihi kapatir (belirtec sorgudan -- RFC 8058 -- ya da form govdesinden). Basit metin/HTML; ham hata/PII yok.
 import express, { Express, Request, Response } from 'express';
-import { createRateLimiter } from '@platform/rateLimit/rateLimit';
+import { createRateLimiter } from '../rateLimit';
 import { logger } from '@platform/core/logger';
 import { applyUnsubscribe, previewUnsubscribe, type UnsubscribeOutcome, type PreferencesWriter } from '@operations/notifications/delivery/unsubscribe';
 

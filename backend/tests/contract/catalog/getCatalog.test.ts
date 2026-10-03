@@ -1,7 +1,7 @@
 // ADR-0018 Aşama A DoD: "getCatalog salt-okunur uç (member)". Saf birim testi (DB/ağ YOK — `getCatalog`
 // yalnız statik `IntegrationDescriptorRegistry`'yi okur, `init()` çağrılmadan test edilebilir olması BUNU kanıtlar).
 import { describe, it, expect } from '@jest/globals';
-import IntegrationService from '@api/rpc/handlers/integration-service';
+import IntegrationService from '@api/services/integration-service';
 import { INTEGRATION_DESCRIPTORS } from '@integration/catalog/IntegrationDescriptorRegistry';
 
 describe('IntegrationService.getCatalog — ADR-0018 manifesto ucu', () => {

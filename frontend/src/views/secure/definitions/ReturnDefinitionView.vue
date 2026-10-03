@@ -1,5 +1,5 @@
 <template>
-  <div ref="rootEl" class="legacy-definition-root">
+  <div class="legacy-definition-root">
     <EkPageHeader
       section="Siparişler"
       :title="$t('definitions.return.title')"
@@ -13,9 +13,9 @@
   <div class="legacy-definition-body">
   <div class="search-section" >
     <div class="d-flex">
-      <div class="legacy-definition-search">
+      <div style="width:48%">
         <div class="d-flex">
-          <v-text-field clearable prepend-icon="mdi-form-textbox"
+          <v-text-field clearable prepend-icon="mdi-form-textbox" density="comfortable"
             :label="$t('customers.customer.searchlabel')" variant="outlined"></v-text-field>
           <v-bottom-sheet>
             <template v-slot:activator="{ props }">
@@ -39,7 +39,7 @@
 
   
   <div class="d-flex scroll-element expand-element no-expand">
-    <v-data-table :items="rows.items.value" item-value="_rowKey" fixed-header :headers="headers"
+    <v-data-table :items="items" fixed-header :headers="headers"
       class="pa-0 ma-0" show-select>
       <template #bottom></template>
       <template v-slot:header.actions>
@@ -47,16 +47,16 @@
       <template v-slot:item.customer="{ item, index }">
         <div class="mt-2 mb-2">
           <div class="font-weight-medium">{{ item.customer.name.toLocaleUpperCase() }}</div>
-          <v-text-field class="mt-3" readonly :label="$t('customers.customer.email')" density="compact"
+          <v-text-field class="mt-3" readonly :label="$t('customers.customer.email')" variant="plain" density="compact"
             hide-details v-model="item.customer.email">
           </v-text-field>
-          <v-text-field class="mt-3" readonly :label="$t('customers.customer.phone')" density="compact"
+          <v-text-field class="mt-3" readonly :label="$t('customers.customer.phone')" variant="plain" density="compact"
             hide-details v-model="item.customer.phone">
           </v-text-field>
         </div>
       </template>
       <template v-slot:item.address="{ item, index }">
-        <v-text-field class="mt-3" readonly density="compact" hide-details v-model="item.address.desc">
+        <v-text-field class="mt-3" readonly variant="plain" density="compact" hide-details v-model="item.address.desc">
         </v-text-field>
         {{ item.address.county }} / {{ item.address.state }} / {{ item.address.country }}
         <div class="d-flex">
@@ -64,37 +64,41 @@
       </template>
       <template v-slot:item.customerType="{ item, index }">
         <div v-if="item.customerType.isCompany">
-          <v-text-field class="mt-3" readonly :label="$t('customers.customer.customerType.taxId')"
+          <v-text-field class="mt-3" readonly :label="$t('customers.customer.customerType.taxId')" variant="plain"
             density="compact" hide-details v-model="item.customerType.taxId">
           </v-text-field>
-          <v-text-field class="mt-3" readonly :label="$t('customers.customer.customerType.taxIssuer')"
+          <v-text-field class="mt-3" readonly :label="$t('customers.customer.customerType.taxIssuer')" variant="plain"
             density="compact" hide-details v-model="item.customerType.taxIssuer">
           </v-text-field>
         </div>
-        <v-text-field v-else class="mt-3" readonly :label="$t('customers.customer.customerType.tc')"
+        <v-text-field v-else class="mt-3" readonly :label="$t('customers.customer.customerType.tc')" variant="plain"
           density="compact" hide-details v-model="item.customerType.tc">
         </v-text-field>
 
       </template>
 
       <template v-slot:item.actions="{ item, index }">
-        <!-- fe-r4d D5: eylemler bağlı (Düzenle → form diyaloğu, Sil → tehlikeli onay); örnek veri, istek yok. -->
-        <EkRowActions :label="`${item.customer.name} satırı işlemleri`" :items="rows.actionsFor(item)" />
+        <div class="text-center justify-center align-center">
+          <v-btn-group class="pa-0" density="comfortable">
+            <v-btn class="" min-width=0 variant="text" aria-label="Düzenle">
+              <v-icon>mdi-pencil</v-icon>
+            </v-btn>
+            <v-btn class="" min-width=0 variant="text" color="error" aria-label="Sil">
+              <v-icon>mdi-delete</v-icon>
+            </v-btn>
+          </v-btn-group>
+        </div>
       </template>
     </v-data-table>
     <ScrollComponent id=".scroll-element .v-table__wrapper" />
   </div>
   <PaginationComponent />
   </div>
-  <LegacyDefinitionRowDialogs :rows="rows" :attach="rootEl ?? false" />
   </div>
 </template>
 
 <script setup lang="ts">
-import EkPageHeader from '@/components/page/EkPageHeader.vue'
-import LegacyDefinitionRowDialogs from '@/components/definitions/LegacyDefinitionRowDialogs.vue'
-import { useLegacyDefinitionRows, type LegacyDefinitionRow } from '@/components/definitions/legacyDefinitionRows'
-import { EkRowActions } from '@entegrasyonik/ui/components'
+import EkPageHeader from '@/components/ds/EkPageHeader.vue'
 import { useI18n } from 'vue-i18n';
 import { ref,inject, onMounted, watch } from 'vue'
 
@@ -127,7 +131,7 @@ var buttons: any = [
   {
     title: t("customers.customer.new.title"),
     icon: 'mdi-plus',
-    color: 'primary',
+    color: 'newButtonColor',
     to: '',
     click: showNewCustomerPopup,
   },
@@ -160,7 +164,7 @@ const headers = [
 
 ]
 
-const items: LegacyDefinitionRow[] = [
+const items = [
   {
     id: 1,
     customer: {
@@ -283,8 +287,6 @@ const items: LegacyDefinitionRow[] = [
   },
 
 ]
-const rows = useLegacyDefinitionRows(items)
-const rootEl = ref<HTMLElement | null>(null)
 
 onMounted(() => {
 
@@ -306,10 +308,6 @@ var openUpdate = (id: number) => {
   inset: 0;
   display: flex;
   flex-direction: column;
-}
-
-.legacy-definition-search {
-  width: 48%;
 }
 
 .legacy-definition-body {

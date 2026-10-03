@@ -9,22 +9,22 @@
  * maddeleri (kanıt: tests/pages.test.ts). Sertifika/uyumluluk, veri konumu, SLA ve süre iddiası YOKTUR.
  * KVKK bağlantısı yalnızca ilgili yasal sayfa `published` ise verilir (S5).
  */
-import Eyebrow from '../components/Eyebrow.astro'
 import BaseLayout from '../layouts/BaseLayout.astro'
-import { crumbsFor } from '../data/seo'
 import Section from '../components/Section.astro'
 import Badge from '../components/Badge.astro'
 import Icon from '../components/home/Icon.astro'
-import SectionHead from '../components/pages/SectionHead.astro'
-import HeroActions from '../components/pages/HeroActions.astro'
 import PageHero from '../components/pages/PageHero.astro'
+import PageMeta from '../components/pages/PageMeta.astro'
 import CtaBand from '../components/pages/CtaBand.astro'
 import { getPublicCapabilities, type PublicProductCapability } from '../data/capabilities'
 import { securityPrinciples } from '../data/security-principles'
-import { fairSection, fairPrinciples } from '../data/fair-play'
 import { legalNav, published } from '../data/navigation'
+import { breadcrumbJsonLd } from '../lib/seo'
 
-const crumbs = crumbsFor('/guvenlik')
+const title = 'Güvenlik'
+const description =
+  'Entegrasyonik güvence ilkeleri: veri izolasyonu, şifreli saklanan entegrasyon sırları, rol tabanlı erişim ve oturum güvenliği, denetim izi, KVKK kapsamında veri işleme, yedekleme ve süreklilik.'
+const crumbs = [{ label: 'Ana sayfa', href: '/' }, { label: 'Güvenlik' }]
 
 const security = getPublicCapabilities('security')
 const byId = new Map(security.map((c) => [c.id, c]))
@@ -46,22 +46,24 @@ const subscription = legal.find((i) => i.href === '/yasal/abonelik-sozlesmesi')
 const legalCards = [kvkk, privacy, subscription].filter((x): x is NonNullable<typeof x> => !!x)
 ---
 
-<BaseLayout>
+<BaseLayout title={title} description={description}>
+  <PageMeta
+    slot="head"
+    title={title}
+    description={description}
+    jsonLd={[breadcrumbJsonLd([{ label: 'Ana sayfa', path: '/' }, { label: title, path: '/guvenlik' }])]}
+  />
 
   <PageHero
-    title="Verileriniz sizin, kontrol sizde"
-    accent="kontrol sizde"
-    eyebrow="Güvenlik"
-    lead="Pazaryeri anahtarlarınızdan operasyon verinize kadar her şey korunur ve yalnızca size aittir. Korumaları aşağıda yönetici düzeyinde özetliyoruz; merak ettiğiniz ilkenin ayrıntısını açabilirsiniz."
+    title="Güvenlik"
+    eyebrow="Güvence"
+    lead="Pazaryeri anahtarlarınızdan operasyon verinize kadar her katman, ürünün yazılımında uygulanmış korumalara dayanır. Aşağıda bunları yönetici düzeyinde özetliyoruz; ayrıntısını merak ettiğiniz her ilkeyi açabilirsiniz."
     crumbs={crumbs}
   >
-    <HeroActions
-      actions={[
-        { label: 'Güvence ilkeleri', href: '#ilkeler' },
-        { label: 'Adil rekabet', href: `#${fairSection.id}` },
-        { label: 'Kapsam ve KVKK', href: '#kapsam' },
-      ]}
-    />
+    <div class="hero-links">
+      <a class="hero-link" href="#ilkeler">Güvence ilkeleri</a>
+      <a class="hero-link hero-link--ghost" href="#kapsam">Kapsam ve KVKK</a>
+    </div>
     <Fragment slot="visual">
       <p class="panel-tag">Güvence ilkeleri</p>
       <ul class="hero-list" role="list">
@@ -78,9 +80,11 @@ const legalCards = [kvkk, privacy, subscription].filter((x): x is NonNullable<ty
   </PageHero>
 
   <Section id="ilkeler" labelledby="ilkeler-title" class="tight-section">
-    <SectionHead id="ilkeler-title" eyebrow="Yönetici özeti" title="Güvence ilkelerimiz">
+    <div class="head">
+      <p class="eyebrow">Yönetici özeti</p>
+      <h2 id="ilkeler-title">Güvence ilkelerimiz</h2>
       <p>Her ilke, ürünün bugün uyguladığı bir korumaya dayanır. Teknik ayrıntılar her kartın "Ayrıntı" bölümündedir.</p>
-    </SectionHead>
+    </div>
 
     <ol class="principles" role="list" data-testid="security-principles">
       {
@@ -132,34 +136,10 @@ const legalCards = [kvkk, privacy, subscription].filter((x): x is NonNullable<ty
     </ol>
   </Section>
 
-  <!-- PRC-MKT (K58): adil rekabet ilkesi — üst tutum; metin `src/data/fair-play.ts`, seçenekler docs/site-fair/COPY.md -->
-  <Section id={fairSection.id} labelledby="adil-rekabet-title" tone="muted" class="tight-section">
-    <div class="fair" data-testid="fair-play">
-      <div class="head head--compact fair__head">
-        <Eyebrow>{fairSection.eyebrow}</Eyebrow>
-        <h2 id="adil-rekabet-title">{fairSection.title}</h2>
-        <p>{fairSection.lead}</p>
-      </div>
-      <ol class="fair__list" role="list">
-        {
-          fairPrinciples.map((f) => (
-            <li class="fair__item" data-fair={f.id}>
-              <span class="fair__icon" aria-hidden="true"><Icon name={f.icon} size="sm" /></span>
-              <div>
-                <h3 class="fair__title">{f.title}</h3>
-                <p class="fair__text">{f.value}</p>
-              </div>
-            </li>
-          ))
-        }
-      </ol>
-    </div>
-  </Section>
-
-  <Section id="kapsam" labelledby="kapsam-title" class="tight-section">
+  <Section id="kapsam" labelledby="kapsam-title" tone="muted" class="tight-section">
     <div class="scope">
       <div class="head head--compact">
-        <Eyebrow>Şeffaflık</Eyebrow>
+        <p class="eyebrow">Şeffaflık</p>
         <h2 id="kapsam-title">Kapsam ve KVKK</h2>
         <p>
           Bu sayfa bir sertifikasyon veya bağımsız denetim belgesi değildir; yalnızca ürünün uyguladığı teknik önlemleri özetler.
@@ -203,20 +183,24 @@ const legalCards = [kvkk, privacy, subscription].filter((x): x is NonNullable<ty
 
   <CtaBand
     id="guvenlik-cta"
-    title="Güvenlik sorularınızı birlikte yanıtlayalım"
+    title="Sorularınız için bize yazın"
     text="Güvenlik yaklaşımımıza dair ek bilgi istiyorsanız iletişim sayfasından bize ulaşabilirsiniz."
     primary={{ label: 'İletişim', href: '/iletisim' }}
     secondary={{ label: 'Sık sorulan sorular', href: '/sss' }}
   />
 </BaseLayout>
 
+<script>
+  import '../scripts/interactions'
+</script>
+
 <style>
-  :global(.section.tight-section) {
+  .tight-section:global(.section) {
     padding-block: calc(var(--site-section-y) * 0.72);
   }
   .head {
     display: flex;
-    flex-wrap: wrap;
+    flex-direction: column;
     gap: var(--ek-space-2);
     max-width: 46rem;
     margin-bottom: var(--ek-space-10);
@@ -224,9 +208,12 @@ const legalCards = [kvkk, privacy, subscription].filter((x): x is NonNullable<ty
   .head--compact {
     margin-bottom: 0;
   }
-  /* SITE-DL-03: mikro bölüm etiketi kendi satırında kalır (başlıkla yan yana düşmesin). */
-  .head :global(.eyebrow) {
-    flex: 0 0 100%;
+  .eyebrow {
+    color: var(--site-link-accent);
+    font-size: var(--site-card-eyebrow-size);
+    font-weight: var(--ek-font-weight-semibold);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
   }
   .head h2 {
     color: var(--site-text-heading);
@@ -246,6 +233,38 @@ const legalCards = [kvkk, privacy, subscription].filter((x): x is NonNullable<ty
   }
 
   /* --- Hero --- */
+  .hero-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ek-space-3);
+  }
+  .hero-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--site-tap-target);
+    padding-inline: var(--ek-space-5);
+    border: var(--site-border-width) solid transparent;
+    border-radius: var(--ek-radius-lg);
+    background: var(--ek-color-surface);
+    color: var(--ek-color-primary);
+    font-weight: var(--ek-font-weight-semibold);
+    text-decoration: none;
+    transition: background-color var(--ek-duration-base) var(--ek-easing-standard), border-color var(--ek-duration-base) var(--ek-easing-standard);
+  }
+  .hero-link:hover {
+    background: color-mix(in srgb, var(--ek-color-surface) 88%, var(--ek-color-secondary));
+  }
+  .hero-link--ghost {
+    border-color: var(--site-glass-border);
+    background: var(--site-glass-bg);
+    color: var(--site-color-on-primary);
+  }
+  .hero-link--ghost:hover {
+    border-color: var(--site-color-on-primary-muted);
+  }
+  .hero-link:focus-visible {
+    outline-color: var(--site-color-on-primary);
+  }
   .panel-tag {
     margin: 0 0 var(--ek-space-3);
     color: var(--site-text-on-dark-meta);
@@ -278,82 +297,16 @@ const legalCards = [kvkk, privacy, subscription].filter((x): x is NonNullable<ty
     width: var(--ek-space-8);
     height: var(--ek-space-8);
     border-radius: var(--ek-radius-md);
-    background: var(--site-glass-bg);
+    background: color-mix(in srgb, var(--ek-color-secondary) 18%, transparent);
     color: var(--site-accent-on-dark);
-    box-sizing: border-box;
-    border: var(--site-border-width) solid var(--site-glass-border);
   }
   .hero-list a {
-    /* site-wdg W12: 44 px dokunma hedefi + hover (sss.astro hero listesiyle aynı desen). */
-    display: inline-flex;
-    align-items: center;
-    min-height: var(--site-tap-target);
     color: var(--site-text-on-dark-heading);
     font-weight: var(--ek-font-weight-medium);
-    line-height: var(--ek-line-height-tight);
     text-decoration: none;
   }
   .hero-list a:hover {
-    color: var(--site-accent-on-dark);
-  }
-
-  /* --- Adil rekabet (PRC-MKT) --- sakin, sayfanın güvence kartlarından hafif: ince çizgili liste, kontur ikon karosu */
-  .fair {
-    display: grid;
-    gap: var(--ek-space-8);
-    /* site-wdg W14: üst bar payı html scroll-padding-top’ta; burada yalnız ek boşluk. */
-    scroll-margin-top: var(--ek-space-2);
-  }
-  .fair__list {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 0 var(--ek-space-8);
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-  .fair__item {
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr);
-    gap: var(--ek-space-4);
-    align-items: start;
-    padding-block: var(--ek-space-5);
-    border-top: var(--site-border-width) solid var(--ek-color-border-default);
-  }
-  .fair__icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: var(--ek-space-10);
-    height: var(--ek-space-10);
-    border: var(--site-border-width) solid var(--site-action-border);
-    border-radius: var(--ek-radius-tile);
-    background: var(--site-action-subtle);
-    color: var(--site-action);
-  }
-  .fair__title {
-    margin-bottom: var(--ek-space-1);
-    color: var(--site-text-heading);
-    font-size: var(--ek-font-size-lg);
-    font-weight: var(--ek-font-weight-bold);
-    letter-spacing: -0.01em;
-  }
-  .fair__text {
-    color: var(--site-text-body);
-    font-size: var(--ek-font-size-md);
-    line-height: var(--site-font-body-line-height);
-  }
-  @media (min-width: 768px) {
-    .fair__list {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-  }
-  @media (min-width: 1024px) {
-    .fair {
-      grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
-      gap: var(--ek-space-12);
-      align-items: start;
-    }
+    text-decoration: underline;
   }
 
   /* --- İlkeler --- */
@@ -366,7 +319,6 @@ const legalCards = [kvkk, privacy, subscription].filter((x): x is NonNullable<ty
     list-style: none;
   }
   .principle {
-    /* SITE-DL-03: düz kart; hover/açık = lacivert tonlu çerçeve (gölge yok). */
     position: relative;
     display: flex;
     flex-direction: column;
@@ -374,16 +326,21 @@ const legalCards = [kvkk, privacy, subscription].filter((x): x is NonNullable<ty
     min-width: 0;
     padding: var(--ek-space-6);
     border: var(--site-border-width) solid var(--ek-color-border-default);
-    border-radius: var(--ek-radius-card);
-    background: var(--ek-color-surface);
-    /* site-wdg W14: üst bar payı html scroll-padding-top’ta; burada yalnız ek boşluk. */
-    scroll-margin-top: var(--ek-space-2);
-    transition: border-color var(--ek-duration-base) var(--ek-easing-standard);
+    border-radius: var(--site-radius-panel);
+    background:
+      radial-gradient(80% 60% at 0% 0%, color-mix(in srgb, var(--ek-color-secondary) 6%, transparent), transparent 70%),
+      var(--ek-color-surface);
+    box-shadow: var(--site-shadow-card);
+    scroll-margin-top: calc(var(--site-header-height) + var(--ek-space-6));
+    transition:
+      border-color var(--ek-duration-base) var(--ek-easing-standard),
+      box-shadow var(--ek-duration-base) var(--ek-easing-standard);
   }
   .principle:hover,
   .principle:focus-within,
   .principle:has(details[open]) {
-    border-color: var(--site-action-border);
+    border-color: color-mix(in srgb, var(--ek-color-secondary) 40%, var(--ek-color-border-default));
+    box-shadow: var(--site-shadow-card-hover);
   }
   .principle__icon {
     display: inline-flex;
@@ -392,10 +349,10 @@ const legalCards = [kvkk, privacy, subscription].filter((x): x is NonNullable<ty
     width: var(--ek-space-12);
     height: var(--ek-space-12);
     margin-bottom: var(--ek-space-1);
-    border-radius: var(--ek-radius-tile);
-    background: var(--site-action-subtle);
-    color: var(--site-action);
-    border: var(--site-border-width) solid var(--site-action-border);
+    border-radius: var(--ek-radius-lg);
+    background: linear-gradient(140deg, var(--ek-color-primary), var(--ek-color-primary-darken-1));
+    box-shadow: 0 var(--ek-space-2) var(--ek-space-4) calc(var(--ek-space-2) * -1) color-mix(in srgb, var(--ek-color-primary) 70%, transparent);
+    color: var(--site-color-on-primary);
   }
   .principle__title {
     color: var(--site-text-heading);
@@ -427,10 +384,6 @@ const legalCards = [kvkk, privacy, subscription].filter((x): x is NonNullable<ty
   }
   .principle__more summary::-webkit-details-marker {
     display: none;
-  }
-  /* site-wdg W18: "Ayrıntı" açıcısına hover geri bildirimi (renk; alt çizgi yok — BRAND §5). */
-  .principle__more summary:hover {
-    color: var(--site-action-emphasis);
   }
   .principle__more summary:focus-visible {
     outline: var(--site-focus-ring-width) solid var(--site-color-focus-ring);
@@ -481,7 +434,7 @@ const legalCards = [kvkk, privacy, subscription].filter((x): x is NonNullable<ty
   .claim__title :global(.icon),
   .claim__text--point :global(.icon) {
     margin-top: calc(var(--ek-space-1) * 0.5);
-    color: var(--site-action);
+    color: var(--ek-color-success);
   }
   .claim__text {
     color: var(--site-text-body);
@@ -522,26 +475,25 @@ const legalCards = [kvkk, privacy, subscription].filter((x): x is NonNullable<ty
     list-style: none;
   }
   .doc {
-    /* SITE-DL-03: düz satır kartı; hover = lacivert tonlu zemin + çerçeve. */
     display: flex;
     align-items: center;
     gap: var(--ek-space-3);
     min-height: calc(var(--site-tap-target) + var(--ek-space-4));
     padding: var(--ek-space-3) var(--ek-space-5);
     border: var(--site-border-width) solid var(--ek-color-border-default);
-    border-radius: var(--ek-radius-tile);
+    border-radius: var(--ek-radius-xl);
     background: var(--ek-color-surface);
+    box-shadow: var(--site-shadow-card);
     color: var(--site-text-heading);
     font-weight: var(--ek-font-weight-semibold);
     text-decoration: none;
-    transition: 
-      background-color var(--ek-duration-base) var(--ek-easing-standard),
-      border-color var(--ek-duration-base) var(--ek-easing-standard);
+    transition:
+      border-color var(--ek-duration-base) var(--ek-easing-standard),
+      box-shadow var(--ek-duration-base) var(--ek-easing-standard);
   }
   .doc:hover {
-    border-color: var(--site-action-border);
-    background: var(--site-action-subtle);
-    color: var(--site-action-emphasis);
+    border-color: color-mix(in srgb, var(--ek-color-secondary) 45%, var(--ek-color-border-default));
+    box-shadow: var(--site-shadow-card-hover);
   }
   .doc:focus-visible {
     outline: var(--site-focus-ring-width) solid var(--site-color-focus-ring);
@@ -554,10 +506,8 @@ const legalCards = [kvkk, privacy, subscription].filter((x): x is NonNullable<ty
     width: var(--ek-space-8);
     height: var(--ek-space-8);
     border-radius: var(--ek-radius-md);
-    background: var(--site-action-subtle);
-    color: var(--site-action);
-    box-sizing: border-box;
-    border: var(--site-border-width) solid var(--site-action-border);
+    background: var(--site-accent-soft);
+    color: var(--site-link-accent);
   }
   .doc__label {
     flex: 1;
@@ -581,9 +531,5 @@ const legalCards = [kvkk, privacy, subscription].filter((x): x is NonNullable<ty
       grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
       gap: var(--ek-space-12);
     }
-  }
-
-  .doc:hover .doc__icon {
-    background: var(--ek-color-surface);
   }
 </style>

@@ -476,74 +476,88 @@
     }
   }
 
-  /* Sahne 4 (S27a) — Otopilot anı: sinyal ve öneri kartı sırayla yükselir (k x %3); %11–13'te "Onayla" basılır ve
-   * "Onaylandı"ya döner; kanal satırlarında onay işaretleri sırayla (k x %1,2) belirir; %16'da sonuç hapı. */
-  @keyframes loop-ap-rise {
+  /* Sahne 4 — kalkandan yayılan halkalar (üç dalga), anahtar taraması, "Şifreli" ve maddeler sırayla. */
+  @keyframes loop-sec-wave {
     0%,
-    2% {
+    1% {
+      opacity: 0;
+      scale: 0.7;
+    }
+    1.6% {
+      opacity: 0.6;
+      scale: 0.78;
+    }
+    8.2% {
+      opacity: 0;
+      scale: 1.55;
+    }
+    8.3%,
+    8.6% {
+      opacity: 0;
+      scale: 0.7;
+    }
+    9.2% {
+      opacity: 0.6;
+      scale: 0.78;
+    }
+    15.8% {
+      opacity: 0;
+      scale: 1.55;
+    }
+    15.9%,
+    16.2% {
+      opacity: 0;
+      scale: 0.7;
+    }
+    16.8% {
+      opacity: 0.6;
+      scale: 0.78;
+    }
+    23.4%,
+    100% {
+      opacity: 0;
+      scale: 1.55;
+    }
+  }
+  @keyframes loop-sec-scan {
+    0%,
+    3% {
+      opacity: 0;
+      translate: -100% 0;
+    }
+    3.5% {
+      opacity: 1;
+      translate: -60% 0;
+    }
+    7.5% {
+      opacity: 1;
+      translate: 250% 0;
+    }
+    8%,
+    100% {
+      opacity: 0;
+      translate: 250% 0;
+    }
+  }
+  @keyframes loop-sec-lock {
+    0%,
+    7.4% {
+      opacity: 0;
+      scale: 0.85;
+    }
+    8.4%,
+    100% {
+      opacity: 1;
+      scale: 1;
+    }
+  }
+  @keyframes loop-sec-item {
+    0%,
+    9% {
       opacity: 0;
       translate: 0 var(--site-motion-distance);
     }
-    4%,
-    100% {
-      opacity: 1;
-      translate: 0 0;
-    }
-  }
-  @keyframes loop-ap-press {
-    0%,
-    11% {
-      scale: 1;
-    }
-    11.8% {
-      scale: 0.94;
-    }
-    12.8%,
-    100% {
-      scale: 1;
-    }
-  }
-  @keyframes loop-ap-out {
-    0%,
-    12.2% {
-      opacity: 1;
-    }
-    12.8%,
-    100% {
-      opacity: 0;
-    }
-  }
-  @keyframes loop-ap-in {
-    0%,
-    12.4% {
-      opacity: 0;
-      scale: 0.9;
-    }
-    13.2%,
-    100% {
-      opacity: 1;
-      scale: 1;
-    }
-  }
-  @keyframes loop-ap-tick {
-    0%,
-    13.4% {
-      opacity: 0;
-      scale: 0.6;
-    }
-    14.6%,
-    100% {
-      opacity: 1;
-      scale: 1;
-    }
-  }
-  @keyframes loop-ap-done {
-    0%,
-    16% {
-      opacity: 0;
-      translate: 0 var(--site-motion-distance);
-    }
-    17.6%,
+    10.5%,
     100% {
       opacity: 1;
       translate: 0 0;
@@ -570,13 +584,10 @@
       [data-part='pub-flag'],
       [data-part='pub-beam'],
       [data-part='pub-check'],
-      [data-part='ap-rise'],
-      [data-part='ap-press'],
-      [data-part='ap-out'],
-      [data-part='ap-in'],
-      [data-part='ap-tick'],
-      [data-part='ap-done'],
-      [data-part='frame-sheen']
+      [data-part='sec-wave'],
+      [data-part='sec-scan'],
+      [data-part='sec-lock'],
+      [data-part='sec-item']
     ),
   html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] :is([data-part='row'], [data-part='chan'], [data-part='hub-core'])::before,
   html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] :is([data-part='row'], [data-part='chan'], [data-part='hub-core'])::after {
@@ -607,13 +618,10 @@
       [data-part='pub-flag'],
       [data-part='pub-beam'],
       [data-part='pub-check'],
-      [data-part='ap-rise'],
-      [data-part='ap-press'],
-      [data-part='ap-out'],
-      [data-part='ap-in'],
-      [data-part='ap-tick'],
-      [data-part='ap-done'],
-      [data-part='frame-sheen']
+      [data-part='sec-wave'],
+      [data-part='sec-scan'],
+      [data-part='sec-lock'],
+      [data-part='sec-item']
     ),
   html[data-motion='play'] [data-scene='hero-mock'][data-state='play'][data-visible='true'] :is([data-part='row'], [data-part='chan'], [data-part='hub-core'])::before,
   html[data-motion='play'] [data-scene='hero-mock'][data-state='play'][data-visible='true'] :is([data-part='row'], [data-part='chan'], [data-part='hub-core'])::after {
@@ -640,51 +648,14 @@
       [data-part='pub-flag'],
       [data-part='pub-beam'],
       [data-part='pub-check'],
-      [data-part='ap-rise'],
-      [data-part='ap-press'],
-      [data-part='ap-out'],
-      [data-part='ap-in'],
-      [data-part='ap-tick'],
-      [data-part='ap-done'],
-      [data-part='frame-sheen']
+      [data-part='sec-wave'],
+      [data-part='sec-scan'],
+      [data-part='sec-lock'],
+      [data-part='sec-item']
     ),
   html[data-motion='play'] [data-scene='hero-mock'][data-state='play'][data-visible='true']:hover :is([data-part='row'], [data-part='chan'], [data-part='hub-core'])::before,
   html[data-motion='play'] [data-scene='hero-mock'][data-state='play'][data-visible='true']:hover :is([data-part='row'], [data-part='chan'], [data-part='hub-core'])::after {
     animation-play-state: paused;
-  }
-
-  /* S21 çerçeve: üst kenar ışığında her sahne geçişinde bir kez sakin parıltı (4 x 7,5 sn; yalnızca translate/opacity). */
-  @keyframes loop-frame-sheen {
-    0%,
-    25%,
-    50%,
-    75%,
-    100% {
-      opacity: 0;
-      translate: -100% 0;
-    }
-    1.5%,
-    26.5%,
-    51.5%,
-    76.5% {
-      opacity: 0.9;
-    }
-    6%,
-    24.9%,
-    31%,
-    49.9%,
-    56%,
-    74.9%,
-    81%,
-    99.9% {
-      opacity: 0;
-      translate: 350% 0;
-    }
-  }
-  html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] [data-part='frame-sheen'] {
-    animation-name: loop-frame-sheen;
-    animation-timing-function: var(--site-motion-ease-loop);
-    /* Gecikme: parıltı hiçbir sahnenin içinde değil → `--show-delay` tanımsız, gecikme 0 (döngü başıyla eş). */
   }
 
   /* Sahne kapsayıcıları ve gösterge */
@@ -772,396 +743,249 @@
     animation-name: loop-pub-check;
   }
 
-  /* Sahne 4 (S27a) — Otopilot anı: kart k döngünün %3'ü x k, onay işareti k %1,2'si x k kadar kayar */
-  html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] [data-part='ap-rise'] {
-    animation-name: loop-ap-rise;
+  /* Sahne 4 — halka k döngünün %2,5'i x k, madde k %3'ü x k kadar kayar */
+  html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] [data-part='sec-wave'] {
+    animation-name: loop-sec-wave;
+    animation-delay: calc(var(--show-delay) + var(--show-cycle) * 0.025 * var(--k, 0));
+  }
+  html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] [data-part='sec-scan'] {
+    animation-name: loop-sec-scan;
+  }
+  html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] [data-part='sec-lock'] {
+    animation-name: loop-sec-lock;
+  }
+  html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] [data-part='sec-item'] {
+    animation-name: loop-sec-item;
     animation-delay: calc(var(--show-delay) + var(--show-cycle) * 0.03 * var(--k, 0));
-  }
-  html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] [data-part='ap-press'] {
-    animation-name: loop-ap-press;
-  }
-  html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] [data-part='ap-out'] {
-    animation-name: loop-ap-out;
-  }
-  html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] [data-part='ap-in'] {
-    animation-name: loop-ap-in;
-  }
-  html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] [data-part='ap-tick'] {
-    animation-name: loop-ap-tick;
-    animation-delay: calc(var(--show-delay) + var(--show-cycle) * 0.012 * var(--k, 0));
-  }
-  html[data-motion='play'] [data-scene='hero-mock'][data-state='play'] [data-part='ap-done'] {
-    animation-name: loop-ap-done;
   }
 
   /* ---------------------------------------------------------------------------------------- */
-  /* problem-solution (S12; S26 SR3 madde 12) — "Entegrasyonik ile" SIFIR AŞIRI SATIŞ hikâyesi.      */
-  /*   Döngü 30 sn (--site-motion-loop-marquee) = 4 PERDE x 7,5 sn; her perde farklı ürün ve farklı  */
-  /*   kanaldan gelen sipariştir (ProblemSolution.astro `acts`). Perde YEREL zaman çizelgesi:        */
-  /*     %0–4    ürün ve kanal değerleri belirir (tüm kanallar aynı stok)                           */
-  /*     %8–12   sipariş gelen kanalda "Yeni sipariş" etiketi                                        */
-  /*     %10–26  ışık paketi o kanalın hattından iner -> %24–40 ortak hat parlar -> %28–36 merkeze    */
-  /*     %38–40  merkezde stok bir adet düşer + "Rezerve edildi"; sipariş gelen kanal da güncellenir   */
-  /*     %46–62  merkezden geri dalga: diğer TÜM kanalların hattında paketler aynı anda yükselir       */
-  /*     %62–67  diğer kanallar AYNI ANDA yeni değere geçer (çipte ince halka)                        */
-  /*     %64–92  "Tüm kanallarda eşzamanlı · aşırı satış yok" parlar -> %94–100 perde söner          */
-  /*   Perdeye özgü öğeler (`[data-act]`) TAM döngüde oynar, perdesi dışında görünmez; kaydırma:     */
-  /*   negatif gecikme (perde k, döngünün k/4'ünde başlar). Ortak öğeler (hat, merkez, sonuç) her     */
-  /*   perdede tekrarlar: süre döngünün dörtte biri. Tüm yüzdeler perde çizelgesinden türetilir      */
-  /*   (tam döngü % = yerel % / 4). Statik hâl = 1. perdenin son karesi (bileşen CSS'i).            */
+  /* problem-solution (S12 + S15-B) — "Entegrasyonik ile" tek merkez akışı, 12 sn sakin döngü:      */
+  /*   %0–4 kanallar kendi (farklı) değerlerini gösterir -> %6–22 ışık paketleri çipin ALTINDAN     */
+  /*   çıkıp hat boyunca iner (kanal başına küçük faz farkı) -> %18–30 ortak hat iki uçtan ortaya    */
+  /*   dolar -> %27–36 gövdeden göbeğe -> %34–52 göbekte yumuşak nabız (iki halka + ışıma) ->         */
+  /*   %46–60 geri yayılan dalga kanallara döner, paket çipin altına girer -> %58–64 değer tüm       */
+  /*   kanallarda aynı (senkron), çipte ince halka; %64–100 sakin bekleme (senkron son durum).        */
+  /*   Statik hâl (hareket kapalı / reduced / JS'siz) = senkron son durum (bileşen CSS'i).            */
   /*   "Bugün" tarafında kaos panelleri hafifçe yüzer, "Uyumsuz" işareti ölçülü söner/yanar.         */
   /* ---------------------------------------------------------------------------------------- */
-  @keyframes loop-ps-act {
-    0% {
-      opacity: 0;
-      translate: 0 calc(var(--site-motion-distance) * 0.5);
-    }
-    1%,
-    23.5% {
-      opacity: 1;
-      translate: 0 0;
-    }
-    25%,
-    100% {
-      opacity: 0;
-      translate: 0 calc(var(--site-motion-distance) * -0.5);
-    }
-  }
-  @keyframes loop-ps-order {
+  /* Değer geçişi SIRALI: eski değer aşağı söner, ardından yeni değer yukarıdan gelir (iki sayı üst üste binmez). */
+  @keyframes loop-ps-old {
     0%,
     2% {
       opacity: 0;
-      translate: 0 calc(var(--site-motion-distance) * 0.8);
-    }
-    3%,
-    23.5% {
-      opacity: 1;
-      translate: 0 0;
-    }
-    25%,
-    100% {
-      opacity: 0;
-      translate: 0 0;
-    }
-  }
-  /* Değer geçişi SIRALI: eski değer aşağı söner, ardından yeni değer yukarıdan gelir (iki sayı üst üste binmez). */
-  @keyframes loop-ps-old {
-    0% {
-      opacity: 0;
       translate: 0 calc(var(--site-motion-distance) * -0.6);
     }
-    1%,
-    15.5% {
+    4%,
+    57% {
       opacity: 1;
       translate: 0 0;
     }
-    16.25%,
-    100% {
+    59.5% {
       opacity: 0;
       translate: 0 calc(var(--site-motion-distance) * 0.6);
+    }
+    60%,
+    100% {
+      opacity: 0;
+      translate: 0 calc(var(--site-motion-distance) * -0.6);
     }
   }
   @keyframes loop-ps-new {
-    0%,
-    16% {
-      opacity: 0;
-      translate: 0 calc(var(--site-motion-distance) * -0.6);
-    }
-    16.75%,
-    23.5% {
-      opacity: 1;
-      translate: 0 0;
-    }
-    25%,
-    100% {
-      opacity: 0;
-      translate: 0 0;
-    }
-  }
-  /* Sipariş gelen kanal ve merkez: rezervasyon anında (yerel %38) güncellenir. */
-  @keyframes loop-ps-old-origin {
     0% {
-      opacity: 0;
-      translate: 0 calc(var(--site-motion-distance) * -0.6);
-    }
-    1%,
-    9.25% {
       opacity: 1;
       translate: 0 0;
     }
-    10%,
-    100% {
+    2% {
       opacity: 0;
       translate: 0 calc(var(--site-motion-distance) * 0.6);
     }
-  }
-  @keyframes loop-ps-new-origin {
-    0%,
-    9.75% {
+    2.5%,
+    59.5% {
       opacity: 0;
       translate: 0 calc(var(--site-motion-distance) * -0.6);
     }
-    10.5%,
-    23.5% {
-      opacity: 1;
-      translate: 0 0;
-    }
-    25%,
+    62%,
     100% {
-      opacity: 0;
+      opacity: 1;
       translate: 0 0;
     }
   }
   @keyframes loop-ps-in {
     0%,
-    2.5% {
-      opacity: 0;
-      translate: 0 -60%;
-    }
-    3.25% {
-      opacity: 1;
-    }
     6% {
+      opacity: 0;
+      translate: 0 -60%;
+    }
+    9% {
+      opacity: 1;
+    }
+    20% {
       opacity: 1;
       translate: 0 100%;
     }
-    6.75%,
+    23%,
     100% {
       opacity: 0;
       translate: 0 100%;
     }
   }
-  @keyframes loop-ps-back {
-    0%,
-    12.5% {
-      opacity: 0;
-      translate: 0 100%;
-    }
-    13% {
-      opacity: 1;
-    }
-    15.5% {
-      opacity: 1;
-      translate: 0 -60%;
-    }
-    16%,
-    100% {
-      opacity: 0;
-      translate: 0 -60%;
-    }
-  }
-  /* --- Ortak öğeler: perde başına bir tur (süre = döngü / 4), yüzdeler YEREL perde çizelgesidir. --- */
   @keyframes loop-ps-bus {
     0%,
-    24% {
+    18% {
       opacity: 0;
+      scale: 0 1;
     }
-    28%,
-    34% {
+    21% {
       opacity: 1;
     }
-    40%,
-    46% {
-      opacity: 0;
-    }
-    50%,
-    56% {
+    29%,
+    50% {
       opacity: 1;
+      scale: 1 1;
     }
-    62%,
+    60%,
     100% {
       opacity: 0;
+      scale: 1 1;
     }
   }
   @keyframes loop-ps-stem {
     0%,
-    28% {
+    27% {
       opacity: 0;
       translate: 0 0;
     }
-    30% {
+    29% {
       opacity: 1;
     }
-    36% {
+    34% {
       opacity: 1;
       translate: 0 100%;
     }
-    37%,
-    46% {
-      opacity: 0;
-      translate: 0 100%;
-    }
-    47% {
-      opacity: 1;
-    }
-    51% {
-      opacity: 1;
-      translate: 0 0;
-    }
-    52%,
+    36%,
     100% {
       opacity: 0;
-      translate: 0 0;
+      translate: 0 100%;
     }
   }
   @keyframes loop-ps-ring {
     0%,
-    38% {
+    34% {
       opacity: 0;
       scale: 1;
     }
-    40% {
+    36% {
       opacity: 0.8;
     }
-    56%,
+    50%,
     100% {
       opacity: 0;
-      scale: 1.12 1.45;
+      scale: 1.9;
     }
   }
   @keyframes loop-ps-ring-late {
     0%,
-    43% {
+    39% {
       opacity: 0;
       scale: 1;
     }
-    45% {
+    41% {
       opacity: 0.6;
     }
-    61%,
+    55%,
     100% {
       opacity: 0;
-      scale: 1.12 1.45;
+      scale: 1.9;
     }
   }
   @keyframes loop-ps-glow {
     0%,
     30%,
-    72%,
+    60%,
     100% {
-      opacity: 0.15;
-      scale: 0.97;
+      opacity: 0.2;
+      scale: 0.9;
     }
     42% {
       opacity: 0.7;
-      scale: 1.04;
-    }
-  }
-  /* "Rezerve edildi": rezervasyon anında kısa bir vurguyla belirir, perde sonunda söner. */
-  @keyframes loop-ps-resv {
-    0%,
-    37% {
-      opacity: 0;
-      scale: 0.92;
-    }
-    40% {
-      opacity: 1;
-      scale: 1.06;
-    }
-    43%,
-    88% {
-      opacity: 1;
-      scale: 1;
-    }
-    94%,
-    100% {
-      opacity: 0;
-      scale: 0.92;
-    }
-  }
-  @keyframes loop-ps-halo {
-    0%,
-    63% {
-      opacity: 0;
-      scale: 1;
-    }
-    66% {
-      opacity: 0.9;
-    }
-    80%,
-    100% {
-      opacity: 0;
-      scale: 1.2 1.6;
-    }
-  }
-  /* Sonuç: senkron anına kadar sakin (okunur), senkronda tam parlaklık + kenar ışığı. */
-  @keyframes loop-ps-result-text {
-    0%,
-    62% {
-      opacity: 0.45;
-    }
-    67%,
-    92% {
-      opacity: 1;
-    }
-    100% {
-      opacity: 0.45;
+      scale: 1.2;
     }
   }
   @keyframes loop-ps-result {
     0%,
-    63% {
+    42% {
       opacity: 0;
     }
-    68%,
-    86% {
+    48%,
+    58% {
       opacity: 1;
     }
-    96%,
+    72%,
     100% {
       opacity: 0;
     }
   }
-  /* Perdeye özgü öğeler: tam döngü. */
+  @keyframes loop-ps-back {
+    0%,
+    46% {
+      opacity: 0;
+      translate: 0 100%;
+    }
+    48% {
+      opacity: 1;
+    }
+    58% {
+      opacity: 1;
+      translate: 0 -60%;
+    }
+    59%,
+    100% {
+      opacity: 0;
+      translate: 0 -60%;
+    }
+  }
+  @keyframes loop-ps-halo {
+    0%,
+    58% {
+      opacity: 0;
+      scale: 1;
+    }
+    60% {
+      opacity: 0.9;
+    }
+    74%,
+    100% {
+      opacity: 0;
+      scale: 1.25 1.7;
+    }
+  }
   html[data-motion='play'] [data-scene='problem-solution'][data-state='play'] :is(
-      [data-part='act'],
-      [data-part='order'],
       [data-part='chip-old'],
       [data-part='chip-new'],
-      [data-part='chip-old-origin'],
-      [data-part='chip-new-origin'],
-      [data-part='hub-old'],
-      [data-part='hub-new'],
       [data-part='packet'],
-      [data-part='packet-back']
-    ) {
-    animation-duration: var(--site-motion-loop-marquee);
-    animation-timing-function: var(--site-motion-ease-loop);
-    animation-iteration-count: infinite;
-    animation-play-state: paused;
-  }
-  /* Ortak öğeler: perde başına bir tur. */
-  html[data-motion='play'] [data-scene='problem-solution'][data-state='play'] :is([data-part='stem-packet'], [data-part='hub-ring'], [data-part='resv'], [data-part='result-text']),
+      [data-part='packet-back'],
+      [data-part='stem-packet'],
+      [data-part='hub-ring']
+    ),
+  html[data-motion='play'] [data-scene='problem-solution'][data-state='play'] :is([data-part='bus'])::before,
   html[data-motion='play'] [data-scene='problem-solution'][data-state='play'] :is([data-part='bus'], [data-part='hub'], [data-part='result'], [data-part='chip'])::after {
-    animation-duration: calc(var(--site-motion-loop-marquee) / 4);
+    animation-duration: var(--site-motion-loop-scene);
     animation-timing-function: var(--site-motion-ease-loop);
     animation-iteration-count: infinite;
     animation-play-state: paused;
   }
   html[data-motion='play'] [data-scene='problem-solution'][data-state='play'][data-visible='true'] :is(
-      [data-part='act'],
-      [data-part='order'],
       [data-part='chip-old'],
       [data-part='chip-new'],
-      [data-part='chip-old-origin'],
-      [data-part='chip-new-origin'],
-      [data-part='hub-old'],
-      [data-part='hub-new'],
       [data-part='packet'],
       [data-part='packet-back'],
       [data-part='stem-packet'],
-      [data-part='hub-ring'],
-      [data-part='resv'],
-      [data-part='result-text']
+      [data-part='hub-ring']
     ),
+  html[data-motion='play'] [data-scene='problem-solution'][data-state='play'][data-visible='true'] :is([data-part='bus'])::before,
   html[data-motion='play'] [data-scene='problem-solution'][data-state='play'][data-visible='true'] :is([data-part='bus'], [data-part='hub'], [data-part='result'], [data-part='chip'])::after {
     animation-play-state: running;
-  }
-  html[data-motion='play'] [data-scene='problem-solution'][data-state='play'] [data-part='act'] {
-    animation-name: loop-ps-act;
-  }
-  html[data-motion='play'] [data-scene='problem-solution'][data-state='play'] [data-part='order'] {
-    animation-name: loop-ps-order;
   }
   html[data-motion='play'] [data-scene='problem-solution'][data-state='play'] [data-part='chip-old'] {
     animation-name: loop-ps-old;
@@ -1169,18 +993,13 @@
   html[data-motion='play'] [data-scene='problem-solution'][data-state='play'] [data-part='chip-new'] {
     animation-name: loop-ps-new;
   }
-  html[data-motion='play'] [data-scene='problem-solution'][data-state='play'] :is([data-part='chip-old-origin'], [data-part='hub-old']) {
-    animation-name: loop-ps-old-origin;
-  }
-  html[data-motion='play'] [data-scene='problem-solution'][data-state='play'] :is([data-part='chip-new-origin'], [data-part='hub-new']) {
-    animation-name: loop-ps-new-origin;
-  }
   html[data-motion='play'] [data-scene='problem-solution'][data-state='play'] [data-part='packet'] {
     animation-name: loop-ps-in;
   }
   html[data-motion='play'] [data-scene='problem-solution'][data-state='play'] [data-part='packet-back'] {
     animation-name: loop-ps-back;
   }
+  html[data-motion='play'] [data-scene='problem-solution'][data-state='play'] [data-part='bus']:not(.ps__stem)::before,
   html[data-motion='play'] [data-scene='problem-solution'][data-state='play'] [data-part='bus']:not(.ps__stem)::after {
     animation-name: loop-ps-bus;
   }
@@ -1196,27 +1015,24 @@
   html[data-motion='play'] [data-scene='problem-solution'][data-state='play'] [data-part='hub']::after {
     animation-name: loop-ps-glow;
   }
-  html[data-motion='play'] [data-scene='problem-solution'][data-state='play'] [data-part='resv'] {
-    animation-name: loop-ps-resv;
-  }
-  html[data-motion='play'] [data-scene='problem-solution'][data-state='play'] [data-part='result-text'] {
-    animation-name: loop-ps-result-text;
-  }
   html[data-motion='play'] [data-scene='problem-solution'][data-state='play'] [data-part='result']::after {
     animation-name: loop-ps-result;
   }
   html[data-motion='play'] [data-scene='problem-solution'][data-state='play'] [data-part='chip']::after {
     animation-name: loop-ps-halo;
   }
-  /* Perde kaydırması: perde k döngünün k/4'ünde başlar (negatif gecikme; 0. perde gecikmesiz). */
-  html[data-motion='play'] [data-scene='problem-solution'][data-state='play'] [data-act='1'] {
-    animation-delay: calc(var(--site-motion-loop-marquee) * -0.75);
+  /* Kanal başına küçük faz gecikmesi (döngünün %1,5'i x sıra): negatif gecikme = aynı döngüde biraz geriden gelir. */
+  html[data-motion='play'] [data-scene='problem-solution'][data-state='play'] .ps__node:nth-child(2) :is([data-part='packet'], [data-part='packet-back'], [data-part='chip-old'], [data-part='chip-new']),
+  html[data-motion='play'] [data-scene='problem-solution'][data-state='play'] .ps__node:nth-child(2) [data-part='chip']::after {
+    animation-delay: calc(var(--site-motion-loop-scene) * -0.985);
   }
-  html[data-motion='play'] [data-scene='problem-solution'][data-state='play'] [data-act='2'] {
-    animation-delay: calc(var(--site-motion-loop-marquee) * -0.5);
+  html[data-motion='play'] [data-scene='problem-solution'][data-state='play'] .ps__node:nth-child(3) :is([data-part='packet'], [data-part='packet-back'], [data-part='chip-old'], [data-part='chip-new']),
+  html[data-motion='play'] [data-scene='problem-solution'][data-state='play'] .ps__node:nth-child(3) [data-part='chip']::after {
+    animation-delay: calc(var(--site-motion-loop-scene) * -0.97);
   }
-  html[data-motion='play'] [data-scene='problem-solution'][data-state='play'] [data-act='3'] {
-    animation-delay: calc(var(--site-motion-loop-marquee) * -0.25);
+  html[data-motion='play'] [data-scene='problem-solution'][data-state='play'] .ps__node:nth-child(4) :is([data-part='packet'], [data-part='packet-back'], [data-part='chip-old'], [data-part='chip-new']),
+  html[data-motion='play'] [data-scene='problem-solution'][data-state='play'] .ps__node:nth-child(4) [data-part='chip']::after {
+    animation-delay: calc(var(--site-motion-loop-scene) * -0.955);
   }
 
   @keyframes loop-float {
@@ -1258,6 +1074,255 @@
   }
   html[data-motion='play'] [data-scene='problem-solution'][data-state='play'][data-visible='true'] [data-part='flag'] {
     animation-play-state: running;
+  }
+
+  /* ---------------------------------------------------------------------------------------- */
+  /* story-step — adımlar arasında akan veri paketi (küçük nabız) + mini arayüzde durum rozeti   */
+  /*   nabzı (ikinci rozet ara sıra belirip sabit rozetin üstüne biner, sonra geri söner)         */
+  /* ---------------------------------------------------------------------------------------- */
+  @keyframes loop-story-packet {
+    0%,
+    6% {
+      opacity: 0;
+      translate: -50% 0;
+    }
+    16%,
+    70% {
+      opacity: 1;
+    }
+    82%,
+    100% {
+      opacity: 0;
+      translate: -50% var(--site-motion-distance);
+    }
+  }
+  html[data-motion='play'] [data-scene='story-step'][data-state='play'] [data-part='story-packet'] {
+    animation: loop-story-packet var(--site-motion-loop-scene) var(--site-motion-ease-loop) infinite paused;
+  }
+  html[data-motion='play'] [data-scene='story-step'][data-state='play'][data-visible='true'] [data-part='story-packet'] {
+    animation-play-state: running;
+  }
+  /* ---------------------------------------------------------------------------------------- */
+  /* story-step canlı sahneleri (S12) — her sahne 6 sn'lik sakin bir döngü; statik hâl = son durum   */
+  /*   (sipariş listede, stok 11, kanallar güncel, paket varışta, iade adımları tamam)               */
+  /* ---------------------------------------------------------------------------------------- */
+  @keyframes loop-viz-spark {
+    0% {
+      opacity: 0;
+      translate: 0 0;
+    }
+    10% {
+      opacity: 1;
+    }
+    42% {
+      opacity: 1;
+      translate: 100% 0;
+    }
+    48%,
+    100% {
+      opacity: 0;
+      translate: 100% 0;
+    }
+  }
+  @keyframes loop-viz-drop {
+    0%,
+    40% {
+      opacity: 0;
+      translate: calc(var(--site-motion-distance) * -2) 0;
+    }
+    52%,
+    100% {
+      opacity: 1;
+      translate: 0 0;
+    }
+  }
+  /* Sayaç: eski sayı yukarı çıkıp tamamen söndükten SONRA yenisi aşağıdan gelir (üst üste binme yok). */
+  @keyframes loop-viz-count-out {
+    0%,
+    40% {
+      opacity: 1;
+      translate: 0 0;
+    }
+    45%,
+    100% {
+      opacity: 0;
+      translate: 0 calc(var(--site-motion-distance) * -4);
+    }
+  }
+  @keyframes loop-viz-count-in {
+    0%,
+    45% {
+      opacity: 0;
+      translate: 0 calc(var(--site-motion-distance) * 4);
+    }
+    51%,
+    100% {
+      opacity: 1;
+      translate: 0 0;
+    }
+  }
+  @keyframes loop-viz-meter {
+    0%,
+    40% {
+      scale: 0.923 1;
+    }
+    52%,
+    100% {
+      scale: 0.846 1;
+    }
+  }
+  @keyframes loop-viz-lock {
+    0%,
+    42% {
+      opacity: 0.35;
+      scale: 0.85;
+    }
+    54%,
+    100% {
+      opacity: 1;
+      scale: 1;
+    }
+  }
+  @keyframes loop-viz-wave {
+    0% {
+      opacity: 0.8;
+      scale: 0.5;
+    }
+    70%,
+    100% {
+      opacity: 0;
+      scale: 1.9;
+    }
+  }
+  @keyframes loop-viz-chan {
+    0%,
+    18% {
+      opacity: 0.4;
+      scale: 0.9;
+    }
+    28% {
+      opacity: 1;
+      scale: 1.12;
+    }
+    40%,
+    100% {
+      opacity: 1;
+      scale: 1;
+    }
+  }
+  @keyframes loop-viz-parcel {
+    0% {
+      opacity: 0;
+      translate: 0 0;
+    }
+    10% {
+      opacity: 1;
+    }
+    60%,
+    88% {
+      opacity: 1;
+      translate: 100% 0;
+    }
+    100% {
+      opacity: 0;
+      translate: 100% 0;
+    }
+  }
+  @keyframes loop-viz-progress {
+    0%,
+    10% {
+      scale: 0 1;
+    }
+    35%,
+    50% {
+      scale: 0.5 1;
+    }
+    75%,
+    100% {
+      scale: 1 1;
+    }
+  }
+  html[data-motion='play'] [data-scene='story-step'][data-state='play'] :is(
+      [data-part='viz-spark'],
+      [data-part='viz-drop'],
+      [data-part='viz-count-out'],
+      [data-part='viz-count-in'],
+      [data-part='viz-meter'],
+      [data-part='viz-lock'],
+      [data-part='viz-wave'],
+      [data-part='viz-chan'],
+      [data-part='viz-parcel']
+    ) {
+    animation-duration: var(--site-motion-ambient-fast);
+    animation-timing-function: var(--site-motion-ease-loop);
+    animation-iteration-count: infinite;
+    animation-fill-mode: both;
+    animation-play-state: paused;
+  }
+  html[data-motion='play'] [data-scene='story-step'][data-state='play'] [data-part='viz-progress'] {
+    animation: loop-viz-progress var(--site-motion-loop-scene) var(--site-motion-ease-loop) infinite paused;
+  }
+  html[data-motion='play'] [data-scene='story-step'][data-state='play'][data-visible='true'] :is(
+      [data-part='viz-spark'],
+      [data-part='viz-drop'],
+      [data-part='viz-count-out'],
+      [data-part='viz-count-in'],
+      [data-part='viz-meter'],
+      [data-part='viz-lock'],
+      [data-part='viz-wave'],
+      [data-part='viz-chan'],
+      [data-part='viz-parcel'],
+      [data-part='viz-progress']
+    ) {
+    animation-play-state: running;
+  }
+  html[data-motion='play'] [data-scene='story-step'][data-state='play'] [data-part='viz-spark'] {
+    animation-name: loop-viz-spark;
+  }
+  html[data-motion='play'] [data-scene='story-step'][data-state='play'] [data-part='viz-drop'] {
+    animation-name: loop-viz-drop;
+  }
+  html[data-motion='play'] [data-scene='story-step'][data-state='play'] [data-part='viz-count-out'] {
+    animation-name: loop-viz-count-out;
+  }
+  html[data-motion='play'] [data-scene='story-step'][data-state='play'] [data-part='viz-count-in'] {
+    animation-name: loop-viz-count-in;
+  }
+  html[data-motion='play'] [data-scene='story-step'][data-state='play'] [data-part='viz-meter'] {
+    animation-name: loop-viz-meter;
+  }
+  html[data-motion='play'] [data-scene='story-step'][data-state='play'] [data-part='viz-lock'] {
+    animation-name: loop-viz-lock;
+  }
+  html[data-motion='play'] [data-scene='story-step'][data-state='play'] [data-part='viz-wave'] {
+    animation-name: loop-viz-wave;
+  }
+  html[data-motion='play'] [data-scene='story-step'][data-state='play'] [data-part='viz-wave']:nth-child(2) {
+    animation-delay: calc(var(--site-motion-ambient-fast) * -0.33);
+  }
+  html[data-motion='play'] [data-scene='story-step'][data-state='play'] [data-part='viz-wave']:nth-child(3) {
+    animation-delay: calc(var(--site-motion-ambient-fast) * -0.66);
+  }
+  html[data-motion='play'] [data-scene='story-step'][data-state='play'] [data-part='viz-chan'] {
+    animation-name: loop-viz-chan;
+  }
+  html[data-motion='play'] [data-scene='story-step'][data-state='play'] [data-part='viz-chan']:nth-child(2) {
+    animation-delay: var(--site-motion-stagger);
+  }
+  html[data-motion='play'] [data-scene='story-step'][data-state='play'] [data-part='viz-chan']:nth-child(3) {
+    animation-delay: calc(var(--site-motion-stagger) * 2);
+  }
+  html[data-motion='play'] [data-scene='story-step'][data-state='play'] [data-part='viz-chan']:nth-child(4) {
+    animation-delay: calc(var(--site-motion-stagger) * 3);
+  }
+  html[data-motion='play'] [data-scene='story-step'][data-state='play'] [data-part='viz-chan']:nth-child(5) {
+    animation-delay: calc(var(--site-motion-stagger) * 4);
+  }
+  html[data-motion='play'] [data-scene='story-step'][data-state='play'] [data-part='viz-chan']:nth-child(n + 6) {
+    animation-delay: calc(var(--site-motion-stagger) * 5);
+  }
+  html[data-motion='play'] [data-scene='story-step'][data-state='play'] [data-part='viz-parcel'] {
+    animation-name: loop-viz-parcel;
   }
 
   /* ---------------------------------------------------------------------------------------- */
@@ -1325,6 +1390,27 @@
   }
 
   /* ---------------------------------------------------------------------------------------- */
+  /* marquee — yetenek şeridi (30 sn / tam küme, S13: ray içinde); üzerine gelince ve durdurulunca durur */
+  /* ---------------------------------------------------------------------------------------- */
+  @keyframes loop-marquee {
+    from {
+      translate: 0 0;
+    }
+    to {
+      translate: -50% 0;
+    }
+  }
+  html[data-motion='play'] [data-scene='marquee'][data-state='play'] .marquee__track {
+    animation: loop-marquee var(--site-motion-loop-marquee) var(--site-motion-ease-linear) infinite paused;
+  }
+  html[data-motion='play'] [data-scene='marquee'][data-state='play'][data-visible='true'] .marquee__track {
+    animation-play-state: running;
+  }
+  html[data-motion='play'] [data-scene='marquee'][data-state='play'][data-visible='true']:hover .marquee__track {
+    animation-play-state: paused;
+  }
+
+  /* ---------------------------------------------------------------------------------------- */
   /* request-guard — denetim yolunda yavaş bir ışın (6 sn) yukarıdan aşağı süzülür                  */
   /* ---------------------------------------------------------------------------------------- */
   @keyframes loop-beam {
@@ -1347,1172 +1433,4 @@
   html[data-motion='play'] [data-scene='request-guard'][data-state='play'][data-visible='true'] [data-part='beam'] {
     animation-play-state: running;
   }
-
-  /* ---------------------------------------------------------------------------------------- */
-  /* assistant-chat (S18) — Asistan hero'su: 30 sn'lik TEK zaman çizelgesi (örnek senaryo).         */
-  /*   %2–4 soru belirir -> %5–13 "yazıyor" -> %13–16 sonuç kartı (satırlar stagger ile) ->           */
-  /*   %37–40 ikinci istek -> %42–51 "yazıyor" -> %51–54 onay kartı -> %68–82 onay düğmesi vurgusu -> */
-  /*   %92–96 sakin çıkış, %96–100 boş sahne (döngü başı = son). Statik hâl (ChatScene.astro): tüm     */
-  /*   diyalog görünür, onay kartı "onay bekliyor"; yazıyor göstergesi ve vurgu halkası gizli.         */
-  /* ---------------------------------------------------------------------------------------- */
-  @keyframes loop-ai-ask1 {
-    0%,
-    2% {
-      opacity: 0;
-      translate: 0 var(--site-motion-distance);
-    }
-    4%,
-    92% {
-      opacity: 1;
-      translate: 0 0;
-    }
-    96%,
-    100% {
-      opacity: 0;
-      translate: 0 0;
-    }
-  }
-  @keyframes loop-ai-typing1 {
-    0%,
-    5% {
-      opacity: 0;
-    }
-    6.5%,
-    12% {
-      opacity: 1;
-    }
-    13.5%,
-    100% {
-      opacity: 0;
-    }
-  }
-  @keyframes loop-ai-result {
-    0%,
-    13% {
-      opacity: 0;
-      translate: 0 var(--site-motion-distance);
-    }
-    16%,
-    92% {
-      opacity: 1;
-      translate: 0 0;
-    }
-    96%,
-    100% {
-      opacity: 0;
-      translate: 0 0;
-    }
-  }
-  @keyframes loop-ai-row {
-    0%,
-    14% {
-      opacity: 0;
-      translate: calc(var(--site-motion-distance) * -1) 0;
-    }
-    17.5%,
-    92% {
-      opacity: 1;
-      translate: 0 0;
-    }
-    96%,
-    100% {
-      opacity: 0;
-      translate: 0 0;
-    }
-  }
-  @keyframes loop-ai-ask2 {
-    0%,
-    37% {
-      opacity: 0;
-      translate: 0 var(--site-motion-distance);
-    }
-    40%,
-    92% {
-      opacity: 1;
-      translate: 0 0;
-    }
-    96%,
-    100% {
-      opacity: 0;
-      translate: 0 0;
-    }
-  }
-  @keyframes loop-ai-typing2 {
-    0%,
-    42% {
-      opacity: 0;
-    }
-    43.5%,
-    50% {
-      opacity: 1;
-    }
-    51.5%,
-    100% {
-      opacity: 0;
-    }
-  }
-  @keyframes loop-ai-approve {
-    0%,
-    51% {
-      opacity: 0;
-      translate: 0 var(--site-motion-distance);
-      scale: var(--site-motion-scale-from);
-    }
-    54%,
-    92% {
-      opacity: 1;
-      translate: 0 0;
-      scale: 1;
-    }
-    96%,
-    100% {
-      opacity: 0;
-      translate: 0 0;
-      scale: 1;
-    }
-  }
-  /* Onay düğmesine yönelen dikkat: yumuşak halka iki kez belirir (yalnızca opacity). */
-  @keyframes loop-ai-focus {
-    0%,
-    68% {
-      opacity: 0;
-    }
-    71%,
-    73% {
-      opacity: 1;
-    }
-    75.5% {
-      opacity: 0.25;
-    }
-    78%,
-    80% {
-      opacity: 1;
-    }
-    83%,
-    100% {
-      opacity: 0;
-    }
-  }
-  /* "Yazıyor" noktaları: 6 sn'de sakin bir dalga (yalnızca opacity). */
-  @keyframes loop-ai-dot {
-    0%,
-    8%,
-    16%,
-    24%,
-    32%,
-    40%,
-    48%,
-    56%,
-    64%,
-    72%,
-    80%,
-    88%,
-    96%,
-    100% {
-      opacity: 0.35;
-    }
-    4%,
-    12%,
-    20%,
-    28%,
-    36%,
-    44%,
-    52%,
-    60%,
-    68%,
-    76%,
-    84%,
-    92% {
-      opacity: 1;
-    }
-  }
-  html[data-motion='play'] [data-scene='assistant-chat'][data-state='play'] [data-part='ai-ask1'] {
-    animation: loop-ai-ask1 var(--site-motion-loop-marquee) var(--site-motion-ease-loop) infinite paused;
-  }
-  html[data-motion='play'] [data-scene='assistant-chat'][data-state='play'] [data-part='ai-typing1'] {
-    animation: loop-ai-typing1 var(--site-motion-loop-marquee) var(--site-motion-ease-loop) infinite paused;
-  }
-  html[data-motion='play'] [data-scene='assistant-chat'][data-state='play'] [data-part='ai-result'] {
-    animation: loop-ai-result var(--site-motion-loop-marquee) var(--site-motion-ease-loop) infinite paused;
-  }
-  html[data-motion='play'] [data-scene='assistant-chat'][data-state='play'] [data-part='ai-row'] {
-    animation: loop-ai-row var(--site-motion-loop-marquee) var(--site-motion-ease-loop) infinite paused;
-    animation-delay: calc(var(--site-motion-stagger) * var(--k, 0));
-    animation-fill-mode: backwards;
-  }
-  html[data-motion='play'] [data-scene='assistant-chat'][data-state='play'] [data-part='ai-ask2'] {
-    animation: loop-ai-ask2 var(--site-motion-loop-marquee) var(--site-motion-ease-loop) infinite paused;
-  }
-  html[data-motion='play'] [data-scene='assistant-chat'][data-state='play'] [data-part='ai-typing2'] {
-    animation: loop-ai-typing2 var(--site-motion-loop-marquee) var(--site-motion-ease-loop) infinite paused;
-  }
-  html[data-motion='play'] [data-scene='assistant-chat'][data-state='play'] [data-part='ai-approve'] {
-    animation: loop-ai-approve var(--site-motion-loop-marquee) var(--site-motion-ease-loop) infinite paused;
-  }
-  html[data-motion='play'] [data-scene='assistant-chat'][data-state='play'] [data-part='ai-press'] {
-    animation: loop-ai-focus var(--site-motion-loop-marquee) var(--site-motion-ease-loop) infinite paused;
-  }
-  html[data-motion='play'] [data-scene='assistant-chat'][data-state='play'] [data-part='ai-dot'] {
-    animation: loop-ai-dot var(--site-motion-ambient-fast) var(--site-motion-ease-loop) infinite paused;
-    animation-delay: calc(var(--site-motion-stagger) * var(--k, 0) * 2);
-    animation-fill-mode: backwards;
-  }
-  html[data-motion='play'] [data-scene='assistant-chat'][data-state='play'][data-visible='true'] :is(
-      [data-part='ai-ask1'],
-      [data-part='ai-typing1'],
-      [data-part='ai-result'],
-      [data-part='ai-row'],
-      [data-part='ai-ask2'],
-      [data-part='ai-typing2'],
-      [data-part='ai-approve'],
-      [data-part='ai-press'],
-      [data-part='ai-dot']
-    ) {
-    animation-play-state: running;
-  }
-  /* Üzerine gelince (okurken) sahne duraklar; ayrılınca kaldığı yerden sürer. */
-  html[data-motion='play'] [data-scene='assistant-chat'][data-state='play'][data-visible='true']:hover :is(
-      [data-part='ai-ask1'],
-      [data-part='ai-typing1'],
-      [data-part='ai-result'],
-      [data-part='ai-row'],
-      [data-part='ai-ask2'],
-      [data-part='ai-typing2'],
-      [data-part='ai-approve'],
-      [data-part='ai-press'],
-      [data-part='ai-dot']
-    ) {
-    animation-play-state: paused;
-  }
-
-  /* ---------------------------------------------------------------------------------------- */
-  /* agent-console (S22) — ajan sayfası hero konsolu: durum noktalarında sakin ışıma (6 sn, satır  */
-  /*   başına kaydırılmış) + konsolu yukarıdan aşağı tarayan ince ışık (12 sn). Statik hâl: noktalar */
-  /*   dolu, tarama ışığı görünmez (AgentConsole.astro).                                           */
-  /* agent-loop (S22) — ajan döngüsü: geniş ekranda iz çizgisi boyunca akan ışık (12 sn) ve sırası   */
-  /*   gelen düğümde hafif büyüme. Statik hâl: ışık yok, düğümler dolu (AgentLoop.astro).           */
-  /* ---------------------------------------------------------------------------------------- */
-  @keyframes loop-agent-live {
-    0%,
-    100% {
-      opacity: 1;
-    }
-    50% {
-      opacity: 0.35;
-    }
-  }
-  @keyframes loop-agent-scan {
-    0% {
-      opacity: 0;
-      translate: 0 -100%;
-    }
-    10% {
-      opacity: 1;
-    }
-    60% {
-      opacity: 1;
-      translate: 0 600%;
-    }
-    70%,
-    100% {
-      opacity: 0;
-      translate: 0 600%;
-    }
-  }
-  @keyframes loop-agent-trace {
-    0% {
-      opacity: 0;
-      translate: 0 0;
-    }
-    6% {
-      opacity: 1;
-    }
-    88% {
-      opacity: 1;
-      translate: 100% 0;
-    }
-    94%,
-    100% {
-      opacity: 0;
-      translate: 100% 0;
-    }
-  }
-  @keyframes loop-agent-beacon {
-    0%,
-    10%,
-    100% {
-      scale: 1;
-    }
-    4% {
-      scale: 1.08;
-    }
-  }
-  html[data-motion='play'] [data-scene='agent-console'][data-state='play'] [data-part='agent-live'] {
-    animation: loop-agent-live var(--site-motion-ambient-fast) var(--site-motion-ease-loop) infinite paused;
-    animation-delay: calc(var(--site-motion-phase) * var(--k, 0));
-    animation-fill-mode: backwards;
-  }
-  html[data-motion='play'] [data-scene='agent-console'][data-state='play'] [data-part='agent-scan'] {
-    animation: loop-agent-scan var(--site-motion-loop-scene) var(--site-motion-ease-loop) infinite paused;
-  }
-  html[data-motion='play'] [data-scene='agent-loop'][data-state='play'] [data-part='loop-trace'] {
-    animation: loop-agent-trace var(--site-motion-loop-scene) var(--site-motion-ease-loop) infinite paused;
-  }
-  html[data-motion='play'] [data-scene='agent-loop'][data-state='play'] [data-part='loop-node'] {
-    animation: loop-agent-beacon var(--site-motion-loop-scene) var(--site-motion-ease-loop) infinite paused;
-    animation-delay: calc(var(--site-motion-loop-scene) * 0.2 * var(--k, 0));
-    animation-fill-mode: backwards;
-  }
-  html[data-motion='play'] [data-scene='agent-console'][data-state='play'][data-visible='true'] :is([data-part='agent-live'], [data-part='agent-scan']),
-  html[data-motion='play'] [data-scene='agent-loop'][data-state='play'][data-visible='true'] :is([data-part='loop-trace'], [data-part='loop-node']) {
-    animation-play-state: running;
-  }
-
-  /* ===== SITE-DL F1: yetenek karoları döngüleri (başlangıç) ===== */
-  /* ---------------------------------------------------------------------------------------- */
-  /* stock-single-winner (SITE-DL F1) — "Aşırı satışa karşı stok rezervasyonu": 12 sn'lik ADIM ADIM döngü. */
-  /*   %5–9   son adet için iki kanaldan AYNI ANDA sipariş gelir                                     */
-  /*   %13–24 iki nokta hatlardan rezervasyon çekirdeğine akar                                       */
-  /*   %25–30 çekirdek: kalan 1 -> 0, kilit ("Rezervasyon") yanar                                    */
-  /*   %31–42 ilk sipariş: "Rezerve edildi"      %41–52 ikinci sipariş: "Aşırı satış olarak işaretlendi" */
-  /*   %56–68 aynı ürünün stoku kanallarda sırayla 1 -> 0 (kanal k: +%3 x k)                         */
-  /*   %68–88 son kare okunur; %88–100 sahne başa döner. Durağan hâl = son kare (Capabilities.astro). */
-  /* ---------------------------------------------------------------------------------------- */
-  @keyframes loop-stock-order {
-    0%,
-    5% {
-      opacity: 0;
-      translate: calc(var(--site-motion-distance) * -3) 0;
-    }
-    9%,
-    93% {
-      opacity: 1;
-      translate: 0 0;
-    }
-    97%,
-    100% {
-      opacity: 0;
-      translate: 0 0;
-    }
-  }
-  @keyframes loop-stock-carry-in {
-    0%,
-    12% {
-      opacity: 0;
-      translate: 0 0;
-    }
-    13% {
-      opacity: 1;
-      translate: 0 0;
-    }
-    18% {
-      opacity: 1;
-      translate: var(--m1);
-    }
-    23% {
-      opacity: 1;
-      translate: var(--m2);
-    }
-    24%,
-    100% {
-      opacity: 0;
-      translate: var(--m2);
-    }
-  }
-  @keyframes loop-stock-flash {
-    0%,
-    24% {
-      opacity: 0;
-    }
-    26% {
-      opacity: 1;
-    }
-    34%,
-    100% {
-      opacity: 0;
-    }
-  }
-  @keyframes loop-stock-old {
-    0%,
-    25% {
-      opacity: 1;
-      translate: 0 0;
-    }
-    28%,
-    96% {
-      opacity: 0;
-      translate: 0 calc(var(--site-motion-distance) * -1.5);
-    }
-    100% {
-      opacity: 1;
-      translate: 0 0;
-    }
-  }
-  @keyframes loop-stock-new {
-    0%,
-    25% {
-      opacity: 0;
-      translate: 0 calc(var(--site-motion-distance) * 1.5);
-    }
-    28%,
-    96% {
-      opacity: 1;
-      translate: 0 0;
-    }
-    100% {
-      opacity: 0;
-      translate: 0 0;
-    }
-  }
-  @keyframes loop-stock-lock {
-    0%,
-    26% {
-      opacity: 0;
-      scale: 0.9;
-    }
-    30%,
-    94% {
-      opacity: 1;
-      scale: 1;
-    }
-    98%,
-    100% {
-      opacity: 0;
-      scale: 1;
-    }
-  }
-  @keyframes loop-stock-carry-ok {
-    0%,
-    30% {
-      opacity: 0;
-      translate: 0 0;
-    }
-    31% {
-      opacity: 1;
-      translate: 0 0;
-    }
-    36% {
-      opacity: 1;
-      translate: var(--m1);
-    }
-    41% {
-      opacity: 1;
-      translate: var(--m2);
-    }
-    42%,
-    100% {
-      opacity: 0;
-      translate: var(--m2);
-    }
-  }
-  @keyframes loop-stock-carry-warn {
-    0%,
-    40% {
-      opacity: 0;
-      translate: 0 0;
-    }
-    41% {
-      opacity: 1;
-      translate: 0 0;
-    }
-    46% {
-      opacity: 1;
-      translate: var(--m1);
-    }
-    51% {
-      opacity: 1;
-      translate: var(--m2);
-    }
-    52%,
-    100% {
-      opacity: 0;
-      translate: var(--m2);
-    }
-  }
-  @keyframes loop-stock-result-ok {
-    0%,
-    38% {
-      opacity: 0;
-      translate: 0 var(--site-motion-distance);
-    }
-    42%,
-    93% {
-      opacity: 1;
-      translate: 0 0;
-    }
-    97%,
-    100% {
-      opacity: 0;
-      translate: 0 0;
-    }
-  }
-  @keyframes loop-stock-result-warn {
-    0%,
-    48% {
-      opacity: 0;
-      translate: 0 var(--site-motion-distance);
-    }
-    52%,
-    93% {
-      opacity: 1;
-      translate: 0 0;
-    }
-    97%,
-    100% {
-      opacity: 0;
-      translate: 0 0;
-    }
-  }
-  @keyframes loop-stock-chan-old {
-    0%,
-    56% {
-      opacity: 1;
-      translate: 0 0;
-    }
-    59%,
-    88% {
-      opacity: 0;
-      translate: 0 calc(var(--site-motion-distance) * -1);
-    }
-    91%,
-    100% {
-      opacity: 1;
-      translate: 0 0;
-    }
-  }
-  @keyframes loop-stock-chan-new {
-    0%,
-    56% {
-      opacity: 0;
-      translate: 0 var(--site-motion-distance);
-    }
-    59%,
-    88% {
-      opacity: 1;
-      translate: 0 0;
-    }
-    91%,
-    100% {
-      opacity: 0;
-      translate: 0 0;
-    }
-  }
-  html[data-motion='play'] [data-scene='stock-single-winner'][data-state='play'] :is([data-part='order-a'], [data-part='order-b'], [data-part='carry-in'], [data-part='carry-ok'], [data-part='carry-warn'], [data-part='flash'], [data-part='left-a'], [data-part='left-b'], [data-part='lock'], [data-part='result-ok'], [data-part='result-oversold'], [data-part='chan-old'], [data-part='chan-new']) {
-    animation-duration: var(--site-motion-loop-scene);
-    animation-timing-function: var(--site-motion-ease-loop);
-    animation-iteration-count: infinite;
-    animation-fill-mode: backwards;
-    animation-play-state: paused;
-  }
-  html[data-motion='play'] [data-scene='stock-single-winner'][data-state='play'][data-visible='true'] :is([data-part='order-a'], [data-part='order-b'], [data-part='carry-in'], [data-part='carry-ok'], [data-part='carry-warn'], [data-part='flash'], [data-part='left-a'], [data-part='left-b'], [data-part='lock'], [data-part='result-ok'], [data-part='result-oversold'], [data-part='chan-old'], [data-part='chan-new']) {
-    animation-play-state: running;
-  }
-  /* Hat noktası yalnız döngüde görünür (taşıyıcının opaklığı yönetir); durağan hâlde gizlidir. */
-  html[data-motion='play'] [data-scene='stock-single-winner'][data-state='play'] .stock__pulse {
-    opacity: 1;
-  }
-  html[data-motion='play'] [data-scene='stock-single-winner'][data-state='play'] :is([data-part='order-a'], [data-part='order-b']) {
-    animation-name: loop-stock-order;
-  }
-  html[data-motion='play'] [data-scene='stock-single-winner'][data-state='play'] [data-part='carry-in'] {
-    animation-name: loop-stock-carry-in;
-  }
-  html[data-motion='play'] [data-scene='stock-single-winner'][data-state='play'] [data-part='carry-ok'] {
-    animation-name: loop-stock-carry-ok;
-  }
-  html[data-motion='play'] [data-scene='stock-single-winner'][data-state='play'] [data-part='carry-warn'] {
-    animation-name: loop-stock-carry-warn;
-  }
-  html[data-motion='play'] [data-scene='stock-single-winner'][data-state='play'] [data-part='flash'] {
-    animation-name: loop-stock-flash;
-  }
-  html[data-motion='play'] [data-scene='stock-single-winner'][data-state='play'] [data-part='left-a'] {
-    animation-name: loop-stock-old;
-  }
-  html[data-motion='play'] [data-scene='stock-single-winner'][data-state='play'] [data-part='left-b'] {
-    animation-name: loop-stock-new;
-  }
-  html[data-motion='play'] [data-scene='stock-single-winner'][data-state='play'] [data-part='lock'] {
-    animation-name: loop-stock-lock;
-  }
-  html[data-motion='play'] [data-scene='stock-single-winner'][data-state='play'] [data-part='result-ok'] {
-    animation-name: loop-stock-result-ok;
-  }
-  html[data-motion='play'] [data-scene='stock-single-winner'][data-state='play'] [data-part='result-oversold'] {
-    animation-name: loop-stock-result-warn;
-  }
-  html[data-motion='play'] [data-scene='stock-single-winner'][data-state='play'] [data-part='chan-old'] {
-    animation-name: loop-stock-chan-old;
-    animation-delay: calc(var(--site-motion-loop-scene) * 0.03 * var(--k, 0));
-  }
-  html[data-motion='play'] [data-scene='stock-single-winner'][data-state='play'] [data-part='chan-new'] {
-    animation-name: loop-stock-chan-new;
-    animation-delay: calc(var(--site-motion-loop-scene) * 0.03 * var(--k, 0));
-  }
-
-  /* ---------------------------------------------------------------------------------------- */
-  /* orders-merge (SITE-DL F1) — "Birleşik sipariş yönetimi": 12 sn'lik döngü.                       */
-  /*   Sipariş i (0..4) kendi kanalından TEK listeye düşer (%5 + 10i): kanal çerçevesi yanar, satır   */
-  /*   yukarıdan iner ve kısa süre vurgulanır, sayaç i -> i+1 olur. Durum rozetleri ilerler:          */
-  /*   1. satır Yeni -> Hazırlanıyor (%34) -> Kargoda (%62); 2. satır Yeni -> Hazırlanıyor (%54).     */
-  /*   %63–93 dolu liste okunur; %93–100 liste boşalır ve döngü başa döner. Durağan hâl = dolu liste. */
-  /* ---------------------------------------------------------------------------------------- */
-  @keyframes loop-ord-row-1 {
-    0%,
-    5% {
-      opacity: 0;
-      translate: 0 calc(var(--site-motion-distance) * -2);
-    }
-    9%,
-    93% {
-      opacity: 1;
-      translate: 0 0;
-    }
-    97%,
-    100% {
-      opacity: 0;
-      translate: 0 0;
-    }
-  }
-  @keyframes loop-ord-new-1 {
-    0%,
-    5% {
-      opacity: 0;
-    }
-    8% {
-      opacity: 1;
-    }
-    17%,
-    100% {
-      opacity: 0;
-    }
-  }
-  @keyframes loop-ord-row-2 {
-    0%,
-    15% {
-      opacity: 0;
-      translate: 0 calc(var(--site-motion-distance) * -2);
-    }
-    19%,
-    93% {
-      opacity: 1;
-      translate: 0 0;
-    }
-    97%,
-    100% {
-      opacity: 0;
-      translate: 0 0;
-    }
-  }
-  @keyframes loop-ord-new-2 {
-    0%,
-    15% {
-      opacity: 0;
-    }
-    18% {
-      opacity: 1;
-    }
-    27%,
-    100% {
-      opacity: 0;
-    }
-  }
-  @keyframes loop-ord-row-3 {
-    0%,
-    25% {
-      opacity: 0;
-      translate: 0 calc(var(--site-motion-distance) * -2);
-    }
-    29%,
-    93% {
-      opacity: 1;
-      translate: 0 0;
-    }
-    97%,
-    100% {
-      opacity: 0;
-      translate: 0 0;
-    }
-  }
-  @keyframes loop-ord-new-3 {
-    0%,
-    25% {
-      opacity: 0;
-    }
-    28% {
-      opacity: 1;
-    }
-    37%,
-    100% {
-      opacity: 0;
-    }
-  }
-  @keyframes loop-ord-row-4 {
-    0%,
-    35% {
-      opacity: 0;
-      translate: 0 calc(var(--site-motion-distance) * -2);
-    }
-    39%,
-    93% {
-      opacity: 1;
-      translate: 0 0;
-    }
-    97%,
-    100% {
-      opacity: 0;
-      translate: 0 0;
-    }
-  }
-  @keyframes loop-ord-new-4 {
-    0%,
-    35% {
-      opacity: 0;
-    }
-    38% {
-      opacity: 1;
-    }
-    47%,
-    100% {
-      opacity: 0;
-    }
-  }
-  @keyframes loop-ord-row-5 {
-    0%,
-    45% {
-      opacity: 0;
-      translate: 0 calc(var(--site-motion-distance) * -2);
-    }
-    49%,
-    93% {
-      opacity: 1;
-      translate: 0 0;
-    }
-    97%,
-    100% {
-      opacity: 0;
-      translate: 0 0;
-    }
-  }
-  @keyframes loop-ord-new-5 {
-    0%,
-    45% {
-      opacity: 0;
-    }
-    48% {
-      opacity: 1;
-    }
-    57%,
-    100% {
-      opacity: 0;
-    }
-  }
-  @keyframes loop-ord-chan-1 {
-    0%,
-    5% {
-      opacity: 0;
-    }
-    7% {
-      opacity: 1;
-    }
-    13%,
-    45% {
-      opacity: 0;
-    }
-    47% {
-      opacity: 1;
-    }
-    53%,
-    100% {
-      opacity: 0;
-    }
-  }
-  @keyframes loop-ord-chan-2 {
-    0%,
-    15% {
-      opacity: 0;
-    }
-    17% {
-      opacity: 1;
-    }
-    23%,
-    100% {
-      opacity: 0;
-    }
-  }
-  @keyframes loop-ord-chan-3 {
-    0%,
-    25% {
-      opacity: 0;
-    }
-    27% {
-      opacity: 1;
-    }
-    33%,
-    100% {
-      opacity: 0;
-    }
-  }
-  @keyframes loop-ord-chan-4 {
-    0%,
-    35% {
-      opacity: 0;
-    }
-    37% {
-      opacity: 1;
-    }
-    43%,
-    100% {
-      opacity: 0;
-    }
-  }
-  @keyframes loop-ord-num-0 {
-    0%,
-    8% {
-      opacity: 1;
-      translate: 0 0;
-    }
-    10%,
-    96% {
-      opacity: 0;
-      translate: 0 calc(var(--site-motion-distance) * -1);
-    }
-    100% {
-      opacity: 1;
-      translate: 0 0;
-    }
-  }
-  @keyframes loop-ord-num-1 {
-    0%,
-    8% {
-      opacity: 0;
-      translate: 0 var(--site-motion-distance);
-    }
-    10%,
-    18% {
-      opacity: 1;
-      translate: 0 0;
-    }
-    20%,
-    100% {
-      opacity: 0;
-      translate: 0 calc(var(--site-motion-distance) * -1);
-    }
-  }
-  @keyframes loop-ord-num-2 {
-    0%,
-    18% {
-      opacity: 0;
-      translate: 0 var(--site-motion-distance);
-    }
-    20%,
-    28% {
-      opacity: 1;
-      translate: 0 0;
-    }
-    30%,
-    100% {
-      opacity: 0;
-      translate: 0 calc(var(--site-motion-distance) * -1);
-    }
-  }
-  @keyframes loop-ord-num-3 {
-    0%,
-    28% {
-      opacity: 0;
-      translate: 0 var(--site-motion-distance);
-    }
-    30%,
-    38% {
-      opacity: 1;
-      translate: 0 0;
-    }
-    40%,
-    100% {
-      opacity: 0;
-      translate: 0 calc(var(--site-motion-distance) * -1);
-    }
-  }
-  @keyframes loop-ord-num-4 {
-    0%,
-    38% {
-      opacity: 0;
-      translate: 0 var(--site-motion-distance);
-    }
-    40%,
-    48% {
-      opacity: 1;
-      translate: 0 0;
-    }
-    50%,
-    100% {
-      opacity: 0;
-      translate: 0 calc(var(--site-motion-distance) * -1);
-    }
-  }
-  @keyframes loop-ord-num-5 {
-    0%,
-    48% {
-      opacity: 0;
-      translate: 0 var(--site-motion-distance);
-    }
-    50%,
-    96% {
-      opacity: 1;
-      translate: 0 0;
-    }
-    100% {
-      opacity: 0;
-      translate: 0 0;
-    }
-  }
-  @keyframes loop-ord-st-1a {
-    0%,
-    33% {
-      opacity: 1;
-    }
-    35%,
-    96% {
-      opacity: 0;
-    }
-    100% {
-      opacity: 1;
-    }
-  }
-  @keyframes loop-ord-st-1b {
-    0%,
-    33% {
-      opacity: 0;
-    }
-    35%,
-    61% {
-      opacity: 1;
-    }
-    63%,
-    100% {
-      opacity: 0;
-    }
-  }
-  @keyframes loop-ord-st-1c {
-    0%,
-    61% {
-      opacity: 0;
-    }
-    63%,
-    96% {
-      opacity: 1;
-    }
-    100% {
-      opacity: 0;
-    }
-  }
-  @keyframes loop-ord-st-2a {
-    0%,
-    53% {
-      opacity: 1;
-    }
-    55%,
-    96% {
-      opacity: 0;
-    }
-    100% {
-      opacity: 1;
-    }
-  }
-  @keyframes loop-ord-st-2b {
-    0%,
-    53% {
-      opacity: 0;
-    }
-    55%,
-    96% {
-      opacity: 1;
-    }
-    100% {
-      opacity: 0;
-    }
-  }
-  html[data-motion='play'] [data-scene='orders-merge'][data-state='play'] :is([data-part='order-row'], [data-part='ord-num']),
-  html[data-motion='play'] [data-scene='orders-merge'][data-state='play'] [data-part='order-row']::before,
-  html[data-motion='play'] [data-scene='orders-merge'][data-state='play'] [data-part='ord-chan']::after,
-  html[data-motion='play'] [data-scene='orders-merge'][data-state='play'] [data-part='order-row']:nth-child(-n + 2) [data-part='ord-st'] {
-    animation-duration: var(--site-motion-loop-scene);
-    animation-timing-function: var(--site-motion-ease-loop);
-    animation-iteration-count: infinite;
-    animation-fill-mode: backwards;
-    animation-play-state: paused;
-  }
-  html[data-motion='play'] [data-scene='orders-merge'][data-state='play'][data-visible='true'] :is([data-part='order-row'], [data-part='ord-num']),
-  html[data-motion='play'] [data-scene='orders-merge'][data-state='play'][data-visible='true'] [data-part='order-row']::before,
-  html[data-motion='play'] [data-scene='orders-merge'][data-state='play'][data-visible='true'] [data-part='ord-chan']::after,
-  html[data-motion='play'] [data-scene='orders-merge'][data-state='play'][data-visible='true'] [data-part='order-row']:nth-child(-n + 2) [data-part='ord-st'] {
-    animation-play-state: running;
-  }
-  html[data-motion='play'] [data-scene='orders-merge'][data-state='play'] [data-part='order-row']:nth-child(1) {
-    animation-name: loop-ord-row-1;
-  }
-  html[data-motion='play'] [data-scene='orders-merge'][data-state='play'] [data-part='order-row']:nth-child(1)::before {
-    animation-name: loop-ord-new-1;
-  }
-  html[data-motion='play'] [data-scene='orders-merge'][data-state='play'] [data-part='order-row']:nth-child(2) {
-    animation-name: loop-ord-row-2;
-  }
-  html[data-motion='play'] [data-scene='orders-merge'][data-state='play'] [data-part='order-row']:nth-child(2)::before {
-    animation-name: loop-ord-new-2;
-  }
-  html[data-motion='play'] [data-scene='orders-merge'][data-state='play'] [data-part='order-row']:nth-child(3) {
-    animation-name: loop-ord-row-3;
-  }
-  html[data-motion='play'] [data-scene='orders-merge'][data-state='play'] [data-part='order-row']:nth-child(3)::before {
-    animation-name: loop-ord-new-3;
-  }
-  html[data-motion='play'] [data-scene='orders-merge'][data-state='play'] [data-part='order-row']:nth-child(4) {
-    animation-name: loop-ord-row-4;
-  }
-  html[data-motion='play'] [data-scene='orders-merge'][data-state='play'] [data-part='order-row']:nth-child(4)::before {
-    animation-name: loop-ord-new-4;
-  }
-  html[data-motion='play'] [data-scene='orders-merge'][data-state='play'] [data-part='order-row']:nth-child(5) {
-    animation-name: loop-ord-row-5;
-  }
-  html[data-motion='play'] [data-scene='orders-merge'][data-state='play'] [data-part='order-row']:nth-child(5)::before {
-    animation-name: loop-ord-new-5;
-  }
-  html[data-motion='play'] [data-scene='orders-merge'][data-state='play'] [data-part='ord-chan']:nth-child(1)::after {
-    animation-name: loop-ord-chan-1;
-  }
-  html[data-motion='play'] [data-scene='orders-merge'][data-state='play'] [data-part='ord-chan']:nth-child(2)::after {
-    animation-name: loop-ord-chan-2;
-  }
-  html[data-motion='play'] [data-scene='orders-merge'][data-state='play'] [data-part='ord-chan']:nth-child(3)::after {
-    animation-name: loop-ord-chan-3;
-  }
-  html[data-motion='play'] [data-scene='orders-merge'][data-state='play'] [data-part='ord-chan']:nth-child(4)::after {
-    animation-name: loop-ord-chan-4;
-  }
-  html[data-motion='play'] [data-scene='orders-merge'][data-state='play'] [data-part='ord-num']:nth-child(1) {
-    animation-name: loop-ord-num-0;
-  }
-  html[data-motion='play'] [data-scene='orders-merge'][data-state='play'] [data-part='ord-num']:nth-child(2) {
-    animation-name: loop-ord-num-1;
-  }
-  html[data-motion='play'] [data-scene='orders-merge'][data-state='play'] [data-part='ord-num']:nth-child(3) {
-    animation-name: loop-ord-num-2;
-  }
-  html[data-motion='play'] [data-scene='orders-merge'][data-state='play'] [data-part='ord-num']:nth-child(4) {
-    animation-name: loop-ord-num-3;
-  }
-  html[data-motion='play'] [data-scene='orders-merge'][data-state='play'] [data-part='ord-num']:nth-child(5) {
-    animation-name: loop-ord-num-4;
-  }
-  html[data-motion='play'] [data-scene='orders-merge'][data-state='play'] [data-part='ord-num']:nth-child(6) {
-    animation-name: loop-ord-num-5;
-  }
-  html[data-motion='play'] [data-scene='orders-merge'][data-state='play'] [data-part='order-row']:nth-child(1) [data-part='ord-st']:nth-child(1) {
-    animation-name: loop-ord-st-1a;
-  }
-  html[data-motion='play'] [data-scene='orders-merge'][data-state='play'] [data-part='order-row']:nth-child(1) [data-part='ord-st']:nth-child(2) {
-    animation-name: loop-ord-st-1b;
-  }
-  html[data-motion='play'] [data-scene='orders-merge'][data-state='play'] [data-part='order-row']:nth-child(1) [data-part='ord-st']:nth-child(3) {
-    animation-name: loop-ord-st-1c;
-  }
-  html[data-motion='play'] [data-scene='orders-merge'][data-state='play'] [data-part='order-row']:nth-child(2) [data-part='ord-st']:nth-child(1) {
-    animation-name: loop-ord-st-2a;
-  }
-  html[data-motion='play'] [data-scene='orders-merge'][data-state='play'] [data-part='order-row']:nth-child(2) [data-part='ord-st']:nth-child(2) {
-    animation-name: loop-ord-st-2b;
-  }
-
-  /* ---------------------------------------------------------------------------------------- */
-  /* integration-status (SITE-DL F1) — "Her kanal aynı merkezde": 12 sn'de bir sakin eşitleme dalgası. */
-  /*   Hat boyunca bir nokta kanallardan "Tek panel"e iner (%0–26); geçtiği satırın ürün/stok/sipariş  */
-  /*   çubukları sırayla yeniden dolar (satır i: +%4 x i, çubuk k: +%1,2 x k); nokta panele ulaşınca   */
-  /*   panel çerçevesi bir kez belirir. Kalan sürede görsel durağandır. Durağan hâl = dolu çubuklar.   */
-  /* ---------------------------------------------------------------------------------------- */
-  @keyframes loop-istat-seg {
-    0%,
-    1% {
-      opacity: 1;
-      scale: 1 1;
-    }
-    2% {
-      opacity: 0;
-      scale: 1 1;
-    }
-    2.5% {
-      opacity: 0;
-      scale: 0 1;
-    }
-    3% {
-      opacity: 1;
-      scale: 0 1;
-    }
-    8%,
-    100% {
-      opacity: 1;
-      scale: 1 1;
-    }
-  }
-  @keyframes loop-istat-light {
-    0% {
-      opacity: 0;
-      translate: 0 0;
-    }
-    1.5% {
-      opacity: 1;
-      translate: 0 0;
-    }
-    26% {
-      opacity: 1;
-      translate: 0 100%;
-    }
-    28%,
-    100% {
-      opacity: 0;
-      translate: 0 100%;
-    }
-  }
-  @keyframes loop-istat-hub {
-    0%,
-    26% {
-      opacity: 0;
-      scale: 1;
-    }
-    29% {
-      opacity: 1;
-      scale: 1;
-    }
-    38%,
-    100% {
-      opacity: 0;
-      scale: 1.12;
-    }
-  }
-  html[data-motion='play'] [data-scene='integration-status'][data-state='play'] :is([data-part='seg']),
-  html[data-motion='play'] [data-scene='integration-status'][data-state='play'] .istat__rows::after,
-  html[data-motion='play'] [data-scene='integration-status'][data-state='play'] .istat__hub::after {
-    animation-duration: var(--site-motion-loop-scene);
-    animation-timing-function: var(--site-motion-ease-loop);
-    animation-iteration-count: infinite;
-    animation-fill-mode: backwards;
-    animation-play-state: paused;
-  }
-  html[data-motion='play'] [data-scene='integration-status'][data-state='play'][data-visible='true'] :is([data-part='seg']),
-  html[data-motion='play'] [data-scene='integration-status'][data-state='play'][data-visible='true'] .istat__rows::after,
-  html[data-motion='play'] [data-scene='integration-status'][data-state='play'][data-visible='true'] .istat__hub::after {
-    animation-play-state: running;
-  }
-  html[data-motion='play'] [data-scene='integration-status'][data-state='play'] [data-part='seg'] {
-    animation-name: loop-istat-seg;
-    animation-delay: calc(var(--site-motion-loop-scene) * (0.04 * var(--i, 0) + 0.012 * var(--k, 0)));
-  }
-  html[data-motion='play'] [data-scene='integration-status'][data-state='play'] .istat__rows::after {
-    animation-name: loop-istat-light;
-    animation-timing-function: var(--site-motion-ease-linear);
-  }
-  html[data-motion='play'] [data-scene='integration-status'][data-state='play'] .istat__hub::after {
-    animation-name: loop-istat-hub;
-  }
-  /* ===== SITE-DL F1: yetenek karoları döngüleri (bitiş) ===== */
 }

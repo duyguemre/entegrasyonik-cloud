@@ -17,9 +17,7 @@ test.describe('ADR-0012 — Derin bağlantı', () => {
     await expect(page.locator('.orderListView')).toBeVisible()
     // Filtre gerçekten uygulandı: OrderListView.vue `parameters?.internalStatuses`'u okuyup
     // çoklu-seçim durum alanına yazıyor (bkz. navigation/screens.ts yorumu) — chip olarak görünür.
-    // DS-v2 Aşama 2: aynı metin artık panel alanında, aktif filtre çipinde ve satır durumunda görünür;
-    // filtrenin uygulandığını aktif filtre çipi kanıtlar.
-    await expect(page.locator('.orderListView').getByRole('group', { name: 'Aktif filtreler' }).getByText('Satıcı onayı bekliyor')).toBeVisible()
+    await expect(page.getByText('Satıcı Onayı Bekliyor')).toBeVisible()
   })
 
   test('bilinmeyen slug panoya düşer + bildirim gösterilir', async ({ page }) => {
@@ -51,9 +49,9 @@ test.describe('ADR-0012 — Derin bağlantı', () => {
     await page.goto('/orders?internalStatuses=APPROVED')
     await expect(page).toHaveURL(/\/login\?redirect=(%2F|\/)orders/)
 
-    await page.getByLabel('E-posta').fill('e2e@example.invalid')
-    await page.getByLabel('Parola', { exact: true }).fill('e2e-pass-1234')
-    await page.getByRole('button', { name: 'Devam et' }).click()
+    await page.getByLabel('EPosta').fill('e2e@example.invalid')
+    await page.getByLabel('Şifre', { exact: true }).fill('e2e-pass-1234')
+    await page.getByRole('button', { name: 'Giriş' }).click()
 
     await expect(page).toHaveURL(/\/orders\?internalStatuses=APPROVED$/, { timeout: 10_000 })
     await expect(page.locator('.orderListView')).toBeVisible()
@@ -62,27 +60,24 @@ test.describe('ADR-0012 — Derin bağlantı', () => {
   test('açık yönlendirme önlemi: //evil.com gibi bir redirect kabul edilmez, /dashboard\'a düşer', async ({ page }) => {
     await installApiMocks(page, { checkAuthentication: false, userContext: mockError(401, {}) })
     await page.goto('/login?redirect=%2F%2Fevil.com')
-    await page.getByLabel('E-posta').fill('e2e@example.invalid')
-    await page.getByLabel('Parola', { exact: true }).fill('e2e-pass-1234')
+    await page.getByLabel('EPosta').fill('e2e@example.invalid')
+    await page.getByLabel('Şifre', { exact: true }).fill('e2e-pass-1234')
     await installApiMocks(page, {
       'SecurityService/login': userContextFixture,
       checkAuthentication: true,
       userContext: userContextFixture,
     })
-    await page.getByRole('button', { name: 'Devam et' }).click()
+    await page.getByRole('button', { name: 'Giriş' }).click()
 
     await expect(page).toHaveURL(/\/dashboard$/, { timeout: 10_000 })
   })
 })
 
-const TAB = '.workplace-tabs [role="tab"]'
-const ACTIVE_TAB_CLOSE = '.workplace-tabs .ek-tab.is-active .ek-tab__close'
-
 test.describe('ADR-0012 — Geri/ileri (Karar 4)', () => {
-  // NOT: bu describe'daki testler sekme şeridi seçicilerini (`TAB`/`ACTIVE_TAB_CLOSE`) kullanıyor.
-  // [DS-v2 Aşama 2, Karar 5.1 izinli değişiklik 1 — yalnızca seçici] Sekme şeridi `EkWorkspaceTabs`'a
-  // taşındı (`.workplace-tab`/`.close-tab-icon` → `role=tab` / `.ek-tab.is-active .ek-tab__close`);
-  // iddialar (sayı, kapatma, URL) DEĞİŞMEDİ. Mobil atlaması korunur (davranış kapsamı aynı kalsın).
+  // NOT: bu describe'daki testler `.workplace-tab`/`.close-tab-icon` (masaüstü/tablet sekme
+  // çubuğu) seçicilerini kullanıyor — mobilde (<768) sekme çubuğu GİZLİ (ADR-0012 Karar 5, tek
+  // görünür sekme + değiştirici); mobilin kendi kapatma/değiştirme etkileşimi
+  // `shell.spec.ts`/`WorkplaceTabSwitcher` kapsamında ayrıca ele alınıyor.
   test.beforeEach(({ }, testInfo) => {
     test.skip(testInfo.project.name === 'chromium-mobile', 'Masaüstü/tablet sekme çubuğu gerektiriyor (mobilde gizli, ADR-0012 Karar 5)')
   })
@@ -111,7 +106,7 @@ test.describe('ADR-0012 — Geri/ileri (Karar 4)', () => {
     await openScreen(page, 'OrderListView')
     await expect(page).toHaveURL(/\/orders$/)
 
-    const closeIcon = page.locator(ACTIVE_TAB_CLOSE)
+    const closeIcon = page.locator('.workplace-tab.selected-workplace-tab .close-tab-icon')
     await closeIcon.click()
     await expect(page).toHaveURL(/\/dashboard$/)
 
@@ -128,19 +123,19 @@ test.describe('ADR-0012 — Geri/ileri (Karar 4)', () => {
     await installApiMocks(page)
     await gotoAuthed(page)
     await openScreen(page, 'OrderListView')
-    await page.locator(ACTIVE_TAB_CLOSE).click()
+    await page.locator('.workplace-tab.selected-workplace-tab .close-tab-icon').click()
     await expect(page).toHaveURL(/\/dashboard$/)
-    await expect(page.locator(TAB)).toHaveCount(1)
+    await expect(page.locator('.workplace-tab')).toHaveCount(1)
 
     await page.goto('/orders')
     await expect(page.locator('.orderListView')).toBeVisible()
-    await expect(page.locator(TAB)).toHaveCount(2)
+    await expect(page.locator('.workplace-tab')).toHaveCount(2)
   })
 })
 
 test.describe('ADR-0012 — Persist (Karar 3, sessionStorage)', () => {
   test('yenileme sonrası açık sekmeler çubukta kalır (oturum-kapsamlı persist)', async ({ page }, testInfo) => {
-    // Sekme sayımı masaüstü/tablet projelerinde doğrulanır (bkz. yukarıdaki NOT).
+    // `.workplace-tab` yalnızca masaüstü/tablet çubuğunda var (bkz. yukarıdaki NOT).
     test.skip(testInfo.project.name === 'chromium-mobile', 'Masaüstü/tablet sekme çubuğu gerektiriyor (mobilde gizli, ADR-0012 Karar 5)')
     await installApiMocks(page)
     await gotoAuthed(page)
@@ -153,7 +148,7 @@ test.describe('ADR-0012 — Persist (Karar 3, sessionStorage)', () => {
     // Aktif ekran URL'den geri geliyor (Siparişler), dashboard sekmesi de sekme çubuğunda kalıyor
     // (persist edilen tab listesi, tembel geri yükleme).
     await expect(page.locator('.orderListView')).toBeVisible()
-    await expect(page.locator(TAB)).toHaveCount(2)
+    await expect(page.locator('.workplace-tab')).toHaveCount(2)
   })
 })
 
@@ -173,7 +168,7 @@ test.describe('ADR-0012 — PII URL\'e YAZILMAZ (Karar 2)', () => {
     })
     await gotoAuthed(page)
 
-    await page.getByRole('combobox', { name: 'Akıllı arama' }).fill('E2E-100001')
+    await page.getByPlaceholder('Akıllı Arama').first().fill('E2E-100001')
     await expect(page.getByText('E2E-100001', { exact: false }).first()).toBeVisible({ timeout: 5000 })
     await page.getByText('E2E-100001', { exact: false }).first().click()
 

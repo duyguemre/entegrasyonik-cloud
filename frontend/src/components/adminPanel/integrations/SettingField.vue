@@ -42,6 +42,7 @@
       <v-text-field
         v-else-if="meta.type === 'int' || meta.type === 'duration'"
         type="number"
+        density="comfortable"
         hide-details="auto"
         :model-value="modelValue"
         :disabled="readonly"
@@ -52,6 +53,7 @@
       <v-textarea
         v-else-if="meta.type === 'stringList'"
         :model-value="stringListDisplay"
+        density="comfortable"
         hide-details="auto"
         readonly
         :aria-label="meta.label.tr"
@@ -59,6 +61,7 @@
       />
       <v-text-field
         v-else
+        density="comfortable"
         hide-details="auto"
         :model-value="modelValue"
         :disabled="readonly"
@@ -101,8 +104,8 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { EkStatusChip } from '@entegrasyonik/ui/components'
-import { formatDuration, formatNumber } from '@entegrasyonik/ui/format'
+import EkStatusChip from '@/components/ds/EkStatusChip.vue'
+import { formatDuration, formatNumber } from '@/composables/format'
 import { SETTING_DANGER_TONE } from '@/design/status-map'
 import type { SettingMeta } from './settingsCatalogMirror'
 

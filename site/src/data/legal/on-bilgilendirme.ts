@@ -50,7 +50,7 @@ export const onBilgilendirme: LegalDoc = {
         {
           type: 'ul',
           items: [
-            'Hizmet, tarayıcı üzerinden kullanılan bir platform hizmetidir (SaaS); fiziksel bir ürün teslim edilmez.',
+            'Hizmet, tarayıcı üzerinden kullanılan bir yazılım hizmetidir (SaaS); fiziksel bir ürün teslim edilmez.',
             'Plan içerikleri, limitler ve özellikler fiyatlandırma sayfasında ve uygulamadaki abonelik ekranında gösterilir.',
             'Yeni hesaplar 14 günlük ücretsiz denemeyle başlar; deneme için kart bilgisi istenmez ([Abonelik Sözleşmesi](/yasal/abonelik-sozlesmesi)).',
           ],

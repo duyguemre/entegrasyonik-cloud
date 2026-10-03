@@ -9,7 +9,7 @@ jest.mock('@database/DatabaseManager', () => ({
   DatabaseManagerInstance: { getApplicationDB: async () => appDb, getClientDB: async () => clientDb },
 }));
 
-import UserService from '../../../src/api/rpc/handlers/user-service';
+import UserService from '../../../src/api/services/user-service';
 
 const dup = () => Object.assign(new Error('E11000 duplicate key collection: X index: uniq_email dup key: { email: "gizli@x.y" }'), { code: 11000 });
 let clientCreate: any, clientDelete: any, centralCreate: any;

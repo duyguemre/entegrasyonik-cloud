@@ -1,25 +1,29 @@
 <template>
 
 
-  <v-card variant="elevated" class="pt-panel ma-0 pa-0" elevation="1" @click.stop :ripple="false"
+  <v-card variant="elevated" class="ma-0 pa-0" elevation="1" @click.stop :ripple="false"
+    style="position:absolute;transition: none!important; box-shadow: none; transform: none!important;right:8px;bottom:8px;top:8px;background-color:#f3f3f3"
     :height="computedSize.height" :width="computedSize.width">
 
 
 
     <v-card-title>
 
-      <div class="pt-panel__topline elevation-1">
+      <div style="position:absolute;top:0px;left:0px;right:0;height:1px;width:auto;opacity:.9;background-color:red"
+        class="elevation-1">
       </div>
 
-      <v-btn class="pt-panel__close pt-panel__close--right"
-        @click="transferProductForm.transferProductFormMenu = false" elevation="1" min-width="0" color="error"><v-icon
+      <v-btn
+        style="position:absolute;top:0px;right:0px;height:40px;width:40px; opacity:.9;border-radius:0;border-bottom-left-radius:20px;"
+        @click="transferProductForm.transferProductFormMenu = false" elevation="1" min-width="0" color="red"><v-icon
           size="x-large">mdi-close</v-icon></v-btn>
 
-      <v-btn class="pt-panel__close pt-panel__close--left"
-        @click="transferProductForm.transferProductFormMenu = false" elevation="1" min-width="0" color="error"><v-icon
+      <v-btn
+        style="position:absolute;top:0px;left:0px;height:40px;width:40px; opacity:.9;border-radius:0;border-bottom-right-radius:20px;"
+        @click="transferProductForm.transferProductFormMenu = false" elevation="1" min-width="0" color="red"><v-icon
           size="x-large">mdi-close</v-icon></v-btn>
 
-      <v-icon class="pt-panel__title-icon mr-2 ml-10">mdi-connection</v-icon>{{
+      <v-icon class="mr-2 ml-10" style="opacity:.7">mdi-connection</v-icon>{{
         $t('productDefinitions.product.transfer')
       }}
 
@@ -29,7 +33,8 @@
 
     <v-form ref="transferProductFormRef" v-model="istransferProductFormValid">
 
-      <v-card v-if="transferProductForm" class="pt-panel__body"
+      <v-card v-if="transferProductForm"
+        style="position:absolute;overflow-y:scroll;top: 48px;left:0;right:0;bottom:70px;border-top:1px solid #ddd;background-color:#eee"
         variant="flat">
         <v-card-text>
 
@@ -37,30 +42,31 @@
 
 
 
-          <div class="pt-panel__ghost">
+          <div style="position:absolute;width:100%;z-index:-1;height:210px">
             <div class="animated-icon d-flex">
 
 
               <div class="d-flex align-center"
-                :class="{ 'pt-panel__product--offsale': transferProductForm.transferProduct.onsale == false }">
-                <div class="pt-panel__thumb text-center mr-4 elevation-0" @click="">
+                :style="transferProductForm.transferProduct.onsale == false ? { 'background-color': '#fff2f2', 'border-right': '2px solid #eee!important' } : {}">
+                <div class="text-center mr-4 elevation-0"
+                  style="position:relative;width:110px;min-width:110px;border:1px solid #ccc" @click="">
                   <v-tooltip location="bottom" open-delay="1000" text="Ürünü düzenlemek için basınız">
                     <template v-slot:activator="{ props: tooltipProps }">
                       <ProductImageComponent v-bind="tooltipProps" :productId="transferProductForm.transferProduct._id"
-                        v-model="transferProductForm.transferProduct.images[0]" class="pt-panel__clickable" />
+                        v-model="transferProductForm.transferProduct.images[0]" style="cursor:pointer;" />
                     </template>
                   </v-tooltip>
                 </div>
                 <div>
                   <span class="font-weight-bold text-body-2">{{ transferProductForm.transferProduct.title }}</span>
                   <div class="d-flex">
-                    <div class="pt-panel__meta">
-                      <div class="pt-panel__label font-weight-light text-caption mt-1">
+                    <div style="min-width:130px">
+                      <div class="font-weight-light text-caption mt-1" style="line-height: .7;font-size:10px!important">
                         Stok
                         Kodu
                       </div>
                       <span class="font-weight-bold">{{ transferProductForm.transferProduct.stockcode }}</span>
-                      <div class="pt-panel__label font-weight-light text-caption mt-1">
+                      <div class="font-weight-light text-caption mt-1" style="line-height: .7;font-size:10px!important">
                         Barkod
                       </div>
                       <span class="font-weight-medium">{{ transferProductForm.transferProduct.barcode }}&nbsp</span>
@@ -82,24 +88,25 @@
 
 
           <div class="d-flex align-center"
-            :class="{ 'pt-panel__product--offsale': transferProductForm.transferProduct.onsale == false }">
-            <div class="pt-panel__thumb text-center mr-4 elevation-0" @click="">
+            :style="transferProductForm.transferProduct.onsale == false ? { 'background-color': '#fff2f2', 'border-right': '2px solid #eee!important' } : {}">
+            <div class="text-center mr-4 elevation-0"
+              style="position:relative;width:110px;min-width:110px;border:1px solid #ccc" @click="">
               <v-tooltip location="bottom" open-delay="1000" text="Ürünü düzenlemek için basınız">
                 <template v-slot:activator="{ props: tooltipProps }">
                   <ProductImageComponent v-bind="tooltipProps" :productId="transferProductForm.transferProduct._id"
-                    v-model="transferProductForm.transferProduct.images[0]" class="pt-panel__clickable" />
+                    v-model="transferProductForm.transferProduct.images[0]" style="cursor:pointer;" />
                 </template>
               </v-tooltip>
             </div>
             <div>
               <span class="font-weight-bold text-body-2">{{ transferProductForm.transferProduct.title }}</span>
               <div class="d-flex">
-                <div class="pt-panel__meta">
-                  <div class="pt-panel__label font-weight-light text-caption mt-1">Stok
+                <div style="min-width:130px">
+                  <div class="font-weight-light text-caption mt-1" style="line-height: .7;font-size:10px!important">Stok
                     Kodu
                   </div>
                   <span class="font-weight-bold">{{ transferProductForm.transferProduct.stockcode }}</span>
-                  <div class="pt-panel__label font-weight-light text-caption mt-1">
+                  <div class="font-weight-light text-caption mt-1" style="line-height: .7;font-size:10px!important">
                     Barkod
                   </div>
                   <span class="font-weight-medium">{{ transferProductForm.transferProduct.barcode }}&nbsp</span>
@@ -117,20 +124,21 @@
           </div>
 
 
-          <div class="pt-panel__platforms pt-2 d-flex flex-wrap">
-            <div v-for="platform of platforms" class="pa-2">
+          <div class="pt-2 d-flex flex-wrap" style="margin-top:100px">
+            <div v-for="platform of platforms" class="pa-2"
+              :style="1 == 1 ? { filter: 'brightness(1)' } : { opacity: '.7', filter: 'brightness(0.9)' }">
               <IntegrationAvatarComponent :platform="platform" :width="'100px'" :height="'100px'" @click=""
-                class="pt-panel__clickable" />
+                style="cursor:pointer" />
             </div>
           </div>
 
         </v-card-text>
       </v-card>
-      <div class="pt-panel__footer pa-4">
+      <div style="position:absolute;bottom:0px;width:100%;border-top:1px solid #ddd" class="pa-4">
         <v-row>
           <v-col>
             <v-btn-group elevation="1" class="d-block" density="compact">
-              <v-btn density="compact" block class="fill-height" color="neutral"
+              <v-btn density="compact" block class="fill-height" color="processButtonColor"
                 @click="resetTransferProductForm">
                 <span class="">
                   <v-icon size="30">mdi-undo-variant</v-icon> {{ $t('common.clear') }}
@@ -139,10 +147,10 @@
           </v-col>
           <v-col>
             <v-btn-group elevation="1" class="d-block" density="compact">
-              <v-btn density="compact" block class="fill-height" color="primary"
+              <v-btn density="compact" block class="fill-height" color="saveButtonColor"
                 @click="validateAndSearchProducts">
                 <span class="">
-                  <v-icon size="30">mdi-content-save-outline</v-icon> {{ $t('common.save') }}
+                  <v-icon size="30">mdi-content-save</v-icon> {{ $t('common.save') }}
                 </span></v-btn>
             </v-btn-group>
           </v-col>
@@ -232,111 +240,12 @@ const validateAndSearchProducts = async () => {
 </script>
 
 <style scoped>
-.pt-panel {
-  position: absolute;
-  transition: none !important;
-  box-shadow: none;
-  transform: none !important;
-  right: var(--ek-space-2);
-  bottom: var(--ek-space-2);
-  top: var(--ek-space-2);
-  background-color: var(--ek-color-surface-sunken);
-}
-
-.pt-panel__topline {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  width: auto;
-  opacity: 0.9;
-  background-color: var(--ek-color-error);
-}
-
-.pt-panel__close {
-  position: absolute;
-  top: 0;
-  height: var(--ek-control-h-lg);
-  width: var(--ek-control-h-lg);
-  opacity: 0.9;
-  border-radius: var(--ek-radius-none);
-}
-
-.pt-panel__close--right {
-  right: 0;
-  border-bottom-left-radius: var(--ek-radius-xl);
-}
-
-.pt-panel__close--left {
-  left: 0;
-  border-bottom-right-radius: var(--ek-radius-xl);
-}
-
-.pt-panel__title-icon {
-  opacity: 0.7;
-}
-
-.pt-panel__body {
-  position: absolute;
-  overflow-y: scroll;
-  top: var(--ek-space-12);
-  left: 0;
-  right: 0;
-  bottom: 70px;
-  border-top: 1px solid var(--ek-color-border-default);
-  background-color: var(--ek-color-surface-muted);
-}
-
-.pt-panel__ghost {
-  position: absolute;
-  width: 100%;
-  z-index: -1;
-  height: 210px;
-}
-
-.pt-panel__product--offsale {
-  background-color: var(--ek-color-error-subtle);
-  border-right: 2px solid var(--ek-color-border-default) !important;
-}
-
-.pt-panel__thumb {
-  position: relative;
-  width: 110px;
-  min-width: 110px;
-  border: 1px solid var(--ek-color-border-strong);
-}
-
-.pt-panel__clickable {
-  cursor: pointer;
-}
-
-.pt-panel__meta {
-  min-width: 130px;
-}
-
-.pt-panel__label {
-  line-height: 0.7;
-  font-size: var(--ek-type-micro-size) !important;
-}
-
-.pt-panel__platforms {
-  margin-top: 100px;
-}
-
-.pt-panel__footer {
-  position: absolute;
-  bottom: 0;
-  width: 100%;
-  border-top: 1px solid var(--ek-color-border-default);
-}
-
 .animated-arrow {
-  animation: dash-move var(--ek-motion-loop-flow) var(--ek-easing-linear) infinite;
+  animation: dash-move 1s linear infinite;
 }
 
 .animated-icon {
-  animation: icon-move var(--ek-motion-loop-transfer) var(--ek-easing-standard) infinite;
+  animation: icon-move 8s cubic-bezier(0.39, 0.575, 0.565, 1) infinite;
 }
 
 @keyframes icon-move {

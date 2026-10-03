@@ -17,7 +17,7 @@ export const featureDetails: Record<string, FeaturePoint[]> = {
       evidence: [evidence(PATHS.adr0004, 'ADR-0004 kullanılabilir stok tanımı', 'available = stock − reserved')],
     },
     {
-      text: 'Aynı sipariş size birden fazla kez ulaşsa da stoğunuzdan yalnızca bir kez düşülür.',
+      text: 'Rezervasyon sipariş satırı anahtarıyla yapılır; aynı satır tekrar işlense de yalnızca bir kez rezerve edilir.',
       evidence: [evidence(PATHS.adr0004, 'ADR-0004 idempotent rezervasyon', 'sipariş satırı anahtarıyla idempotent')],
     },
     {

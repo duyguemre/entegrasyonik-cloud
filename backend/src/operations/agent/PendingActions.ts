@@ -43,8 +43,6 @@ export interface PendingAction {
     input: unknown;
     confirmMode: 'confirm' | 'typed';
     typedPhrase?: string;
-    /** Sunucu verisinden onay karti onizlemesi (ornek: fiyat onerisi once -> sonra). Girdiden turetilen ozetin yerine gecer. */
-    changes?: Array<{ label: string; from?: string; to: string }>;
     locale: Locale;
     /** ms epoch; Redis TTL'inin yaninda saat denetimi (TTL sapmasi/saat farki). */
     expiresAt: number;

@@ -15,7 +15,6 @@
 <template>
   <div class="stockPolicyView">
     <EkSettingsTemplate
-      section="Katalog"
       :title="$t('stockPolicy.title')"
       :description="$t('stockPolicy.description')"
       :dirty="isDirty"
@@ -44,7 +43,6 @@
       />
       <template v-else>
         <EkSettingsSection :title="$t('stockPolicy.primary.title')" :description="$t('stockPolicy.primary.description')">
-          <template #title-extra><EkHelpHint hint="stock.channelPolicy" /></template>
           <v-select
             v-model="primaryDraft"
             class="stockPolicyView__primary"
@@ -52,6 +50,7 @@
             item-title="title"
             item-value="value"
             :label="$t('stockPolicy.primary.label')"
+            density="comfortable"
             :hint="primaryHint"
             persistent-hint
           />
@@ -62,7 +61,6 @@
         </EkSettingsSection>
 
         <EkSettingsSection :title="$t('stockPolicy.channels.title')" :description="$t('stockPolicy.channels.description')">
-          <template #title-extra><EkHelpHint hint="stock.safetyStock" /></template>
           <article
             v-for="channel in policy.channels"
             :key="channel.integrationCode"
@@ -86,6 +84,7 @@
                 v-model="drafts[channel.integrationCode].bufferUnits"
                 :label="$t('stockPolicy.fields.bufferUnits')"
                 inputmode="numeric"
+                density="comfortable"
                 :placeholder="$t('stockPolicy.fields.defaultPlaceholder', { value: bufferUnitsDefault(channel.integrationCode) })"
                 persistent-placeholder
                 :hint="isPrimaryDraft(channel.integrationCode) ? $t('stockPolicy.fields.bufferUnitsPrimaryHint') : $t('stockPolicy.fields.bufferUnitsHint')"
@@ -96,6 +95,7 @@
                 v-model="drafts[channel.integrationCode].bufferPercent"
                 :label="$t('stockPolicy.fields.bufferPercent')"
                 inputmode="decimal"
+                density="comfortable"
                 prefix="%"
                 :placeholder="$t('stockPolicy.fields.defaultPlaceholder', { value: policy.defaults.bufferPercent })"
                 persistent-placeholder
@@ -107,6 +107,7 @@
                 v-model="drafts[channel.integrationCode].graceMinutes"
                 :label="$t('stockPolicy.fields.graceMinutes')"
                 inputmode="numeric"
+                density="comfortable"
                 :suffix="$t('stockPolicy.fields.minutes')"
                 :placeholder="$t('stockPolicy.fields.defaultPlaceholder', { value: policy.defaults.graceMinutes })"
                 persistent-placeholder
@@ -121,6 +122,7 @@
                 item-title="title"
                 item-value="value"
                 :label="$t('stockPolicy.fields.autoCancel')"
+                density="comfortable"
                 :hint="$t('stockPolicy.fields.autoCancelHint')"
                 persistent-hint
               />
@@ -149,15 +151,18 @@
 </template>
 
 <script setup lang="ts">
-import EkHelpHint from '@/components/page/EkHelpHint.vue'
 import { computed, inject, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import EkSettingsTemplate from '@/components/page/templates/EkSettingsTemplate.vue'
-import EkSettingsSection from '@/components/page/templates/EkSettingsSection.vue'
-import { EkSkeleton, EkErrorState, EkEmptyState, EkStatusChip, EkPlatformMark } from '@entegrasyonik/ui/components'
-import { useToast } from '@entegrasyonik/ui/composables/useToast'
+import EkSettingsTemplate from '@/components/ds/templates/EkSettingsTemplate.vue'
+import EkSettingsSection from '@/components/ds/templates/EkSettingsSection.vue'
+import EkSkeleton from '@/components/ds/EkSkeleton.vue'
+import EkErrorState from '@/components/ds/EkErrorState.vue'
+import EkEmptyState from '@/components/ds/EkEmptyState.vue'
+import EkStatusChip from '@/components/ds/EkStatusChip.vue'
+import EkPlatformMark from '@/components/ds/EkPlatformMark.vue'
+import { useToast } from '@/composables/useToast'
 import { useMenuStore } from '@/stores/site/menu'
-import { formatNumber } from '@entegrasyonik/ui/format'
+import { formatNumber } from '@/composables/format'
 import { apiMessage, apiStatus, isApiError } from '@/composables/apiErrors'
 import {
   buildChannelPatch, computePublishQuantity, effectiveNumbers, isStockPolicyResponse, toDraft, useStockPolicyApi, validateDraft,

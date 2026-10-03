@@ -19,12 +19,12 @@ import {
     ProviderTestRequestSchema, TurnRequestSchema, type ServerEvent,
 } from '@operations/agent/protocol/v1';
 import { createToolRuntime } from '@operations/agent/tools';
-import { dbPreviewChanges, dbVerifyRefs } from '@operations/agent/refVerifiers';
+import { dbVerifyRefs } from '@operations/agent/refVerifiers';
 import { resolveTier } from '@platform/core/authz/tier';
-import { getClientIp } from '@platform/rateLimit/clientIp';
+import { getClientIp } from '../clientIp';
 import { AppError } from '@platform/core/errors';
 import { publicErrorExtras, sendHttpError } from './errorEnvelope';
-import type { Actor } from '../rpc/requestContext';
+import type { Actor } from '../requestContext';
 
 const log = logger.child({ module: 'agent.routes' });
 
@@ -52,7 +52,7 @@ export function getAgentBroker(): AgentBroker {
         isMaintenance,
         resolveProvider: resolveLlmProvider,
         setupState: resolveSetupState,
-        tools: createToolRuntime({ isMaintenance, verifyRefs: dbVerifyRefs, previewChanges: dbPreviewChanges }),
+        tools: createToolRuntime({ isMaintenance, verifyRefs: dbVerifyRefs }),
     });
     return singleton;
 }

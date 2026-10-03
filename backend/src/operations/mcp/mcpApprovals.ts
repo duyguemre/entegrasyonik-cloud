@@ -9,7 +9,7 @@ import { findExposed } from '../../capabilities/invoke';
 import { AppError } from '@platform/core/errors';
 import { logger } from '@platform/core/logger';
 import { auditAgent, outcomeOfCode, type AgentOutcome } from '../agent/agentTelemetry';
-import { actionQuotaCost, consumeActionQuota, peekActionQuota, quotaExceededError, resolveAgentEntitlement, type AgentEntitlement } from '../agent/agentEntitlement';
+import { consumeActionQuota, peekActionQuota, quotaExceededError, resolveAgentEntitlement, type AgentEntitlement } from '../agent/agentEntitlement';
 import type { AgentKv } from '../agent/kv';
 import {
     McpPendingActions, MCP_RESULT_TTL_SEC, hashInput, isValidPendingId,
@@ -73,12 +73,12 @@ const UNKNOWN_OUTCOME_CODES = new Set(['INTERNAL', 'UNKNOWN_OUTCOME', 'IDEMPOTEN
 const plain = (v: unknown, max: number): string => Array.from(String(v ?? ''), (ch) => { const c = ch.charCodeAt(0); return c < 32 || c === 127 || ch === '<' || ch === '>' ? ' ' : ch; }).join('').replace(/\s+/g, ' ').trim().slice(0, max);
 
 /** Sunucu tarafli on izleme: yetenek ozet metni + degisiklikler + etkilenen kayit ornekleri (model/istemci metni YOK). */
-export function buildPreview(tool: Pick<AgentTool, 'capId' | 'title'>, input: unknown, serverChanges?: Array<{ label: string; from?: string; to: string }>): ApprovalPreview {
+export function buildPreview(tool: Pick<AgentTool, 'capId' | 'title'>, input: unknown): ApprovalPreview {
     const spec = CONFIRM_SPECS[tool.capId];
     const title = plain(tool.title.tr, 120);
     if (!spec) return { title, lines: [plain('Bu işlem onayınızı bekliyor.', 200)], confirmLabel: title };
     const lines: string[] = [plain(spec.summary(input, 'tr'), 200)];
-    for (const c of serverChanges ?? spec.changes?.(input, 'tr') ?? []) lines.push(plain(`${c.label}: ${c.from ? `${c.from} → ` : ''}${c.to}`, 200));
+    for (const c of spec.changes?.(input, 'tr') ?? []) lines.push(plain(`${c.label}: ${c.from ? `${c.from} → ` : ''}${c.to}`, 200));
     const aff = spec.affected(input);
     if (aff.sample.length) lines.push(plain(`Etkilenen kayıtlar: ${aff.sample.map((s) => s.label).join(', ')}${aff.count > aff.sample.length ? ` ve ${aff.count - aff.sample.length} diğeri` : ''}`, 200));
     return { title, lines: lines.slice(0, MAX_LINES), ...(aff.count > 0 ? { count: aff.count } : {}), confirmLabel: plain(spec.confirmLabel?.(input, 'tr') ?? title, 80) };
@@ -110,10 +110,9 @@ export class McpApprovals {
         if (!q.allowed) throw quotaExceededError(ent);
 
         const clientName = plain(await this.d.clientName(p.clientId).catch(() => undefined) ?? 'Yapay zekâ uygulaması', 60) || 'Yapay zekâ uygulaması';
-        const serverChanges = await this.d.tools.previewChanges?.(p.ctx, tool.capId, input).catch(() => undefined);
         const created = await store.createMcp({
             userId: p.ctx.userId, tid: p.ctx.tid, capId: tool.capId, version: tool.version, input, confirmMode: tool.confirm === 'typed' ? 'typed' : 'confirm',
-            mcp: { clientId: p.clientId, clientName, fam: p.fam, preview: buildPreview(tool, input, serverChanges) },
+            mcp: { clientId: p.clientId, clientName, fam: p.fam, preview: buildPreview(tool, input) },
         });
         if (!created.created || !created.pa) {
             // Es zamanli ayni cagri kazandi: onun kaydi.
@@ -265,7 +264,7 @@ export class McpApprovals {
         }
 
         const ent = await (this.d.entitlement ?? resolveAgentEntitlement)(pa.tid);
-        const q = await consumeActionQuota(kv, pa.tid, ent, new Date(this.now()), actionQuotaCost(pa.capId, pa.input));
+        const q = await consumeActionQuota(kv, pa.tid, ent, new Date(this.now()));
         if (!q.allowed) { await kv.del(lockKey); throw quotaExceededError(ent); } // kayit tuketilmez: yarin ya da plan yukseltilince onaylanabilir
 
         void auditAgent(ctx, this.auditOf(pa, 'mcp.approval', 'ok', 'approve'));

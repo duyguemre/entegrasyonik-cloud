@@ -48,16 +48,15 @@ export async function installTwoUserMocks(page: Page, state: { session: Session 
 }
 
 export async function loginViaForm(page: Page, email: string, landing: RegExp = /\/dashboard$/) {
-  await page.getByLabel('E-posta').fill(email)
-  await page.getByLabel('Parola', { exact: true }).fill('e2e-pass-1234')
-  await page.getByRole('button', { name: 'Devam et' }).click()
+  await page.getByLabel('EPosta').fill(email)
+  await page.getByLabel('Şifre', { exact: true }).fill('e2e-pass-1234')
+  await page.getByRole('button', { name: 'Giriş' }).click()
   await expect(page).toHaveURL(landing, { timeout: 10_000 })
 }
 
 export async function logoutViaAccountMenu(page: Page) {
   await page.getByRole('button', { name: 'Hesap menüsü' }).click()
-  // [DS-v2 Aşama 2] Hesap menüsü `EkMenuPanel` (role=menuitem) — niyet aynı: menüden "Çıkış".
-  await page.locator('.v-overlay--active').getByRole('menuitem', { name: 'Çıkış' }).click()
+  await page.locator('.v-overlay--active .v-list-item').filter({ hasText: 'Çıkış' }).click()
   await expect(page).toHaveURL(/\/login/, { timeout: 10_000 })
 }
 

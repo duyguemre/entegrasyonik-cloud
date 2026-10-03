@@ -16,7 +16,7 @@ jest.mock('@database/DatabaseManager', () => ({
     },
 }));
 
-import { resolveIdentity } from '../../../src/api/http/authenticate';
+import { resolveIdentity } from '../../../src/api/authenticate';
 import { getIdentityCache } from '../../../src/platform/core/security/identityCache';
 
 let user: any;

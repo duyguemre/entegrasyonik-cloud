@@ -9,7 +9,7 @@
 
       <div v-if="isMapped" :key="'mapped-state'"
         class="mapped-success-state d-flex align-start pa-4 rounded-lg">
-        <v-icon color="success" size="32" class="mr-4 mt-1">mdi-check-decagram-outline</v-icon>
+        <v-icon color="success" size="32" class="mr-4 mt-1">mdi-check-decagram</v-icon>
         <div class="d-flex flex-column">
           <span class="mapped-title">
             Kategori Eşleşmesi Doğrulandı
@@ -319,103 +319,5 @@ const handleSaveCategoryMapping = async () => {
   letter-spacing: 0.02em;
   text-transform: uppercase;
   height: 44px !important;
-}
-
-/* ================= FE-LOCAL-1048 — eşleştirme menüsü: ana sayfa dili =================
-   Menü kartı zaten çerçevedir → iç kutunun ikinci çerçevesi / gölgesi yok. Bağlam satırları ince çizgiyle ayrılan
-   bilgi hücreleri; uyarılar tonun DÜZ açık zemini + ince ton çerçevesi (kalın sol şerit yok); düğme düz, 8px köşe. */
-.mapping-close {
-  top: calc(-1 * var(--ek-space-10));
-  right: 0;
-}
-
-.mapping-step-box {
-  padding: 0;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  box-shadow: none;
-}
-
-.context-card {
-  border-radius: var(--ek-radius-control);
-  background: var(--ek-color-surface-muted);
-}
-
-.context-card :deep(.v-divider) {
-  margin: 0 !important;
-  border-color: var(--ek-color-border-subtle);
-  opacity: 1;
-}
-
-.context-label {
-  font-size: var(--ek-type-micro-size);
-  line-height: var(--ek-type-micro-line);
-  font-weight: var(--ek-type-micro-weight);
-  letter-spacing: var(--ek-type-micro-tracking);
-  margin-bottom: 2px;
-}
-
-.context-value {
-  font-size: var(--ek-type-body-size);
-  font-weight: var(--ek-font-weight-semibold);
-}
-
-.context-value--pending {
-  font-style: normal;
-  font-weight: var(--ek-font-weight-regular);
-}
-
-.info-alert {
-  border-left-width: 1px;
-  border-radius: var(--ek-radius-control) !important;
-}
-
-.info-alert__title {
-  font-size: var(--ek-type-micro-size);
-  font-weight: var(--ek-type-micro-weight);
-  letter-spacing: var(--ek-type-micro-tracking);
-}
-
-.info-alert__text {
-  color: var(--ek-color-content-strong);
-  font-size: var(--ek-type-body-size);
-}
-
-.mapped-success-state {
-  border: 1px solid var(--ek-color-success-border);
-  border-radius: var(--ek-radius-control) !important;
-  background: var(--ek-color-success-subtle);
-}
-
-.mapped-title {
-  color: var(--ek-color-success-emphasis);
-  font-size: var(--ek-type-body-size);
-}
-
-.step-title {
-  font-size: var(--ek-type-body-size);
-}
-
-.premium-btn {
-  height: 40px !important;
-  border-radius: var(--ek-radius-control) !important;
-  letter-spacing: 0;
-  box-shadow: none !important;
-}
-
-.context-row--danger {
-  background: var(--ek-color-error-subtle);
-}
-
-.context-label--danger,
-.context-value--danger,
-.info-alert__title {
-  color: var(--ek-color-error-emphasis);
-}
-
-.info-alert {
-  border-color: var(--ek-color-error-border);
-  background: var(--ek-color-error-subtle);
 }
 </style>

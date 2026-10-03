@@ -2,11 +2,11 @@
 /**
  * IntegrationCard — `/entegrasyonlar` vitrin kartı. Yalnızca `PublicIntegration` (getPublic* çıktısı) alır:
  * destekleneni ve temel düzeyde olanı AYRI gruplarda dürüstçe gösterir; ayrıntı sayfasına bağlanır.
- * 2026-10-02 pazarlama düzeni: kanal rengiyle ince üst çizgi, büyük monogram, yetenekler çip olarak
- * (destekleniyor = onay işaretli dolu çip, temel düzeyde = çerçeveli çip). Degrade yok.
+ *
+ * S16 (kullanıcı: "daha profesyonel, albenili"): kanal rengi vurgusu (üst şerit + monogram, `--chan`), kayıttaki
+ * `status`'tan türeyen durum rozeti (`statusLabel`, uydurma durum yok), yetenekler çip olarak, hover'da derinlik.
+ * Kartın tamamı tıklanabilir (alttaki "X ayrıntıları" bağlantısının `::after` örtüsü); odakta kart çerçevelenir.
  */
-import Badge from '../Badge.astro'
-import Icon from '../home/Icon.astro'
 import ChannelMono from './ChannelMono.astro'
 import type { PublicIntegration, CoverageLevel } from '../../data/integrations'
 
@@ -15,11 +15,6 @@ interface Props {
 }
 
 const { integration: i } = Astro.props
-const coverageTone: Record<CoverageLevel, 'success' | 'info' | 'warning'> = {
-  broad: 'success',
-  partial: 'info',
-  limited: 'warning',
-}
 /** Görsel kapsam segmenti (aria-hidden); anlam yanındaki `coverageLabel` metnindedir. */
 const COVERAGE_METER: Record<CoverageLevel, number> = { broad: 3, partial: 2, limited: 1 }
 const supported = i.capabilities.filter((c) => c.level === 'supported').map((c) => c.label)
@@ -27,25 +22,29 @@ const limited = i.capabilities.filter((c) => c.level === 'limited').map((c) => c
 const titleId = `int-${i.code}`
 ---
 
-<article class="int-card" aria-labelledby={titleId} data-testid="integration-card" data-code={i.code} data-kind={i.kind}>
+<article class="int-card" aria-labelledby={titleId} data-testid="integration-card" data-code={i.code} data-kind={i.kind} data-tilt>
+  <span class="int-card__strip" aria-hidden="true"></span>
   <div class="int-card__head">
     <ChannelMono code={i.code} name={i.name} size="lg" />
     <div class="int-card__id">
       <h3 id={titleId}>{i.name}</h3>
-      <span class="int-card__kind">{i.kindLabel}</span>
+      <p class="int-card__kind">{i.kindLabel}</p>
     </div>
     <span class="int-card__status" data-testid="integration-status">
       <span class="int-card__status-dot" aria-hidden="true"></span>
       {i.statusLabel}
     </span>
   </div>
+
   <p class="int-card__summary">{i.summary}</p>
+
   <p class="int-card__coverage">
     <span class="int-card__meter" aria-hidden="true" data-level={COVERAGE_METER[i.coverage]}>
       <span></span><span></span><span></span>
     </span>
-    <Badge tone={coverageTone[i.coverage]}>{i.coverageLabel}</Badge>
+    <span class="int-card__coverage-label" data-level={COVERAGE_METER[i.coverage]}>{i.coverageLabel}</span>
   </p>
+
   <dl class="int-card__caps">
     {
       supported.length > 0 && (
@@ -54,10 +53,7 @@ const titleId = `int-${i.code}`
           <dd>
             <ul class="chips" role="list">
               {supported.map((label) => (
-                <li class="chip chip--on">
-                  <Icon name="check" size="sm" />
-                  {label}
-                </li>
+                <li class="chip">{label}</li>
               ))}
             </ul>
           </dd>
@@ -71,7 +67,7 @@ const titleId = `int-${i.code}`
           <dd>
             <ul class="chips" role="list">
               {limited.map((label) => (
-                <li class="chip">{label}</li>
+                <li class="chip chip--limited">{label}</li>
               ))}
             </ul>
           </dd>
@@ -79,31 +75,50 @@ const titleId = `int-${i.code}`
       )
     }
   </dl>
-  <a class="link int-card__link int-card__foot" href={`/entegrasyonlar/${i.code}`}>
-    {i.name} ayrıntıları
-    <Icon name="arrow" size="sm" />
+
+  <a class="int-card__foot" href={`/entegrasyonlar/${i.code}`}>
+    <span>{i.name} ayrıntıları</span>
+    <svg viewBox="0 0 24 24" class="int-card__arrow" aria-hidden="true" focusable="false"><path d="M4 12h16 M14 6l6 6-6 6"></path></svg>
   </a>
 </article>
 
 <style>
   .int-card {
+    position: relative;
     display: flex;
     flex-direction: column;
-    gap: var(--ek-space-5);
+    gap: var(--ek-space-4);
     height: 100%;
-    padding: var(--ek-space-6) var(--ek-space-6) var(--ek-space-4);
-    /* SITE-DL-03: düz kart — ince çerçeve; kalın renkli üst şerit ve gölge yok (kanal kimliği monogramda). */
+    padding: var(--ek-space-6);
+    overflow: hidden;
     border: var(--site-border-width) solid var(--ek-color-border-default);
-    border-radius: var(--ek-radius-card);
-    background: var(--ek-color-surface);
+    border-radius: var(--site-radius-panel);
+    background:
+      radial-gradient(90% 60% at 0% 0%, color-mix(in srgb, var(--chan, var(--ek-color-secondary)) 7%, transparent), transparent 70%),
+      var(--ek-color-surface);
+    box-shadow: var(--site-shadow-card);
     transition:
-      border-color var(--ek-duration-base) var(--ek-easing-standard);
+      border-color var(--ek-duration-base) var(--ek-easing-standard),
+      box-shadow var(--ek-duration-base) var(--ek-easing-standard),
+      transform var(--tilt-transition-duration, var(--ek-duration-base)) var(--ek-easing-standard);
+  }
+  /* Kanal rengi üst şerit */
+  .int-card__strip {
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline: 0;
+    height: calc(var(--site-border-width) * 3);
+    background: linear-gradient(90deg, var(--chan, var(--ek-color-secondary)), color-mix(in srgb, var(--chan, var(--ek-color-secondary)) 30%, transparent));
+  }
+  .int-card:hover,
+  .int-card:focus-within {
+    border-color: color-mix(in srgb, var(--chan, var(--ek-color-secondary)) 40%, var(--ek-color-border-default));
+    box-shadow: var(--site-shadow-card-hover);
   }
   .int-card__head {
     display: flex;
-    flex-wrap: wrap;
     align-items: center;
-    gap: var(--ek-space-4);
+    gap: var(--ek-space-3);
   }
   .int-card__id {
     display: flex;
@@ -113,88 +128,12 @@ const titleId = `int-${i.code}`
     min-width: 0;
   }
   .int-card__id h3 {
-    font-size: var(--ek-font-size-2xl);
+    color: var(--site-text-heading);
+    font-size: var(--ek-font-size-xl);
     font-weight: var(--ek-font-weight-bold);
-    letter-spacing: var(--site-font-display-tracking);
-  }
-  .int-card__kind {
-    color: var(--site-text-meta);
-    font-size: var(--ek-font-size-sm);
-    font-weight: var(--ek-font-weight-medium);
-  }
-  .int-card__coverage {
-    display: flex;
-    align-items: center;
-    gap: var(--ek-space-2);
-  }
-  .int-card__meter {
-    display: inline-flex;
-    gap: var(--ek-space-1);
-  }
-  .int-card__meter span {
-    width: var(--ek-space-3);
-    height: var(--ek-space-1);
-    border-radius: var(--ek-radius-sm);
-    background: var(--ek-color-border-default);
-  }
-  .int-card__meter[data-level='1'] span:nth-child(1),
-  .int-card__meter[data-level='2'] span:nth-child(-n + 2),
-  .int-card__meter[data-level='3'] span {
-    background: var(--site-accent);
-  }
-  .int-card__summary {
-    color: var(--site-text-body);
-    font-size: var(--ek-font-size-lg);
-    text-wrap: pretty;
-  }
-  .int-card__caps {
-    display: flex;
-    flex-direction: column;
-    gap: var(--ek-space-4);
-    margin: 0;
-    padding-top: var(--ek-space-4);
-    border-top: var(--site-border-width) solid var(--ek-color-border-default);
-  }
-  .int-card__caps dt {
-    margin-bottom: var(--ek-space-2);
-    color: var(--site-text-meta);
-    font-size: var(--ek-font-size-xs);
-    font-weight: var(--ek-font-weight-semibold);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
-  .int-card__caps dd {
-    margin: 0;
-  }
-  .chips {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--ek-space-2);
-  }
-  .chip {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--ek-space-1);
-    padding: var(--ek-space-1) var(--ek-space-2);
-    border: var(--site-border-width) solid var(--ek-color-border-default);
-    border-radius: var(--ek-radius-md);
-    background: var(--ek-color-surface);
-    color: var(--site-text-body);
-    font-size: var(--ek-font-size-sm);
-    font-weight: var(--ek-font-weight-medium);
-  }
-  .chip--on {
-    border-color: var(--site-action-border);
-    background: var(--site-action-subtle);
-    color: var(--site-action-emphasis);
-  }
-  .chip--on :global(svg) {
-    color: var(--site-accent);
+    letter-spacing: -0.01em;
   }
   /* Tüm kart tıklanabilir: alt bağlantının örtüsü (tek sekme durağı, erişilebilir ad "X ayrıntıları") */
-  .int-card {
-    position: relative;
-  }
   .int-card__foot::after {
     content: '';
     position: absolute;
@@ -209,17 +148,21 @@ const titleId = `int-${i.code}`
     outline: var(--site-focus-ring-width) solid var(--site-color-focus-ring);
     outline-offset: var(--site-focus-ring-offset);
   }
+  .int-card__kind {
+    color: var(--site-text-meta);
+    font-size: var(--ek-font-size-sm);
+    font-weight: var(--ek-font-weight-medium);
+  }
   .int-card__status {
     display: inline-flex;
     flex: none;
     align-items: center;
     align-self: flex-start;
     gap: var(--ek-space-2);
-    padding: var(--ek-space-1) var(--ek-space-2);
-    border: var(--site-border-width) solid var(--site-action-border);
-    border-radius: var(--ek-radius-md);
-    background: var(--site-action-subtle);
-    color: var(--site-action-emphasis);
+    padding: var(--ek-space-1) var(--ek-space-3);
+    border-radius: var(--ek-radius-full);
+    background: var(--ek-color-success-subtle);
+    color: var(--ek-color-success);
     font-size: var(--ek-font-size-xs);
     font-weight: var(--ek-font-weight-semibold);
     white-space: nowrap;
@@ -228,22 +171,106 @@ const titleId = `int-${i.code}`
     width: var(--ek-space-2);
     height: var(--ek-space-2);
     border-radius: var(--ek-radius-full);
-    background: var(--site-accent);
+    background: currentColor;
+    box-shadow: 0 0 0 calc(var(--site-border-width) * 3) color-mix(in srgb, var(--ek-color-success) 20%, transparent);
+  }
+  .int-card__summary {
+    color: var(--site-text-body);
+    font-size: var(--ek-font-size-md);
+    line-height: var(--site-font-body-line-height);
   }
   .int-card__coverage {
+    display: flex;
+    align-items: center;
+    gap: var(--ek-space-3);
     padding-block: var(--ek-space-3);
     border-block: var(--site-border-width) solid var(--ek-color-border-default);
   }
-  .int-card__link {
-    align-self: flex-start;
+  .int-card__meter {
+    display: inline-flex;
+    gap: var(--ek-space-1);
+  }
+  .int-card__meter span {
+    width: var(--ek-space-5);
+    height: calc(var(--ek-space-1) * 1.5);
+    border-radius: var(--ek-radius-full);
+    background: var(--ek-color-border-default);
+  }
+  .int-card__meter[data-level='1'] span:nth-child(1),
+  .int-card__meter[data-level='2'] span:nth-child(-n + 2),
+  .int-card__meter[data-level='3'] span {
+    background: var(--ek-color-secondary-darken-1);
+  }
+  .int-card__coverage-label {
+    color: var(--site-text-heading);
+    font-size: var(--ek-font-size-sm);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+  .int-card__caps {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-4);
+    margin: 0;
+  }
+  .int-card__caps dt {
+    margin-bottom: var(--ek-space-2);
+    color: var(--site-text-meta);
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--ek-font-weight-semibold);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .int-card__caps dd {
+    margin: 0;
+  }
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ek-space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .chip {
+    padding: calc(var(--ek-space-1) * 0.5) var(--ek-space-2);
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--ek-radius-md);
+    background: var(--ek-color-surface-muted);
+    color: var(--site-text-body);
+    font-size: var(--ek-font-size-sm);
+  }
+  .chip--limited {
+    border-style: dashed;
+    border-color: var(--ek-color-border-strong);
+    background: var(--ek-color-surface);
+  }
+  .int-card__foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     margin-top: auto;
+    padding-top: var(--ek-space-4);
+    color: var(--site-link-accent);
+    font-size: var(--ek-font-size-md);
+    font-weight: var(--ek-font-weight-semibold);
+    text-decoration: none;
   }
-
-  /* SITE-DL-03: hover = çerçeve tonu (gölge/yükselme yok). */
-  .int-card:hover {
-    border-color: var(--site-action-border);
+  .int-card__arrow {
+    width: var(--ek-space-5);
+    height: var(--ek-space-5);
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    transition: transform var(--ek-duration-base) var(--ek-easing-standard);
   }
-  .int-card:hover .int-card__link {
-    color: var(--site-action-emphasis);
+  .int-card:hover .int-card__arrow {
+    transform: translateX(var(--ek-space-1));
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .int-card:hover .int-card__arrow {
+      transform: none;
+    }
   }
 </style>

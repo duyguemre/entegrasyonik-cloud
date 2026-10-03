@@ -1,6 +1,6 @@
 # Backoffice log kontrol merkezi + denetim ekranı — API sözleşmesi
 
-ADR-0026 WP-LOG L2. Yüzey: `/admin-api` (yalnız platformAdmin, TOTP tamamlanmış tam oturum). Kaynak kod: `backend/src/api/rpc/handlers/backoffice-{log,error,audit}-service.ts`, şemalar `backend/src/capabilities/rpc-input/backoffice.ts`, yetenekler `backend/src/capabilities/domains/backoffice.ts`.
+ADR-0026 WP-LOG L2. Yüzey: `/admin-api` (yalnız platformAdmin, TOTP tamamlanmış tam oturum). Kaynak kod: `backend/src/api/services/backoffice-{log,error,audit}-service.ts`, şemalar `backend/src/capabilities/rpc-input/backoffice.ts`, yetenekler `backend/src/capabilities/domains/backoffice.ts`.
 
 ## Genel kurallar
 

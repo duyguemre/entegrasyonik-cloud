@@ -12,7 +12,7 @@
 import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals';
 import { ObjectId } from 'mongodb';
 
-import ProductService from '../../../src/api/rpc/handlers/product-service';
+import ProductService from '../../../src/api/services/product-service';
 
 const CLIENT_ID = 42;
 

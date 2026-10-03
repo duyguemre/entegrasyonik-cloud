@@ -86,7 +86,7 @@ const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'obj
  */
 const PLAN_TAGLINES: Record<string, string> = {
   starter: 'İlk pazaryeri kanallarını tek panelde toplamak isteyen küçük ekipler için.',
-  growth: 'Birden fazla kanalda büyüyen ve daha fazla ürün yöneten işletmeler için.',
+  growth: 'Birden fazla kanalda büyüyen ve daha fazla ürün yöneten satıcılar için.',
   enterprise: 'Özel limitler ve ihtiyaçlar için size özel teklif hazırlıyoruz.',
 }
 
@@ -167,7 +167,7 @@ export const FEATURE_STATE_LABELS: Record<FeatureState, string> = {
   soon: 'Yakında',
 }
 
-export const LIMIT_LABELS = { channels: 'Kanal', skus: 'Ürün varyantı', users: 'Kullanıcı' } as const
+export const LIMIT_LABELS = { channels: 'Kanal', skus: 'Ürün varyantı (SKU)', users: 'Kullanıcı' } as const
 
 export interface PublicPlanFeature {
   code: PlanFeatureCode

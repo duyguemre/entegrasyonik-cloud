@@ -3,7 +3,7 @@
 // bir Redis dokumu bileti ele gecirmeye yetmez. Redis hazir degilse bilet URETILMEZ (reddedilir; bellek ici yedek YOK -- tek
 // kullanimlik garantisi cok-pod'da yalniz Redis ile saglanir).
 import crypto from 'crypto';
-import { ApplicationError } from '@platform/core/security/Security';
+import { ApplicationError } from '@api/Security';
 import { RedisService } from '@services/redis';
 
 export const IMPERSONATION_TICKET_TTL_SECONDS = 60;

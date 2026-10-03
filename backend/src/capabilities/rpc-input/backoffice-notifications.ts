@@ -40,7 +40,7 @@ export const BACKOFFICE_NOTIFICATIONS_RPC_INPUT: Partial<Record<RpcRef, z.ZodTyp
     'BackofficeNotificationService/previewAnnouncement': strictBody({ id: oid.optional(), draft: announcementInput.optional() }),
     'BackofficeNotificationService/getDeliveryStats': strictBody({}),
     'BackofficeNotificationService/listDeliveries': strictBody({
-        status: z.enum(['pending', 'sending', 'sent', 'failed', 'dead', 'skipped', 'suppressed']).optional(), channel: z.enum(['email', 'push']).optional(), tid: tid.optional(),
+        status: z.enum(['pending', 'sending', 'sent', 'failed', 'dead', 'skipped', 'suppressed']).optional(), channel: z.enum(['email']).optional(), tid: tid.optional(),
         code: code.optional(), eventId: oid.optional(), cursor: cursor.optional(), limit: limit.optional(),
     }),
     'BackofficeNotificationService/retryDelivery': strictBody({ id: oid, tid: tid.optional(), reason }),

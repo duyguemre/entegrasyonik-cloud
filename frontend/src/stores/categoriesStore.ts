@@ -2,19 +2,16 @@ import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import useRestApi from '@/composables/restapi'
 import { registerStoreReset } from '@/stores/resetRegistry'
-import type { CreateResult } from '@/components/common/quickCreate'
 export const useCategoriesStore = defineStore('categoriesStore', () => {
   const categories = ref()
   const selectCategories = ref()
-  /** Son `retrieve` durumu (Kategoriler ekranı yükleniyor/hata/boş ayrımı için; diğer tüketiciler yok sayar). */
-  const status = ref<'idle' | 'loading' | 'ready' | 'error'>('idle')
   const restApi = useRestApi()
 
   const getCategory = (_id: any) => {
     if (selectCategories.value == undefined || selectCategories.value.length == 0) {
       return { title: '-' }
     }
-    for (var category of (selectCategories.value || [])) {
+    for (var category of selectCategories.value) {
       if (category._id == _id)
         return category
     }
@@ -29,7 +26,7 @@ export const useCategoriesStore = defineStore('categoriesStore', () => {
 
   const checkCategoryPlatformMapping = (categoryId: any, integrationCode: any) => {
     const ret: any = { code: "SUCCESS", choices: [] }
-    for (var category of (selectCategories.value || [])) {
+    for (var category of selectCategories.value) {
       if (category._id != categoryId) continue
       if (category.platforms && Array.isArray(category.platforms)) {
         const platform = category.platforms.find((platform: any) => platform.integrationCode == integrationCode)
@@ -56,7 +53,7 @@ export const useCategoriesStore = defineStore('categoriesStore', () => {
 
 
   const getCategoryPlatformMappingForChoiceId = (categoryId: any, integrationCode: any, choiceId: any) => {
-    for (var category of (selectCategories.value || [])) {
+    for (var category of selectCategories.value) {
       if (category._id != categoryId) continue
       if (category.platforms && Array.isArray(category.platforms)) {
         const platform = category.platforms.find((platform: any) => platform.integrationCode == integrationCode)
@@ -73,7 +70,7 @@ export const useCategoriesStore = defineStore('categoriesStore', () => {
 
   const getCategoryPlatformMapping = (integrationCode: any, integrationCategoryId: any, integrationCategoryChoiceId: any) => {
     console.log(integrationCode, integrationCategoryId, integrationCategoryChoiceId)
-    for (var category of (selectCategories.value || [])) {
+    for (var category of selectCategories.value) {
       if (category.platforms && Array.isArray(category.platforms)) {
         const platform = category.platforms.find((platform: any) => platform.integrationCode == integrationCode && platform.integrationCategoryId == integrationCategoryId)
         if (platform) {
@@ -88,7 +85,7 @@ export const useCategoriesStore = defineStore('categoriesStore', () => {
 
 
   const getCategoryPlatformChoiceId = (integrationCode: any, integrationCategoryId: any, integrationCategoryChoiceId: any) => {
-    for (var category of (selectCategories.value || [])) {
+    for (var category of selectCategories.value) {
       if (category.platforms && Array.isArray(category.platforms)) {
         const platform = category.platforms.find((platform: any) => platform.integrationCode == integrationCode && platform.integrationCategoryId == integrationCategoryId)
         if (platform) {
@@ -103,7 +100,7 @@ export const useCategoriesStore = defineStore('categoriesStore', () => {
   }
 
   const getCategoryNameFromIntegrationCategoryId = (integrationCode: any, integrationCategoryId: any) => {
-    for (var category of (selectCategories.value || [])) {
+    for (var category of selectCategories.value) {
       if (category.platforms && Array.isArray(category.platforms)) {
         const platform = category.platforms.find((platform: any) => platform.integrationCode == integrationCode && platform.integrationCategoryId == integrationCategoryId)
         if (platform)
@@ -117,7 +114,7 @@ export const useCategoriesStore = defineStore('categoriesStore', () => {
     if (selectCategories.value == undefined || selectCategories.value.length == 0) {
       return undefined
     }
-    for (var category of (selectCategories.value || [])) {
+    for (var category of selectCategories.value) {
       if (category._id == categoryId) {
         return category.platforms?.[integrationCode]
       }
@@ -127,14 +124,12 @@ export const useCategoriesStore = defineStore('categoriesStore', () => {
 
 
   const retrieve = async () => {
-    status.value = 'loading'
     await restApi.get("CategoryService").then((resp: any) => {
       if (resp && resp.length > 0) {
         categories.value = resp
         selectCategories.value = processCategories(categories.value, [])
       }
-      status.value = Array.isArray(resp) ? 'ready' : 'error'
-    }).catch(() => { status.value = 'error' })
+    })
     return categories.value
   }
 
@@ -156,22 +151,20 @@ export const useCategoriesStore = defineStore('categoriesStore', () => {
     return countCategories(categories.value) - 1
   }
 
-  /** FR2-PFORM 23: istek beklenir; başarıda ağaç yenilenir ve yeni kimlik döner, hata yutulmaz. Üst yoksa ana kök. */
-  const addCategory = async (newCategory: any): Promise<CreateResult> => {
+  const addCategory = (newCategory: any) => {
     if (!newCategory.parentId) {
-      for (const category of categories.value ?? []) {
+      for (const category of categories.value) {
         if (category.isMain == true) {
           newCategory.parentId = category._id
           break
         }
       }
     }
-    const response: any = await restApi.post("CategoryService/addCategory", { parentCategoryId: newCategory.parentId || undefined, title: newCategory.title })
-    if (response && response._id) {
-      await retrieve()
-      return { id: String(response._id) }
-    }
-    return { error: response }
+    restApi.post("CategoryService/addCategory", { parentCategoryId: newCategory.parentId, title: newCategory.title }).then((response: any) => {
+      if (response && response._id) {
+        retrieve()
+      }
+    })
   }
 
 
@@ -207,7 +200,7 @@ export const useCategoriesStore = defineStore('categoriesStore', () => {
   }
 
   // R9b: çıkış sonrası önceki kiracının kategori önbelleği kalmasın.
-  registerStoreReset('categoriesStore', () => { categories.value = undefined; selectCategories.value = undefined; status.value = 'idle' })
+  registerStoreReset('categoriesStore', () => { categories.value = undefined; selectCategories.value = undefined })
 
-  return { status, retrieve, getCategoryTitle, getCategoryPlatformMappingForChoiceId, checkCategoryPlatformMapping, getCategoryPlatformMapping, getCategoryPlatformChoiceId, getCategoryNameFromIntegrationCategoryId, getIntegrationCategoryId, getCategories, getSelectCategories, addCategory, getCategory, countOfCategories }
+  return { retrieve, getCategoryTitle, getCategoryPlatformMappingForChoiceId, checkCategoryPlatformMapping, getCategoryPlatformMapping, getCategoryPlatformChoiceId, getCategoryNameFromIntegrationCategoryId, getIntegrationCategoryId, getCategories, getSelectCategories, addCategory, getCategory, countOfCategories }
 })

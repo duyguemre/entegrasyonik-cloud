@@ -1,1312 +1,608 @@
 ---
 /**
- * /fiyatlandirma — plan seçimi (ADR-0014 Karar 2, S4b; S17; S25 K46; S27b SR4-10 üst seviye fiyat sayfası).
- *
- * VERİ: tüm fiyat/limit/deneme değerleri tek görünüm kaydından — `src/data/plan-cards.ts` (`getPlanCards`,
- * `getPlanTrustPoints`, `getPlanNotice`, `getBillingIntervals`); o da `plans.ts` (repo içi seed) ve `pricing.ts`
- * kopyasını okur. Anasayfa planlar bölümü (S27a) AYNI kaydı kullanır. Sayfa hiçbir olgusal değer sabit yazmaz;
- * uydurma fiyat/indirim yok (yıllık seçenek seed'de yok → aralık geçişi gösterilmez).
- *
- * KURGU (S27b): koyu, ortalı kısa hero (vaat + güven çipleri + taslak notu) → kartlar hero'nun alt kenarına taşar
- * (göz ilk ekranda fiyatı görür) → önerilen plan koyu "vitrin" kartı (sayfanın tek koyu kartı; "her planda" çekirdeği ilk kartta, tekrar şeridi yok)
- * → kanıtlanabilir güven unsurları (kayıttan) → Otopilot her planda (K46; açık zeminde merdiven) → karşılaştırma
- * tablosu (grup ikonları, öne çıkan sütun) → iki sütunlu SSS (+ belgeler, yardım) → kapanış (ücretsiz deneme + demo).
- * Koyu sahne sayısı: hero + kapanış (BRAND §4). CTA'lar uygulamaya devreder:
- * `${PUBLIC_APP_URL}/login?mode=register&plan=<kod>&interval=<aralık>`; Kurumsal → /iletisim (yayımlı değilse not).
+ * /fiyatlandirma — plan karşılaştırma + deneme + fiyat SSS'si (ADR-0014 Karar 2, S4b).
+ * Tüm fiyat/limit/deneme değerleri `src/data/plans.ts` seçicilerinden (repo içindeki plans.seed.json) gelir; sayfa
+ * hiçbir olgusal değer sabit yazmaz. Yol haritası özellikleri (ROADMAP_VISIBLE=false) kartlarda görünmez.
+ * CTA'lar uygulamaya devreder: `${PUBLIC_APP_URL}/login?mode=register&plan=<kod>&interval=<aralık>`.
+ * Kurumsal (özel teklif) planın CTA'sı /iletisim'e gider; sayfa henüz yayımlanmamışsa bağlantı üretilmez (kırık link yok).
  */
 import BaseLayout from '../layouts/BaseLayout.astro'
-import { crumbsFor } from '../data/seo'
 import Section from '../components/Section.astro'
-import Container from '../components/Container.astro'
 import Button from '../components/Button.astro'
-import Eyebrow from '../components/Eyebrow.astro'
-import Icon from '../components/home/Icon.astro'
+import Badge from '../components/Badge.astro'
 import PageHero from '../components/pages/PageHero.astro'
-import SectionHead from '../components/pages/SectionHead.astro'
-import Accordion from '../components/pages/Accordion.astro'
-import HelpBand from '../components/pages/HelpBand.astro'
-import CtaBand from '../components/pages/CtaBand.astro'
-import { appUrls } from '../lib/site-config'
-import { contactEmail, mailtoHref } from '../lib/contact'
+import { siteConfig, appUrls } from '../lib/site-config'
 import { primaryNav, published } from '../data/navigation'
-import { getPublicPlans, getPublicTrial, getTrialPlanCode } from '../data/plans'
-import { getComparisonRows, getPricingFaq, getPlanCommonFeatures, getPlanAgentRows, planAgentIntro } from '../data/pricing'
-import { getPlanCards, getPlanTrustPoints, getPlanNotice, getBillingIntervals } from '../data/plan-cards'
-import { AGENT_BRAND, AGENT_PATH } from '../data/agent-brand'
+import { getPublicPlans, getPlanSourceNotice, getVatNotice, getPublicTrial, getTrialPlanCode } from '../data/plans'
+import { getComparisonRows, getPricingFaq, getPlanPitch } from '../data/pricing'
 
 const plans = getPublicPlans()
-const cards = getPlanCards(plans)
 const rows = getComparisonRows(plans)
 const faq = getPricingFaq()
 const trial = getPublicTrial()
 const trialPlanCode = getTrialPlanCode()
-const notice = getPlanNotice()
-const trust = getPlanTrustPoints()
-const intervals = getBillingIntervals(plans)
-const commonFeatures = getPlanCommonFeatures()
-const agentRows = getPlanAgentRows(plans)
-const crumbs = crumbsFor('/fiyatlandirma')
+const proposalNotice = getPlanSourceNotice()
+const vatNotice = getVatNotice()
+const crumbs = [{ label: 'Ana sayfa', href: '/' }, { label: 'Fiyatlandırma' }]
 
 const isPublished = (href: string) => published(primaryNav).some((i) => i.href === href)
+const contactHref = isPublished('/iletisim') ? '/iletisim' : undefined
 const faqPageHref = isPublished('/sss') ? '/sss' : undefined
-const featuresHref = isPublished('/ozellikler') ? '/ozellikler' : undefined
 
 const fmt = (n: number) => new Intl.NumberFormat('tr-TR').format(n)
 const registerPlan = plans.find((p) => p.code === trialPlanCode) ?? plans.find((p) => p.priceKind === 'fixed')
 const closingHref = appUrls.register({ plan: registerPlan?.code, interval: registerPlan?.interval })
-const demoHref = mailtoHref(contactEmail, 'Entegrasyonik demo talebi')
-const featuredCode = cards.find((c) => c.recommended)?.code
-// Hero çipleri: güven kaydının ilk üç öğesi (deneme, kart, ajan ürünü); tamamı kartların altında şerit olarak.
-const heroChips = trust.filter((t) => ['trial', 'card', 'agent'].includes(t.id))
-const ladder = cards.filter((c) => c.agent)
 
-// Karşılaştırma: plan eklentisi satırları — planlardaki özellik kodlarının birleşimi (kayıt sırası korunur).
-const planFeatureRows = [...new Map(plans.flatMap((p) => p.features.map((f) => [f.code, f.label] as const))).entries()].map(
-  ([code, label]) => ({ code, label, cells: plans.map((p) => p.features.some((f) => f.code === code)) }),
-)
+// Hero görseli: sabit fiyatlı planlar ARTAN fiyat sırasındadır (getPublicPlans() garantisi) — çubuk yüksekliği
+// bu sıraya göre CSS'te (nth-child) kademelenir. Inline `style` KULLANILMAZ (CSP `style-src 'self'`, ham
+// değer/piksel yasağı da zaten hardcode yasağı ile aynı gerekçeye dayanır).
+const fixedPlans = plans.filter((p) => p.priceKind === 'fixed')
+// Görsel vurgu: en çok özelliği içeren sabit fiyatlı plan (gerçek veriden, iddia metni eklenmez).
+const featuredCode = [...fixedPlans].sort((a, b) => b.features.length - a.features.length)[0]?.code
 ---
 
-<BaseLayout>
+<BaseLayout
+  title="Fiyatlandırma"
+  description="Entegrasyonik planlarını karşılaştırın: kanal, ürün varyantı ve kullanıcı limitleri, deneme sürümü ve sık sorulan sorular."
+>
   <PageHero
     title="İşinize uygun planı seçin"
-    accent="uygun planı"
-    eyebrow="Fiyatlandırma"
-    lead="Bugün ihtiyacınız olan kapasiteyle başlayın; kanal, ürün ve ekip sayınız büyüdükçe planınızı uygulama içinden yükseltin."
+    lead="Çok kanallı satış operasyonunuzu ölçeğinize uygun planla yönetin. Ücretsiz denemeyle başlayın; kanal, ürün ve ekip sayınız büyüdükçe planınızı uygulama içinden yükseltin."
     crumbs={crumbs}
-    align="center"
-    overlap
   >
-    <ul class="hero-chips" role="list" aria-label="Plan güvenceleri">
-      {
-        heroChips.map((t) => (
-          <li>
-            <Icon name={t.icon} size="sm" />
-            <span>
-              {t.meta && <strong>{t.meta}</strong>} {t.label}
-            </span>
-          </li>
-        ))
-      }
-    </ul>
     {
-      notice && (
-        <p class="notice" role="note" data-testid="pricing-notice" data-proposal-notice={notice.internal}>
-          <Icon name="info" size="sm" />
-          {notice.visitor}
-        </p>
+      (proposalNotice || vatNotice) && (
+        <div class="notice" role="note" data-testid="pricing-notice">
+          {proposalNotice && <strong>{proposalNotice}</strong>}
+          <span>Fiyatlar ve plan içerikleri taslaktır; nihai değerler onaylandığında güncellenir.{vatNotice ? ` ${vatNotice}` : ''}</span>
+        </div>
       )
     }
+    <Fragment slot="visual">
+      <p class="stat-panel__tag">Aylık fiyat kademesi</p>
+      <ul class="tier-chart" role="list">
+        {
+          fixedPlans.map((p) => (
+            <li>
+              <span class="tier-chart__bar" aria-hidden="true" />
+              <span class="tier-chart__name">{p.name}</span>
+              <span class="tier-chart__price">{p.priceLabel}</span>
+            </li>
+          ))
+        }
+      </ul>
+      <p class="stat-panel__caption">Kurumsal plan özel tekliftir; sabit fiyat gösterilmez.</p>
+    </Fragment>
   </PageHero>
 
-  <section id="planlar" class="plans-section" aria-labelledby="plans-title">
-    <Container class="plans-wrap">
-      <h2 id="plans-title" class="sr-only">Planlar</h2>
+  <Section tone="muted" labelledby="plans-title" class="tight-section">
+    <h2 id="plans-title" class="sr-only">Planlar</h2>
+    <ul class="plans" data-testid="plan-cards">
       {
-        intervals.length > 1 && (
-          <p class="interval-note" data-testid="interval-options">
-            {intervals.map((i) => (i === 'year' ? 'Yıllık' : 'Aylık')).join(' · ')}
-          </p>
-        )
-      }
-      <ul class="plans" data-testid="plan-cards" role="list">
-        {
-          cards.map((c) => (
-            <li class:list={['plan', { 'plan--featured': c.recommended }]} data-plan={c.code}>
-              <article
-                aria-labelledby={`plan-${c.code}-name`}
-                class:list={['plan__card', { 'plan__card--featured': c.recommended }]}
-                data-surface={c.recommended ? 'dark' : undefined}
-              >
-                {c.recommended && (
-                  <p class="plan__ribbon">
-                    <Icon name="sparkle" size="sm" />
-                    Önerilen
-                  </p>
-                )}
+        plans.map((plan) => {
+          const isTrialPlan = trialPlanCode === plan.code
+          const isFeatured = plan.code === featuredCode
+          return (
+            <li class="plan" data-plan={plan.code}>
+              <article aria-labelledby={`plan-${plan.code}-name`} class:list={['plan__card', { 'plan__card--featured': isFeatured }]}>
                 <header class="plan__head">
-                  <h3 id={`plan-${c.code}-name`} class="plan__name">{c.name}</h3>
-                  {c.headline && <p class="plan__pitch">{c.headline}</p>}
+                  <div class="plan__title-row">
+                    <h3 id={`plan-${plan.code}-name`}>{plan.name}</h3>
+                    {isFeatured && <span class="plan__featured">Önerilen</span>}
+                  </div>
+                  {getPlanPitch(plan.code) && <p class="plan__pitch">{getPlanPitch(plan.code)!.headline}</p>}
+                  {plan.tagline && <p class="plan__tagline">{plan.tagline}</p>}
                 </header>
 
-                <div class="plan__pricebox">
-                  <p class="plan__price">
-                    <span class:list={['plan__amount', { 'plan__amount--quote': c.price.kind === 'quote' }]} data-testid="plan-price">
-                      {c.price.label}
-                    </span>
-                    {c.price.period && <span class="plan__period">{c.price.period}</span>}
-                  </p>
-                  <p class="plan__vat">{c.price.note}</p>
-                  {c.trial && <p class="plan__trial">{c.trial.label}</p>}
+                <div class="plan__price">
+                  <span class="plan__amount" data-testid="plan-price">{plan.priceLabel}</span>
+                  {plan.periodLabel && <span class="plan__period">{plan.periodLabel}</span>}
                 </div>
+                <p class="plan__vat">{plan.vatLabel || 'Kapsama göre size özel'}</p>
+
+                {isTrialPlan && (
+                  <Badge tone="info">
+                    {fmt(trial.days)} gün ücretsiz deneme{trial.cardRequired ? '' : ' · kart gerekmez'}
+                  </Badge>
+                )}
+
+                <ul class="plan__list" aria-label={`${plan.name} plan limitleri`}>
+                  {plan.limits.map((l) => (
+                    <li>
+                      <span class="plan__list-label">{l.label}</span>
+                      <span class="plan__list-value">{l.value === null ? 'Özel limit' : fmt(l.value)}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                {plan.features.length > 0 && (
+                  <ul class="plan__features" aria-label={`${plan.name} plan özellikleri`}>
+                    {plan.features.map((f) => (
+                      <li>{f.label}</li>
+                    ))}
+                  </ul>
+                )}
 
                 <div class="plan__cta">
-                  {c.cta.href ? (
+                  {plan.cta === 'trial' ? (
                     <Button
-                      href={c.cta.href}
-                      variant={c.recommended ? 'inverse' : c.cta.kind === 'trial' ? 'primary' : 'secondary'}
+                      href={appUrls.register({ plan: plan.code, interval: plan.interval })}
+                      variant={isTrialPlan ? 'primary' : 'secondary'}
                       size="lg"
-                      aria-label={c.cta.ariaLabel}
+                      aria-label={`${plan.name} planı için ${isTrialPlan ? 'ücretsiz dene' : 'planı seç'}`}
                       data-testid="plan-cta"
                     >
-                      {c.cta.label}
+                      {isTrialPlan ? 'Ücretsiz dene' : 'Planı seç'}
                     </Button>
-                  ) : null}
-                  {!c.trial && <p class="plan__cta-note">{c.cta.note}</p>}
+                  ) : contactHref ? (
+                    <Button href={contactHref} variant="secondary" size="lg" aria-label={`${plan.name} plan için teklif iste`} data-testid="plan-cta">
+                      Teklif iste
+                    </Button>
+                  ) : (
+                    <p class="plan__cta-note">Teklif için iletişim bilgileri hazırlanıyor.</p>
+                  )}
                 </div>
-
-                {c.tagline && <p class="plan__tagline">{c.tagline}</p>}
-
-                <ul class="plan__limits" aria-label={`${c.name} plan limitleri`}>
-                  {c.limits.map((l) => (
-                    <li>
-                      <span class="plan__limit-icon" aria-hidden="true">
-                        <Icon name={l.icon} size="sm" />
-                      </span>
-                      <span class="plan__limit-label">{l.label}</span>
-                      <span class="plan__limit-value">{l.display}</span>
-                    </li>
-                  ))}
-                </ul>
-
-                {c.includes.length > 0 && (
-                  <div class="plan__inc">
-                    <p class="plan__inc-label">{c.includesLabel}</p>
-                    <ul class="plan__features" aria-label={`${c.name} plan özellikleri`}>
-                      {[...new Set([...c.includes, ...c.addOns])].map((f) => (
-                        <li>
-                          <span class="plan__check" aria-hidden="true">
-                            <Icon name="check" size="sm" />
-                          </span>
-                          <span>{f}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {c.agent && (
-                  <div class="plan__agent" data-testid="plan-agent">
-                    <p class="plan__agent-title">
-                      <Icon name="sparkle" size="sm" />
-                      {c.agent.title}
-                    </p>
-                    {c.agent.previous && <p class="plan__agent-prev">{c.agent.previous} planındakilere ek olarak:</p>}
-                    <ul class="plan__agent-list" role="list">
-                      {c.agent.items.map((it) => (
-                        <li>{it}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
               </article>
             </li>
-          ))
-        }
-      </ul>
-
-      <ul class="trust" role="list" aria-label="Güvenceler" data-testid="plan-trust">
-        {
-          trust.map((t) => (
-            <li class="trust__item" data-trust={t.id}>
-              <span class="trust__icon" aria-hidden="true">
-                <Icon name={t.icon} size="sm" />
-              </span>
-              <span class="trust__text">
-                {t.meta ? (
-                  <>
-                    <strong>{t.meta}</strong> {t.label}
-                  </>
-                ) : (
-                  t.label
-                )}
-              </span>
-            </li>
-          ))
-        }
-      </ul>
-      {
-        featuresHref && (
-          <p class="trust__more">
-            <a class="link" href={featuresHref}>
-              Her planda gelen özelliklerin tamamı <Icon name="arrow" size="sm" />
-            </a>
-          </p>
-        )
+          )
+        })
       }
-    </Container>
-  </section>
+    </ul>
+  </Section>
 
-  {
-    ladder.length > 0 && (
-      <Section id="ajan-her-planda" labelledby="agent-plan-title" class="tight-section">
-        <div class="agent-plan" data-testid="plan-ai">
-          <div class="agent-plan__copy">
-            <Eyebrow icon="sparkle">{planAgentIntro.eyebrow}</Eyebrow>
-            <h2 id="agent-plan-title" class="agent-plan__title">
-              {planAgentIntro.title}
-            </h2>
-            <p class="agent-plan__text">{planAgentIntro.text}</p>
-            <ul class="agent-plan__points" role="list">
-              {planAgentIntro.points.map((pt) => (
-                <li>
-                  <Icon name="check" size="sm" />
-                  {pt}
-                </li>
-              ))}
-            </ul>
-            <a class="link" href={AGENT_PATH}>
-              {AGENT_BRAND} nasıl çalışır <Icon name="arrow" size="sm" />
-            </a>
-          </div>
-          <ol class="agent-ladder" aria-label={`${AGENT_BRAND}: planlara göre yetki`}>
-            {ladder.map((c, i) => (
-              <li class:list={['agent-ladder__step', { 'is-featured': c.recommended }]} data-plan={c.code} data-step={i + 1}>
-                <p class="agent-ladder__name">
-                  <span class="agent-ladder__level" aria-hidden="true">
-                    {ladder.map((_, j) => (
-                      <span class:list={{ on: j <= i }} />
-                    ))}
-                  </span>
-                  {c.name}
-                </p>
-                {c.agent!.previous && <p class="agent-ladder__prev">{c.agent!.previous} planındakilere ek olarak</p>}
-                <ul class="agent-ladder__list" role="list">
-                  {c.agent!.items.map((it) => (
-                    <li>
-                      <Icon name="check" size="sm" />
-                      {it}
-                    </li>
-                  ))}
-                </ul>
-              </li>
-            ))}
-          </ol>
-        </div>
-      </Section>
-    )
-  }
-
-  <Section id="karsilastir" tone="muted" labelledby="compare-title" class="tight-section">
-    <SectionHead
-      id="compare-title"
-      eyebrow="Karşılaştırma"
-      title="Planları yan yana görün"
-      lead={`Limitler, özellikler ve ${AGENT_BRAND} yetkileri tek tabloda; tablo kaydırılırken plan adları üstte kalır.`}
-    />
-    <div class="table-wrap" role="region" aria-label="Plan karşılaştırma tablosu" tabindex="0">
-      <table class="compare__table" data-testid="compare-table">
-        <caption class="sr-only">Planların fiyat, limit ve özellik karşılaştırması</caption>
-        <thead>
-          <tr>
-            <th scope="col">Plan</th>
-            {
-              plans.map((p) => (
-                <th scope="col" class:list={{ 'is-featured': p.code === featuredCode }}>
-                  {p.name}
-                </th>
-              ))
-            }
-          </tr>
-        </thead>
-        <tbody>
-          <tr class="compare__price-row" data-row-kind="limit">
-            <th scope="row">{plans[0]?.intervalLabel} fiyat</th>
-            {plans.map((p) => (
-              <td class:list={{ 'is-featured': p.code === featuredCode }}>
-                <span class="cell-price">{p.priceLabel}</span>
-                {p.vatLabel && <span class="cell-note">{p.vatLabel}</span>}
-              </td>
-            ))}
-          </tr>
-          {
-            rows.map((row) => (
-              <tr data-row-kind="limit">
-                <th scope="row">{row.label}</th>
-                {row.cells.map((c) => (
-                  <td class:list={{ 'is-featured': c.planCode === featuredCode }}>{c.value === null ? 'Özel limit' : fmt(c.value)}</td>
-                ))}
-              </tr>
-            ))
-          }
-          <tr class="compare__group">
-            <td colspan={plans.length + 1}>
-              <span class="compare__group-label">
-                <Icon name="layers" size="sm" />
-                Özellikler
-              </span>
-            </td>
-          </tr>
-          <tr data-row-kind="feature">
-            <th scope="row">Ücretsiz deneme</th>
-            {plans.map((p) => (
-              <td class:list={{ 'is-featured': p.code === featuredCode }}>
-                {p.code === trialPlanCode ? (
-                  <span class="cell-strong">{fmt(trial.days)} gün</span>
-                ) : (
-                  <>
-                    <span class="cell-dash" aria-hidden="true" />
-                    <span class="sr-only">Yok</span>
-                  </>
-                )}
-              </td>
-            ))}
-          </tr>
-          {
-            commonFeatures.map((f) => (
-              <tr data-row-kind="feature">
-                <th scope="row">{f}</th>
-                {plans.map((p) => (
-                  <td class:list={{ 'is-featured': p.code === featuredCode }}>
-                    <span class="cell-check" aria-hidden="true">
-                      <Icon name="check" size="sm" />
-                    </span>
-                    <span class="sr-only">Dahil</span>
-                  </td>
-                ))}
-              </tr>
-            ))
-          }
-          {
-            planFeatureRows.map((r) => (
-              <tr data-row-kind="feature">
-                <th scope="row">{r.label}</th>
-                {r.cells.map((has, idx) => (
-                  <td class:list={{ 'is-featured': plans[idx].code === featuredCode }}>
-                    {has ? (
-                      <>
-                        <span class="cell-check" aria-hidden="true">
-                          <Icon name="check" size="sm" />
-                        </span>
-                        <span class="sr-only">Dahil</span>
-                      </>
-                    ) : (
-                      <>
-                        <span class="cell-dash" aria-hidden="true" />
-                        <span class="sr-only">Dahil değil</span>
-                      </>
-                    )}
-                  </td>
-                ))}
-              </tr>
-            ))
-          }
-          <tr class="compare__group compare__group--agent">
-            <td colspan={plans.length + 1}>
-              <span class="compare__group-label">
-                <Icon name="sparkle" size="sm" />
-                {AGENT_BRAND} (her planda dahil)
-              </span>
-            </td>
-          </tr>
-          {
-            agentRows.map((r) => (
-              <tr data-row-kind="agent">
-                <th scope="row">{r.label}</th>
-                {r.cells.map(({ planCode, cell }) => (
-                  <td class:list={{ 'is-featured': planCode === featuredCode }}>
-                    {cell.kind === 'check' ? (
-                      <>
-                        <span class="cell-check" aria-hidden="true">
-                          <Icon name="check" size="sm" />
-                        </span>
-                        <span class="sr-only">Dahil</span>
-                      </>
-                    ) : cell.kind === 'text' ? (
-                      <span class="cell-strong">{cell.text}</span>
-                    ) : (
-                      <>
-                        <span class="cell-dash" aria-hidden="true" />
-                        <span class="sr-only">Dahil değil</span>
-                      </>
-                    )}
-                  </td>
-                ))}
-              </tr>
-            ))
-          }
-        </tbody>
-        <tfoot>
-          <tr>
-            <th scope="row">
-              <span class="sr-only">Plan seçimi</span>
-            </th>
-            {
-              cards.map((c) => (
-                <td class:list={{ 'is-featured': c.recommended }}>
-                  {c.cta.href && (
-                    <a class="compare__cta" href={c.cta.href} aria-label={c.cta.ariaLabel}>
-                      {c.cta.label}
-                      <Icon name="arrow" size="sm" />
-                    </a>
-                  )}
+  <Section labelledby="compare-title" class="tight-section">
+    <div class="compare">
+      <h2 id="compare-title">Planları karşılaştırın</h2>
+      <div class="table-wrap" role="region" aria-label="Plan karşılaştırma tablosu" tabindex="0">
+        <table class="compare__table" data-testid="compare-table">
+          <caption class="sr-only">Planların fiyat ve limit karşılaştırması</caption>
+          <thead>
+            <tr>
+              <th scope="col">Plan</th>
+              {plans.map((p) => <th scope="col">{p.name}</th>)}
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="compare__price-row">
+              <th scope="row">{plans[0]?.intervalLabel} fiyat</th>
+              {plans.map((p) => (
+                <td>
+                  <span class="cell-strong">{p.priceLabel}</span>
+                  {p.vatLabel && <span class="cell-note">{p.vatLabel}</span>}
                 </td>
+              ))}
+            </tr>
+            {
+              rows.map((row) => (
+                <tr>
+                  <th scope="row">{row.label}</th>
+                  {row.cells.map((c) => <td>{c.value === null ? 'Özel limit' : fmt(c.value)}</td>)}
+                </tr>
               ))
             }
-          </tr>
-        </tfoot>
-      </table>
+          </tbody>
+        </table>
+      </div>
+      <p class="compare__note">Plan içerikleri taslaktır; nihai kapsam onaylandığında güncellenir.</p>
     </div>
   </Section>
 
-  <Section id="fiyat-sss" labelledby="faq-title" class="tight-section">
-    <div class="faq-grid">
-      <div class="faq-grid__aside">
-        <SectionHead id="faq-title" eyebrow="SSS" title="Fiyatlandırma hakkında sorular" lead="Deneme, faturalama ve plan değişikliği hakkında merak edilenler." compact />
-        <ul class="doc-links" role="list" aria-label="İlgili belgeler">
-          {
-            faqPageHref && (
-              <li>
-                <a href={faqPageHref}>
-                  <Icon name="help" size="sm" />
-                  Tüm sık sorulan sorular
-                </a>
-              </li>
-            )
-          }
-          <li>
-            <a href="/yasal/abonelik-sozlesmesi">
-              <Icon name="book" size="sm" />
-              Abonelik sözleşmesi
-            </a>
-          </li>
-          <li>
-            <a href="/yasal/iptal-iade">
-              <Icon name="book" size="sm" />
-              İptal ve iade koşulları
-            </a>
-          </li>
-        </ul>
-      </div>
-      <div class="faq-grid__main">
-        <div data-testid="pricing-faq">
-          <Accordion items={faq} />
-        </div>
-        <HelpBand
-          title="Planınızdan emin değil misiniz?"
-          text="Operasyonunuzu anlatın, size uygun planı birlikte seçelim."
-          links={[
-            { label: 'Bize yazın', href: '/iletisim' },
-            { label: 'Destek merkezi', href: '/destek' },
-          ]}
-        />
+  <Section tone="muted" labelledby="faq-title" size="narrow" class="tight-section">
+    <h2 id="faq-title" class="faq__title">Fiyatlandırma hakkında sorular</h2>
+    <div class="faq" data-testid="pricing-faq">
+      {
+        faq.map((item) => (
+          <details class="faq__item">
+            <summary>{item.question}</summary>
+            <p>{item.answer}</p>
+          </details>
+        ))
+      }
+    </div>
+    <p class="faq__more">
+      {faqPageHref && <a href={faqPageHref}>Tüm sık sorulan sorular</a>}
+      <a href="/yasal/abonelik-sozlesmesi">Abonelik sözleşmesi</a>
+      <a href="/yasal/iptal-iade">İptal ve iade koşulları</a>
+    </p>
+  </Section>
+
+  <Section tone="stage" labelledby="cta-title">
+    <div class="cta">
+      <h2 id="cta-title">Tüm kanallarınızı tek panelde yönetmeye bugün başlayın</h2>
+      <p>
+        Ücretsiz denemeyle pazaryeri hesaplarınızı bağlayın; merkezi stok yönetimi, overselling koruması ve birleşik sipariş
+        akışını kendi operasyonunuzda görün.
+      </p>
+      <div class="cta__actions">
+        <Button href={closingHref} variant="inverse" size="lg">Ücretsiz dene</Button>
+        <Button href={appUrls.login()} variant="inverse-outline" size="lg">Giriş yap</Button>
       </div>
     </div>
   </Section>
-
-  <CtaBand
-    id="cta-title"
-    title="Operasyonunuzu bugün tek merkeze taşıyın"
-    text={`Ücretsiz denemeyle kanallarınızı bağlayın; stok, sipariş ve ${AGENT_BRAND} önerilerini kendi işinizde görün.`}
-    primary={{ label: 'Ücretsiz deneyin', href: closingHref }}
-    secondary={{ label: 'Demo talep edin', href: demoHref }}
-  />
 </BaseLayout>
 
+<script>
+  import '../scripts/interactions'
+</script>
+
 <style>
-  /*
-   * SITE-DL (F4): sayfa uygulamanın tasarım diline çevrildi — düz yüzey + 1px çerçeve + kart yarıçapı; gölge, degrade,
-   * hover yükselmesi ve hap biçimi yok; tek vurgu eylem mavisi; ikonlar çerçeveli kare kutuda; onay işareti çıplak ikon.
-   */
-  :global(.section.tight-section) {
+  /* Bölümler arası dikey ritim genel olarak sıkılaştırıldı (S11b). */
+  .tight-section:global(.section) {
     padding-block: calc(var(--site-section-y) * 0.72);
   }
-
-  /* --- Hero --- */
-  .hero-chips {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: var(--ek-space-2);
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-  .hero-chips li {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--ek-space-2);
-    min-height: calc(var(--ek-space-8) + var(--ek-space-1));
-    padding-inline: var(--ek-space-3) var(--ek-space-4);
-    border: var(--site-border-width) solid var(--site-glass-border);
-    border-radius: var(--ek-radius-md);
-    background: var(--site-glass-bg);
-    color: var(--site-text-on-dark-body);
-    font-size: var(--ek-font-size-sm);
-  }
-  .hero-chips :global(.icon) {
-    color: var(--site-accent-on-dark);
-  }
-  .hero-chips strong {
-    color: var(--site-text-on-dark-heading);
-    font-weight: var(--ek-font-weight-semibold);
-  }
-  /* Taslak fiyat notu (N4): küçük, sakin dipnot — ziyaretçi dili; iç kayıt yalnız öznitelikte. */
+  /* Taslak fiyat notu (ürün kararı bekliyor): kaldırılmaz, görsel ağırlığı küçük bir dipnota indirildi (S12). */
   .notice {
-    flex-basis: 100%;
-    max-width: none;
-    text-align: center;
-    margin-top: var(--ek-space-2);
-    color: var(--site-text-on-dark-meta);
-    font-size: var(--ek-font-size-sm);
-  }
-  .notice :global(.icon) {
-    display: inline-block;
-    margin-inline-end: var(--ek-space-1);
-    vertical-align: -0.2em;
-    color: var(--site-accent-on-dark);
-  }
-  .trial__unit {
-    color: var(--site-accent-on-dark);
-    font-size: var(--ek-font-size-3xl);
-    font-weight: var(--ek-font-weight-bold);
-  }
-  .trial__note {
-    margin-top: var(--ek-space-3);
-    color: var(--site-text-on-dark-body);
-    font-size: var(--ek-font-size-lg);
-  }
-  .trial__list {
     display: flex;
     flex-direction: column;
-    gap: var(--ek-space-3);
-    margin-top: var(--ek-space-5);
-    padding-top: var(--ek-space-5);
-    border-top: var(--site-border-width) solid var(--site-glass-border);
+    gap: var(--ek-space-1);
+    max-width: var(--site-measure);
+    padding-inline-start: var(--ek-space-3);
+    border-inline-start: var(--site-border-width) solid var(--site-glass-border);
+    color: var(--site-color-on-primary-muted);
+    font-size: var(--ek-font-size-xs);
   }
-  .trial__list li {
+  .notice strong {
+    font-weight: var(--ek-font-weight-semibold);
+  }
+  .plan__title-row {
     display: flex;
     align-items: center;
-    gap: var(--ek-space-2);
-    color: var(--site-text-on-dark-heading);
-    font-size: var(--ek-font-size-md);
-    font-weight: var(--ek-font-weight-medium);
+    justify-content: space-between;
+    gap: var(--ek-space-3);
   }
-  .trial__list :global(svg) {
-    color: var(--site-accent-on-dark);
+  .plan__featured {
+    padding: var(--ek-space-1) var(--ek-space-3);
+    border-radius: var(--ek-radius-full);
+    background: color-mix(in srgb, var(--ek-color-secondary) 16%, transparent);
+    color: var(--ek-color-secondary-darken-1);
+    font-size: var(--site-card-eyebrow-size);
+    font-weight: var(--site-card-eyebrow-weight);
+    letter-spacing: var(--site-card-eyebrow-tracking);
+    text-transform: uppercase;
+  }
+  .plan__pitch {
+    color: var(--ek-color-content-strong);
+    font-size: var(--site-card-value-size);
+    font-weight: var(--site-card-value-weight);
   }
 
-  /* --- Plan kartları: hero'nun alt kenarına taşar --- */
-  .plans-section {
-    position: relative;
-    z-index: 1;
-    padding-bottom: calc(var(--site-section-y) * 0.6);
-    background: linear-gradient(180deg, transparent var(--site-hero-overlap), var(--ek-color-surface-muted) var(--site-hero-overlap));
-    border-bottom: var(--site-border-width) solid var(--ek-color-border-default);
+  /* --- Hero görsel: fiyat kademesi (gerçek oran) --- */
+  .stat-panel__tag {
+    margin: 0 0 var(--ek-space-5);
+    color: var(--site-color-on-primary-muted);
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--ek-font-weight-semibold);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
   }
-  .plans-wrap {
-    margin-top: calc(var(--site-hero-overlap) * -1);
+  .stat-panel__caption {
+    margin: var(--ek-space-5) 0 0;
+    color: var(--site-color-on-primary-muted);
+    font-size: var(--ek-font-size-sm);
   }
-  .interval-note {
-    margin: 0 auto var(--ek-space-4);
-    text-align: center;
-  }
-  .plans {
-    display: grid;
-    gap: var(--ek-space-5);
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-  .plan {
+  .tier-chart {
     display: flex;
-    min-width: 0;
+    align-items: flex-end;
+    gap: var(--ek-space-5);
+    height: calc(var(--ek-space-16) * 2);
   }
-  .plan__card {
-    position: relative;
+  .tier-chart li {
     display: flex;
     flex: 1;
     flex-direction: column;
-    gap: var(--ek-space-5);
-    padding: var(--ek-space-8) var(--ek-space-6) var(--ek-space-6);
-    border: var(--site-border-width) solid var(--ek-color-border-default);
-    border-radius: var(--ek-radius-card);
-    background: var(--ek-color-surface);
-    transition: border-color var(--ek-duration-base) var(--ek-easing-standard);
-  }
-  .plan__card:hover {
-    border-color: var(--site-action-border);
-  }
-  /* Önerilen plan: sayfanın tek koyu kartı — DÜZ marka laciverti + ince çerçeve (degrade, ışıma, gölge, yükseltme yok). */
-  .plan__card--featured {
-    border-color: var(--ek-color-chrome-border);
-    background: var(--ek-color-chrome);
-    color: var(--site-text-on-dark-body);
-  }
-  .plan__card--featured:hover {
-    border-color: var(--ek-color-chrome-soft-border);
-  }
-  .plan__ribbon {
-    position: absolute;
-    top: 0;
-    left: 50%;
-    display: inline-flex;
     align-items: center;
-    gap: var(--ek-space-1);
-    margin: 0;
-    padding: var(--ek-space-1) var(--ek-space-3);
-    /* Lacivert kartın üstünde: açık rozet (lacivert dolgu kaybolurdu). */
-    border: var(--site-border-width) solid var(--site-action);
-    border-radius: var(--ek-radius-md);
-    background: var(--ek-color-background);
-    color: var(--ek-color-primary);
+    justify-content: flex-end;
+    height: 100%;
+    gap: var(--ek-space-2);
+  }
+  .tier-chart__bar {
+    display: block;
+    width: 100%;
+    max-width: var(--ek-space-10);
+    /* Planlar zaten artan fiyat sırasındadır (getPublicPlans()); yükseklik bu sıraya göre kademelenir.
+       Inline `style` kullanılmaz (CSP `style-src 'self'`, bkz. yukarıdaki not). */
+    height: 45%;
+    border-radius: var(--ek-radius-md) var(--ek-radius-md) 0 0;
+    background: linear-gradient(180deg, var(--ek-color-secondary), color-mix(in srgb, var(--ek-color-secondary) 55%, var(--ek-color-primary-darken-1)));
+  }
+  .tier-chart li:nth-child(2) .tier-chart__bar {
+    height: 70%;
+  }
+  .tier-chart li:nth-child(3) .tier-chart__bar {
+    height: 100%;
+  }
+  .tier-chart__name {
+    color: var(--site-color-on-primary);
+    font-size: var(--ek-font-size-sm);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+  .tier-chart__price {
+    color: var(--site-color-on-primary-muted);
     font-size: var(--ek-font-size-xs);
-    font-weight: var(--ek-font-weight-bold);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    translate: -50% -50%;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* --- Plan kartları --- */
+  .plans {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--ek-space-6);
+  }
+  .plan {
+    display: flex;
+  }
+  .plan__card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-4);
+    width: 100%;
+    padding: var(--ek-space-8);
+    background: var(--ek-color-surface);
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--ek-radius-xl);
+    transition:
+      border-color var(--ek-duration-base) var(--ek-easing-standard),
+      box-shadow var(--ek-duration-base) var(--ek-easing-standard);
+  }
+  /* Görsel vurgu: en çok özelliği içeren sabit fiyatlı plan (gerçek veriden türetilir, iddia metni yok). */
+  .plan__card--featured {
+    border-color: var(--ek-color-secondary-darken-1);
+    border-width: calc(var(--site-border-width) * 2);
+    box-shadow: var(--site-shadow-card-hover);
+  }
+  @media (min-width: 800px) {
+    .plan__card--featured {
+      transform: translateY(calc(var(--ek-space-2) * -1));
+    }
   }
   .plan__head {
-    display: grid;
-    gap: var(--ek-space-1);
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-2);
   }
-  .plan__name {
-    color: var(--site-text-heading);
+  .plan__head h3 {
     font-size: var(--ek-font-size-2xl);
-    font-weight: var(--ek-font-weight-bold);
-    letter-spacing: -0.015em;
+    font-weight: var(--ek-font-weight-semibold);
   }
-  .plan__pitch {
-    color: var(--site-text-body);
-    font-size: var(--ek-font-size-md);
-  }
-  .plan__card--featured .plan__name {
-    color: var(--site-text-on-dark-heading);
-  }
-  .plan__card--featured .plan__pitch {
-    color: var(--site-text-on-dark-body);
-  }
-  .plan__pricebox {
-    display: grid;
-    gap: var(--ek-space-1);
+  .plan__tagline {
+    color: var(--ek-color-content-default);
+    font-size: var(--ek-font-size-lg);
   }
   .plan__price {
     display: flex;
     align-items: baseline;
-    gap: var(--ek-space-1);
-    margin: 0;
-  }
-  .plan__amount {
-    color: var(--site-text-heading);
-    font-size: var(--site-font-display-md);
-    font-weight: var(--site-font-display-weight);
-    letter-spacing: var(--site-font-display-tracking);
-    line-height: 1;
+    gap: var(--ek-space-2);
     font-variant-numeric: tabular-nums;
   }
-  .plan__amount--quote {
+  .plan__amount {
+    color: var(--ek-color-content-strong);
     font-size: var(--site-font-display-sm);
+    font-weight: var(--site-font-display-weight);
+    line-height: var(--site-font-display-line-height);
+    letter-spacing: var(--site-font-display-tracking);
   }
   .plan__period {
-    color: var(--site-text-meta);
-    font-size: var(--ek-font-size-lg);
-    font-weight: var(--ek-font-weight-medium);
+    color: var(--ek-color-content-default);
+    font-size: var(--ek-font-size-xl);
   }
   .plan__vat {
-    color: var(--site-text-meta);
-    font-size: var(--ek-font-size-sm);
+    margin-top: calc(var(--ek-space-2) * -1);
+    color: var(--ek-color-content-muted);
+    font-size: var(--ek-font-size-md);
   }
-  .plan__card--featured .plan__amount {
-    color: var(--site-text-on-dark-heading);
+  .plan__list {
+    display: flex;
+    flex-direction: column;
+    border-top: var(--site-border-width) solid var(--ek-color-border-default);
   }
-  .plan__card--featured :is(.plan__period, .plan__vat) {
-    color: var(--site-text-on-dark-meta);
+  .plan__list li {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--ek-space-3);
+    padding-block: var(--ek-space-3);
+    border-bottom: var(--site-border-width) solid var(--ek-color-border-default);
+    font-size: var(--ek-font-size-lg);
+    font-variant-numeric: tabular-nums;
   }
-  .plan__trial {
-    justify-self: start;
-    margin-top: var(--ek-space-2);
-    padding: calc(var(--ek-space-1) * 0.5) var(--ek-space-2);
-    border: var(--site-border-width) solid var(--site-action-border);
-    border-radius: var(--ek-radius-md);
-    background: var(--site-action-subtle);
-    color: var(--site-action-emphasis);
-    font-size: var(--ek-font-size-sm);
+  .plan__list-label {
+    color: var(--ek-color-content-default);
+  }
+  .plan__list-value {
+    color: var(--ek-color-content-strong);
     font-weight: var(--ek-font-weight-semibold);
+    text-align: end;
+  }
+  .plan__features {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-2);
+    color: var(--ek-color-content-default);
+    font-size: var(--ek-font-size-lg);
+  }
+  .plan__features li {
+    position: relative;
+    padding-inline-start: var(--ek-space-5);
+  }
+  .plan__features li::before {
+    content: '';
+    position: absolute;
+    inset-inline-start: 0;
+    top: 0.55em;
+    width: var(--ek-space-2);
+    height: var(--ek-space-2);
+    border-radius: var(--ek-radius-full);
+    background: var(--ek-color-secondary-darken-1);
   }
   .plan__cta {
-    display: grid;
-    gap: var(--ek-space-2);
+    margin-top: auto;
+    padding-top: var(--ek-space-2);
   }
   .plan__cta :global(.btn) {
     width: 100%;
   }
   .plan__cta-note {
-    color: var(--site-text-meta);
-    font-size: var(--ek-font-size-sm);
-    text-align: center;
-  }
-  .plan__card--featured .plan__cta-note {
-    color: var(--site-text-on-dark-meta);
-  }
-  .plan__tagline {
-    padding-top: var(--ek-space-5);
-    border-top: var(--site-border-width) solid var(--ek-color-border-default);
-    color: var(--site-text-body);
-    font-size: var(--ek-font-size-sm);
-    line-height: var(--ek-line-height-normal);
-  }
-  .plan__card--featured .plan__tagline {
-    border-top-color: var(--site-glass-border);
-    color: var(--site-text-on-dark-body);
-  }
-  .plan__limits {
-    display: grid;
-    gap: var(--ek-space-2);
-  }
-  .plan__limits li {
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    gap: var(--ek-space-3);
-    align-items: center;
-    color: var(--site-text-body);
+    color: var(--ek-color-content-muted);
     font-size: var(--ek-font-size-md);
-  }
-  .plan__limit-icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: var(--ek-space-8);
-    height: var(--ek-space-8);
-
-    border: var(--site-border-width) solid var(--site-action-border);
-    border-radius: var(--ek-radius-tile);
-    background: var(--site-action-subtle);
-    color: var(--site-action);
-  }
-  .plan__limit-value {
-    color: var(--site-text-heading);
-    font-weight: var(--ek-font-weight-bold);
-    font-variant-numeric: tabular-nums;
-  }
-  .plan__card--featured .plan__limits li {
-    color: var(--site-text-on-dark-body);
-  }
-  .plan__card--featured .plan__limit-icon {
-    border-color: var(--site-glass-border);
-    background: var(--site-glass-bg);
-    color: var(--site-accent-on-dark);
-  }
-  .plan__card--featured .plan__limit-value {
-    color: var(--site-text-on-dark-heading);
-  }
-  .plan__inc {
-    display: grid;
-    gap: var(--ek-space-2);
-  }
-  .plan__inc-label {
-    color: var(--site-text-heading);
-    font-size: var(--ek-font-size-sm);
-    font-weight: var(--ek-font-weight-semibold);
-  }
-  .plan__card--featured .plan__inc-label {
-    color: var(--site-text-on-dark-heading);
-  }
-  .plan__features {
-    display: grid;
-    gap: var(--ek-space-2);
-  }
-  .plan__features li {
-    display: flex;
-    gap: var(--ek-space-2);
-    align-items: flex-start;
-    color: var(--site-text-body);
-    font-size: var(--ek-font-size-sm);
-    line-height: var(--ek-line-height-normal);
-  }
-  .plan__card--featured .plan__features li {
-    color: var(--site-text-on-dark-body);
-  }
-  /* Onay işareti: çıplak eylem mavisi ikon (dolu daire yok). */
-  .plan__check {
-    display: inline-flex;
-    flex: none;
-    align-items: center;
-    justify-content: center;
-    width: var(--ek-space-5);
-    height: var(--ek-space-5);
-    color: var(--site-action);
-  }
-  .plan__check :global(.icon) {
-    width: var(--ek-space-4);
-    height: var(--ek-space-4);
-  }
-  .plan__card--featured .plan__check {
-    color: var(--site-accent-on-dark);
-  }
-  /* Otopilot bloğu: kartın tabanında, eylem tonu zeminli + ince çerçeveli "dahil" paneli. */
-  .plan__agent {
-    display: grid;
-    gap: var(--ek-space-2);
-    margin-top: auto;
-    padding: var(--ek-space-4);
-    border: var(--site-border-width) solid var(--site-action-border);
-    border-radius: var(--ek-radius-tile);
-    background: var(--site-action-subtle);
-  }
-  .plan__agent-title {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--ek-space-2);
-    color: var(--site-text-heading);
-    font-size: var(--ek-font-size-sm);
-    font-weight: var(--ek-font-weight-bold);
-  }
-  .plan__agent-title :global(.icon) {
-    color: var(--site-action);
-  }
-  .plan__agent-prev {
-    color: var(--site-text-meta);
-    font-size: var(--ek-font-size-xs);
-  }
-  .plan__agent-list {
-    display: grid;
-    gap: var(--ek-space-1);
-  }
-  .plan__agent-list li {
-    position: relative;
-    padding-inline-start: var(--ek-space-4);
-    color: var(--site-text-body);
-    font-size: var(--ek-font-size-sm);
-  }
-  .plan__agent-list li::before {
-    content: '';
-    position: absolute;
-    inset-inline-start: var(--ek-space-1);
-    top: 0.6em;
-    width: var(--ek-space-1);
-    height: var(--ek-space-1);
-    background: var(--site-action);
-  }
-  .plan__card--featured .plan__agent {
-    border-color: var(--site-glass-border);
-    background: var(--site-glass-bg);
-  }
-  .plan__card--featured :is(.plan__agent-title, .plan__agent-list li) {
-    color: var(--site-text-on-dark-heading);
-  }
-  .plan__card--featured .plan__agent-title :global(.icon) {
-    color: var(--site-accent-on-dark);
-  }
-  .plan__card--featured .plan__agent-prev {
-    color: var(--site-text-on-dark-meta);
-  }
-  .plan__card--featured .plan__agent-list li::before {
-    background: var(--site-accent-on-dark);
-  }
-
-  /* --- Güven unsurları (kayıttan) --- */
-  .trust {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
-    margin: var(--ek-space-10) 0 0;
-    padding: var(--ek-space-2);
-    border: var(--site-border-width) solid var(--ek-color-border-default);
-    border-radius: var(--ek-radius-card);
-    background: var(--ek-color-surface);
-    list-style: none;
-  }
-  .trust__item {
-    display: flex;
-    gap: var(--ek-space-3);
-    align-items: center;
-    padding: var(--ek-space-3) var(--ek-space-4);
-  }
-  .trust__icon {
-    display: inline-flex;
-    flex: none;
-    align-items: center;
-    justify-content: center;
-    width: var(--ek-space-8);
-    height: var(--ek-space-8);
-
-    border: var(--site-border-width) solid var(--site-action-border);
-    border-radius: var(--ek-radius-tile);
-    background: var(--site-action-subtle);
-    color: var(--site-action);
-  }
-  .trust__text {
-    color: var(--site-text-heading);
-    font-size: var(--ek-font-size-sm);
-    font-weight: var(--ek-font-weight-medium);
-    line-height: var(--ek-line-height-tight);
-  }
-  .trust__text strong {
-    font-weight: var(--ek-font-weight-bold);
-  }
-  .trust__more {
-    margin: var(--ek-space-4) auto 0;
-    font-size: var(--ek-font-size-md);
-    text-align: center;
-  }
-
-  /* --- Otopilot her planda (açık zemin; merdiven) --- */
-  .agent-plan {
-    display: grid;
-    gap: var(--ek-space-10);
-    align-items: center;
-  }
-  .agent-plan__copy {
-    display: grid;
-    gap: var(--ek-space-4);
-    justify-items: start;
-  }
-  .agent-plan__title {
-    color: var(--site-text-heading);
-    font-size: var(--site-font-display-sm);
-    font-weight: var(--site-font-display-weight);
-    letter-spacing: var(--site-font-display-tracking);
-    line-height: var(--site-font-display-line-height);
-    text-wrap: balance;
-  }
-  .agent-plan__text {
-    color: var(--site-text-body);
-    font-size: var(--ek-font-size-lg);
-    line-height: var(--site-font-body-line-height);
-  }
-  .agent-plan__points {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--ek-space-2);
-  }
-  .agent-plan__points li {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--ek-space-2);
-    padding: var(--ek-space-1) var(--ek-space-2);
-    border: var(--site-border-width) solid var(--site-action-border);
-    border-radius: var(--ek-radius-md);
-    background: var(--site-action-subtle);
-    color: var(--site-action-emphasis);
-    font-size: var(--ek-font-size-sm);
-    font-weight: var(--ek-font-weight-semibold);
-  }
-  .agent-plan__points :global(.icon) {
-    color: var(--site-action);
-  }
-  .agent-ladder {
-    display: grid;
-    gap: var(--ek-space-3);
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-  .agent-ladder__step {
-    display: grid;
-    align-content: start;
-    gap: var(--ek-space-2);
-    padding: var(--ek-space-5);
-    border: var(--site-border-width) solid var(--ek-color-border-default);
-    border-radius: var(--ek-radius-card);
-    background: var(--ek-color-surface);
-  }
-  .agent-ladder__step.is-featured {
-    border-color: var(--site-action-border);
-    background: var(--site-action-subtle);
-  }
-  .agent-ladder__name {
-    display: flex;
-    align-items: center;
-    gap: var(--ek-space-3);
-    color: var(--site-text-heading);
-    font-size: var(--ek-font-size-lg);
-    font-weight: var(--ek-font-weight-bold);
-  }
-  /* Yetki seviyesi: dolu çubuk sayısı = kademe (yalnız görsel; metin "öncekine ek olarak" ile anlatır). */
-  .agent-ladder__level {
-    display: inline-flex;
-    align-items: flex-end;
-    gap: calc(var(--ek-space-1) * 0.5);
-    height: var(--ek-space-4);
-  }
-  .agent-ladder__level span {
-    width: calc(var(--ek-space-1) * 1.25);
-    background: var(--ek-color-border-strong);
-  }
-  .agent-ladder__level span:nth-child(1) {
-    height: 40%;
-  }
-  .agent-ladder__level span:nth-child(2) {
-    height: 70%;
-  }
-  .agent-ladder__level span:nth-child(3) {
-    height: 100%;
-  }
-  .agent-ladder__level span.on {
-    background: var(--site-action);
-  }
-  .agent-ladder__prev {
-    color: var(--site-text-meta);
-    font-size: var(--ek-font-size-xs);
-  }
-  .agent-ladder__list {
-    display: grid;
-    gap: var(--ek-space-2);
-  }
-  .agent-ladder__list li {
-    display: flex;
-    gap: var(--ek-space-2);
-    align-items: flex-start;
-    color: var(--site-text-body);
-    font-size: var(--ek-font-size-sm);
-  }
-  .agent-ladder__list :global(.icon) {
-    flex: none;
-    margin-top: 0.15em;
-    color: var(--site-action);
   }
 
   /* --- Karşılaştırma tablosu --- */
+  .compare {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-5);
+  }
+  .compare h2,
+  .faq__title,
+  .cta h2 {
+    font-size: var(--site-font-display-sm);
+    font-weight: var(--site-font-display-weight);
+    line-height: var(--site-font-display-line-height);
+    letter-spacing: var(--site-font-display-tracking);
+  }
   .table-wrap {
-    position: relative;
     overflow-x: auto;
     border: var(--site-border-width) solid var(--ek-color-border-default);
-    border-radius: var(--ek-radius-card);
-    background: var(--ek-color-surface);
+    border-radius: var(--ek-radius-lg);
   }
   .compare__table {
     width: 100%;
-    min-width: 36rem;
-    border-collapse: separate;
-    border-spacing: 0;
-    font-size: var(--ek-font-size-md);
+    min-width: calc(var(--site-container-narrow) * 0.85);
+    border-collapse: collapse;
+    font-size: var(--ek-font-size-lg);
+    font-variant-numeric: tabular-nums;
   }
   .compare__table th,
   .compare__table td {
-    padding: var(--ek-space-4) var(--ek-space-5);
+    padding: var(--ek-space-4);
+    text-align: start;
+    vertical-align: top;
     border-bottom: var(--site-border-width) solid var(--ek-color-border-default);
-    text-align: start;
-    vertical-align: middle;
   }
-  .compare__table :is(thead th, tbody td, tfoot td):not(:first-child) {
-    text-align: center;
-  }
-  /* Başlık bandı: sakin zemin + ince çizgi; plan adları mikro büyük harf. */
   .compare__table thead th {
+    position: sticky;
+    inset-block-start: 0;
+    inset-inline-start: 0;
+    z-index: 2;
     background: var(--ek-color-surface-muted);
-    color: var(--site-text-heading);
-    font-size: var(--ek-font-size-xs);
-    font-weight: var(--ek-font-weight-bold);
-    letter-spacing: var(--site-eyebrow-tracking);
-    text-transform: uppercase;
-  }
-  .compare__table thead th:first-child {
-    color: var(--site-text-meta);
-  }
-  /* Öne çıkan sütun: eylem tonu zemin, tüm satırlar boyunca süreklilik (üst şerit yok). */
-  .compare__table .is-featured {
-    background: var(--site-action-subtle);
-  }
-  .compare__table thead th.is-featured {
-    background: var(--site-action-subtle);
-    color: var(--site-action-emphasis);
-  }
-  .compare__table tbody th {
-    color: var(--site-text-body);
-    font-weight: var(--ek-font-weight-medium);
-  }
-  .compare__table td {
-    color: var(--site-text-heading);
-    font-variant-numeric: tabular-nums;
-  }
-  .compare__table tbody tr:not(.compare__group):hover > * {
-    background: var(--ek-color-surface-muted);
-  }
-  .compare__table tbody tr:not(.compare__group):hover > .is-featured {
-    background: var(--site-action-subtle);
-  }
-  .compare__group td {
-    padding-block: var(--ek-space-3);
-    background: var(--ek-color-surface-muted);
-    text-align: start;
-  }
-  .compare__group-label {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--ek-space-2);
-    color: var(--site-text-heading);
-    font-size: var(--ek-font-size-xs);
-    font-weight: var(--ek-font-weight-bold);
-    letter-spacing: var(--site-eyebrow-tracking);
-    text-transform: uppercase;
-  }
-  .compare__group-label :global(.icon) {
-    color: var(--site-action);
-  }
-  .compare__group--agent td {
-    background: var(--ek-color-surface-muted);
-  }
-  .compare__table tfoot td,
-  .compare__table tfoot th {
-    border-bottom: 0;
-  }
-  .compare__cta {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--ek-space-1);
-    min-height: var(--site-tap-target);
-    color: var(--site-link-accent);
-    font-size: var(--ek-font-size-sm);
+    color: var(--ek-color-content-strong);
     font-weight: var(--ek-font-weight-semibold);
   }
-  .cell-price {
-    display: block;
-    color: var(--site-text-heading);
-    font-size: var(--ek-font-size-xl);
-    font-weight: var(--ek-font-weight-bold);
+  .compare__table tbody th {
+    position: sticky;
+    inset-inline-start: 0;
+    z-index: 1;
+    background: var(--ek-color-surface);
+    color: var(--ek-color-content-default);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+  .compare__table tbody tr:last-child th,
+  .compare__table tbody tr:last-child td {
+    border-bottom: 0;
+  }
+  /* Fiyat satırı: bir üst "grup" gibi hafifçe ayrılır (S11 — yapışkan başlık + grup vurgusu).
+     Özgüllük `.compare__table tbody th` (0,1,2) kuralını geçmek için satır + hücre birlikte seçilir. */
+  .compare__table tbody tr.compare__price-row th,
+  .compare__table tbody tr.compare__price-row td {
+    background: var(--ek-color-surface-muted);
+  }
+  .compare__table tbody tr:hover td,
+  .compare__table tbody tr:hover th {
+    background: color-mix(in srgb, var(--ek-color-primary) 5%, var(--ek-color-surface));
   }
   .cell-strong {
     display: block;
-    color: var(--site-text-heading);
-    font-weight: var(--ek-font-weight-bold);
+    color: var(--ek-color-content-strong);
+    font-weight: var(--ek-font-weight-semibold);
   }
   .cell-note {
     display: block;
-    color: var(--site-text-meta);
-    font-size: var(--ek-font-size-sm);
+    color: var(--ek-color-content-muted);
+    font-size: var(--ek-font-size-md);
   }
-  .cell-check {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: var(--ek-space-6);
-    height: var(--ek-space-6);
-    color: var(--site-action);
-  }
-  .cell-check :global(.icon) {
-    width: var(--ek-space-5);
-    height: var(--ek-space-5);
-  }
-  .cell-dash {
-    display: inline-block;
-    width: var(--ek-space-3);
-    height: calc(var(--site-border-width) * 2);
-    background: var(--ek-color-border-strong);
-    vertical-align: middle;
+  .compare__note {
+    color: var(--ek-color-content-muted);
+    font-size: var(--ek-font-size-md);
   }
 
-  /* --- SSS: iki sütun --- */
-  .faq-grid {
-    display: grid;
-    gap: var(--ek-space-8);
-  }
-  .faq-grid__aside :global(.shead) {
+  /* --- SSS --- */
+  .faq__title {
     margin-bottom: var(--ek-space-6);
   }
-  .doc-links {
-    display: grid;
-    gap: var(--ek-space-2);
-    margin: 0;
-    padding: 0;
-    list-style: none;
+  .faq {
+    display: flex;
+    flex-direction: column;
+    border-top: var(--site-border-width) solid var(--ek-color-border-default);
   }
-  .doc-links a {
+  .faq__item {
+    border-bottom: var(--site-border-width) solid var(--ek-color-border-default);
+  }
+  .faq__item summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--ek-space-4);
+    min-height: var(--site-tap-target);
+    padding-block: var(--ek-space-4);
+    color: var(--ek-color-content-strong);
+    font-size: var(--ek-font-size-xl);
+    font-weight: var(--ek-font-weight-semibold);
+    list-style: none;
+    cursor: pointer;
+  }
+  .faq__item summary::-webkit-details-marker {
+    display: none;
+  }
+  .faq__item summary::after {
+    content: '+';
+    flex: none;
+    color: var(--ek-color-content-default);
+    font-size: var(--ek-font-size-2xl);
+    font-weight: var(--ek-font-weight-regular);
+  }
+  .faq__item[open] summary::after {
+    content: '\2212';
+  }
+  .faq__item p {
+    max-width: var(--site-measure);
+    padding-bottom: var(--ek-space-5);
+    color: var(--ek-color-content-default);
+    font-size: var(--ek-font-size-lg);
+  }
+  .faq__more {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ek-space-1) var(--ek-space-6);
+    margin-top: var(--ek-space-6);
+  }
+  .faq__more a {
     display: inline-flex;
     align-items: center;
-    gap: var(--ek-space-2);
     min-height: var(--site-tap-target);
-    padding-inline: var(--ek-space-3) var(--ek-space-4);
-    border: var(--site-border-width) solid var(--ek-color-border-default);
-    border-radius: var(--ek-radius-tile);
-    background: var(--ek-color-surface);
-    color: var(--site-text-heading);
-    font-size: var(--ek-font-size-md);
-    font-weight: var(--ek-font-weight-medium);
-    transition:
-    border-color var(--ek-duration-base) var(--ek-easing-standard),
-    background-color var(--ek-duration-base) var(--ek-easing-standard);
-  }
-  .doc-links a:hover {
-    border-color: var(--site-action-border);
-    background: var(--site-action-subtle);
-    color: var(--site-action-emphasis);
-  }
-  .doc-links :global(.icon) {
-    color: var(--site-action);
+    color: var(--site-color-link);
+    font-size: var(--ek-font-size-lg);
+    font-weight: var(--ek-font-weight-semibold);
   }
 
-  /* <1024: tablo yatay kaydırılır; ilk sütun sabit (S16 CoverageMatrix deseni). */
-  @media (max-width: 767.98px) {
-    .compare__table th,
-    .compare__table td {
-      padding: var(--ek-space-3);
-    }
-    .compare__table th:first-child {
-      width: 10rem;
-      font-size: var(--ek-font-size-sm);
-    }
-    .plan__card {
-      padding-inline: var(--ek-space-5);
-    }
+  /* --- Kapanış --- */
+  .cta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--ek-space-5);
+    max-width: var(--site-container-narrow);
   }
-  @media (max-width: 1023.98px) {
-    .compare__table th:first-child {
-      position: sticky;
-      inset-inline-start: 0;
-      z-index: 1;
-      background: var(--ek-color-surface);
-      border-inline-end: var(--site-border-width) solid var(--ek-color-border-default);
-    }
-    .compare__table thead th:first-child,
-    .compare__group td:first-child {
-      background: var(--ek-color-surface-muted);
-    }
+  .cta p {
+    font-size: var(--ek-font-size-xl);
   }
+  .cta__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ek-space-3);
+  }
+
   @media (min-width: 800px) {
     .plans {
       grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
-      align-items: stretch;
-    }
-    .agent-ladder {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      align-items: end;
-    }
-    /* Merdiven: her kademe bir öncekinden biraz yüksek başlar (yetki arttıkça). */
-    .agent-ladder__step[data-step='1'] {
-      margin-top: var(--ek-space-12);
-    }
-    .agent-ladder__step[data-step='2'] {
-      margin-top: var(--ek-space-6);
-    }
-  }
-  /* >=1024: tablo sığar → kapsayıcı kaydırma kapsayıcısı DEĞİL; başlık satırı site header'ının altına yapışır. */
-  @media (min-width: 1024px) {
-    .table-wrap {
-      overflow: clip;
-    }
-    .compare__table thead th {
-      position: sticky;
-      top: var(--site-header-visible);
-      z-index: 2;
-    }
-    .compare__table thead th:first-child {
-      width: 34%;
-      border-start-start-radius: var(--ek-radius-card);
-    }
-    .compare__table {
-      table-layout: fixed;
-    }
-    .compare__table thead th:last-child {
-      border-start-end-radius: var(--ek-radius-card);
-    }
-    .plans {
-      gap: var(--ek-space-6);
-    }
-    .trust {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
-    .agent-plan {
-      grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
-    }
-    .faq-grid {
-      grid-template-columns: minmax(0, 4fr) minmax(0, 7fr);
-      gap: var(--ek-space-12);
-    }
-    .faq-grid__aside {
-      position: sticky;
-      top: calc(var(--site-header-visible) + var(--ek-space-6));
-      align-self: start;
-    }
-    .faq-grid__main :global(.help-band-wrap) {
-      margin-top: var(--ek-space-8);
     }
   }
 </style>

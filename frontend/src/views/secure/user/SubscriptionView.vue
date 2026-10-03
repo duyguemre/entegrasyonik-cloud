@@ -1,7 +1,7 @@
 <template>
   <div class="subscriptionView">
     <div class="subscription-inner">
-      <EkPageHeader section="Hesap" title="Abonelik ve planlar"
+      <EkPageHeader section="Hesap" title="Abonelik ve Planlar"
         description="İşletmenize uygun planı seçin, mevcut aboneliğinizin durumunu buradan izleyin." />
 
       <!-- Durum bandı (ADR-0008 §3 durum makinesi -- boş/hata/yükleniyor AYRI durumlardır) -->
@@ -33,10 +33,7 @@
 
       <!-- Planlar -->
       <section class="plans-section">
-        <div class="section-title-row">
-          <h3 class="section-title">Planlar</h3>
-          <EkHelpHint hint="subscription.plan" />
-        </div>
+        <h3 class="section-title">Planlar</h3>
 
         <!-- ADR-0014 S4b: kayıt sırasında (tanıtım sitesinden) seçilen plan önerisi. Yalnızca izinli plan kodu + listede var olan plan. -->
         <div v-if="suggestedPlan" class="suggested-plan-note" role="status" data-testid="suggested-plan-note">
@@ -48,32 +45,32 @@
           <EkSkeleton v-for="n in 3" :key="n" type="cards" :rows="1" class="plan-card-skeleton" />
         </div>
 
-        <EkEmptyState v-else-if="plansError" variant="error" title="Planlar yüklenemedi"
-          message="Plan bilgileri şu anda getirilemedi. Bağlantınızı kontrol edip tekrar deneyin."
+        <EkEmptyState v-else-if="plansError" variant="error" title="Planlar Yüklenemedi"
+          message="Plan bilgileri şu anda getirilemedi -- bağlantınızı kontrol edip tekrar deneyin."
           show-action action-text="Tekrar Dene" action-icon="mdi-refresh"
           @action="fetchPlans" />
 
-        <EkEmptyState v-else-if="!plans.length" variant="no-data" title="Plan tanımları henüz yayınlanmadı"
+        <EkEmptyState v-else-if="!plans.length" variant="no-data" title="Plan Tanımları Henüz Yayınlanmadı"
           message="Şu anda satışa açık bir plan bulunmuyor. Lütfen daha sonra tekrar kontrol edin veya destek ekibimizle iletişime geçin." />
 
         <div v-else class="plans-grid" role="list" aria-label="Abonelik planları">
           <article v-for="plan in plans" :key="plan.code" class="plan-card" role="listitem"
             :class="{ 'plan-card--current': isCurrentPlan(plan), 'plan-card--suggested': !isCurrentPlan(plan) && suggestedPlan?.code === plan.code }">
-            <div v-if="isCurrentPlan(plan)" class="plan-card-ribbon">Mevcut planınız</div>
-            <div v-else-if="suggestedPlan?.code === plan.code" class="plan-card-ribbon">Seçtiğiniz Plan</div>
+            <div v-if="isCurrentPlan(plan)" class="plan-card-ribbon text-white">Mevcut Planınız</div>
+            <div v-else-if="suggestedPlan?.code === plan.code" class="plan-card-ribbon text-white">Seçtiğiniz Plan</div>
 
             <h4 class="plan-card-name">{{ plan.name }}</h4>
 
             <div class="plan-card-price">
               <span class="price-amount">{{ formatPrice(plan) }}</span>
-              <span v-if="plan.priceMinor > 0" class="price-note">{{ plan.vatIncluded ? 'KDV Dahil' : 'KDV hariç' }}</span>
+              <span v-if="plan.priceMinor > 0" class="price-note">{{ plan.vatIncluded ? 'KDV Dahil' : 'KDV Hariç' }}</span>
             </div>
 
             <ul class="plan-card-limits">
-              <li><v-icon size="16" color="content-muted">mdi-storefront-outline</v-icon> {{ formatLimit(plan.limits?.channels, 'channels') }} Kanal (Pazaryeri + E-ticaret)</li>
-              <li><v-icon size="16" color="content-muted">mdi-package-variant-closed</v-icon> {{ formatLimit(plan.limits?.skus, 'skus') }} Varyant (SKU)</li>
-              <li><v-icon size="16" color="content-muted">mdi-account-group-outline</v-icon> {{ formatLimit(plan.limits?.users, 'users') }} Kullanıcı</li>
-              <li><v-icon size="16" color="content-muted">mdi-robot-outline</v-icon> {{ formatLimit(plan.limits?.mcpCallsPerDay, 'mcpCallsPerDay') }} MCP Çağrısı / gün</li>
+              <li><v-icon size="16" color="content-muted">mdi-storefront-outline</v-icon> {{ formatLimit(plan.limits?.channels) }} Kanal (Pazaryeri + E-ticaret)</li>
+              <li><v-icon size="16" color="content-muted">mdi-package-variant-closed</v-icon> {{ formatLimit(plan.limits?.skus) }} Varyant (SKU)</li>
+              <li><v-icon size="16" color="content-muted">mdi-account-group-outline</v-icon> {{ formatLimit(plan.limits?.users) }} Kullanıcı</li>
+              <li><v-icon size="16" color="content-muted">mdi-robot-outline</v-icon> {{ formatLimit(plan.limits?.mcpCallsPerDay) }} MCP Çağrısı / gün</li>
             </ul>
 
             <div v-if="plan.features?.length" class="plan-card-features">
@@ -100,26 +97,26 @@
       </section>
 
       <!-- Checkout sonucu (ADR-0008 §1: MockPaymentProvider -- gerçek hosted checkout sayfası YOK, bilgilendirme amaçlı) -->
-      <EkAlert v-if="checkoutInfo" tone="info" class="checkout-alert" live dismissible title="Ödeme adımına yönlendiriliyorsunuz (test ortamı)" @dismiss="checkoutInfo = null">
+      <v-alert v-if="checkoutInfo" type="info" variant="tonal" density="comfortable" closable
+        class="checkout-alert" role="status" @click:close="checkoutInfo = null">
+        <div class="font-weight-bold">Ödeme adımına yönlendiriliyorsunuz (test ortamı)</div>
         <div class="text-body-2 mt-1">
           <strong>{{ checkoutInfo.planName }}</strong> planı için işlem başlatıldı. Bu bir MOCK (test) bağlantısıdır,
           gerçek bir ödeme sağlayıcısına yönlendirmez; abonelik durumunuz ödeme sağlayıcısından onay geldiğinde otomatik güncellenir.
         </div>
         <div v-if="checkoutInfo.checkoutUrl" class="checkout-url text-body-2 mt-1">{{ checkoutInfo.checkoutUrl }}</div>
-      </EkAlert>
+      </v-alert>
     </div>
 
     <ConfirmationDialogComponent v-model="confirmDialog.show" :title="confirmDialog.title" attach=".subscriptionView"
       :subtitle="confirmDialog.subtitle" :message="confirmDialog.message" icon="mdi-credit-card-check-outline"
-      color="primary" confirm-text="Devam Et" confirm-icon="mdi-arrow-right-circle-outline"
+      color="primary" confirm-text="Devam Et" confirm-icon="mdi-arrow-right-circle"
       :loading="checkingOutCode === confirmDialog.planCode"
       @confirm="confirmCheckout" @cancel="confirmDialog.show = false" maxWidth="420px" />
   </div>
 </template>
 
 <script setup lang="ts">
-import EkHelpHint from '@/components/page/EkHelpHint.vue'
-import { EkAlert, EkEmptyState, EkSkeleton, EkStatusChip } from '@entegrasyonik/ui/components'
 // ADR-0008 (ödeme sağlayıcısı/abonelik modeli) + ADR-0011 Karar 2 "P1-yeni": bu ekran
 // `SubscriptionView.vue`'nun ürünle ilgisiz yer tutucu içeriğinin (bkz. git geçmişi) YERİNE
 // sıfırdan, token'larla yazıldı -- characterization testi YAZILMADI (sabitlenecek gerçek bir iş
@@ -127,12 +124,11 @@ import { EkAlert, EkEmptyState, EkSkeleton, EkStatusChip } from '@entegrasyonik/
 import { ref, computed, onMounted } from 'vue';
 import useRestApi from '@/composables/restapi';
 import { useSnackbarStore } from '@/stores/snackbarStore';
-;
-import EkPageHeader from '@/components/page/EkPageHeader.vue';
-;
-;
-import { formatNumber } from '@entegrasyonik/ui/format';
-import { subscriptionStatusMeta, subscriptionStatusMessage, type SubscriptionSummary } from '@/composables/subscriptionStatus';
+import EkEmptyState from '@/components/ds/EkEmptyState.vue';
+import EkPageHeader from '@/components/ds/EkPageHeader.vue';
+import EkSkeleton from '@/components/ds/EkSkeleton.vue';
+import EkStatusChip from '@/components/ds/EkStatusChip.vue';
+import { formatDate as formatDateDs, formatNumber } from '@/composables/format';
 import ConfirmationDialogComponent from '@/components/layout/ConfirmationDialogComponent.vue';
 import { text, emphasis, type MessagePart } from '@/components/layout/messageParts';
 import { isRegisterPlanCode } from '@/navigation/registerIntent';
@@ -141,6 +137,10 @@ interface PlanLimits { channels?: number; skus?: number; users?: number; mcpCall
 interface Plan {
   code: string; name: string; priceMinor: number; currency?: string; interval?: 'month' | 'year';
   vatIncluded?: boolean; limits?: PlanLimits; features?: string[];
+}
+interface SubscriptionSummary {
+  planCode?: string; status?: string; trialEndsAt?: string; currentPeriodEnd?: string;
+  graceUntil?: string; cancelAtPeriodEnd?: boolean; billingExempt?: boolean;
 }
 
 const restApi = useRestApi();
@@ -162,17 +162,50 @@ const confirmDialog = ref<{ show: boolean; planCode: string; title: string; subt
   show: false, planCode: '', title: '', subtitle: '', message: '',
 });
 
-const FEATURE_LABELS: Record<string, string> = {
-  // fe-r3d (APP_IDENTITY §8): cümle düzeni; MCP kullanıcı dilinde "Yapay zekâ bağlantısı" (P-MCP-1 ekran adı).
-  einvoice: 'E-Fatura', erp: 'ERP entegrasyonu', shipping: 'Kargo entegrasyonu',
-  mcp: 'Yapay zekâ bağlantısı', desktopApp: 'Masaüstü uygulaması',
+// ADR-0008 §3 durum makinesi -- Türkçe, insan-okunur karşılıklar (ham durum kodu kullanıcıya gösterilmez).
+const STATUS_META: Record<string, { label: string; tone: 'success' | 'info' | 'warning' | 'error' | 'grey'; icon: string }> = {
+  trialing: { label: 'Deneme Sürümü', tone: 'info', icon: 'mdi-timer-sand' },
+  active: { label: 'Aktif', tone: 'success', icon: 'mdi-check-circle-outline' },
+  past_due: { label: 'Ödeme Bekliyor', tone: 'warning', icon: 'mdi-alert-circle-outline' },
+  suspended: { label: 'Askıya Alındı', tone: 'error', icon: 'mdi-pause-circle-outline' },
+  canceled: { label: 'İptal Edildi', tone: 'error', icon: 'mdi-close-circle-outline' },
+  expired: { label: 'Sona Erdi', tone: 'error', icon: 'mdi-calendar-remove-outline' },
+  no_subscription: { label: 'Abonelik Yok', tone: 'grey', icon: 'mdi-help-circle-outline' },
 };
 
-const statusMeta = computed(() => subscriptionStatusMeta(subscriptionStatus.value));
+const FEATURE_LABELS: Record<string, string> = {
+  einvoice: 'E-Fatura', erp: 'ERP Entegrasyonu', shipping: 'Kargo Entegrasyonu',
+  mcp: 'MCP / AI Asistan', desktopApp: 'Masaüstü Uygulaması',
+};
+
+const statusMeta = computed(() => STATUS_META[subscriptionStatus.value] || STATUS_META.no_subscription);
 const isActiveLike = computed(() => subscriptionStatus.value === 'trialing' || subscriptionStatus.value === 'active');
 
-// Durum → metin eşlemesi `composables/subscriptionStatus.ts`'te (kabuk bandıyla ORTAK kaynak, C2.2).
-const statusMessage = computed(() => subscriptionStatusMessage(subscriptionStatus.value, subscriptionData.value, accessReason.value));
+const formatDate = (val?: string) => val ? formatDateDs(val) : '';
+
+const statusMessage = computed(() => {
+  const sub = subscriptionData.value;
+  switch (subscriptionStatus.value) {
+    case 'trialing':
+      return sub?.trialEndsAt
+        ? `Deneme sürümündesiniz -- ${formatDate(sub.trialEndsAt)} tarihine kadar tüm özellikler açık. Devam etmek için bir plan seçin.`
+        : 'Deneme sürümündesiniz. Deneme bitiminde devam etmek için bir plan seçmeniz gerekir.';
+    case 'active':
+      return 'Aboneliğiniz aktif -- tüm özellikler ve pazaryeri senkronizasyonu çalışıyor.';
+    case 'past_due':
+      return accessReason.value || 'Son ödemeniz alınamadı. Lütfen kart bilgilerinizi güncelleyin, aksi halde erişiminiz kısıtlanacak.';
+    case 'suspended':
+      return accessReason.value || 'Aboneliğiniz askıya alındı: verileriniz görüntülenebilir/dışa aktarılabilir ama düzenleme ve pazaryeri senkronizasyonu durduruldu.';
+    case 'canceled':
+      return sub?.currentPeriodEnd
+        ? `Aboneliğiniz iptal edildi -- ${formatDate(sub.currentPeriodEnd)} tarihine kadar tüm özellikler kullanılabilir, sonrasında salt-okunur erişime geçilecek.`
+        : 'Aboneliğiniz iptal edildi.';
+    case 'expired':
+      return accessReason.value || 'Aboneliğiniz sona erdi. Devam etmek için bir plan seçin.';
+    default:
+      return 'Henüz aktif bir aboneliğiniz yok. Aşağıdan bir plan seçerek başlayabilirsiniz.';
+  }
+});
 
 function isCurrentPlan(plan: Plan): boolean {
   return !!subscriptionData.value?.planCode && subscriptionData.value.planCode === plan.code;
@@ -180,17 +213,12 @@ function isCurrentPlan(plan: Plan): boolean {
 
 function planActionLabel(plan: Plan): string {
   if (!subscriptionData.value) return 'Planı Seç';
-  if (isCurrentPlan(plan)) return isActiveLike.value ? 'Mevcut planınız' : 'Yeniden Etkinleştir';
-  return 'Bu plana geç';
+  if (isCurrentPlan(plan)) return isActiveLike.value ? 'Mevcut Planınız' : 'Yeniden Etkinleştir';
+  return 'Bu Plana Geç';
 }
 
-// P08 (K49): plan kaydındaki tavan değerler "sınırsız" anlamındadır (Kurumsal: 999 kanal/kullanıcı, 999.999 varyant/çağrı).
-// Plan verisi değişmez; yalnız gösterim. Açık `unlimited` bayrağı backend isteği (PROPOSALS_PENDING backend istekleri).
-const UNLIMITED_AT: Record<string, number> = { channels: 999, users: 999, skus: 999_999, mcpCallsPerDay: 999_999 };
-
-function formatLimit(n?: number, key?: keyof typeof UNLIMITED_AT): string {
+function formatLimit(n?: number): string {
   if (n === undefined || n === null) return '—';
-  if (!Number.isFinite(n) || (key && n >= UNLIMITED_AT[key])) return 'Sınırsız';
   return formatNumber(n);
 }
 
@@ -199,9 +227,9 @@ function featureLabel(f: string): string {
 }
 
 function formatPrice(plan: Plan): string {
-  if (!plan.priceMinor) return 'Özel teklif';
+  if (!plan.priceMinor) return 'Özel Teklif';
   const amount = formatNumber(Math.round(plan.priceMinor / 100));
-  return `₺${amount} / ${plan.interval === 'year' ? 'yıl' : 'ay'}`;
+  return `${amount} ₺ / ${plan.interval === 'year' ? 'yıl' : 'ay'}`;
 }
 
 const fetchPlans = async () => {
@@ -304,22 +332,11 @@ onMounted(() => {
 
 .subscription-inner {
   max-width: 1100px;
-  margin: 0; /* Aşama 4: sayfa ızgarasına sola hizalı */
+  margin: 0 auto;
   padding: var(--ek-space-6);
   display: flex;
   flex-direction: column;
   gap: var(--ek-space-6);
-}
-
-.section-title-row {
-  display: flex;
-  align-items: center;
-  gap: var(--ek-space-1);
-  margin: 0 0 var(--ek-space-4) 0;
-}
-
-.section-title-row .section-title {
-  margin: 0;
 }
 
 .section-title {
@@ -385,7 +402,7 @@ onMounted(() => {
   background: var(--ek-color-surface);
   border: 1px solid var(--ek-color-border-default);
   border-radius: var(--ek-radius-lg);
-  transition: border-color var(--ek-motion-reveal), box-shadow var(--ek-motion-reveal);
+  transition: border-color var(--ek-duration-base) var(--ek-easing-standard), box-shadow var(--ek-duration-base) var(--ek-easing-standard);
 }
 
 .plan-card:hover {
@@ -416,9 +433,7 @@ onMounted(() => {
   position: absolute;
   top: var(--ek-space-3);
   right: var(--ek-space-3);
-  /* FR2-DARK: aksiyon zemini + eşleşik kontrast metni (iki temada AA). */
-  background: var(--ek-color-action);
-  color: var(--ek-color-action-contrast);
+  background: var(--ek-color-primary);
   padding: 2px var(--ek-space-2);
   border-radius: var(--ek-radius-full);
   font-size: var(--ek-font-size-xs);
@@ -473,10 +488,7 @@ onMounted(() => {
 }
 
 .plan-card-action {
-  /* Vuetify `.v-btn--block` `flex: 1 0 auto` taşır; dikey flex kartta düğmeyi boş alan kadar UZATIYORDU
-     (kısa içerikli kartta ~80px düğme). Düğme kendi yüksekliğinde, kartın dibine yaslı. */
-  flex: 0 0 auto;
-  height: var(--ek-control-h-lg);
+  margin-top: var(--ek-space-2);
 }
 
 .checkout-url {

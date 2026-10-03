@@ -84,7 +84,7 @@ Kullanıcı kararları: K21, K36, K37, K20, K03, K06 (`docs/adr/USER_DECISIONS.m
   - `DELETE` → anahtarı siler, denetim.
   - `POST /consent` (`agent.provider.consent`, **yalnız tenant sahibi**; impersonation'da yasak) → `transferConsent {at, by, textVersion}` yazar/siler; denetim `agent.transfer_consent.given|revoked`. `info`: anahtar var ama geçerli sürüm için onay yok → `SETUP_REQUIRED` + `consentRequired:true`; tur isteği 403 `SETUP_REQUIRED`.
   - Konuşma kaydı saklanmaz (K38): Redis çalışma belleği dışında hiçbir yere sohbet metni yazılmaz (test: Mongo'ya `agent` kaynaklı yazım yalnız ayar/denetim).
-  - `api/rpc/impersonationPolicy.ts` `IMP_DENIED_CREDENTIAL_RPCS`'e save/test/remove eklenir (destek oturumu tenant anahtarını göremez/değiştiremez).
+  - `api/impersonationPolicy.ts` `IMP_DENIED_CREDENTIAL_RPCS`'e save/test/remove eklenir (destek oturumu tenant anahtarını göremez/değiştiremez).
 - Ağ: `api.anthropic.com`, `api.openai.com`, `generativelanguage.googleapis.com` → `ALLOWED_OUTBOUND_HOSTS` (K7 tek listesi) + egress guard + `liveReadonlyPolicy.ts` (bu üç host için POST izinli; gerekçe: çıkarım entegrasyona yazma değildir). Test: başka host reddedilir.
 - Kullanım sayacı (yalnız bilgi): Redis `agent:usage:{tid}:{yyyymmdd}` (istek, girdi token, çıktı token; 40 gün TTL) + ay toplamı hesaplanarak `ProviderStatus.usage`; metrik `agent_tokens_total{surface,provider,kind}`. Kota/kesme yok.
 - Backoffice platform anahtarı aynı modülün platform kipi (BR-4 ile).

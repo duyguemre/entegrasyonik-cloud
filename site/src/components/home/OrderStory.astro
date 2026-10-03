@@ -25,11 +25,6 @@
  * numarası (01–05) + ikonlu düğüm net hiyerarşi kurar. Sahne paneli kartın içinde çok hafif teal tonlu bir yüzey,
  * öğeler beyaz; tüm iç metinler açık zemin metin tonlarını (`--site-text-*`) kullanır (AA). Katman token adları ve
  * tek renk ailesi (teal) korunur; hareket/döngü/reduced-motion davranışı değişmedi (scenes*.css).
- *
- * S27a (N3 "anasayfa kurgusunu kısalt", N9 hareket ekonomisi): bölüm ~2.000 px'ten tek ekranlık YATAY zaman çizgisine
- * indi. Beş adım ve metinleri (kayıt bağları) aynen korunur; adım başına canlı mini sahne paneli (`.viz`) ve döngüleri
- * kaldırıldı — aynı hikâyeyi hero vitrini (stok) ve sorun–çözüm kartı (sıfır aşırı satış) zaten canlı anlatıyor.
- * Masaüstünde beş sütun, aralarında tek ince hat; dar ekranda dikey liste. Giriş: düğüm → hat → kart (scenes.css).
  */
 import Section from '../Section.astro'
 import SectionHeading from './SectionHeading.astro'
@@ -43,17 +38,16 @@ const cap = (id: string) => {
   return id
 }
 
-// SITE-DL-02 (akış): "Tüm kanallar güncellenir" adımındaki kanal noktaları — ad yok, yalnız marka rengi (data-code).
-const dotCodes = getPublicIntegrations()
-  .slice(0, 4)
-  .map((c) => c.code)
+const codes = getPublicIntegrations().map((i) => i.code)
+const sources = [
+  { code: codes[0], label: 'Pazaryeri' },
+  { code: codes[1], label: 'Pazaryeri' },
+  { code: getPublicIntegrations('ecommerce')[0]?.code ?? codes[2], label: 'Web mağaza' },
+]
 
-// Her adımın kart altındaki canlı ayrıntısı (dekoratif, aria-hidden): akış adıma vardığında `before` -> `after`.
-// Durağan hâl (hareket kapalı / JS'siz) = `after` (akışın SON karesi). Sayılar senaryoyu anlatan örnektir.
 const steps = [
   {
     key: 'incoming',
-    live: { before: 'Yeni sipariş', after: 'Listeye eklendi' },
     cap: cap('unified-orders'),
     icon: 'orders' as const,
     title: 'Sipariş gelir',
@@ -61,7 +55,6 @@ const steps = [
   },
   {
     key: 'reserve',
-    live: { before: 'Stok 9', after: 'Stok 8 · rezerve' },
     cap: cap('stock-reservation'),
     icon: 'stock' as const,
     title: 'Stok rezerve edilir',
@@ -69,15 +62,13 @@ const steps = [
   },
   {
     key: 'sync',
-    live: { before: 'Kanallar bekliyor', after: 'Kanallar güncel' },
     cap: cap('multi-channel-products'),
     icon: 'refresh' as const,
     title: 'Tüm kanallar güncellenir',
-    text: 'Güncellenen stok, fiyat ve ürün bilgisi bağlı satış kanallarınıza iletilir.',
+    text: 'Güncellenen stok, fiyat ve ürün bilgisi bağlı satış kanallarına tek merkezden iletilir.',
   },
   {
     key: 'notice',
-    live: { before: 'Kargo ve fatura', after: 'Pazaryerine iletildi' },
     cap: cap('shipping-invoice-notice'),
     icon: 'notice' as const,
     title: 'Kargo ve fatura bilgisi iletilir',
@@ -85,7 +76,6 @@ const steps = [
   },
   {
     key: 'returns',
-    live: { before: 'İade talebi', after: 'Onaylandı' },
     cap: cap('returns'),
     icon: 'returns' as const,
     title: 'İade talebi yönetilir',
@@ -99,7 +89,7 @@ const steps = [
     id="senaryo-baslik"
     eyebrow="Senaryo"
     title="Bir sipariş geldiğinde ne olur?"
-    lead="Siparişin düştüğü andan iadeye kadar her adım aynı akışta, sizin gözünüzün önünde ilerler."
+    lead="Siparişin düştüğü andan iadeye kadar her adım tek merkezde ilerler. Aşağıdaki sahneler örnek görünümdür."
   />
 
   <ol class="story" data-testid="story-steps">
@@ -111,32 +101,151 @@ const steps = [
               <Icon name={s.icon} size="md" />
             </span>
             <span class="story__line" data-part="story-line">
-              <i class="story__fill" />
-              <i class="story__packet" />
+              {i < steps.length - 1 && <span class="story__packet" data-part="story-packet" />}
             </span>
           </div>
-          <div class="story__card" data-part="story-card">
-            <p class="story__index">
-              <span class="story__num" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>
-              <span class="sr-only">Adım {i + 1}</span>
-            </p>
-            <h3 class="story__title">{s.title}</h3>
-            <p class="story__text">{s.text}</p>
-            <div class="story__live" aria-hidden="true">
-              {s.key === 'sync' && (
-                <span class="story__dots">
-                  {dotCodes.map((code) => (
-                    <i data-code={code} />
-                  ))}
-                </span>
+          <div class="story__card" data-part="story-card" data-tilt>
+            <div class="story__copy">
+              <p class="story__index">
+                <span class="story__num" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>
+                <span class="sr-only">Adım {i + 1}</span>
+              </p>
+              <h3 class="story__title">{s.title}</h3>
+              <p class="story__text">{s.text}</p>
+            </div>
+
+            <div class="viz" data-viz={s.key} aria-hidden="true">
+              {s.key === 'incoming' && (
+                <div class="vin">
+                  <ul class="vin__sources">
+                    {sources.map((src) => (
+                      <li class="vin__src" data-part="mini-item" data-code={src.code}>
+                        <span class="vdot" />
+                        {src.label}
+                      </li>
+                    ))}
+                  </ul>
+                  <span class="vin__pipe">
+                    <i class="vin__spark" data-part="viz-spark" />
+                  </span>
+                  <div class="vin__inbox" data-part="mini-item">
+                    <p class="vin__inbox-title">
+                      <Icon name="orders" size="sm" />
+                      Sipariş merkezi
+                    </p>
+                    <ul class="vin__list">
+                      {sources.map((src, k) => (
+                        <li class="vin__order" data-code={src.code} data-part={k === 0 ? 'viz-drop' : undefined}>
+                          <span class="vdot" />
+                          <span class="vin__bar" />
+                          <span class="vin__pill">{k === 0 ? 'Yeni' : 'Alındı'}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
               )}
-              <span class="story__swap">
-                <span class="story__live-old">{s.live.before}</span>
-                <span class="story__live-new">
-                  <span class="story__tick"><Icon name="check" size="sm" /></span>
-                  {s.live.after}
-                </span>
-              </span>
+
+              {s.key === 'reserve' && (
+                <div class="vres">
+                  <div class="vres__counter" data-part="mini-item">
+                    <p class="vres__label">Kullanılabilir stok</p>
+                    <p class="vres__num">
+                      <span class="vres__n vres__n--from" data-part="viz-count-out">12</span>
+                      <span class="vres__n vres__n--to" data-part="viz-count-in">11</span>
+                    </p>
+                    <span class="vres__meter">
+                      <i class="vres__fill" data-part="viz-meter" />
+                    </span>
+                  </div>
+                  <div class="vres__chip" data-part="mini-item">
+                    <span class="vres__lock" data-part="viz-lock">
+                      <Icon name="lock" size="sm" />
+                    </span>
+                    <span>
+                      <b>1 adet rezerve</b>
+                      <small>Sipariş için ayrıldı</small>
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {s.key === 'sync' && (
+                <div class="vsync">
+                  <span class="vsync__wave" data-part="viz-wave" />
+                  <span class="vsync__wave vsync__wave--2" data-part="viz-wave" />
+                  <span class="vsync__wave vsync__wave--3" data-part="viz-wave" />
+                  <span class="vsync__hub">
+                    <Icon name="refresh" size="md" />
+                  </span>
+                  <ul class="vsync__ring">
+                    {codes.map((code) => (
+                      <li class="vsync__chan" data-code={code} data-part="viz-chan">
+                        <span class="vdot" />
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {s.key === 'notice' && (
+                <div class="vship">
+                  <div class="vship__track">
+                    <span class="vship__end vship__end--from" data-part="mini-item">
+                      <Icon name="layers" size="sm" />
+                    </span>
+                    <span class="vship__road">
+                      <span class="vship__lane" data-part="viz-parcel">
+                        <span class="vship__parcel">
+                          <Icon name="notice" size="sm" />
+                        </span>
+                      </span>
+                    </span>
+                    <span class="vship__end vship__end--to" data-part="mini-item" data-code={codes[0]}>
+                      <span class="vdot" />
+                    </span>
+                  </div>
+                  <ul class="vship__checks">
+                    <li data-part="mini-item">
+                      <Icon name="check" size="sm" />
+                      Kargo takip bilgisi
+                    </li>
+                    <li data-part="mini-item">
+                      <Icon name="check" size="sm" />
+                      Fatura bağlantısı
+                    </li>
+                  </ul>
+                </div>
+              )}
+
+              {s.key === 'returns' && (
+                <div class="vret">
+                  <div class="vret__card" data-part="mini-item" data-code={codes[1]}>
+                    <span class="vdot" />
+                    <span class="vret__title">İade talebi</span>
+                    <span class="vret__bar" />
+                  </div>
+                  <div class="vret__steps" data-part="mini-item">
+                    <span class="vret__track">
+                      <i class="vret__progress" data-part="viz-progress" />
+                    </span>
+                    <ol class="vret__labels">
+                      <li>
+                        <span class="vret__dot" />
+                        Talep
+                      </li>
+                      <li>
+                        <span class="vret__dot" />
+                        İnceleme
+                      </li>
+                      <li>
+                        <span class="vret__dot" />
+                        Onay / red
+                      </li>
+                    </ol>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </li>
@@ -146,20 +255,30 @@ const steps = [
 </Section>
 
 <style>
-  /* Kart katmanı tek renk ailesinde (teal) — S15-B token sözleşmesi korunur. */
   .story {
-    --story-card-tint: color-mix(in srgb, var(--site-action) 6%, var(--ek-color-background));
-    --story-card-edge: color-mix(in srgb, var(--site-action) 22%, var(--ek-color-border-default));
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    margin: var(--ek-space-10) 0 0;
+    /*
+     * Katman hiyerarşisi — kart > sahne > öğeler, tek renk ailesi (teal). S16: açık zemin; kart beyaz, sahne çok
+     * hafif teal tonlu, öğeler beyaz + ince teal kenar. Token adları S15-B'den korunur (tests/home-demos.test.ts).
+     */
+    --story-card-tint: color-mix(in srgb, var(--ek-color-secondary) 3%, var(--ek-color-surface));
+    --story-card-base: var(--ek-color-surface);
+    --story-card-edge: var(--ek-color-border-default);
+    --story-scene-bg: color-mix(in srgb, var(--ek-color-secondary) 6%, var(--ek-color-surface-muted));
+    --story-scene-edge: color-mix(in srgb, var(--ek-color-secondary) 14%, var(--ek-color-border-default));
+    --story-item-bg: color-mix(in srgb, var(--ek-color-secondary) 2%, var(--ek-color-surface));
+    --story-item-edge: color-mix(in srgb, var(--ek-color-secondary) 24%, var(--ek-color-border-default));
+    --story-item-light: color-mix(in srgb, var(--ek-color-content-strong) 6%, transparent);
+    --story-item-skel: color-mix(in srgb, var(--ek-color-secondary) 16%, var(--ek-color-surface-sunken));
+    display: flex;
+    flex-direction: column;
+    margin: var(--ek-space-12) 0 0;
     padding: 0;
     list-style: none;
   }
   .story__step {
     position: relative;
     display: grid;
-    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-columns: var(--ek-space-10) minmax(0, 1fr);
     gap: var(--ek-space-4);
   }
   .story__rail {
@@ -167,607 +286,620 @@ const steps = [
     display: flex;
     flex-direction: column;
     align-items: center;
+    padding-block-start: var(--ek-space-5);
   }
-  /* Düğüm: beyaz disk + ince teal halka + teal ikon. */
+  /* Düğüm: beyaz disk + ince teal halka + teal ikon (açık zeminde net, ağır değil). */
   .story__node {
     position: relative;
     z-index: 1;
-    display: inline-grid;
-    place-items: center;
-    width: var(--ek-space-12);
-    height: var(--ek-space-12);
-    border: var(--site-border-width) solid var(--story-card-edge);
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: var(--ek-space-10);
+    height: var(--ek-space-10);
     border-radius: var(--ek-radius-full);
-    background: var(--ek-color-background);
-    box-shadow: 0 0 0 var(--ek-space-1) color-mix(in srgb, var(--site-action) 10%, transparent), var(--site-shadow-card);
-    color: var(--site-accent);
-  }
-  .story__line {
-    flex: 1;
-    width: calc(var(--site-border-width) * 2);
-    min-height: var(--ek-space-6);
-    background: linear-gradient(180deg, var(--site-action), var(--story-card-edge));
-    transform-origin: 50% 0;
-  }
-  .story__step:last-child .story__line {
-    background: linear-gradient(180deg, var(--story-card-edge), transparent);
-  }
-  .story__card {
-    display: flex;
-    flex-direction: column;
-    gap: var(--ek-space-2);
-    padding: var(--ek-space-2) 0 var(--ek-space-6);
-  }
-  .story .story__index {
-    margin: 0;
-  }
-  .story__num {
-    color: var(--site-accent);
-    font-size: var(--ek-font-size-sm);
-    font-weight: var(--ek-font-weight-bold);
-    font-variant-numeric: tabular-nums;
-    letter-spacing: 0.08em;
-  }
-  .story__title {
-    margin: 0;
-    color: var(--site-text-heading);
-    font-size: var(--ek-font-size-lg);
-    font-weight: var(--ek-font-weight-bold);
-  }
-  .story__text {
-    margin: 0;
-    color: var(--site-text-body);
-    font-size: var(--ek-font-size-sm);
-    line-height: var(--ek-line-height-normal);
-  }
-
-  /* Geniş ekran: beş sütun; düğümler tek yatay hat üzerinde, kartlar altında. */
-  @media (min-width: 1024px) {
-    .story {
-      grid-template-columns: repeat(5, minmax(0, 1fr));
-      gap: var(--ek-space-6);
-    }
-    .story__step {
-      grid-template-columns: minmax(0, 1fr);
-      grid-template-rows: auto 1fr;
-      gap: var(--ek-space-5);
-    }
-    .story__rail {
-      flex-direction: row;
-    }
-    .story__line {
-      width: auto;
-      min-height: 0;
-      height: calc(var(--site-border-width) * 2);
-      margin-inline-end: calc(var(--ek-space-6) * -1);
-      background: linear-gradient(90deg, var(--site-action), var(--story-card-edge));
-      transform-origin: 0 50%;
-    }
-    /* Giriş "büyüme" yönü yataya döner (scenes.css varsayılanı dikey). */
-    .story .story__line[data-part='story-line'] {
-      --grow-from: 0 1;
-    }
-    .story__step:last-child .story__line {
-      background: linear-gradient(90deg, var(--story-card-edge), transparent);
-      margin-inline-end: 0;
-    }
-    .story__card {
-      height: 100%;
-      padding: var(--ek-space-5);
-      border: var(--site-border-width) solid var(--story-card-edge);
-      border-radius: var(--site-radius-panel);
-      background: var(--story-card-tint);
-      box-shadow: var(--site-shadow-card);
-    }
-  }
-
-  /* ================= SITE-DL-02 — uygulamanın tasarım dili (frontend/DESIGN_SYSTEM.md §35) =================
-     Düz yüzey + 1px ince çerçeve + kart yarıçapı; gölge, degrade, ışıma, hover yükselmesi yok; tek vurgu eylem
-     mavisi; ikonlar çerçeveli köşeli kutuda; hap rozet yerine köşeli çip. Yukarıdaki kuralları EZER (aynı özgüllük,
-     kaynak sırası). */
-
-  .story {
-    --story-card-tint: var(--ek-color-surface);
-    --story-card-edge: var(--ek-color-border-default);
-  }
-  /* Düğüm: çerçeveli köşeli ikon kutusu (yuvarlak disk + halka yerine). */
-  .story__node {
-    border-color: var(--site-action-border);
-    border-radius: var(--ek-radius-tile);
     background: var(--ek-color-surface);
-    box-shadow: none;
-  }
-  .story__line,
-  .story__step:last-child .story__line {
-    background: var(--ek-color-border-strong);
-  }
-  .story__step:last-child .story__line {
-    visibility: hidden;
-  }
-  @media (min-width: 1024px) {
-    .story__card {
-      border-radius: var(--ek-radius-card);
-      box-shadow: none;
-    }
-  }
-
-  /* SITE-DL-02 (akış) — "Bir sipariş geldiğinde ne olur?": sipariş adımdan adıma İLERLER.
-     Döngü (--story-T): sipariş paketi hat üzerinde bir düğümden ötekine gider; vardığı adım etkinleşir (düğüm:
-     action-subtle + action-border; kart: aynı vurgu, yalnız o adımdayken), kart altındaki canlı ayrıntı `önce` ->
-     `sonra` değişir (yeni sipariş -> listede, stok 9 -> 8 rezerve, kanallar güncel, pazaryerine iletildi, onaylandı),
-     geçilen hat eylem mavisiyle dolar. Tur bitince hepsi sıfırlanır. Yalnız opacity/scale/translate.
-     Durağan hâl (hareket kapalı / reduced / JS'siz) = akışın SON karesi: tüm düğümler etkin, hatlar dolu, tüm
-     ayrıntılar `sonra` durumunda. Dar ekranda (dikey liste) her adım kendi turunu döner; paket yalnız masaüstünde. */
-  .story {
-    --story-T: calc(var(--site-motion-loop-scene) * 1.25);
-    --story-d0: var(--site-motion-duration-reveal-lg);
-    --fill-from: 1 0;
-  }
-  .story__node {
-    isolation: isolate;
-    border-color: var(--ek-color-border-default);
-  }
-  .story__node::before {
-    content: '';
-    position: absolute;
-    inset: calc(var(--site-border-width) * -1);
-    z-index: -1;
-    border: var(--site-border-width) solid var(--site-action-border);
-    border-radius: inherit;
-    background: var(--site-action-subtle);
-    pointer-events: none;
+    box-shadow:
+      0 0 0 var(--site-border-width) var(--story-item-edge),
+      0 0 0 var(--ek-space-1) var(--site-accent-soft),
+      var(--site-shadow-card);
+    color: var(--site-accent);
   }
   .story__line {
     position: relative;
-  }
-  .story__fill {
-    position: absolute;
-    inset: 0;
-    background: var(--site-action);
+    flex: 1;
+    width: calc(var(--site-border-width) * 2);
+    margin-block: var(--ek-space-2);
+    border-radius: var(--ek-radius-full);
+    background: linear-gradient(180deg, var(--site-accent-line), var(--ek-color-border-default));
     transform-origin: 50% 0;
   }
+  .story__step:last-child .story__line {
+    background: linear-gradient(180deg, var(--site-accent-line), transparent);
+  }
+  /* Adımlar arasında akan veri paketi (döngü: scenes-loops.css `loop-story-packet`); statik/JS'siz hâlde görünmez. */
   .story__packet {
-    display: none;
-  }
-  .story__live {
-    display: flex;
-    align-items: center;
-    gap: var(--ek-space-2);
-    min-height: var(--ek-space-6);
-    margin-top: var(--ek-space-1);
-    color: var(--site-text-meta);
-    font-size: var(--ek-font-size-xs);
-    font-weight: var(--ek-font-weight-semibold);
-    line-height: var(--ek-line-height-tight);
-  }
-  .story__swap {
-    display: grid;
-    min-width: 0;
-  }
-  .story__live-old,
-  .story__live-new {
-    grid-area: 1 / 1;
-    display: inline-flex;
-    align-items: center;
-    gap: var(--ek-space-2);
-  }
-  .story__live-old {
-    opacity: 0;
-  }
-  .story__live-new {
-    color: var(--site-action-emphasis);
-  }
-  .story__tick {
-    display: inline-grid;
-    flex: none;
-    place-items: center;
-    width: var(--ek-space-5);
-    height: var(--ek-space-5);
-    border: var(--site-border-width) solid var(--site-action-border);
-    border-radius: var(--ek-radius-md);
-    background: var(--ek-color-surface);
-    color: var(--site-action);
-  }
-  .story__dots {
-    display: inline-flex;
-    flex: none;
-    gap: var(--ek-space-1);
-  }
-  .story__dots i {
+    position: absolute;
+    inset-inline-start: 50%;
+    inset-block-start: 0;
+    translate: -50% 0;
     width: var(--ek-space-2);
     height: var(--ek-space-2);
     border-radius: var(--ek-radius-full);
-    background: var(--chan, var(--site-action));
+    background: var(--site-accent);
+    box-shadow: var(--site-glow-ring);
+    opacity: 0;
+    pointer-events: none;
   }
-  .story__step:nth-child(2) {
-    --k: 1;
+  /*
+   * Açık kart: beyaz yüzey (üst sol köşede çok hafif teal ışıma) + ince kenarlık + yumuşak iki katmanlı gölge.
+   * Üst kenarda ince vurgu çizgisi yalnızca hover/odakta belirir (sakin hiyerarşi).
+   */
+  .story__card {
+    position: relative;
+    display: grid;
+    gap: var(--ek-space-5);
+    margin-bottom: var(--ek-space-6);
+    padding: var(--ek-space-5);
+    border: var(--site-border-width) solid var(--story-card-edge);
+    border-radius: var(--site-radius-panel);
+    background:
+      radial-gradient(70% 90% at 0% 0%, var(--story-card-tint), transparent 70%),
+      var(--story-card-base);
+    box-shadow: var(--site-shadow-card);
+    transition:
+      box-shadow var(--ek-duration-base) var(--ek-easing-standard),
+      border-color var(--ek-duration-base) var(--ek-easing-standard),
+      transform var(--tilt-transition-duration, var(--ek-duration-fast)) var(--ek-easing-standard);
   }
-  .story__step:nth-child(3) {
-    --k: 2;
+  .story__card::before {
+    content: '';
+    position: absolute;
+    inset-block-start: calc(var(--site-border-width) * -1);
+    inset-inline: var(--ek-space-6);
+    height: calc(var(--site-border-width) * 2);
+    border-radius: var(--ek-radius-full);
+    background: var(--site-gradient-hairline);
+    opacity: 0;
+    transition: opacity var(--ek-duration-base) var(--ek-easing-standard);
   }
-  .story__step:nth-child(4) {
-    --k: 3;
+  .story__card:hover {
+    border-color: var(--story-item-edge);
+    box-shadow: var(--site-shadow-card-hover);
   }
-  .story__step:nth-child(5) {
-    --k: 4;
+  .story__card:hover::before {
+    opacity: 1;
   }
-  @media (min-width: 1024px) {
-    .story {
-      --fill-from: 0 1;
+  .story__step:last-child .story__card {
+    margin-bottom: 0;
+  }
+  .story__copy {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-2);
+    min-width: 0;
+  }
+  /* Kart hiyerarşisi: adım numarası (büyük, vurgu) -> eyebrow -> başlık -> gövde (site-tokens.css `--site-card-*`). */
+  .story .story__index {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ek-space-3);
+    margin-bottom: var(--ek-space-1);
+  }
+  .story__num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: var(--ek-space-10);
+    height: var(--ek-space-8);
+    padding-inline: var(--ek-space-2);
+    border-radius: var(--ek-radius-md);
+    background: var(--site-accent-soft);
+    box-shadow: inset 0 0 0 var(--site-border-width) color-mix(in srgb, var(--ek-color-secondary) 30%, transparent);
+    color: var(--site-link-accent);
+    font-size: var(--ek-font-size-md);
+    font-weight: var(--ek-font-weight-bold);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.02em;
+  }
+  .story__title {
+    color: var(--site-card-title-color);
+    font-size: var(--ek-font-size-2xl);
+    font-weight: var(--site-card-title-weight);
+    letter-spacing: -0.01em;
+  }
+  .story__text {
+    color: var(--site-card-value-color);
+    font-size: var(--site-card-value-size);
+    font-weight: var(--site-card-value-weight);
+    line-height: var(--site-font-body-line-height);
+  }
+
+  /* ------------------------------------------------------------ Canlı sahne yüzeyi (açık, hafif teal tonlu) */
+  .viz {
+    container-type: inline-size;
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 14rem;
+    padding: var(--ek-space-6) var(--ek-space-5);
+    border: var(--site-border-width) solid var(--story-scene-edge);
+    border-radius: var(--ek-radius-xl);
+    /* Kartın içine gömülü, bir ton tonlu yüzey: üst sağda çok hafif teal ışıma, altta düz. */
+    background:
+      radial-gradient(90% 80% at 100% 0%, color-mix(in srgb, var(--ek-color-secondary) 10%, transparent), transparent 65%),
+      var(--story-scene-bg);
+    box-shadow: inset 0 var(--site-border-width) var(--ek-space-1) var(--story-item-light);
+    color: var(--site-text-body);
+    font-size: var(--ek-font-size-sm);
+  }
+  .viz::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background-image: var(--site-texture-dots);
+    background-size: var(--site-texture-dots-size);
+    -webkit-mask-image: var(--site-texture-fade);
+    mask-image: var(--site-texture-fade);
+    opacity: 0.55;
+  }
+  .vdot {
+    flex: none;
+    width: var(--ek-space-2);
+    height: var(--ek-space-2);
+    border-radius: var(--ek-radius-full);
+    background: var(--chan, var(--site-accent));
+    box-shadow: 0 0 0 calc(var(--site-border-width) * 3) color-mix(in srgb, var(--chan, var(--site-accent)) 18%, transparent);
+  }
+  /* Öğe camı: sahneden bir ton açık, aynı teal ailesi; üst kenarda ince ışık. */
+  .viz :is(.vin__src, .vin__inbox, .vres__counter, .vres__chip, .vship__checks li, .vret__card, .vret__steps) {
+    border: var(--site-border-width) solid var(--story-item-edge);
+    border-radius: var(--ek-radius-lg);
+    background: var(--story-item-bg);
+    box-shadow: 0 var(--site-border-width) calc(var(--site-border-width) * 2) var(--story-item-light);
+  }
+
+  /* 1) Sipariş gelir: kaynaklar -> akış -> sipariş merkezi */
+  /* Dar sahne (mobil/tablet): kaynaklar üstte yan yana, akış dikey, merkez altta; geniş sahnede soldan sağa. */
+  .vin {
+    display: grid;
+    gap: var(--ek-space-3);
+  }
+  .vin__sources {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ek-space-2);
+  }
+  .vin__pipe {
+    display: none;
+  }
+  @container (min-width: 26rem) {
+    .vin {
+      grid-template-columns: auto minmax(var(--ek-space-6), 1fr) minmax(0, 1.6fr);
+      align-items: center;
+      gap: var(--ek-space-2);
     }
-    .story__line {
-      container-type: inline-size;
+    .vin__sources {
+      flex-direction: column;
     }
-    .story__fill {
-      transform-origin: 0 50%;
-    }
-    /* Sipariş paketi: köşeli küçük kutu; hattın başından sonuna (sonraki düğümün altına) kayar. Durağan: görünmez. */
-    .story__packet {
+    .vin__pipe {
       display: block;
-      position: absolute;
-      inset-block-start: 50%;
-      inset-inline-start: 0;
-      width: var(--ek-space-3);
-      height: var(--ek-space-3);
-      margin: calc(var(--ek-space-3) / -2) 0 0 calc(var(--ek-space-3) / -2);
-      border: calc(var(--site-border-width) * 2) solid var(--ek-color-surface-muted);
-      border-radius: var(--ek-radius-sm);
-      background: var(--site-action);
-      opacity: 0;
+    }
+  }
+  .vin__src {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ek-space-2);
+    padding: var(--ek-space-1) var(--ek-space-3) var(--ek-space-1) var(--ek-space-2);
+    color: var(--site-text-heading);
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--ek-font-weight-semibold);
+    white-space: nowrap;
+  }
+  .vin__pipe {
+    position: relative;
+    height: calc(var(--site-border-width) * 2);
+    border-radius: var(--ek-radius-full);
+    background: linear-gradient(90deg, transparent, var(--site-accent-line));
+  }
+  /* Kıvılcım şeridi boru boyunca uzanır; döngü şeridi 0 -> %100 kaydırır (nokta ::before). Statik hâlde görünmez. */
+  .vin__spark {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+  }
+  .vin__spark::before {
+    content: '';
+    position: absolute;
+    inset-block-start: 50%;
+    inset-inline-start: 0;
+    width: var(--ek-space-2);
+    height: var(--ek-space-2);
+    translate: -50% -50%;
+    border-radius: var(--ek-radius-full);
+    background: var(--site-accent);
+    box-shadow: var(--site-glow-ring);
+  }
+  .vin__inbox {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-2);
+    padding: var(--ek-space-3);
+    min-width: 0;
+  }
+  .vin__inbox-title {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ek-space-2);
+    color: var(--site-text-heading);
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+  .vin__inbox-title :global(.icon) {
+    color: var(--site-accent);
+  }
+  .vin__list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-1);
+  }
+  .vin__order {
+    display: flex;
+    align-items: center;
+    gap: var(--ek-space-2);
+    padding: var(--ek-space-1) var(--ek-space-2);
+    border-radius: var(--ek-radius-md);
+    background: var(--ek-color-surface-muted);
+  }
+  .vin__order:first-child {
+    background: var(--site-accent-soft);
+    box-shadow: inset 0 0 0 var(--site-border-width) color-mix(in srgb, var(--ek-color-secondary) 40%, transparent);
+  }
+  .vin__bar {
+    flex: 1;
+    height: var(--ek-space-1);
+    border-radius: var(--ek-radius-full);
+    background: var(--story-item-skel);
+  }
+  .vin__pill {
+    color: var(--site-text-meta);
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+  .vin__order:first-child .vin__pill {
+    color: var(--site-link-accent);
+  }
+
+  /* 2) Stok rezerve edilir: akan sayaç + ölçer + rezerve çipi */
+  .vres {
+    display: grid;
+    gap: var(--ek-space-3);
+  }
+  @container (min-width: 26rem) {
+    .vres {
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: var(--ek-space-4);
+    }
+  }
+  .vres__counter {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-2);
+    padding: var(--ek-space-4);
+  }
+  .vres__label {
+    color: var(--site-text-meta);
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--ek-font-weight-semibold);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .vres__num {
+    display: grid;
+    overflow: hidden;
+    color: var(--site-text-heading);
+    font-size: var(--site-font-display-md);
+    font-weight: var(--site-font-display-weight);
+    letter-spacing: var(--site-font-display-tracking);
+    line-height: 1.05;
+  }
+  .vres__n {
+    grid-area: 1 / 1;
+  }
+  .vres__n--from {
+    opacity: 0;
+  }
+  .vres__meter {
+    overflow: hidden;
+    height: calc(var(--ek-space-1) * 1.5);
+    border-radius: var(--ek-radius-full);
+    background: var(--story-item-skel);
+  }
+  .vres__fill {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, var(--ek-color-secondary-darken-1), var(--ek-color-secondary));
+    transform-origin: 0 50%;
+    scale: 0.846 1;
+  }
+  .vres__chip {
+    display: flex;
+    align-items: center;
+    gap: var(--ek-space-3);
+    padding: var(--ek-space-3) var(--ek-space-4) var(--ek-space-3) var(--ek-space-3);
+    background: color-mix(in srgb, var(--ek-color-secondary) 8%, var(--ek-color-surface));
+    border-color: color-mix(in srgb, var(--ek-color-secondary) 40%, transparent);
+  }
+  .vres__chip b,
+  .vres__chip small {
+    display: block;
+  }
+  .vres__chip b {
+    color: var(--site-text-heading);
+    font-size: var(--ek-font-size-md);
+  }
+  .vres__chip small {
+    color: var(--site-text-meta);
+    font-size: var(--ek-font-size-xs);
+  }
+  .vres__lock {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--ek-space-8);
+    height: var(--ek-space-8);
+    border-radius: var(--ek-radius-full);
+    background: var(--site-accent);
+    color: var(--site-color-on-primary);
+  }
+
+  /* 3) Kanallar güncellenir: merkez + yayılan dalga + çevredeki kanal noktaları */
+  .vsync {
+    position: relative;
+    align-self: center;
+    width: min(100%, 15rem);
+    aspect-ratio: 1.6;
+  }
+  .vsync__hub {
+    position: absolute;
+    inset-block-start: 50%;
+    inset-inline-start: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--ek-space-12);
+    height: var(--ek-space-12);
+    translate: -50% -50%;
+    border-radius: var(--ek-radius-full);
+    background: linear-gradient(140deg, var(--ek-color-secondary), var(--ek-color-secondary-darken-1));
+    box-shadow:
+      0 0 0 var(--ek-space-2) color-mix(in srgb, var(--ek-color-secondary) 14%, transparent),
+      0 var(--ek-space-2) var(--ek-space-5) calc(var(--ek-space-1) * -1) color-mix(in srgb, var(--ek-color-secondary-darken-1) 45%, transparent);
+    color: var(--site-color-on-primary);
+  }
+  .vsync__wave {
+    position: absolute;
+    inset-block-start: 50%;
+    inset-inline-start: 50%;
+    width: 55%;
+    aspect-ratio: 1;
+    translate: -50% -50%;
+    border: var(--site-border-width) solid color-mix(in srgb, var(--ek-color-secondary) 55%, transparent);
+    border-radius: var(--ek-radius-full);
+    opacity: 0;
+  }
+  /* Statik hâl: tek, soluk bir halka (dalga "tamamlandı") */
+  .vsync__wave--3 {
+    opacity: 0.35;
+  }
+  .vsync__ring {
+    position: absolute;
+    inset: 0;
+  }
+  .vsync__chan {
+    position: absolute;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--ek-space-6);
+    height: var(--ek-space-6);
+    translate: -50% -50%;
+    border-radius: var(--ek-radius-full);
+    background: var(--ek-color-surface);
+    box-shadow:
+      inset 0 0 0 var(--site-border-width) color-mix(in srgb, var(--chan, var(--site-accent)) 45%, transparent),
+      0 var(--site-border-width) calc(var(--site-border-width) * 3) var(--story-item-light);
+  }
+  .vsync__chan .vdot {
+    width: var(--ek-space-3);
+    height: var(--ek-space-3);
+  }
+  .vsync__chan:nth-child(1) {
+    inset-block-start: 8%;
+    inset-inline-start: 50%;
+  }
+  .vsync__chan:nth-child(2) {
+    inset-block-start: 26%;
+    inset-inline-start: 88%;
+  }
+  .vsync__chan:nth-child(3) {
+    inset-block-start: 74%;
+    inset-inline-start: 88%;
+  }
+  .vsync__chan:nth-child(4) {
+    inset-block-start: 92%;
+    inset-inline-start: 50%;
+  }
+  .vsync__chan:nth-child(5) {
+    inset-block-start: 74%;
+    inset-inline-start: 12%;
+  }
+  .vsync__chan:nth-child(n + 6) {
+    inset-block-start: 26%;
+    inset-inline-start: 12%;
+  }
+
+  /* 4) Kargo ve fatura: panelden pazaryerine giden paket */
+  .vship {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-5);
+  }
+  .vship__track {
+    display: flex;
+    align-items: center;
+    gap: var(--ek-space-2);
+  }
+  .vship__end {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: var(--ek-space-10);
+    height: var(--ek-space-10);
+    border-radius: var(--ek-radius-full);
+    border: var(--site-border-width) solid var(--story-item-edge);
+    background: var(--story-item-bg);
+    box-shadow: 0 var(--site-border-width) calc(var(--site-border-width) * 2) var(--story-item-light);
+    color: var(--site-accent);
+  }
+  .vship__end--to .vdot {
+    width: var(--ek-space-3);
+    height: var(--ek-space-3);
+  }
+  .vship__road {
+    position: relative;
+    flex: 1;
+    height: calc(var(--site-border-width) * 2);
+    background: repeating-linear-gradient(
+      90deg,
+      var(--site-accent-line) 0 var(--ek-space-2),
+      transparent var(--ek-space-2) var(--ek-space-3)
+    );
+  }
+  /* Paket şeridi yol boyunca uzanır; statik hâlde %100 (paket varış noktasında), döngüde 0 -> %100 ilerler. */
+  .vship__lane {
+    position: absolute;
+    inset: 0;
+    translate: 100% 0;
+  }
+  .vship__parcel {
+    position: absolute;
+    inset-block-start: 50%;
+    inset-inline-start: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--ek-space-8);
+    height: var(--ek-space-8);
+    translate: -100% -50%;
+    border-radius: var(--ek-radius-md);
+    background: var(--site-accent);
+    box-shadow: 0 var(--ek-space-1) var(--ek-space-3) calc(var(--ek-space-1) * -1) color-mix(in srgb, var(--ek-color-secondary-darken-1) 60%, transparent);
+    color: var(--site-color-on-primary);
+  }
+  .vship__checks {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ek-space-2);
+  }
+  .vship__checks li {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ek-space-2);
+    padding: var(--ek-space-1) var(--ek-space-3);
+    color: var(--site-text-heading);
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+  .vship__checks :global(.icon) {
+    color: var(--site-accent);
+  }
+
+  /* 5) İade: talep kartı + ilerleyen adım çubuğu */
+  .vret {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-3);
+  }
+  .vret__card {
+    display: flex;
+    align-items: center;
+    gap: var(--ek-space-2);
+    padding: var(--ek-space-2) var(--ek-space-3);
+  }
+  .vret__title {
+    color: var(--site-text-heading);
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+  .vret__bar {
+    flex: 1;
+    height: var(--ek-space-1);
+    border-radius: var(--ek-radius-full);
+    background: var(--story-item-skel);
+  }
+  .vret__steps {
+    position: relative;
+    padding: var(--ek-space-4) var(--ek-space-3) var(--ek-space-3);
+  }
+  .vret__track {
+    position: absolute;
+    inset-block-start: calc(var(--ek-space-4) + var(--ek-space-1));
+    inset-inline: 16.6%;
+    height: calc(var(--site-border-width) * 2);
+    border-radius: var(--ek-radius-full);
+    background: var(--story-item-skel);
+  }
+  .vret__progress {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--site-accent);
+    transform-origin: 0 50%;
+  }
+  .vret__labels {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .vret__labels li {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--ek-space-2);
+    color: var(--site-text-body);
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--ek-font-weight-semibold);
+    text-align: center;
+  }
+  .vret__dot {
+    width: var(--ek-space-3);
+    height: var(--ek-space-3);
+    border-radius: var(--ek-radius-full);
+    background: var(--site-accent);
+    box-shadow: 0 0 0 var(--ek-space-1) var(--site-accent-soft), 0 0 0 calc(var(--ek-space-1) + var(--site-border-width)) var(--ek-color-surface);
+  }
+
+  @media (min-width: 768px) {
+    .story__step {
+      gap: var(--ek-space-6);
     }
     .story__card {
-      position: relative;
-      isolation: isolate;
-    }
-    /* "Sipariş şu an bu adımda" vurgusu (yalnız döngüde; durağan hâlde görünmez). */
-    .story__card::before {
-      content: '';
-      position: absolute;
-      inset: calc(var(--site-border-width) * -1);
-      z-index: -1;
-      border: var(--site-border-width) solid var(--site-action-border);
-      border-radius: inherit;
-      background: var(--site-action-subtle);
-      opacity: 0;
-      pointer-events: none;
-    }
-    /* Canlı ayrıntı kartın alt bandı: surface-muted + ince çizgi. */
-    .story__live {
-      margin: auto calc(var(--ek-space-5) * -1) calc(var(--ek-space-5) * -1);
-      padding: var(--ek-space-3) var(--ek-space-5);
-      border-top: var(--site-border-width) solid var(--ek-color-border-subtle);
-      border-radius: 0 0 calc(var(--ek-radius-card) - var(--site-border-width)) calc(var(--ek-radius-card) - var(--site-border-width));
-      background: var(--ek-color-surface-muted);
-    }
-  }
-
-  @media (prefers-reduced-motion: no-preference) {
-    @keyframes story-on-1 {
-      0%,
-      4% {
-        opacity: 0;
-      }
-      7%,
-      95% {
-        opacity: 1;
-      }
-      99%,
-      100% {
-        opacity: 0;
-      }
-    }
-    @keyframes story-off-1 {
-      0%,
-      4% {
-        opacity: 1;
-      }
-      7%,
-      95% {
-        opacity: 0;
-      }
-      99%,
-      100% {
-        opacity: 1;
-      }
-    }
-    @keyframes story-fill-1 {
-      0%,
-      14% {
-        opacity: 1;
-        scale: var(--fill-from);
-      }
-      21%,
-      95% {
-        opacity: 1;
-        scale: 1 1;
-      }
-      99%,
-      100% {
-        opacity: 0;
-        scale: 1 1;
-      }
-    }
-    @keyframes story-on-2 {
-      0%,
-      22% {
-        opacity: 0;
-      }
-      25%,
-      95% {
-        opacity: 1;
-      }
-      99%,
-      100% {
-        opacity: 0;
-      }
-    }
-    @keyframes story-off-2 {
-      0%,
-      22% {
-        opacity: 1;
-      }
-      25%,
-      95% {
-        opacity: 0;
-      }
-      99%,
-      100% {
-        opacity: 1;
-      }
-    }
-    @keyframes story-fill-2 {
-      0%,
-      32% {
-        opacity: 1;
-        scale: var(--fill-from);
-      }
-      39%,
-      95% {
-        opacity: 1;
-        scale: 1 1;
-      }
-      99%,
-      100% {
-        opacity: 0;
-        scale: 1 1;
-      }
-    }
-    @keyframes story-on-3 {
-      0%,
-      40% {
-        opacity: 0;
-      }
-      43%,
-      95% {
-        opacity: 1;
-      }
-      99%,
-      100% {
-        opacity: 0;
-      }
-    }
-    @keyframes story-off-3 {
-      0%,
-      40% {
-        opacity: 1;
-      }
-      43%,
-      95% {
-        opacity: 0;
-      }
-      99%,
-      100% {
-        opacity: 1;
-      }
-    }
-    @keyframes story-fill-3 {
-      0%,
-      50% {
-        opacity: 1;
-        scale: var(--fill-from);
-      }
-      57%,
-      95% {
-        opacity: 1;
-        scale: 1 1;
-      }
-      99%,
-      100% {
-        opacity: 0;
-        scale: 1 1;
-      }
-    }
-    @keyframes story-on-4 {
-      0%,
-      58% {
-        opacity: 0;
-      }
-      61%,
-      95% {
-        opacity: 1;
-      }
-      99%,
-      100% {
-        opacity: 0;
-      }
-    }
-    @keyframes story-off-4 {
-      0%,
-      58% {
-        opacity: 1;
-      }
-      61%,
-      95% {
-        opacity: 0;
-      }
-      99%,
-      100% {
-        opacity: 1;
-      }
-    }
-    @keyframes story-fill-4 {
-      0%,
-      68% {
-        opacity: 1;
-        scale: var(--fill-from);
-      }
-      75%,
-      95% {
-        opacity: 1;
-        scale: 1 1;
-      }
-      99%,
-      100% {
-        opacity: 0;
-        scale: 1 1;
-      }
-    }
-    @keyframes story-on-5 {
-      0%,
-      76% {
-        opacity: 0;
-      }
-      79%,
-      95% {
-        opacity: 1;
-      }
-      99%,
-      100% {
-        opacity: 0;
-      }
-    }
-    @keyframes story-off-5 {
-      0%,
-      76% {
-        opacity: 1;
-      }
-      79%,
-      95% {
-        opacity: 0;
-      }
-      99%,
-      100% {
-        opacity: 1;
-      }
-    }
-    @keyframes story-packet {
-      0%,
-      14% {
-        opacity: 0;
-        translate: 0 0;
-      }
-      15% {
-        opacity: 1;
-        translate: 0 0;
-        animation-timing-function: var(--site-motion-ease-loop);
-      }
-      21% {
-        opacity: 1;
-        translate: 100cqw 0;
-      }
-      22%,
-      100% {
-        opacity: 0;
-        translate: 100cqw 0;
-      }
-    }
-    @keyframes story-current {
-      0%,
-      4% {
-        opacity: 0;
-      }
-      7%,
-      19% {
-        opacity: 1;
-      }
-      23%,
-      100% {
-        opacity: 0;
-      }
-    }
-
-    /* Varsayılan (dar ekran dahil): her adım kendi turunda 1. adım zamanlamasını kullanır. */
-    :global(html[data-motion='play']) .story__step[data-state='play'] .story__node::before,
-    :global(html[data-motion='play']) .story__step[data-state='play'] .story__live-new,
-    :global(html[data-motion='play']) .story__step[data-state='play'] .story__dots i {
-      animation: story-on-1 var(--story-T) linear var(--story-d0) infinite backwards paused;
-    }
-    :global(html[data-motion='play']) .story__step[data-state='play'] .story__live-old {
-      animation: story-off-1 var(--story-T) linear var(--story-d0) infinite backwards paused;
-    }
-    :global(html[data-motion='play']) .story__step[data-state='play'] .story__fill {
-      animation: story-fill-1 var(--story-T) linear var(--story-d0) infinite backwards paused;
-    }
-    :global(html[data-motion='play']) .story__step[data-state='play'] .story__dots i:nth-child(2) {
-      animation-delay: calc(var(--story-d0) + var(--site-motion-stagger) * 3);
-    }
-    :global(html[data-motion='play']) .story__step[data-state='play'] .story__dots i:nth-child(3) {
-      animation-delay: calc(var(--story-d0) + var(--site-motion-stagger) * 6);
-    }
-    :global(html[data-motion='play']) .story__step[data-state='play'] .story__dots i:nth-child(4) {
-      animation-delay: calc(var(--story-d0) + var(--site-motion-stagger) * 9);
-    }
-    :global(html[data-motion='play']) .story__step[data-state='play'][data-visible='true'] .story__node::before,
-    :global(html[data-motion='play']) .story__step[data-state='play'][data-visible='true'] .story__live-new,
-    :global(html[data-motion='play']) .story__step[data-state='play'][data-visible='true'] .story__live-old,
-    :global(html[data-motion='play']) .story__step[data-state='play'][data-visible='true'] .story__dots i,
-    :global(html[data-motion='play']) .story__step[data-state='play'][data-visible='true'] .story__fill,
-    :global(html[data-motion='play']) .story__step[data-state='play'][data-visible='true'] .story__packet,
-    :global(html[data-motion='play']) .story__step[data-state='play'][data-visible='true'] .story__card::before {
-      animation-play-state: running;
-    }
-
-    /* Masaüstü: beş adım TEK saatte — adım k, turun k. diliminde etkinleşir; paket ve "şu an" vurgusu gecikmeyle kayar. */
-    @media (min-width: 1024px) {
-      :global(html[data-motion='play']) .story__step[data-state='play']:nth-child(2) .story__node::before,
-      :global(html[data-motion='play']) .story__step[data-state='play']:nth-child(2) .story__live-new,
-      :global(html[data-motion='play']) .story__step[data-state='play']:nth-child(2) .story__dots i {
-        animation-name: story-on-2;
-      }
-      :global(html[data-motion='play']) .story__step[data-state='play']:nth-child(2) .story__live-old {
-        animation-name: story-off-2;
-      }
-      :global(html[data-motion='play']) .story__step[data-state='play']:nth-child(2) .story__fill {
-        animation-name: story-fill-2;
-      }
-      :global(html[data-motion='play']) .story__step[data-state='play']:nth-child(3) .story__node::before,
-      :global(html[data-motion='play']) .story__step[data-state='play']:nth-child(3) .story__live-new,
-      :global(html[data-motion='play']) .story__step[data-state='play']:nth-child(3) .story__dots i {
-        animation-name: story-on-3;
-      }
-      :global(html[data-motion='play']) .story__step[data-state='play']:nth-child(3) .story__live-old {
-        animation-name: story-off-3;
-      }
-      :global(html[data-motion='play']) .story__step[data-state='play']:nth-child(3) .story__fill {
-        animation-name: story-fill-3;
-      }
-      :global(html[data-motion='play']) .story__step[data-state='play']:nth-child(4) .story__node::before,
-      :global(html[data-motion='play']) .story__step[data-state='play']:nth-child(4) .story__live-new,
-      :global(html[data-motion='play']) .story__step[data-state='play']:nth-child(4) .story__dots i {
-        animation-name: story-on-4;
-      }
-      :global(html[data-motion='play']) .story__step[data-state='play']:nth-child(4) .story__live-old {
-        animation-name: story-off-4;
-      }
-      :global(html[data-motion='play']) .story__step[data-state='play']:nth-child(4) .story__fill {
-        animation-name: story-fill-4;
-      }
-      :global(html[data-motion='play']) .story__step[data-state='play']:nth-child(5) .story__node::before,
-      :global(html[data-motion='play']) .story__step[data-state='play']:nth-child(5) .story__live-new,
-      :global(html[data-motion='play']) .story__step[data-state='play']:nth-child(5) .story__dots i {
-        animation-name: story-on-5;
-      }
-      :global(html[data-motion='play']) .story__step[data-state='play']:nth-child(5) .story__live-old {
-        animation-name: story-off-5;
-      }
-      :global(html[data-motion='play']) .story__step[data-state='play'] .story__packet {
-        animation: story-packet var(--story-T) linear infinite backwards paused;
-        animation-delay: calc(var(--story-d0) + var(--story-T) * 0.18 * var(--k, 0));
-      }
-      :global(html[data-motion='play']) .story__step[data-state='play'] .story__card::before {
-        animation: story-current var(--story-T) linear infinite backwards paused;
-        animation-delay: calc(var(--story-d0) + var(--story-T) * 0.18 * var(--k, 0));
-      }
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+      align-items: center;
+      gap: var(--ek-space-8);
+      padding: var(--ek-space-6);
     }
   }
 </style>

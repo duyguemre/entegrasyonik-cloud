@@ -100,10 +100,10 @@ test.describe('Gezinme ve klavye', () => {
     await expect(login).toBeHidden()
     await expect(toggle).toBeFocused()
 
-    // Klavye ile aç (Enter); S25: çekmece tam ekran (dışarısı yok) → kapat düğmesiyle (X) kapanır
+    // Klavye ile aç (Enter) ve dışarı tıklayarak kapat
     await page.keyboard.press('Enter')
     await expect(login).toBeVisible()
-    await toggle.click()
+    await page.mouse.click(5, 700) // menü panelinin dışında (hero üstü menüyle örtüşür)
     await expect(login).toBeHidden()
   })
 

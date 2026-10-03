@@ -4,7 +4,7 @@
 // (/health, /ready, /admin-api, webhook'lar bu ara katmandan önce/ayrı bağlıdır). Mesaj `maintenance.message` (public-config ile aynı kaynak).
 import type { NextFunction, Request, RequestHandler, Response } from 'express';
 import { getPlatformSetting } from '@integration/config/platformSettings';
-import { OPEN_OPERATIONS } from '@api/rpc/operationPolicy';
+import { OPEN_OPERATIONS } from '@api/operationPolicy';
 import { CAPABILITY_BY_RPC } from '../../capabilities';
 import { ERROR_CODES } from '@platform/core/errors';
 import { sendHttpError } from './errorEnvelope';

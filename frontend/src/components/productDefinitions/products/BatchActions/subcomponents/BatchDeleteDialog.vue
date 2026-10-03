@@ -1,19 +1,50 @@
-<!--
-  Toplu ürün silme onayı (Toplu işlemler › Toplu Sil › İşlemi Başlat). DS-v2 Aşama 2:
-  standart tehlikeli onay (`EkConfirmDialog`) — soru başlığı, sonucu anlatan açıklama
-  (`hint`), error onay düğmesi, varsayılan odak Vazgeç; yalnızca ürünler sekmesini örter.
-  Sözleşme DEĞİŞMEDİ: `deleteProducts` onayda yayılır; vazgeçince `update:modelValue(false)`.
--->
 <template>
-  <EkConfirmDialog :model-value="modelValue" title="Seçili ürünler silinsin mi?"
-    :description="`${hint} Bu işlem geri alınamaz.`" confirm-label="Evet, Sil" cancel-label="Hayır"
-    icon="mdi-trash-can-outline" confirm-icon="mdi-trash-can-outline" danger attach=".productListView"
-    @update:model-value="(v: boolean) => $emit('update:modelValue', v)" @confirm="$emit('deleteProducts')" />
+    <v-dialog :model-value="modelValue" @update:model-value="$emit('update:modelValue', $event)" scrim persistent
+        :retain-focus="false" no-click-animation :close-on-content-click="false"
+        :attach="'.productBatchMenuActionPanel'" :contained="true" location="center" origin="center" max-width="400"
+        width="100%">
+
+        <v-card color="danger" class="pa-4 w-100 rounded-lg">
+            <template v-slot:title>
+                <div class="d-flex align-center justify-center text-wrap text-center">
+                    <v-icon color="error" class="mr-2">mdi-alert-circle-outline</v-icon>
+                    <span class="text-h6 font-weight-bold text-error">{{ hint }}</span>
+                </div>
+            </template>
+            <template v-slot:text>
+                <div class="d-flex justify-center text-body-1 mt-2">Bu işlemi onaylıyor musunuz?</div>
+
+                <div class="mt-6 d-flex justify-center gap-4 flex-wrap">
+                    <v-btn color="grey-darken-1" variant="outlined" @click="$emit('update:modelValue', false)"
+                        class="flex-grow-1 bdd-s1">
+                        Hayır
+                    </v-btn>
+                    <v-btn color="error" variant="flat" @click="$emit('deleteProducts')" class="flex-grow-1 bdd-s1">
+                        Evet, Sil
+                    </v-btn>
+                </div>
+            </template>
+        </v-card>
+    </v-dialog>
 </template>
 
 <script setup lang="ts">
-import { EkConfirmDialog } from '@entegrasyonik/ui/components'
-
 defineProps<{ modelValue: boolean, hint: string }>()
 defineEmits(['update:modelValue', 'deleteProducts'])
 </script>
+
+<style scoped>
+.gap-4 {
+    gap: 16px;
+}
+</style>
+
+<style>
+/* ADR-0015 B5-2 — satir ici stillerden tasinan siniflar (autostyle). Satir ici stilin onceligi
+   !important ile korunur; ayni ozellikte Vuetify yardimci sinifi/`color` prop cakismasi varsa
+   (satir ici stil zaten yeniliyordu) !important eklenmez. Scope'suz: v-dialog/v-menu ve alt
+   bilesen kokleri scoped ozniteligi almayabilir; onek dosyaya ozgudur. */
+.bdd-s1 {
+  max-width: 150px !important;
+}
+</style>

@@ -5,7 +5,7 @@ import jwt from 'jsonwebtoken';
 import type http from 'http';
 import type { AddressInfo } from 'net';
 import { ApplicationError } from '../../src/platform/core/errors';
-import { buildActor } from '../../src/api/rpc/requestContext';
+import { buildActor } from '../../src/api/requestContext';
 import type { Role } from '../../src/capabilities/roles';
 import { verifyOAuthAccessToken, signOAuthAccessToken, isMcpEnabled } from '../../src/platform/core/security/oauthTokens';
 import { getMcpAccess } from '../../src/api/oauth/tenantAccess';

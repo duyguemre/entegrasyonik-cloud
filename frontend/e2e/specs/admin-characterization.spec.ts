@@ -22,7 +22,7 @@ function recorder(response: any, bodies: any[]) {
   }
 }
 
-test.describe('B3 karakterizasyon — Mağaza yönetimi (AdminClientListView)', () => {
+test.describe('B3 karakterizasyon — Mağaza Yönetimi (AdminClientListView)', () => {
   test.beforeEach(async ({}, testInfo) => {
     test.skip(testInfo.project.name !== 'chromium-desktop', 'Davranış viewport bağımsız; tek viewport yeterli (token tasarrufu)')
   })
@@ -34,17 +34,17 @@ test.describe('B3 karakterizasyon — Mağaza yönetimi (AdminClientListView)', 
     await openScreen(page, 'AdminClientListView')
     await expect(page.getByText('E2E Örnek Mağaza', { exact: true })).toBeVisible()
 
-    // DS-v2 Aşama 2: `v-data-table-server` kalktı; eskiden onun yazdığı limit 10, ekranın varsayılanı
-    // yapılarak sunucuya giden gövde AYNI tutuldu.
+    // GİZLİ DAVRANIŞ (düzeltilmedi): `pagination.limit` 50 ile başlıyor ama `v-data-table-server`'ın
+    // `@update:options` olayı Vuetify varsayılanı `itemsPerPage=10`'u yazıyor — sunucuya limit 10 gider.
     expect(bodies[0]).toEqual({ search: '', page: 1, limit: 10, sortField: 'order', sortOrder: 1 })
     const view = page.locator('.adminClientListView')
-    await expect(view).toContainText('Toplam mağaza')
-    await expect(view).toContainText('Aktif mağaza')
+    await expect(view).toContainText('Toplam Mağaza')
+    await expect(view).toContainText('Aktif Mağaza')
     await expect(view).toContainText('Pasif')
     await expect(view).toContainText('ID: 1001')
     await expect(view).toContainText('E2E Örnek Ticaret A.Ş.')
-    await expect(view.getByText('Aktif', { exact: true })).toBeVisible()
-    await expect(view.getByText('Pasif', { exact: true })).toBeVisible()
+    await expect(view.getByText('AKTİF', { exact: true })).toBeVisible()
+    await expect(view.getByText('PASİF', { exact: true })).toBeVisible()
   })
 
   test('arama: Enter ve büyüteç düğmesi getClients\'i arama metniyle yeniden ister; yenile aynı gövdeyi gönderir', async ({ page }) => {
@@ -55,15 +55,18 @@ test.describe('B3 karakterizasyon — Mağaza yönetimi (AdminClientListView)', 
     await expect(page.getByText('E2E Örnek Mağaza', { exact: true })).toBeVisible()
     const initial = bodies.length
 
-    const search = page.getByLabel('Mağaza adı veya kodu ara').first()
+    const search = page.getByLabel('Müşteri / Mağaza Ara').first()
     await search.fill('Pasif')
     await search.press('Enter')
     await expect.poll(() => bodies.length).toBe(initial + 1)
     expect(bodies.at(-1)).toMatchObject({ search: 'Pasif', page: 1, sortField: 'order', sortOrder: 1 })
 
-    // DS-v2 Aşama 2 — BİLİNÇLİ DEĞİŞİKLİK: büyüteç düğmesi kalktı (arama yalnız Enter ile).
-    await page.getByRole('button', { name: 'Listeyi yenile' }).click()
+    await page.getByRole('button', { name: 'Mağazaları ara' }).click()
     await expect.poll(() => bodies.length).toBe(initial + 2)
+    expect(bodies.at(-1)).toMatchObject({ search: 'Pasif' })
+
+    await page.getByRole('button', { name: 'Listeyi yenile' }).click()
+    await expect.poll(() => bodies.length).toBe(initial + 3)
     expect(bodies.at(-1)).toEqual(bodies.at(-2))
   })
 
@@ -82,7 +85,7 @@ test.describe('B3 karakterizasyon — Mağaza yönetimi (AdminClientListView)', 
     await page.getByRole('button', { name: 'Yeni mağaza oluştur' }).click()
     const dialog = page.getByRole('dialog').filter({ hasText: 'Yeni Mağaza Oluştur' })
     await expect(dialog).toBeVisible()
-    for (const label of ['Mağaza adı', 'Mağaza Başlığı', 'Ad Soyad', 'E-Posta Adresi', 'Giriş parolası']) {
+    for (const label of ['Mağaza Adı', 'Mağaza Başlığı', 'Ad Soyad', 'E-Posta Adresi', 'Giriş Şifresi']) {
       await expect(dialog.getByLabel(label)).toBeVisible()
     }
 
@@ -92,11 +95,11 @@ test.describe('B3 karakterizasyon — Mağaza yönetimi (AdminClientListView)', 
     expect(createBodies).toHaveLength(0)
 
     const listBefore = listBodies.length
-    await dialog.getByLabel('Mağaza adı').fill('E2E Yeni Mağaza')
+    await dialog.getByLabel('Mağaza Adı').fill('E2E Yeni Mağaza')
     await dialog.getByLabel('Mağaza Başlığı').fill('E2E Yeni Ticaret')
     await dialog.getByLabel('Ad Soyad').fill('E2E Yönetici')
     await dialog.getByLabel('E-Posta Adresi').fill('yonetici@e2e.invalid')
-    await dialog.getByLabel('Giriş parolası').fill('E2e-Sifre-123')
+    await dialog.getByLabel('Giriş Şifresi').fill('E2e-Sifre-123')
     await submit.click()
 
     await expect.poll(() => createBodies.length).toBe(1)

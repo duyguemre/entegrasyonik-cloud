@@ -30,8 +30,6 @@ export interface AgentTool {
     /** `none` = dogrudan calisir (okuma/onizleme); aksi halde onay karti. */
     confirm: 'none' | 'confirm' | 'typed';
     external: boolean;
-    /** Onay kartı risk geçersiz kılma (`mcp.exposed.risk`). */
-    risk?: 'high';
     untrustedPaths: string[];
     title: { tr: string; en: string };
     toolset: Toolset;
@@ -50,8 +48,6 @@ export interface ToolRuntime {
      * Sorun yoksa undefined; aksi halde kart uretilmez. Tanimsiz = dogrulama yok (yalniz test sahteleri).
      */
     verifyRefs?(ctx: AgentCtx, capId: string, input: unknown): Promise<RefProblem | undefined>;
-    /** Onay karti icin SUNUCU verisinden once -> sonra satirlari (canli: `dbPreviewChanges`). Tanimsiz/undefined = girdiden turetilen ozet. */
-    previewChanges?(ctx: AgentCtx, capId: string, input: unknown): Promise<Array<{ label: string; from?: string; to: string }> | undefined>;
     /**
      * Yurutme ANINDA yeniden denetim (RBAC/kill-switch/LIVE_READONLY/bakim/impersonation + abonelik yazma erisimi); sorun yoksa undefined.
      * Bant disi onay ucu (MCP-4) kota tuketmeden/kaydi almadan ONCE sorar: 423/503/403 ile reddedilen onay kaydi tuketmez. Tanimsiz = denetim yok (yalniz test sahteleri).
@@ -83,7 +79,7 @@ export function toolOf(cap: CapabilityDef): AgentTool {
     return {
         name: toolNameOf(cap.id), capId: cap.id, version: cap.version,
         description: cap.llm!.description + (confirm !== 'none' ? ' Requires explicit user confirmation before anything happens.' : ''),
-        inputSchema: schemaOf(cap), effect: cap.effect, confirm, external: cap.external, ...(exposed.risk ? { risk: exposed.risk } : {}), untrustedPaths: cap.untrustedPaths ?? [],
+        inputSchema: schemaOf(cap), effect: cap.effect, confirm, external: cap.external, untrustedPaths: cap.untrustedPaths ?? [],
         title: cap.summary, toolset: exposed.toolset,
     };
 }
@@ -144,8 +140,6 @@ export interface RuntimeDeps {
     entitled?: (tid: number) => Promise<(cap: CapabilityDef) => boolean>;
     /** Onay oncesi kimlik dogrulama (canli: `dbVerifyRefs`). */
     verifyRefs?: ToolRuntime['verifyRefs'];
-    /** Onay karti onizlemesi (canli: `dbPreviewChanges`). */
-    previewChanges?: ToolRuntime['previewChanges'];
 }
 
 export function createToolRuntime(deps: RuntimeDeps): ToolRuntime {
@@ -180,6 +174,5 @@ export function createToolRuntime(deps: RuntimeDeps): ToolRuntime {
             return entitled(cap) ? undefined : AppError.of('SUBSCRIPTION_RESTRICTED');
         },
         ...(deps.verifyRefs ? { verifyRefs: deps.verifyRefs } : {}),
-        ...(deps.previewChanges ? { previewChanges: deps.previewChanges } : {}),
     };
 }

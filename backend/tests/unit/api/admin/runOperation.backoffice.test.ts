@@ -23,10 +23,10 @@ let audits: any[];
 function loadRun(apis: any = { AdminService: Fake, IntegrationConfigService: Fake, SecurityService: Fake, UserService: Fake, BillingService: Fake, OrderService: Fake }) {
     let run: any;
     jest.isolateModules(() => {
-        jest.doMock('../../../../src/api/rpc/index', () => ({ __esModule: true, default: apis }));
+        jest.doMock('../../../../src/api/index', () => ({ __esModule: true, default: apis }));
         // Govde semalari (ADR-0023) bu testin konusu degil: dogrulama gecirgen
-        jest.doMock('../../../../src/api/rpc/requestValidation', () => ({ validateRpcRequest: (_s: string, _o: string, b: any) => b }));
-        run = require('../../../../src/api/rpc/RunOperation').default;
+        jest.doMock('../../../../src/api/requestValidation', () => ({ validateRpcRequest: (_s: string, _o: string, b: any) => b }));
+        run = require('../../../../src/api/RunOperation').default;
         // Izole kayit defterindeki AuditLogger ornegine sink baglanir (dis kayit defteri farkli ornektir)
         require('../../../../src/services/audit/AuditLogger').AuditLogger.setSink(async (r: any) => { audits.push(r); });
     });

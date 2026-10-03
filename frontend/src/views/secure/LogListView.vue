@@ -1,15 +1,10 @@
 <template>
   <div class="logListView d-flex flex-column">
-    <!-- DS-v2 Aşama 2: her sekme kendi liste standardını (EkListScreen) taşır — filtre paneli,
-         aktif çipler, sayfalama sekmeye yereldir. Başlığı bu sayfa taşır. -->
+    <!-- ek-pattern-exception: EkListPage — bu ekran iki ayrı liste sekmesi barındırıyor; her sekmenin kendi arama/filtre/sayfalama düzeni (Enter ile arama, iş numarası araması, gelişmiş sorgu paneli) logs*.spec.ts ile sabit ve EkFilterBar'a sığmıyor — hedef: Aşama C (sekme başına EkListPage) -->
     <EkPageHeader
-      section="Ayarlar"
-      title="İşlem kayıtları"
+      section="Entegrasyonlar"
+      title="İşlem Kayıtları"
       description="Pazaryerlerine gönderilen ve pazaryerlerinden çekilen ürün işlemlerini buradan izleyin."
-      :tools-id="toolsId"
-      :refreshable="refreshHub.available.value"
-      :refreshing="refreshHub.loading.value"
-      @refresh="refreshHub.run"
     />
 
     <EkPageTabs v-model="activeTab" :tabs="tabs" />
@@ -22,24 +17,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref, useId } from 'vue';
-import { provideListRefreshHub, provideListToolsTarget } from '@/components/page/listTools';
-import EkPageHeader from '@/components/page/EkPageHeader.vue';
-import { EkPageTabs } from '@entegrasyonik/ui/components';
+import { ref } from 'vue';
+import EkPageHeader from '@/components/ds/EkPageHeader.vue';
+import EkPageTabs from '@/components/ds/EkPageTabs.vue';
 import ImportLogList from '@/components/logListView/ImportLogList.vue';
 import ExportLogList from '@/components/logListView/ExportLogList.vue';
 
-// P03 (K49): etkin sekmenin arama + yenile'si başlık çubuğunda.
-const toolsId = `ek-log-tools-${useId().replace(/[^\w-]/g, '-')}`
-provideListToolsTarget(toolsId)
-// FE-LOCAL-1047: "Yenile" düğmesi yok — sayfa adına tıklamak etkin sekmenin listesini yeniler.
-const refreshHub = provideListRefreshHub()
-
-// Varsayılan sekme: ürün gönderim işlemleri
+// Default olarak "Ürün Gönderim İşlemleri" seçili geliyor
 const activeTab = ref('export');
 const tabs = [
-  { value: 'export', label: 'Ürün gönderim işlemleri' },
-  { value: 'import', label: 'Ürün çekim işlemleri' },
+  { value: 'export', label: 'Ürün Gönderim İşlemleri' },
+  { value: 'import', label: 'Ürün Çekim İşlemleri' },
 ];
 </script>
 
@@ -52,16 +40,9 @@ const tabs = [
   bottom: 0;
   left: 0;
   right: 0;
-  padding: var(--ek-space-5) var(--ek-space-6);
-  gap: var(--ek-space-3);
+  padding: var(--ek-space-6);
+  gap: var(--ek-space-4);
   background-color: transparent;
-}
-
-@media (max-width: 767px) {
-  .logListView {
-    overflow-y: auto;
-    padding: var(--ek-space-4);
-  }
 }
 
 /* Alt listeler (ExportLogList/ImportLogList) bu gövdeye göre konumlanır. */

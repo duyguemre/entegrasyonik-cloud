@@ -53,7 +53,7 @@ test.describe('P3 (B5-2) — Ürün düzenleme parçaları (ProductImages / Sing
   test('resim galerisi: "Ürün Tanımı" adımındaki galeri butonu "Ürün Resim Galerisi" kartını açar', async ({ page }, testInfo) => {
     const root = await openUpdate(page)
     await root.getByText('Ürün Tanımı').click()
-    await root.locator('[data-pf-field="gallery"]').click()
+    await root.getByText('Resim Galerisi').first().click()
 
     const card = page.locator('.v-overlay--active:not(.v-snackbar)').filter({ hasText: 'Ürün Resim Galerisi' }).first()
     await expect(card).toBeVisible()

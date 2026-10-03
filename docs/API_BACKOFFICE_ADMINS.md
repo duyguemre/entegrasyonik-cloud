@@ -1,6 +1,6 @@
 # Backoffice platform yöneticisi yönetimi — API sözleşmesi (B12)
 
-ADR-0026 + `docs/BACKOFFICE_PLAN.md` §2.8 (B12). Yüzey: `/admin-api` (yalnız platformAdmin, TOTP tamamlanmış tam oturum). Kaynak kod: `backend/src/api/rpc/handlers/backoffice-admin-user-service.ts` (ince sarmalayıcı), `backend/src/api/admin/adminUserManager.ts` (kurallar), şemalar `backend/src/capabilities/rpc-input/backoffice.ts`, yetenekler `backend/src/capabilities/domains/backoffice.ts` (`platform.admins.*`).
+ADR-0026 + `docs/BACKOFFICE_PLAN.md` §2.8 (B12). Yüzey: `/admin-api` (yalnız platformAdmin, TOTP tamamlanmış tam oturum). Kaynak kod: `backend/src/api/services/backoffice-admin-user-service.ts` (ince sarmalayıcı), `backend/src/api/admin/adminUserManager.ts` (kurallar), şemalar `backend/src/capabilities/rpc-input/backoffice.ts`, yetenekler `backend/src/capabilities/domains/backoffice.ts` (`platform.admins.*`).
 
 ## Genel kurallar
 

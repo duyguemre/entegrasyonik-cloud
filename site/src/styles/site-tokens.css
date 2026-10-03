@@ -38,9 +38,6 @@
   --site-container-max: 75rem; /* 1200 px @ 16px kök */
   --site-container-narrow: 48rem;
   --site-header-height: calc(var(--ek-space-16) + var(--ek-space-2)); /* 72 */
-  /* S25: header'ın GÖRÜNEN yüksekliği — masaüstünde kaydırınca 60'a iner (Header.astro); başlığa yaslanan yapışkan
-     öğeler (karşılaştırma tablosu, kapsam matrisi, sözlük harf çubuğu) bunu kullanır → arada boşluk kalmaz. */
-  --site-header-visible: var(--site-header-height);
 
   /* Çizgi/odak ölçüleri (ölçek dışı ince değerler) */
   --site-border-width: 1px;
@@ -52,23 +49,6 @@
   --site-color-on-primary: var(--ek-color-background);
   --site-color-on-primary-muted: color-mix(in srgb, var(--ek-color-background) 78%, transparent);
   --site-color-link: var(--ek-color-primary);
-  /* S27b: fiyat kartlarının koyu hero'ya taşma payı (PageHero `overlap` + fiyat sayfası). */
-  --site-hero-overlap: calc(var(--ek-space-16) * 1.5);
-  /* S27b (N6, ELEV A14): TEK eyebrow biçimi — anasayfa bölümleri, iç sayfa hero/bölüm başlıkları, menü ve fiyat sayfası.
-     Küçük, büyük harf, aralıklı, vurgu rengi; solda ince degrade çizgi işareti (her yerde). Koyu zeminde renk
-     `--site-link-accent` eşlemesiyle kendiliğinden açık teal'e döner (global.css). */
-  --site-eyebrow-size: var(--ek-font-size-sm);
-  --site-eyebrow-weight: var(--ek-font-weight-semibold);
-  --site-eyebrow-tracking: 0.1em;
-  --site-eyebrow-color: var(--site-link-accent);
-  --site-eyebrow-gap: var(--ek-space-2);
-  --site-eyebrow-mark-width: var(--ek-space-5);
-  --site-eyebrow-mark-height: calc(var(--site-border-width) * 2);
-  /* S27b (SR4-11): hover'da alt çizgi YOK — renk + yumuşak zemin + ok. Bağlantı hover tonu ve "işaret" zemini. */
-  --site-color-link-hover: color-mix(in srgb, var(--ek-color-secondary-darken-1) 82%, var(--ek-color-content-strong));
-  --site-link-hover-bg: color-mix(in srgb, var(--ek-color-secondary) 14%, transparent);
-  --site-link-hover-bg-on-dark: color-mix(in srgb, var(--ek-color-secondary) 22%, transparent);
-  --site-link-arrow-shift: 0.25em;
   --site-color-focus-ring: var(--ek-color-primary);
 
   /* Degrade / ışıma — yalnızca token renklerinden türetilir */
@@ -123,16 +103,10 @@
   --site-text-heading: var(--ek-color-content-strong);
   --site-text-body: var(--ek-color-content-default);
   --site-text-meta: var(--ek-color-content-muted);
-  /* site-wdg W03: düz teal (#018786) beyazda 4,36:1 — 12–14 px etiketlerde AA altı. Aynı teal, %12 lacivert ile
-     koyulaştırılır (beyazda ~5,2:1, surface-muted'da ~5,0:1). Degradeler ve ikon dolguları kendi tokenlarında kalır. */
-  --site-accent: color-mix(in srgb, var(--ek-color-secondary-darken-1) 88%, var(--ek-color-content-strong));
+  --site-accent: var(--ek-color-secondary-darken-1);
   --site-accent-on-dark: var(--ek-color-secondary);
   /* S15: bağımsız `.link` rengi — açık/renkli yüzeylerde de AA (≥4.5:1) kalsın diye vurgudan bir ton koyu */
   --site-link-accent: color-mix(in srgb, var(--ek-color-secondary-darken-1) 82%, var(--ek-color-content-strong));
-  /* Orta vurgu tonu: hem açık hem koyu zeminde çizgi/nokta/çubuk gibi metin taşımayan vurgular (2026-10-02). */
-  --site-accent-mid: var(--ek-color-secondary);
-  /* Koyu zeminde açık marka mavisi (iç sayfa paleti, global.css :root:has(.page-hero)). */
-  --site-brand-light: color-mix(in srgb, var(--ek-color-primary-darken-1) 42%, var(--ek-color-background));
   --site-accent-soft: color-mix(in srgb, var(--ek-color-secondary) 12%, transparent);
   --site-accent-line: color-mix(in srgb, var(--ek-color-secondary) 55%, transparent);
   --site-text-on-dark-heading: var(--site-color-on-primary);
@@ -176,10 +150,6 @@
     0 0.75rem 1.5rem -0.75rem color-mix(in srgb, var(--ek-color-content-strong) 14%, transparent);
   --site-shadow-card-hover: 0 0.0625rem 0.125rem color-mix(in srgb, var(--ek-color-content-strong) 8%, transparent),
     0 1.5rem 2.5rem -1rem color-mix(in srgb, var(--ek-color-primary-darken-1) 30%, transparent);
-  /* Yumuşak yükselme (2026-10-02, kullanıcı: "hover çok sert"): kart gölgesinden yalnızca bir adım derin, renk
-     tonu yok. İç sayfa kartları hover'da bunu kullanır; geçiş --ek-duration-slow. */
-  --site-shadow-card-raise: 0 0.0625rem 0.125rem color-mix(in srgb, var(--ek-color-content-strong) 6%, transparent),
-    0 1rem 2rem -1rem color-mix(in srgb, var(--ek-color-content-strong) 18%, transparent);
   --site-glow-ring: 0 0 0 0.25rem color-mix(in srgb, var(--ek-color-secondary) 24%, transparent);
 
   /* Birleşik yerleşim ölçüleri */
@@ -248,134 +218,27 @@
   --site-tilt-leave-ease: cubic-bezier(0.22, 0.61, 0.36, 1); /* ease-out (sıçrama/aşma yok) */
 
   /*
-   * Kanal (pazaryeri/entegrasyon) RESMİ marka renkleri (C1S, 2026-09-30) — İSTİSNAİ HAM HEX.
-   * TEK KAYNAK: docs/cloud-contracts/CHANNEL_BRAND_COLORS.md (kullanıcı onaylı, ölçülmüş değerler). Frontend
-   * aynı tabloyu `channel.<kod>.brand` / `channel.<kod>.onBrand` olarak uygular — değerler birebir aynıdır;
-   * değişiklik yalnız belge + bu blok üzerinden (tests/channel-colors.test.ts belgeyi sabit olarak taşır).
-   * Kural: marka rengi DEĞİŞTİRİLMEZ (tint/karartma türetilmez). `--channel-<kod>-on` dolgulu zemindeki
-   * metin rengidir: siyah/beyazdan hangisi ≥4.5:1 (WCAG AA) ise — renk değil metin rengi seçilir.
-   * Yalnız uygulanmış (backend entegrasyonu olan) 6 kanal tanımlıdır; belgedeki yalnız-UI kanallar ve
-   * ölçülmemiş/bilinmeyen kanallar `--channel-neutral` (nötr gri, --ek-* türevi) alır.
-   * Bu değişkenler tests/tokens.test.ts'te açıkça listelenmiş tek ham-hex istisnasıdır; logo DEĞİLDİR.
+   * Kanal (pazaryeri/entegrasyon) marka renkleri (S8 2. tur, 2026-09-29) — İSTİSNAİ HAM HEX:
+   * bu 6 değişken (`--site-channel-*`) tests/tokens.test.ts'te açıkça listelenmiş tek istisnadır; dosyanın
+   * geri kalanı hâlâ yalnızca `--ek-color-*` türevi kullanır. Değerler YAKLAŞIK marka tonudur (resmî marka
+   * kılavuzu doğrulanmadı), LOGO DEĞİLDİR (marka izni açık soru — ADR-0014 Açık Soru 3): yalnızca monogram
+   * rozeti zemini / ince kenarlık / nokta gibi dekoratif ayırt edici olarak kullanılır. Eşleme tek kaynak:
+   * src/data/channel-colors.ts + global.css `[data-code]`. `-fill` türevleri (siyaha doğru karıştırılmış)
+   * beyaz harfli dolu monogram rozetlerinde kullanılır — WCAG AA (≥3:1 büyük/kalın metin) için karartılmıştır;
+   * ham `--site-channel-*` değeri yalnızca kenarlık/nokta gibi metin taşımayan yerlerde kullanılır.
    */
-  --channel-trendyol: #FF6620;
-  --channel-trendyol-on: #000000;
-  --channel-hepsiburada: #FF6000;
-  --channel-hepsiburada-on: #000000;
-  --channel-n11: #FF44EE;
-  --channel-n11-on: #000000;
-  --channel-pazarama: #0137F3;
-  --channel-pazarama-on: #FFFFFF;
-  --channel-ideasoft: #391EE0;
-  --channel-ideasoft-on: #FFFFFF;
-  --channel-bizimhesap: #20554E;
-  --channel-bizimhesap-on: #FFFFFF;
-  --channel-neutral: var(--ek-color-neutral);
-  --channel-neutral-on: var(--ek-color-background);
-
-  /*
-   * S23 — KANAL ROZETİ biçimi (FR2 madde 11/15, kullanıcı kararı 2026-09-30): kenarlık = marka renginin KOYUSU,
-   * iç zemin = AÇIĞI, harf = koyu marka tonu. Marka token'ı (`--channel-<kod>`) DEĞİŞMEZ; rozet tonları yalnızca
-   * bu üç oranla `color-mix` ile türetilir (formül: src/styles/global.css `[data-code]` bloğu; tek bileşen
-   * `components/pages/ChannelMono.astro`). Oranlar tests/channel-colors.test.ts'te her kanal için hesaplanıp
-   * AA'ya karşı doğrulanır: harf/zemin ≥ 4.5:1, kenarlık/sayfa zemini ≥ 3:1 (WCAG 1.4.11).
-   */
-  --channel-badge-tint: 14%; /* iç zemin: marka %14 + sayfa zemini */
-  --channel-badge-shade: 78%; /* kenarlık: marka %78 + mürekkep */
-  --channel-badge-ink: 58%; /* harf: marka %58 + mürekkep */
-  --channel-badge-mix-ink: var(--ek-color-content-strong);
-}
-
-/*
- * ================= SITE-DL-01 — UYGULAMANIN TASARIM DİLİ (frontend/DESIGN_SYSTEM.md §35, kullanıcı kararı K73) =================
- * Site, uygulama ve backoffice ile AYNI dili konuşur. Bu blok yukarıdaki pazarlama tokenlarını KAYNAĞINDA düzleştirir
- * (bileşenler token adlarını kullanmaya devam eder):
- *   D1 degrade yok ......... kart/panel/metin/kenarlık degradeleri (`--site-gradient-accent|border|hairline`) DÜZ renge iner. Değerler tek renkli
- *                            `linear-gradient(c, c)` olarak yazılır: token hem `background` hem `background-image`
- *                            bağlamında geçerli kalır, görünüm düzdür.
- *   D2 düz yüzey + çerçeve . kart/panel gölgesi yok (1px ince çerçeve); hover'da gölge yok; köşe `radius-card`.
- *   D3 tek vurgu ........... MARKA LACİVERTİ (`--site-action*`; uygulamadaki eylem mavisinin sitedeki karşılığı) — düğme,
- *                            vurgu, bağlantı, ikon, etkin durum. Parlak mavi ve teal vurgu yok (logo işareti, favicon, kanal
- *                            renkleri ve metin seçimi markaya aittir — değişmez).
- *   D4 bölüm etiketi ....... 12×2px kısa eylem çizgisi + BÜYÜK HARF mikro etiket (uygulamadaki bölüm başlıklarıyla aynı).
- *   D7 koyu sahne .......... TEK istisna: hero/kapanış bandı zemini derinlikli kalır ama yalnız MAVİ ailesinden
- *                            (lacivert zemin + eylem mavisi ışıma + ince ızgara); üstündeki "cam" yüzeyler düz ve çerçeveli.
- * Eğim (tilt) ve imleç ışığı kapalı. Yalnız `--ek-*` türevleri; ham renk yok.
- */
-:root {
-  /* D3 — tek vurgu: MARKA LACİVERTİ (kullanıcı kararı 2026-10-02: "mavi olan yerleri Entegrasyonik laciverti yap").
-     Uygulamadaki eylem mavisinin sitedeki karşılığı `--site-action*` ailesidir; bileşenler `--ek-color-action*` YAZMAZ.
-     Bu aile koyu yüzeyde yeniden eşlenmez (dolgu/çerçeve için); metin vurgusu için `--site-accent` kullanılır
-     (koyu yüzeyde global.css onu açık tona çevirir). */
-  /* Dolgu/ikon tonu (düğme, anahtar, ikon, çizgi): lacivertin bir ton AÇIĞI — tam marka laciverti bu öğelerde fazla koyu
-     duruyordu (kullanıcı kararı). Metin vurgusu (`-emphasis`) tam lacivert kalır; hover bir ton koyulaşır. */
-  --site-action: var(--ek-color-chrome-soft-raised);
-  --site-action-hover: var(--ek-color-chrome-soft);
-  --site-action-emphasis: var(--ek-color-primary);
-  --site-action-contrast: var(--site-color-on-primary);
-  --site-action-subtle: color-mix(in srgb, var(--ek-color-primary) 6%, var(--ek-color-background));
-  --site-action-border: color-mix(in srgb, var(--ek-color-primary) 26%, var(--ek-color-background));
-  --site-accent: var(--site-action);
-  --site-accent-on-dark: var(--ek-color-chrome-soft-text-muted);
-  --site-accent-mid: var(--site-action);
-  --site-accent-soft: var(--site-action-subtle);
-  --site-accent-line: var(--site-action-border);
-  --site-brand-light: var(--ek-color-chrome-soft-text-muted);
-  --site-link-accent: var(--site-action);
-  --site-color-link: var(--site-action);
-  --site-color-link-hover: var(--ek-color-chrome-soft);
-  --site-link-hover-bg: var(--site-action-subtle);
-  --site-link-hover-bg-on-dark: var(--ek-color-chrome-raised);
-  --site-color-focus-ring: var(--site-action);
-  --site-card-eyebrow-color: var(--site-action);
-
-  /* D4 — bölüm etiketi (eyebrow): mikro, büyük harf, sakin metin; işaret 12×2 eylem çizgisi */
-  --site-eyebrow-size: 0.75rem;
-  --site-eyebrow-weight: var(--ek-font-weight-semibold);
-  --site-eyebrow-tracking: 0.08em;
-  --site-eyebrow-color: var(--site-text-meta);
-  --site-eyebrow-mark-width: 0.75rem;
-  --site-eyebrow-mark-height: calc(var(--site-border-width) * 2);
-  --site-eyebrow-mark-color: var(--site-action);
-
-  /* D7 — koyu sahne (hero, kapanış bandı): kullanıcı kararı 2026-10-02 — "hero arka planı eskisi daha iyiydi, mavi
-     tonunda olsun". Sahne zemini derinlikli kalır (yumuşak ışımalar + ince ızgara), ama YALNIZ mavi ailesinden:
-     marka laciverti zemin + eylem mavisi ışımalar; teal ışıma yok. Kart/panel yüzeyleri bundan etkilenmez (düz). */
-  --site-stage-deep: color-mix(in srgb, var(--ek-color-chrome) 78%, var(--ek-color-content-strong));
-  --site-stage-base: var(--ek-color-chrome-soft);
-  --site-stage-mesh:
-    radial-gradient(60% 50% at 82% 4%, color-mix(in srgb, var(--ek-color-action) 58%, transparent), transparent 72%),
-    radial-gradient(48% 46% at 6% 96%, color-mix(in srgb, var(--ek-color-action) 34%, transparent), transparent 72%),
-    radial-gradient(36% 36% at 44% 46%, color-mix(in srgb, var(--ek-color-chrome-soft-border) 22%, transparent), transparent 74%),
-    linear-gradient(180deg, var(--site-stage-deep) 0%, var(--site-stage-base) 100%);
-  --site-gradient-stage: linear-gradient(160deg, var(--site-stage-deep) 0%, var(--site-stage-base) 100%);
-  --site-glow-secondary: radial-gradient(
-    closest-side,
-    color-mix(in srgb, var(--ek-color-action) 36%, transparent),
-    transparent
-  );
-  --site-texture-dots: linear-gradient(transparent, transparent);
-  --site-glass-bg: color-mix(in srgb, var(--ek-color-background) 6%, transparent);
-  --site-glass-border: color-mix(in srgb, var(--ek-color-background) 16%, transparent);
-  --site-glass-blur: 0rem;
-
-  /* D1 — degrade yok */
-  --site-gradient-accent: linear-gradient(var(--site-action), var(--site-action));
-  --site-gradient-accent-on-dark: linear-gradient(var(--ek-color-chrome-soft-text-muted), var(--ek-color-chrome-soft-text-muted));
-  --site-gradient-border: linear-gradient(var(--ek-color-border-default), var(--ek-color-border-default));
-  --site-gradient-hairline: linear-gradient(var(--ek-color-border-default), var(--ek-color-border-default));
-  --site-surface-tint: linear-gradient(var(--ek-color-surface-muted), var(--ek-color-surface-muted));
-
-  /* D2 — gölge yok: panel ve kart yalnız ince çerçeve; hover'da gölge büyümez */
-  --site-shadow-panel: 0 0 0 var(--site-border-width) var(--ek-color-chrome-border);
-  --site-shadow-card: 0 0 0 0 transparent;
-  --site-shadow-card-hover: 0 0 0 0 transparent;
-  --site-shadow-card-raise: 0 0 0 0 transparent;
-  --site-glow-ring: 0 0 0 var(--site-border-width) var(--site-action-border);
-  --site-radius-panel: var(--ek-radius-card);
-
-  /* Eğim ve imleç ışığı kapalı */
-  --site-tilt-max: 0deg;
+  --site-channel-trendyol: #f27a1a;
+  --site-channel-hepsiburada: #ff6000;
+  --site-channel-n11: #5c2d91;
+  --site-channel-pazarama: #6c3ce1;
+  --site-channel-ideasoft: #0063e5;
+  --site-channel-bizimhesap: #00a86b;
+  --site-channel-trendyol-fill: color-mix(in srgb, var(--site-channel-trendyol) 70%, black);
+  --site-channel-hepsiburada-fill: color-mix(in srgb, var(--site-channel-hepsiburada) 70%, black);
+  --site-channel-n11-fill: color-mix(in srgb, var(--site-channel-n11) 85%, black);
+  --site-channel-pazarama-fill: color-mix(in srgb, var(--site-channel-pazarama) 75%, black);
+  --site-channel-ideasoft-fill: color-mix(in srgb, var(--site-channel-ideasoft) 80%, black);
+  --site-channel-bizimhesap-fill: color-mix(in srgb, var(--site-channel-bizimhesap) 70%, black);
 }
 
 /*

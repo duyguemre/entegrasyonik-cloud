@@ -46,7 +46,7 @@ jest.mock('@services/redis/RedisService', () => ({
 jest.mock('@integration/engine/order/OrderQueueProducer', () => ({ OrderQueueProducer: jest.fn() }));
 jest.mock('@integration/engine/order/OrderErrorHandler', () => ({ OrderErrorHandler: jest.fn() }));
 jest.mock('@integration/engine/order/worker-runner', () => ({ startOrderWorkerConsumer: jest.fn() }));
-jest.mock('@operations/orders/postOrder', () => ({ PostOrderOperations: jest.fn() }));
+jest.mock('@operations/integration/PostOrderOperations', () => ({ PostOrderOperations: jest.fn() }));
 
 import { OrderOrchestrator } from '@integration/engine/order/OrderOrchestrator';
 import { OrderQueueProducer } from '@integration/engine/order/OrderQueueProducer';
@@ -208,7 +208,7 @@ describe('OrderOrchestrator - queueEvents "completed" olayı', () => {
     const qe = await startAndGetQueueEvents();
     await qe.emit('completed', { jobId: 'j1', returnvalue: { clientId: '7', marketplace: 'trendyol', processedOrderCount: 5, insertedIds: ['a'] } });
     // PostOrderOperations HİÇ örneklenmedi/çağrılmadı (OrderOrchestrator seviyesinde iş yapılmıyor)
-    const { PostOrderOperations } = require('@operations/orders/postOrder');
+    const { PostOrderOperations } = require('@operations/integration/PostOrderOperations');
     expect(PostOrderOperations).not.toHaveBeenCalled();
   });
 

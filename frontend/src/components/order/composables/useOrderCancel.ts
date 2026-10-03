@@ -131,7 +131,7 @@ export function useOrderCancel(executeOrderAction: any, snackbarStore: any, getO
         if (!isCancelFormValid.value) return;
 
         confirmDialog.title = isBulk.value ? 'TOPLU İPTAL ONAYI' : 'İPTAL ONAYI';
-        confirmDialog.icon = 'mdi-alert-octagon-outline';
+        confirmDialog.icon = 'mdi-alert-octagon';
         confirmDialog.color = 'error';
         confirmDialog.confirmText = 'EVET, ŞİMDİ İPTAL ET';
 

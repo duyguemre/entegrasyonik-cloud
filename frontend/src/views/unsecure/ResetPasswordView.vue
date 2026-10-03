@@ -24,7 +24,7 @@
             title="Bağlantı geçersiz"
             message="Bu sayfaya doğrudan erişilemez. Parola sıfırlama e-postasındaki bağlantıyı kullanın."
             show-action
-            action-text="Parola sıfırlama ekranına dön"
+            action-text="Şifremi unuttum ekranına dön"
             action-icon="mdi-arrow-left"
             @action="goToForgotPassword"
           />
@@ -43,25 +43,35 @@
           <v-form @submit.prevent="handleSubmit">
             <v-text-field
               v-model="newPassword"
-              label="Yeni parola"
+              label="Yeni Parola"
               type="password"
               autocomplete="new-password"
               class="mb-2"
             ></v-text-field>
             <v-text-field
               v-model="newPassword2"
-              label="Yeni parola (tekrar)"
+              label="Yeni Parola (Tekrar)"
               type="password"
               autocomplete="new-password"
               class="mb-2"
             ></v-text-field>
 
             <v-expand-transition>
-              <EkAlert v-if="errorMessage" tone="error" dense live class="mb-3" :text="errorMessage" />
+              <v-alert
+                v-if="errorMessage"
+                type="error"
+                variant="tonal"
+                density="compact"
+                role="alert"
+                aria-live="assertive"
+                class="mb-3 text-caption"
+              >
+                {{ errorMessage }}
+              </v-alert>
             </v-expand-transition>
 
             <v-btn block color="primary" height="40" type="submit" :loading="loading">
-              Parolamı güncelle
+              Parolamı Güncelle
             </v-btn>
           </v-form>
 
@@ -77,10 +87,10 @@
 </template>
 
 <script setup lang="ts">
-import { EkAlert, EkEmptyState } from '@entegrasyonik/ui/components'
 import { ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AuthShell from '@/components/login/AuthShell.vue'
+import EkEmptyState from '@/components/ds/EkEmptyState.vue'
 import useUser from '@/composables/user'
 
 const route = useRoute()

@@ -22,13 +22,6 @@ export {
 export type { DerivedHealth, DeriveHealthOptions, JobStateDoc } from './registry';
 
 const activeControllers = new Map<string, JobController>();
-/** ADR-0017 R6: bu surecte baslatilan islerin beklenen araligi/suresi/kritikligi (JobState bunlari saklamaz). */
-const startedDefs = new Map<string, { everyMs: number; maxDurationMs: number; critical: boolean }>();
-
-/** R6 alarm kaynagi icin: bu surecte baslatilan islerin tanim ozeti. */
-export function listStartedJobDefs(): Array<{ name: string; everyMs: number; maxDurationMs: number; critical: boolean }> {
-    return [...startedDefs.entries()].map(([name, d]) => ({ name, ...d }));
-}
 
 /**
  * Bir işi başlatır. `deps` verilmezse üretim bağımlılıkları (`ApplicationDB`) TEMBEL çözülür (`stop()` çözüm
@@ -36,7 +29,6 @@ export function listStartedJobDefs(): Array<{ name: string; everyMs: number; max
  * `deps` verilirse (testler) senkron olarak HEMEN `scheduleJob` çağrılır.
  */
 export function startJob(def: JobDefinition, deps?: RunJobDeps): JobController {
-    startedDefs.set(def.name, { everyMs: def.everyMs, maxDurationMs: def.maxDurationMs, critical: def.criticality === 'critical' });
     if (deps) {
         const inner = scheduleJob(def, deps);
         activeControllers.set(def.name, inner);

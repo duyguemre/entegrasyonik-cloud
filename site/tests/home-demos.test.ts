@@ -54,10 +54,8 @@ const FILES = {
   eco: 'components/home/IntegrationShowcase.astro',
   caps: 'components/home/Capabilities.astro',
 } as const
-/** Bileşen içi döngü/animasyon taşıyan dosyalar (S27a N9: bento karoları döngüsüz → caps listede değil). */
-const MOTION_FILES = { how: FILES.how, eco: FILES.eco }
 
-describe.each(Object.entries(MOTION_FILES))('%s: bileşen içi hareket sözleşmesi', (_key, file) => {
+describe.each(Object.entries(FILES))('%s: bileşen içi hareket sözleşmesi', (_key, file) => {
   const css = styleOf(file)
   const { start, body, outside } = split(css)
 
@@ -177,9 +175,7 @@ describe('S15-C: "Örnek görünüm" etiketi yok; görseller aria-hidden (anlam 
 
   it('bento/stok görsellerinin kökleri aria-hidden kalır', () => {
     const html = read(FILES.caps)
-    // S27a (SR4 madde 5): şifreli anahtar / izole veri karoları Güvenlik bölümüne taşındı (bentoda yok)
-    for (const scene of ['secret-encryption', 'tenant-isolation']) expect(html, scene).not.toContain(`data-scene="${scene}"`)
-    for (const scene of ['stock-single-winner', 'orders-merge', 'integration-status']) {
+    for (const scene of ['stock-single-winner', 'orders-merge', 'integration-status', 'secret-encryption', 'tenant-isolation']) {
       expect(html, scene).toMatch(new RegExp(`data-scene="${scene}" aria-hidden="true"`))
     }
   })
@@ -206,12 +202,11 @@ describe('S15-C: stok rezervasyonu anlatısı (eşzamanlı iki sipariş -> biri 
     expect(outside).not.toMatch(/\.stock__zero\s*\{[^}]*opacity:\s*0/)
   })
 
-  // S27a (N9 hareket ekonomisi, BRAND §4): bento karolarında SÜREKLİ döngü yok — yalnızca tek seferlik giriş (scenes.css);
-  // sürekli döngü yalnız hero vitrini ve sıfır aşırı satış hikâyesinde. Statik son durum yukarıdaki testte korunur.
-  it('bento döngüsüz (N9): bileşende keyframes / infinite / no-preference bloğu yok', () => {
-    expect(css).not.toMatch(/@keyframes/)
-    expect(css).not.toMatch(/infinite/)
-    expect(body).toBe('')
+  it('iki sipariş ışığı AYNI fazda (eşzamanlı); başarı hattı uyarı hattından önce', () => {
+    const phase = (sel: string) => Number(body.match(new RegExp(`${sel}[^{]*\\{\\s*--p:\\s*([\\d.]+)`))![1])
+    expect(body).toMatch(/\.stock__carrier--a,\s*\.stock__carrier--b\s*\{\s*--p:/)
+    expect(phase('\\.stock__carrier--ok')).toBeLessThan(phase('\\.stock__carrier--warn'))
+    expect(phase('\\.stock__result--ok')).toBeLessThan(phase('\\.stock__result--warn'))
   })
 })
 
@@ -219,11 +214,9 @@ describe('S15-C: ekosistem düğümlerinin iç hareketi (yörünge korunur)', ()
   const html = read(FILES.eco)
   const { body } = split(styleOf(FILES.eco))
 
-  // S27a (N9 hareket ekonomisi): yörünge halkaları sabit dekor — sürekli dönüş yok; akış paketleri sürer.
-  it('yörünge noktaları korunur; halkalar dönmez (N9)', () => {
+  it('yörünge noktaları ve dönüşü korunur', () => {
     expect(html).toContain('eco__orbit eco__orbit--outer')
-    expect(body).not.toMatch(/eco-orbit/)
-    expect(body).toMatch(/\.eco__packet--out\s*\{\s*animation:\s*eco-travel/)
+    expect(body).toMatch(/\.eco__orbit--outer\s*\{\s*animation:\s*eco-orbit/)
   })
 
   it('düğüm içi: ikon uyanışı, kanal noktası nabzı ve akış çizgisi düğümün çeyrek fazına (--k) bağlı', () => {
@@ -246,7 +239,7 @@ describe('S15-B: tek merkez akışı (sorun -> çözüm) ve sipariş hikâyesi c
   const loops = stripComments(read('styles/scenes-loops.css'))
 
   it('statik hâl = senkron son durum: eski değer, paketler, halkalar ve ışıklar görünmez', () => {
-    for (const sel of ['.ps__chip-old', '.ps__packet', '.ps__hub-ring', '.ps__chip::after', '.ps__bus::after', '.ps__result::after', ".ps__net [data-act]:not([data-act='0'])"]) {
+    for (const sel of ['.ps__chip-old', '.ps__packet', '.ps__hub-ring', '.ps__chip::after', '.ps__bus::after', '.ps__result::after']) {
       expect(rule(psCss, sel), sel).toMatch(/opacity:\s*0;/)
     }
     // yeni (senkron) değerin statik opaklığı düşürülmez
@@ -259,31 +252,28 @@ describe('S15-B: tek merkez akışı (sorun -> çözüm) ve sipariş hikâyesi c
     expect(rule(psCss, '.ps__after')).toMatch(/overflow:\s*hidden;/)
   })
 
-  it('döngü (S26): 30 sn = dört perde; perde öğeleri tam döngü + negatif kaydırma, ortak öğeler perde başına bir tur; yalnızca oynatma + görünürken', () => {
-    for (const k of ['loop-ps-act', 'loop-ps-order', 'loop-ps-old', 'loop-ps-new', 'loop-ps-old-origin', 'loop-ps-new-origin', 'loop-ps-in', 'loop-ps-back', 'loop-ps-bus', 'loop-ps-stem', 'loop-ps-ring', 'loop-ps-glow', 'loop-ps-resv', 'loop-ps-halo', 'loop-ps-result-text', 'loop-ps-result']) {
+  it('döngü: 12 sn sahne token\'ı, yalnızca oynatma + görünürken; paket gidiş/dönüş, nabız ve senkron kareleri tanımlı', () => {
+    for (const k of ['loop-ps-old', 'loop-ps-new', 'loop-ps-in', 'loop-ps-bus', 'loop-ps-stem', 'loop-ps-ring', 'loop-ps-glow', 'loop-ps-back', 'loop-ps-halo', 'loop-ps-result']) {
       expect(loops, k).toContain(`@keyframes ${k} {`)
       const use = loops.match(new RegExp(`\\{\\s*animation-name:\\s*${k};`))
       expect(use, k).not.toBeNull()
     }
-    const blocks = [...loops.matchAll(/\[data-scene='problem-solution'\]\[data-state='play'\] :is\([^{]*\{([^}]*)\}/g)].map((m) => m[1])
-    expect(blocks.some((b) => /animation-duration:\s*var\(--site-motion-loop-marquee\);/.test(b) && /paused/.test(b))).toBe(true)
-    expect(blocks.some((b) => /animation-duration:\s*calc\(var\(--site-motion-loop-marquee\) \/ 4\);/.test(b) && /paused/.test(b))).toBe(true)
-    for (const [k, f] of [['1', '-0.75'], ['2', '-0.5'], ['3', '-0.25']]) {
-      expect(loops, k).toMatch(new RegExp(`\\[data-act='${k}'\\] \\{\\s*animation-delay: calc\\(var\\(--site-motion-loop-marquee\\) \\* ${f}\\);`))
-    }
+    const timing = loops.match(/\[data-scene='problem-solution'\]\[data-state='play'\] :is\([^{]*\{([^}]*)\}/)![1]
+    expect(timing).toMatch(/animation-duration:\s*var\(--site-motion-loop-scene\)/)
+    expect(timing).toMatch(/animation-play-state:\s*paused/)
     expect(loops).toMatch(/\[data-scene='problem-solution'\]\[data-state='play'\]\[data-visible='true'\] :is\([^{]*\{\s*animation-play-state:\s*running/)
   })
 
-  // S27a (N3): sipariş hikâyesi kompakt yatay zaman çizgisi — adım başına mini sahne (.viz) yok; kart tonu tek renk ailesinde.
-  it('sipariş hikâyesi: kart tonu tek renk ailesinde (token), mini sahne/etiket yok', () => {
+  it('sipariş hikâyesi: kart > sahne > öğe cam katmanları tek renk ailesinde (token), sahne başına etiket yok', () => {
     const file = 'components/home/OrderStory.astro'
     const css = styleOf(file)
-    for (const t of ['--story-card-tint', '--story-card-edge']) {
-      expect(css, t).toMatch(new RegExp(`${t}:\\s*color-mix\\(in srgb, var\\(--ek-color-secondary\\)`))
+    for (const t of ['--story-card-tint', '--story-scene-bg', '--story-item-bg', '--story-item-edge']) {
+      expect(css, t).toMatch(new RegExp(`${t}:\\s*color-mix\\(in srgb, var\\(--(?:ek-color-secondary|site-stage-deep)\\)`))
     }
-    expect(rule(css, '.story__card')).toBeDefined()
-    expect(css).toContain('var(--story-card-tint)')
+    expect(rule(css, '.story__card')).toContain('var(--story-card-tint)')
+    expect(rule(css, '.viz')).toContain('var(--story-scene-bg)')
+    expect(css).toMatch(/\.vret__steps\) \{\s*border: var\(--site-border-width\) solid var\(--story-item-edge\);[^}]*background: var\(--story-item-bg\)/)
     const markup = read(file).split('<style>')[0].replace(/\/\*[\s\S]*?\*\//g, '')
-    expect(markup).not.toMatch(/Örnek görünüm|viz__tag|class="viz"/)
+    expect(markup).not.toMatch(/Örnek görünüm|viz__tag/)
   })
 })

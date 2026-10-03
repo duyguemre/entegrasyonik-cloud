@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 // ADR-0029 Karar 3/4: e-posta outbox + teslim gunlugu (ApplicationDB). Gonderici NB5'te (`notifications.email` isi, lease).
 // E-posta ADRESI SAKLANMAZ (gonderim aninda Users'tan cozulur). ADR-0021 deseni: `autoIndex:false`, indeksler yalniz onayli gocle (S1).
 
-export const DELIVERY_CHANNELS = ['email', 'push'] as const; // push: MOB-04 web push (anlik; ozet yok)
+export const DELIVERY_CHANNELS = ['email'] as const;
 export const DELIVERY_MODES = ['instant', 'digest'] as const;
 export const DELIVERY_STATUSES = ['pending', 'sending', 'sent', 'failed', 'dead', 'skipped', 'suppressed'] as const;
 

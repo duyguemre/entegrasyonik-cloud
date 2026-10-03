@@ -3,15 +3,15 @@
         <slot />
     </span>
 
-    <div v-if="show" class="custom-dialog popup-element" :class="[activeClass]"
+    <div v-if="show" class="custom-dialog popup-element" :class="[activeClass]" color="workplaceColor"
         :style="{ 'top': firstPosition.top + 'px', 'left': firstPosition.left + 'px', 'bottom': firstPosition.bottom + 'px', 'right': firstPosition.right + 'px' }">
         <div class="custom-dialog-overlay" @click="close">
         </div>
 
         <v-card class="d-flex ma-4 custom-dialog-workplace" variant="outlined" elevated=2>
             <div class="mt-0 mr-0 close-button" v-if="showComponent">
-                <v-btn size="30" class="mb-0" block flat color="neutral" aria-label="Kapat" @click="close"><v-icon
-                        size="25">mdi-close</v-icon></v-btn>
+                <v-btn size="30" class="mb-0" block flat color="processButtonColor" @click="close"><v-icon
+                        size="25">mdi-window-close</v-icon></v-btn>
             </div>
             <div class="pa-2 pt-0 pr-5 popup-scroll flex-1-0" variant="flat">
                 <v-card variant="text">
@@ -145,16 +145,16 @@ var close = () => {
     background-color: transparent;
     opacity: 1;
     transition:
-        all var(--ek-motion-reveal),
-        opacity var(--ek-motion-reveal);
+        all .4s ease,
+        opacity 1s ease;
 }
 
 .custom-dialog .custom-dialog-workplace {
     opacity: .06;
-    transition: all var(--ek-motion-reveal), opacity var(--ek-motion-reveal);
+    transition: all .4s ease, opacity .28s ease;
     visibility: hidden !important;
-    border-radius: var(--ek-radius-card);
-    border-color: var(--ek-color-border-strong);
+    border-radius: 10px;
+    border-color: #777;
     position: absolute;
     bottom: 0;
     top: 0;
@@ -162,13 +162,13 @@ var close = () => {
     right: 0;
     height: auto;
     width: auto;
-    background-color: var(--ek-color-surface-sunken);
+    background-color: #eee;
     z-index: 1;
     padding-top: 0;
 }
 
 .active .custom-dialog-workplace {
-    transition: opacity var(--ek-motion-feedback);
+    transition: opacity .18s ease;
     padding-top: 24px !important;
     border: none;
 }
@@ -181,10 +181,10 @@ var close = () => {
 
 .custom-dialog .custom-dialog-overlay {
     opacity: 0;
-    transition: all var(--ek-motion-reveal), opacity var(--ek-motion-feedback);
+    transition: all .31s ease, opacity .1s ease;
     visibility: hidden !important;
-    border-top: 1px solid var(--ek-color-border-strong);
-    background-color: var(--ek-color-scrim);
+    border-top: 1px solid #444;
+    background-color: #555;
     position: absolute;
     top: 1px;
     bottom: 0;
@@ -196,7 +196,7 @@ var close = () => {
 
 .custom-dialog.active .custom-dialog-overlay {
     opacity: .2;
-    transition: all var(--ek-motion-reveal), opacity var(--ek-motion-reveal);
+    transition: all .5s ease, opacity 2s ease;
     visibility: visible !important;
 }
 

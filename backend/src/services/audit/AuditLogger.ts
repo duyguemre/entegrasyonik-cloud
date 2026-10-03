@@ -1,6 +1,5 @@
 import type { AuditResult } from '@database/application/models/AuditLog';
 import { metricsRegistry } from '@platform/runtime/metrics';
-import { getContext, isClientPlatform, type ClientPlatform } from '@platform/core/context';
 
 /** [ADR-0030 X4] Denetim yazım hatası sayacı (best-effort: istek düşmez, ama görünür olur). Metrik hatası yutulur. */
 function countAuditFailure(): void { try { metricsRegistry.incCounter('audit_write_failures_total', {}, 1); } catch { /* yut */ } }
@@ -22,8 +21,6 @@ export interface AuditEntry {
     surface?: AuditSurface;
     imp?: boolean;
     reqId?: string;
-    /** [MOB-08] Verilmezse istek bağlamındaki `clientPlatform` (yoksa alan yazılmaz: motor/sistem kayıtları). */
-    platform?: ClientPlatform;
 }
 
 export type AuditActorType = 'user' | 'platform' | 'impersonator' | 'system';
@@ -86,8 +83,6 @@ export class AuditLogger {
             if (entry.surface && SURFACES.includes(entry.surface)) record.surface = entry.surface;
             if (entry.imp === true) record.imp = true;
             if (typeof entry.reqId === 'string' && entry.reqId) record.reqId = entry.reqId.slice(0, 64);
-            const platform = entry.platform ?? getContext()?.clientPlatform;
-            if (isClientPlatform(platform)) record.platform = platform;
             const meta = sanitizeMeta(entry.meta);
             if (meta) record.meta = meta;
             const sink = customSink ?? defaultSink;

@@ -12,12 +12,12 @@ import type { McpApprovals } from '@operations/mcp/mcpApprovals';
 import type { AgentCtx } from '@operations/agent/types';
 import { resolveTier } from '@platform/core/authz/tier';
 import { getMcpApprovals } from '../../mcp/approvalsRuntime';
-import { getClientIp } from '@platform/rateLimit/clientIp';
+import { getClientIp } from '../clientIp';
 import { ConnectionsService, type ConnectionsSession } from '../oauth/connections';
 import { getOAuthRuntime } from '../oauth/routes';
 import { setMcpAccessReader } from '../oauth/tenantAccess';
 import { publicErrorExtras, sendHttpError } from './errorEnvelope';
-import type { Actor } from '../rpc/requestContext';
+import type { Actor } from '../requestContext';
 
 export const MCP_PATH = '/mcp';
 

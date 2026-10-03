@@ -11,7 +11,6 @@
 // bizimhesap) çözülür.
 import { test, expect } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
-import { settleAnimations } from '../fixtures/settle'
 import type { Page } from '@playwright/test'
 import { installApiMocks } from '../fixtures/mockApi'
 import { buildProduct, choicesDoluFixture } from '../fixtures/apiData'
@@ -65,17 +64,14 @@ async function openVariantList(page: Page) {
   await gotoAuthed(page)
   await openScreen(page, 'ProductListView')
   const productRow = page.locator('.productListView tbody tr').filter({ hasText: 'E2E Varyant Listesi Ürünü' }).first()
-  // FR2 (fe-r2b): açma düğmesi "n seçenek" (A11 tasarımı); tablo yerel <table> (EkDataGrid dışı, pvl-table).
-  const later = page.getByRole('button', { name: 'Şimdi değil' })
-  if (await later.isVisible().catch(() => false)) await later.click()
-  await productRow.locator('.plv-variants-toggle').click()
-  const list = page.locator(`#variant-target-${listProduct._id} .pvl`)
+  await productRow.getByText('(2 Seçenek)').click()
+  const list = page.locator(`#variant-target-${listProduct._id} .v-data-table`)
   await expect(list).toBeVisible({ timeout: 20_000 })
   return list
 }
 
 test.describe('P3 (B5-2) — Ürün listesi varyant açılımı (ProductVariantListComponent)', () => {
-  test('smoke: "n seçenek" tıklanınca varyant tablosu stok kodu/barkod/grup/fiyat/stok ile açılır', async ({ page }) => {
+  test('smoke: "(n Seçenek)" tıklanınca varyant tablosu stok kodu/barkod/grup/fiyat/stok ile açılır', async ({ page }) => {
     const list = await openVariantList(page)
 
     await expect(list.getByText('VL-E2E-SIYAH')).toBeVisible()
@@ -86,8 +82,8 @@ test.describe('P3 (B5-2) — Ürün listesi varyant açılımı (ProductVariantL
     await expect(list.locator('td').getByText('Beyaz', { exact: true })).toBeVisible()
     await expect(list.getByText('₺149,90').first()).toBeVisible()
     await expect(list.getByText('B-02')).toBeVisible()
-    // Başlıklar (A11/B1 + FR2): Varyant/grup, Barkod, Fiyat, Stok, Kanal durumu.
-    for (const title of ['Barkod', 'Fiyat', 'Stok', 'Kanal durumu']) {
+    // Başlıklar: Stok Kodu | Barkod, Grup, Satış | Piyasa Fiyatı, Stok Adedi, Platform Yükleme Durumları.
+    for (const title of ['Stok Kodu', 'Grup', 'Satış Fiyatı', 'Piyasa Fiyatı', 'Stok Adedi', 'Platform Yükleme Durumları']) {
       await expect(list.locator('thead').getByText(title, { exact: true })).toBeVisible()
     }
   })
@@ -98,39 +94,30 @@ test.describe('P3 (B5-2) — Ürün listesi varyant açılımı (ProductVariantL
     const rowCheckbox = list.locator('tbody tr').filter({ hasText: 'VL-E2E-SIYAH' }).locator('input[type="checkbox"]')
     await rowCheckbox.check()
     await expect(rowCheckbox).toBeChecked()
-    const all = list.locator('thead input[type="checkbox"]')
-    await expect.poll(() => all.evaluate((el: HTMLInputElement) => el.indeterminate)).toBe(true)
+    await expect(list.locator('thead .v-selection-control--dirty, thead .mdi-minus-box')).toHaveCount(1)
   })
 
-  test('kanal durumu: gönderilmiş kanal karosuna tıklayınca satış/yükleme durumu kartı (kanal rozetiyle) açılır', async ({ page }) => {
+  test('platform durumu: platform logosuna tıklayınca satış/yükleme durumu kartı açılır', async ({ page }) => {
     const list = await openVariantList(page)
 
     const row = list.locator('tbody tr').filter({ hasText: 'VL-E2E-SIYAH' })
-    await row.getByRole('button', { name: /^Trendyol: Yayında/ }).click()
+    await row.locator('.platform-mini-card').first().click()
     const card = page.locator('.v-overlay--active .premium-status-container')
     await expect(card).toBeVisible()
-    await expect(card.locator('.ek-chb')).toHaveText('Trendyol')
     await expect(card.getByText('Satış Durumu')).toBeVisible()
+    await expect(card.getByText('Pazaryerinde Yayında')).toBeVisible()
+    await expect(card.getByText('Ürün Gönderimi')).toBeVisible()
     await expect(card.getByText('Pazaryeri Stoğu')).toBeVisible()
   })
 
-  // fe-r4d D3: FR2 madde 21 (ürün satırıyla aynı dil) gönderilmeyen kanalları kanal başına pasif karo yerine TEK
-  // soluk "+n" hapında topladı; bu test eski 4 karoyu (`.pvl-ch.is-unsent`) arıyordu → tabanda da kırmızıydı.
-  // Sözleşme aynı: gönderilmemiş kanalın durum karosu/ayrıntı düğmesi YOK, ekran okuyucu "gönderilmedi" duyar;
-  // "+n" bilgi kartı hangi kanallara gönderilmediğini ve nasıl gönderileceğini söyler.
-  test('kanal durumu (veri yok): gönderilmemiş kanallar tek "+n" hapında; durum karosu yok, ekran okuyucuya "gönderilmedi" der', async ({ page }) => {
+  test('platform durumu (veri yok): yüklenmemiş varyantta "Satışa Kapalı" gösterilir', async ({ page }) => {
     const list = await openVariantList(page)
 
     const row = list.locator('tbody tr').filter({ hasText: 'VL-E2E-BEYAZ' })
-    await expect(row.locator('button.pvl-ch')).toHaveCount(0)
-    const absent = row.getByRole('button', { name: '4 kanala gönderilmedi. Ayrıntı' })
-    await expect(absent).toHaveText('+4')
-    await absent.click()
-    const card = page.getByRole('dialog', { name: 'VL-E2E-BEYAZ — gönderilmeyen kanallar' })
-    await expect(card).toBeVisible()
-    await expect(card.locator('.pvl-absent-card__list li')).toHaveCount(4)
-    await expect(card.getByText('Gönderilmedi')).toHaveCount(4)
-    await expect(card).toContainText('Kanallara yükle')
+    await row.locator('.platform-mini-card').first().click()
+    const card = page.locator('.v-overlay--active .premium-status-container')
+    await expect(card.getByText('Satışa Kapalı')).toBeVisible()
+    await expect(card.getByText('İşlem Yok')).toBeVisible()
   })
 
   test('ekran görüntüsü tabanı (varyant açılımı)', async ({ page }) => {
@@ -141,16 +128,13 @@ test.describe('P3 (B5-2) — Ürün listesi varyant açılımı (ProductVariantL
 
   test('axe: WCAG 2.1 AA taraması (tablo + durum kartı)', async ({ page }, testInfo) => {
     const list = await openVariantList(page)
-    await settleAnimations(page)
     const table = await new AxeBuilder({ page }).include(`#variant-target-${listProduct._id}`).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze()
-    await list.locator('tbody tr').filter({ hasText: 'VL-E2E-SIYAH' }).getByRole('button', { name: /^Trendyol: Yayında/ }).click()
+    await list.locator('tbody tr').filter({ hasText: 'VL-E2E-SIYAH' }).locator('.platform-mini-card').first().click()
     await expect(page.locator('.v-overlay--active .premium-status-container')).toBeVisible()
     await page.waitForTimeout(500) // scale-transition bitsin (ara opaklık kontrastı bozar)
-    await settleAnimations(page)
     const card = await new AxeBuilder({ page }).include('.v-overlay--active .premium-status-container').withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze()
     await testInfo.attach('axe-ProductVariantListComponent-sonuclari.json', { body: JSON.stringify(table.violations, null, 2), contentType: 'application/json' })
     await testInfo.attach('axe-ProductVariantListTooltipComponent-sonuclari.json', { body: JSON.stringify(card.violations, null, 2), contentType: 'application/json' })
     console.log(`[axe] ProductVariantListComponent: ${table.violations.length}, Tooltip: ${card.violations.length} WCAG 2.1 AA ihlali`)
-    expect([...table.violations, ...card.violations].map((v) => v.id)).toEqual([])
   })
 })

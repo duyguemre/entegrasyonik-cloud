@@ -18,18 +18,7 @@ export const settingsFixture = {
 
 export const resourcesFixture: any[] = []
 
-// DS-v2 dashboard "Katalog ve kanal aktarımı" kartı (ProductService/getProductStatistics yanıt şekli).
-export const productStatisticsFixture = {
-  totalProducts: 48,
-  variantPlatformTransferStatistics: {
-    totalVariants: 136,
-    totalStock: 2310,
-    counts: {
-      trendyol: { PENDING: 2, WAITING: 1, SENT: 0, FAILED: 3, COMPLETED: 96, ONSALECOUNT: 88 },
-      hepsiburada: { PENDING: 0, WAITING: 4, SENT: 1, FAILED: 0, COMPLETED: 71, ONSALECOUNT: 70 },
-    },
-  },
-}
+export const productStatisticsFixture = {}
 
 // --- Entegrasyonlar ---------------------------------------------------------
 
@@ -682,57 +671,3 @@ export function buildHashtag(overrides: Record<string, any> = {}) {
 export const hashtagsDoluFixture = [buildHashtag()]
 
 export const hashtagsBosFixture: any[] = []
-
-// --- DS-v2 dashboard: stok özeti ve entegrasyon sağlığı (docs/API_TENANT_SURFACE.md §2.3 / §3) ---------
-
-export const stockOverviewFixture = {
-  generatedAt: '2026-09-27T09:00:00.000Z',
-  attention: { oversold: { lines: 2, units: 5 }, unmapped: { lines: 1, units: 3 } },
-  recentOrders: [
-    {
-      orderId: 'order-e2e-attn-1', orderNumber: 'E2E-ORD-9001', externalOrderId: 'TY-9001', integrationCode: 'trendyol', orderDate: '2026-09-27T08:10:00.000Z',
-      items: [
-        { externalLineItemId: 'L1', sku: 'SKU-E2E-0001', barcode: null, productName: 'E2E Test Ürünü', quantity: 3, allocationState: 'OVERSOLD', lastAllocationAppliedAt: null, oversoldEscalatedAt: '2026-09-27T08:12:00.000Z' },
-      ],
-    },
-    {
-      orderId: 'order-e2e-attn-2', orderNumber: 'E2E-ORD-9002', externalOrderId: 'HB-9002', integrationCode: 'hepsiburada', orderDate: '2026-09-27T07:40:00.000Z',
-      items: [
-        { externalLineItemId: 'L2', sku: null, barcode: null, productName: 'Eşleşmeyen E2E Kalemi', quantity: 3, allocationState: 'UNMAPPED', lastAllocationAppliedAt: null, oversoldEscalatedAt: null },
-      ],
-    },
-  ],
-  variants: { total: 136, totalStock: 2310, reservedUnits: 42, availableUnits: 2268, withReservations: 11, overReserved: 1, publishPending: 4 },
-  reconciliation: { tracked: false, lastRunAt: null },
-}
-
-export const stockOverviewBosFixture = {
-  generatedAt: '2026-09-27T09:00:00.000Z',
-  attention: { oversold: { lines: 0, units: 0 }, unmapped: { lines: 0, units: 0 } },
-  recentOrders: [],
-  variants: { total: 0, totalStock: 0, reservedUnits: 0, availableUnits: 0, withReservations: 0, overReserved: 0, publishPending: 0 },
-  reconciliation: { tracked: false, lastRunAt: null },
-}
-
-export const integrationHealthFixture = {
-  generatedAt: '2026-09-27T09:00:00.000Z',
-  windowHours: 24,
-  integrations: [
-    {
-      integrationCode: 'trendyol', type: 'marketplace', enabled: true, credentialsConfigured: true,
-      lastSuccessfulSyncAt: '2026-09-27T08:55:00.000Z', webhook: null, lastError: null, circuit: null,
-      last24h: { total: 120, success: 120, error: 0, errorsByCode: {} }, health: 'healthy',
-    },
-    {
-      integrationCode: 'hepsiburada', type: 'marketplace', enabled: true, credentialsConfigured: true,
-      lastSuccessfulSyncAt: '2026-09-27T06:30:00.000Z', webhook: null,
-      lastError: { at: '2026-09-27T08:40:00.000Z', code: 'RATE_LIMITED', httpStatus: 429, operation: 'GET /orders' }, circuit: null,
-      last24h: { total: 80, success: 74, error: 6, errorsByCode: { RATE_LIMITED: 6 } }, health: 'degraded',
-    },
-    {
-      integrationCode: 'bizimhesap', type: 'erp', enabled: true, credentialsConfigured: false,
-      lastSuccessfulSyncAt: '2026-09-20T10:00:00.000Z', webhook: null, lastError: null, circuit: null,
-      last24h: { total: 0, success: 0, error: 0, errorsByCode: {} }, health: 'not_configured',
-    },
-  ],
-}

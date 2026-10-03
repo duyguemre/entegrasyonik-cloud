@@ -16,16 +16,16 @@
  * // main.ts (A5/B3'te eklenecek):
  * import * as echarts from 'echarts/core'
  * import { buildEchartsTheme } from '@/design/echarts-theme'
- * import { semanticColorsLight } from '@entegrasyonik/ui/tokens'
+ * import { semanticColorsLight } from '@/design/tokens/semantic'
  * echarts.registerTheme('entegrasyonik', buildEchartsTheme(semanticColorsLight))
  *
  * // Bileşende:
  * // <v-chart theme="entegrasyonik" ... />
  * ```
  */
-import type { SemanticColorKey } from '@entegrasyonik/ui/tokens'
-import { sky, green, amberScale, red, slate, statusDark } from '@entegrasyonik/ui/tokens'
-import { shadow, radius } from '@entegrasyonik/ui/tokens'
+import type { SemanticColorKey } from './tokens/semantic'
+import { sky, green, amberScale, red, slate } from './tokens/palette'
+import { shadow, radius } from './tokens/scale'
 import { JOB_STATUS_TONE, type JobStatus, type StatusTone } from './status-map'
 
 /**
@@ -40,20 +40,6 @@ export function buildChartCategoricalPalette(primaryHex: string, secondaryDarken
     sky[700], // 5,93:1
     amberScale[700], // 5,02:1
     slate[500], // 4,76:1
-  ]
-}
-
-/**
- * FR2-DARK — koyu zemin kategorik paleti: aynı sıra/anlam, koyu `surface` üzerinde ≥3:1 (grafik, WCAG 1.4.11).
- * 700 tonları koyu zeminde kaybolur; yerine koyu temanın kendi okunaklı tonları (`statusDark`, slate-400) gelir.
- */
-export function buildChartCategoricalPaletteDark(primaryHex: string, secondaryHex: string): string[] {
-  return [
-    primaryHex,
-    secondaryHex,
-    statusDark.infoText,
-    statusDark.warningText,
-    slate[400],
   ]
 }
 
@@ -92,13 +78,9 @@ export function chartStatusFill(
  * Inter, çubuk üst radius 4 (degrade/gölge YOK), tooltip `surface`+gölge,
  * lejant altta, `animationDuration<=250`, overshoot YOK (`quadraticOut`).
  */
-export function buildEchartsTheme(tokens: Record<SemanticColorKey, string>, mode: 'light' | 'dark' = 'light') {
+export function buildEchartsTheme(tokens: Record<SemanticColorKey, string>) {
   return {
-    color:
-      mode === 'dark'
-        ? buildChartCategoricalPaletteDark(tokens.primary, tokens.secondary)
-        : buildChartCategoricalPalette(tokens.primary, tokens['secondary-darken-1']),
-    backgroundColor: 'transparent',
+    color: buildChartCategoricalPalette(tokens.primary, tokens['secondary-darken-1']),
     textStyle: { fontFamily: "'Inter', sans-serif" },
     grid: { borderColor: tokens['border-default'] },
     categoryAxis: {
@@ -125,7 +107,7 @@ export function buildEchartsTheme(tokens: Record<SemanticColorKey, string>, mode
       borderColor: tokens['border-default'],
       borderWidth: 1,
       textStyle: { color: tokens['content-strong'] },
-      extraCssText: `border-radius: ${radius.lg}px; box-shadow: ${shadow[mode].md};`,
+      extraCssText: `border-radius: ${radius.lg}px; box-shadow: ${shadow.light.md};`,
     },
     animationDuration: 250,
     animationEasing: 'quadraticOut',

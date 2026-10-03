@@ -8,7 +8,6 @@
 import { PATHS, evidence, type EvidenceRef } from './evidence'
 import { getPublicFaq } from './faq'
 import { getPublicCapabilities } from './capabilities'
-import { AGENT_BRAND } from './agent-brand'
 import {
   PLAN_SEED_PATH,
   defaultPlanSource,
@@ -103,14 +102,7 @@ export function getPricingFaqRecords(source: PlanSource = defaultPlanSource): Pr
     id: 'plan-degisikligi',
     question: 'Planımı sonradan değiştirebilir miyim?',
     answer: 'Evet. Uygulamadaki Abonelik ve Planlar ekranından plan seçebilir ve planınızı değiştirebilirsiniz.',
-    evidence: [evidence('frontend/src/views/secure/user/SubscriptionView.vue', 'Abonelik ekranı plan geçişi', 'Bu plana geç')],
-  })
-
-  records.push({
-    id: 'ajan-ucret',
-    question: `${AGENT_BRAND} için ayrıca ücret ödüyor muyum?`,
-    answer: `Hayır. ${AGENT_BRAND} her planda dahildir. ${planAgentIntro.text}`,
-    evidence: [evidence('site/src/data/pricing.ts', 'Kullanıcı kararı K46: ajan ürünü her planda, ayrı yapay zekâ ücreti yok', 'K46')],
+    evidence: [evidence('frontend/src/views/secure/user/SubscriptionView.vue', 'Abonelik ekranı plan geçişi', 'Bu Plana Geç')],
   })
 
   const card = getPublicFaq().find((f) => f.id === 'kart-bilgisi')
@@ -147,7 +139,7 @@ export interface PlanPitch {
 
 const PLAN_PITCH: Record<string, PlanPitch> = {
   starter: { headline: 'Çok kanallı satışa güçlü bir başlangıç', ctaLabel: 'Ücretsiz deneyin' },
-  growth: { headline: 'Büyüyen çok kanallı operasyonlar için', ctaLabel: 'Büyüme ile başlayın' },
+  growth: { headline: 'Büyüyen omnichannel operasyonlar için', ctaLabel: 'Büyüme ile başlayın' },
   enterprise: { headline: 'Ölçeğinize göre şekillenen kapasite', ctaLabel: 'Teklif isteyin' },
 }
 
@@ -161,7 +153,7 @@ export function getPlanPitch(code: string): PlanPitch | undefined {
  * özellik kodu yoktur). Başlıklar `capabilities.ts` kayıtlarından gelir (yalnızca `available`).
  */
 const PLAN_COMMON_LABELS: Array<{ capabilityId: string; label: string }> = [
-  { capabilityId: 'stock-reservation', label: 'Stok rezervasyonu ile aşırı satış koruması' },
+  { capabilityId: 'stock-reservation', label: 'Stok rezervasyonu ile overselling koruması' },
   { capabilityId: 'multi-channel-products', label: 'Merkezi ürün, fiyat ve stok yönetimi' },
   { capabilityId: 'unified-orders', label: 'Tüm kanallardan birleşik sipariş akışı' },
   { capabilityId: 'secrets-encryption', label: 'Şifreli API anahtarı saklama' },
@@ -172,64 +164,4 @@ const PLAN_COMMON_LABELS: Array<{ capabilityId: string; label: string }> = [
 export function getPlanCommonFeatures(): string[] {
   const live = new Set(getPublicCapabilities().filter((c) => c.status === 'available').map((c) => c.id))
   return PLAN_COMMON_LABELS.filter((x) => live.has(x.capabilityId)).map((x) => x.label)
-}
-
-// ---------------------------------------------------------------------------- Ajan ürünü her planda (S25, K46)
-
-/**
- * Kullanıcı kararı K46: ajan ürünü HER planda dahildir; ayrı yapay zekâ ücreti yoktur. Alt planda sınırlı (sohbetle
- * sorgulama, raporlar, onayınızla uygulanan öneriler, sınırlı günlük işlem); üst planlarda zamanlanmış ve kurallı
- * otonom ajanlar ile yüksek/özel kota. RAKAM YOK: kota yalnızca nitel kademedir (seed'de ajan kotası alanı yoktur;
- * `mcpCallsPerDay` ayrı bir üründür, burada kullanılmaz). Kredi/token dili ve "sınırsız/ücretsiz yapay zekâ" YASAK
- * (tests/claims.test.ts + tests/pricing-agent.test.ts). Metin plan KODUNA bağlıdır; seed'de olup burada olmayan plan
- * kodu satırda "—" gösterir (derleme kırılmaz).
- */
-export const planAgentIntro = {
-  eyebrow: `${AGENT_BRAND} her planda`,
-  title: 'Yapay zekâ için ayrıca ödeme yok',
-  text: 'Kendi yapay zekâ anahtarınızı getirirsiniz; yapay zekâ için bize ekstra ücret ödemezsiniz. Her pakette başlayın, büyüdükçe ajanlarınıza daha fazla yetki verin.',
-  points: ['Her planda dahil', 'Kendi anahtarınızla çalışır', 'Büyüdükçe daha fazla yetki'],
-} as const
-
-export type AgentCell = { kind: 'check' } | { kind: 'none' } | { kind: 'text'; text: string }
-
-export interface PlanAgentRow {
-  key: string
-  label: string
-  cells: Array<{ planCode: string; cell: AgentCell }>
-}
-
-const yes: AgentCell = { kind: 'check' }
-const no: AgentCell = { kind: 'none' }
-const txt = (text: string): AgentCell => ({ kind: 'text', text })
-
-const PLAN_AGENT_MATRIX: Array<{ key: string; label: string; byPlan: Record<string, AgentCell> }> = [
-  { key: 'chat', label: 'Sohbetle sorgulama ve raporlar', byPlan: { starter: yes, growth: yes, enterprise: yes } },
-  { key: 'approved', label: 'Onayınızla uygulanan öneriler', byPlan: { starter: yes, growth: yes, enterprise: yes } },
-  { key: 'quota', label: 'Günlük işlem kotası', byPlan: { starter: txt('Sınırlı'), growth: txt('Yüksek'), enterprise: txt('Size özel') } },
-  { key: 'scheduled', label: 'Zamanlanmış ajanlar', byPlan: { starter: no, growth: yes, enterprise: yes } },
-  { key: 'autonomous', label: 'Kurallarınızla çalışan otonom ajanlar', byPlan: { starter: no, growth: yes, enterprise: yes } },
-]
-
-/** Karşılaştırma tablosu satırları (plan sırası `getPublicPlans()` sırasıdır). */
-export function getPlanAgentRows(plans: PublicPlan[] = getPublicPlans()): PlanAgentRow[] {
-  return PLAN_AGENT_MATRIX.map((r) => ({
-    key: r.key,
-    label: r.label,
-    cells: plans.map((p) => ({ planCode: p.code, cell: r.byPlan[p.code] ?? no })),
-  }))
-}
-
-/**
- * Plan kartındaki özet. Alt plan temel kümeyi, üst planlar yalnızca EKLENENLERİ listeler (sayfa bir önceki planın adını
- * seed'den koyar: "<önceki plan> planındakilere ek olarak").
- */
-const PLAN_AGENT_SUMMARY: Record<string, { title: string; items: string[] }> = {
-  starter: { title: `${AGENT_BRAND} dahil`, items: ['Sohbetle sorgulama ve raporlar', 'Onayınızla uygulanan öneriler', 'Sınırlı günlük işlem'] },
-  growth: { title: `${AGENT_BRAND} dahil`, items: ['Zamanlanmış ajanlar', 'Kurallarınızla çalışan otonom ajanlar', 'Yüksek günlük kota'] },
-  enterprise: { title: `${AGENT_BRAND} dahil`, items: ['Size özel kota', 'İhtiyacınıza göre ajan kuralları'] },
-}
-
-export function getPlanAgentSummary(code: string): { title: string; items: string[] } | undefined {
-  return PLAN_AGENT_SUMMARY[code]
 }

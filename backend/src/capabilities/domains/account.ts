@@ -222,23 +222,6 @@ export const ACCOUNT_CAPABILITIES = [
         ui: noUi('Backend-only: tenant varsayılanları ekranı (F-N2) bulut FE işi (BACKEND_ONLY_NOT_YET_IN_FE).'), mcp: PLUMBING('Tenant bildirim varsayılanları'), agent: NO_AGENT,
     }),
 
-    // [MOB-04] web push: kullanıcı × cihaz aboneliği (tercih matrisindeki 'push' sütunu notifications.preferences.* ile).
-    c({
-        id: 'notifications.push.config', domain: 'account', summary: { tr: 'Anlık bildirim durumu ve cihazlarım', en: 'Push notification status and my devices' },
-        effect: 'read', minTier: 'member', permission: 'self:manage', scope: 'user', bindings: [{ rpc: 'NotificationService/getPushConfig' }],
-        ui: onScreens('NotificationPreferencesView'), mcp: PLUMBING('Cihaz push durumu (tarayıcıya bağlı)'), agent: NO_AGENT,
-    }),
-    c({
-        id: 'notifications.push.subscribe', domain: 'account', summary: { tr: 'Bu cihazda anlık bildirimleri aç', en: 'Enable push notifications on this device' },
-        effect: 'write', minTier: 'member', permission: 'self:manage', scope: 'user', bindings: [{ rpc: 'NotificationService/subscribePush' }],
-        ui: onScreens('NotificationPreferencesView'), mcp: PLUMBING('Cihaz push aboneliği (tarayıcı izni + service worker)'), agent: NO_AGENT,
-    }),
-    c({
-        id: 'notifications.push.unsubscribe', domain: 'account', summary: { tr: 'Cihazda anlık bildirimleri kapat', en: 'Disable push notifications on a device' },
-        effect: 'write', minTier: 'member', permission: 'self:manage', scope: 'user', bindings: [{ rpc: 'NotificationService/unsubscribePush' }],
-        ui: onScreens('NotificationPreferencesView'), mcp: PLUMBING('Cihaz push aboneliği (kişisel)'), agent: NO_AGENT,
-    }),
-
     // --- Arama / denetim ---
     c({
         id: 'search.unified', domain: 'account', summary: { tr: 'Birleşik arama (sipariş/ürün/müşteri)', en: 'Unified search (orders/products/customers)' },

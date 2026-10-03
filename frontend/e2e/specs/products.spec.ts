@@ -12,30 +12,30 @@ test.describe('P1 — Ürünler (ProductListView)', () => {
     await openScreen(page, 'ProductListView')
 
     await expectScreenOpen(page, '.productListView')
-    await expect(page.getByLabel('Ürün adı, stok kodu, barkod').first()).toBeVisible()
-    // Birleştirme (Aşama 3): pano kartları da aynı ürün adını taşıyor (gizli sekmede DOM'da) → ekrana kapsandı.
-    await expect(page.locator('.productListView').getByText('E2E Test Ürünü', { exact: true })).toBeVisible()
-    await expect(page.locator('.productListView').getByText('E2E İkinci Ürün', { exact: true })).toBeVisible()
+    await expect(page.getByLabel('Ürün Adı, Stok Kodu, Barkod').first()).toBeVisible()
+    await expect(page.getByText('E2E Test Ürünü')).toBeVisible()
+    await expect(page.getByText('E2E İkinci Ürün')).toBeVisible()
   })
 
-  test('boş durum: sonuç yoksa "Ürün bulunamadı" kartı gösterilir', async ({ page }) => {
+  test('boş durum: sonuç yoksa "Ürün Bulunamadı" kartı gösterilir', async ({ page }) => {
     await installApiMocks(page, { 'ProductService/getProducts': productsBosFixture })
     await gotoAuthed(page)
     await openScreen(page, 'ProductListView')
 
-    await expect(page.getByText('Ürün bulunamadı')).toBeVisible()
+    await expect(page.getByText('Ürün Bulunamadı')).toBeVisible()
   })
 
-  test('hata durumu: 500 alındığında "Ürünler yüklenemedi" + Tekrar dene gösterilir (boştan AYRI), ham hata sızmaz', async ({ page }) => {
-    // DS-v2 Aşama 2 — BİLİNÇLİ DAVRANIŞ DEĞİŞİKLİĞİ: eskiden hata "Ürün bulunamadı" boş durumuna düşüyordu
-    // (ve `loading` başarısızlıkta false olmuyordu). Artık `isRequestError` ile hata ayrı gösterilir; API çağrısı AYNI.
+  test('hata durumu: 500 alındığında da aynı "Ürün Bulunamadı" boş-durumuna düşülür, ham hata sızmaz (gizli davranış — bkz. BACKLOG.md)', async ({ page }) => {
+    // GİZLİ DAVRANIŞ (characterization, düzeltilmedi — BACKLOG.md): getProducts() `if (response &&
+    // response.products)` şartı sağlanmadığında `loading.value = false` satırı da ÇALIŞMIYOR (yalnızca
+    // başarı dalının İÇİNDE) — ama tablonun `:loading` prop'u zaten hardcoded `false` olduğu için bu
+    // sızıntının görünür bir etkisi yok; dashboard/orders'daki aynı desenle tutarlı (bkz. BACKLOG.md).
     await installApiMocks(page, { 'ProductService/getProducts': mockError(500) })
     await gotoAuthed(page)
     await openScreen(page, 'ProductListView')
 
-    await expect(page.getByText('Ürünler yüklenemedi')).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Tekrar dene' })).toBeVisible()
-    await expect(page.locator('.productListView')).not.toContainText('500')
+    await expect(page.getByText('Ürün Bulunamadı')).toBeVisible()
+    await expect(page.locator('body')).not.toContainText('500')
   })
 
   test('etkileşim: ürün satırına tıklayınca varyant/seçim alanı genişler', async ({ page }) => {
@@ -45,8 +45,7 @@ test.describe('P1 — Ürünler (ProductListView)', () => {
 
     const firstRow = page.locator('.productListView tbody tr').first()
     await firstRow.getByText('E2E Test Ürünü').click()
-    // DS-v2: satır onay kutusu EkDataGrid'in yerel checkbox'ı (eski `.v-checkbox-btn`).
-    await expect(firstRow.locator('input[type="checkbox"]')).toBeVisible()
+    await expect(firstRow.locator('.v-checkbox-btn')).toBeVisible()
   })
 
   test('ekran görüntüsü tabanı (ürün listesi)', async ({ page }) => {
@@ -61,7 +60,7 @@ test.describe('P1 — Ürünler (ProductListView)', () => {
     await installApiMocks(page)
     await gotoAuthed(page)
     await openScreen(page, 'ProductListView')
-    await expect(page.locator('.productListView').getByText('E2E Test Ürünü', { exact: true })).toBeVisible()
+    await expect(page.getByText('E2E Test Ürünü')).toBeVisible()
     const results = await new AxeBuilder({ page }).include('.productListView').withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze()
     await testInfo.attach('axe-ProductListView-sonuclari.json', { body: JSON.stringify(results.violations, null, 2), contentType: 'application/json' })
     console.log(`[axe] ProductListView: ${results.violations.length} WCAG 2.1 AA ihlali`)

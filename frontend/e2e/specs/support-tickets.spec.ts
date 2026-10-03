@@ -8,7 +8,6 @@
 // gösterir). Bu yüzden iddialar `getByText` ile (tablo hücresi/kart fark etmeksizin AYNI metin)
 // yazıldı; tabloya/karta ÖZGÜ DOM yapısı test EDİLMEDİ.
 import { test, expect } from '@playwright/test'
-import { suppressTourOffer } from '../fixtures/appDialog'
 import { installApiMocks, mockError } from '../fixtures/mockApi'
 import { gotoAuthed, menuFixtureWithAccountSupport, openScreen } from '../fixtures/nav'
 
@@ -48,37 +47,32 @@ const ticketDetailFixture = {
 }
 
 test.describe('ADR-0015 B5-3 — TicketListView (destek) + TicketCreateDialog + TicketDetailComponent', () => {
-  // Sağ alttaki (mobilde tam genişlik) tur teklifi kartı sayfalama/çip/çekmece öğelerini örter → kullanıcı gibi önce kapatılmış sayılır.
-  test.beforeEach(async ({ page }) => { await suppressTourOffer(page) })
-
   test('smoke: arama alanı + destek talebi kayıtları render olur', async ({ page }) => {
     await installApiMocks(page, withSupportMenu({ 'TicketService/getTickets': ticketsDoluFixture }))
     await gotoAuthed(page)
     await openScreen(page, 'TicketListView')
 
     await expect(page.locator('.ticketListView')).toBeVisible()
-    await expect(page.getByLabel('Talep no veya konu ara', { exact: true })).toBeVisible()
+    await expect(page.getByLabel('Destek No veya Konu Ara', { exact: true })).toBeVisible()
     await expect(page.getByText('DSK-100001')).toBeVisible()
     await expect(page.getByText('E2E fatura kesim sorunu')).toBeVisible()
     await expect(page.getByText('E2E entegrasyon sorusu')).toBeVisible()
   })
 
-  test('boş durum: "Destek talebi bulunamadı" mesajı gösterilir', async ({ page }) => {
+  test('boş durum: "Destek Talebi Bulunamadı" mesajı gösterilir', async ({ page }) => {
     await installApiMocks(page, withSupportMenu({ 'TicketService/getTickets': ticketsBosFixture }))
     await gotoAuthed(page)
     await openScreen(page, 'TicketListView')
 
-    await expect(page.getByText('Destek talebi bulunamadı')).toBeVisible()
+    await expect(page.getByText('Destek Talebi Bulunamadı')).toBeVisible()
   })
 
-  // DS-v2 Aşama 2 — BİLİNÇLİ DEĞİŞİKLİK: 500 artık boş duruma DÜŞMEZ; "Destek talepleri yüklenemedi" + "Tekrar dene" gösterilir.
-  test('hata durumu: 500 alındığında "Destek talepleri yüklenemedi" + "Tekrar dene" gösterilir', async ({ page }) => {
+  test('hata durumu: 500 alındığında da liste boş kalır (gizli davranış, catch YOK — console.error ile yutuluyor)', async ({ page }) => {
     await installApiMocks(page, withSupportMenu({ 'TicketService/getTickets': mockError(500) }))
     await gotoAuthed(page)
     await openScreen(page, 'TicketListView')
 
-    await expect(page.getByText('Destek talepleri yüklenemedi')).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Tekrar dene' })).toBeVisible()
+    await expect(page.getByText('Destek Talebi Bulunamadı')).toBeVisible()
   })
 
   test('yeni bilet aç: diyalog açılır, gönderilince TicketService/openTicket çağrılır', async ({ page }) => {
@@ -94,7 +88,7 @@ test.describe('ADR-0015 B5-3 — TicketListView (destek) + TicketCreateDialog + 
     await openScreen(page, 'TicketListView')
 
     await page.locator('.ticketListView button:has(.mdi-plus)').click()
-    const dialog = page.getByRole('dialog').filter({ hasText: 'Yeni destek talebi' })
+    const dialog = page.getByRole('dialog').filter({ hasText: 'YENİ DESTEK TALEBİ' })
     await expect(dialog).toBeVisible()
     await dialog.getByLabel('Konu', { exact: true }).fill('E2E test talebi')
     await dialog.getByLabel('Mesajınız', { exact: true }).fill('Bu bir E2E test mesajıdır.')
@@ -105,8 +99,8 @@ test.describe('ADR-0015 B5-3 — TicketListView (destek) + TicketCreateDialog + 
     expect(created.ticket.message).toBe('Bu bir E2E test mesajıdır.')
   })
 
-  test('detay: "Görüntüle / Yanıtla" düğmesine tıklayınca talep detayı açılır, yanıt gönderilince TicketService/sendTicketMessage çağrılır', async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name !== 'chromium-desktop', 'Masaüstü tablosundaki satır eylemiyle açılıyor (mdAndUp/>=960px); mobil kart aynı eylemi farklı yerleşimle sunar')
+  test('detay: görüntüle/yanıtla ikonuna tıklayınca talep detayı açılır, yanıt gönderilince TicketService/sendTicketMessage çağrılır', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'chromium-desktop', 'Masaüstü tablodaki mdi-message-text-outline ikonuyla açılıyor (mdAndUp/>=960px); mobil kart aynı eylemi mdi-message-text ile sunar')
     let sendPayload: any = null
     await installApiMocks(page, withSupportMenu({
       'TicketService/getTickets': ticketsDoluFixture,
@@ -118,8 +112,8 @@ test.describe('ADR-0015 B5-3 — TicketListView (destek) + TicketCreateDialog + 
     await gotoAuthed(page)
     await openScreen(page, 'TicketListView')
 
-    await page.locator('.ticketListView').getByRole('button', { name: 'Görüntüle / Yanıtla' }).first().click()
-    const dialog = page.getByRole('dialog').filter({ hasText: 'DSK-100001' })
+    await page.locator('.ticketListView button:has(.mdi-message-text-outline)').first().click()
+    const dialog = page.getByRole('dialog').filter({ hasText: 'DESTEK TALEBİ' })
     await expect(dialog).toBeVisible()
     await expect(dialog.getByText('Fatura oluşturamıyorum.')).toBeVisible()
 

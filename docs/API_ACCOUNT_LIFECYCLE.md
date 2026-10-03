@@ -1,7 +1,7 @@
 # Kimlik hesabı yaşam döngüsü — API sözleşmesi
 
 Kapsam: parola değiştirme, parola sıfırlama, e-posta doğrulama (backend; 2026-09-28). Frontend ekranları (Hesabım/Güvenlik, "Şifremi unuttum", `/reset-password`, `/verify-email`) ADR-0015 sonrası ayrı yapılacaktır — bu belge onların sözleşmesidir.
-Kaynak: `backend/src/operations/account/*` (iş kuralları), `backend/src/api/rpc/handlers/account-service.ts` (API), `backend/src/api/rpc/ApiManager.ts` (özel rotalar + rate limit), `backend/src/api/rpc/operationPolicy.ts` (kademe). İlgili: ADR-0001 (login desenleri, tokenVersion, audit), FRONTEND_GAP_ANALYSIS N1/N2, araştırma Y-05.
+Kaynak: `backend/src/operations/account/*` (iş kuralları), `backend/src/api/services/account-service.ts` (API), `backend/src/api/ApiManager.ts` (özel rotalar + rate limit), `backend/src/api/operationPolicy.ts` (kademe). İlgili: ADR-0001 (login desenleri, tokenVersion, audit), FRONTEND_GAP_ANALYSIS N1/N2, araştırma Y-05.
 
 ## Genel
 

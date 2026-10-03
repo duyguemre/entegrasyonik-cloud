@@ -33,6 +33,8 @@ const ENTER_SCENES: Record<string, string> = {
   'stock-single-winner': 'components/home/Capabilities.astro',
   'orders-merge': 'components/home/Capabilities.astro',
   'integration-status': 'components/home/Capabilities.astro',
+  'secret-encryption': 'components/home/Capabilities.astro',
+  'tenant-isolation': 'components/home/Capabilities.astro',
   'story-step': 'components/home/OrderStory.astro',
   'how-progress': 'components/home/HowItWorks.astro',
   'request-guard': 'components/home/SecuritySummary.astro',
@@ -49,11 +51,7 @@ const GENERIC_SCENES: Record<string, string> = {
 /** Yalnızca döngüsel (ambient) sahneler. */
 const LOOP_SCENES: Record<string, string> = {
   'hero-bg': 'components/home/Hero.astro',
-  // S18: /asistan hero'su — örnek senaryo sohbeti (30 sn tek zaman çizelgesi; statik hâl = tüm diyalog + onay bekliyor)
-  'assistant-chat': 'components/assistant/ChatScene.astro',
-  // S22: ajan sayfası — konsol durum ışıması + tarama ışığı; ajan döngüsü iz ışığı + düğüm vurgusu
-  'agent-console': 'components/assistant/AgentConsole.astro',
-  'agent-loop': 'components/assistant/AgentLoop.astro',
+  marquee: 'components/home/Proof.astro',
 }
 const ALL_SCENES = { ...ENTER_SCENES, ...GENERIC_SCENES, ...LOOP_SCENES }
 
@@ -275,36 +273,28 @@ describe('sahne süreleri bağlayıcı sınırlar içinde (ADR-0014 Karar 3)', (
     // S13: hero show merkezi 30 sn'de dört sahne (dilim başına 7,5 sn); 12 sn senaryo token'ı diğer sahnelerde sürer
     expect(loops.body).toMatch(/animation-duration:\s*var\(--site-motion-loop-marquee\)/)
     expect(loops.body).toMatch(/var\(--site-motion-loop-scene\)/)
-    // S27a: kayan yetenek şeridi kaldırıldı (hero sade karşılama + N9 hareket ekonomisi) — döngüsü de yok
-    expect(loops.body).not.toMatch(/@keyframes loop-marquee|animation:\s*loop-marquee/)
+    expect(loops.body).toMatch(/animation:\s*loop-marquee var\(--site-motion-loop-marquee\)/)
   })
 })
 
 describe('durdurma kontrolü ve yürütücü (WCAG 2.2.2)', () => {
-  it('anahtar (S26): <button role="switch" aria-checked>, ad görünür etiketten, 44 px hedef, odak halkası, JS\'siz gizli', () => {
-    expect(toggle).toMatch(/<button[\s\S]*?type="button"[\s\S]*?role="switch"[\s\S]*?data-motion-toggle/)
-    expect(toggle).toContain('aria-checked="true"')
-    expect(toggle).not.toContain('aria-pressed')
-    expect(toggle).toMatch(/aria-labelledby="motion-toggle-label"/)
-    expect(toggle).toMatch(/id="motion-toggle-label">Animasyon</)
-    expect(toggle).toMatch(/aria-describedby="motion-toggle-hint"/)
+  it('kontrol: <button type="button">, aria-pressed, sabit ad, 44 px hedef, JS\'siz gizli, reduced-motion\'da gösterilmez', () => {
+    expect(toggle).toMatch(/<button[^>]*type="button"[^>]*data-motion-toggle|<button[^>]*data-motion-toggle[^>]*type="button"/)
+    expect(toggle).toContain('aria-pressed="false"')
+    expect(toggle).toContain('Hareketi durdur')
     expect(toggle).toMatch(/min-height:\s*var\(--site-tap-target\)/)
     expect(toggle).toMatch(/min-width:\s*var\(--site-tap-target\)/)
     expect(toggle).toMatch(/html:not\(\[data-motion\]\)[^{]*\{\s*visibility:\s*hidden/)
-    // odak halkası rayın çevresinde, yerel (açık/koyu zemine göre) halka rengiyle
-    expect(toggle).toMatch(/:focus-visible \.motion-toggle__track\s*\{\s*outline:\s*var\(--site-focus-ring-width\) solid var\(--mt-ring\)/)
+    expect(toggle).toMatch(/prefers-reduced-motion:\s*reduce\)\s*\{\s*\.motion-toggle\s*\{\s*display:\s*none/)
   })
 
-  it('anahtar görünümü: yumuşak durum geçişi yalnızca transform/renk; açık/koyu zemin tonları; reduced-motion\'da geçiş yok', () => {
-    expect(toggle).toMatch(/\.motion-toggle__thumb\s*\{[^}]*transition:\s*transform var\(--ek-duration-base\)/)
-    expect(toggle).toMatch(/\[aria-checked='true'\] \.motion-toggle__thumb\s*\{\s*transform:\s*translateX\(/)
-    expect(toggle).toMatch(/:global\(:is\(\[data-surface='dark'\], \.section--stage\)\) \.motion-toggle\s*\{[^}]*--mt-track-on/)
-    expect(toggle).toMatch(/prefers-reduced-motion:\s*reduce\)\s*\{\s*\.motion-toggle__thumb,\s*\.motion-toggle__track\s*\{\s*transition:\s*none/)
-    // sistem ayarı: kapalı + devre dışı görünüm (gizlenmez; neden ipucunda)
-    expect(toggle).toMatch(/\[aria-disabled='true'\]/)
-    // S24/S25 üst bar sadeliği: görünür etiket yok (her genişlikte görsel olarak gizli), ad yine etiketten okunur
-    expect(toggle).toMatch(/\.motion-toggle__label\s*\{[^}]*clip-path:\s*inset\(50%\)/)
-    expect(toggle).not.toMatch(/motion-toggle__label\s*\{\s*display:\s*inline/)
+  it('kontrol header\'a SIĞAR: simge boyutunda; kısa etiket yalnızca >= 90rem\'de; etiket erişilebilir adın içinde geçer', () => {
+    expect(toggle).toMatch(/@media \(min-width: 90rem\)[\s\S]*motion-toggle__label\s*\{\s*display:\s*inline/)
+    expect(toggle).toMatch(/\.motion-toggle__label\s*\{\s*display:\s*none/)
+    expect(toggle).not.toMatch(/margin-inline-start:\s*auto[\s\S]*flex:\s*1/)
+    // görünür etiket ("Hareket") erişilebilir adın ("Hareketi durdur") içinde geçer (WCAG 2.5.3)
+    expect('Hareketi durdur').toContain('Hareket')
+    expect(toggle).toMatch(/motion-toggle__label" aria-hidden="true">Hareket</)
   })
 
   it("yürütücü: IntersectionObserver, localStorage yalnızca try/catch içinde, çerez yok, data-motion durumları", () => {
@@ -314,10 +304,7 @@ describe('durdurma kontrolü ve yürütücü (WCAG 2.2.2)', () => {
       const before = scenesTs.slice(0, m.index!)
       expect(before.lastIndexOf('try {'), 'localStorage try içinde').toBeGreaterThan(before.lastIndexOf('}\n\n'))
     }
-    expect(scenesTs).toContain("'aria-checked'")
-    // sistem hareket azaltma: anahtar kapalı + devre dışı; tıklama tercihi değiştirmez
-    expect(scenesTs).toMatch(/setAttribute\('aria-disabled', 'true'\)/)
-    expect(scenesTs).toMatch(/addEventListener\('click', \(\) => \{\s*if \(reduceQuery\.matches\) return/)
+    expect(scenesTs).toContain("'aria-pressed'")
     for (const state of ["'play'", "'paused'", "'reduced'"]) expect(scenesTs).toContain(state)
     expect(scenesTs).toContain('prefers-reduced-motion: reduce')
     expect(scenesTs).toMatch(/dataset\.visible/)

@@ -1,5 +1,5 @@
 <template>
-  <div class="customerListView">
+  <div class="customerListView d-flex flex-column pt-4">
     <LoadingComponent :attach="dialogAttach" ref="loadingComponentRef" />
 
     <!-- ek-pattern-exception: EkConfirmDialog — R7 (e2e/specs/confirmation-dialog.spec.ts,
@@ -12,138 +12,182 @@
       :color="actionDialog.color" :confirm-text="actionDialog.confirmText" :confirm-icon="actionDialog.confirmIcon"
       @confirm="actionDialog.onConfirm" @cancel="actionDialog.show = false" maxWidth="400px" />
 
-    <CustomerDetailComponent v-model="editDialog.show" :customer="selectedCustomerForDetail" :can-anonymize="canAnonymize"
-      :loading="detailState.loading" :error="detailState.error"
-      @save="handleSave" @anonymize="askAnonymize" @retry="loadDetail(detailState.id)" />
+    <CustomerDetailComponent v-model="editDialog.show" :customer="selectedCustomerForDetail" @save="handleSave" />
 
-    <!-- C1.6 (ADR-0003 F.23) — son kullanıcı silme talebi: kişisel alanlar kalıcı maskelenir, kayıtlar kalır. -->
-    <EkConfirmDialog v-model="anonymizeDialog.show" danger :loading="anonymizeDialog.loading"
-      :title="`'${anonymizeDialog.name}' anonimleştirilsin mi?`"
-      description="Ad, iletişim ve adres bilgileri kalıcı olarak maskelenir; sipariş kayıtları kalır. Bu işlem geri alınamaz."
-      confirm-label="Anonimleştir" confirm-icon="mdi-account-cancel-outline"
-      @confirm="anonymizeCustomer" @cancel="anonymizeDialog.show = false" />
+    <EkFormDialog v-model="filterDialog" title="Gelişmiş filtreleme" @submit="applyAdvancedFilters">
+      <v-select
+        v-model="searchCustomerForm.data.cities"
+        :items="['İstanbul', 'Ankara', 'İzmir', 'Bursa', 'Antalya', 'Kocaeli']"
+        label="Şehir seçimi"
+        multiple
+        chips
+      />
+      <v-select
+        v-model="searchCustomerForm.data.status"
+        :items="[{ title: 'Aktif', value: 'ACTIVE' }, { title: 'Pasif', value: 'INACTIVE' }, { title: 'Engellenmiş', value: 'BLOCKED' }]"
+        label="Müşteri durumu"
+      />
+    </EkFormDialog>
 
-    <EkListScreen
-      section="Satış"
+    <EkListPage
+      section="Siparişler"
       title="Müşteriler"
       description="Tüm platformlardaki müşteri kayıtlarınızı buradan yönetin."
-      label="Müşteriler tablosu"
-      noun="müşteri"
-      row-key="_id"
-      label-key="fullName"
-      :columns="columns"
-      :rows="rows"
-      :loading="loading"
-      :error="loadError"
-      error-title="Müşteriler yüklenemedi"
+      :secondary-actions="[{ label: 'Gelişmiş filtre', icon: 'mdi-filter-variant', onClick: () => (filterDialog = true) }]"
       :search="searchCustomerForm.data.globalSearch"
-      search-placeholder="Ad, telefon, e-posta veya vergi no"
-      :chips="activeChips"
-      :filter-count="panelFilterCount"
-      selectable
-      v-model:selected="selectedCustomers"
-      :sort="gridSort"
-      :page="pagination.page"
-      :page-size="pagination.limit"
-      :total="pagination.totalNumberOfRecords"
-      empty-title="Müşteri bulunamadı"
-      empty-text="Siparişlerle gelen müşteriler burada listelenir."
-      empty-icon="mdi-account-group-outline"
-      filtered-empty-title="Müşteri bulunamadı"
-      filtered-empty-text="Arama kriterlerinize uygun herhangi bir müşteri kaydı bulunamadı."
+      search-placeholder="İsim, Telefon, E-posta veya Vergi No"
+      :state="viewState"
       @update:search="onSearchInput"
-      @update:sort="onGridSort"
-      @update:page="handlePageChange"
-      @update:page-size="onPageSizeChange"
-      @filter-submit="applyAdvancedFilters"
-      @filter-reset="resetFilters"
-      @remove-chip="removeChip"
       @clear-filters="resetFilters"
-      @refresh="getCustomers(true)"
+      @refresh="() => getCustomers(true)"
     >
-      <!-- faz3-fe-help: ilk kullanım — hiç kayıt yokken "Nasıl başlanır?" (filtreli boş sonuçta gösterilmez). -->
-      <template #empty-action><HelpStartLink article="gs-first-integration" /></template>
-      <template #filters>
-        <EkSelect v-model="searchCustomerForm.data.cities" :items="CITY_OPTIONS" label="Şehir" multiple clearable />
-        <EkSelect v-model="searchCustomerForm.data.status" kind="status" :items="STATUS_OPTIONS" label="Müşteri durumu" clearable />
+      <template #empty>
+        <EkEmptyState variant="no-results" title="Müşteri Bulunamadı" message="Arama kriterlerinize uygun herhangi bir müşteri kaydı bulunamadı." />
+      </template>
+      <template #error>
+        <EkErrorState message="Müşteriler yüklenemedi — bağlantınızı kontrol edip tekrar deneyin." @retry="() => getCustomers(true)" />
       </template>
 
-      <template #bulk-actions>
-        <EkButton size="sm" icon="mdi-trash-can-outline" class="ek-bulk-danger" @click="onBulkDelete">
-          Toplu sil ({{ selectedCustomers.length }})
-        </EkButton>
-      </template>
+      <div class="ek-customer-table-wrapper">
+        <EkDataTable v-if="$vuetify.display.mdAndUp" :items="customers" :columns="columns" row-key="_id" class="ek-customer-desktop-table" aria-label="Müşteriler tablosu">
+          <template #cell-select="{ item }">
+            <v-checkbox-btn :model-value="isCustomerSelected(item)" color="primary" density="compact"
+              :aria-label="`${item.firstName} ${item.lastName} satırını seç`"
+              @update:model-value="val => onCustomerSelectionUpdate(item, !!val)" />
+          </template>
 
-      <template #cell-name="{ row }">
-        <span class="ek-customer">
-          <CustomerAvatar :first-name="row.firstName || row.companyName" :last-name="row.lastName" :anonymized="isAnonymized(row.firstName)" size="sm" />
-          <span class="ek-customer__name" :class="{ 'ek-muted': !row.firstName && !row.lastName && !row.companyName }" :title="row.fullName">{{ row.fullName }}</span>
-          <EkBadge v-if="row.isCorporate" tone="info">Kurumsal</EkBadge>
-        </span>
+          <template #cell-name="{ item }">
+            <div class="d-flex align-center">
+              <v-avatar color="surface-muted" size="38" class="mr-3 avatar-ring">
+                <span class="text-body-2 font-weight-bold ek-avatar-initials">{{ item.firstName?.[0] }}{{ item.lastName?.[0] }}</span>
+              </v-avatar>
+              <div class="d-flex flex-column">
+                <span class="font-weight-medium text-body-2">{{ item.firstName }} {{ item.lastName }}</span>
+                <div class="d-flex align-center ek-gap-1 mt-1">
+                  <EkStatusChip v-if="item.isCorporate" tone="info" label="Kurumsal" />
+                  <span class="text-caption ek-muted">{{ item.externalIdentities?.[0]?.integrationCode || 'Sistem' }}</span>
+                </div>
+              </div>
+            </div>
+          </template>
+
+          <template #cell-contact="{ item }">
+            <div class="d-flex flex-column contact-block">
+              <span class="text-caption font-weight-medium"><v-icon size="14" class="mr-1" color="content-muted">mdi-phone</v-icon>{{ item.phone || '—' }}</span>
+              <span class="text-caption ek-muted"><v-icon size="14" class="mr-1" color="content-muted">mdi-email</v-icon>{{ item.email || '—' }}</span>
+            </div>
+          </template>
+
+          <template #cell-region="{ item }">
+            <div class="d-flex flex-column">
+              <span class="text-caption font-weight-medium">{{ item.addresses?.[0]?.city || '—' }}</span>
+              <span class="text-caption ek-muted">{{ item.addresses?.[0]?.state || '' }}</span>
+            </div>
+          </template>
+
+          <template #cell-netRevenue="{ item }">
+            <div class="d-flex flex-column align-end">
+              <span class="text-caption ek-muted gross-amount ek-num">{{ formatMoney(item.metrics?.totalSpent) }}</span>
+              <span class="font-weight-semibold ek-num">{{ formatMoney(item.netRevenue) }}</span>
+              <span class="text-caption ek-muted">{{ item.metrics?.totalOrderCount || 0 }} başarılı sipariş</span>
+            </div>
+          </template>
+
+          <template #cell-returnRate="{ item }">
+            <div class="d-flex flex-column align-center return-risk-cell">
+              <v-progress-linear :model-value="item.returnRate" :color="returnRateTone(item.returnRate)" height="6" rounded class="mb-1"
+                :aria-label="`İade oranı ${formatPercent((item.returnRate || 0) / 100)}`" />
+              <span class="text-caption font-weight-medium ek-num" :class="`ek-text-${returnRateTone(item.returnRate)}`">{{ formatPercent((item.returnRate || 0) / 100) }}</span>
+            </div>
+          </template>
+
+          <template #cell-actions="{ item }">
+            <div class="d-flex justify-end ek-gap-1">
+              <v-btn icon variant="text" density="comfortable" aria-label="Müşteri karnesini görüntüle" @click="openDetailedReport(item)">
+                <v-icon>mdi-eye</v-icon>
+                <v-tooltip activator="parent" location="top">Müşteri karnesi</v-tooltip>
+              </v-btn>
+              <v-btn icon variant="text" density="comfortable" aria-label="Müşteriyi sil" @click="triggerDelete(item)">
+                <v-icon>mdi-delete-sweep-outline</v-icon>
+                <v-tooltip activator="parent" location="top">Sil</v-tooltip>
+              </v-btn>
+            </div>
+          </template>
+        </EkDataTable>
+
+        <div v-else class="mobile-list d-flex flex-column h-100">
+          <div class="pa-2 overflow-y-auto flex-grow-1 d-flex flex-column mobile-list-scroll">
+            <EkEmptyState v-if="!customers?.length" variant="no-results" title="Müşteri Bulunamadı" message="Arama kriterlerinize uygun herhangi bir müşteri kaydı bulunamadı." />
+            <v-card v-for="item in customers" :key="item._id" class="mobile-card mb-3" variant="flat" border rounded="lg">
+              <div class="pa-3 border-bottom-dashed d-flex justify-space-between align-center">
+                <div class="d-flex align-center">
+                  <v-checkbox-btn :model-value="isCustomerSelected(item)" color="primary" density="compact" class="mr-2"
+                    :aria-label="`${item.firstName} ${item.lastName} satırını seç`"
+                    @update:model-value="val => onCustomerSelectionUpdate(item, !!val)" />
+                  <v-avatar size="32" color="surface-muted" class="mr-2 ek-avatar-initials text-caption font-weight-bold">
+                    {{ item.firstName?.[0] }}{{ item.lastName?.[0] }}
+                  </v-avatar>
+                  <span class="font-weight-medium text-body-2">{{ item.firstName }} {{ item.lastName }}</span>
+                </div>
+                <EkStatusChip v-if="item.returnRate > 25" tone="danger" label="Riskli" />
+              </div>
+
+              <div class="pa-3">
+                <div class="d-flex justify-space-between mb-2">
+                  <div class="d-flex flex-column">
+                    <span class="text-caption ek-muted"><v-icon size="12" color="content-muted">mdi-phone</v-icon> {{ item.phone || '—' }}</span>
+                    <span class="text-caption ek-muted"><v-icon size="12" color="content-muted">mdi-map-marker</v-icon> {{ item.addresses?.[0]?.city || '—' }}</span>
+                  </div>
+                  <div class="d-flex flex-column align-end">
+                    <span class="text-body-2 font-weight-semibold ek-num">{{ formatMoney(item.netRevenue) }}</span>
+                    <span class="text-caption ek-muted">{{ item.metrics?.totalOrderCount || 0 }} sipariş</span>
+                  </div>
+                </div>
+                <div class="d-flex ek-gap-2 justify-end mt-2">
+                  <v-btn icon variant="text" density="comfortable" aria-label="Müşteri karnesini görüntüle" @click="openDetailedReport(item)">
+                    <v-icon>mdi-eye</v-icon>
+                  </v-btn>
+                  <v-btn icon variant="text" density="comfortable" aria-label="Müşteriyi sil" @click="triggerDelete(item)">
+                    <v-icon>mdi-delete-sweep-outline</v-icon>
+                  </v-btn>
+                </div>
+              </div>
+            </v-card>
+          </div>
+        </div>
+      </div>
+
+      <template #pagination>
+        <EkPagination :page="pagination.page" :page-size="pagination.limit" :total="pagination.totalNumberOfRecords"
+          @update:page="handlePageChange" @update:pageSize="onPageSizeChange" />
       </template>
-      <template #cell-channel="{ row }">
-        <span v-if="row.channels.length" class="ek-customer-channels">
-          <EkChannelDot :code="row.channels[0]" />
-          <span v-if="row.channels.length > 1" class="ek-customer-channels__more ek-num" :title="row.channels.slice(1).join(', ')">+{{ row.channels.length - 1 }}<span class="ek-sr-only"> kanal daha</span></span>
-        </span>
-        <span v-else class="ek-muted">Sistem</span>
-      </template>
-      <!-- A13 · KVKK: listede iletişim her zaman maskeli; açık değer yalnız müşteri kartında "Göster" ile. -->
-      <!-- P04 (K49): Telefon + E-posta tek "İletişim" kolonu (telefon üstte, e-posta ikincil satır). -->
-      <template #cell-contact="{ row }">
-        <span class="ek-cust-contact">
-          <span class="ek-num">{{ listContact('phone', row.phone, row.isPhoneMasked) }}</span>
-          <!-- İki alan da aynı nedenle gizliyse ("Pazaryeri gizledi") tek satır yeter. -->
-          <span v-if="listContact('email', row.email, row.isEmailMasked) !== listContact('phone', row.phone, row.isPhoneMasked)"
-            class="ek-cust-contact__sub" :title="listContact('email', row.email, row.isEmailMasked)">{{ listContact('email', row.email, row.isEmailMasked) }}</span>
-        </span>
-      </template>
-      <template #cell-region="{ row }">
-        <span class="ek-region">{{ row.addresses?.[0]?.city || '—' }}<span v-if="row.addresses?.[0]?.state" class="ek-muted"> · {{ row.addresses[0].state }}</span></span>
-      </template>
-      <template #cell-orders="{ row }"><span class="ek-num">{{ row.metrics?.totalOrderCount || 0 }}</span></template>
-      <template #cell-netRevenue="{ row }"><span class="ek-num">{{ formatMoney(row.netRevenue) }}</span></template>
-      <template #cell-returnRate="{ row }">
-        <EkStatusChip v-if="row.metrics?.totalOrderCount > 0" :tone="rateTone(row.returnRate ?? 0) ?? 'success'" :label="formatPercent((row.returnRate || 0) / 100)" />
-        <span v-else class="ek-muted">—<span class="ek-sr-only">sipariş yok</span></span>
-      </template>
-      <template #cell-actions="{ row }">
-        <EkRowActions :label="`${row.firstName ?? ''} ${row.lastName ?? ''} işlemleri`" :items="[
-          { key: 'view', action: 'view', label: 'Müşteri karnesini görüntüle', onClick: () => openDetailedReport(row) },
-          { key: 'delete', action: 'delete', label: 'Müşteriyi sil', onClick: () => triggerDelete(row) },
-        ]" />
-      </template>
-    </EkListScreen>
+    </EkListPage>
+
+    <BatchProcessMenu :model-value="selectedCustomers" title="Müşteri Seçildi" :actions="[
+      { id: 'DELETE', label: 'Toplu Sil', icon: 'mdi-delete-sweep-outline', color: 'error', badgeCount: bulkActionCounts.DELETE }
+    ]" @action="onBulkDelete" @clear="selectedCustomers = []" />
   </div>
 </template>
 
 <script setup lang="ts">
-import HelpStartLink from '@/components/help/HelpStartLink.vue'
-import { EkSelect, EkRowActions, EkBadge, EkButton, EkChannelDot, EkStatusChip, EkConfirmDialog } from '@entegrasyonik/ui/components'
-import type { EkGridColumn, EkGridSort, EkActiveFilterChip } from '@entegrasyonik/ui/components'
 import { ref, onMounted, computed } from 'vue';
 import useRestApi from '@/composables/restapi';
 import { useSnackbarStore } from '@/stores/snackbarStore';
 import { useCustomerFilters } from '@/components/customer/composables/useCustomerFilters';
 import { useCustomerActions } from '@/components/customer/composables/useCustomerActions';
-import { formatMoney, formatPercent } from '@entegrasyonik/ui/format';
-import CustomerAvatar from '@/components/customer/card/CustomerAvatar.vue';
-;
-import { contactValue, isAnonymized, returnRateTone as rateTone } from '@/components/customer/customerCard';
+import { formatMoney, formatPercent } from '@/composables/format';
 
 import LoadingComponent from '@/components/LoadingComponent.vue';
 import ConfirmationDialogComponent from '@/components/layout/ConfirmationDialogComponent.vue';
 import CustomerDetailComponent from '@/components/customer/CustomerDetailComponent.vue';
-import EkListScreen from '@/components/page/templates/EkListScreen.vue';
-;
-;
-;
-;
-;
-import { isRequestError } from '@entegrasyonik/ui/components/listStandard';
-;
-import useUser from '@/composables/user';
-import { apiMessage, apiStatus, isApiError } from '@/composables/apiErrors';
+import BatchProcessMenu from '@/components/layout/BatchProcessMenu.vue';
+import EkListPage from '@/components/ds/templates/EkListPage.vue';
+import EkDataTable, { type EkTableColumn } from '@/components/ds/EkDataTable.vue';
+import EkPagination from '@/components/ds/EkPagination.vue';
+import EkEmptyState from '@/components/ds/EkEmptyState.vue';
+import EkErrorState from '@/components/ds/EkErrorState.vue';
+import EkStatusChip from '@/components/ds/EkStatusChip.vue';
+import EkFormDialog from '@/components/ds/EkFormDialog.vue';
 
 const emits = defineEmits(['clear'])
 const restApi = useRestApi();
@@ -153,55 +197,41 @@ const loadingComponentRef = ref<any>(null);
 const dialogAttach = ref(".customerListView");
 const loading = ref(false);
 const loadError = ref(false);
+const filterDialog = ref(false);
 
 const customers = ref<any[]>([]);
-const selectedCustomers = ref<Array<string | number>>([]);
+const selectedCustomers = ref<string[]>([]);
 const selectedCustomerForDetail = ref<any>(null);
 
 const editDialog = ref({ show: false });
 const actionDialog = ref<any>({ show: false });
 
-const CITY_OPTIONS = ['İstanbul', 'Ankara', 'İzmir', 'Bursa', 'Antalya', 'Kocaeli'];
-// FR2-SCREENS 34: durum seçimi diğer filtrelerle aynı standartta (ton noktası + sade açıklama).
-const STATUS_OPTIONS = [
-  { title: 'Aktif', value: 'ACTIVE', tone: 'success', subtitle: 'Sipariş veren müşteri' },
-  { title: 'Pasif', value: 'INACTIVE', tone: 'neutral', subtitle: 'Uzun süredir sipariş yok' },
-  { title: 'Engellenmiş', value: 'BLOCKED', tone: 'danger', subtitle: 'Satış yapılmayan müşteri' },
+const columns: EkTableColumn[] = [
+  { key: 'select', label: '' },
+  { key: 'name', label: 'MÜŞTERİ PROFİLİ' },
+  { key: 'contact', label: 'İLETİŞİM' },
+  { key: 'region', label: 'LOKASYON' },
+  { key: 'netRevenue', label: 'CİRO ANALİZİ (NET)', align: 'end' },
+  { key: 'returnRate', label: 'İADE RİSKİ', align: 'end' },
+  { key: 'actions', label: '', type: 'actions', align: 'end' },
 ];
 
-// DS-v2 liste standardı. CustomerService.getCustomers `sortBy.key` ile SUNUCUDA sıralar
-// (yalnız saklanan alanlar: ad, şehir); ciro/iade oranı sayfada hesaplandığı için sıralanamaz.
-const columns: EkGridColumn[] = [
-  { key: 'name', label: 'Müşteri', sortable: true },
-  { key: 'channel', label: 'Kanal' },
-  { key: 'contact', label: 'İletişim' },
-  { key: 'region', label: 'Şehir', sortable: true },
-  { key: 'orders', label: 'Sipariş', type: 'num' },
-  { key: 'netRevenue', label: 'Net ciro', type: 'num' },
-  { key: 'returnRate', label: 'İade oranı' },
-  { key: 'actions', label: 'İşlemler', align: 'end', hideLabel: true, pin: 'end' },
-];
-
-const SORT_FIELD: Record<string, string> = { name: 'firstName', region: 'addresses.city' };
-
-const rows = computed(() => customers.value.map((c: any) => ({ ...c, fullName: [c.firstName, c.lastName].filter(Boolean).join(' ') || c.companyName || 'Adı iletilmedi', channels: uniqueChannels(c) })));
-/** Müşterinin geldiği kanallar (externalIdentities; tekrarsız, sırası korunur). */
-function uniqueChannels(c: any): string[] {
-  return [...new Set<string>((c?.externalIdentities ?? []).map((e: any) => e?.integrationCode).filter(Boolean))]
-}
+const viewState = computed(() => {
+  if (loading.value) return 'loading';
+  if (loadError.value) return 'error';
+  if (!customers.value.length) return 'empty';
+  return 'ready';
+});
 
 const getCustomersInternal = async (resetPage: boolean = false) => {
   if (resetPage) pagination.page = 1;
   loading.value = true;
   loadError.value = false;
-  const d = searchCustomerForm.data;
-  applied.value = { globalSearch: d.globalSearch || '', cities: [...(d.cities || [])], status: d.status || null };
+  const guid = loadingComponentRef.value?.info("Müşteri verileri senkronize ediliyor...") || "loading";
 
   try {
     const res = await restApi.post('CustomerService/getCustomers', prepareFilterPayload());
-    if (isRequestError(res)) {
-      loadError.value = true;
-    } else if (res?.customers) {
+    if (res.customers) {
       customers.value = res.customers;
       pagination.totalNumberOfRecords = res.totalNumberOfRecords || 0;
       pagination.totalNumberOfPages = res.totalNumberOfPages || 1;
@@ -210,6 +240,7 @@ const getCustomersInternal = async (resetPage: boolean = false) => {
     loadError.value = true;
     snackbarStore.addSnackbar({ text: "Veri yükleme hatası!", color: "error" });
   } finally {
+    loadingComponentRef.value?.remove(guid);
     loading.value = false;
   }
 };
@@ -217,42 +248,12 @@ const getCustomersInternal = async (resetPage: boolean = false) => {
 const executeAction = async (endpoint: string, payload: any) => await restApi.post(endpoint, payload);
 
 const {
-  searchCustomerForm, pagination, sortBy, resetFilters, onSortUpdate, handlePageChange, prepareFilterPayload
+  searchCustomerForm, pagination, resetFilters, handlePageChange, prepareFilterPayload
 } = useCustomerFilters(getCustomersInternal);
-
-const gridSort = computed<EkGridSort>(() => {
-  const current = sortBy.value[0];
-  const key = Object.keys(SORT_FIELD).find(k => SORT_FIELD[k] === current?.key);
-  return key ? { key, dir: current.order === 'asc' ? 'asc' : 'desc' } : null;
-});
-
-function onGridSort(sort: EkGridSort) {
-  onSortUpdate(sort ? [{ key: SORT_FIELD[sort.key], order: sort.dir }] : [{ key: 'createdAt', order: 'desc' }]);
-}
-
-// Aktif filtre çipleri — SON SORGULANAN değerlerden.
-const applied = ref<{ globalSearch: string; cities: string[]; status: string | null }>({ globalSearch: '', cities: [], status: null });
-
-const activeChips = computed<EkActiveFilterChip[]>(() => {
-  const chips: EkActiveFilterChip[] = [];
-  if (applied.value.globalSearch) chips.push({ key: 'globalSearch', label: 'Arama', value: applied.value.globalSearch });
-  if (applied.value.cities.length) chips.push({ key: 'cities', label: 'Şehir', value: applied.value.cities.join(', ') });
-  if (applied.value.status) chips.push({ key: 'status', label: 'Durum', value: STATUS_OPTIONS.find(o => o.value === applied.value.status)?.title ?? applied.value.status });
-  return chips;
-});
-
-const panelFilterCount = computed(() => (applied.value.cities.length ? 1 : 0) + (applied.value.status ? 1 : 0));
-
-function removeChip(key: string) {
-  if (key === 'globalSearch') searchCustomerForm.data.globalSearch = '';
-  if (key === 'cities') searchCustomerForm.data.cities = [];
-  if (key === 'status') searchCustomerForm.data.status = null;
-  getCustomers(true);
-}
 
 const { handleDelete, handleBulkDelete } = useCustomerActions(executeAction, snackbarStore, getCustomersInternal);
 
-const onBulkDelete = () => handleBulkDelete(selectedCustomers.value as string[], actionDialog.value);
+const onBulkDelete = () => handleBulkDelete(selectedCustomers.value, actionDialog.value);
 
 function onSearchInput(value: string) {
   searchCustomerForm.data.globalSearch = value;
@@ -260,6 +261,7 @@ function onSearchInput(value: string) {
 }
 
 function applyAdvancedFilters() {
+  filterDialog.value = false;
   getCustomers(true);
 }
 
@@ -268,39 +270,33 @@ function onPageSizeChange(size: number) {
   handlePageChange(1);
 }
 
+function returnRateTone(rate: number): 'success' | 'warning' | 'danger' {
+  if (rate > 30) return 'danger';
+  if (rate > 15) return 'warning';
+  return 'success';
+}
 
 async function getCustomers(resetPage: boolean = false) { await getCustomersInternal(resetPage); }
 
+const bulkActionCounts = computed(() => {
+  return {
+    DELETE: selectedCustomers.value.length
+  };
+});
 
 
-// A13 — yan sayfa hemen açılır (iskelet); hata boş kayıt gibi çizilmez (EkProblemState + Tekrar dene).
-const detailState = ref({ id: '', loading: false, error: false });
-
-async function loadDetail(id: string) {
-  if (!id) return;
-  detailState.value = { id, loading: true, error: false };
-  const res: any = await restApi.post('CustomerService/getCustomerDetail', { customerId: id }).catch(() => null);
-  if (detailState.value.id !== id) return; // başka müşteri açıldı
-  if (!res || isRequestError(res) || isApiError(res) || !res._id) {
-    detailState.value = { id, loading: false, error: true };
-    return;
+const openDetailedReport = async (item: any) => {
+  const guid = loadingComponentRef.value?.info("Analitik veriler hazırlanıyor...") || "loading";
+  try {
+    const res = await restApi.post('CustomerService/getCustomerDetail', { customerId: item._id });
+    selectedCustomerForDetail.value = res;
+    editDialog.value.show = true;
+  } catch (error) {
+    snackbarStore.addSnackbar({ text: "Detay verisi alınamadı", color: "error" });
+  } finally {
+    loadingComponentRef.value?.remove(guid);
   }
-  selectedCustomerForDetail.value = res;
-  detailState.value = { id, loading: false, error: false };
-}
-
-const openDetailedReport = (item: any) => {
-  selectedCustomerForDetail.value = null;
-  editDialog.value.show = true;
-  loadDetail(String(item._id));
 };
-
-function listContact(kind: 'phone' | 'email', raw: string, sourceMasked?: boolean) {
-  const v = contactValue(kind, raw, { sourceMasked });
-  if (v.hidden === 'marketplace') return 'Pazaryeri gizledi';
-  if (v.hidden === 'anonymized') return 'Anonimleştirildi';
-  return v.display ?? '—';
-}
 
 const handleSave = async ({ customerId, updateData }: any) => {
   try {
@@ -315,36 +311,14 @@ const handleSave = async ({ customerId, updateData }: any) => {
   }
 };
 
-// C1.6 — müşteri anonimleştirme (CustomerService/anonymizeCustomer, admin).
-const user = useUser();
-const canAnonymize = computed(() => user.isTenantAdmin());
-const anonymizeDialog = ref({ show: false, loading: false, customerId: '', name: '' });
-
-function askAnonymize(customer: any) {
-  if (!customer?._id) return;
-  const name = [customer.firstName, customer.lastName].filter(Boolean).join(' ') || 'Müşteri';
-  anonymizeDialog.value = { show: true, loading: false, customerId: String(customer._id), name };
-}
-
-async function anonymizeCustomer() {
-  anonymizeDialog.value.loading = true;
-  const res: any = await restApi.post('CustomerService/anonymizeCustomer', { customerId: anonymizeDialog.value.customerId });
-  anonymizeDialog.value.loading = false;
-  if (isApiError(res) || res?.success !== true) {
-    const text = apiStatus(res) === 403
-      ? 'Bu işlem için yönetici yetkisi gerekir.'
-      : apiMessage(res, 'Müşteri anonimleştirilemedi — birkaç dakika sonra tekrar deneyin.');
-    snackbarStore.addSnackbar({ text, color: 'error' });
-    return;
-  }
-  anonymizeDialog.value.show = false;
-  editDialog.value.show = false;
-  snackbarStore.addSnackbar({ text: 'Müşterinin kişisel verileri anonimleştirildi.', color: 'success' });
-  getCustomers();
-}
-
 const triggerDelete = (item: any) => handleDelete(item, actionDialog.value);
 
+const onCustomerSelectionUpdate = (item: any, isSelected: boolean) => {
+  if (isSelected) selectedCustomers.value.push(item._id);
+  else selectedCustomers.value = selectedCustomers.value.filter(id => id !== item._id);
+};
+
+const isCustomerSelected = (item: any) => selectedCustomers.value.includes(item._id);
 
 onMounted(() => getCustomers());
 
@@ -384,85 +358,59 @@ defineExpose({
 </script>
 
 <style scoped>
-.ek-cust-contact {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.ek-cust-contact__sub {
-  overflow: hidden;
-  max-width: 220px;
-  color: var(--ek-color-content-muted);
-  font-size: var(--ek-type-caption-size);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.ek-customer-channels__more {
-  font-size: var(--ek-type-caption-size);
-  color: var(--ek-color-content-muted);
-}
-
-.ek-customer-channels {
-  display: inline-flex;
-  flex-wrap: nowrap;
-  align-items: center;
-  gap: var(--ek-space-1);
-}
-
 .customerListView {
   position: absolute;
-  inset: 0;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  padding: var(--ek-space-5) var(--ek-space-6);
+  padding: var(--ek-space-6);
+  gap: var(--ek-space-4);
 }
 
-@media (max-width: 767px) {
-  .customerListView {
-    overflow-y: auto;
-    padding: var(--ek-space-4);
-  }
+.contact-block {
+  gap: 2px;
+}
+
+.gross-amount {
+  text-decoration: line-through;
+}
+
+.return-risk-cell {
+  min-width: 100px;
+}
+
+.mobile-list-scroll {
+  padding-bottom: var(--ek-space-8);
+}
+
+.ek-customer-table-wrapper {
+  width: 100%;
+}
+
+.avatar-ring {
+  border: 1px solid var(--ek-color-border-default);
+}
+
+.ek-avatar-initials {
+  color: var(--ek-color-content-strong);
 }
 
 .ek-muted {
   color: var(--ek-color-content-muted);
 }
 
-.ek-customer {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--ek-space-2);
-  /* Uzun ad kısalır, "Kurumsal" rozeti hücre kenarında kırpılmaz. */
-  max-width: 100%;
-  min-width: 0;
+.ek-text-success { color: var(--ek-color-success); }
+.ek-text-warning { color: var(--ek-color-warning); }
+.ek-text-danger { color: var(--ek-color-error); }
+
+.border-bottom-dashed {
+  border-bottom: 1px dashed var(--ek-color-border-default);
 }
 
-.ek-customer > :not(.ek-customer__name) {
-  flex: none;
-}
-
-.ek-region {
-  white-space: nowrap;
-}
-
-.ek-customer__name {
-  overflow: hidden;
-  min-width: 0;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: var(--ek-color-content-strong);
-  font-weight: var(--ek-font-weight-medium);
-}
-
-.ek-row-actions {
-  display: inline-flex;
-  gap: var(--ek-space-1);
-}
-
-.ek-bulk-danger {
-  color: var(--ek-color-error);
-}
+.ek-gap-1 { gap: var(--ek-space-1); }
+.ek-gap-2 { gap: var(--ek-space-2); }
 </style>

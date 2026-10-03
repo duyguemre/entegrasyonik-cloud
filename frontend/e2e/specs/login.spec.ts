@@ -17,16 +17,33 @@ test.describe('P1 — Giriş', () => {
   test('smoke: giriş formu render olur (sekmeler + alanlar + buton)', async ({ page }) => {
     await page.goto('/login')
 
-    await expect(page.getByRole('tab', { name: 'Hesabım var' })).toBeVisible()
-    await expect(page.getByRole('tab', { name: 'Yeni hesap' })).toBeVisible()
-    await expect(page.getByRole('tab', { name: 'Parolamı unuttum' })).toHaveCount(0)
-    await expect(page.getByRole('button', { name: 'Parolanızı mı unuttunuz?' })).toBeVisible()
-    await expect(page.getByLabel('E-posta')).toBeVisible()
-    await expect(page.getByLabel('Parola', { exact: true })).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Devam et' })).toBeVisible()
+    await expect(page.getByRole('tab', { name: 'GİRİŞ' })).toBeVisible()
+    await expect(page.getByRole('tab', { name: 'KAYIT' })).toBeVisible()
+    await expect(page.getByRole('tab', { name: 'ŞİFREMİ UNUTTUM' })).toBeVisible()
+    await expect(page.getByLabel('EPosta')).toBeVisible()
+    await expect(page.getByLabel('Şifre', { exact: true })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Giriş' })).toBeVisible()
   })
 
-  // Silindi: CAPTCHA "gizli iş kuralı" testi — Faz 4 hesap sözleşmesiyle captcha kaldırıldı (LoginComponent artık `requireCaptcha` işlemez).
+  test('gizli iş kuralı: güvenlik kodu (CAPTCHA) gerektiğinde cevap ekranda AÇIK METİN gösteriliyor (bkz. BACKLOG.md)', async ({ page }) => {
+    // GİZLİ DAVRANIŞ (characterization, düzeltilmedi — BACKLOG.md'ye "incelenmesi gereken davranış" eklendi):
+    // requireCaptcha=true döndüğünde LoginComponent captcha metnini {{ captchaSecret }} ile DOĞRUDAN
+    // render ediyor (bkz. LoginComponent.vue satır ~50) — yani "güvenlik kodu" kullanıcının kendisine
+    // sunuluyor, bir insan/bot ayrımı sağlamıyor. Şüpheli ama bu görevde DÜZELTİLMEDİ, yalnızca sabitlendi.
+    await installApiMocks(page, {
+      checkAuthentication: false,
+      userContext: mockError(401, {}),
+      'SecurityService/login': { requireCaptcha: true, message: 'Güvenlik kodu gereklidir.' },
+      'SecurityService/getCaptcha': { captcha: 'AB12' },
+    })
+    await page.goto('/login')
+    await page.getByLabel('EPosta').fill('e2e@example.invalid')
+    await page.getByLabel('Şifre', { exact: true }).fill('e2e-pass')
+    await page.getByRole('button', { name: 'Giriş' }).click()
+
+    await expect(page.getByText('Güvenlik kodu gereklidir.')).toBeVisible()
+    await expect(page.locator('.captcha-box')).toHaveText('AB12')
+  })
 
   test('hata durumu: hatalı bilgilerde Türkçe hata mesajı gösterilir, ham hata sızmaz', async ({ page }) => {
     await installApiMocks(page, {
@@ -35,9 +52,9 @@ test.describe('P1 — Giriş', () => {
       'SecurityService/login': mockError(401, { message: 'Unauthorized' }),
     })
     await page.goto('/login')
-    await page.getByLabel('E-posta').fill('yanlis@example.invalid')
-    await page.getByLabel('Parola', { exact: true }).fill('yanlis-sifre')
-    await page.getByRole('button', { name: 'Devam et' }).click()
+    await page.getByLabel('EPosta').fill('yanlis@example.invalid')
+    await page.getByLabel('Şifre', { exact: true }).fill('yanlis-sifre')
+    await page.getByRole('button', { name: 'Giriş' }).click()
 
     await expect(page.getByText('Bilgiler hatalı, lütfen kontrol ediniz.')).toBeVisible()
     await expect(page.locator('body')).not.toContainText('Unauthorized')
@@ -58,9 +75,9 @@ test.describe('P1 — Giriş', () => {
       },
     })
     await page.goto('/login')
-    await page.getByLabel('E-posta').fill('e2e@example.invalid')
-    await page.getByLabel('Parola', { exact: true }).fill('e2e-pass-1234')
-    await page.getByRole('button', { name: 'Devam et' }).click()
+    await page.getByLabel('EPosta').fill('e2e@example.invalid')
+    await page.getByLabel('Şifre', { exact: true }).fill('e2e-pass-1234')
+    await page.getByRole('button', { name: 'Giriş' }).click()
 
     // ADR-0012 Karar 1/2 (kasıtlı davranış değişikliği, T4a): giriş sonrası artık kanonik
     // aktif-ekran adresine (`/dashboard`, `redirect` yoksa) `router.replace` ile gidiliyor —
@@ -71,7 +88,7 @@ test.describe('P1 — Giriş', () => {
 
   test('ekran görüntüsü tabanı (giriş formu)', async ({ page }) => {
     await page.goto('/login')
-    await expect(page.getByRole('tab', { name: 'Hesabım var' })).toBeVisible()
+    await expect(page.getByRole('tab', { name: 'GİRİŞ' })).toBeVisible()
     // ADR-0011 Açık Soru 1 (Inter göçü) — bkz. `nav.ts` `waitForShellReady` yorumu: Inter'in
     // tam yüklendiğinden emin olmadan alınan ekran görüntüsü FOUT/reflow nedeniyle kararsız
     // olabiliyor; bu ekran `waitForShellReady` kullanmadığından aynı bekleme burada tekrarlanır.

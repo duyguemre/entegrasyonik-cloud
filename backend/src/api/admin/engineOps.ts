@@ -6,7 +6,6 @@
 import { ApplicationError } from '@platform/core/errors';
 import { AuditLogger } from '@services/audit/AuditLogger';
 import { getRequestId } from '@platform/core/context';
-import { escapeRegex } from '@utils/search';
 import exportConfig from '../../integration/engine/catalog/export/export.config.json';
 import importConfig from '../../integration/engine/catalog/import/import.config.json';
 
@@ -199,7 +198,7 @@ export class EngineOps {
         if (f.integrationCode !== undefined) match.integrationCode = f.integrationCode;
         if (f.errorCode !== undefined) {
             // errorCodeOf ile aynı kural: `[KOD]` öneki; `UNKNOWN` = öneksiz. Kod şemada ^[A-Z_]{2,32}$ ile sınırlıdır (regex enjeksiyonu yok).
-            match.failedReason = f.errorCode === 'UNKNOWN' ? { $not: /^\[[A-Z_]{2,32}\]/ } : { $regex: `^\\[${escapeRegex(f.errorCode)}\\]` };
+            match.failedReason = f.errorCode === 'UNKNOWN' ? { $not: /^\[[A-Z_]{2,32}\]/ } : { $regex: `^\\[${f.errorCode}\\]` };
         }
         let query: Record<string, any> = match;
         if (cursor !== undefined) {

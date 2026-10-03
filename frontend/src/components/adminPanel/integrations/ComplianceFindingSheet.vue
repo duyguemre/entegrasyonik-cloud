@@ -135,10 +135,16 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { EkDetailSheet, EkSection, EkDescriptionList, type EkDescriptionListItem, EkStatusChip, EkSkeleton, EkErrorState, EkConfirmDialog } from '@entegrasyonik/ui/components'
+import EkDetailSheet from '@/components/ds/EkDetailSheet.vue'
+import EkSection from '@/components/ds/EkSection.vue'
+import EkDescriptionList, { type EkDescriptionListItem } from '@/components/ds/EkDescriptionList.vue'
+import EkStatusChip from '@/components/ds/EkStatusChip.vue'
+import EkSkeleton from '@/components/ds/EkSkeleton.vue'
+import EkErrorState from '@/components/ds/EkErrorState.vue'
+import EkConfirmDialog from '@/components/ds/EkConfirmDialog.vue'
 import { FINDING_SEVERITY_TONE, FINDING_STATUS_TONE } from '@/design/status-map'
-import { formatDateTime, formatNumber } from '@entegrasyonik/ui/format'
-import { useToast } from '@entegrasyonik/ui/composables/useToast'
+import { formatDateTime, formatNumber } from '@/composables/format'
+import { useToast } from '@/composables/useToast'
 import {
   CLOSED_STATUSES, STATUS_BY_ACTION, TRANSITION_LIMITS,
   availableActions, isErrorShapedResponse, serverErrorMessage, useIntegrationComplianceApi, validateTransition,

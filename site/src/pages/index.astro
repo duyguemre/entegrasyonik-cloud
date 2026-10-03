@@ -8,18 +8,12 @@
  * başlarım -> fiyat -> güven -> SSS -> kapanış):
  *   Hero -> Proof (kanıt) -> Sorun/Çözüm (+karşılaştırma) -> Sipariş hikâyesi (farkımız: stok rezervasyonu) ->
  *   Yetenekler (ne sunuyoruz) -> Entegrasyonlar (hangi kanallar) -> Nasıl çalışır (nasıl başlarım) ->
- *   [S18: Asistan bandı — "yolda" (UPCOMING yüzeyi), Entegrasyonlar ile Nasıl çalışır arasında] ->
  *   Fiyat -> Güvenlik (fiyattan hemen sonra son bir güven pekiştirmesi) -> SSS -> Kapanış.
  * Koyu "sahne" ritmi (Hero, Yetenekler'in iç küme bandı, Nasıl çalışır, Güvenlik, Kapanış) İKİ KOYU BÖLÜM ARKA
  * ARKAYA GELMEYECEK şekilde dağıtılmıştır: Güvenlik kasıtlı olarak Nasıl-çalışır'ın hemen ardına değil, Fiyat'tan
  * hemen sonraya alınmıştır (Nasıl-çalışır ve Güvenlik ikisi de --site-glass-* / stage'e derinden bağlı olduğundan
  * tonlarını değiştirmek yerine ARALARINA açık bir bölüm --Fiyat-- girmesi tercih edildi).
  *
- * S27a (SR4-HOME, K50): hero yalnız karşılama (fayda şeridi hero'dan çıktı → `Proof` açık zeminde, hemen ardından);
- * Yetenekler + Günlük işler tek bölüm; güvenlik anlatısı yalnız Güvenlik bölümünde; Nasıl çalışır ve Güvenlik açık
- * zemine alındı → koyu sahneler: hero, Otopilot vitrini (kart) ve kapanış (BRAND §4). Sıra değişmedi.
- * S24 (kullanıcı madde 5): Hero + fayda şeridi + kayan şerit TEK koyu sahnede (`.stage-top` ortak zemini) — şerit artık
- * hero'nun altına "sonradan yerleştirilmiş" ayrı bir bant değil; hero'nun alt kenarında ince, kompakt bir güven rayıdır.
  * Hero'da ürün paneli (S15: "Örnek görünüm" rozeti kaldırıldı), kanıt şeridi + kayan entegrasyon şeridi, bento yetenekler (beş
  * animasyonlu UI parçası), "Bir sipariş geldiğinde ne olur" zaman çizgisi, yapışkan "nasıl çalışır", güvenlik
  * istek yolu. Animasyon sahneleri `data-scene="…"` ile (src/styles/scenes.css + scenes-loops.css +
@@ -37,19 +31,19 @@ import PricingSummary from '../components/home/PricingSummary.astro'
 import SecuritySummary from '../components/home/SecuritySummary.astro'
 import FaqPreview from '../components/home/FaqPreview.astro'
 import ClosingCta from '../components/home/ClosingCta.astro'
-import AssistantTeaser from '../components/home/AssistantTeaser.astro'
 ---
 
-<BaseLayout scenes>
-  <div class="stage-top">
-    <Hero />
-  </div>
+<BaseLayout
+  scenes
+  title="Pazaryeri entegrasyonu ve stok yönetimi"
+  description="Entegrasyonik, pazaryerlerindeki ürün, stok, sipariş ve iade süreçlerinizi tek panelde toplar; stok rezervasyonuyla aşırı satış riskini azaltır."
+>
+  <Hero />
   <Proof />
   <ProblemSolution />
   <OrderStory />
   <Capabilities />
   <IntegrationShowcase />
-  <AssistantTeaser />
   <HowItWorks />
   <PricingSummary />
   <SecuritySummary />
@@ -60,12 +54,3 @@ import AssistantTeaser from '../components/home/AssistantTeaser.astro'
 <script>
   import '../scripts/interactions'
 </script>
-
-<style>
-  /* S24: hero ve fayda şeridi aynı zemini paylaşır (iki bölüm arasında renk/ışıma kesiti yok). */
-  .stage-top {
-    position: relative;
-    isolation: isolate;
-    background: var(--site-stage-mesh);
-  }
-</style>

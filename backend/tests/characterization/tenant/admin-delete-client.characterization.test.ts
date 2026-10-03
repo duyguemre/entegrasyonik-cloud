@@ -1,6 +1,6 @@
 /**
  * AdminService.deleteClient — ADR-0003 adım 8 (Karar F.20) davranış değişikliği.
- * Kaynak: backend/src/api/rpc/handlers/admin-service.ts (deleteClient). DB/Redis/ağ YOK; `_fakes.ts` in-memory sahte.
+ * Kaynak: backend/src/api/services/admin-service.ts (deleteClient). DB/Redis/ağ YOK; `_fakes.ts` in-memory sahte.
  *
  * ESKİ (ADR-0003 adım 8'den ÖNCE, artık GEÇERSİZ) davranış: yalnızca merkezi Clients + Users kayıtlarını GERÇEKTEN
  * SİLERDİ (hard delete); tenant DB, R2 nesneleri, ExportSignals/ExportFlag/ImportJobs/Tickets/OperationLogs/
@@ -22,7 +22,7 @@ jest.mock('@integration/engine/order/OrderQueueProducer', () => ({ OrderQueuePro
 jest.mock('@integration/modules/IntegrationFactory', () => ({ __esModule: true, default: { clearCache: jest.fn() } }));
 jest.mock('@database/client/ClientDB', () => ({ __esModule: true, default: { invalidate: jest.fn(async () => undefined) } }));
 
-import AdminService from '../../../src/api/rpc/handlers/admin-service';
+import AdminService from '../../../src/api/services/admin-service';
 import { TENANT_LIFECYCLE_STATUS } from '../../../src/operations/tenant/TenantLifecycleService';
 
 let appDbRef: any;

@@ -60,9 +60,9 @@ test.describe('B5-1 — Ürün tanımlama (ProductDefinitionView)', () => {
     const root = page.locator('.productDefinitionView')
     await expect(root).toBeVisible()
     await expect(root.getByRole('heading', { level: 1, name: 'Yeni Ürün' })).toBeVisible()
-    await expect(root.getByText('Kategori Seçimi', { exact: true })).toBeVisible()
-    await expect(root.getByText('Ürün Tanımı', { exact: true })).toBeVisible()
-    await expect(root.getByText('Detay Bilgiler', { exact: true })).toBeVisible()
+    await expect(root.getByText('Kategori Seçimi')).toBeVisible()
+    await expect(root.getByText('Ürün Tanımı')).toBeVisible()
+    await expect(root.getByText('Detay Bilgiler')).toBeVisible()
     // GİZLİ DAVRANIŞ (characterization, düzeltilmedi — BACKLOG.md önerisi): `isSaveDisabled()`
     // yalnızca `category` + `brand` + tamamlanmış bir varyant varsa `false` döner; kategori/marka
     // seçilmeden Kaydet HER ZAMAN devre dışıdır.
@@ -84,7 +84,7 @@ test.describe('B5-1 — Ürün güncelleme (ProductUpdateView)', () => {
     const root = page.locator(`.productUpdateView${product._id}`)
     await expect(root).toBeVisible()
     await expect(root.getByRole('heading', { level: 1, name: 'Ürünü Düzenle' })).toBeVisible()
-    await expect(root.getByText('Kategori Seçimi', { exact: true })).toBeVisible()
+    await expect(root.getByText('Kategori Seçimi')).toBeVisible()
     // GİZLİ DAVRANIŞ (characterization, düzeltilmedi — BACKLOG.md önerisi): sabit fixture'da
     // `brand`/`category` `null` olduğu için `isUpdateDisabled()` HER ZAMAN `true` döner; bu,
     // gerçek (kategori/marka atanmış) bir üründe farklı davranabilir.

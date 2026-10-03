@@ -2,7 +2,7 @@
 
 Tarih: 2026-09-28 · Kaynak: `backend/src/api/**`, `backend/src/operations/**` · Testler: `backend/tests/unit/tenant-surface/*`
 Kapsam: FRONTEND_GAP_ANALYSIS N4/N5/N6/N7/N10 + §b-2 (politikasız metotlar). **Frontend'e dokunulmadı**; ekranlar ADR-0015 sonrası.
-Kademe kaynağı: `backend/src/api/rpc/operationPolicy.ts` (tablo: `docs/OPERATION_POLICY.md` "Tenant-yüzlü yeni uçlar").
+Kademe kaynağı: `backend/src/api/operationPolicy.ts` (tablo: `docs/OPERATION_POLICY.md` "Tenant-yüzlü yeni uçlar").
 
 ## 0. Ortak sözleşme (jenerik RPC)
 
@@ -233,17 +233,6 @@ Tenant, kanal bazında varsayılan ya da kategori bazında kendi komisyon oranı
 | `FinancialService/deleteCommissionOverride` | admin / `integrations:manage` | `{ id }` (24 hex) | `{ deleted: true }` |
 
 Kurallar: `rate` 0–100, en çok 2 ondalık (gerçek `0` geçerlidir ve "bilinmiyor" değildir); `scope:'category'` için `platformCategoryId` zorunlu, `'default'` için verilmez (400). Tekil anahtar `{integrationCode (küçük harf), scope, platformCategoryId}`: aynı anahtarla tekrar `set` günceller. Silinecek kayıt yoksa 404. Bilinmeyen alan 400 VALIDATION. `updatedBy` sunucuda doğrulanmış kullanıcıdan yazılır (gövdeden alınmaz). Yazmalar X4 denetim kaydına `a_rate/b_rate` (önce/sonra), `a_scope`, hedef (`integrationCode`, `platformCategoryId`) ile düşer; `note` denetime yazılmaz. Okuma yolu tenant kapsamlı 10 dk önbellekli; yazma tenant önbelleğini düşürür (pod-yerel; çok pod'da en çok 10 dk gecikme). Depolama: tenant DB `CommissionOverrides` (göç `0016-commission-overrides-tenant`, çalıştırılmadı; yerel/Atlas uygulaması ayrı onay). Göç uygulanmadan `set` tekil indeks olmadan çalışır ama yarış durumunda mükerrer satır riski vardır: göç önce uygulanmalıdır.
-
-### 10.1 Komisyon sapması — `FinancialService/getCommissionDrift` (COM-08, 2026-10-01) — member / `finance:read`
-
-Kategori başına **gerçekleşen** oran (hakediş, son 30 gün) ile **referans** oran (override > kanal tablosu) karşılaştırması. `COMMISSION_RATE_DRIFT`
-bildiriminin (`/finance`'a yönlendirir) ayrıntı kaynağıdır. Şimdilik yalnız Trendyol gerçekleşen oran taşır.
-
-Girdi `{ integrationCode? = 'trendyol', days? (1–180, varsayılan 30) }`. Çıktı:
-`{ integrationCode, days, thresholdPoints, minSamples, items: [{ integrationCode, categoryId, platformCategoryId|null, title|null, realizedRate, sampleCount, referenceRate|null, referenceSource: 'override'|'estimated'|null, deltaPoints|null, status: 'drift'|'ok'|'no_reference'|'insufficient_samples' }] }`.
-Sıra: önce `drift` (|delta| büyükten küçüğe). `deltaPoints` = gerçekleşen − referans (puan; pozitif = pazaryeri tablodan fazla kesiyor). Eşik kanal ayarı
-`finance.commissionDriftThresholdPoints` (varsayılan 2 puan); `minSamples` = 5 hakediş satırı. FE önerisi: `drift` satırında "Tablo bayat olabilir" rozeti +
-"Özel oran tanımla" (COM-04 `setCommissionOverride`, `platformCategoryId` ile) eylemi.
 
 ## 11. Bağlantıyı test et — `IntegrationService/testConnection` (INT-01, 2026-09-30) — **admin** (`integrations:manage`)
 

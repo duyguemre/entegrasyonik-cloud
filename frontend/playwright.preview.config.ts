@@ -4,10 +4,6 @@
 // Kullanım: `npm run test:preview-smoke` (önce `vite build` çalıştırır). Backend YOK; `/api/**` mock'lu.
 import { defineConfig, devices } from '@playwright/test'
 
-// MOB-01 (e2e/preview/pwa.spec.ts): Chromium'da service worker'ın kendi ağ istekleri `context.route`'a yalnız bu bayrakla
-// gelir (çevrimdışı ekranı testi). Duman testi SW'yi engellediği için etkilenmez.
-process.env.PW_EXPERIMENTAL_SERVICE_WORKER_NETWORK_EVENTS ??= '1'
-
 const PORT = Number(process.env.E2E_PREVIEW_PORT) || 4400
 const baseURL = `http://127.0.0.1:${PORT}`
 

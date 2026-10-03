@@ -37,7 +37,7 @@
           rows="3"></v-textarea>
 
         <div class="reply-actions">
-          <v-btn flat color="primary" prepend-icon="mdi-send-outline" class="px-6"
+          <v-btn flat color="primary" prepend-icon="mdi-send" class="px-6"
             :disabled="!replyText.trim() || loading" :loading="loading" @click="submitReply">
             CEVAPLA VE GÖNDER
           </v-btn>
@@ -50,10 +50,9 @@
 <script setup lang="ts">
 import { ref, watch, nextTick } from 'vue';
 import ActionDialogComponent from '@/components/layout/ActionDialogComponent.vue';
-import { EkStatusChip } from '@entegrasyonik/ui/components';
-import { formatDate, formatDateTime } from '@entegrasyonik/ui/format';
+import EkStatusChip from '@/components/ds/EkStatusChip.vue';
+import { formatDate, formatDateTime } from '@/composables/format';
 import type { StatusTone } from '@/design/status-map';
-import { TICKET_STATUS_COLORS, TICKET_STATUS_LABELS, type TicketStatusEnum } from '@/types/TicketTypes';
 
 const props = defineProps({
   modelValue: { type: Boolean, required: true },
@@ -97,11 +96,23 @@ function submitReply() {
 // Saat: mesaj balonunda yalnızca gün içi zaman yeterli; tarih+saat biçimlendiricisinden saat kısmı alınır.
 const formatTime = (date: any) => (date ? formatDateTime(date).split(' ')[1] ?? '' : '');
 
-// Aşama 4: durum adı/tonu tek kaynak (TicketTypes) — liste ve sohbet aynı dili konuşur.
-const statusLabel = (status: string) => TICKET_STATUS_LABELS[status as TicketStatusEnum] ?? status;
+const STATUS_LABELS: Record<string, string> = {
+  OPEN: 'AÇIK',
+  IN_PROGRESS: 'İŞLEMDE',
+  RESOLVED: 'ÇÖZÜLDÜ',
+  CLOSED: 'KAPALI',
+};
+const statusLabel = (status: string) => STATUS_LABELS[status] || status;
 
-const statusTone = (status: string): StatusTone =>
-  (TICKET_STATUS_COLORS[status as TicketStatusEnum] as StatusTone | undefined) ?? 'info';
+const statusTone = (status: string): StatusTone => {
+  switch (status) {
+    case 'OPEN': return 'danger';
+    case 'IN_PROGRESS': return 'warning';
+    case 'RESOLVED': return 'success';
+    case 'CLOSED': return 'neutral';
+    default: return 'info';
+  }
+};
 
 const priorityTone = (priority: string): StatusTone => {
   switch (priority) {
@@ -118,7 +129,7 @@ const getStatusColor = (status: string) => {
     case 'OPEN': return 'error';
     case 'IN_PROGRESS': return 'warning';
     case 'RESOLVED': return 'success';
-    case 'CLOSED': return 'neutral';
+    case 'CLOSED': return 'passiveColor';
     default: return 'info';
   }
 };

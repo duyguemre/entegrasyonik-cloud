@@ -1,6 +1,6 @@
 /**
  * CHARACTERIZATION: ClaimService.approveClaim / rejectClaim / bulkApproveClaim
- * (backend/src/api/rpc/handlers/claim-service.ts)
+ * (backend/src/api/services/claim-service.ts)
  *
  * Kapsam: approveClaim (BACKLOG C22 bulgusu, KAPANDI) + rejectClaim/bulkApproveClaim (BACKLOG "4 birikmiş
  * hata düzeltmesi" notundaki AÇIK uç: "claim-service.ts'teki AYNI if(!marketplaceResult) deseni
@@ -17,7 +17,7 @@ jest.mock('@database/DatabaseManager', () => ({
 }));
 jest.mock('@integration/modules/IntegrationFactory', () => ({ __esModule: true, default: jest.fn() }));
 
-import ClaimService from '@api/rpc/handlers/claim-service';
+import ClaimService from '@api/services/claim-service';
 import IntegrationFactory from '@integration/modules/IntegrationFactory';
 import { ClaimInternalStatusEnum } from '@interfaces/claim';
 

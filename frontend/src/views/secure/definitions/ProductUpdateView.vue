@@ -1,81 +1,199 @@
 <template>
-  <div class="pdv-root" :class="[dialogAttach.substring(1)]" ref="rootRef">
+  <div :class="[dialogAttach.substring(1)]">
+    <!-- ek-pattern-exception: EkWizardTemplate — bu ekran çok adımlı bir sihirbaz değil,
+         kendi adım/gezinme+Güncelle şeridini taşıyan mevcut bir `v-stepper`dir (ADR-0015
+         Karar 6, B5-1); yapısal göç ayrı ve daha riskli bir iş olduğu için bu turda
+         yalnızca EkPageHeader eklenip mevcut stepper token'larla yenilendi. -->
     <EkPageHeader
       section="Katalog"
-      :trail="productTrail"
-      :record="productRecord"
       :title="$t('definitions.product.update.title')"
       :description="$t('definitions.product.update.description')"
-    >
-      <template #status><div :id="statusId" class="pdv-status" /></template>
-    </EkPageHeader>
+    />
 
     <ProductCompetitivePricesComponent v-model="isCompetitivePricesDialog" ref="productCompetitivePricesComponentRef"
       :productInfoForm="productInfoForm" v-if="isCompetitivePricesDialog" />
 
     <LoadingComponent :attach="dialogAttach" ref="loadingComponentRef"></LoadingComponent>
 
-    <EkDialogHost :model-value="isImagesDialog" :attach="dialogAttach" width="xl"
-      @update:model-value="(v) => { if (!v) isImagesDialog = false }">
+    <v-dialog scrim persistent :retain-focus="false" v-model="show" location-strategy="connected" target="cursor"
+      no-click-animation :close-on-content-click="false" :attach="dialogAttach"
+      style="transition: opacity .1s ease-in!important"
+      :style="!isImagesDialog ? { 'visibility': 'hidden', 'opacity': '.2!important' } : {}" :contained="true"
+      location="left" height="100%" width="100%">
       <keep-alive>
-        <ProductImagesComponent v-model="isImagesDialog" key="ProductImagesComponent"
+        <ProductImagesComponent v-model="isImagesDialog" style="transition: opacity .2s ease-in!important"
+          :style="!isImagesDialog ? { 'opacity': '.2!important' } : {}" key="ProductImagesComponent"
           @close="isImagesDialog = false" v-if="isImagesDialog == true" :productInfoForm="productInfoForm" />
       </keep-alive>
-    </EkDialogHost>
+    </v-dialog>
 
     <v-form @keydown.enter.prevent @submit.prevent ref="productInfoFormRef" v-model="isProductInfoFormValid"
       v-if="initialized">
 
-      <div class="pdv-flow">
-        <ProductFormWizardBar :form="productInfoForm" :current="stepper" :teleport-to="`#${statusId}`" save-label="Güncelle"
-          :saving="isSaving" :category-title="categoriesStore.getCategoryTitle(productInfoForm.category)"
-          :brand-title="brandsStore.getBrandTitle(productInfoForm.brand)" @navigate="onNavigate" @save="updateProduct" />
+      <div class="mt-2">
+        <v-stepper bg-color="transparent" style="border:none!important"
+          class="custom-stepper ml-1 mr-0 flex-grow-1 productDefinition-stepper" elevation="0" v-model="stepper">
+          <v-stepper-header style="height:40px!important" class="">
+            <v-stepper-item @click="stepper = 0" title="Kategori Seçimi" value="1" :complete="stepper > 0" editable
+              color="primary">
+            </v-stepper-item>
+            <v-divider class="mr-1 ml-1" color="border-default" opacity="1"></v-divider>
+            <v-stepper-item @click="stepper = 1" title="Ürün Tanımı" value="2" :complete="stepper > 1"
+              :editable="productInfoForm.category != undefined" color="primary"></v-stepper-item>
+            <v-divider class="mr-1 ml-1" color="border-default" opacity="1"></v-divider>
+            <v-stepper-item @click="stepper = 2; checkSingleVariant()" value="3" :complete="stepper > 2"
+              :editable="isVariantInfoEditable()" color="primary">
+              <template v-slot:title>
+                <span v-if="productInfoForm.hasVariant">Varyant Bilgileri</span>
+                <span v-else>Tekil Ürün Bilgisi</span>
+              </template>
+            </v-stepper-item>
+            <v-divider class="mr-2 ml-1" color="border-default" opacity="1"></v-divider>
+            <v-stepper-item @click="stepper = 3" title="Detay Bilgiler" value="4" :complete="stepper > 3"
+              :editable="productInfoForm.title?.length > 2" color="primary"></v-stepper-item>
+            <v-divider class="mr-1 ml-1" color="border-default" opacity="1"></v-divider>
+            <v-btn-group elevation="0" class="ma-0 mr-4"
+              style="height:40px;border:0px solid white;min-width:113px!important;margin-top:0px" density="compact">
+              <v-btn class="fill-height" color="primary" @click="updateProduct" :disabled="isUpdateDisabled()"
+                style="height:40px;min-width:0;padding:0;width:100%">
+                <span class="">
+                  Güncelle
+                </span></v-btn>
+            </v-btn-group>
+          </v-stepper-header>
+        </v-stepper>
 
-        <div v-if="stepper == 0" class="pdv-category-step" data-pf-field="category">
-          <v-form ref="formStep0Ref" @submit.stop>
-            <CategorySelectBoxLevelComponent v-model="productInfoForm.category" />
-          </v-form>
+        <div style="height:30px"></div>
+
+
+        <div v-if="stepper == 0">
+          <v-row>
+            <v-col :cols="2">
+            </v-col>
+            <v-col>
+              <v-form ref="formStep0Ref" @submit.stop>
+                <CategorySelectBoxLevelComponent v-model="productInfoForm.category" />
+              </v-form>
+            </v-col>
+            <v-col :cols="2">
+            </v-col>
+          </v-row>
         </div>
 
 
 
-        <div v-if="stepper == 1" class="pdv-step">
+        <div v-if="stepper == 1">
           <v-form ref="formStep1Ref" @submit.stop>
-            <ProductInfoFormComponent :productInfoForm="productInfoForm" :quillToolbar="quillToolbar"
-              :galleryDisabled="!productInfoForm._id && !productInfoForm.tempId" :imageProductId="productInfoForm._id ? productInfoForm._id : productInfoForm.tempId"
-              @openGallery="isImagesDialog = true" />
+            <v-btn :disabled="!productInfoForm._id && !productInfoForm.tempId" density="compact" elevation="0"
+              class=" ml-12"
+              style="position:absolute;top:100px;z-index:1;min-width:0!important;padding:2px;width:193px;height:216px;border:1px solid var(--ek-color-border-default)"
+              color="surface" @click="isImagesDialog = true">
+              <v-row>
+                <v-col>
+                  <div v-if="productInfoForm.images == undefined || !productInfoForm.images[0]">
+                    <v-icon size="180" style="opacity:.5" color="content-muted">mdi-image-outline</v-icon>
+                  </div>
+                  <div v-else>
+                    <div style="width:189px;height:191px;background-color:white" class="d-flex">
+                      <ProductImageComponent v-model="productInfoForm.images[0]"
+                        :productId="productInfoForm._id ? productInfoForm._id : productInfoForm.tempId" :height="187">
+                      </ProductImageComponent>
+                    </div>
+                  </div>
+                  Resim Galerisi <span class="text-caption" v-if="productInfoForm.images">({{
+                    productInfoForm.images?.length }})</span>
+                </v-col>
+              </v-row>
+            </v-btn>
+            <v-row>
+              <v-col :cols="2">
+              </v-col>
+              <v-col class="pb-0">
+                <div class="d-flex mt-2">
+                  <div style="width:270px!important">
+                    <v-radio-group inline v-model="productInfoForm.hasVariant">
+                      <v-radio :value=false
+                        :label="$t('productDefinitions.product.define.withoutVariant')">
+                      </v-radio>
+                      <v-radio :value=true
+                        :label="$t('productDefinitions.product.define.withVariant')">
+                      </v-radio>
+                    </v-radio-group>
+                  </div>
+                  <v-text-field clearable maxlength="32" type="tel" v-if="productInfoForm.hasVariant"
+                    :rules="formRules.stockcodeRules" density="compact" class="mb-0" v-model="productInfoForm.maincode"
+                    variant="outlined"
+                    :hint="$t('productDefinitions.product.define.maincodeDesc')" counter>
+                    <template #label>
+                      {{ $t('productDefinitions.product.define.maincode') }}<v-icon size="12"
+                        class="mb-2 ml-1">mdi-asterisk</v-icon>
+                    </template>
+                  </v-text-field>
+                </div>
+              </v-col>
+              <v-col :cols="2">
+              </v-col>
+            </v-row>
+            <v-row>
+              <v-col :cols="2">
+              </v-col>
+              <v-col>
+                <BrandSelectBoxComponent v-model="productInfoForm.brand" :mandatory="true" class="mt-0" />
+                <v-text-field clearable :rules="formRules.titleRules" maxlength="160" type="tel"
+                  class="mb-3 mt-2 customTextField" density="compact" v-model="productInfoForm.title" variant="outlined"
+                  :hint="$t('productDefinitions.product.define.productTitleDesc')" counter>
+                  <template #label>
+                    {{ $t('productDefinitions.product.define.productTitle') }}<v-icon size="12"
+                      class="mb-2 ml-1">mdi-asterisk</v-icon>
+                  </template>
+                </v-text-field>
+                <div class="d-flex">
+                  <div style="height:385px;width:100%">
+                    <QuillEditor v-model:content="productInfoForm.description" content-type="html" theme="snow"
+                      :toolbar="quillToolbar" />
+                  </div>
+                </div>
+              </v-col>
+              <v-col :cols="2">
+              </v-col>
+            </v-row>
           </v-form>
         </div>
 
 
-        <div v-if="stepper == 2" class="pdv-step-variants">
+        <temnplate v-if="stepper == 2">
           <v-form ref="formStep2Ref" @submit.stop>
-            <template v-if="productInfoForm.hasVariant">
+            <temnplate v-if="productInfoForm.hasVariant">
               <ProductVariantsComponent v-model="isVariantsDialog1" :productInfoForm="productInfoForm"
-                class="pdv-variants" :class="{ 'pdv-variants--dim': !isVariantsDialog1 }" key="ProductVariantsComponent"
+                style="transition: opacity .2s ease-in!important"
+                :style="!isVariantsDialog1 ? { 'opacity': '.2!important' } : {}" key="ProductVariantsComponent"
                 @close="isVariantsDialog1 = false" v-if="isVariantsDialog1 == true" @refresh-images="refreshImages"
                 :dialogAttach="dialogAttach" @refresh-variants="refreshVariants" />
-            </template>
-            <template v-else>
+            </temnplate>
+            <temnplate v-else>
 
               <ProductSingleVariantComponent v-model="isVariantsDialog1" :productInfoForm="productInfoForm"
-                :single-variant="productInfoForm.variants[0]" class="pdv-variants" :class="{ 'pdv-variants--dim': !isVariantsDialog1 }" key="ProductVariantsComponent"
+                :single-variant="productInfoForm.variants[0]" style="transition: opacity .2s ease-in!important"
+                :style="!isVariantsDialog1 ? { 'opacity': '.2!important' } : {}" key="ProductVariantsComponent"
                 @close="isVariantsDialog1 = false" v-if="isVariantsDialog1 == true" @refresh-images="refreshImages"
                 :dialogAttach="dialogAttach" @refresh-variants="refreshVariants" />
-            </template>
+            </temnplate>
           </v-form>
+        </temnplate>
+
+        <div v-if="stepper == 3">
+          <v-row>
+            <v-col :cols="2">
+            </v-col>
+            <v-col>
+              <v-form ref="formStep0Ref" @submit.stop>
+                <ProductDetailsComponent :productInfoForm="productInfoForm" />
+              </v-form>
+            </v-col>
+            <v-col :cols="2">
+            </v-col>
+          </v-row>
         </div>
-
-        <div v-if="stepper == 3" class="pdv-step">
-          <v-form ref="formStep3Ref" @submit.stop>
-            <ProductDetailsComponent :productInfoForm="productInfoForm" />
-          </v-form>
-        </div>
-
-        <!-- PRC-R1: Rekabet ve kâr (Trendyol, salt okuma) — yalnız kayıtlı üründe, Varyantlar adımının altında. -->
-        <CompetitionPanel v-if="stepper == 2 && productInfoForm._id" class="pdv-competition" :key="`${productInfoForm._id}-${competitionKey}`"
-          :product-id="String(productInfoForm._id)" :variants="productInfoForm.variants || []" @focus-cost="focusCostColumn" />
-
       </div>
 
     </v-form>
@@ -88,23 +206,24 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onBeforeMount, nextTick, onBeforeUnmount, onMounted, onActivated, onDeactivated, inject, useId } from 'vue'
+import { ref, computed, watch, onBeforeMount, nextTick, onBeforeUnmount, onMounted, onActivated, onDeactivated, inject } from 'vue'
 import { useI18n } from 'vue-i18n';
 import { useDisplay } from 'vuetify'
 
-import EkPageHeader from '@/components/page/EkPageHeader.vue'
-import ProductFormWizardBar from '@/components/productDefinitions/crud/ProductFormWizardBar.vue'
-import { focusProductField } from '@/composables/productFormFocus'
-import type { StepIndex } from '@/composables/useProductFormProgress'
-import { EkSkeleton, EkDialogHost } from '@entegrasyonik/ui/components'
+import EkPageHeader from '@/components/ds/EkPageHeader.vue'
+import EkSkeleton from '@/components/ds/EkSkeleton.vue'
 import ProductCompetitivePricesComponent from '@/components/productDefinitions/crud/ProductCompetitivePricesComponent.vue'
 import ProductVariantsComponent from '@/components/productDefinitions/variants/ProductVariantsComponent.vue'
 import ProductImagesComponent from '@/components/productDefinitions/crud/ProductImagesComponent.vue'
 import LoadingComponent from '@/components/LoadingComponent.vue'
+import BrandSelectBoxComponent from '@/components/common/BrandSelectBoxComponent.vue'
+import ProductImageComponent from '@/components/productDefinitions/products/ProductImageComponent.vue'
 import { useChoicesStore } from '@/stores/choicesStore';
 
 import ProductSingleVariantComponent from '@/components/productDefinitions/variants/ProductSingleVariantComponent.vue';
 
+import { QuillEditor } from '@vueup/vue-quill';
+import '@vueup/vue-quill/dist/vue-quill.snow.css';
 import usePriceCalculator from '@/composables/priceCalculator';
 import useFormRules from '@/composables/formrules';
 import useRestApi from '@/composables/restapi'
@@ -113,36 +232,18 @@ import useBarcode from '@/composables/barcode';
 import { useBrandsStore } from '@/stores/brandsStore';
 import { useCategoriesStore } from '@/stores/categoriesStore';
 import { useIntegrationStore } from '@/stores/integrationStore';
-;
 import CategorySelectBoxLevelComponent from '@/components/CategorySelectBoxLevelComponent.vue';
 import { useSnackbarStore } from '@/stores/snackbarStore';
 import ProductDetailsComponent from '@/components/productDefinitions/variants/ProductDetailsComponent.vue';
-import CompetitionPanel from '@/components/pricing/CompetitionPanel.vue'
-import { useCostSave } from '@/composables/useCostSave'
-import type { CostBaseline } from '@/composables/usePricingApi'
-import ProductInfoFormComponent from '@/components/productDefinitions/crud/ProductInfoFormComponent.vue';
-
-/** Sayfa başlığındaki durum yuvası (zorunlu bilgi çubuğu buraya taşınır); sekme başına benzersiz. */
-const statusId = `pf-status-${useId()}`
 const snackbarStore = useSnackbarStore();
-const costSave = useCostSave()
-// PRC-R0: açılıştaki (sunucudaki) maliyetler — kaydetmede yalnız DEĞİŞENLER `setVariantCosts` ile gider.
-const costBase = ref<CostBaseline>({})
-const competitionKey = ref(0)
-const focusCostColumn = () => {
-  stepper.value = 2
-  nextTick(() => rootRef.value?.querySelector<HTMLElement>('.pv-frame')?.scrollIntoView({ block: 'center' }))
-}
 
 const menuStore: any = inject('useMenuStore')
-const eventBus: any = inject('eventBus', undefined)
 const choicesStore = useChoicesStore()
 var choicesStoreChoices: any = ref()
 const stepper = ref(0)
 const formStep0Ref: any = ref(null)
 const formStep1Ref: any = ref(null)
 const formStep2Ref: any = ref(null)
-const formStep3Ref: any = ref(null)
 
 const { t } = useI18n()
 const { name } = useDisplay()
@@ -154,21 +255,10 @@ const formRules: any = useFormRules()
 
 const initialized = ref(false)
 
+const show = ref(true)
 const productInfoFormRef = ref()
 const isProductInfoFormValid = ref(false)
 const productInfoForm = ref()
-
-// A7 breadcrumb: Katalog / Ürünler (bağlantı) / Ürünü düzenle · [stok kodu ⧉].
-const productTrail = [{ label: 'Ürünler', icon: 'mdi-tag-outline', onSelect: () => {
-  const link = menuStore?.getMenuLinkWithCode?.('ProductListView')
-  if (link) eventBus?.emit('openTab', link)
-} }]
-const productRecord = computed(() => {
-  // Tekil ürünün stok kodu = kaydın kısa kimliği; varyantlı üründe tek bir kod yok (uydurma kimlik gösterilmez).
-  const form = productInfoForm.value
-  const code = form && !form.hasVariant ? form.variants?.[0]?.stockcode : undefined
-  return code ? { code: String(code), label: 'Stok kodu' } : null
-})
 const isCompetitivePricesDialog = ref(false)
 const isVariantsDialog = ref(false)
 const isVariantsDialog1 = ref(true)
@@ -207,15 +297,26 @@ const checkSingleVariant = () => {
   }
 }
 
-const rootRef = ref<HTMLElement | null>(null)
-const isSaving = ref(false)
-
-// Sihirbaz şeridi/altbilgi/eksikler paneli ortak gezinti noktası: adım değişir, isteniyorsa alana odaklanılır.
-const onNavigate = async ({ step, field }: { step: StepIndex; field?: string }) => {
-  if (step === 2) checkSingleVariant()
-  stepper.value = step
-  await focusProductField(rootRef.value, field)
+const isVariantInfoEditable = () => {
+  if (productInfoForm.value.title?.length > 3 && productInfoForm.value.hasVariant == false)
+    return true
+  else if (productInfoForm.value.title?.length > 3 && productInfoForm.value.maincode)
+    return true
+  return false
 }
+
+const isUpdateDisabled = () => {
+  if (productInfoForm.value.category && productInfoForm.value.brand) {
+    if (productInfoForm.value.variants?.length > 0) {
+      const unFinishedVariant = productInfoForm.value.variants.find((variant: any) => !variant.barcode || !variant.stockcode)
+      if (!unFinishedVariant) {
+        return false
+      }
+    }
+  }
+  return true
+}
+
 
 
 const getCombinations = (data: any): any[] => {
@@ -298,7 +399,6 @@ const refreshVariants = async () => {
   loadingComponentRef.value.remove(guid)
   if (response) {
     productInfoForm.value.variants = response
-    costBase.value = costSave.baseline(response)
   }
 }
 
@@ -317,7 +417,6 @@ const retrieveProduct = async () => {
   if (response && response.product && response.product._id) {
     productInfoForm.value = response.product
     checkSingleVariant()
-    costBase.value = costSave.baseline(productInfoForm.value.variants)
 
     console.log("productInfoForm.value", productInfoForm.value, productInfoForm.value.variants)
     if (productInfoForm.value.prices == undefined) productInfoForm.value.prices = {}
@@ -368,8 +467,6 @@ const checkVariantAttributes = async () => {
 
 
 const updateProduct = async () => {
-  if (isSaving.value) return
-  isSaving.value = true
   /*   await productInfoFormRef.value?.validate()
     if (isProductInfoFormValid.value == false) return
    */
@@ -377,16 +474,10 @@ const updateProduct = async () => {
       calculateSetSalePrice()
     }
    */
-  const costDiff = costSave.plan(costBase.value, productInfoForm.value.variants)
   let guid = loadingComponentRef.value.info(t('loading.info.updateProduct'))
   checkVariantAttributes()
-  let response: any
-  try {
-    response = await restApi.post("ProductService/updateProduct", { productInfo: productInfoForm.value })
-  } finally {
-    loadingComponentRef.value.remove(guid)
-    isSaving.value = false
-  }
+  const response = await restApi.post("ProductService/updateProduct", { productInfo: productInfoForm.value })
+  loadingComponentRef.value.remove(guid)
   if (response && response.product && response.product._id) {
     productInfoForm.value = response.product
     snackbarStore.addSnackbar({
@@ -396,11 +487,6 @@ const updateProduct = async () => {
       color: 'success'
     })
     setTabTitle()
-    // PRC-R0: maliyet ayrı yazma yolu; sonucu AYRI bildirilir (kayıt başarılı + maliyet başarısız açıkça görünür).
-    costBase.value = costSave.baseline(productInfoForm.value.variants)
-    const outcome = await costSave.persist(productInfoForm.value.variants, costDiff, 'update')
-    if (outcome.status === 'ok') costBase.value = costSave.baseline(productInfoForm.value.variants)
-    if (outcome.status !== 'none') competitionKey.value++
   }
 }
 
@@ -590,59 +676,12 @@ const headers = [
   overflow-y: auto;
 }
 
-.pdv-variants {
-  transition: opacity var(--ek-motion-overlay) !important;
-}
-
-.pdv-variants--dim {
-  opacity: 0.2 !important;
+.productDefinition-stepper .v-stepper-header {
+  box-shadow: none;
 }
 
 /* .productDefinitionView .v-overlay__content {
   width:100%!important
 }
  */
-</style>
-
-<style scoped>
-/* Başlıktaki durum yuvası: zorunlu bilgi çubuğu başlığın sağındaki alanı doldurur. */
-.pdv-root :deep(.ek-page-bar__status) {
-  flex: 1 1 auto;
-  overflow: visible;
-}
-
-.pdv-status {
-  flex: 1 1 auto;
-  min-width: 0;
-}
-
-/* Sayfa kenar boşluğu — başlık/adım şeridi/içerik iş alanı kenarına yapışmasın. */
-.pdv-root {
-  padding: var(--ek-space-2) var(--ek-space-6) var(--ek-space-4);
-}
-
-@media (max-width: 599px) {
-  .pdv-root {
-    padding: var(--ek-space-2) var(--ek-space-4) var(--ek-space-6);
-  }
-}
-
-/* FE R4 B: sihirbaz şeridi, kayıt çubuğu, adım içeriği ve altbilgi TEK sütunda (önceden adım kartları 880/1200/tam
-   genişlik arasında değişiyordu). Kayıt çubuğu bu sütunda yapışkandır (ProductFormWizardBar).
-   Sütun iş alanının tam genişliğine yayılır (önceden 1280px ile ortada kalıyordu). */
-.pdv-flow {
-  margin-top: var(--ek-space-4);
-}
-
-.pdv-category-step,
-.pdv-step,
-.pdv-step-variants {
-  display: block;
-  margin-top: var(--ek-space-3);
-}
-
-/* PRC-R1: Rekabet ve kâr bölümü — varyant tablosu ile adım altbilgisi arasında. */
-.pdv-competition {
-  margin-top: var(--ek-space-4);
-}
 </style>

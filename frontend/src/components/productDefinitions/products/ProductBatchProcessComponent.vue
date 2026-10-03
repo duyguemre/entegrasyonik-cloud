@@ -1,39 +1,44 @@
 <template>
   <LoadingComponent attach=".productListView" ref="loadingComponentRef"></LoadingComponent>
 
-  <v-card variant="elevated" class="bp-panel ma-0 pa-0" elevation="1"
+  <v-card variant="elevated" class="ma-0 pa-0" elevation="1"
+    style="transition: none!important;box-shadow: none; transform: none!important;right:0;background-color:#f3f3f3"
     height="100%">
     <v-card-title>
-      <div class="bp-panel__topline elevation-1">
+      <div style="position:absolute;top:0px;left:0px;right:0;height:1px;width:auto;opacity:.9;background-color:red"
+        class="elevation-1">
       </div>
-      <v-btn class="bp-panel__close bp-panel__close--right"
-        @click="emits('close')" elevation="1" min-width="0" color="error"><v-icon
+      <v-btn
+        style="position:absolute;top:0px;right:0px;height:40px;width:40px; opacity:.9;border-radius:0;border-bottom-left-radius:20px;"
+        @click="emits('close')" elevation="1" min-width="0" color="red"><v-icon
           size="x-large">mdi-close</v-icon></v-btn>
-      <v-btn class="bp-panel__close bp-panel__close--left"
-        @click="emits('close')" elevation="1" min-width="0" color="error"><v-icon
+      <v-btn
+        style="position:absolute;top:0px;left:0px;height:40px;width:40px; opacity:.9;border-radius:0;border-bottom-right-radius:20px;"
+        @click="emits('close')" elevation="1" min-width="0" color="red"><v-icon
           size="x-large">mdi-close</v-icon></v-btn>
 
-      <div class="bp-panel__heading font-weight-light ml-8 text-body-1">
+      <div class="font-weight-light ml-8 text-body-1" style="position:absolute;top:2px;left:20px;opacity:.8">
         <span class="ml-2 mr-2"></span>
         <span class="font-weight-bold text-h6">
-          <v-icon class="bp-panel__heading-icon mr-0" size="20">mdi-tag-outline</v-icon>
+          <v-icon class="mr-0" style="opacity:.7" size="20">mdi-tag-outline</v-icon>
           {{ $t('productDefinitions.product.variants.batch') }}</span>
       </div>
 
 
     </v-card-title>
     <v-form ref="batchProcessFormsFormRef" v-model="isUpdatesProductFormValid">
-      <v-card v-if="batchProcessForm" class="bp-panel__body"
+      <v-card v-if="batchProcessForm"
+        style="position:absolute;overflow-y:auto;top: 48px;left:0;right:0;bottom:70px;border-top:1px solid #ddd;background-color:#eee"
         variant="flat">
         <v-card-text class="fill-height">
 
           <v-row class="fill-height">
             <v-col cols="4">
-              <v-card variant="outlined" class="bp-panel__col mb-0 mt-0 pt-0">
+              <v-card variant="outlined" class="mb-0 mt-0 pt-0" style="border-color:transparent">
                 <v-card-text>
 
                   <v-select prepend-icon="mdi-help-rhombus-outline" density="compact" v-model="batchProcessForm.scope"
-                    :items="scopes" label="Hangi Ürünler Dahil Olacak?" variant="outlined">
+                    :items="scopes" label="Hangi Ürünler Dahil Olacak?" variant="outlined" bg-color="textfieldColor">
                   </v-select>
 
 
@@ -41,12 +46,12 @@
                     <v-checkbox v-model="batchProcessForm.saleStatus" label="Satış Durumu" class="ml-8"></v-checkbox>
 
                     <v-switch :disabled="!batchProcessForm.saleStatus" v-model="batchProcessForm.onsale"
-                      class="ml-0 mb-6" hide-details density="compact">
+                      class="ml-0 mb-6" color="processButtonColor" hide-details density="compact">
                       <template #label>
-                        <div class="bp-panel__switch-label font-weight-normal mt-0">
+                        <div class="font-weight-normal mt-0" style="line-height: 1;font-size:14px!important">
                           Satışa
                           <span v-if="batchProcessForm.onsale == true">Açık</span>
-                          <span v-else class="bp-panel__off font-weight-bold">Kapalı</span>
+                          <span v-else class="font-weight-bold text-red">Kapalı</span>
                         </div>
                       </template>
                     </v-switch>
@@ -59,8 +64,9 @@
               </v-card>
             </v-col>
             <v-col>
-              <v-card variant="outlined" class="bp-panel__col bp-panel__col--scroll mb-0 mt-0 pt-0 fill-height">
-                <v-card-text class="bp-panel__platforms-text">
+              <v-card variant="outlined" class="mb-0 mt-0 pt-0 fill-height"
+                style="border-color:transparent;overflow-y:auto;">
+                <v-card-text style="height:90%">
 
                   <v-checkbox v-model="batchProcessForm.platformUploadStatus" label="Platform Yükleme Durumu"
                     class="ml-0"></v-checkbox>
@@ -69,8 +75,10 @@
                     <template v-if="integrationStore"
                       v-for="(integration, index) of integrationStore.getClientMarketplaces().filter((item: any) => item.type.code == 'marketplace')">
                       <IntegrationAvatarComponent mode="text" :platform="integration" width="120px" height="65px"
-                        :class="platformReady(integration.code) ? 'bp-panel__platform--ready' : 'bp-panel__platform--idle'"
-                        class="bp-panel__platform mb-2 mr-1"
+                        :style="batchProcessForm.platformUploadStatus && batchProcessForm.platformUploads && batchProcessForm.platformUploads[integration.code] && batchProcessForm.platformUploads[integration.code].isReady ?
+                          { 'background-color': integration.color, opacity: 1, border: '1px solid #ddd' } :
+                          { 'background-color': '#555', opacity: .6, border: '1px solid white' }" class="mb-2 mr-1"
+                        style="cursor:pointer"
                         @click.stop="batchProcessForm.platformUploadStatus ? setPlatformUploads(integration.code) : ''" />
                     </template>
                   </div>
@@ -81,11 +89,11 @@
           </v-row>
         </v-card-text>
       </v-card>
-      <div class="bp-panel__footer pa-4">
+      <div style="position:absolute;bottom:0px;width:100%;border-top:1px solid #ddd" class="pa-4">
         <v-row>
           <v-col>
             <v-btn-group elevation="1" class="d-block" density="compact">
-              <v-btn density="compact" block class="fill-height" color="neutral"
+              <v-btn density="compact" block class="fill-height" color="processButtonColor"
                 @click="resetBatchProcessForm">
                 <span class="">
                   <v-icon>mdi-undo-variant</v-icon> {{ $t('common.clear') }}
@@ -94,16 +102,16 @@
           </v-col>
           <v-col>
             <v-btn-group elevation="1" class="d-block" density="compact">
-              <v-btn density="compact" block class="fill-height" color="error"
+              <v-btn density="compact" block class="fill-height" color="deleteButtonColor"
                 @click="validateAndBatchProcessDelete">
                 <span class="">
-                  <v-icon>mdi-trash-can-outline</v-icon> {{ $t('common.batchDelete') }}
+                  <v-icon>mdi-delete</v-icon> {{ $t('common.batchDelete') }}
                 </span></v-btn>
             </v-btn-group>
           </v-col>
           <v-col>
             <v-btn-group elevation="1" class="d-block" density="compact">
-              <v-btn density="compact" block class="fill-height" color="primary"
+              <v-btn density="compact" block class="fill-height" color="saveButtonColor"
                 @click="validateAndBatchProcessUpdate">
                 <span class="">
                   <v-icon>mdi-refresh</v-icon> {{ $t('common.batchUpdate') }}
@@ -239,110 +247,6 @@ const validateAndBatchProcessDelete = async () => {
 
 
 
-const platformReady = (code: string) => !!(batchProcessForm.value?.platformUploadStatus && batchProcessForm.value?.platformUploads?.[code]?.isReady)
 </script>
 
-<style scoped>
-.bp-panel {
-  transition: none !important;
-  box-shadow: none;
-  transform: none !important;
-  right: 0;
-  background-color: var(--ek-color-surface-sunken);
-}
-
-.bp-panel__topline {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  width: auto;
-  opacity: 0.9;
-  background-color: var(--ek-color-error);
-}
-
-.bp-panel__close {
-  position: absolute;
-  top: 0;
-  height: var(--ek-control-h-lg);
-  width: var(--ek-control-h-lg);
-  opacity: 0.9;
-  border-radius: var(--ek-radius-none);
-}
-
-.bp-panel__close--right {
-  right: 0;
-  border-bottom-left-radius: var(--ek-radius-xl);
-}
-
-.bp-panel__close--left {
-  left: 0;
-  border-bottom-right-radius: var(--ek-radius-xl);
-}
-
-.bp-panel__heading {
-  position: absolute;
-  top: 2px;
-  left: var(--ek-space-5);
-  opacity: 0.8;
-}
-
-.bp-panel__heading-icon {
-  opacity: 0.7;
-}
-
-.bp-panel__body {
-  position: absolute;
-  overflow-y: auto;
-  top: var(--ek-space-12);
-  left: 0;
-  right: 0;
-  bottom: 70px;
-  border-top: 1px solid var(--ek-color-border-default);
-  background-color: var(--ek-color-surface-muted);
-}
-
-.bp-panel__col {
-  border-color: transparent;
-}
-
-.bp-panel__col--scroll {
-  overflow-y: auto;
-}
-
-.bp-panel__switch-label {
-  line-height: 1;
-  font-size: var(--ek-type-body-size) !important;
-}
-
-.bp-panel__off {
-  color: var(--ek-color-error);
-}
-
-.bp-panel__platforms-text {
-  height: 90%;
-}
-
-.bp-panel__platform {
-  cursor: pointer;
-}
-
-.bp-panel__platform--ready {
-  opacity: 1;
-  border: 1px solid var(--ek-color-border-default) !important;
-}
-
-.bp-panel__platform--idle {
-  opacity: 0.6;
-  background-color: var(--ek-color-content-muted) !important;
-  border: 1px solid var(--ek-color-surface) !important;
-}
-
-.bp-panel__footer {
-  position: absolute;
-  bottom: 0;
-  width: 100%;
-  border-top: 1px solid var(--ek-color-border-default);
-}
-</style>
+<style scoped></style>

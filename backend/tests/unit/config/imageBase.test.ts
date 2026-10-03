@@ -44,7 +44,7 @@ describe('config.images', () => {
 
 // ADR-0031 yan bulgu: BE görsel URL'i HER ZAMAN clientId içerir (FE ProductImageComponent.vue clientId'siz kuruyor; FE değişmedi).
 import { jest } from '@jest/globals';
-import { imageOperations as ImageOperations } from '@operations/catalog/images/image-operations';
+import { ImageOperations } from '@services/index';
 
 describe('yan bulgu: BE yazdığı görsel URL biçimi clientId içerir', () => {
   it('prepareImageQueries: <taban>products/<clientId>/<tempId>/<imageId>.<uzantı> (image-service.addImages dizin = clientId/tempId)', async () => {

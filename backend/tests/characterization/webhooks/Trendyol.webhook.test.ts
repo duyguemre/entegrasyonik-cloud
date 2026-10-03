@@ -1,6 +1,6 @@
 /**
  * CHARACTERIZATION: Trendyol sipariş durumu webhook alıcısı (ADR-0005 Karar 8 — Aşama B, YENİ özellik).
- * Kaynak: backend/src/api/webhooks/WebhookApiManager.ts
+ * Kaynak: backend/src/api/WebhookApiManager.ts
  *
  * `OrderQueueProducer` tamamen mock'lanır (kendi jobId/dedup mantığı `OrderQueueProducer.characterization.test.ts`
  * içinde AYRICA test edilir -- burada yalnızca WebhookApiManager'ın onu DOĞRU argümanlarla çağırdığı doğrulanır).
@@ -24,7 +24,7 @@ jest.mock('@integration/engine/order/OrderQueueProducer', () => ({
 }));
 jest.mock('@database/DatabaseManager', () => ({ DatabaseManagerInstance: { getApplicationDB: jest.fn() } }));
 
-import { handleTrendyolWebhook, configureWebhookRoutes } from '@api/webhooks/WebhookApiManager';
+import { handleTrendyolWebhook, configureWebhookRoutes } from '@api/WebhookApiManager';
 import { DatabaseManagerInstance } from '@database/DatabaseManager';
 
 function mockClientLookup(client: any, updateOne = jest.fn(async () => ({}))) {
@@ -119,7 +119,7 @@ describe('handleTrendyolWebhook - gövde veri kaynağı olarak KULLANILMAZ', () 
   });
 
   it('[STATİK DOĞRULAMA] route handler `req.body`\'ye HİÇ dokunmaz (kaynak taraması) -- gövde yalnızca express.raw ile drenaj için tamponlanır', () => {
-    const src = fs.readFileSync(path.resolve(__dirname, '../../../src/api/webhooks/WebhookApiManager.ts'), 'utf8');
+    const src = fs.readFileSync(path.resolve(__dirname, '../../../src/api/WebhookApiManager.ts'), 'utf8');
     const withoutComments = src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
     expect(withoutComments).not.toMatch(/req\.body/);
     expect(withoutComments).toMatch(/express\.raw\(/);

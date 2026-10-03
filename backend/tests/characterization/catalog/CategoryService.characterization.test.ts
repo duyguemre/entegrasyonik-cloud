@@ -1,5 +1,5 @@
 /**
- * CHARACTERIZATION: CategoryService (backend/src/api/rpc/handlers/category-service.ts)
+ * CHARACTERIZATION: CategoryService (backend/src/api/services/category-service.ts)
  *
  * Kapsam: get/buildCategory, addCategory, saveIntegrationCategory, updateCategory, moveCategory,
  * changeOrderCategory, deleteCategory. DB/Redis/ağ YOK; `clientDB` sahte model nesneleridir (ADR-0016 B-R-T1).
@@ -10,7 +10,7 @@
 import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals';
 import { ObjectId } from 'mongodb';
 
-import CategoryService from '@api/rpc/handlers/category-service';
+import CategoryService from '@api/services/category-service';
 
 let categoryModel: any;
 

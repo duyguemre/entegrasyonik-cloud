@@ -1,5 +1,5 @@
 /**
- * CHARACTERIZATION + YENİ: backend/src/api/rpc/RunOperation.ts — ADR-0008 §3(a) `EntitlementService.checkAccess`
+ * CHARACTERIZATION + YENİ: backend/src/api/RunOperation.ts — ADR-0008 §3(a) `EntitlementService.checkAccess`
  * guard'ının API katmanına BAYRAK KORUMALI (`ENTITLEMENT_GUARD_ENABLED`, varsayılan `false`) bağlanması.
  *
  * Gerçek `capabilities` kaydı (mock'lanmaz) kullanılır: `MenuService/get` (effect: read, minTier: member),
@@ -25,9 +25,9 @@ class MenuService {
 function loadRun() {
   let run: any;
   jest.isolateModules(() => {
-    jest.doMock('../../../src/api/rpc/index', () => ({ __esModule: true, default: { MenuService } }));
+    jest.doMock('../../../src/api/index', () => ({ __esModule: true, default: { MenuService } }));
     jest.doMock('@services/billing/EntitlementService', () => ({ EntitlementService: { checkAccess } }));
-    run = require('../../../src/api/rpc/RunOperation').default;
+    run = require('../../../src/api/RunOperation').default;
   });
   return run as (userContext: any, service: string, operation: string, request: any, principal?: any) => Promise<any>;
 }
@@ -132,11 +132,11 @@ describe('[YENİ DAVRANIŞ] ENTITLEMENT_GUARD_ENABLED=true: authorize() sonrası
   it('RPC bir yetenek kaydına ÇÖZÜLEMİYORSA (capability-drift) guard ATLANIR (fail-open); işlem normal çalışır', async () => {
     let run: any;
     jest.isolateModules(() => {
-      jest.doMock('../../../src/api/rpc/index', () => ({ __esModule: true, default: { FakeService: class { constructor() {} async init() {} async echo() { return 'echo-ok'; } } } }));
+      jest.doMock('../../../src/api/index', () => ({ __esModule: true, default: { FakeService: class { constructor() {} async init() {} async echo() { return 'echo-ok'; } } } }));
       jest.doMock('@services/billing/EntitlementService', () => ({ EntitlementService: { checkAccess } }));
-      const policy = require('../../../src/api/rpc/operationPolicy');
+      const policy = require('../../../src/api/operationPolicy');
       Object.assign(policy.OPERATION_POLICY, { FakeService: { echo: 'member' } });
-      run = require('../../../src/api/rpc/RunOperation').default;
+      run = require('../../../src/api/RunOperation').default;
     });
     const resp = await run({ order: 7 }, 'FakeService', 'echo', {}, PR);
     expect(resp).toBe('echo-ok');
@@ -147,9 +147,9 @@ describe('[YENİ DAVRANIŞ] ENTITLEMENT_GUARD_ENABLED=true: authorize() sonrası
     let run: any;
     jest.isolateModules(() => {
       class SecurityService { constructor() {} async init() {} async logout() { return 'captcha-ok'; } }
-      jest.doMock('../../../src/api/rpc/index', () => ({ __esModule: true, default: { SecurityService } }));
+      jest.doMock('../../../src/api/index', () => ({ __esModule: true, default: { SecurityService } }));
       jest.doMock('@services/billing/EntitlementService', () => ({ EntitlementService: { checkAccess } }));
-      run = require('../../../src/api/rpc/RunOperation').default;
+      run = require('../../../src/api/RunOperation').default;
     });
     const resp = await run(undefined, 'SecurityService', 'logout', {});
     expect(resp).toBe('captcha-ok');
@@ -161,9 +161,9 @@ describe('[YENİ DAVRANIŞ] ENTITLEMENT_GUARD_ENABLED=true: authorize() sonrası
     let runImageApi: any;
     jest.isolateModules(() => {
       class ImageService { constructor() {} async init() {} async addImages() { return 'upload-ok'; } }
-      jest.doMock('../../../src/api/rpc/index', () => ({ __esModule: true, default: { ImageService } }));
+      jest.doMock('../../../src/api/index', () => ({ __esModule: true, default: { ImageService } }));
       jest.doMock('@services/billing/EntitlementService', () => ({ EntitlementService: { checkAccess } }));
-      runImageApi = require('../../../src/api/rpc/RunOperation').runImageApi;
+      runImageApi = require('../../../src/api/RunOperation').runImageApi;
     });
     // IMAGE_API_TARGETS['upload'] gerçek kayıtta ['ImageService', 'addImages'] (ADR-0001 Karar 9); guard 'ImageApi'
     // sözde-servis adıyla çözer (capability rpc 'ImageApi/upload', effect:write) -- gerçek hedef metot adı ayrıdır.

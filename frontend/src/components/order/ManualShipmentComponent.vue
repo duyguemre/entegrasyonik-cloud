@@ -1,31 +1,34 @@
 <template>
     <ActionDialogComponent v-model="show" title="Manuel Kargo Girişi"
         subtitle="Kargo entegrasyonu dışındaki gönderiler için bilgi kaydı" icon="mdi-truck-delivery-outline"
-        color="primary" confirm-text="Kargoya Ver" cancel-text="Vazgeç" confirm-buttom-color="primary"
+        color="passiveColor" confirm-text="Kargoya Ver" cancel-text="Vazgeç" confirm-buttom-color="passiveColor"
         :is-confirm-disabled="isFormInvalid" @confirm="handleSubmit" @cancel="handleClose" attach="orderListView"
         max-width="600px">
         <v-form ref="formRef" @submit.prevent="handleSubmit">
-            <EkFormGrid :columns="1">
-                    <!-- FR2 madde 13 (K13): kargo firmaları kanal rozetiyle aynı biçim; liste tek kayıttan (`carrierOptions`),
-                         değer = firma adı (backend `carrierName` serbest metin — eski değerler aynen). -->
-                    <EkSelect v-model="form.carrierName" kind="carrier" :items="CARRIER_ITEMS"
-                        label="Kargo Firması"
-                        :rules="[(v: string) => !!v || 'Kargo firması seçilmelidir']" />
-                    <v-text-field v-model="form.trackingCode" label="Takip Numarası" placeholder="Kargo takip numarasını giriniz"
+            <v-row dense>
+                <v-col cols="12">
+                    <v-select v-model="form.carrierName"
+                        :items="['Aras Kargo', 'Yurtiçi Kargo', 'MNG Kargo', 'Sürat Kargo', 'Trendyol Express', 'PTT Kargo', 'Diğer']"
+                        label="Kargo Firması" variant="outlined" density="comfortable" class="customTextField"
+                        :rules="[v => !!v || 'Kargo firması seçilmelidir']"></v-select>
+                </v-col>
+                <v-col cols="12">
+                    <v-text-field v-model="form.trackingCode" label="Takip Numarası" variant="outlined"
+                        density="comfortable" class="customTextField" placeholder="Kargo takip numarasını giriniz"
                         :rules="[v => !!v || 'Takip numarası zorunludur']" autofocus></v-text-field>
-                    <v-text-field v-model="form.trackingUrl" label="Takip Linki (Opsiyonel)" placeholder="https://..."
+                </v-col>
+                <v-col cols="12">
+                    <v-text-field v-model="form.trackingUrl" label="Takip Linki (Opsiyonel)" variant="outlined"
+                        density="comfortable" class="customTextField" placeholder="https://..."
                         prepend-inner-icon="mdi-link-variant"></v-text-field>
-            </EkFormGrid>
+                </v-col>
+            </v-row>
         </v-form>
     </ActionDialogComponent>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, computed } from 'vue';
-import { EkFormGrid, EkSelect } from '@entegrasyonik/ui/components'
-import { carrierOptions } from '@entegrasyonik/ui/tokens'
-
-const CARRIER_ITEMS = carrierOptions()
 import ActionDialogComponent from '@/components/layout/ActionDialogComponent.vue';
 
 // State yönetimi

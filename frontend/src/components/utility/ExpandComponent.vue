@@ -3,7 +3,7 @@
         :class="{ expanded: isExpanded }">
         <v-tooltip :text="$t('common.expand.minimize')">
             <template v-slot:activator="{ props }">
-                <v-btn icon v-bind="props" size="30" elevation=2 class="mr-2" @click="toggle" color="neutral" aria-label="Genişlet / daralt">
+                <v-btn icon v-bind="props" size="30" elevation=2 class="mr-2" @click="toggle" color="processButtonColor">
                 <v-icon size="25">{{ !isExpanded ? 'mdi-window-maximize' :
                         'mdi-window-minimize' }} </v-icon>
                 </v-btn>
@@ -60,7 +60,8 @@ var expandHtml = () => {
 /*     top: -40px;
  */    z-index: 3;
 /*     right: 56%; */
-    transition: top var(--ek-motion-reveal), right var(--ek-motion-reveal)
+    transition: top .5s ease-in-out, right .5s ease-in-out
+        /*     transition: top .3s ease, right .3s ease */
 }
 
 .expand-button.expanded {

@@ -22,7 +22,6 @@ const OPERATOR: ReadonlyArray<Permission> = [
 /** Yönetici: operatör + `tenant:*` dışındaki admin kademeli izinler. */
 const ADMIN_EXTRA: ReadonlyArray<Permission> = [
     'integrations:manage', 'settings:manage', 'users:read', 'users:manage', 'audit:read', 'billing:manage', 'customers:anonymize',
-    'pricing:manage',
 ];
 
 /** Sahip: yönetici + tenant sahipliği izinleri. */

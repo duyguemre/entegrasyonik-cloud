@@ -4,8 +4,8 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import { EkKpiCard } from '@entegrasyonik/ui/components';
-import { formatNumber, formatMoney } from '@entegrasyonik/ui/format';
+import EkKpiCard from '@/components/ds/EkKpiCard.vue';
+import { formatNumber, formatMoney } from '@/composables/format';
 
 // ADR-0015 Karar 3.5 — istatistik kartı EkKpiCard'a devredildi (pastel zemin, fiyat etiketi
 // ve renk varyantları kaldırıldı). Tüketici: AdminClientDetailComponent.

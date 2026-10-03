@@ -7,7 +7,6 @@ import { OAUTH_CAPABILITIES } from './domains/oauth';
 import { MCP_CAPABILITIES } from './domains/mcp';
 import { BILLING_CAPABILITIES } from './domains/billing';
 import { CATALOG_CAPABILITIES } from './domains/catalog';
-import { PRICING_CAPABILITIES, PRICING_R2_CAPABILITIES } from './domains/pricing';
 import { CLAIMS_CAPABILITIES } from './domains/claims';
 import { CUSTOMERS_CAPABILITIES } from './domains/customers';
 import { FINANCE_CAPABILITIES } from './domains/finance';
@@ -64,8 +63,6 @@ export const CAPABILITIES: ReadonlyArray<CapabilityDef> = attachRpcInputs([
     ...SUPPORT_CAPABILITIES,
     ...MESSAGES_CAPABILITIES,
     ...CATALOG_CAPABILITIES,
-    ...PRICING_CAPABILITIES,
-    ...PRICING_R2_CAPABILITIES,
     ...ORDERS_CAPABILITIES,
     ...CLAIMS_CAPABILITIES,
     ...CUSTOMERS_CAPABILITIES,

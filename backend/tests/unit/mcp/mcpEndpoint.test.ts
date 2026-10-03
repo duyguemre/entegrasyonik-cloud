@@ -22,8 +22,6 @@ let audit: Array<Record<string, any>> = [];
 const flush = async () => { await new Promise((r) => setImmediate(r)); await new Promise((r) => setImmediate(r)); };
 
 const READ_TOOLS = ['integrations_health_get', 'orders_list', 'products_search', 'reports_sales_summary', 'stock_low_list'];
-/** tools/list'te görünen tüm okuma araçları: core + PRC-R0/R1 `catalog` toolset okumaları (çağrı testleri yalnız READ_TOOLS üzerinden). */
-const LISTED_READ = [...READ_TOOLS, 'pricing_buybox_list', 'pricing_cost_list', 'pricing_margin_preview', 'pricing_rules_list', 'pricing_suggestions_list'].sort();
 const ARGS: Record<string, unknown> = { products_search: { query: 'x' } };
 
 beforeEach(async () => {
@@ -64,7 +62,7 @@ describe('protokol el sikismasi (durumsuz Streamable HTTP)', () => {
         const c = await m.connect({ scope: 'mcp:read' });
         const j = await body(await m.rpc(c.token, 'tools/list'));
         const names: string[] = j.result.tools.map((t: any) => t.name);
-        expect(names).toEqual(LISTED_READ);
+        expect(names).toEqual(READ_TOOLS);
         expect(names).not.toContain('orders_approve');
         for (const t of j.result.tools) {
             expect(t.inputSchema).toMatchObject({ type: 'object', additionalProperties: false });
@@ -312,13 +310,13 @@ describe('tenant ayari (mcp.access) ve kapsam kesisimi', () => {
 describe('RBAC, entitlement, kill-switch, LIVE_READONLY, bakim', () => {
     it('RBAC matrisi: operator integrations_health_get GORMEZ (admin kademesi); admin/owner gorur; zorla cagri isError ve servis cagrisi yok', async () => {
         const op = await m.connect({ sub: 'op', scope: 'mcp:read' });
-        expect(await m.list(op.token)).toEqual(LISTED_READ.filter((n) => n !== 'integrations_health_get'));
+        expect(await m.list(op.token)).toEqual(['orders_list', 'products_search', 'reports_sales_summary', 'stock_low_list']);
         const forced = await m.call(op.token, 'integrations_health_get');
         expect(forced.body.result.isError).toBe(true);
         expect(forced.body.result._meta['com.entegrasyonik/error'].code).toBe('CAPABILITY_DISABLED');
         expect(m.calls).toEqual([]);
         const adm = await m.connect({ sub: 'adm', scope: 'mcp:read' });
-        expect(await m.list(adm.token)).toEqual(LISTED_READ);
+        expect(await m.list(adm.token)).toEqual(READ_TOOLS);
     });
 
     it('kill-switch (disabledCapabilities): kapatilan arac listede yok, zorla cagri isError; LIVE_READONLY ve bakimda OKUMA calisir', async () => {
@@ -328,11 +326,11 @@ describe('RBAC, entitlement, kill-switch, LIVE_READONLY, bakim', () => {
         expect((await m.call(c.token, 'orders_list')).body.result.isError).toBe(true);
         m.st.disabled = new Set();
         m.st.liveReadonly = true;
-        expect(await m.list(c.token)).toEqual(LISTED_READ);
+        expect(await m.list(c.token)).toEqual(READ_TOOLS);
         expect((await m.call(c.token, 'orders_list')).body.result.isError).toBeUndefined();
         m.st.liveReadonly = false;
         m.st.maintenance = true;
-        expect(await m.list(c.token)).toEqual(LISTED_READ);
+        expect(await m.list(c.token)).toEqual(READ_TOOLS);
         expect((await m.call(c.token, 'reports_sales_summary')).body.result.isError).toBeUndefined();
         // yazma araci ne LIVE_READONLY ne bakim ne kapali durumlarda listelenir / calisir
         m.st.maintenance = false;

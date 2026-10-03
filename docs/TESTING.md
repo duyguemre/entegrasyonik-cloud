@@ -35,24 +35,6 @@ Ek jest argümanı: `npm run test:module -- trendyol --coverage=false -t "429"`.
 - API/servis/auth: `test:api`.
 - İş bitimi / büyük değişiklik: `npm run test:all && npm run typecheck && npm run lint && npm run ratchet` (veya `npm run verify`).
 
-## Kaynak yerleşimi ve dosya taşıma (ADR-0024 P2-MOVE)
-
-`src/api/` ağacı: `rpc/` (ApiManager, RunOperation, BaseApi, operationPolicy, servis kaydı `index.ts`, RPC kancaları),
-`rpc/handlers/` (`<ad>-service.ts`, eski `api/services`), `rpc/dto/`, `http/` (authenticate, originCheck, clientLog,
-membershipAuthz + mevcut http rotaları), `webhooks/`, `files/` (ImageApiManager, ExportDownloadApiManager), `admin/`, `oauth/`.
-`Webserver.ts` → `src/bootstrap/Webserver.ts`. Dosya taşımak için elle düzenleme yerine dönüştürücü kullanılır:
-`node dev-tools/codemods/move-module.js <harita.json>` (kuru çalıştırma) → `--write` (git mv + `import`/`require`/`jest.mock` yolları).
-`tests/static/noMockedShim.static.test.ts`: `jest.mock` hedefi yalnız yeniden-dışa-aktarma (shim) dosyası olamaz.
-
-## Alan paketleri: repository + operations + ince handler (ADR-0024 Dalga 3)
-
-Sorgular `src/database/repositories/{tenant,app}/` altında (kurucu DB tutamacını alır; `clientId` parametresi yok, model her
-çağrıda `getXModel()` ile alınır), iş kuralları `src/operations/<alan>/` altında, handler yalnız cephe. Handler karakterizasyon
-testleri `svc.clientDB = { getXModel: jest.fn(...) }` atamasıyla çalışmaya devam eder: repository handler'da çağrı anında kurulur,
-bu yüzden test sahteleri ve `jest.mock('@integration/modules/IntegrationFactory')` gibi modül sahteleri yeni katmanlara da ulaşır.
-Motor içe alım repository'leri (`OrderRepository`, `ClaimRepository`, ...) `database/repositories/tenant/`'tadır; panel (RPC)
-sorguları ayrı `*PanelRepository` sınıflarındadır. Paket testi: `test:module -- orders`, `test:api`, `test:integration-engine`.
-
 ## Gerçek-Mongo testleri neden varsayılan koşuda değil
 
 `tests/integration/*` (`*.realmongo.test.ts`, `mongoLease`, `StockAllocator.concurrency`, `realMongoTestDb.selfcheck`) yerel
@@ -63,16 +45,6 @@ Bellek-içi Mongo isteyen `tests/mongo-semantics` varsayılan koşuda çalışı
 
 Kural: yeni test varsayılan olarak mock'lu; gerçek DB gerektiriyorsa `tests/integration/` altına `*.realmongo.test.ts` olarak.
 Ayrıntı ve DB kuralları: `backend/tests/README.md`.
-
-## Kalite kapısı (ADR-0024 P4-GATE)
-
-`npm run depcruise`: ihlali sıfır olan tüm katman kuralları `error` (tek `warn`: `no-circular`, mandallı). `npm run ratchet`
-(`quality/check-ratchets.js`, ölçüm `quality/baseline.json`'a göre ARTAMAZ): `no-console` dosya başına, diğer eslint uyarıları
-kural başına, depcruise kural başına, `noUnusedLocals`, knip ve `handlers` — `src/api/rpc/handlers/**` dosya başına satır
-(yalnız 400'ü aşanlar; yeni handler 400'ü aşamaz, aşan büyüyemez) ve dosya başına `getXModel()` çağrısı (depo katmanına
-taşındıkça azalır). Azalma `npm run ratchet:update` ile kilitlenir. `src/api/**` için `no-console` eslint `error`'dur.
-Bulutta knip için Linux yerel bağlayıcısı lockfile'da kurulmuyorsa: `npm i --no-save @oxc-parser/binding-linux-x64-gnu@<sürüm>
-@oxc-resolver/binding-linux-x64-gnu@<sürüm>` (sürümler `package-lock.json`'da).
 
 ## Log doğrulama (F-06)
 

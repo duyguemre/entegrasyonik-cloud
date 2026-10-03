@@ -1,0 +1,101 @@
+/**
+ * frontend/src/design/vuetify-overrides.css
+ *
+ * ADR-0015 Karar 3.1 — "Radius, düğme harf dönüşümü, odak halkası... Vuetify
+ * `rounded` değerleriyle ayarlanmaz [...] `--ek-*` token'larıyla uygulanır."
+ * `main.ts` bu dosyayı `tokens.app.css`'ten SONRA import eder (kademe sırası:
+ * Vuetify çekirdek stilleri → token CSS değişkenleri → bu override katmanı).
+ *
+ * Emsal: `vuetify-font-overrides.css` (T5, ADR-0011 Açık Soru 1) — aynı
+ * "küçük, gerekçeli `!important` katmanı" deseni.
+ *
+ * HER `!important` kuralı yanında gerekçesini taşır (Karar 3.1 zorunluluğu).
+ */
+
+/* ---- Radius (kontrol/düğme = radius-md) ----
+ * Vuetify'ın `rounded` prop'u SASS `$border-radius-root` ölçeğine bağlıdır;
+ * bu proje SASS `configFile`'ı KAPALI tutuyor (ADR-0011), bu yüzden radius
+ * doğrudan CSS ile, `--ek-radius-*` token'larından uygulanır. `!important`
+ * gerekçesi: Vuetify'ın kendi `.rounded-*` yardımcı sınıfları ve bileşen içi
+ * inline `border-radius` stilleri aksi halde önceliği alır. */
+.v-btn,
+.v-field,
+.v-field__outline,
+.v-text-field .v-field,
+.v-select .v-field,
+.v-autocomplete .v-field,
+.v-combobox .v-field,
+.v-textarea .v-field {
+  border-radius: var(--ek-radius-md) !important;
+}
+
+/* ---- Radius (kart/diyalog = radius-lg) ---- */
+.v-card,
+.v-dialog > .v-overlay__content,
+.v-dialog > .v-overlay__content > .v-card {
+  border-radius: var(--ek-radius-lg) !important;
+}
+
+/* ---- Radius (komut paleti/menü = radius-lg) ---- */
+.v-menu > .v-overlay__content,
+.v-overlay__content .v-list {
+  border-radius: var(--ek-radius-lg) !important;
+}
+
+/* ---- Radius (rozet = radius-full) ----
+ * Durum rozeti için `EkStatusChip` kullanılır (çıplak `v-chip` DEĞİL,
+ * Karar 3.3); bu kural, filtre/etiket gibi MEŞRU çıplak `v-chip`
+ * kullanımlarının da aynı "hap" (pill) biçimini almasını sağlar. */
+.v-chip {
+  border-radius: var(--ek-radius-full) !important;
+}
+
+/* ---- Düğme metni: cümle düzeni (Karar 1.2) ----
+ * Vuetify `VBtn` varsayılanı `text-transform: uppercase`; ADR-0015 Karar 1.2
+ * bunu kapatır ("Düğmelerde de Vuetify'ın uppercase davranışı kapatılır").
+ * `!important` gerekçesi: Vuetify'ın `.v-btn` temel stili aynı özgüllükte
+ * `text-transform` tanımlıyor.
+ * `:not(.v-tab)` İSTİSNASI (bilinçli, bu görevde bulundu): Vuetify'ın
+ * `VTab` bileşeni kökte `v-btn` sınıfını DA taşıyor (dahili uygulama
+ * detayı) — bu yüzden bu kural istisnasız yazılırsa bugünkü kabuk sekme
+ * şeridindeki (`SecureLayout.vue` `.workplace-tab`) BÜYÜK HARF render'ını
+ * da kapatır ve `session-isolation.spec.ts`'in `'ANASAYFA'` metin iddiasını
+ * KIRAR (Ek A / Karar 5.1 kapalı liste DIŞI bir davranış değişikliği).
+ * Kabuk sekmelerinin büyük/küçük harf stili A3'ün kapsamıdır (ADR Karar 1.2
+ * "üst etiket" — overline — istisnası zaten `.v-tab`/sekme başlıkları için
+ * öngörülüyor); A1 yalnızca GERÇEK düğmeleri (`.v-btn:not(.v-tab)`) kapsar. */
+.v-btn:not(.v-tab) {
+  text-transform: none !important;
+  letter-spacing: normal !important;
+  font-weight: var(--ek-font-weight-medium);
+}
+
+/* ---- Odak göstergesi (Karar 3.1 — WCAG 2.4.7) ----
+ * Tüm etkileşimli öğelerde tutarlı, görünür `:focus-visible` halkası.
+ * `outline` kutu-modelini etkilemediği için `!important` GEREKMEZ; yalnızca
+ * Vuetify'ın kendi (görünmez/eksik) focus stilini ezmek için yeterli
+ * özgüllük sağlanır. `--ek-color-primary` (`tokens.app.css`) zaten Vuetify
+ * tema değişkenine sarılı biçimde tanımlıdır — burada ikinci kez ham renk
+ * fonksiyonu YAZILMAZ (literal-stil mandalı bu deseni de sayıyor; token'a
+ * dolaylı referans mandal-temiz kalır). */
+:focus-visible {
+  outline: 2px solid var(--ek-color-primary);
+  outline-offset: 2px;
+}
+
+/* ---- Yoğunluk: tablo satır yüksekliği (Karar 1.1/6.2 — --ek-app-row-h) ----
+ * `app.css`'teki `--ek-app-row-h` (varsayılan 44, kompakt 36) buradan
+ * tüketilir. `!important` gerekçesi: Vuetify `density="compact"` kendi sabit
+ * satır yüksekliğini (`--v-table-row-height`) zaten `!important` OLMADAN
+ * ama yüksek özgüllükle tanımlıyor; token'ın kazanması için gerekli. */
+.v-data-table .v-data-table__tr {
+  --v-table-row-height: var(--ek-app-row-h) !important;
+}
+
+/* ---- Kart derinliği: kenarlıkla, gölgeyle DEĞİL (Karar 1.1) ----
+ * `VCard` varsayılanı `border:true` (bkz. vuetify-defaults.ts); bu kural
+ * kenarlık rengini token'a bağlar. `!important` gerekçesi: Vuetify'ın
+ * `.v-card` temel stili aynı özgüllükte `border-color` yazıyor. */
+.v-card {
+  border-color: var(--ek-color-border-default) !important;
+}

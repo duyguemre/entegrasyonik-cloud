@@ -35,8 +35,9 @@ export default function useUser() {
   const integrationStore: any = useIntegrationStore()
 
   const restApi = useRestApi()
-  // Parola ve Google girişi aynı yanıtı döner; ikisi de bu tek işleyişten geçer (mağaza seçimi dahil).
-  const applyLoginResponse = async (resp: any) => {
+  const login = async (username: string, password: string, captcha?: string) => {
+    const resp: any = await restApi.post('SecurityService/login', { username, password, captcha })
+
     if (resp?.requireStoreSelection) {
       stores.value = resp.clients
       userContext.value = resp.user
@@ -47,23 +48,6 @@ export default function useUser() {
       userContext.value = resp
       await fetchUserContext()
     }
-    return resp
-  }
-
-  const login = async (username: string, password: string) => {
-    const resp: any = await restApi.post('SecurityService/login', { username, password })
-    return applyLoginResponse(resp)
-  }
-
-  /**
-   * GL-FE — Google ile giriş. `status: 'ok'` → parola girişiyle BİREBİR aynı işleyiş; `signup_required` ve hata
-   * yanıtları olduğu gibi çağırana döner (kayıt ekranına geçiş / hata gösterimi ekranın işidir).
-   * GL-FE2: yük `{ code }` (yetkilendirme kodu popup'ı — giriş ekranının kullandığı yol) ya da `{ credential }` (ID token).
-   */
-  const googleSignIn = async (payload: { code?: string; credential?: string }) => {
-    const body = payload.code ? { code: payload.code } : { credential: payload.credential }
-    const resp: any = await restApi.post('SecurityService/googleSignIn', body, false)
-    if (resp?.status === 'ok') return applyLoginResponse(resp)
     return resp
   }
 
@@ -81,10 +65,8 @@ export default function useUser() {
     return false
   }
 
-  // GL-FE: Google ile kayıtta `googleSignupToken` (sunucunun imzaladığı kısa ömürlü belirteç) gövdeye eklenir;
-  // e-posta belirteçten gelir, parola istenmez. Belirteç yalnız bellekte taşınır (URL/depolama yok).
-  const register = async (registerValues: any, googleSignupToken?: string) => {
-    const resp: any = await restApi.post('SecurityService/register', googleSignupToken ? { registerValues, googleSignupToken } : { registerValues })
+  const register = async (registerValues: any) => {
+    const resp: any = await restApi.post('SecurityService/register', { registerValues })
     // ADR-0014 S4b: başarı bilgisi çağırana döner (kayıt sonrası yönlendirme için). Hata-yutma davranışı DEĞİŞMEDİ:
     // başarısızlıkta hiçbir şey fırlatılmaz/gösterilmez, yalnızca `false` döner.
     if (resp && resp._id) {
@@ -174,6 +156,10 @@ export default function useUser() {
   }
 
 
+  const getCaptcha = async () => {
+    return await restApi.post('SecurityService/getCaptcha', {})
+  }
+
   const getRoles = async () => {
     return await restApi.post('UserService/getRoles', {})
   }
@@ -251,21 +237,11 @@ export default function useUser() {
     return resp
   }
 
-  /** FR3-16: ana sayfa selamlaması için kullanıcının adı (userContext.name); yoksa undefined. */
-  const getFirstName = computed<string | undefined>(() => userContext.value?.name || undefined)
-
   const getUsername = computed(() => {
     if (userContext.value)
       return userContext.value.username
     return undefined
   })
-
-  // C2.4: kullanıcı/mağaza kapsamlı yerel kayıtlar için KİMLİK (e-posta/ad değil). Mağaza: süper-yönetici
-  // seçimi (`activeClientId`) öncelikli, yoksa oturumun kendi `clientId`'si (profileDto beyaz listesi).
-  const getSessionScope = computed(() => ({
-    userId: userContext.value?._id as string | undefined,
-    tenantId: (activeClientId.value || userContext.value?.clientId) as string | number | undefined,
-  }))
 
 
   const checkAuthorization = (resource: string) => {
@@ -284,7 +260,7 @@ export default function useUser() {
   }
 
   const isOwner = () => {
-    return userContext.value?.owner
+    return userContext.value.owner
   }
 
   // ADR-0020 Aşama C — admin panel (Entegrasyon Ayarları) ekranları, `platformAdmin`
@@ -295,21 +271,14 @@ export default function useUser() {
     return userContext.value?.isGlobalAdmin === true
   }
 
-  // Tenant `admin` kademesi (mağaza sahibi, ROLE_ADMIN/ROLE_OWNER rolü veya platform yöneticisi) — yalnızca
-  // GÖRÜNÜRLÜK ipucu; asıl yetki sınırı backend `operationPolicy.resolveTier` (ADMIN_ROLE_CODES ile aynı küme).
-  const isTenantAdmin = () => {
-    const uc = userContext.value
-    return uc?.owner === true || uc?.isGlobalAdmin === true || ['ROLE_ADMIN', 'ROLE_OWNER'].includes(uc?.roleCode)
-  }
-
   return {
     getRoles,
     selectStore,
     stores,
     activeClientId,
+    getCaptcha,
     isOwner,
     isPlatformAdmin,
-    isTenantAdmin,
     getStoreName,
     getStoreLogo,
     getResources,
@@ -317,14 +286,11 @@ export default function useUser() {
     fetchUserContext,
     register,
     login,
-    googleSignIn,
     logout,
     requestPasswordReset,
     confirmPasswordReset,
     isAuthenticated,
     getUsername,
-    getFirstName,
-    getSessionScope,
     getProductStatistics,
     retrieveProductStatistics
   }

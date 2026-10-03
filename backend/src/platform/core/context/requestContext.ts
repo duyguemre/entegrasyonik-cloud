@@ -3,7 +3,6 @@
 // (Node çekirdek `async_hooks` hariç), bilerek en alt seviyede tutulur.
 import { AsyncLocalStorage } from 'async_hooks';
 import * as crypto from 'crypto';
-import type { ClientPlatform } from './clientPlatform';
 
 export interface RequestContext {
     /** İstek/iş/adaptör zinciri boyunca taşınan correlation id (HTTP: `X-Request-Id`; iş: `runId`; katalog: `ExportSignals.requestId`). */
@@ -18,8 +17,6 @@ export interface RequestContext {
     integrationCode?: string;
     /** [F-06] Üst düzey işlem adı (örn. "order.sync", "export.Publisher", "GET /orders"). */
     operation?: string;
-    /** [MOB-08] İstemci platform sınıfı (`X-Client-Platform`, yoksa UA'dan kaba sınıf). Ham UA saklanmaz. Motor işlerinde yok. */
-    clientPlatform?: ClientPlatform;
 }
 
 const storage = new AsyncLocalStorage<RequestContext>();

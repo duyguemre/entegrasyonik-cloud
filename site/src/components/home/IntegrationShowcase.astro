@@ -39,8 +39,9 @@ const innerCodes = orbitCodes.filter((_, i) => i % 2 === 1)
   <SectionHeading
     id="entegrasyon-baslik"
     eyebrow="Entegrasyon ekosistemi"
-    title="Kanallarınız bağlanır, iş akışınız sadeleşir"
-    lead="Pazaryerleriniz, e-ticaret siteniz, ERP ve muhasebe sisteminiz, kargo ve fatura bilgileriniz aynı merkezde buluşur. Yeni bir kanal, yeni bir panel demek değildir."
+    title="Satış ekosisteminizin tamamı, tek platformda"
+    accent="tek platformda"
+    lead="Entegrasyonik; pazaryerlerini, e-ticaret altyapınızı, ERP ve muhasebe sisteminizi, kargo ve fatura akışlarınızı tek merkezde buluşturmak için tasarlandı. Çok kanallı satışın verisi tek yerden yönetilir."
   />
 
   <div class="eco" data-scene="ecosystem" data-testid="ecosystem">
@@ -146,7 +147,7 @@ const innerCodes = orbitCodes.filter((_, i) => i % 2 === 1)
    * Katman sırası: hat (svg) < paket < düğüm kartı (paket kartın altına "girer") < merkez.
    */
   .eco {
-    --glow: color-mix(in srgb, var(--site-action) 55%, transparent);
+    --glow: color-mix(in srgb, var(--ek-color-secondary) 55%, transparent);
     position: relative;
     display: flex;
     flex-direction: column;
@@ -180,12 +181,12 @@ const innerCodes = orbitCodes.filter((_, i) => i % 2 === 1)
     width: 100%;
     height: 100%;
     overflow: hidden;
-    border: var(--site-border-width) solid color-mix(in srgb, var(--site-action) 45%, var(--site-glass-border));
+    border: var(--site-border-width) solid color-mix(in srgb, var(--ek-color-secondary) 45%, var(--site-glass-border));
     border-radius: var(--ek-radius-full);
     background: var(--site-stage-mesh);
     box-shadow:
-      0 0 0 var(--ek-space-2) color-mix(in srgb, var(--site-action) 12%, transparent),
-      0 0 var(--ek-space-16) var(--ek-space-2) color-mix(in srgb, var(--site-action) 30%, transparent),
+      0 0 0 var(--ek-space-2) color-mix(in srgb, var(--ek-color-secondary) 12%, transparent),
+      0 0 var(--ek-space-16) var(--ek-space-2) color-mix(in srgb, var(--ek-color-secondary) 30%, transparent),
       var(--site-shadow-panel);
   }
   /* Derinlik: üst-solda ışık, alt kenarda iç gölge halkası (küre hissi). */
@@ -195,7 +196,7 @@ const innerCodes = orbitCodes.filter((_, i) => i % 2 === 1)
     inset: 0;
     border-radius: inherit;
     background:
-      radial-gradient(circle at 32% 24%, color-mix(in srgb, var(--site-action) 38%, transparent), transparent 55%),
+      radial-gradient(circle at 32% 24%, color-mix(in srgb, var(--ek-color-secondary) 38%, transparent), transparent 55%),
       radial-gradient(circle at 70% 90%, color-mix(in srgb, var(--ek-color-primary) 55%, transparent), transparent 60%);
     pointer-events: none;
   }
@@ -229,11 +230,11 @@ const innerCodes = orbitCodes.filter((_, i) => i % 2 === 1)
   }
   .eco__orbit--outer {
     inset: -30%;
-    border: var(--site-border-width) dashed color-mix(in srgb, var(--site-action) 40%, var(--ek-color-border-default));
+    border: var(--site-border-width) dashed color-mix(in srgb, var(--ek-color-secondary) 40%, var(--ek-color-border-default));
   }
   .eco__orbit--inner {
     inset: -13%;
-    border: var(--site-border-width) solid color-mix(in srgb, var(--site-action) 28%, var(--ek-color-border-default));
+    border: var(--site-border-width) solid color-mix(in srgb, var(--ek-color-secondary) 28%, var(--ek-color-border-default));
   }
   .eco__sat {
     position: absolute;
@@ -244,8 +245,8 @@ const innerCodes = orbitCodes.filter((_, i) => i % 2 === 1)
     margin: calc(var(--ek-space-3) / -2) 0 0 calc(var(--ek-space-3) / -2);
     border: calc(var(--site-border-width) * 2) solid var(--ek-color-surface);
     border-radius: var(--ek-radius-full);
-    background: var(--chan, var(--site-action));
-    box-shadow: 0 0 0 var(--ek-space-1) color-mix(in srgb, var(--chan, var(--site-action)) 22%, transparent);
+    background: var(--chan, var(--ek-color-secondary));
+    box-shadow: 0 0 0 var(--ek-space-1) color-mix(in srgb, var(--chan, var(--ek-color-secondary)) 22%, transparent);
   }
   /* Nokta, yörünge çemberine açıyla yerleştirilir: merkezden yarıçap kadar dışarı (halka öğesinin yarısı). */
   .eco__orbit--outer .eco__sat {
@@ -307,10 +308,10 @@ const innerCodes = orbitCodes.filter((_, i) => i % 2 === 1)
   .eco__lit {
     position: absolute;
     inset: calc(var(--site-border-width) * -1);
-    border: calc(var(--site-border-width) * 2) solid var(--site-action);
+    border: calc(var(--site-border-width) * 2) solid var(--ek-color-secondary);
     border-radius: inherit;
     box-shadow:
-      0 0 0 var(--ek-space-1) color-mix(in srgb, var(--site-action) 14%, transparent),
+      0 0 0 var(--ek-space-1) color-mix(in srgb, var(--ek-color-secondary) 14%, transparent),
       0 var(--ek-space-4) var(--ek-space-10) calc(var(--ek-space-4) * -1) var(--glow);
     opacity: 0;
     pointer-events: none;
@@ -365,7 +366,7 @@ const innerCodes = orbitCodes.filter((_, i) => i % 2 === 1)
     width: calc(var(--ek-space-2) * 0.75);
     height: calc(var(--ek-space-2) * 0.75);
     border-radius: var(--ek-radius-full);
-    background: var(--chan, var(--site-action));
+    background: var(--chan, var(--ek-color-secondary));
     opacity: 0.85;
   }
 
@@ -378,17 +379,17 @@ const innerCodes = orbitCodes.filter((_, i) => i % 2 === 1)
     height: calc(var(--site-border-width) * 2);
     margin-inline-start: var(--ek-space-1);
     border-radius: var(--ek-radius-full);
-    background: linear-gradient(90deg, color-mix(in srgb, var(--site-action) 30%, var(--ek-color-border-default)), transparent);
+    background: linear-gradient(90deg, color-mix(in srgb, var(--ek-color-secondary) 30%, var(--ek-color-border-default)), transparent);
   }
   .eco__node--tr .eco__flow,
   .eco__node--br .eco__flow {
-    background: linear-gradient(90deg, color-mix(in srgb, var(--site-action) 30%, var(--ek-color-border-default)), color-mix(in srgb, var(--site-action) 12%, transparent));
+    background: linear-gradient(90deg, color-mix(in srgb, var(--ek-color-secondary) 30%, var(--ek-color-border-default)), color-mix(in srgb, var(--ek-color-secondary) 12%, transparent));
   }
   .eco__stream {
     position: absolute;
     inset: 0;
     width: 40%;
-    background: linear-gradient(90deg, transparent, var(--site-action), transparent);
+    background: linear-gradient(90deg, transparent, var(--ek-color-secondary), transparent);
     opacity: 0;
   }
 
@@ -411,7 +412,7 @@ const innerCodes = orbitCodes.filter((_, i) => i % 2 === 1)
     margin-top: var(--ek-space-1);
     padding: calc(var(--ek-space-1) * 0.5);
     border-radius: var(--ek-radius-full);
-    background: var(--site-action);
+    background: var(--ek-color-secondary-darken-1);
     color: var(--site-color-on-primary);
   }
   .promise__title {
@@ -436,7 +437,15 @@ const innerCodes = orbitCodes.filter((_, i) => i % 2 === 1)
     font-weight: var(--ek-font-weight-semibold);
     text-decoration: none;
   }
-  /* site-wdg W16: ok kayması global.css'teki tek kuraldan (a:hover .icon[data-icon='arrow']); yerel ikinci kayma kaldırıldı. */
+  .eco__link :global(.icon) {
+    transition: translate var(--ek-duration-base) var(--ek-easing-standard);
+  }
+  .eco__link:hover {
+    text-decoration: underline;
+  }
+  .eco__link:hover :global(.icon) {
+    translate: var(--ek-space-1) 0;
+  }
 
   @media (min-width: 640px) {
     .eco__nodes {
@@ -474,8 +483,8 @@ const innerCodes = orbitCodes.filter((_, i) => i % 2 === 1)
       border-radius: var(--ek-radius-full);
       background: radial-gradient(
         circle,
-        color-mix(in srgb, var(--site-action) 16%, transparent) 0%,
-        color-mix(in srgb, var(--site-action) 6%, transparent) 35%,
+        color-mix(in srgb, var(--ek-color-secondary) 16%, transparent) 0%,
+        color-mix(in srgb, var(--ek-color-secondary) 6%, transparent) 35%,
         transparent 65%
       );
       pointer-events: none;
@@ -499,15 +508,15 @@ const innerCodes = orbitCodes.filter((_, i) => i % 2 === 1)
     }
     /* Işın: hattın üzerinde parlayan, daha kalın kopya (sırayla ışır; statik: görünmez). */
     .eco__beam {
-      stroke: var(--site-action);
+      stroke: var(--ek-color-secondary);
       stroke-width: 5;
       opacity: 0;
     }
     .eco__stop-a {
-      stop-color: color-mix(in srgb, var(--site-action) 40%, var(--ek-color-border-default));
+      stop-color: color-mix(in srgb, var(--ek-color-secondary) 40%, var(--ek-color-border-default));
     }
     .eco__stop-b {
-      stop-color: var(--site-action);
+      stop-color: var(--ek-color-secondary);
     }
     .eco__hub {
       position: absolute;
@@ -600,8 +609,8 @@ const innerCodes = orbitCodes.filter((_, i) => i % 2 === 1)
       inset-inline-start: var(--ex);
       inset-block-start: var(--ey);
       --to: var(--dx) var(--dy);
-      background: var(--chan, var(--site-action));
-      box-shadow: 0 0 0 var(--ek-space-1) color-mix(in srgb, var(--chan, var(--site-action)) 22%, transparent);
+      background: var(--chan, var(--ek-color-secondary));
+      box-shadow: 0 0 0 var(--ek-space-1) color-mix(in srgb, var(--chan, var(--ek-color-secondary)) 22%, transparent);
     }
     .eco__packet--out {
       inset-inline-start: 50%;
@@ -609,9 +618,9 @@ const innerCodes = orbitCodes.filter((_, i) => i % 2 === 1)
       --to: calc(var(--dx) * -1) calc(var(--dy) * -1);
       --size: var(--ek-space-4);
       border: calc(var(--site-border-width) * 2) solid var(--ek-color-surface);
-      background: var(--site-action);
+      background: var(--ek-color-secondary);
       box-shadow:
-        0 0 0 var(--ek-space-1) color-mix(in srgb, var(--site-action) 25%, transparent),
+        0 0 0 var(--ek-space-1) color-mix(in srgb, var(--ek-color-secondary) 25%, transparent),
         0 0 var(--ek-space-4) var(--ek-space-1) var(--glow);
     }
 
@@ -697,7 +706,6 @@ const innerCodes = orbitCodes.filter((_, i) => i % 2 === 1)
         opacity: 0;
       }
     }
-    /* S27a (N9): yörünge halkalarının sürekli dönüşü kaldırıldı (halkalar sabit dekor); döngü yalnız akış paketlerinde. */
     @keyframes eco-lit {
       0%,
       100% {
@@ -708,6 +716,11 @@ const innerCodes = orbitCodes.filter((_, i) => i % 2 === 1)
       }
       30% {
         opacity: 0;
+      }
+    }
+    @keyframes eco-orbit {
+      to {
+        rotate: 1turn;
       }
     }
 
@@ -744,6 +757,13 @@ const innerCodes = orbitCodes.filter((_, i) => i % 2 === 1)
     }
     :global(html[data-motion='play']) .eco[data-state='play'] .eco__ring--late {
       animation-delay: calc(var(--T) * 0.6);
+    }
+    :global(html[data-motion='play']) .eco[data-state='play'] .eco__orbit--outer {
+      animation: eco-orbit var(--site-motion-ambient-slow) var(--site-motion-ease-linear) infinite paused;
+    }
+    :global(html[data-motion='play']) .eco[data-state='play'] .eco__orbit--inner {
+      animation: eco-orbit var(--site-motion-ambient-slow) var(--site-motion-ease-linear) infinite reverse paused;
+      animation-duration: calc(var(--site-motion-ambient-slow) * 0.7);
     }
     :global(html[data-motion='play']) .eco[data-state='play'] .eco__packet--out {
       animation: eco-travel var(--site-motion-ambient-fast) var(--site-motion-ease-loop) infinite paused;
@@ -848,102 +868,13 @@ const innerCodes = orbitCodes.filter((_, i) => i % 2 === 1)
       animation: eco-stream var(--site-motion-ambient-fast) var(--site-motion-ease-loop) infinite paused;
       animation-delay: calc(var(--T) * var(--k, 0) / 4 + var(--T) * 0.42);
     }
-    :global(html[data-motion='play']) .eco[data-state='play'][data-visible='true'] :is(.eco__ring, .eco__packet, .eco__beam, .eco__lit, .eco__dots > i, .eco__stream),
+    :global(html[data-motion='play']) .eco[data-state='play'][data-visible='true'] :is(.eco__ring, .eco__orbit, .eco__packet, .eco__beam, .eco__lit, .eco__dots > i, .eco__stream),
     :global(html[data-motion='play']) .eco[data-state='play'][data-visible='true'] .eco__icon :global(svg) {
       animation-play-state: running;
     }
     /* Üzerine gelinen kartın halkası sürekli yanar (döngü yerine). */
     :global(html[data-motion='play']) .eco[data-state='play'] .eco__node:hover .eco__lit {
       animation: none;
-    }
-  }
-
-  /* ================= SITE-DL-02 — uygulamanın tasarım dili (frontend/DESIGN_SYSTEM.md §35) =================
-     Düz yüzey + 1px ince çerçeve + kart yarıçapı; gölge, degrade, ışıma, hover yükselmesi yok; tek vurgu eylem
-     mavisi; ikonlar çerçeveli köşeli kutuda; hap rozet yerine köşeli çip. Yukarıdaki kuralları EZER (aynı özgüllük,
-     kaynak sırası). */
-
-  .eco {
-    --glow: transparent;
-  }
-  /* Merkez: düz marka laciverti (küre ışığı/gölge halkaları yok). Şema çizimi olduğundan daire biçimi korunur. */
-  .eco__core {
-    border-color: var(--ek-color-chrome-border);
-    background: var(--ek-color-chrome);
-    box-shadow: none;
-  }
-  .eco__core::before,
-  .eco__core::after,
-  .eco__ring {
-    display: none;
-  }
-  .eco__orbit--outer,
-  .eco__orbit--inner {
-    border-color: var(--ek-color-border-default);
-  }
-  .eco__sat {
-    box-shadow: none;
-  }
-  /* Düğüm kartları: düz + ince çerçeve; hover yalnız çerçeve tonu. */
-  .eco__node {
-    border-radius: var(--ek-radius-card);
-    box-shadow: none;
-  }
-  .eco__node:hover {
-    border-color: var(--site-action-border);
-    box-shadow: none;
-  }
-  .eco__lit {
-    border-width: var(--site-border-width);
-    border-color: var(--site-action);
-    box-shadow: none;
-  }
-  .eco__icon {
-    border: var(--site-border-width) solid var(--site-action-border);
-    border-radius: var(--ek-radius-tile);
-    background: var(--site-action-subtle);
-    box-shadow: none;
-    color: var(--site-action);
-  }
-  .eco__node:hover .eco__icon {
-    scale: 1;
-  }
-  .eco__flow,
-  .eco__node--tr .eco__flow,
-  .eco__node--br .eco__flow {
-    background: var(--ek-color-border-default);
-  }
-  .eco__stream {
-    background: var(--site-action);
-  }
-  /* Vizyon şeridi: onay işareti köşeli kutuda. */
-  .promise > :global(.icon) {
-    box-sizing: content-box;
-    padding: calc(var(--ek-space-1) * 0.75);
-    border: var(--site-border-width) solid var(--site-action-border);
-    border-radius: var(--ek-radius-md);
-    background: var(--site-action-subtle);
-    color: var(--site-action);
-  }
-  @media (min-width: 1024px) {
-    .eco {
-      border-radius: var(--ek-radius-card);
-      background-image: none;
-      box-shadow: none;
-    }
-    .eco__spot {
-      display: none;
-    }
-    .eco__stop-a,
-    .eco__stop-b {
-      stop-color: var(--ek-color-border-strong);
-    }
-    .eco__beam {
-      stroke-width: 3;
-    }
-    .eco__packet--in,
-    .eco__packet--out {
-      box-shadow: none;
     }
   }
 </style>

@@ -3,9 +3,8 @@
  * BaseLayout — tüm sayfaların iskeleti (ADR-0014). Sıcak dosya: yalnızca orkestratör birleştirmesiyle değişir.
  * - lang="tr", skip-link, header, <main id="main">, footer
  * - SITE_DRAFT iken TÜM sayfalarda `noindex,nofollow` (site geneli TASLAK bandı kullanıcı isteğiyle kaldırıldı, 2026-09-29;
- *   yasal sayfalardaki hukuki TASLAK bandı LegalLayout'ta sürer); sayfa bazında `noindex` kararı SEO kaydında (`index`)
+ *   yasal sayfalardaki hukuki TASLAK bandı LegalLayout'ta sürer); `noindex` prop'u ile sayfa bazında da zorlanabilir
  * - Font ön yüklemesi (S3): değişken Inter latin + latin-ext (Türkçe ğ/ş/İ hemen her sayfada gerekir; iki dosya ~133 KB)
- * - S19: tüm <head> SEO/paylaşım/JSON-LD etiketleri `src/data/seo.ts` kaydından (tek kaynak; eski PageMeta kaldırıldı)
  * - `scenes` (S3): animasyon sahneleri olan sayfada durdurma kontrolünü (header) ve sahne betiğini yükler
  */
 import '../styles/global.css'
@@ -15,37 +14,20 @@ import interLatin from '../../node_modules/@fontsource-variable/inter/files/inte
 import interLatinExt from '../../node_modules/@fontsource-variable/inter/files/inter-latin-ext-wght-normal.woff2?url'
 import { siteConfig } from '../lib/site-config'
 import { lightToken } from '../lib/tokens-node'
-import { abs, jsonLdFor, pageUrl, serializeJsonLd } from '../lib/seo'
-import {
-  SITE_NAME,
-  OG_IMAGE_HEIGHT,
-  OG_IMAGE_WIDTH,
-  fullTitle,
-  getSeoEntry,
-  markdownPath,
-  ogImageFor,
-} from '../data/seo'
 
 interface Props {
-  /** SEO kaydı anahtarı; verilmezse sayfanın kendi yolu (Astro.url.pathname). */
-  path?: string
+  title: string
+  description?: string
+  noindex?: boolean
   /** Sayfada animasyon sahneleri varsa true: durdurma kontrolü + sahne betiği yüklenir (ADR-0014 S3). */
   scenes?: boolean
 }
 
-const { path, scenes = false } = Astro.props
-// S19: başlık/açıklama/robots/OG/JSON-LD YALNIZCA src/data/seo.ts kaydından (kayıtsız sayfa derleme hatası).
-const entry = getSeoEntry(path ?? Astro.url.pathname)
-const title = fullTitle(entry)
-const indexable = !siteConfig.draft && entry.index
-const robots = indexable ? 'index,follow' : 'noindex,nofollow'
-// site-wdg W15: tarayıcı çubuğu sayfa/üst bar zeminiyle aynı (beyaz).
-const themeColor = lightToken('--ek-color-background')
-// Canonical/og:url yalnızca yayın modunda (alan adı PUBLIC_SITE_URL'den; taslakta uydurma adres yok).
-const canonical = !siteConfig.draft && siteConfig.siteUrl ? pageUrl(entry.path) : undefined
-const ogImage = abs(ogImageFor(entry))
-const ogImageAlt = `${entry.ogEyebrow}: ${entry.title} — ${SITE_NAME}`
-const jsonLd = jsonLdFor(entry)
+const { title, description = 'Entegrasyonik tanıtım sitesi.', noindex = false, scenes = false } = Astro.props
+const fullTitle = title === 'Entegrasyonik' ? title : `${title} · Entegrasyonik`
+const robots = siteConfig.draft || noindex ? 'noindex,nofollow' : 'index,follow'
+const themeColor = lightToken('--ek-color-primary')
+const canonical = !siteConfig.draft && siteConfig.siteUrl ? new URL(Astro.url.pathname, siteConfig.siteUrl).href : undefined
 ---
 
 <!doctype html>
@@ -53,39 +35,15 @@ const jsonLd = jsonLdFor(entry)
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{title}</title>
-    <meta name="description" content={entry.description} />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
     <meta name="robots" content={robots} />
     <meta name="theme-color" content={themeColor} />
     {canonical && <link rel="canonical" href={canonical} />}
-    {/* Tek dil (tr): hreflang yalnızca kendini ve x-default'u gösterir; İngilizce sürüm olmadığı için `en` YOK. */}
-    {canonical && indexable && <link rel="alternate" hreflang="tr" href={canonical} />}
-    {canonical && indexable && <link rel="alternate" hreflang="x-default" href={canonical} />}
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-    <link rel="icon" href="/icon-192.png" type="image/png" sizes="192x192" />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <link rel="manifest" href="/site.webmanifest" />
-    <link rel="alternate" type="text/plain" href="/llms.txt" title="llms.txt" />
-    {entry.index && <link rel="alternate" type="text/markdown" href={markdownPath(entry.path)} title="Markdown" />}
+    <link rel="alternate" type="text/plain" href="/llms.txt" />
     <link rel="preload" href={interLatin} as="font" type="font/woff2" crossorigin />
     <link rel="preload" href={interLatinExt} as="font" type="font/woff2" crossorigin />
-    <meta property="og:site_name" content={SITE_NAME} />
-    <meta property="og:type" content="website" />
-    <meta property="og:locale" content="tr_TR" />
-    <meta property="og:title" content={title} />
-    <meta property="og:description" content={entry.description} />
-    {canonical && <meta property="og:url" content={canonical} />}
-    <meta property="og:image" content={ogImage} />
-    <meta property="og:image:type" content="image/png" />
-    <meta property="og:image:width" content={String(OG_IMAGE_WIDTH)} />
-    <meta property="og:image:height" content={String(OG_IMAGE_HEIGHT)} />
-    <meta property="og:image:alt" content={ogImageAlt} />
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content={title} />
-    <meta name="twitter:description" content={entry.description} />
-    <meta name="twitter:image" content={ogImage} />
-    <meta name="twitter:image:alt" content={ogImageAlt} />
-    {jsonLd.map((item) => <script type="application/ld+json" set:html={serializeJsonLd(item)} />)}
     <slot name="head" />
   </head>
   <body>
@@ -107,9 +65,8 @@ const jsonLd = jsonLdFor(entry)
     z-index: 20;
     padding: var(--ek-space-3) var(--ek-space-4);
     border-radius: var(--ek-radius-md);
-    /* SITE-DL-02: birincil eylem rengi (eylem mavisi). */
-    background: var(--site-action);
-    color: var(--site-action-contrast);
+    background: var(--ek-color-primary);
+    color: var(--site-color-on-primary);
     font-weight: var(--ek-font-weight-semibold);
     text-decoration: none;
     transform: translateY(-200%);

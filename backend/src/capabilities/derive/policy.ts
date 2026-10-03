@@ -1,5 +1,5 @@
 // ADR-0019 §2 türetme (a): OPERATION_POLICY nesnesi bellekte kayıttan türetilir.
-// `api/rpc/operationPolicy.ts` bunu `derivePolicy(CAPABILITIES)` ile dışa verir; dışa açık API (getRequiredTier/resolveTier/
+// `api/operationPolicy.ts` bunu `derivePolicy(CAPABILITIES)` ile dışa verir; dışa açık API (getRequiredTier/resolveTier/
 // isAllowed/OPEN_OPERATIONS/IMAGE_API_TARGETS/PSEUDO_SERVICES) DEĞİŞMEZ.
 import type { CapabilityDef, PolicyTable, RpcBinding, Tier } from '../types';
 

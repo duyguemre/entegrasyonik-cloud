@@ -100,16 +100,16 @@ describe('audience (saf)', () => {
 describe('preferences.resolveChannels (saf)', () => {
     it('zorunlu: uygulama ici kapatilamaz, e-posta "off" secilemez; anlik -> ozet yalniz kritik olmayanda', () => {
         const paymentFailed = getDefinition('BILLING_PAYMENT_FAILED')!; // mandatory, severity error, instant
-        expect(resolveChannels(paymentFailed, { billing: { inApp: false, email: 'off' } })).toEqual({ inApp: true, email: 'instant', push: true });
+        expect(resolveChannels(paymentFailed, { billing: { inApp: false, email: 'off' } })).toEqual({ inApp: true, email: 'instant' });
         expect(resolveChannels(paymentFailed, { billing: { email: 'digest' } }).email).toBe('digest');
         const oversold = getDefinition('STOCK_OVERSOLD')!; // mandatory + critical
         expect(resolveChannels(oversold, { stock: { email: 'digest' } }).email).toBe('instant');
     });
     it('zorunlu degil: kullanici -> tenant -> katalog sirasi', () => {
         const d = getDefinition('ORDER_SYNC_FAILED')!; // varsayilan digest
-        expect(resolveChannels(d)).toEqual({ inApp: true, email: 'digest', push: false });
+        expect(resolveChannels(d)).toEqual({ inApp: true, email: 'digest' });
         expect(resolveChannels(d, undefined, { order: { email: 'instant' } }).email).toBe('instant');
-        expect(resolveChannels(d, { order: { email: 'off', inApp: false } }, { order: { email: 'instant' } })).toEqual({ inApp: false, email: 'off', push: false });
+        expect(resolveChannels(d, { order: { email: 'off', inApp: false } }, { order: { email: 'instant' } })).toEqual({ inApp: false, email: 'off' });
     });
 });
 

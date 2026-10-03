@@ -1,4 +1,4 @@
-// P2 — Admin paneli / Sistem yönetimi (AdminSystemManagementView: platform sağlığı, kuyruklar,
+// P2 — Admin paneli / Sistem Yönetimi (AdminSystemManagementView: platform sağlığı, kuyruklar,
 // önbellek, Redis, operasyonel içgörüler + export detay / önbellek diyalogları). ADR-0011 Bağlam:
 // "AdminSystemManagementView 41 hex" — literal sayısı en yüksek dosya. platformAdmin-only (ADR-0001).
 // Menü kaydı için sentetik 'adminPanel' grubu — bkz. admin-clients.spec.ts / nav.ts `menuFixtureWithAdmin`.
@@ -26,7 +26,7 @@ async function scrollAreaTo(page: Page, where: 'top' | 'bottom') {
   await page.waitForTimeout(200)
 }
 
-test.describe('P2 — Admin / Sistem yönetimi (AdminSystemManagementView)', () => {
+test.describe('P2 — Admin / Sistem Yönetimi (AdminSystemManagementView)', () => {
   test('smoke: başlık, trafik özetleri, kuyruk/önbellek/Redis kartları ve 5 grafik render olur', async ({ page }) => {
     await installApiMocks(page, withAdminMenu())
     await gotoAuthed(page)
@@ -34,9 +34,8 @@ test.describe('P2 — Admin / Sistem yönetimi (AdminSystemManagementView)', () 
 
     await expect(page.locator('.adminSystemManagementView')).toBeVisible()
     await expect(page.getByText('Sistem Durum Özeti')).toBeVisible()
-    // Aşama 3: bölüm başlıkları cümle düzeninde (heading rolü).
-    await expect(page.getByRole('heading', { name: 'Gönderim işlemleri' })).toBeVisible()
-    await expect(page.getByRole('heading', { name: 'Çekim işlemleri' })).toBeVisible()
+    await expect(page.getByText('EXPORT OPERASYONLARI')).toBeVisible()
+    await expect(page.getByText('IMPORT OPERASYONLARI')).toBeVisible()
     await expect(page.getByText('TAMAMLANDI').first()).toBeVisible()
     await expect(page.getByText('e2e-pod-a1')).toBeVisible()
     await expect(page.getByText('Kuyruk Analizi')).toBeVisible()
@@ -77,15 +76,15 @@ test.describe('P2 — Admin / Sistem yönetimi (AdminSystemManagementView)', () 
     await gotoAuthed(page)
     await openScreen(page, 'AdminSystemManagementView')
 
-    await page.getByRole('button', { name: 'Gönderim trafiği detaylı analizini aç' }).click()
+    await page.locator('button[title="Detaylı Analiz"]').click()
 
-    const dialog = page.getByRole('dialog').filter({ hasText: 'Gönderim trafiği — ayrıntılı analiz' })
+    const dialog = page.getByRole('dialog').filter({ hasText: 'Export Trafiği Detaylı Analiz' })
     await expect(dialog).toBeVisible()
     await expect(dialog).toContainText('E2E Örnek Ticaret A.Ş.')
-    await expect(dialog).toContainText('Ürün gönderimi')
+    await expect(dialog).toContainText('Ürün Gönderimi')
     await expect(dialog).toContainText('Sıradaki:')
 
-    await dialog.getByRole('button', { name: 'Grafik görünümü' }).click()
+    await dialog.locator('button:has(.mdi-chart-box-outline)').click()
     await expect(dialog.getByText('GÜNLÜK İTEM TRAFİĞİ')).toBeVisible()
   })
 
@@ -144,8 +143,8 @@ test.describe('P2 — Admin / Sistem yönetimi (AdminSystemManagementView)', () 
     await gotoAuthed(page)
     await openScreen(page, 'AdminSystemManagementView')
     await waitForCharts(page, 5)
-    await page.getByRole('button', { name: 'Gönderim trafiği detaylı analizini aç' }).click()
-    const dialog = page.getByRole('dialog').filter({ hasText: 'Gönderim trafiği — ayrıntılı analiz' })
+    await page.locator('button[title="Detaylı Analiz"]').click()
+    const dialog = page.getByRole('dialog').filter({ hasText: 'Export Trafiği Detaylı Analiz' })
     await expect(dialog).toContainText('E2E Örnek Ticaret A.Ş.')
     await page.waitForTimeout(500)
     await expect(page).toHaveScreenshot('admin-system-export-detail.png', { fullPage: false })
@@ -170,8 +169,8 @@ test.describe('P2 — Admin / Sistem yönetimi (AdminSystemManagementView)', () 
     await installApiMocks(page, withAdminMenu())
     await gotoAuthed(page)
     await openScreen(page, 'AdminSystemManagementView')
-    await page.getByRole('button', { name: 'Gönderim trafiği detaylı analizini aç' }).click()
-    const dialog = page.getByRole('dialog').filter({ hasText: 'Gönderim trafiği — ayrıntılı analiz' })
+    await page.locator('button[title="Detaylı Analiz"]').click()
+    const dialog = page.getByRole('dialog').filter({ hasText: 'Export Trafiği Detaylı Analiz' })
     await expect(dialog).toContainText('E2E Örnek Ticaret A.Ş.')
     // Geçiş animasyonu (sekme/diyalog opaklık geçişi) bitmeden ölçülürse yarı saydam renkler yanlış kontrast
     // sonucu üretir — ölçüm ÖNCESİ oturmasını bekle.

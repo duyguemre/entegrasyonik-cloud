@@ -4,9 +4,8 @@
 
     <div class="flex-grow-1 overflow-y-auto scroll-area" :aria-busy="loading ? 'true' : 'false'">
 
-      <EkPageHeader section="Yönetim" title="Sistem yönetimi"
-        description="Platform sağlığı, aktif işleyiciler ve bellek durumu anlık olarak izleniyor."
-        refreshable :refreshing="loading" @refresh="loadData()" />
+      <EkPageHeader section="Yönetim" title="Sistem Yönetimi"
+        description="Platform sağlığı, aktif işleyiciler ve bellek durumu anlık olarak izleniyor." />
 
       <!-- Yeniden yükleme göstergesi: ince 2px çizgi (ilk yükleme dahil yerleşimi kaydırmaz) -->
       <div class="load-indicator">
@@ -14,16 +13,18 @@
       </div>
 
       <!-- Operasyonel kontroller -->
-      <EkSection title="Sistem durum özeti" class="block">
+      <EkSection title="Sistem Durum Özeti" class="block">
         <div class="panel controls-bar">
           <div class="controls-group">
+            <v-icon size="20" aria-hidden="true">mdi-filter-variant</v-icon>
+            <span class="label-caps">FİLTRE:</span>
             <v-select v-model="timeFrame" :items="timeFrameOptions" density="compact" hide-details variant="outlined"
               class="customTextField timeframe-select-inline select-max-140" color="primary"
               aria-label="Zaman aralığı"></v-select>
 
             <v-select v-model="targetClientId" :items="clients" item-title="title" item-value="clientId"
-              label="Mağaza" density="compact" hide-details clearable variant="outlined"
-              class="customTextField client-select-inline" color="primary" placeholder="Tüm mağazalar">
+              label="Mağaza Seçiniz" density="compact" hide-details clearable variant="outlined"
+              class="customTextField client-select-inline" color="primary" placeholder="Tüm Mağazalar">
               <template v-slot:prepend-inner>
                 <v-icon size="18">mdi-store-outline</v-icon>
               </template>
@@ -31,11 +32,16 @@
           </div>
 
           <div class="controls-group">
-            <v-switch v-model="autoRefresh" hide-details density="compact">
+            <v-switch v-model="autoRefresh" hide-details color="success" inset density="compact">
               <template v-slot:label>
-                <span class="controls-label">Canlı izleme</span>
+                <span class="label-caps">CANLI İZLEME</span>
               </template>
             </v-switch>
+
+            <v-btn @click="loadData()" icon variant="outlined" density="comfortable"
+              :loading="loading" aria-label="Sistem verilerini yenile">
+              <v-icon>mdi-refresh</v-icon>
+            </v-btn>
           </div>
         </div>
       </EkSection>
@@ -43,13 +49,13 @@
       <!-- Export / Import -->
       <v-row class="block">
         <v-col cols="12" md="6">
-          <h2 class="section-title">Gönderim işlemleri</h2>
+          <h2 class="section-title">EXPORT OPERASYONLARI</h2>
           <div class="panel panel--muted stack-gap">
             <div class="panel-head">
               <div class="panel-head__left">
-                <span class="panel-title">Gönderim trafiği (tüm mağazalar)</span>
+                <span class="panel-title panel-title--caps">Export Trafiği (Global)</span>
                 <v-btn icon="mdi-information-outline" size="28" variant="text" color="primary"
-                  @click="openExportDetail()" title="Ayrıntılı analiz" aria-label="Gönderim trafiği detaylı analizini aç"></v-btn>
+                  @click="openExportDetail()" title="Detaylı Analiz" aria-label="Export trafiği detaylı analizini aç"></v-btn>
               </div>
               <v-icon color="primary" size="24" aria-hidden="true">mdi-upload-network-outline</v-icon>
             </div>
@@ -65,19 +71,19 @@
             <div class="panel-head">
               <div class="panel-head__left">
                 <v-icon color="primary" size="20" aria-hidden="true">mdi-chart-bar</v-icon>
-                <span class="panel-title">En aktif 5 mağaza</span>
+                <span class="label-caps">EN AKTİF 5 MAĞAZA</span>
               </div>
             </div>
-            <v-chart v-if="isMounted" :theme="chartTheme" class="chart chart-min-350" :option="exportChartOption" autoresize role="img"
+            <v-chart v-if="isMounted" theme="entegrasyonik" class="chart chart-min-350" :option="exportChartOption" autoresize role="img"
               aria-label="En aktif 5 mağaza için export durumu grafiği (başarılı, hatalı, bekleyen)" />
           </div>
         </v-col>
 
         <v-col cols="12" md="6">
-          <h2 class="section-title">Çekim işlemleri</h2>
+          <h2 class="section-title">IMPORT OPERASYONLARI</h2>
           <div class="panel panel--muted stack-gap">
             <div class="panel-head">
-              <span class="panel-title">Çekim trafiği (tüm mağazalar)</span>
+              <span class="panel-title panel-title--caps">Import Trafiği (Global)</span>
               <v-icon color="success" size="24" aria-hidden="true">mdi-download-network-outline</v-icon>
             </div>
             <div class="metric-pills">
@@ -92,17 +98,17 @@
             <div class="panel-head">
               <div class="panel-head__left">
                 <v-icon color="success" size="20" aria-hidden="true">mdi-chart-bar</v-icon>
-                <span class="panel-title">En aktif 5 mağaza</span>
+                <span class="label-caps">EN AKTİF 5 MAĞAZA</span>
               </div>
             </div>
-            <v-chart v-if="isMounted" :theme="chartTheme" class="chart chart-min-350" :option="importChartOption" autoresize role="img"
+            <v-chart v-if="isMounted" theme="entegrasyonik" class="chart chart-min-350" :option="importChartOption" autoresize role="img"
               aria-label="En aktif 5 mağaza için import durumu grafiği (tamamlanan, hatalı)" />
           </div>
         </v-col>
       </v-row>
 
       <!-- Operasyonel içgörüler -->
-      <h2 class="section-title">Operasyonel içgörüler ve performans</h2>
+      <h2 class="section-title">Operasyonel Insights & Performans</h2>
       <div class="panel panel--muted block">
         <v-row>
           <v-col cols="12" lg="4">
@@ -110,13 +116,13 @@
             <div class="insight-list">
               <div class="metric-insight-card">
                 <div class="insight-left">
-                  <span class="insight-icon insight-icon--info"><v-icon size="20" aria-hidden="true">mdi-download-outline</v-icon></span>
+                  <span class="insight-icon insight-icon--info"><v-icon size="20" aria-hidden="true">mdi-cloud-download</v-icon></span>
                   <div>
                     <div class="insight-label">Çekilen Kayıt</div>
                     <div class="insight-value">{{ healthData.operationInsights.metrics.totalFetched }}</div>
                   </div>
                 </div>
-                <EkStatusChip tone="info" label="Platform" />
+                <EkStatusChip tone="info" label="PLATFORM" />
               </div>
 
               <div class="metric-insight-card">
@@ -127,18 +133,18 @@
                     <div class="insight-value">{{ healthData.operationInsights.metrics.totalInserted }}</div>
                   </div>
                 </div>
-                <EkStatusChip tone="success" label="Veritabanı" />
+                <EkStatusChip tone="success" label="VERİTABANI" />
               </div>
 
               <div class="metric-insight-card">
                 <div class="insight-left">
-                  <span class="insight-icon insight-icon--warning"><v-icon size="20" aria-hidden="true">mdi-refresh</v-icon></span>
+                  <span class="insight-icon insight-icon--warning"><v-icon size="20" aria-hidden="true">mdi-cached</v-icon></span>
                   <div>
                     <div class="insight-label">Güncellenen</div>
                     <div class="insight-value">{{ healthData.operationInsights.metrics.totalUpdated }}</div>
                   </div>
                 </div>
-                <EkStatusChip tone="warning" label="Senkron" />
+                <EkStatusChip tone="warning" label="SYNC" />
               </div>
 
               <div class="metric-insight-card">
@@ -149,7 +155,7 @@
                     <div class="insight-value">{{ healthData.operationInsights.metrics.totalFailed }}</div>
                   </div>
                 </div>
-                <EkStatusChip tone="danger" label="Kritik" />
+                <EkStatusChip tone="danger" label="KRİTİK" />
               </div>
             </div>
           </v-col>
@@ -157,7 +163,7 @@
           <v-col cols="12" lg="5">
             <div class="label-caps col-title">OPERASYONEL BAŞARI TRENDİ</div>
             <div class="panel panel--inner fill-height">
-              <v-chart v-if="isMounted" :theme="chartTheme" class="chart chart-h-300" :option="insightTimelineChartOption" autoresize role="img"
+              <v-chart v-if="isMounted" theme="entegrasyonik" class="chart chart-h-300" :option="insightTimelineChartOption" autoresize role="img"
                 aria-label="Operasyonel başarı trendi grafiği (günlük başarılı ve hatalı işlemler)" />
             </div>
           </v-col>
@@ -165,12 +171,12 @@
           <v-col cols="12" lg="3">
             <div class="label-caps col-title">İŞLEM DAĞILIMI</div>
             <div class="panel panel--inner stack-gap">
-              <v-chart v-if="isMounted" :theme="chartTheme" class="chart chart-h-180" :option="insightTypePieChartOption" autoresize role="img"
+              <v-chart v-if="isMounted" theme="entegrasyonik" class="chart chart-h-180" :option="insightTypePieChartOption" autoresize role="img"
                 aria-label="İşlem türü dağılımı grafiği" />
             </div>
             <div class="label-caps col-title">ORTALAMA SÜRE (MS)</div>
             <div class="panel panel--inner">
-              <v-chart v-if="isMounted" :theme="chartTheme" class="chart chart-h-120" :option="insightDurationBarChartOption" autoresize role="img"
+              <v-chart v-if="isMounted" theme="entegrasyonik" class="chart chart-h-120" :option="insightDurationBarChartOption" autoresize role="img"
                 aria-label="İşlem türüne göre ortalama süre grafiği (milisaniye)" />
             </div>
           </v-col>
@@ -178,7 +184,7 @@
       </div>
 
       <!-- Altyapı -->
-      <h2 class="section-title">Altyapı ve sağlık</h2>
+      <h2 class="section-title">ALTYAPI VE SAĞLIK</h2>
       <v-row class="block">
         <v-col cols="12" md="4">
           <div class="panel h-100">
@@ -194,7 +200,7 @@
               <li v-for="pod in healthData.infrastructure.activePods" :key="pod" class="pod-item">
                 <span class="insight-icon insight-icon--info insight-icon--sm"><v-icon size="18" aria-hidden="true">mdi-console</v-icon></span>
                 <span class="pod-item__name">{{ pod }}</span>
-                <EkStatusChip tone="success" label="Çalışıyor" />
+                <EkStatusChip tone="success" label="ÇALIŞIYOR" />
               </li>
             </ul>
             <EkEmptyState v-else variant="no-data" title="Aktif işlemci bulunamadı"
@@ -215,7 +221,7 @@
               <div class="queue-box">
                 <div class="queue-box__head">
                   <span class="label-caps">Sipariş Senkronizasyonu</span>
-                  <EkStatusChip tone="warning" label="BullMQ" />
+                  <EkStatusChip tone="warning" label="BULLMQ" />
                 </div>
                 <div class="queue-box__counts">
                   <div class="queue-count">
@@ -232,7 +238,7 @@
               <div class="queue-box">
                 <div class="queue-box__head">
                   <span class="label-caps">Export İşlemleri</span>
-                  <EkStatusChip tone="info" label="Dahili" />
+                  <EkStatusChip tone="info" label="INTERNAL" />
                 </div>
                 <div class="queue-box__counts">
                   <div class="queue-count">
@@ -249,7 +255,7 @@
               <div class="queue-box">
                 <div class="queue-box__head">
                   <span class="label-caps">Import İşlemleri</span>
-                  <EkStatusChip tone="success" label="Dahili" />
+                  <EkStatusChip tone="success" label="INTERNAL" />
                 </div>
                 <div class="queue-box__counts">
                   <div class="queue-count">
@@ -311,7 +317,12 @@
       <ActionDialogComponent v-model="showCacheDialog" :title="cacheDialogTitle" icon="mdi-memory" color="info"
         maxWidth="700px" :showFooter="false" attach=".adminSystemManagementView">
         <div class="dialog-body">
-          <EkAlert v-if="cacheDialogTitle.includes('Erişim')" tone="info" dense class="mb-4" text="Hits/Misses istatistikleri NodeCache çalışma süresi boyunca birikmiş toplam verilerdir." />
+          <v-alert v-if="cacheDialogTitle.includes('Erişim')" type="info" variant="tonal" density="compact"
+            class="mb-4 rounded-lg border">
+            <div class="text-caption font-weight-bold">
+              Hits/Misses istatistikleri NodeCache çalışma süresi boyunca birikmiş toplam verilerdir.
+            </div>
+          </v-alert>
 
           <EkDataTable v-if="healthData.infrastructure.memoryCache.breakdown.length > 0"
             :items="healthData.infrastructure.memoryCache.breakdown" :columns="cacheColumns" row-key="name"
@@ -322,7 +333,7 @@
       </ActionDialogComponent>
 
       <!-- Export detay analizi -->
-      <ActionDialogComponent v-model="showExportDialog" title="Gönderim trafiği — ayrıntılı analiz"
+      <ActionDialogComponent v-model="showExportDialog" title="Export Trafiği Detaylı Analiz"
         icon="mdi-upload-network-outline" color="primary" maxWidth="1200px" :showFooter="false"
         attach=".adminSystemManagementView" @close="closeExportDetail">
         <div class="dialog-body">
@@ -341,7 +352,7 @@
               clearable variant="outlined" class="customTextField select-max-150"
               color="primary"></v-select>
 
-            <v-select v-model="exportFilters.mode" :items="modeOptions" label="İşlem türü" density="compact"
+            <v-select v-model="exportFilters.mode" :items="modeOptions" label="İşlem Tipi" density="compact"
               hide-details clearable variant="outlined" class="customTextField select-max-150"
               color="primary"></v-select>
 
@@ -352,9 +363,9 @@
             <v-spacer></v-spacer>
 
             <div class="controls-group">
-              <v-switch v-model="exportAutoRefresh" hide-details density="compact">
+              <v-switch v-model="exportAutoRefresh" hide-details color="success" inset density="compact">
                 <template v-slot:label>
-                  <span class="controls-label">Canlı izleme</span>
+                  <span class="label-caps">CANLI İZLEME</span>
                 </template>
               </v-switch>
 
@@ -367,64 +378,77 @@
 
           <!-- Tablo görünümü -->
           <template v-if="exportViewMode === 'table'">
-            <div class="export-grid-host">
-              <EkListFrame label="Export işleri">
-                <EkDataGrid
-                  :columns="exportColumns"
-                  :rows="exportDetailData"
-                  label="Export işleri tablosu"
-                  row-key="_id"
-                  label-key="clientName"
-                  :sort="exportGridSort"
-                  :loading="exportLoading && exportDetailData.length === 0"
-                  :error="exportLoadError"
-                  error-title="Export işleri yüklenemedi"
-                  empty-title="Kayıt bulunamadı"
-                  empty-text="Filtreleri değiştirerek yeniden deneyin."
-                  @update:sort="onExportGridSort"
-                >
-                  <template #cell-client="{ row }">
-                    <div class="d-flex flex-column">
-                      <span class="cell-id">#{{ row.clientId }}</span>
-                      <span class="cell-strong">{{ row.clientName }}</span>
-                    </div>
-                  </template>
-                  <template #cell-createdAt="{ row }"><span class="cell-muted">{{ formatDateTime(row.createdAt) }}</span></template>
-                  <template #cell-updatedAt="{ row }"><span class="cell-muted">{{ formatDateTime(row.updatedAt) }}</span></template>
-                  <template #cell-itemCount="{ row }">
-                    <EkStatusChip tone="info" :label="String(row.itemCount || 0)" />
-                  </template>
-                  <template #cell-status="{ row }">
-                    <div class="d-flex flex-column align-start ga-1">
-                      <EkStatusChip :tone="getStatusTone(row.status)" :label="formatStatus(row.status)" />
-                      <span v-if="row.status === 'WAITING' && row.nextRunAt" class="next-run">
-                        Sıradaki: {{ formatClock(row.nextRunAt) }}
+            <div class="export-table-wrap">
+              <!-- ek-pattern-exception: EkDataTable — sunucu-taraflı sıralanabilir başlıklar (aria-sort + klavye), sayfalama ve WAITING "Sıradaki" alt satırı EkDataTable'da yok; sunucu-taraflı varyant gelince (Aşama C) geçilecek. --><v-table density="comfortable" class="custom-export-table" fixed-header height="550px">
+                <thead>
+                  <tr>
+                    <th class="text-left">MÜŞTERİ (ID / AD)</th>
+                    <th class="text-left cursor-pointer" tabindex="0"
+                      :aria-sort="ariaSortFor('createdAt')" @click="toggleExportSort('createdAt')"
+                      @keydown.enter.prevent="toggleExportSort('createdAt')">
+                      OLUŞTURMA
+                      <v-icon size="14" v-if="exportFilters.sortField === 'createdAt'" aria-hidden="true">
+                        {{ exportFilters.sortOrder === 1 ? 'mdi-chevron-up' : 'mdi-chevron-down' }}
+                      </v-icon>
+                    </th>
+                    <th class="text-left cursor-pointer" tabindex="0"
+                      :aria-sort="ariaSortFor('updatedAt')" @click="toggleExportSort('updatedAt')"
+                      @keydown.enter.prevent="toggleExportSort('updatedAt')">
+                      GÜNCELLEME
+                      <v-icon size="14" v-if="exportFilters.sortField === 'updatedAt'" aria-hidden="true">
+                        {{ exportFilters.sortOrder === 1 ? 'mdi-chevron-up' : 'mdi-chevron-down' }}
+                      </v-icon>
+                    </th>
+                    <th class="text-center">TOPLAM İTEM</th>
+                    <th class="text-center">DURUM</th>
+                    <th class="text-center">PLATFORM</th>
+                    <th class="text-left">İŞLEM TİPİ</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="item in exportDetailData" :key="item._id">
+                    <td>
+                      <div class="d-flex flex-column">
+                        <span class="cell-id">#{{ item.clientId }}</span>
+                        <span class="cell-strong">{{ item.clientName }}</span>
+                      </div>
+                    </td>
+                    <td class="cell-muted">{{ formatDateTime(item.createdAt) }}</td>
+                    <td class="cell-muted">{{ formatDateTime(item.updatedAt) }}</td>
+                    <td class="text-center">
+                      <EkStatusChip tone="info" :label="String(item.itemCount || 0)" />
+                    </td>
+                    <td class="text-center">
+                      <div class="d-flex flex-column align-center ga-1">
+                        <EkStatusChip :tone="getStatusTone(item.status)" :label="formatStatus(item.status)" />
+                        <span v-if="item.status === 'WAITING' && item.nextRunAt" class="next-run">
+                          Sıradaki: {{ formatClock(item.nextRunAt) }}
+                        </span>
+                      </div>
+                    </td>
+                    <td class="text-center">
+                      <span class="cell-platform">{{ item.integrationCode }}</span>
+                    </td>
+                    <td>
+                      <span class="cell-muted cell-caps">
+                        {{ PLATFORM_PROCESS_LABELS[item.mode as keyof typeof PLATFORM_PROCESS_LABELS] || item.mode }}
                       </span>
-                    </div>
-                  </template>
-                  <template #cell-integrationCode="{ row }">
-                    <span class="cell-platform">{{ row.integrationCode }}</span>
-                  </template>
-                  <template #cell-mode="{ row }">
-                    <span class="cell-muted cell-caps">
-                      {{ PLATFORM_PROCESS_LABELS[row.mode as keyof typeof PLATFORM_PROCESS_LABELS] || row.mode }}
-                    </span>
-                  </template>
-                  <template #error-action>
-                    <EkButton tone="secondary" size="sm" icon="mdi-refresh" @click="loadExportDetails()">Tekrar dene</EkButton>
-                  </template>
-                </EkDataGrid>
-                <template #pager>
-                  <EkPagerBar
-                    :page="exportFilters.page"
-                    :page-size="exportFilters.limit"
-                    :total="exportTotal"
-                    label="Export işleri sayfalama"
-                    @update:page="(p: number) => (exportFilters.page = p)"
-                    @update:page-size="onExportPageSize"
-                  />
-                </template>
-              </EkListFrame>
+                    </td>
+                  </tr>
+                  <tr v-if="exportDetailData.length === 0">
+                    <td colspan="7">
+                      <EkEmptyState variant="no-results" title="Kayıt bulunamadı"
+                        message="Filtreleri değiştirerek yeniden deneyin." />
+                    </td>
+                  </tr>
+                </tbody>
+              </v-table>
+            </div>
+
+            <div class="sticky-pagination-container">
+              <PaginationComponent v-model="exportFilters.page"
+                :totalNumberOfPages="Math.ceil(exportTotal / exportFilters.limit)" :pagination="exportPagination"
+                :static="true" @setPage="loadExportDetails" />
             </div>
           </template>
 
@@ -434,21 +458,21 @@
               <v-col cols="12">
                 <div class="panel">
                   <div class="label-caps col-title">GÜNLÜK İTEM TRAFİĞİ</div>
-                  <v-chart v-if="isMounted" :theme="chartTheme" class="chart chart-h-400" :option="exportTimelineChartOption" autoresize role="img"
+                  <v-chart v-if="isMounted" theme="entegrasyonik" class="chart chart-h-400" :option="exportTimelineChartOption" autoresize role="img"
                     aria-label="Günlük export item trafiği grafiği" />
                 </div>
               </v-col>
               <v-col cols="12" md="6">
                 <div class="panel h-100">
                   <div class="label-caps col-title">İŞLEM TİPİ DAĞILIMI (Ürün Bazlı)</div>
-                  <v-chart v-if="isMounted" :theme="chartTheme" class="chart chart-h-350" :option="exportModePieChartOption" autoresize role="img"
+                  <v-chart v-if="isMounted" theme="entegrasyonik" class="chart chart-h-350" :option="exportModePieChartOption" autoresize role="img"
                     aria-label="Export işlem tipi dağılımı grafiği" />
                 </div>
               </v-col>
               <v-col cols="12" md="6">
                 <div class="panel h-100">
                   <div class="label-caps col-title">DURUM DAĞILIMI (Ürün Bazlı)</div>
-                  <v-chart v-if="isMounted" :theme="chartTheme" class="chart chart-h-350" :option="exportStatusPieChartOption" autoresize role="img"
+                  <v-chart v-if="isMounted" theme="entegrasyonik" class="chart chart-h-350" :option="exportStatusPieChartOption" autoresize role="img"
                     aria-label="Export durum dağılımı grafiği" />
                 </div>
               </v-col>
@@ -461,25 +485,20 @@
 </template>
 
 <script setup lang="ts">
-import { EkAlert, EkSection, EkKpiRow, EkKpiCard, EkStatusChip, EkEmptyState, EkDataTable, type EkTableColumn, EkListFrame, EkDataGrid, type EkGridColumn, type EkGridSort, EkPagerBar, EkButton } from '@entegrasyonik/ui/components'
 import { ref, reactive, computed, onMounted, onUnmounted, watch } from 'vue';
 import { PLATFORM_PROCESS, PLATFORM_PROCESS_LABELS } from '@/types/PlatformProcess';
 import useRestApi from '@/composables/restapi';
 import LoadingComponent from '@/components/LoadingComponent.vue';
+import PaginationComponent from '@/components/PaginationComponent.vue';
 import ActionDialogComponent from '@/components/layout/ActionDialogComponent.vue';
-import EkPageHeader from '@/components/page/EkPageHeader.vue';
-;
-;
-;
-;
-;
-;
-;
-;
-;
-;
-import { isRequestError } from '@entegrasyonik/ui/components/listStandard';
-import { formatDateTime } from '@entegrasyonik/ui/format';
+import EkPageHeader from '@/components/ds/EkPageHeader.vue';
+import EkSection from '@/components/ds/EkSection.vue';
+import EkKpiRow from '@/components/ds/EkKpiRow.vue';
+import EkKpiCard from '@/components/ds/EkKpiCard.vue';
+import EkStatusChip from '@/components/ds/EkStatusChip.vue';
+import EkEmptyState from '@/components/ds/EkEmptyState.vue';
+import EkDataTable, { type EkTableColumn } from '@/components/ds/EkDataTable.vue';
+import { formatDateTime } from '@/composables/format';
 import type { StatusTone } from '@/design/status-map';
 import VChart from 'vue-echarts';
 import { use } from 'echarts/core';
@@ -487,7 +506,7 @@ import { CanvasRenderer } from 'echarts/renderers';
 import { BarChart, PieChart } from 'echarts/charts';
 import { TooltipComponent, GridComponent, LegendComponent } from 'echarts/components';
 import { LegacyGridContainLabel } from 'echarts/features';
-import { useChartColors, useChartTheme } from '@/composables/useChartTheme';
+import { semanticColorsLight } from '@/design/tokens';
 import { escapeHtml } from '@/utils/escapeHtml';
 
 use([CanvasRenderer, BarChart, PieChart, TooltipComponent, GridComponent, LegendComponent, LegacyGridContainLabel]);
@@ -495,22 +514,19 @@ use([CanvasRenderer, BarChart, PieChart, TooltipComponent, GridComponent, Legend
 // ECharts canvas renkleri CSS değişkeni okuyamaz (ADR-0011 Karar 2 Aşama 1 istisnası) — nötr
 // (eksen etiketi / dilim kenarlığı / dilim içi yazı) renkler token kaynağından JS değeri olarak
 // alınır (eski literal'lar semantik token ile BİREBİR aynı değerdi: slate-500 / beyaz).
-// FR2-DARK: değerler etkin moda göre okunur (getter → computed seçenekler tema değişince yeniden hesaplanır).
-const chartTheme = useChartTheme();
-const chartColors = useChartColors();
 const CHART_NEUTRAL = {
-  get axisLabel() { return chartColors.value['content-muted']; },
-  get sliceBorder() { return chartColors.value.surface; },
-  get sliceLabel() { return chartColors.value.surface; },
+  axisLabel: semanticColorsLight['content-muted'],
+  sliceBorder: semanticColorsLight.surface,
+  sliceLabel: semanticColorsLight.surface,
 };
 
 // Grafik durum renkleri: ADR-0015 Karar 3.3 — iş durumları anlamsal tonlara eşlenir, TEK kaynak
-// token setidir (etkin moda göre light/dark); literal renk YOK. `accent` (kuyruk/genel vurgu) = `info`.
+// token setidir (semanticColorsLight); literal renk YOK. `accent` (kuyruk/genel vurgu) = `info`.
 const CHART_STATUS = {
-  get success() { return chartColors.value.success; },
-  get error() { return chartColors.value.error; },
-  get warning() { return chartColors.value.warning; },
-  get accent() { return chartColors.value.info; },
+  success: semanticColorsLight.success,
+  error: semanticColorsLight.error,
+  warning: semanticColorsLight.warning,
+  accent: semanticColorsLight.info,
 };
 
 const cacheColumns: EkTableColumn[] = [
@@ -530,7 +546,11 @@ const exportDetailData = ref<any[]>([]);
 const exportAnalyticsData = ref<any>(null);
 const exportViewMode = ref('table');
 const exportTotal = ref(0);
-const exportLoadError = ref(false);
+const exportPagination = computed(() => ({
+  page: exportFilters.page,
+  limit: exportFilters.limit,
+  totalNumberOfRecords: exportTotal.value
+}));
 const exportFilters = reactive({
   status: null,
   mode: null,
@@ -900,7 +920,6 @@ async function loadExportDetails() {
       ...exportFilters,
       targetClientId: targetClientId.value
     });
-    exportLoadError.value = isRequestError(res);
     if (res?.success) {
       exportDetailData.value = res.data;
       exportTotal.value = res.total;
@@ -975,33 +994,19 @@ function getStatusColorHex(status: string) {
 }
 
 // Sıralanabilir sütun başlığının erişilebilirlik durumu (yalnızca görünüm; sıralama mantığı aynı).
-// DS-v2 liste standardı — sıralama SUNUCUDA (getExportDetails `sortField`/`sortOrder`: 1 artan, -1 azalan).
-const exportColumns: EkGridColumn[] = [
-  { key: 'client', label: 'Müşteri (ID / Ad)' },
-  { key: 'createdAt', label: 'Oluşturma', sortable: true },
-  { key: 'updatedAt', label: 'Güncelleme', sortable: true },
-  { key: 'itemCount', label: 'Toplam item' },
-  { key: 'status', label: 'Durum' },
-  { key: 'integrationCode', label: 'Platform' },
-  { key: 'mode', label: 'İşlem tipi' },
-];
-
-const exportGridSort = computed<EkGridSort>(() =>
-  exportFilters.sortField
-    ? { key: exportFilters.sortField, dir: exportFilters.sortOrder === 1 ? 'asc' : 'desc' }
-    : null
-);
-
-function onExportGridSort(sort: EkGridSort) {
-  // Sunucuda "sırasız" yok: üçüncü tıklama varsayılana (oluşturma, yeniden eskiye) döner.
-  exportFilters.sortField = sort?.key ?? 'createdAt';
-  exportFilters.sortOrder = sort ? (sort.dir === 'asc' ? 1 : -1) : -1;
-  loadExportDetails();
+function ariaSortFor(field: string): 'ascending' | 'descending' | 'none' {
+  if (exportFilters.sortField !== field) return 'none';
+  return exportFilters.sortOrder === 1 ? 'ascending' : 'descending';
 }
 
-function onExportPageSize(size: number) {
-  exportFilters.limit = size;
-  exportFilters.page = 1;
+function toggleExportSort(field: string) {
+  if (exportFilters.sortField === field) {
+    exportFilters.sortOrder = exportFilters.sortOrder === 1 ? -1 : 1;
+  } else {
+    exportFilters.sortField = field;
+    exportFilters.sortOrder = -1;
+  }
+  loadExportDetails();
 }
 
 // Auto-refresh on filter change
@@ -1132,36 +1137,31 @@ onUnmounted(() => {
   }
 }
 
-// Aşama 3: başlık hiyerarşisi DS rollerine bağlandı — bölüm başlığı `heading` (16/24/600, cümle düzeni),
-// kart başlığı `subheading`, mikro etiket `micro`. Eskiden bölüm başlıkları 11px BÜYÜK HARF, kart başlıkları
-// BÜYÜK HARF'ti ve hiyerarşi tersine dönüyordu.
 .panel-title {
-  font-size: var(--ek-type-subheading-size);
-  line-height: var(--ek-type-subheading-line);
-  font-weight: var(--ek-type-subheading-weight);
+  font-size: var(--ek-font-size-md);
+  font-weight: var(--ek-font-weight-semibold);
   color: var(--ek-color-content-strong);
+
+  &--caps {
+    font-size: var(--ek-font-size-sm);
+    text-transform: uppercase;
+  }
 }
 
 .section-title {
   margin: 0 0 var(--ek-space-4);
-  font-size: var(--ek-type-heading-size);
-  line-height: var(--ek-type-heading-line);
-  font-weight: var(--ek-type-heading-weight);
-  color: var(--ek-color-content-strong);
-}
-
-.label-caps {
-  font-size: var(--ek-type-micro-size);
-  line-height: var(--ek-type-micro-line);
-  font-weight: var(--ek-type-micro-weight);
-  letter-spacing: var(--ek-type-micro-tracking);
+  font-size: var(--ek-font-size-xs);
+  font-weight: var(--ek-font-weight-semibold);
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--ek-color-content-muted);
 }
 
-.controls-label {
-  font-size: var(--ek-type-label-size);
-  font-weight: var(--ek-type-label-weight);
+.label-caps {
+  font-size: var(--ek-font-size-xs);
+  font-weight: var(--ek-font-weight-semibold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
   color: var(--ek-color-content-default);
 }
 
@@ -1200,7 +1200,12 @@ onUnmounted(() => {
 .select-max-140 { max-width: 140px; }
 .select-max-150 { max-width: 150px; }
 
-/* Aşama 4: araç çubuğu seçicileri DS alan tipografisinde (yan yana iki seçici farklı boyut/renkte görünüyordu). */
+.timeframe-select-inline :deep(.v-field__input),
+.client-select-inline :deep(.v-field__input) {
+  font-size: var(--ek-font-size-sm) !important;
+  font-weight: var(--ek-font-weight-semibold) !important;
+  color: var(--ek-color-primary) !important;
+}
 
 // ── Grafik boyutları ────────────────────────────────────────────────────────
 .chart { width: 100%; }
@@ -1218,32 +1223,27 @@ onUnmounted(() => {
   gap: var(--ek-space-2);
 }
 
-// Aşama 3: anahtar-değer bloğu dili — mikro etiket ÜSTTE, değer ALTTA kalın/tabular (brif "Uygulama kimliği").
 .metric-pill {
   flex: 1 1 140px;
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--ek-space-1);
-  padding: var(--ek-space-3) var(--ek-space-4);
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ek-space-2);
+  padding: var(--ek-space-2) var(--ek-space-4);
   background: var(--ek-color-surface);
   border: 1px solid var(--ek-color-border-default);
-  border-radius: var(--ek-radius-tile);
+  border-radius: var(--ek-radius-md);
 
   &__label {
-    font-size: var(--ek-type-micro-size);
-    line-height: var(--ek-type-micro-line);
-    font-weight: var(--ek-type-micro-weight);
-    letter-spacing: var(--ek-type-micro-tracking);
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--ek-font-weight-semibold);
     text-transform: uppercase;
     color: var(--ek-color-content-muted);
   }
 
   &__value {
-    font-size: var(--ek-type-metric-size);
-    line-height: var(--ek-type-metric-line);
-    font-weight: var(--ek-type-metric-weight);
-    font-variant-numeric: tabular-nums;
+    font-size: var(--ek-font-size-lg);
+    font-weight: var(--ek-font-weight-semibold);
   }
 }
 
@@ -1269,7 +1269,7 @@ onUnmounted(() => {
   background: var(--ek-color-surface);
   border: 1px solid var(--ek-color-border-default);
   border-radius: var(--ek-radius-lg);
-  transition: border-color var(--ek-motion-reveal);
+  transition: border-color var(--ek-duration-base) var(--ek-easing-standard);
 
   &:hover { border-color: var(--ek-color-border-strong); }
 }
@@ -1419,8 +1419,8 @@ onUnmounted(() => {
 // Tıklanabilir önbellek kartları: hover/odakta yalnızca kenarlık geri bildirimi + görünür odak halkası.
 .hover-effect {
   cursor: pointer;
-  transition: border-color var(--ek-motion-reveal),
-    box-shadow var(--ek-motion-reveal);
+  transition: border-color var(--ek-duration-base) var(--ek-easing-standard),
+    box-shadow var(--ek-duration-base) var(--ek-easing-standard);
 }
 
 .hover-effect:hover,
@@ -1463,10 +1463,28 @@ onUnmounted(() => {
   border-radius: var(--ek-radius-md);
 }
 
-.export-grid-host {
-  height: 550px;
+.export-table-wrap {
   margin-bottom: var(--ek-space-4);
+  overflow: hidden;
+  background: var(--ek-color-surface);
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-lg);
 }
+
+.custom-export-table :deep(th) {
+  background: var(--ek-color-surface-muted) !important;
+  font-size: var(--ek-font-size-xs) !important;
+  font-weight: var(--ek-font-weight-semibold) !important;
+  color: var(--ek-color-content-default) !important;
+}
+
+// Sıralanabilir tablo başlıkları (klavye ile odaklanabilir): görünür odak halkası.
+.custom-export-table th[tabindex]:focus-visible {
+  outline: 2px solid var(--ek-color-primary);
+  outline-offset: -2px;
+}
+
+.cursor-pointer { cursor: pointer; }
 
 .cell-id {
   font-size: var(--ek-font-size-xs);
@@ -1498,5 +1516,16 @@ onUnmounted(() => {
   font-size: var(--ek-font-size-xs);
   font-weight: var(--ek-font-weight-semibold);
   color: var(--ek-color-warning);
+}
+
+.sticky-pagination-container {
+  position: sticky;
+  bottom: calc(-1 * var(--ek-space-4));
+  z-index: 10;
+  margin-left: calc(-1 * var(--ek-space-4));
+  margin-right: calc(-1 * var(--ek-space-4));
+  padding: var(--ek-space-2) var(--ek-space-4);
+  background: var(--ek-color-surface);
+  border-top: 1px solid var(--ek-color-border-default);
 }
 </style>

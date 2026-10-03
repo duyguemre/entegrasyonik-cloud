@@ -5,11 +5,17 @@
     attach="adminClientListView">
 
     <div class="pa-0">
-      <EkPageTabs v-model="activeTab" class="px-4" label="Mağaza ayrıntıları" :tabs="[
-        { value: 'overview', label: 'Genel bakış', icon: 'mdi-view-dashboard-outline' },
-        { value: 'operations', label: 'Operasyonel izleme', icon: 'mdi-buffer' },
-        { value: 'settings', label: 'Mağaza ayarları', icon: 'mdi-cog-outline' },
-      ]" />
+      <v-tabs v-model="activeTab" color="primary" class="admin-tabs px-4 border-b">
+        <v-tab value="overview" class="font-weight-black">
+          <v-icon start size="18">mdi-view-dashboard-outline</v-icon> GENEL BAKIŞ
+        </v-tab>
+        <v-tab value="operations" class="font-weight-black">
+          <v-icon start size="18">mdi-buffer</v-icon> OPERASYONEL İZLEME
+        </v-tab>
+        <v-tab value="settings" class="font-weight-black">
+          <v-icon start size="18">mdi-cog-outline</v-icon> MAĞAZA AYARLARI
+        </v-tab>
+      </v-tabs>
 
       <v-window v-model="activeTab" class="pa-4">
         <!-- Overview Tab -->
@@ -44,7 +50,7 @@
                           <div class="d-flex align-center justify-space-between">
                             <span class="text-subtitle-2 font-weight-black color-slate-900">{{ int.integrationCode
                               }}</span>
-                            <EkStatusChip tone="success" label="Aktif" />
+                            <EkStatusChip tone="success" label="AKTİF" />
                           </div>
                           <div class="text-micro font-weight-bold color-slate-500 mt-1 line-clamp-1">
                             {{ int.title || 'Platform Entegrasyonu' }}
@@ -178,7 +184,7 @@
                   <div class="text-subtitle-2 font-weight-black color-slate-800 mb-4 uppercase">TEMEL BİLGİLER</div>
                   <v-row>
                     <v-col cols="12" md="6">
-                      <v-text-field v-model="form.name" label="Mağaza adı" variant="outlined" density="compact"
+                      <v-text-field v-model="form.name" label="Mağaza Adı" variant="outlined" density="compact"
                         class="customTextField" hide-details></v-text-field>
                     </v-col>
                     <v-col cols="12" md="6">
@@ -205,7 +211,7 @@
                 <v-card flat border class="rounded-xl pa-5 border-subtle h-100">
                   <div class="d-flex align-center justify-space-between mb-4">
                     <div class="text-subtitle-2 font-weight-black color-slate-800 uppercase">ARŞİV DEPOLAMA (R2)</div>
-                    <v-switch v-model="form.archive.isActive" hide-details density="compact"
+                    <v-switch v-model="form.archive.isActive" hide-details color="success" inset density="compact"
                       class="premium-switch">
                       <template v-slot:label>
                         <span class="text-caption font-weight-black color-slate-500 mr-2">DURUM</span>
@@ -232,7 +238,7 @@
                 <v-card flat border class="rounded-xl pa-5 border-subtle h-100">
                   <div class="d-flex align-center justify-space-between mb-4">
                     <div class="text-subtitle-2 font-weight-black color-slate-800 uppercase">RESİM DEPOLAMA (R2)</div>
-                    <v-switch v-model="form.image.isActive" hide-details density="compact"
+                    <v-switch v-model="form.image.isActive" hide-details color="success" inset density="compact"
                       class="premium-switch">
                       <template v-slot:label>
                         <span class="text-caption font-weight-black color-slate-500 mr-2">DURUM</span>
@@ -272,7 +278,7 @@
                             <div class="text-micro font-weight-black color-slate-700 uppercase">{{ item.integrationCode }}</div>
                             <div class="text-micro font-weight-bold color-slate-400 uppercase">{{ item.type }}</div>
                           </div>
-                          <v-switch v-model="item.status" hide-details density="compact" class="premium-switch"
+                          <v-switch v-model="item.status" hide-details color="success" inset density="compact" class="premium-switch"
                             :aria-label="`${item.integrationCode} entegrasyonu etkin`"></v-switch>
                         </v-card>
                       </v-col>
@@ -304,17 +310,16 @@
 </template>
 
 <script setup lang="ts">
-import { EkPageTabs, EkKpiRow, EkSkeleton, EkStatusChip } from '@entegrasyonik/ui/components'
 import { ref, reactive, computed, watch } from 'vue';
 import useRestApi from '@/composables/restapi';
 import { useSnackbarStore } from '@/stores/snackbarStore';
 import ActionDialogComponent from '@/components/layout/ActionDialogComponent.vue';
 import ClientStatsCard from '@/components/adminPanel/ClientStatsCard.vue';
 import useMarketplaceStore from '@/stores/marketplace';
-;
-;
-;
-import { formatDateTime, formatPercent } from '@entegrasyonik/ui/format';
+import EkKpiRow from '@/components/ds/EkKpiRow.vue';
+import EkSkeleton from '@/components/ds/EkSkeleton.vue';
+import EkStatusChip from '@/components/ds/EkStatusChip.vue';
+import { formatDateTime, formatPercent } from '@/composables/format';
 
 const marketplaceStore = useMarketplaceStore();
 
@@ -490,8 +495,8 @@ watch(activeTab, (val) => {
 // Hover: yalnızca renk/kenarlık geri bildirimi (token süre, 200ms). Eski `translateY(-2px)` "zıplama"
 // efekti kaldırıldı (premium-ui-standards: yalnızca işlevsel geri bildirim).
 .hover-card {
-  transition: border-color var(--ek-motion-reveal),
-    background-color var(--ek-motion-reveal);
+  transition: border-color var(--ek-duration-base) var(--ek-easing-standard),
+    background-color var(--ek-duration-base) var(--ek-easing-standard);
   cursor: pointer;
 
   &:hover {
@@ -503,7 +508,7 @@ watch(activeTab, (val) => {
 .metric-pill {
   min-width: 130px;
   box-shadow: var(--ek-shadow-sm);
-  transition: border-color var(--ek-motion-reveal);
+  transition: border-color var(--ek-duration-base) var(--ek-easing-standard);
 
   &:hover {
     border-color: var(--ek-color-border-strong);

@@ -9,8 +9,8 @@
 </template>
 <script setup lang="ts">
 import { ref, inject, nextTick, watch, computed, onBeforeMount, onMounted } from 'vue'
-import { useProductImageUrl } from '@/composables/useProductImageUrl'
-const productImageUrl = useProductImageUrl()
+const baseImageURL = ref('https://images.entegrasyonik.com/products/')
+const baseTempImageURL = ref(baseImageURL.value + 'temp/')
 
 const props = withDefaults(defineProps<{
   height?: number,
@@ -45,9 +45,11 @@ const computedImage = computed(() => {
   if (!image || !image._id) {
     return { width: 0, src: undefined }
   }
-  var src = productImageUrl(image, props.productInfoForm, { thumbnail: true })
+  var src = image.url
   var width = 0
-  if (image.url) {
+  if (src == undefined) {
+    src = (image.isTempImage == false ? baseImageURL.value : baseTempImageURL.value) + props.productInfoForm.tempId + '/' + image._id + '_t.' + image.extension
+  } else {
     width = image.width * 100 / image.height
   }
   if (aspect.value) {

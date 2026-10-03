@@ -1,15 +1,3 @@
-<!--
-  frontend/src/components/logListView/DetailedExportLogReport.vue
-
-  FE-LOCAL-1048 — Pazaryeri Gönderim Detaylı Raporu, ana sayfa / bölüm panolarıyla AYNI dilde (yalnız sunum; veri,
-  yoklama ve API çağrıları DEĞİŞMEDİ):
-    [çözüm önerisi]  başarısız işte tonun düz açık zemini + ince çerçeve (degrade / dolgu başlık yok)
-    kayıt özeti      ürün görseli + ad + seçenekler · kanal + işlem tipi · ince çizgiyle ayrılan bilgi hücreleri
-    İŞLEM ÖZETİ      özet şeridi (durum, adım, toplam süre, günlük kaydı[, sonraki deneme])
-    AKIŞ             çerçeveli ikon kapsülleriyle adımlar (geçilen = başarı, etkin = durum tonu, sıradaki = nötr)
-    İŞLEM GÜNLÜĞÜ    tek düz kart; her satır ikon kapsülü + adım adı + durum + zaman (+ önceki adıma göre süre)
-    PERFORMANS       adım süreleri grafiği (kart başlığında toplam süre)
--->
 <template>
   <div class="report-content-wrapper">
     <LoadingComponent attach=".reportContainer" ref="loadingComponentRef"></LoadingComponent>
@@ -18,14 +6,14 @@
 
     <!-- `localItem` boş kaldığında (rapor bulunamadı/servis hatası) aksiyon alınabilir boş/hata durumu.
          İş mantığı (veri çekme/`getReport()` yeniden deneme) DEĞİŞMEDİ. -->
-    <EkEmptyState v-if="!localItem && !loading" variant="error" title="Rapor verilerine ulaşılamadı"
+    <EkEmptyState v-if="!localItem && !loading" variant="error" title="Rapor Verilerine Ulaşılamadı"
       message="İşlem raporu henüz hazırlanmamış olabilir veya sunucuyla olan bağlantıda bir sorun yaşanıyor."
       showAction actionText="Yeniden dene" actionIcon="mdi-refresh" @action="getReport()" />
 
     <div v-if="localItem" class="report-body">
 
       <div v-if="isFailed" class="solution-band" role="alert">
-        <EkIconTile icon="mdi-lightbulb-on-outline" tone="error" />
+        <v-icon color="error" size="28" aria-hidden="true">mdi-lightbulb-on-outline</v-icon>
         <div class="solution-band__text">
           <div class="solution-band__title">Sistem Çözüm Önerisi</div>
           <div class="solution-band__message">{{ getSmartSolution(localItem.logs) }}</div>
@@ -33,136 +21,127 @@
         <v-btn color="error" variant="text" size="small" prepend-icon="mdi-lifebuoy">DESTEK AL</v-btn>
       </div>
 
-      <!-- Kayıt özeti: ürün kimliği + kanal + bilgi hücreleri -->
-      <section class="panel product-card" aria-label="Gönderilen ürün">
-        <div class="product-card__main">
-          <v-img v-if="localItem.image" :src="localItem.image" width="72" height="72" cover
-            class="product-card__image" :alt="localItem.title"></v-img>
-          <div v-else class="product-card__image product-card__image--empty">
-            <v-icon size="28" aria-hidden="true">mdi-image-off-outline</v-icon>
+      <div class="panel panel--muted">
+        <div class="meta-row">
+          <PlatformImageComponent :integrationCode="localItem.integrationCode" :width="80" :height="35">
+          </PlatformImageComponent>
+
+          <EkStatusChip tone="info" :dot="true"
+            :label="PLATFORM_PROCESS_LABELS[localItem.mode as PLATFORM_PROCESS] || localItem.mode" />
+
+          <span class="meta-spacer"></span>
+          <div class="meta-item">
+            <v-icon size="16" aria-hidden="true">mdi-clock-outline</v-icon>
+            <span class="meta-item__label">Başlangıç:</span>
+            <span class="meta-item__value">{{ formatDateTime(localItem.createdAt) }}</span>
           </div>
-          <div class="product-card__body">
-            <div class="product-card__eyebrow">Gönderilen ürün</div>
-            <div class="product-card__title">{{ localItem.title }}</div>
-            <div v-if="localItem.choices?.length" class="choice-list">
-              <span v-for="choice in localItem.choices" :key="choice._id" class="choice-pill">
-                <span class="choice-pill__key">{{ choice.choiceTitle }}</span>
-                <span class="choice-pill__value">{{ choice.choiceValueTitle }}</span>
-              </span>
-            </div>
+          <div class="meta-item">
+            <v-icon size="16" aria-hidden="true">mdi-clock-check</v-icon>
+            <span class="meta-item__label">Bitiş:</span>
+            <span class="meta-item__value">{{ localItem.completedAt ? formatDateTime(localItem.completedAt) : '-' }}</span>
           </div>
-          <div class="product-card__channel">
-            <PlatformImageComponent :integrationCode="localItem.integrationCode" :width="80" :height="35">
-            </PlatformImageComponent>
-            <EkStatusChip tone="info" :dot="true"
-              :label="PLATFORM_PROCESS_LABELS[localItem.mode as PLATFORM_PROCESS] || localItem.mode" />
+          <div v-if="localItem.nextRunAt && !localItem.completedAt" class="meta-item">
+            <v-icon size="16" aria-hidden="true">mdi-calendar-clock</v-icon>
+            <span class="meta-item__label">Sonraki İşlem:</span>
+            <span class="meta-item__value">{{ formatDateTime(localItem.nextRunAt) }}</span>
           </div>
         </div>
 
-        <div class="field-row">
-          <div class="field"><span class="field__label">Barkod</span><span class="field__value ek-num">{{ localItem.barcode }}</span></div>
-          <div class="field"><span class="field__label">Stok Kodu</span><span class="field__value ek-num">{{ localItem.stockcode || '-' }}</span></div>
-          <div class="field"><span class="field__label">KATEGORİ</span><span class="field__value">{{
-            categoriesStore.getCategoryTitle(localItem.category) || '-' }}</span></div>
-          <div class="field"><span class="field__label">MARKA</span><span class="field__value">{{
-            brandsStore.getBrandTitle(localItem.brand) || '-' }}</span></div>
-          <div v-if="localItem.price" class="field">
-            <span class="field__label">Fiyat</span>
-            <span class="field__value field__value--action ek-num price-tag">{{ localItem.price }} TL</span>
-          </div>
-          <div v-if="localItem.stock !== undefined" class="field">
-            <span class="field__label">Stok</span>
-            <span class="field__value"><EkStatusChip tone="success" :label="`${localItem.stock} STOK`" /></span>
-          </div>
-        </div>
-      </section>
-
-      <ListDashSection label="İşlem özeti">
-        <ListSummaryStrip :cells="summaryCells" label="İşlem özeti" />
-      </ListDashSection>
-
-      <ListDashSection label="Akış">
-        <div class="panel stepper-wrapper">
-          <ol class="stepper-content" aria-label="Gönderim adımları">
-            <li v-for="(step, index) in exportSteps" :key="index" class="step-item"
-              :class="{ 'is-passed': currentStepIndex > index, 'is-active': currentStepIndex === index, 'is-upcoming': currentStepIndex < index }"
-              :aria-current="currentStepIndex === index ? 'step' : undefined">
+        <div class="stepper-wrapper">
+          <div class="stepper-content">
+            <div class="stepper-line"></div>
+            <div v-for="(step, index) in exportSteps" :key="index" class="step-item">
               <span class="step-dot"
-                :class="[stepDotClass(index), currentStepIndex === index && isProcessing ? 'step-dot--processing' : '']">
-                <EkIconTile :icon="stepIcon(index, step.icon)" :tone="stepTone(index)" />
-              </span>
+                :class="[stepDotClass(index), currentStepIndex === index && isProcessing ? 'step-dot--processing' : '']"></span>
               <span class="step-title"
                 :class="{ 'active-text': currentStepIndex === index, 'passed-text': currentStepIndex > index }">
                 {{ step.title }}
               </span>
-            </li>
-          </ol>
-          <div class="meta-row">
-            <div class="meta-item">
-              <v-icon size="16" aria-hidden="true">mdi-clock-outline</v-icon>
-              <span class="meta-item__label">Başlangıç:</span>
-              <span class="meta-item__value ek-num">{{ formatDateTime(localItem.createdAt) }}</span>
-            </div>
-            <div class="meta-item">
-              <v-icon size="16" aria-hidden="true">mdi-clock-check-outline</v-icon>
-              <span class="meta-item__label">Bitiş:</span>
-              <span class="meta-item__value ek-num">{{ localItem.completedAt ? formatDateTime(localItem.completedAt) : '-' }}</span>
-            </div>
-            <div v-if="localItem.nextRunAt && !localItem.completedAt" class="meta-item">
-              <v-icon size="16" aria-hidden="true">mdi-calendar-clock-outline</v-icon>
-              <span class="meta-item__label">Sonraki İşlem:</span>
-              <span class="meta-item__value ek-num">{{ formatDateTime(localItem.nextRunAt) }}</span>
             </div>
           </div>
         </div>
-      </ListDashSection>
+      </div>
 
-      <ListDashSection label="İşlem Günlüğü ve Akış Analizi">
-        <ol class="panel log-list">
-          <li v-for="(log, idx) in localItem.logs" :key="idx" class="log-card" :class="getLogClass(log.status)">
-            <span class="log-card__rail" aria-hidden="true">
-              <EkIconTile :icon="workerIcon(log.worker)" :tone="TONE_KEY[getLogTone(log.status)]" size="sm" />
+      <div class="panel product-card">
+        <v-img v-if="localItem.image" :src="localItem.image" width="175" height="175" cover
+          class="product-card__image" :alt="localItem.title"></v-img>
+        <div v-else class="product-card__image product-card__image--empty">
+          <v-icon size="40" aria-hidden="true">mdi-image-off</v-icon>
+        </div>
+        <div class="product-card__body">
+          <div class="product-card__title">{{ localItem.title }}</div>
+
+          <div class="choice-list">
+            <span v-for="choice in localItem.choices" :key="choice._id" class="choice-pill">
+              <span class="choice-pill__key">{{ choice.choiceTitle }}</span>
+              <span class="choice-pill__value">{{ choice.choiceValueTitle }}</span>
             </span>
-            <div class="log-card__main">
-              <div class="log-card-header">
-                <div class="worker-group">
-                  <span class="worker-name">{{ translateWorker(log.worker) }}</span>
-                  <v-tooltip location="top" max-width="300">
-                    <template v-slot:activator="{ props }">
-                      <button v-bind="props" type="button" class="help-btn"
-                        :aria-label="`${translateWorker(log.worker)} açıklaması`">
-                        <v-icon size="14" aria-hidden="true">mdi-help-circle-outline</v-icon>
-                      </button>
-                    </template>
-                    <span class="text-caption">{{ getWorkerDescription(log.worker) }}</span>
-                  </v-tooltip>
-                </div>
-                <EkStatusChip :tone="getLogTone(log.status)" :label="translateStatus(log.status)" />
-                <span class="meta-spacer"></span>
-                <div class="time-group">
-                  <v-icon size="12" aria-hidden="true">mdi-clock-outline</v-icon>
-                  <span class="timestamp ek-num">{{ formatDateTime(log.timestamp) }}</span>
-                </div>
-                <div v-if="Number(idx) > 0" class="duration-badge ek-num">+ {{
-                  calculateDuration(localItem.logs[Number(idx) - 1].timestamp, log.timestamp) }}</div>
-              </div>
-              <div class="log-card-body">{{ log.message }}</div>
-            </div>
-          </li>
-        </ol>
-      </ListDashSection>
+          </div>
 
-      <ListDashSection label="Performans Analizi">
-        <EkCard title="Adım süreleri" subtitle="Her adımın bir öncekine göre ne kadar sürdüğü" icon="mdi-timer-sand" icon-tone="info">
-          <template #actions>
-            <div class="duration-total">
-              <span class="duration-total__label">TOPLAM SÜREÇ</span>
-              <span class="duration-total__value ek-num" :title="totalDurationText">{{ totalDurationCompact }}</span>
-            </div>
-          </template>
-          <v-chart v-if="isMounted" class="chart" :theme="chartTheme" :option="chartOption" autoresize />
-        </EkCard>
-      </ListDashSection>
+          <div class="field-row">
+            <div class="field"><span class="field__label">Barkod</span><span class="field__value">{{ localItem.barcode }}</span></div>
+            <div class="field"><span class="field__label">Stok Kodu</span><span class="field__value">{{ localItem.stockcode || '-' }}</span></div>
+            <div class="field"><span class="field__label">KATEGORİ</span><span class="field__value">{{
+              categoriesStore.getCategoryTitle(localItem.category) || '-' }}</span></div>
+            <div class="field"><span class="field__label">MARKA</span><span class="field__value">{{
+              brandsStore.getBrandTitle(localItem.brand) || '-' }}</span></div>
+          </div>
+
+          <div class="price-row">
+            <span v-if="localItem.price" class="price-tag">
+              <v-icon size="14" aria-hidden="true">mdi-tag-outline</v-icon>
+              {{ localItem.price }} TL
+            </span>
+            <EkStatusChip v-if="localItem.stock !== undefined" tone="success" :label="`${localItem.stock} STOK`" />
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <EkSection title="İşlem Günlüğü ve Akış Analizi">
+          <v-timeline density="compact" line-thickness="1">
+            <v-timeline-item v-for="(log, idx) in localItem.logs" :key="idx"
+              :dot-color="getLogStatusColor(log.status)" size="x-small">
+              <div class="log-card" :class="getLogClass(log.status)">
+                <div class="log-card-header">
+                  <div class="worker-group">
+                    <span class="worker-name">{{ translateWorker(log.worker) }}</span>
+                    <v-tooltip location="top" max-width="300">
+                      <template v-slot:activator="{ props }">
+                        <button v-bind="props" type="button" class="help-btn"
+                          :aria-label="`${translateWorker(log.worker)} açıklaması`">
+                          <v-icon size="14" aria-hidden="true">mdi-help-circle-outline</v-icon>
+                        </button>
+                      </template>
+                      <span class="text-caption">{{ getWorkerDescription(log.worker) }}</span>
+                    </v-tooltip>
+                  </div>
+                  <EkStatusChip :tone="getLogTone(log.status)" :label="translateStatus(log.status)" />
+                  <span class="meta-spacer"></span>
+                  <div class="time-group">
+                    <v-icon size="12" aria-hidden="true">mdi-clock-outline</v-icon>
+                    <span class="timestamp">{{ formatDateTime(log.timestamp) }}</span>
+                  </div>
+                  <div v-if="Number(idx) > 0" class="duration-badge">+ {{
+                    calculateDuration(localItem.logs[Number(idx) - 1].timestamp, log.timestamp) }}</div>
+                </div>
+                <div class="log-card-body">{{ log.message }}</div>
+              </div>
+            </v-timeline-item>
+          </v-timeline>
+        </EkSection>
+      </div>
+
+      <div class="panel">
+        <EkSection title="Performans Analizi">
+          <div class="duration-total">
+            <v-icon size="18" aria-hidden="true">mdi-timer-sand</v-icon>
+            <span class="duration-total__label">TOPLAM SÜREÇ</span>
+            <span class="duration-total__value">{{ totalDurationText }}</span>
+          </div>
+          <v-chart v-if="isMounted" class="chart" theme="entegrasyonik" :option="chartOption" autoresize />
+        </EkSection>
+      </div>
     </div>
   </div>
 </template>
@@ -180,15 +159,15 @@ import { BarChart } from 'echarts/charts'
 import { TooltipComponent, GridComponent } from 'echarts/components'
 import { LegacyGridContainLabel } from 'echarts/features'
 import PlatformImageComponent from '../platforms/PlatformImageComponent.vue'
-import { EkCard, EkEmptyState, EkIconTile, EkSkeleton, EkStatusChip, type EkTone } from '@entegrasyonik/ui/components'
-import ListDashSection from '@/components/page/ListDashSection.vue'
-import ListSummaryStrip, { type ListSummaryCell } from '@/components/page/ListSummaryStrip.vue'
-import { formatDateTime } from '@entegrasyonik/ui/format'
-import { useChartColors, useChartTheme } from '@/composables/useChartTheme'
+import EkEmptyState from '@/components/ds/EkEmptyState.vue'
+import EkSkeleton from '@/components/ds/EkSkeleton.vue'
+import EkStatusChip from '@/components/ds/EkStatusChip.vue'
+import EkSection from '@/components/ds/EkSection.vue'
+import { formatDateTime } from '@/composables/format'
+import { semanticColorsLight } from '@/design/tokens'
 import type { StatusTone } from '@/design/status-map'
 import { escapeHtml } from '@/utils/escapeHtml'
 import { PLATFORM_PROCESS_LABELS, PLATFORM_PROCESS } from '@/types/PlatformProcess'
-import { reportPollInterval } from '@/stores/publicConfig'
 
 use([CanvasRenderer, BarChart, TooltipComponent, GridComponent, LegacyGridContainLabel])
 
@@ -204,11 +183,11 @@ const brandsStore = useBrandsStore()
 const isMounted = ref(false)
 
 const exportSteps = [
-  { title: 'Kuyrukta', status: 'QUEUED', icon: 'mdi-tray-full' },
+  { title: 'Kuyrukta', status: 'QUEUED', icon: 'mdi-queue' },
   { title: 'Ürün Doğrulanıyor', status: 'PREPARING', icon: 'mdi-cog-outline' },
   { title: 'İşlem Pazaryerine Gönderiliyor', status: 'PENDING', icon: 'mdi-tray-arrow-up' },
-  { title: 'Gönderim Sorgulanıyor', status: 'SENT', icon: 'mdi-upload-outline' },
-  { title: 'Ürün Onayı Bekleniyor', status: 'WAITING', icon: 'mdi-file-clock-outline' },
+  { title: 'Gönderim Sorgulanıyor', status: 'SENT', icon: 'mdi-cloud-upload' },
+  { title: 'Ürün Onayı Bekleniyor', status: 'WAITING', icon: 'mdi-file-clock' },
   { title: 'Tamamlandı', status: 'COMPLETED', icon: 'mdi-check-all' }
 ]
 
@@ -345,7 +324,7 @@ const getReport = async (isSilent = false) => {
   }
 };
 
-const startPolling = () => { stopPolling(); pollTimer = setTimeout(() => { getReport(true) }, reportPollInterval()); };
+const startPolling = () => { stopPolling(); pollTimer = setTimeout(() => { getReport(true) }, 5000); };
 const stopPolling = () => { if (pollTimer) { clearTimeout(pollTimer); pollTimer = null; } };
 
 const calculateDuration = (start: any, end: any) => {
@@ -394,82 +373,10 @@ const TONE_KEY = { success: 'success', danger: 'error', info: 'info', warning: '
 /** CSS özel özelliği olarak ton rengi (Vuetify `color`/`dot-color` prop'ları için). */
 const toneVar = (tone: StatusTone) => `var(--ek-color-${TONE_KEY[tone]})`;
 /** ECharts canvas'ı CSS değişkeni çözemez; tema kaynağındaki değer okunur. */
-// FR2-DARK: grafik teması ve seri renkleri etkin moda göre (light/dark).
-const chartTheme = useChartTheme();
-const chartColors = useChartColors();
-const toneHex = (tone: StatusTone) => chartColors.value[TONE_KEY[tone]];
+const toneHex = (tone: StatusTone) => semanticColorsLight[TONE_KEY[tone]];
 
 /** Log satırları için Vuetify `dot-color` değeri. */
 const getLogStatusColor = (status: string) => toneVar(getLogTone(status));
-
-// ---- FE-LOCAL-1048: sunum yardımcıları (özet şeridi, adım tonu, günlük ikonu) ----
-/** Akış adımının ikon kapsülü tonu: geçilen = başarı, etkin = işin durum tonu, sıradaki = nötr. */
-const stepTone = (index: number): EkTone => {
-  if (currentStepIndex.value > index) return 'success'
-  if (currentStepIndex.value < index) return 'neutral'
-  const tone = TONE_KEY[getLogTone(localItem.value?.status)]
-  return tone === 'neutral' ? 'action' : tone
-}
-
-/** Geçilen adım onay imi, başarısız/iptal olan etkin adım uyarı imi, diğerleri adımın kendi ikonu. */
-const stepIcon = (index: number, icon: string) => {
-  if (currentStepIndex.value > index) return 'mdi-check'
-  if (currentStepIndex.value === index && isFailed.value) return 'mdi-alert-circle-outline'
-  return icon
-}
-
-/** Toplam süre — en büyük iki birim (gün/saat/dakika/saniye), tam sayı; hücreye ve kart başlığına sığar. */
-const totalDurationCompact = computed(() => {
-  const item = localItem.value
-  if (!item?.createdAt) return '-'
-  const total = Math.max(0, Math.round((new Date(item.completedAt || new Date()).getTime() - new Date(item.createdAt).getTime()) / 1000))
-  const parts = [
-    [Math.floor(total / 86400), 'g'], [Math.floor((total % 86400) / 3600), 'sa'], [Math.floor((total % 3600) / 60), 'dk'], [total % 60, 'sn'],
-  ].filter(([n]) => Number(n) > 0).map(([n, unit]) => `${n} ${unit}`)
-  return parts.length ? parts.slice(0, 2).join(' ') : '0 sn'
-})
-
-const WORKER_ICONS: Record<string, string> = {
-  BATCHCREATOR: 'mdi-playlist-plus',
-  'CATALOG DISPATCHER': 'mdi-tray-full',
-  'CATALOG VALIDATOR': 'mdi-shield-check-outline',
-  'CATALOG PUBLISHER': 'mdi-send-outline',
-  'CATALOG SENTINEL': 'mdi-radar',
-  'CATALOG SYNCHRONIZER': 'mdi-sync',
-}
-const workerIcon = (worker: string) => WORKER_ICONS[worker?.toUpperCase() || ''] || 'mdi-cog-outline'
-
-const STATUS_ICONS: Record<string, string> = {
-  QUEUED: 'mdi-tray-full', PREPARING: 'mdi-cog-sync-outline', PENDING: 'mdi-send-outline', SENT: 'mdi-progress-check',
-  WAITING: 'mdi-clock-outline', COMPLETED: 'mdi-check-circle-outline', FAILED: 'mdi-alert-circle-outline', CANCELLED: 'mdi-cancel',
-}
-const STATUS_TITLES: Record<string, string> = { FAILED: 'Başarısız', CANCELLED: 'İptal edildi' }
-
-/** Özet şeridi: durum · adım · toplam süre · günlük kaydı (+ sürüyorsa sonraki deneme). */
-const summaryCells = computed<ListSummaryCell[]>(() => {
-  const item = localItem.value
-  if (!item) return []
-  const status = String(item.status ?? '').toUpperCase()
-  const statusTone = TONE_KEY[getLogTone(status)]
-  const logCount = Array.isArray(item.logs) ? item.logs.length : 0
-  const cells: ListSummaryCell[] = [
-    {
-      key: 'status', label: 'Durum', icon: STATUS_ICONS[status] ?? 'mdi-circle-outline', tone: statusTone,
-      value: STATUS_TITLES[status] ?? exportSteps.find((s) => s.status === status)?.title ?? (item.status || '—'),
-      hint: isProcessing.value ? 'İşlem sürüyor' : 'İşlem sonuçlandı',
-    },
-    {
-      key: 'step', label: 'Adım', icon: 'mdi-format-list-numbered', tone: 'action',
-      value: `${currentStepIndex.value + 1} / ${exportSteps.length}`, hint: exportSteps[currentStepIndex.value]?.title,
-    },
-    { key: 'duration', label: 'Toplam süre', icon: 'mdi-timer-sand', tone: 'info', value: totalDurationCompact.value, hint: item.completedAt ? 'Başlangıçtan bitişe' : 'Başlangıçtan bu yana' },
-    { key: 'logs', label: 'Günlük kaydı', icon: 'mdi-text-box-outline', tone: 'neutral', value: String(logCount), zero: !logCount, hint: 'Kaydedilen işlem adımı' },
-  ]
-  if (item.nextRunAt && !item.completedAt) {
-    cells.push({ key: 'next', label: 'Sonraki işlem', icon: 'mdi-calendar-clock-outline', tone: 'warning', value: formatDateTime(item.nextRunAt), hint: 'Planlanan sorgu zamanı' })
-  }
-  return cells
-})
 
 /** Akış adımı noktası: aktif adım durumun tonunu, geçilenler başarı tonunu, gelecek adımlar nötr alır. */
 const stepDotClass = (index: number) => {
@@ -488,41 +395,39 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-/* FE-LOCAL-1050: TEK kaydırma — rapor kendi içinde kaymaz (sabit yükseklik + iç kaydırma kaldırıldı); kaydıran yalnız
-   diyalog gövdesidir. Önceden gövde ve rapor ayrı ayrı kayıyordu (sağda iki kaydırma çubuğu). */
 .report-content-wrapper {
-  min-height: 240px;
+  overflow-y: auto;
+  flex: 1 1 auto;
+  height: calc(100vh - 280px);
 }
 
 .report-body {
   display: flex;
   flex-direction: column;
-  gap: var(--ek-space-5);
+  gap: var(--ek-space-4);
   padding-right: var(--ek-space-3);
 }
 
-/* Düz yüzey + ince çerçeve (gölge / degrade yok). */
 .panel {
-  margin: 0;
   border: 1px solid var(--ek-color-border-default);
-  border-radius: var(--ek-radius-card);
+  border-radius: var(--ek-radius-lg);
   background: var(--ek-color-surface);
+  padding: var(--ek-space-4);
 }
 
-/* Çözüm önerisi: tonun düz açık zemini + ince çerçevesi; ikon kutusu düz yüzeyde. */
+.panel--muted {
+  background: var(--ek-color-surface-muted);
+}
+
 .solution-band {
   display: flex;
   align-items: center;
-  gap: var(--ek-space-3);
+  gap: var(--ek-space-4);
   flex-wrap: wrap;
-  padding: var(--ek-space-3) var(--ek-space-4);
-  border: 1px solid var(--ek-color-error-border);
-  border-radius: var(--ek-radius-card);
+  padding: var(--ek-space-4);
+  border: 1px solid var(--ek-color-error);
+  border-radius: var(--ek-radius-lg);
   background: var(--ek-color-error-subtle);
-}
-
-.solution-band :deep(.ek-icon-tile) {
-  background: var(--ek-color-surface);
 }
 
 .solution-band__text {
@@ -531,241 +436,13 @@ onBeforeUnmount(() => {
 }
 
 .solution-band__title {
-  color: var(--ek-color-error-emphasis);
-  font-size: var(--ek-type-micro-size);
-  line-height: var(--ek-type-micro-line);
-  font-weight: var(--ek-type-micro-weight);
-  letter-spacing: var(--ek-type-micro-tracking);
-  text-transform: uppercase;
+  font-size: var(--ek-font-size-sm);
+  font-weight: var(--ek-font-weight-semibold);
+  color: var(--ek-color-error);
 }
 
 .solution-band__message {
-  color: var(--ek-color-content-strong);
-  font-size: var(--ek-type-body-size);
-}
-
-/* Kayıt özeti */
-.product-card {
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.product-card__main {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--ek-space-4);
-  padding: var(--ek-space-4) var(--ek-space-5);
-}
-
-.product-card__image {
-  flex: 0 0 72px;
-  width: 72px;
-  max-width: 72px;
-  height: 72px;
-  border: 1px solid var(--ek-color-border-default);
-  border-radius: var(--ek-radius-tile);
-  background: var(--ek-color-surface-muted);
-}
-
-.product-card__image--empty {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--ek-color-content-subtle);
-}
-
-.product-card__body {
-  display: flex;
-  flex-direction: column;
-  flex: 1 1 260px;
-  min-width: 0;
-  gap: var(--ek-space-1);
-}
-
-.product-card__eyebrow {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--ek-space-2);
-  color: var(--ek-color-content-muted);
-  font-size: var(--ek-type-micro-size);
-  line-height: var(--ek-type-micro-line);
-  font-weight: var(--ek-type-micro-weight);
-  letter-spacing: var(--ek-type-micro-tracking);
-  text-transform: uppercase;
-}
-
-.product-card__eyebrow::before {
-  content: '';
-  width: 12px;
-  height: 2px;
-  border-radius: 1px;
-  background: var(--ek-color-action);
-}
-
-.product-card__title {
-  color: var(--ek-color-content-strong);
-  font-size: var(--ek-type-heading-size);
-  line-height: var(--ek-type-heading-line);
-  font-weight: var(--ek-font-weight-semibold);
-  overflow-wrap: anywhere;
-}
-
-.product-card__channel {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--ek-space-3);
-}
-
-.choice-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--ek-space-1);
-  margin-top: var(--ek-space-1);
-}
-
-.choice-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--ek-space-2);
-  padding: 2px var(--ek-space-2);
-  border: 1px solid var(--ek-color-border-default);
-  border-radius: var(--ek-radius-md);
-  background: var(--ek-color-surface-muted);
-}
-
-.choice-pill__key {
-  color: var(--ek-color-content-muted);
-  font-size: var(--ek-type-caption-size);
-}
-
-.choice-pill__value {
-  color: var(--ek-color-content-strong);
-  font-size: var(--ek-type-caption-size);
-  font-weight: var(--ek-font-weight-semibold);
-}
-
-/* Bilgi hücreleri: ince çizgiyle ayrılır (KPI şeridiyle aynı aile). */
-.field-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--ek-space-3) 0;
-  padding: var(--ek-space-3) var(--ek-space-5);
-  border-top: 1px solid var(--ek-color-border-subtle);
-  background: var(--ek-color-surface-muted);
-}
-
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-  padding: 0 var(--ek-space-5);
-}
-
-.field:first-child {
-  padding-left: 0;
-}
-
-.field + .field {
-  border-left: 1px solid var(--ek-color-border-default);
-}
-
-.field__label {
-  color: var(--ek-color-content-muted);
-  font-size: var(--ek-type-micro-size);
-  line-height: var(--ek-type-micro-line);
-  font-weight: var(--ek-type-micro-weight);
-  letter-spacing: var(--ek-type-micro-tracking);
-  text-transform: uppercase;
-}
-
-.field__value {
-  color: var(--ek-color-content-strong);
-  font-size: var(--ek-type-body-size);
-  font-weight: var(--ek-font-weight-semibold);
-  overflow-wrap: anywhere;
-}
-
-.field__value--action {
-  color: var(--ek-color-action-emphasis);
-}
-
-/* Akış adımları: çerçeveli ikon kapsülleri, aralarında ince çizgi. */
-.stepper-wrapper {
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.stepper-content {
-  display: flex;
-  justify-content: space-between;
-  margin: 0;
-  padding: var(--ek-space-5) var(--ek-space-4) var(--ek-space-4);
-  list-style: none;
-}
-
-.step-item {
-  position: relative;
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--ek-space-2);
-  min-width: 0;
-}
-
-/* Adımı bir sonrakine bağlayan çizgi (geçilen adımdan sonra başarı tonu). */
-.step-item + .step-item::before {
-  content: '';
-  position: absolute;
-  top: 18px;
-  right: calc(50% + 26px);
-  left: calc(-50% + 26px);
-  height: 2px;
-  border-radius: 1px;
-  background: var(--ek-color-border-default);
-}
-
-.step-item.is-passed + .step-item::before {
-  background: var(--ek-color-success);
-}
-
-.step-dot {
-  position: relative;
-  z-index: 1;
-  display: inline-flex;
-  border-radius: var(--ek-radius-tile);
-  background: var(--ek-color-surface);
-}
-
-.step-item.is-upcoming .step-dot {
-  opacity: 0.6;
-}
-
-/* İşlemde olan adım: sakin, statik halka (sonsuz animasyon yok). */
-.step-dot--processing {
-  box-shadow: 0 0 0 3px var(--ek-color-info-subtle);
-}
-
-.step-title {
-  padding: 0 var(--ek-space-1);
-  color: var(--ek-color-content-muted);
-  font-size: var(--ek-type-caption-size);
-  line-height: var(--ek-type-caption-line);
-  font-weight: var(--ek-font-weight-medium);
-  text-align: center;
-}
-
-.active-text {
-  color: var(--ek-color-content-strong);
-  font-weight: var(--ek-font-weight-semibold);
-}
-
-.passed-text {
+  font-size: var(--ek-font-size-xs);
   color: var(--ek-color-content-default);
 }
 
@@ -773,10 +450,8 @@ onBeforeUnmount(() => {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--ek-space-2) var(--ek-space-5);
-  padding: var(--ek-space-3) var(--ek-space-5);
-  border-top: 1px solid var(--ek-color-border-subtle);
-  background: var(--ek-color-surface-muted);
+  gap: var(--ek-space-4);
+  padding-bottom: var(--ek-space-3);
 }
 
 .meta-spacer {
@@ -792,59 +467,163 @@ onBeforeUnmount(() => {
 }
 
 .meta-item__label {
+  font-size: var(--ek-font-size-xs);
+  font-weight: var(--ek-font-weight-medium);
   color: var(--ek-color-content-muted);
-  font-size: var(--ek-type-caption-size);
 }
 
 .meta-item__value {
-  color: var(--ek-color-content-strong);
-  font-size: var(--ek-type-caption-size);
+  font-size: var(--ek-font-size-xs);
   font-weight: var(--ek-font-weight-semibold);
+  color: var(--ek-color-content-strong);
 }
 
-/* İşlem günlüğü: tek düz kart, satırlar ince çizgiyle ayrılır; ikon kapsülleri dikey çizgiyle bağlanır. */
-.log-list {
+/* Ürün kartı */
+.product-card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--ek-space-5);
+}
+
+.product-card__image {
+  flex: 0 0 175px;
+  width: 175px;
+  max-width: 175px;
+  height: 175px;
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-md);
+  background: var(--ek-color-surface-sunken);
+}
+
+.product-card__image--empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ek-color-content-subtle);
+}
+
+.product-card__body {
   display: flex;
   flex-direction: column;
-  padding: 0;
-  list-style: none;
-  overflow: hidden;
-}
-
-.log-card {
-  position: relative;
-  display: flex;
+  flex: 1 1 300px;
+  min-width: 0;
   gap: var(--ek-space-3);
-  padding: var(--ek-space-3) var(--ek-space-4);
 }
 
-.log-card + .log-card {
-  border-top: 1px solid var(--ek-color-border-subtle);
+.product-card__title {
+  font-size: var(--ek-font-size-lg);
+  font-weight: var(--ek-font-weight-semibold);
+  color: var(--ek-color-content-strong);
 }
 
-.log-card__rail {
-  position: relative;
-  z-index: 1;
-  flex: none;
-}
-
-/* Ray çizgisi: kapsülden bir sonraki satırın kapsülüne. */
-.log-card:not(:last-child)::after {
-  content: '';
-  position: absolute;
-  top: calc(var(--ek-space-3) + var(--ek-icon-tile-sm));
-  bottom: calc(-1 * var(--ek-space-3));
-  left: calc(var(--ek-space-4) + var(--ek-icon-tile-sm) / 2);
-  width: 1px;
-  background: var(--ek-color-border-default);
-}
-
-.log-card__main {
+.choice-list {
   display: flex;
-  flex: 1;
+  flex-wrap: wrap;
+  gap: var(--ek-space-1);
+}
+
+.choice-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ek-space-2);
+  padding: var(--ek-space-1) var(--ek-space-3);
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-full);
+  background: var(--ek-color-surface-muted);
+}
+
+.choice-pill__key {
+  font-size: var(--ek-font-size-xs);
+  color: var(--ek-color-content-muted);
+}
+
+.choice-pill__value {
+  font-size: var(--ek-font-size-sm);
+  font-weight: var(--ek-font-weight-semibold);
+  color: var(--ek-color-content-strong);
+}
+
+.field-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ek-space-4) var(--ek-space-10);
+  padding-top: var(--ek-space-3);
+  border-top: 1px solid var(--ek-color-border-default);
+}
+
+.field {
+  display: flex;
   flex-direction: column;
   gap: var(--ek-space-1);
   min-width: 0;
+}
+
+.field__label {
+  font-size: var(--ek-font-size-xs);
+  font-weight: var(--ek-font-weight-medium);
+  color: var(--ek-color-content-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.field__value {
+  font-size: var(--ek-font-size-sm);
+  font-weight: var(--ek-font-weight-semibold);
+  color: var(--ek-color-content-strong);
+  overflow-wrap: anywhere;
+}
+
+.price-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--ek-space-3);
+}
+
+.price-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ek-space-2);
+  padding: var(--ek-space-1) var(--ek-space-3);
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-lg);
+  background: var(--ek-color-info-subtle);
+  font-size: var(--ek-font-size-md);
+  font-weight: var(--ek-font-weight-semibold);
+  color: var(--ek-color-info);
+}
+
+/* İşlem günlüğü */
+.log-card {
+  position: relative;
+  overflow: hidden;
+  margin-bottom: var(--ek-space-1);
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-lg);
+  background: var(--ek-color-surface);
+}
+
+.log-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background-color: var(--ek-color-content-subtle);
+}
+
+.log-success::before {
+  background-color: var(--ek-color-success);
+}
+
+.log-error::before {
+  background-color: var(--ek-color-error);
+}
+
+.log-sent::before {
+  background-color: var(--ek-color-info);
 }
 
 .log-card-header {
@@ -852,7 +631,9 @@ onBeforeUnmount(() => {
   align-items: center;
   flex-wrap: wrap;
   gap: var(--ek-space-2);
-  min-height: var(--ek-icon-tile-sm);
+  padding: var(--ek-space-2) var(--ek-space-3);
+  background-color: var(--ek-color-surface-muted);
+  border-bottom: 1px solid var(--ek-color-border-default);
 }
 
 .worker-group {
@@ -862,9 +643,11 @@ onBeforeUnmount(() => {
 }
 
 .worker-name {
-  color: var(--ek-color-content-strong);
-  font-size: var(--ek-type-body-size);
+  font-size: var(--ek-font-size-xs);
   font-weight: var(--ek-font-weight-semibold);
+  color: var(--ek-color-content-default);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .help-btn {
@@ -877,105 +660,186 @@ onBeforeUnmount(() => {
 }
 
 .help-btn:focus-visible {
-  outline: none;
-  box-shadow: var(--ek-focus-ring);
+  outline: 2px solid var(--ek-color-primary);
+  outline-offset: 2px;
 }
 
 .time-group {
   display: flex;
   align-items: center;
   gap: var(--ek-space-1);
+  font-size: var(--ek-font-size-xs);
   color: var(--ek-color-content-muted);
-  font-size: var(--ek-type-caption-size);
 }
 
 .duration-badge {
-  padding: 1px var(--ek-space-2);
-  border: 1px solid var(--ek-color-border-default);
-  border-radius: var(--ek-radius-md);
-  background: var(--ek-color-surface-muted);
+  background: var(--ek-color-surface-sunken);
   color: var(--ek-color-content-default);
-  font-size: var(--ek-type-caption-size);
+  padding: var(--ek-space-1) var(--ek-space-2);
+  border-radius: var(--ek-radius-sm);
+  font-size: var(--ek-font-size-xs);
   font-weight: var(--ek-font-weight-medium);
 }
 
 .log-card-body {
-  color: var(--ek-color-content-default);
-  font-size: var(--ek-type-body-size);
+  padding: var(--ek-space-3);
+  font-size: var(--ek-font-size-sm);
   line-height: var(--ek-line-height-normal);
-  overflow-wrap: anywhere;
-}
-
-/* Hata / gönderim mesajı: tonun düz açık zemini + ince çerçeve. */
-.log-error .log-card-body,
-.log-sent .log-card-body {
-  padding: var(--ek-space-2) var(--ek-space-3);
-  border: 1px solid var(--ek-color-info-border);
-  border-radius: var(--ek-radius-control);
-  background: var(--ek-color-info-subtle);
-  color: var(--ek-color-info-emphasis);
+  color: var(--ek-color-content-default);
 }
 
 .log-error .log-card-body {
-  border-color: var(--ek-color-error-border);
-  background: var(--ek-color-error-subtle);
-  color: var(--ek-color-error-emphasis);
+  color: var(--ek-color-error);
+  background-color: var(--ek-color-error-subtle);
+}
+
+.log-sent .log-card-body {
+  color: var(--ek-color-info);
+  background-color: var(--ek-color-info-subtle);
 }
 
 /* Performans */
 .duration-total {
   display: inline-flex;
-  align-items: baseline;
+  align-items: center;
+  align-self: flex-start;
   gap: var(--ek-space-2);
-  white-space: nowrap;
+  padding: var(--ek-space-2) var(--ek-space-3);
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-lg);
+  color: var(--ek-color-primary);
 }
 
 .duration-total__label {
+  font-size: var(--ek-font-size-xs);
+  font-weight: var(--ek-font-weight-medium);
+  letter-spacing: 0.04em;
   color: var(--ek-color-content-muted);
-  font-size: var(--ek-type-micro-size);
-  font-weight: var(--ek-type-micro-weight);
-  letter-spacing: var(--ek-type-micro-tracking);
 }
 
 .duration-total__value {
-  color: var(--ek-color-content-strong);
-  font-size: var(--ek-type-heading-size);
+  font-size: var(--ek-font-size-sm);
   font-weight: var(--ek-font-weight-semibold);
+  color: var(--ek-color-content-strong);
 }
 
 .chart {
-  min-height: 280px;
+  min-height: 300px;
   width: 100%;
 }
 
+/* Akış adımları */
+.stepper-content {
+  display: flex;
+  justify-content: space-between;
+  position: relative;
+  z-index: 1;
+}
+
+.stepper-line {
+  position: absolute;
+  top: 8px;
+  left: 10%;
+  right: 10%;
+  height: 1px;
+  background: var(--ek-color-border-strong);
+  z-index: 1;
+}
+
+.step-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ek-space-2);
+  flex: 1;
+  z-index: 2;
+  position: relative;
+}
+
+.step-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: var(--ek-radius-full);
+  border: 2px solid var(--ek-color-surface);
+  background: var(--ek-color-border-strong);
+  position: relative;
+  z-index: 2;
+  transition: background-color var(--ek-duration-slow) var(--ek-easing-standard);
+}
+
+.step-dot--upcoming {
+  background: var(--ek-color-border-strong);
+}
+
+.step-dot--done,
+.step-dot--success {
+  background: var(--ek-color-success);
+}
+
+.step-dot--danger {
+  background: var(--ek-color-error);
+}
+
+.step-dot--info {
+  background: var(--ek-color-info);
+}
+
+.step-dot--warning {
+  background: var(--ek-color-warning);
+}
+
+.step-dot--neutral {
+  background: var(--ek-color-content-subtle);
+}
+
+.step-dot--done {
+  opacity: 0.7;
+}
+
+/* İşlemde olan adım: sakin, statik halka (sonsuz animasyon yok). */
+.step-dot--processing {
+  box-shadow: 0 0 0 4px var(--ek-color-info-subtle);
+}
+
+.step-title {
+  font-size: var(--ek-font-size-xs);
+  font-weight: var(--ek-font-weight-medium);
+  text-transform: uppercase;
+  text-align: center;
+  color: var(--ek-color-content-muted);
+}
+
+.active-text {
+  color: var(--ek-color-content-strong);
+  font-weight: var(--ek-font-weight-semibold);
+}
+
+.passed-text {
+  color: var(--ek-color-success);
+}
+
 @media (max-width: 768px) {
-  .field,
-  .field:first-child {
-    flex: 1 1 40%;
-    padding: 0;
-  }
-
-  .field + .field {
-    border-left: 0;
-  }
-
   .stepper-content {
     flex-direction: column;
-    gap: var(--ek-space-3);
+    align-items: flex-start;
+    gap: var(--ek-space-5);
+    padding-left: var(--ek-space-5);
+  }
+
+  .stepper-line {
+    top: 0;
+    bottom: 0;
+    left: 28px;
+    width: 1px;
+    height: 100%;
+    right: auto;
   }
 
   .step-item {
-    flex: none;
     flex-direction: row;
-    gap: var(--ek-space-3);
-  }
-
-  .step-item + .step-item::before {
-    top: calc(-1 * var(--ek-space-3));
-    right: auto;
-    left: 17px;
-    width: 2px;
-    height: var(--ek-space-3);
+    align-items: center;
+    gap: var(--ek-space-4);
+    flex: none;
   }
 
   .step-title {

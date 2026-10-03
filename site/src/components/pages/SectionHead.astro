@@ -1,9 +1,8 @@
 ---
 /**
- * SectionHead — iç sayfa bölüm başlığı: küçük üst etiket + <h2> + isteğe bağlı giriş cümlesi.
- * S17: S16 sayfalarındaki yerel `.head` deseni (vurgu renkli etiket, `--site-text-*` hiyerarşisi) ortak
- * bileşene çekildi; tüm iç sayfalar aynı başlık ritmini kullanır. Zengin giriş (bağlantı içeren) için
- * varsayılan yuva `lead` yerine kullanılabilir. `inverse`: koyu ("stage") zemin. `compact`: alt boşluk yok.
+ * SectionHead — iç sayfa bölüm başlığı (S14): küçük üst etiket + <h2> + isteğe bağlı giriş cümlesi.
+ * Ana sayfa `home/SectionHeading` bileşeninden bağımsızdır (paralel S13 turu o dizine dokunur).
+ * `inverse`: koyu ("stage") zeminde vurgu rengi açık varyanta geçer.
  */
 interface Props {
   id: string
@@ -11,34 +10,15 @@ interface Props {
   eyebrow?: string
   lead?: string
   inverse?: boolean
-  compact?: boolean
-  /** Başlıkta düz vurgu rengiyle işaretlenecek birebir alt dize. */
-  accent?: string
-  align?: 'start' | 'center'
 }
 
-import Eyebrow from '../Eyebrow.astro'
-
-const { id, title, eyebrow, lead, inverse = false, compact = false, accent, align = 'start' } = Astro.props
-const parts = accent && title.includes(accent) ? title.split(accent) : null
-const hasSlot = Astro.slots.has('default')
+const { id, title, eyebrow, lead, inverse = false } = Astro.props
 ---
 
-<div class:list={['shead', { 'shead--inverse': inverse, 'shead--compact': compact, 'shead--center': align === 'center' }]}>
-  {eyebrow && <Eyebrow>{eyebrow}</Eyebrow>}
-  <h2 id={id}>
-    {parts ? (
-      <>
-        {parts[0]}
-        <span class="shead__accent">{accent}</span>
-        {parts[1]}
-      </>
-    ) : (
-      title
-    )}
-  </h2>
+<div class:list={['shead', { 'shead--inverse': inverse }]}>
+  {eyebrow && <p class="shead__eyebrow">{eyebrow}</p>}
+  <h2 id={id}>{title}</h2>
   {lead && <p class="shead__lead">{lead}</p>}
-  {hasSlot && <div class="shead__lead"><slot /></div>}
 </div>
 
 <style>
@@ -47,47 +27,35 @@ const hasSlot = Astro.slots.has('default')
     flex-direction: column;
     gap: var(--ek-space-3);
     max-width: var(--site-container-narrow);
-    margin-bottom: var(--ek-space-12);
+    margin-bottom: var(--ek-space-10);
   }
-  .shead__accent {
-    color: var(--site-accent);
-  }
-  .shead--compact {
-    margin-bottom: 0;
-  }
-  .shead--center {
+  .shead__eyebrow {
+    display: inline-flex;
     align-items: center;
-    margin-inline: auto;
-    text-align: center;
+    gap: var(--ek-space-2);
+    color: var(--ek-color-primary);
+    font-size: var(--ek-font-size-sm);
+    font-weight: var(--ek-font-weight-semibold);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .shead__eyebrow::before {
+    content: '';
+    width: var(--ek-space-6);
+    height: var(--site-border-width);
+    background: currentColor;
+  }
+  .shead--inverse .shead__eyebrow {
+    color: var(--site-accent-on-dark);
   }
   .shead h2 {
-    color: var(--site-text-heading);
-    text-wrap: balance;
-    font-size: var(--site-font-display-md);
+    font-size: var(--site-font-display-sm);
     font-weight: var(--site-font-display-weight);
     line-height: var(--site-font-display-line-height);
     letter-spacing: var(--site-font-display-tracking);
   }
   .shead__lead {
-    color: var(--site-text-body);
-    font-size: var(--ek-font-size-xl);
-    line-height: var(--site-font-body-line-height);
-    text-wrap: pretty;
-  }
-  .shead__lead :global(p + p) {
-    margin-top: var(--ek-space-2);
-  }
-  .shead__lead :global(a) {
-    color: var(--site-link-accent);
-    font-weight: var(--ek-font-weight-semibold);
-  }
-  .shead--inverse h2 {
-    color: var(--site-text-on-dark-heading);
-  }
-  .shead--inverse .shead__accent {
-    color: var(--site-accent-on-dark);
-  }
-  .shead--inverse .shead__lead {
-    color: var(--site-text-on-dark-body);
+    color: var(--ek-color-content-muted);
+    font-size: var(--ek-font-size-lg);
   }
 </style>

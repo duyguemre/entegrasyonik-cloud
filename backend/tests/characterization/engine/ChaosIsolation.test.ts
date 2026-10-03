@@ -61,7 +61,7 @@ jest.mock('@services/redis/RedisService', () => ({ RedisService: { getConnection
 jest.mock('@integration/engine/order/OrderQueueProducer', () => ({ OrderQueueProducer: jest.fn(() => ({ scheduleJobs: jest.fn(async () => undefined) })) }));
 jest.mock('@integration/engine/order/OrderErrorHandler', () => ({ OrderErrorHandler: jest.fn() }));
 jest.mock('@integration/engine/order/worker-runner', () => ({ startOrderWorkerConsumer: jest.fn() }));
-jest.mock('@operations/orders/postOrder', () => ({ PostOrderOperations: jest.fn() }));
+jest.mock('@operations/integration/PostOrderOperations', () => ({ PostOrderOperations: jest.fn() }));
 
 function chain(result: any) {
   const c: any = { calls: {} as Record<string, any[]> };

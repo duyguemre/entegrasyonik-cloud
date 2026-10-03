@@ -51,7 +51,7 @@ Kapsam: `http.request/get`, `https.request/get`, `globalThis.fetch` (undici) + T
   `stock.*` (yayın, tahsis, oversell, mutabakat), `billing.trialExpiry`, `catalog.exportSignalPoll`, `compliance.probeRunner`, `compliance.sourceMonitor`, `notifications.email-dispatch`.
   Çalışanlar: ImportOrchestrator (yalnız kullanıcı tetiklemeli içe alma), `observability.metrics-flush`, `config-head-poll` (yerel DB).
 - **API**: yetenek kaydında `external && effect != read` olan her RPC (sipariş onay/iptal, talep onay/ret, mesaj cevabı, kargo, fatura, `batchCreator`, token değişimi) `423 LIVE_READONLY` döner;
-  tek merkez `src/api/rpc/liveReadonlyRpcGuard.ts` (RunOperation). Tek istisna: `IntegrationService/requestFetchFromPlatform` (içe alma = okuma). Yerel DB'ye yazan RPC'ler (ürün düzenleme, eşleme,
+  tek merkez `src/api/liveReadonlyRpcGuard.ts` (RunOperation). Tek istisna: `IntegrationService/requestFetchFromPlatform` (içe alma = okuma). Yerel DB'ye yazan RPC'ler (ürün düzenleme, eşleme,
   ayar kaydı) serbest; yayın işçileri kapalı olduğundan dışarı çıkmaz. Görsel yükleme R2'ye gider -> Katman A bloklar.
 - **Token riski**: Ideasoft refresh_token döndürür; yenileme eski token'ı geçersiz kılabilir (üretim aynı bağlantıyı kullanıyor olabilir). Bu kipte Ideasoft yenileme/kod değişimi varsayılan KAPALI;
   access_token süresi dolmuşsa açık AUTH hatası (`LIVE_READONLY_TOKEN_REFRESH_DISABLED`). Diğer adaptörlerde dönen/rotasyonlu token yok: Trendyol/HB Basic, N11 appkey/appsecret,

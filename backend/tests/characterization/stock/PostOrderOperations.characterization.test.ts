@@ -1,5 +1,5 @@
 /**
- * CHARACTERIZATION: PostOrderOperations (backend/src/operations/orders/postOrder.ts)
+ * CHARACTERIZATION: PostOrderOperations (backend/src/operations/integration/PostOrderOperations.ts)
  * ADR-0004 Aşama B (Karar 3-4). ÖNCEKİ DAVRANIŞ: bu sınıf BOŞTU (hiçbir metodu yoktu, hiç örneklenmiyordu
  * — bkz. BACKLOG C8/1c bulgusu, `OrderOrchestrator.triggerDownstreamWorkflows`'taki yorum satırı). Bu dosya
  * önce o boş/no-op durumu sabitler, SONRA doldurulmuş sürücünün davranışını test eder.
@@ -14,7 +14,7 @@ const anyFn = (): any => jest.fn();
 
 jest.mock('@services/notification/NotificationService', () => require('../../helpers/notificationServiceMock').notificationServiceModule());
 
-import { PostOrderOperations } from '@operations/orders/postOrder';
+import { PostOrderOperations } from '@operations/integration/PostOrderOperations';
 import { NotificationService } from '@services/notification/NotificationService';
 import { expectCatalogNotify } from '../../helpers/notificationServiceMock';
 

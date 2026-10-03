@@ -1,12 +1,12 @@
 /**
- * CHARACTERIZATION (tamamlayıcı): SmartService.get() — backend/src/api/rpc/handlers/smart-service.ts.
+ * CHARACTERIZATION (tamamlayıcı): SmartService.get() — backend/src/api/services/smart-service.ts.
  * `unifiedSearch` VE dört özel arama metodu zaten `SmartService.characterization.test.ts`'te kapsamlıdır
  * (ADR-0021). Bu dosya YALNIZCA o dosyada test edilmeyen `get()` (IService arayüzü gereği var olan,
  * kullanılmayan) metodunu tamamlar (ADR-0016 B-R-T3). DB/Redis/ağ YOK. Kod DEĞİŞTİRİLMEDİ.
  */
 import { describe, it, expect } from '@jest/globals';
 
-import SmartService from '@api/rpc/handlers/smart-service';
+import SmartService from '@api/services/smart-service';
 
 describe('SmartService.get (IService arayüzü — kullanılmıyor)', () => {
   it('[MEVCUT DAVRANIŞ] her çağrıda "Method not implemented." hatası fırlatır; clientDB\'ye hiç dokunmaz', async () => {

@@ -16,7 +16,6 @@ function selectText(el: Element | null): void {
 }
 
 for (const btn of document.querySelectorAll<HTMLButtonElement>('[data-copy]')) {
-  btn.hidden = false
   const status = btn.parentElement?.querySelector<HTMLElement>('[data-copy-status]')
   const label = btn.querySelector<HTMLElement>('[data-copy-label]')
   const idle = label?.textContent ?? ''

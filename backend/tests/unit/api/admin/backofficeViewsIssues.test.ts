@@ -4,7 +4,7 @@ import { listViews, saveView, deleteView, MAX_VIEWS_PER_ADMIN } from '../../../.
 import { BACKOFFICE_ATTENTION_RPC_INPUT } from '../../../../src/capabilities/rpc-input/backoffice-attention';
 import { CAPABILITY_BY_RPC } from '../../../../src/capabilities';
 import { requiresStepUp } from '../../../../src/api/admin/stepUp';
-import { getRequiredTier } from '../../../../src/api/rpc/operationPolicy';
+import { getRequiredTier } from '../../../../src/api/operationPolicy';
 import { getIssueGroups, LogQueryError } from '../../../../src/platform/runtime/logs/logQuery';
 import { tenantBucketOf } from '../../../../src/platform/runtime/metrics/errorEvents';
 import { BackofficeViewSchema, BACKOFFICE_VIEW_INDEXES } from '../../../../src/database/application/models/BackofficeView';

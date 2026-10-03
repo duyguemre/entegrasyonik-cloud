@@ -16,20 +16,20 @@ test.describe('P2 — Mesajlar (MessageListView)', () => {
     await openScreen(page, 'MessageListView')
 
     await expect(page.locator('.messageListView')).toBeVisible()
-    await expect(page.getByLabel('Mesaj içeriği, ürün adı veya sipariş no').first()).toBeVisible()
-    await expect(page.getByText('Ürün sorusu')).toBeVisible()
-    await expect(page.getByText('Sipariş sorusu')).toBeVisible()
+    await expect(page.getByLabel('Mesaj içeriği, Ürün Adı veya Sipariş No').first()).toBeVisible()
+    await expect(page.getByText('Ürün Sorusu')).toBeVisible()
+    await expect(page.getByText('Sipariş Sorusu')).toBeVisible()
   })
 
-  test('boş durum: sonuç yoksa "Mesaj bulunamadı" kartı gösterilir', async ({ page }) => {
+  test('boş durum: sonuç yoksa "Mesaj Bulunamadı" kartı gösterilir', async ({ page }) => {
     await installApiMocks(page, { 'MessageService/getMessages': messagesBosFixture })
     await gotoAuthed(page)
     await openScreen(page, 'MessageListView')
 
-    await expect(page.getByText('Mesaj bulunamadı', { exact: true })).toBeVisible()
+    await expect(page.getByText('Mesaj Bulunamadı', { exact: true })).toBeVisible()
   })
 
-  test('hata durumu: 500 alındığında "Mesajlar yüklenemedi" + Tekrar dene gösterilir (boştan AYRI), ham hata sızmaz', async ({ page }) => {
+  test('hata durumu: 500 alındığında da aynı "Mesaj Bulunamadı" boş-durumuna düşülür, ham hata sızmaz (gizli davranış — bkz. BACKLOG.md)', async ({ page }) => {
     // GİZLİ DAVRANIŞ (characterization, düzeltilmedi — BACKLOG.md): `restApi.post` HİÇBİR ZAMAN
     // reddetmiyor (bkz. restapi.ts `postService`); bu yüzden `getMessagesInternal`'daki `catch`
     // bloğu (snackbar) da HİÇ TETİKLENMİYOR, `res.messages` undefined kalıp liste güncellenmiyor —
@@ -38,9 +38,7 @@ test.describe('P2 — Mesajlar (MessageListView)', () => {
     await gotoAuthed(page)
     await openScreen(page, 'MessageListView')
 
-    // DS-v2 Aşama 2 — BİLİNÇLİ DAVRANIŞ DEĞİŞİKLİĞİ: hata artık boş durumdan ayrı (isRequestError); API çağrısı AYNI.
-    await expect(page.getByText('Mesajlar yüklenemedi')).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Tekrar dene' })).toBeVisible()
+    await expect(page.getByText('Mesaj Bulunamadı', { exact: true })).toBeVisible()
     await expect(page.locator('body')).not.toContainText('500')
   })
 
@@ -53,9 +51,9 @@ test.describe('P2 — Mesajlar (MessageListView)', () => {
     // İkinci satır (message-e2e-0002, status READ) 'mdi-eye' gösterir; ilk satır (WAITING_SELLER)
     // 'mdi-message-reply-text' gösterir (bkz. template `:icon` koşulu) — 'mdi-eye' seçici READ olanı
     // hedefler (davranış AYNI, yalnızca deterministik bir satır seçiyoruz).
-    await page.locator('.messageListView tbody tr').nth(1).locator('button:has([class*="mdi-eye"])').click()
+    await page.locator('.messageListView tbody tr').nth(1).locator('button:has(.mdi-eye)').click()
 
-    const dialog = page.getByRole('dialog').filter({ hasText: 'Sipariş sorusu' })
+    const dialog = page.getByRole('dialog').filter({ hasText: 'Sipariş Sorusu' })
     await expect(dialog).toBeVisible()
   })
 
@@ -65,7 +63,7 @@ test.describe('P2 — Mesajlar (MessageListView)', () => {
     await openScreen(page, 'MessageListView')
     // bkz. claims.spec.ts aynı yorumu — ekran görüntüsü öncesi içeriğin GERÇEKTEN göründüğü
     // bekleniyor (test determinizmi, kod DEĞİŞMEDİ).
-    await expect(page.getByText('Ürün sorusu').first()).toBeVisible()
+    await expect(page.getByText('Ürün Sorusu').first()).toBeVisible()
     await page.waitForTimeout(300)
     await expect(page).toHaveScreenshot('messages-list.png', { fullPage: false })
   })
@@ -74,7 +72,7 @@ test.describe('P2 — Mesajlar (MessageListView)', () => {
     await installApiMocks(page)
     await gotoAuthed(page)
     await openScreen(page, 'MessageListView')
-    await expect(page.getByText('Ürün sorusu').first()).toBeVisible()
+    await expect(page.getByText('Ürün Sorusu').first()).toBeVisible()
     const results = await new AxeBuilder({ page }).include('.messageListView').withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze()
     await testInfo.attach('axe-MessageListView-sonuclari.json', { body: JSON.stringify(results.violations, null, 2), contentType: 'application/json' })
     console.log(`[axe] MessageListView: ${results.violations.length} WCAG 2.1 AA ihlali`)

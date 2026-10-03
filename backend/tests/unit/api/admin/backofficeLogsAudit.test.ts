@@ -1,8 +1,8 @@
 // ADR-0026 WP-LOG L2: BackofficeLog/Error/Audit servisleri -- girdi semasi, kademe, 400 VALIDATION esleme, kesme, tek-kayit hassas okuma denetimi. DB/Redis YOK (sahte modeller).
 import { describe, it, expect, jest, beforeEach } from '@jest/globals';
 import { BACKOFFICE_RPC_INPUT } from '../../../../src/capabilities/rpc-input/backoffice';
-import { getRequiredTier } from '../../../../src/api/rpc/operationPolicy';
-import { truncateLogEntry } from '../../../../src/api/rpc/handlers/backoffice-support';
+import { getRequiredTier } from '../../../../src/api/operationPolicy';
+import { truncateLogEntry } from '../../../../src/api/services/backoffice-support';
 import { AuditLogger } from '../../../../src/services/audit/AuditLogger';
 
 let audits: any[];
@@ -49,7 +49,7 @@ function loadLog(logs: any) {
     let Svc: any;
     jest.isolateModules(() => {
         jest.doMock('@platform/runtime/logs', () => ({ ...logs, LogQueryError: LQE }));
-        Svc = require('../../../../src/api/rpc/handlers/backoffice-log-service').default;
+        Svc = require('../../../../src/api/services/backoffice-log-service').default;
         // izole kayit defterindeki AuditLogger ornegine sink baglanir
         require('../../../../src/services/audit/AuditLogger').AuditLogger.setSink(async (r: any) => { audits.push(r); });
     });
@@ -89,7 +89,7 @@ describe('BackofficeLogService', () => {
 
 describe('BackofficeAuditService', () => {
     function svcWith(rows: any[], request: any) {
-        const Svc = require('../../../../src/api/rpc/handlers/backoffice-audit-service').default;
+        const Svc = require('../../../../src/api/services/backoffice-audit-service').default;
         const s = new Svc(undefined, request);
         s.applicationDB = { getAuditLogModel: () => ({ find: (q: any) => { s.q = q; const c: any = { sort: () => c, limit: (n: number) => { s.n = n; return c; }, maxTimeMS: () => c, lean: async () => rows }; return c; } }) };
         return s;
@@ -119,27 +119,11 @@ describe('BackofficeAuditService', () => {
         expect(audits).toHaveLength(2);
         expect(audits[0].meta).toMatchObject({ service: 'BackofficeAuditService', operation: 'list', f_tid: 5, f_event: 'app.write' });
     });
-    it('ip: ham deger aynen; alan yoksa null (karakterizasyon, RET-02 oncesi)', async () => {
-        const rows = [
-            { _id: '64b000000000000000000005', at: new Date('2026-09-10T10:00:00Z'), event: 'login', result: 'ok', ip: '203.0.113.7' },
-            { _id: '64b000000000000000000004', at: new Date('2026-09-10T09:00:00Z'), event: 'login', result: 'ok' },
-        ];
-        const out = await svcWith(rows, { from: iso(1), to: iso(20) }).list();
-        expect(out.items.map((i: any) => i.ip)).toEqual(['203.0.113.7', null]);
-    });
-    it('RET-02: maskelenmis kayitta ip = ag oneki (ipMasked) ve ipMasked:true; ham ip varsa false', async () => {
-        const rows = [
-            { _id: '64b000000000000000000007', at: new Date('2026-09-10T10:00:00Z'), event: 'login', result: 'ok', ipMasked: '203.0.113.0/24' },
-            { _id: '64b000000000000000000006', at: new Date('2026-09-10T09:00:00Z'), event: 'login', result: 'ok', ip: '203.0.113.7' },
-        ];
-        const out = await svcWith(rows, { from: iso(1), to: iso(20) }).list();
-        expect(out.items.map((i: any) => [i.ip, i.ipMasked])).toEqual([['203.0.113.0/24', true], ['203.0.113.7', false]]);
-    });
 });
 
 describe('BackofficeErrorService.setStatus', () => {
     it('durumu gunceller; yoksa 404', async () => {
-        const Svc = require('../../../../src/api/rpc/handlers/backoffice-error-service').default;
+        const Svc = require('../../../../src/api/services/backoffice-error-service').default;
         const s = new Svc(undefined, { fingerprint: 'fp1', status: 'resolved' });
         let upd: any;
         s.applicationDB = { getErrorEventModel: () => ({ updateOne: (f: any, u: any) => { upd = [f, u]; return { maxTimeMS: async () => ({ matchedCount: 1 }) }; } }) };

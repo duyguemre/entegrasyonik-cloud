@@ -5,21 +5,28 @@
  */
 
 import '../public/assets/css/site.css'
-// Ortak stil katmanı (tek merkez: @entegrasyonik/ui — Vuetify çekirdek, token CSS değişkenleri `--ek-*`,
-// uygulama türev değişkenleri, Vuetify override katmanı, kendi barındırılan Inter; ADR-0011/0015/0026).
-import '@entegrasyonik/ui/styles'
+import '../public/assets/css/integrations.css'
+// ADR-0011 Karar 1 — token omurgası (`--ek-*` CSS değişkenleri, Vuetify'a bağlı).
+import '@/design/tokens/dist/tokens.app.css'
+// ADR-0015 Karar 1.3/3.1 (A1) — uygulamaya özgü türev değişkenler
+// (`--ek-app-*`) ve Vuetify override katmanı (radius/odak/uppercase).
+// Kademe sırası: Vuetify çekirdek → token CSS değişkenleri → bu ikisi.
+import '@/design/app.css'
+import '@/design/vuetify-overrides.css'
+// ADR-0011 Açık Soru 1 (KARARLANDI 2026-09-27) — Inter, kendi barındırılan
+// (`@fontsource/inter`, CDN YOK). `--ek-font-weight-*` ile eşleşen 4 ağırlık
+// (regular/medium/semibold/bold) yüklenir.
+import '@fontsource/inter/400.css'
+import '@fontsource/inter/500.css'
+import '@fontsource/inter/600.css'
+import '@fontsource/inter/700.css'
 // Plugins
 import { registerPlugins } from '@/plugins'
-import { installNoFormHistory } from '@/plugins/noFormHistory'
 // Components
 import App from './App.vue'
 // Composables
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
-import router from './router'
-import { onNativePushOpen } from '@entegrasyonik/ui/native'
-import { hasUnsavedChanges } from '@/composables/useUnsavedChanges'
-import { usePublicConfigStore } from '@/stores/publicConfig'
 
 import HorizontalScrollComponent from '@/components/HorizontalScrollComponent.vue';
 import ScrollComponent from '@/components/ScrollComponent.vue';
@@ -34,12 +41,13 @@ import { reportUnexpectedError } from '@/composables/errorReporting'
 
 // ADR-0015 Karar 3.6 (A5) — ECharts tema adaptörü tek noktadan kaydedilir;
 // tüketiciler (`StatisticsComponent` vb.) `theme="entegrasyonik"` ile bağlanır.
-import { registerChartThemes } from '@/composables/useChartTheme'
-registerChartThemes()
+import * as echarts from 'echarts/core'
+import { buildEchartsTheme } from '@/design/echarts-theme'
+import { semanticColorsLight } from '@/design/tokens'
+echarts.registerTheme('entegrasyonik', buildEchartsTheme(semanticColorsLight))
 
 const pinia = createPinia()
 const app = createApp(App)
-installNoFormHistory()
 
 
 registerPlugins(app)
@@ -81,9 +89,6 @@ window.addEventListener('unhandledrejection', (event: PromiseRejectionEvent) => 
 // (img/script/link) YAKALAMAZ — yalnızca script çalışma zamanı hatalarını (window'a
 // kadar bubble eden) yakalar; broken image gibi durumlar için gürültülü toast riski yok.
 window.addEventListener('error', (event: ErrorEvent) => {
-  // "ResizeObserver loop completed with undelivered notifications." tarayıcının zararsız bir uyarısıdır (hata değil,
-  // işlev etkilenmez); dar ekranda kullanıcıya "Bir şeyler ters gitti" bildirimi olarak çıkması yanlış alarmdı.
-  if (/^ResizeObserver loop (completed with undelivered notifications|limit exceeded)/.test(event.message)) return
   reportUnexpectedError('Yakalanmamış global hata', {
     module: 'errorHandler',
     message: event.message,
@@ -94,27 +99,12 @@ window.addEventListener('error', (event: ErrorEvent) => {
   })
 })
 
-// FE-CFG-1 (ADR-0031) — kamu açılış yapılandırması montajdan ÖNCE bir kez alınır (3 sn zaman aşımı; alınamazsa
-// güvenli varsayılanlarla açılır). Sonra 5 dk'da bir / sekme görünür olunca / rota değişiminde (eskiyse) tazelenir.
-const publicConfig = usePublicConfigStore(pinia)
-router.afterEach(() => { void publicConfig.ensureFresh() })
-// MOB-07 — Android kabuğu: bildirime dokunulunca yalnız uygulama içi yola gidilir (kabuk dışında no-op).
-onNativePushOpen((path) => void router.push(path))
-publicConfig.refresh().finally(() => {
-  publicConfig.startAutoRefresh()
-  app.mount('#app')
-})
+app.mount('#app')
 
 
 
 window.onbeforeunload = function (ev) {
   var e = ev || window.event;
-  // FE R4 C1: kaydedilmemiş değişiklik varsa tarayıcı onayı iste ve uygulamayı UNMOUNT ETME (kullanıcı "Kal" diyebilir).
-  if (hasUnsavedChanges()) {
-    e?.preventDefault?.();
-    if (e) (e as BeforeUnloadEvent).returnValue = '';
-    return '';
-  }
   logger.debug("destroy vue", { event: e });
   app.unmount();
 

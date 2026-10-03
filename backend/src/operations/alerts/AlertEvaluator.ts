@@ -4,7 +4,7 @@
 //  - susturma (`mutedUntil`) ve bakim penceresi bildirimleri bastirir (degerlendirme ve kayit surer),
 //  - firtina korumasi: ayni turda > 5 yeni platform uyarisi -> tek `PLATFORM_ALERT_DIGEST`,
 //  - golge mod (`ALERT_SHADOW_UNTIL`): yalniz kayit + defter (`suppressed:shadow`), e-posta ve tenant bildirimi YOK.
-// Platform: `platformNotify` (e-posta `ALERT_EMAIL_TO`; yoksa yalniz panel). Tenant: `notify` (R1/R2/R3/R8 kodlari, `alertRules.TenantNotice`).
+// Platform: `platformNotify` (e-posta `ALERT_EMAIL_TO`; yoksa yalniz panel). Tenant: `notify` (INTEGRATION_ERROR_RATE_HIGH / INTEGRATION_AUTH_FAILED).
 // Tum bagimliliklar enjekte (testler DB/Redis/SMTP'ye baglanmaz). Bayrak kapaliyken hicbir koleksiyona dokunmaz.
 import { logger } from '@platform/core/logger';
 import { DEFAULT_THRESHOLDS, evaluateRules, type AlertLevel, type Finding, type RuleSources, type Thresholds } from './alertRules';
@@ -38,8 +38,7 @@ export interface AlertEvaluatorDeps {
     flags(): { enabled: boolean; shadowUntil?: Date };
     isMaintenance(): boolean;
     now?(): Date;
-    /** Her turda okunur (platform ayarlari yayin olmadan degisebilir); tanimsizsa DEFAULT_THRESHOLDS. */
-    thresholds?(): Thresholds;
+    thresholds?: Thresholds;
 }
 
 export interface EvaluateResult {
@@ -63,7 +62,7 @@ export class AlertEvaluator {
         const maintenance = this.d.isMaintenance();
         res.shadow = shadow; res.maintenance = maintenance;
 
-        const findings = await evaluateRules(this.d.sources, this.d.thresholds?.() ?? DEFAULT_THRESHOLDS, now.getTime());
+        const findings = await evaluateRules(this.d.sources, this.d.thresholds ?? DEFAULT_THRESHOLDS, now.getTime());
         res.evaluated = findings.length;
         const seen = new Set(findings.map((x) => `${x.ruleId}\u0000${x.scopeKey}`));
 

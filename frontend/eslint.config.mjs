@@ -15,9 +15,7 @@ export default tseslint.config(
       'coverage/**',
       'node_modules/**',
       '.vite/**',
-      'src/design/tokens/dist/**', // üretilmiş CSS/JS token çıktısı (site sözleşme yolu)
-      'packages/ui/src/tokens/dist/**', // üretilmiş CSS token çıktısı
-      'packages/ui/src/theme/theme-boot.js', // tarayıcı önyükleme betiği (public/ kopyalarıyla bayt bayt aynı)
+      'src/design/tokens/dist/**', // üretilmiş CSS/JS token çıktısı
       '*.config.js',
       '*.config.mjs',
       '*.config.cjs',
@@ -36,7 +34,7 @@ export default tseslint.config(
   // başlığı) bunu dışlar. Stil göçü ayrı bir iştir (ADR-0011 literal-stil mandalı zaten bu alanı kapsıyor).
   ...pluginVue.configs['flat/essential'],
   {
-    files: ['src/**/*.vue', 'packages/ui/src/**/*.vue', 'packages/chat/src/**/*.vue'],
+    files: ['src/**/*.vue'],
     languageOptions: {
       parserOptions: {
         // `<script lang="ts">` / `<script setup lang="ts">` bloklarını `vue-eslint-parser`
@@ -47,7 +45,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ['src/**/*.ts', 'src/**/*.vue', 'packages/ui/src/**/*.ts', 'packages/ui/src/**/*.vue', 'packages/chat/src/**/*.ts', 'packages/chat/src/**/*.vue'],
+    files: ['src/**/*.ts', 'src/**/*.vue'],
     languageOptions: {
       parserOptions: {
         // Tip-farkındalıklı DEĞİL (yukarıdaki not); `.vue` dosyalarında `<script setup lang="ts">`
@@ -99,26 +97,6 @@ export default tseslint.config(
       'no-constant-condition': ['warn', { checkLoops: false }],
       'prefer-const': 'warn',
       'no-var': 'warn',
-    },
-  },
-  {
-    // ADR-0034 Karar 2 / CHAT_UI_CONTRACT §1 — bağımlılık yönü: sohbet paketi uygulamaları içe aktarmaz; v-html yasak.
-    files: ['packages/chat/src/**/*.ts', 'packages/chat/src/**/*.vue'],
-    rules: {
-      'vue/no-v-html': 'error',
-      'no-restricted-imports': ['error', {
-        patterns: [
-          { group: ['@/*', '@/**'], message: '@entegrasyonik/chat frontend/src (@/) içe aktaramaz — host arayüzünü kullanın.' },
-          { group: ['**/backoffice/**', '@entegrasyonik/backoffice', '@entegrasyonik/backoffice/**'], message: '@entegrasyonik/chat backoffice içe aktaramaz.' },
-        ],
-      }],
-    },
-  },
-  {
-    // ADR-0034 Karar 2 — `ui` tasarım sistemi sohbet paketine bağımlı olamaz.
-    files: ['packages/ui/src/**/*.ts', 'packages/ui/src/**/*.vue'],
-    rules: {
-      'no-restricted-imports': ['error', { patterns: [{ group: ['@entegrasyonik/chat', '@entegrasyonik/chat/**'], message: '@entegrasyonik/ui → @entegrasyonik/chat içe aktarımı yasak.' }] }],
     },
   },
   {

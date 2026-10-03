@@ -10,11 +10,7 @@ import { getPublicCapabilities, getStockReservationStory } from '../data/capabil
 import { getPublicFaq, getSupportCategories } from '../data/faq'
 import { getConnectGuide } from '../data/connect'
 import { getPublicPlans, getPlanSourceNotice, getVatNotice, getPublicTrial } from '../data/plans'
-import { TAGLINE, canonicalPath, entityDefinition, markdownPath, seoEntries } from '../data/seo'
-import { ASSISTANT_PATH, ASSISTANT_NAME, assistantLlms } from '../data/assistant'
-import { AGENT_DESCRIPTOR } from '../data/agent-brand'
-import { guideHref, guides, sourcesOf } from '../data/kb'
-import { plainKb } from '../lib/kb-render'
+import { primaryNav, featureNav, legalNav, published } from '../data/navigation'
 
 const base = siteConfig.siteUrl ?? ''
 const url = (path: string) => `${base}${path}`
@@ -32,21 +28,18 @@ export const GET: APIRoute = () => {
   const lines: string[] = []
   lines.push('# Entegrasyonik — kapsamlı özet')
   lines.push('')
-  lines.push(`> ${TAGLINE}`)
-  lines.push('')
-  lines.push('## Entegrasyonik nedir?')
-  lines.push('')
-  lines.push(entityDefinition(integrations))
+  lines.push(
+    '> Entegrasyonik, pazaryerlerindeki ürün, stok, sipariş ve iade süreçlerinizi tek panelde toplar; stok rezervasyonuyla aşırı satış riskini azaltır.',
+  )
   lines.push('')
   lines.push(`Kısa dizin: ${url('/llms.txt')}. Ücretsiz deneme: ${trial.days} gün${trial.cardRequired ? '' : ', kart bilgisi gerekmez'}.`)
   lines.push('')
 
-  // S19: sayfa listesi SEO kaydından (indekslenen her sayfa + kısa açıklama + markdown sürümü).
   lines.push('## Sayfalar')
   lines.push('')
-  for (const e of seoEntries.filter((x) => x.index && x.section !== 'rehber')) {
-    lines.push(`- [${e.title}](${url(canonicalPath(e.path))}): ${e.llmsSummary} Markdown: ${url(markdownPath(e.path))}`)
-  }
+  lines.push(`- [Ana sayfa](${url('/')})`)
+  for (const p of published(primaryNav)) lines.push(`- [${p.label}](${url(p.href)})`)
+  for (const p of published(featureNav)) lines.push(`- [${p.label}](${url(p.href)})`)
   lines.push('')
 
   lines.push('## Entegrasyonlar')
@@ -62,7 +55,7 @@ export const GET: APIRoute = () => {
     const guide = getConnectGuide(i.code, i.kind)
     if (guide) {
       lines.push(`- Gerekli bilgiler: ${guide.credentials.join(', ')}`)
-      lines.push(`- Nasıl bağlanır: ${guide.steps.join(' ')}${guide.note ? ` ${guide.note}` : ''} Rehber: ${url(canonicalPath(`/entegrasyonlar/${i.code}`))}`)
+      lines.push(`- Nasıl bağlanır: ${guide.steps.join(' ')}${guide.note ? ` ${guide.note}` : ''} Rehber: ${url(`/entegrasyonlar/${i.code}`)}`)
     }
     lines.push('')
   }
@@ -79,7 +72,7 @@ export const GET: APIRoute = () => {
   const story = getStockReservationStory()
   lines.push('## Stok rezervasyonu: aşırı satış nasıl önlenir')
   lines.push('')
-  lines.push(`Ayrıntı: ${url(canonicalPath('/ozellikler/stok-rezervasyonu'))}`)
+  lines.push(`Ayrıntı: ${url('/ozellikler/stok-rezervasyonu')}`)
   lines.push('')
   lines.push('Sorun:')
   for (const x of story.problems) lines.push(`- **${x.title}**: ${x.text}`)
@@ -121,7 +114,7 @@ export const GET: APIRoute = () => {
 
   lines.push('## Destek merkezi')
   lines.push('')
-  lines.push(`Kategorili destek sayfası: ${url(canonicalPath('/destek'))}`)
+  lines.push(`Kategorili destek sayfası: ${url('/destek')}`)
   lines.push('')
   for (const c of getSupportCategories()) {
     const guides = c.channelGuides ? ' Kanal bağlantı rehberleri her entegrasyonun sayfasındadır.' : ''
@@ -129,40 +122,9 @@ export const GET: APIRoute = () => {
   }
   lines.push('')
 
-  // S24 (K43): ajan bölümü; satırlar vaat kaydından (src/data/agent-claims.ts; tests/agent-claims.test.ts).
-  lines.push(`## ${ASSISTANT_NAME} — ${AGENT_DESCRIPTOR}`)
-  lines.push('')
-  lines.push(`Sayfa: ${url(canonicalPath(ASSISTANT_PATH))}`)
-  lines.push('')
-  lines.push(assistantLlms.short)
-  lines.push('')
-  for (const l of assistantLlms.full) lines.push(`- ${l}`)
-  lines.push('')
-
-  // S20b: rehber / bilgi merkezi — her sayfanın kısa yanıtı, son güncelleme tarihi ve kaynak yayıncıları (kayıttan).
-  // Bu içerik pazarı/mevzuatı anlatır; Entegrasyonik ürün kapsamı değildir (ürün kapsamı yukarıdaki bölümlerde).
-  lines.push('## Rehber')
-  lines.push('')
-  for (const e of seoEntries.filter((x) => x.index && x.section === 'rehber')) {
-    lines.push(`- [${e.title}](${url(canonicalPath(e.path))}): ${e.llmsSummary} Markdown: ${url(markdownPath(e.path))}`)
-  }
-  lines.push('')
-  for (const g of guides) {
-    lines.push(`### ${g.title}`)
-    lines.push('')
-    lines.push(`Sayfa: ${url(canonicalPath(guideHref(g.slug)))} · Son güncelleme: ${g.dateModified}`)
-    lines.push('')
-    lines.push(plainKb(g.answer))
-    lines.push('')
-    for (const k of g.keyPoints) lines.push(`- ${plainKb(k)}`)
-    if (g.keyPoints.length > 0) lines.push('')
-    lines.push(`Kaynaklar: ${[...new Set(sourcesOf(g).map((s) => s.publisher))].join('; ')}`)
-    lines.push('')
-  }
-
   lines.push('## Optional')
   lines.push('')
-  for (const e of seoEntries.filter((x) => x.section === 'legal')) lines.push(`- [${e.title}](${url(canonicalPath(e.path))}): ${e.llmsSummary}`)
+  for (const p of published(legalNav)) lines.push(`- [${p.label}](${url(p.href)}): taslak, hukuki incelemeyi bekliyor.`)
   lines.push('')
 
   return new Response(lines.join('\n'), { headers: { 'Content-Type': 'text/plain; charset=utf-8' } })

@@ -69,9 +69,7 @@ export type CapabilityKey =
     | 'taxpayerLookup'
     | 'documentPdf'
     // ERP muhasebe senkronu (§3) — bugün hiçbir adaptörde yok.
-    | 'accountingSync'
-    // PRC-R1 (K57-S1): rekabet — buybox bilgisini SALT OKUMA. Yalnız Trendyol; diğer kanallarda manifestoda yok = not_supported.
-    | 'pricing.buybox.read';
+    | 'accountingSync';
 
 /**
  * Yetenek düzeyi (ADR-0018 Karar 1.2 / kategori belgesi §3):
@@ -92,8 +90,6 @@ export interface CapabilityEntry {
     note?: string;
     /** 'dosya:satır' ya da test adı biçiminde kanıt referansları (görünmez, yalnız iç kullanım). */
     evidence?: string[];
-    /** Bu yeteneğin alan/uç sözleşmesinin resmi kaynak ya da gerçek yanıtla son doğrulandığı tarih (ISO). Boş = DOĞRULANMADI. */
-    lastVerifiedAt?: string;
 }
 
 export interface DocRef {

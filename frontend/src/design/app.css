@@ -1,0 +1,62 @@
+/**
+ * frontend/src/design/app.css
+ *
+ * ADR-0015 Karar 1.3 — uygulamaya özgü, yalnızca CSS'te yaşayan türev
+ * değerler. Kural sitedeki (`--site-*`, ADR-0014) ile AYNIDIR: `--ek-app-*`
+ * yalnızca `--ek-*` (`tokens.app.css`) üzerine KURULUR ve hiçbir `--ek-*`'i
+ * YENİDEN TANIMLAMAZ. Bu dosya `main.ts`'te `tokens.app.css`'ten SONRA
+ * import edilir.
+ *
+ * Kapsam (A1'de yalnızca DEĞİŞKENLER tanımlanır — kabuk/login'in kendisi
+ * A3/A4'te bu değişkenleri TÜKETİR, bu dosya henüz hiçbir ekranı değiştirmez):
+ *  - kabuk ölçüleri (Karar 2.1)
+ *  - yoğunluk değişkenleri (Karar 1.1 — "rahat-kompakt", `data-density`)
+ *  - giriş paneli degradesi (Karar 4 — sitenin `--site-gradient-stage`
+ *    formülüyle AYNI: `primary` → `color-mix(primary 62%, primary-darken-1)`)
+ */
+:root {
+  /* ---- Kabuk ölçüleri (Karar 2.1) ---- */
+  --ek-app-sidebar-width: 248px;
+  --ek-app-sidebar-rail-width: 64px;
+  --ek-app-topbar-height: 56px;
+  --ek-app-tabstrip-height: 36px;
+
+  /* ---- Yoğunluk (Karar 1.1 — varsayılan "rahat") ----
+   * `<html data-density="compact">` ile kompakt moda geçilir (localStorage
+   * `ek.ui.v1.density`, A3'ün işi — bu dosya yalnızca DEĞİŞKENİ tanımlar). */
+  --ek-app-row-h: 44px;
+  --ek-app-control-h: 40px;
+
+  /* ---- Giriş paneli degradesi (Karar 4) ----
+   * Sitenin `--site-gradient-stage` formülüyle AYNI: `primary` →
+   * `color-mix(primary 62%, primary-darken-1)`. */
+  --ek-app-login-gradient: linear-gradient(
+    160deg,
+    var(--ek-color-primary) 0%,
+    color-mix(in srgb, var(--ek-color-primary) 62%, var(--ek-color-primary-darken-1)) 100%
+  );
+}
+
+[data-density='compact'] {
+  --ek-app-row-h: 36px;
+  --ek-app-control-h: 36px;
+}
+
+/* `prefers-reduced-motion` — ADR-0015 Karar 1.1: tüm süreler 0'a iner,
+ * yalnızca ≤150ms opaklık kalır. Bileşenler `--ek-duration-*` token'larını
+ * TÜKETİR; bu blok o token'ların KÖK değerini reduced-motion altında geçersiz
+ * kılar (tek noktadan, her bileşenin kendi media query yazmasına gerek kalmaz). */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --ek-duration-fast: 0ms;
+    --ek-duration-base: 0ms;
+    --ek-duration-slow: 150ms;
+  }
+}
+
+/* ADR-0015 Karar 1.2 — para/adet/tarih/kimlik değerleri için tek yardımcı
+ * sınıf: sabit genişlikli rakamlar (tablo sayı sütunları hizalanır,
+ * KPI değerleri titremez). */
+.ek-num {
+  font-variant-numeric: tabular-nums;
+}

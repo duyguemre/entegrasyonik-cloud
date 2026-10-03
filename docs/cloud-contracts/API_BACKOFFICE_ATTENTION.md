@@ -115,7 +115,6 @@ Girdi: `{}`. "Sistem kullanımı büyük resimde nasıl?" kartları için sakin 
 - `orders`: platform geneli YENİ sipariş hacmi. Kaynak: tenant etiketsiz `orders_ingested_total{channel}` sayacı (sipariş içe alma yolunda `OrderRepository.saveOrders`; yalnız yeni oluşan sipariş sayılır, güncelleme sayılmaz) ve `MetricRollups` 1 sa kovaları (90 gün saklama). `last24h`/`last7d` toplam, `previous24h` bir önceki 24 saat, `changePct` = (son−önceki)/önceki×100 (1 ondalık; önceki 0 veya önceki dönem verisi yoksa `previous24h`/`changePct` `null`). Hiç kova yoksa `computable:false` + `note:'hesaplanamadı'` (uydurma 0 yok). Sayaç yalnız bu değişiklikten sonraki siparişleri kapsar (geriye dönük doldurma yok). Kanal kırılımı bu uçta dönmez.
 - `calls`: `http` = `MetricRollups.http_requests` (tüm podlar, 5 dk/1 sa kovaları); `integration` = `IntegrationCallMetrics` (30 gün TTL) 24 sa/7 g sayısı.
 - `errorRate.http`: saatlik 5xx oranı (son 24 sa); `integration`: hata/çağrı.
-- `activeUsers` (MOB-08, ek blok) ve isteğe bağlı `platform` girdisi: `docs/API_BACKOFFICE_USAGE.md` §3.1.
 - `mrr`: `computeRevenueMetrics` ile aynı hesap (plan liste fiyatı; muaf/özel teklif hariç; para birimi bazında, küçük birim). `lostLast30d` iptal/süresi dolan abonelik sayısı.
 
 ---
@@ -128,7 +127,6 @@ Girdi: `{}`. "Sistem kullanımı büyük resimde nasıl?" kartları için sakin 
 | `platform.overview.pulse` | `BackofficeOverviewService/getPulse` | read |
 | `platform.tenants.list` | `BackofficeTenantService/listTenants` (BE-01) | read, `sensitive_read` denetimi (çağrı başına tek kayıt, yalnız süzgeç özeti) |
 | `platform.tenants.health_summary` | `BackofficeTenantService/getHealthSummary` (BE-02) | read (sayaç; denetimsiz) |
-| `platform.tenants.usage` | `BackofficeTenantService/getUsage` (MOB-08; `docs/API_BACKOFFICE_USAGE.md`) | read (sayaç; denetimsiz) |
 | `platform.engine.retry_jobs` | `BackofficeEngineService/retryJobs` (BE-03) | write + `external:true` (LIVE_READONLY → 423), step-up + gerekçe |
 | `platform.prefs.list_views` / `save_view` / `delete_view` | `BackofficePrefsService/listViews|saveView|deleteView` (BE-05) | read / write / write |
 
@@ -201,16 +199,6 @@ Yeni servis `BackofficePrefsService`; veri `ApplicationDB` yeni koleksiyon **`Ba
 ## BE-06 — Sorun gruplarında müşteri süzgeci
 
 `BackofficeLogService/issueGroups` girdisine `tid?: number` (pozitif tam sayı) eklenir. Süzgeç, `ErrorEvents.tenantBuckets` (tenant kimliği saklanmaz; ADR-0026 L1) üzerinden **kova eşleşmesiyle** uygulanır → sonuç **yaklaşık**dır (çakışma nedeniyle başka tenant'ın grubu da gelebilir; eksik gelmez). Yanıta `tenantFilter: { tid, approximate: true } | null` eklenir; her satırın alanları aynı. Log gezgini (`list`) zaten kesin `tenantId` süzgeci taşır (değişmedi). FE "yalnız olay akışına uygulanır" notunu kaldırır, sorun gruplarında "yaklaşık" ipucu gösterir.
-
-## BE-07 — Kritik dikkat maddeleri için web push (MOB-06)
-
-`BackofficePrefsService`'e üç uç (MOB-04 kanalı ve kuralları aynen; ayrıntı `docs/NOTIFICATION_PLAN.md` NB9 + "MOB-06 backoffice push"):
-- `getPushConfig {}` → `{ enabled, publicKey, devices: [ { id, deviceLabel, createdAt, lastSuccessAt } ] }` — kanal kapalıysa `{enabled:false, publicKey:null, devices:[]}`; yalnız çağıranın cihazları.
-- `subscribePush { subscription: { endpoint, expirationTime?, keys: { p256dh, auth } }, deviceLabel? }` → `{ ok: true }` — kanal kapalı `409 PUSH_DISABLED`, izinsiz uç `400 PUSH_ENDPOINT_NOT_ALLOWED`, bozuk anahtar `400 PUSH_KEYS_INVALID`.
-- `unsubscribePush { endpoint } | { id }` → `{ removed }` — yalnız kendi kaydı; kanal kapalıyken de çalışır; ikisi birden ya da hiçbiri `400 VALIDATION`.
-- Kayıt `PushSubscriptions` koleksiyonunda `tid = 0` (platform; tenant tid'leri ≥ 1) + `userId = principal.sub` — yeni koleksiyon/göç yok (göç `0020` yeterli).
-- Yetenekler `platform.prefs.push_{config,subscribe,unsubscribe}` (`platformAdmin`, MCP'ye kapalı); yazmalar step-up/gerekçe istemez (kişisel tercih).
-- Gönderici `notifications.platform-attention-push` (worker, 2 dk): `getAttention` ile aynı kaynaklar, yalnız `severity:'critical'` maddeler; yeni madde ya da 6 sa'tir süren madde bildirim üretir (süreç belleği; yeniden başlatmada en çok bir tekrar). İçerik sabit madde başlıkları (tenant adı/`subjects` yok), `url:'/'`, `tag:'bo-attention'`. Gönderim anında alıcı DB'den taze denetlenir: `isGlobalAdmin !== true` ya da `isActive === false` olanın aboneliği silinir.
 
 ---
 

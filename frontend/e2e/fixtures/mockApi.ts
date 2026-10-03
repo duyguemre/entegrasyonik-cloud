@@ -21,7 +21,6 @@ import {
   importJobsDoluFixture,
   importJobByJobIdFixture,
   importJobReportFixture,
-  integrationHealthFixture,
   integrationDefinitionsFixture,
   integrationTypesFixture,
   invoicesDoluFixture,
@@ -34,11 +33,9 @@ import {
   resourcesFixture,
   retrieveClientSettingsResponse,
   settingsFixture,
-  stockOverviewFixture,
   userContextFixture,
 } from './apiData'
 import { menuFixture } from './nav'
-import { integrationCatalogFixture } from './integrationCatalog'
 
 export type MockValue = any | ((route: Route, corsHeaders: Record<string, string>) => Promise<void> | void)
 
@@ -62,8 +59,6 @@ function isErrorMarker(value: any): value is MockErrorMarker {
 // geri kalanı burada tanımlı "DOLU" (başarı) durumundan gelir.
 export const defaultRoutes: Record<string, MockValue> = {
   checkAuthentication: true,
-  // GL-FE: Google ile giriş varsayılan KAPALI (istemci kimliği yok → düğme görünmez; mevcut ekran testleri değişmez).
-  'SecurityService/authConfig': { googleClientId: null },
   userContext: userContextFixture,
   MenuService: menuFixture,
   'MenuService/retrieveFavorites': [],
@@ -79,16 +74,8 @@ export const defaultRoutes: Record<string, MockValue> = {
   'ChoiceService': [],
   'HashtagService': [],
   'OrderService/getOrderDashboardInsights': orderDashboardInsightsFixture,
-  // DS-v2 dashboard kartları (stok uyarıları, entegrasyon sağlığı).
-  'StockService/getStockOverview': stockOverviewFixture,
-  'IntegrationService/getIntegrationHealth': integrationHealthFixture,
-  // C1.2 — kanal kapsamı / canlı küme (backend manifestolarının birebir kopyası, bkz. integrationCatalog.ts).
-  'IntegrationService/getCatalog': integrationCatalogFixture(),
   'OrderService/getOrders': ordersDoluFixture,
   'ProductService/getProducts': productsDoluFixture,
-  // PRC-R0/R1: varsayılan = özellik kapalı + kapsam verisi yok (rozet/gösterge çizilmez); spec'ler kendi durumunu verir.
-  'PricingService/listCosts': { items: [], nextCursor: null, staleAfterDays: 90, coverage: { total: 0, withCost: 0, percent: 0, stale: 0 } },
-  'PricingService/listBuybox': { channel: 'trendyol', channels: [], settings: { enabled: false, skuCap: 0, refreshMin: 0, freshnessMin: 30, eligible: 0, tracked: 0 }, summary: { winning: 0, losing: 0, not_found: 0, unchecked: 0 }, items: [], nextCursor: null },
   'ClaimService/getClaims': claimsDoluFixture,
   'CustomerService/getCustomers': customersDoluFixture,
   'CustomerService/getCustomerDetail': buildCustomerDetail(),
@@ -115,14 +102,6 @@ export const defaultRoutes: Record<string, MockValue> = {
   'AdminService/getSystemHealth': adminSystemHealthDoluFixture,
   'AdminService/getExportDetails': adminExportDetailsFixture,
   'SmartService/unifiedSearch': { navigation: [], orders: [], products: [] },
-  // ADR-0034 — Otopilot `sse` taşıyıcısının açılış çağrısı (`GET /api/agent/info`). Varsayılan KAPALI (DISABLED): giriş
-  // noktaları gizli → mevcut ekran specleri/görsel tabanları değişmez. Sohbet specleri mock taşıyıcıyı init script
-  // (`window.__EK_CHAT_MOCK__`) ile seçer (e2e/fixtures/otopilot.ts).
-  'agent/info': {
-    v: 1, enabled: false, reason: 'DISABLED',
-    setup: { configured: false, canConfigure: false, consentRequired: false, canConsent: false },
-    readOnly: false, limits: { maxInputChars: 4000, turnsPerMinute: 10 }, suggestions: [],
-  },
   'IntegrationService/retrievePlatformInfos': {},
   'IntegrationService/retrieveClientMarketplaceSettings': async (route: Route, headers: Record<string, string>) => {
     const body = route.request().postDataJSON?.() ?? {}

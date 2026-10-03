@@ -4,7 +4,7 @@ import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 const getClientDB = jest.fn<any>();
 jest.mock('@database/index', () => ({ DatabaseManagerInstance: { getClientDB: (...a: any[]) => getClientDB(...a), getApplicationDB: jest.fn() } }));
 
-import { OrderRepository } from '@database/repositories/tenant/OrderRepository';
+import { OrderRepository } from '@integration/engine/order/OrderRepository';
 import { metricsRegistry } from '@platform/runtime/metrics/MetricsRegistry';
 import { buildBulkWriteOps } from '@platform/runtime/metrics/metricsFlush';
 

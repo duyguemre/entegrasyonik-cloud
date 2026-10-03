@@ -26,7 +26,7 @@ jest.mock('@services/billing/PaymentProviderFactory', () => ({
   getPaymentProvider: () => getPaymentProvider(),
 }));
 
-import BillingService from '../../../src/api/rpc/handlers/billing-service';
+import BillingService from '../../../src/api/services/billing-service';
 
 function makeApplicationDB(opts: {
   plans?: any[];

@@ -2,7 +2,7 @@
   ADR-0015 N13 "Yakında" — bkz. `PttComponent.vue` gerekçe notu.
 -->
 <template>
-  <IntegrationComingSoonPanel platform-name="Oplog" category="kargo" alternative-capability="shippingNotice" />
+  <IntegrationComingSoonPanel platform-name="Oplog" category="kargo" />
 </template>
 
 <script setup lang="ts">

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { useToast } from '@entegrasyonik/ui/composables/useToast'
+import { useToast } from '../src/composables/useToast'
 
 /** ADR-0015 Karar 6.1 — useToast birim testleri: <=3 eşzamanlı toast, hata kapanmaz, diğerleri 4sn sonra kapanır. */
 describe('useToast', () => {

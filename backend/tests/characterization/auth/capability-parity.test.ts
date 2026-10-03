@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { CAPABILITIES, CAPABILITY_BY_RPC, findRegistryInvariantViolations, rpcBindingsOf } from '../../../src/capabilities';
 import { derivePolicy } from '../../../src/capabilities/derive/policy';
-import { OPERATION_POLICY } from '../../../src/api/rpc/operationPolicy';
+import { OPERATION_POLICY } from '../../../src/api/operationPolicy';
 import { OPERATION_POLICY_SNAPSHOT } from './operationPolicy.snapshot';
 
 // ADR-0019 §3: Parite kapısı v1 (Aşama A). `operation-policy.test.ts` DEĞİŞTİRİLMEDEN yeşil kalır (ayrı dosya, ayrı
@@ -65,10 +65,9 @@ describe('P3 — MCP kararı', () => {
 
   // ADR-0034 BR-2: Aşama A'daki "hiçbiri exposed değil" kuralı yerini AÇIK, dondurulmuş bir listeye bıraktı (core 5 + ilk onaylı yazma).
   // Yeni bir yeteneği exposed yapmak bu listeyi ve docs/CAPABILITIES.md'yi bilinçli olarak güncellemeyi gerektirir (mandal).
-  // PRC-R0/R1 (2026-10-01, K20/K57): `catalog` toolset'inde maliyet okuma/yazma (onay kartı), buybox listesi, kâr önizlemesi.
-  it('exposed yetenek kümesi = dondurulmuş liste (core 5 + orders.approve + pricing 4 + PRC-R2 3); yeni exposed bilinçli karar ister', () => {
+  it('exposed yetenek kümesi = dondurulmuş liste (core 5 + orders.approve); yeni exposed bilinçli karar ister', () => {
     const exposed = CAPABILITIES.filter((c) => c.mcp.exposed).map((c) => c.id).sort();
-    expect(exposed).toEqual(['integrations.health.get', 'orders.approve', 'orders.list', 'pricing.buybox.list', 'pricing.cost.list', 'pricing.cost.set', 'pricing.margin.preview', 'pricing.rules.list', 'pricing.suggestions.apply', 'pricing.suggestions.list', 'products.search', 'reports.sales.summary', 'stock.low_list']);
+    expect(exposed).toEqual(['integrations.health.get', 'orders.approve', 'orders.list', 'products.search', 'reports.sales.summary', 'stock.low_list']);
   });
 });
 

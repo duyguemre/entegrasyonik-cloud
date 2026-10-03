@@ -20,34 +20,21 @@ import { computed } from 'vue'
 
 const props = defineProps<{ storeName?: string; logo?: string; size?: number | string }>()
 
-// FE-R4 A2: monogram üst bardaki hesap avatarıyla aynı (ilk iki kelimenin baş harfi, tr-TR büyük harf).
 const initial = computed(() => {
   const name = (props.storeName || '').trim()
-  if (!name) return '?'
-  return name
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((w) => w.charAt(0))
-    .join('')
-    .toLocaleUpperCase('tr-TR')
+  return name ? name[0]!.toUpperCase() : '?'
 })
 </script>
 
 <style scoped>
-/* FR2-DARK: gerçek logo (çoğu şeffaf) iki temada da okunur bir plaka üzerinde. */
-.store-logo-avatar:not(.store-logo-avatar--monogram) {
-  background-color: var(--ek-app-media-plate);
-}
-
 .store-logo-avatar--monogram {
-  background-color: var(--ek-color-action-subtle);
-  box-shadow: inset 0 0 0 1px var(--ek-color-action-border);
+  background-color: var(--ek-color-surface-sunken);
 }
 
 .store-logo-avatar__initial {
-  font-weight: var(--ek-font-weight-bold);
-  color: var(--ek-color-action-emphasis);
-  font-size: var(--ek-type-label-size);
+  font-weight: var(--ek-font-weight-semibold);
+  color: var(--ek-color-content-strong);
+  font-size: var(--ek-font-size-md);
   line-height: 1;
 }
 </style>

@@ -19,22 +19,6 @@ export const BACKOFFICE_BILLING_RPC_INPUT: Partial<Record<RpcRef, z.ZodType<any>
     'BackofficeBillingService/cancelSubscription': strictBody({ tid, atPeriodEnd: z.boolean(), reason }),
     'BackofficeBillingService/changePlan': strictBody({ tid, planCode, reason }),
     'BackofficeBillingService/getRevenueMetrics': strictBody({ range: z.enum(['7d', '30d', '90d']).optional() }),
-    // PRC-R2: fiyat kuralları toplam istatistik (girdi yok).
-    'BackofficeBillingService/getPricingRulesOverview': strictBody({}),
-    // PRC-CFG: rekabet modülü tenant istisnası (alan sınırları operations/pricing/competitionSettings.ts'te ikinci kez doğrulanır).
-    'BackofficeBillingService/getCompetitionSettings': strictBody({}),
-    'BackofficeBillingService/getTenantCompetition': strictBody({ tid }),
-    'BackofficeBillingService/setCompetitionOverride': strictBody({
-        tid,
-        override: z.object({
-            skuCap: z.number().int().min(0).max(50_000).optional(),
-            refreshMin: z.number().int().min(15).max(1440).optional(),
-            freshnessMin: z.number().int().min(5).max(1440).optional(),
-            priority: z.enum(['changed_first', 'stocked_only', 'oldest_first']).optional(),
-        }).strict().nullable(),
-        note: z.string().max(280).optional(),
-        reason,
-    }),
     'BackofficeTenantService/getLifecycle': strictBody({ tid }),
     'BackofficeTenantService/cancelDeletion': strictBody({ tid, reason }),
 };

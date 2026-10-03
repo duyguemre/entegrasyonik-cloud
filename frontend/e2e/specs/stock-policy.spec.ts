@@ -4,7 +4,6 @@
 import { test, expect } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
 import { installApiMocks, mockError, type MockValue } from '../fixtures/mockApi'
-import { expectProblemState } from '../fixtures/problemState'
 import { AXE_TAGS, B4_SCREENS, menuFixtureWithB4, openB4Screen } from '../fixtures/b4Screens'
 
 const ROOT = B4_SCREENS.StockPolicyView.root
@@ -75,7 +74,8 @@ test.describe('ADR-0015 B4-P0 — N5 Stok politikası', () => {
     await mocks(page, { 'IntegrationService/getStockPolicy': mockError(500, { error: 'MongoServerError: stack' }) })
     await openB4Screen(page, 'StockPolicyView')
     const root = page.locator(ROOT)
-    await expectProblemState(root, 'Stok politikası yüklenemedi — bağlantınızı kontrol edip tekrar deneyin.')
+    await expect(root.getByText('Stok politikası yüklenemedi — bağlantınızı kontrol edip tekrar deneyin.')).toBeVisible()
+    await expect(root.getByRole('button', { name: 'Tekrar dene' })).toBeVisible()
     await expect(root).not.toContainText('Mongo')
 
     await page.unrouteAll({ behavior: 'ignoreErrors' })

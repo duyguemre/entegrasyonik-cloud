@@ -18,7 +18,6 @@
  * bakar. T4b/T4c/T4d kendi P1/P2 ekranlarını taşırken buraya kayıt ekler.
  */
 
-import { CHAT_ICON, CHAT_PRODUCT } from '@entegrasyonik/chat/brand'
 import { REGISTER_PLAN_CODES } from './registerIntent'
 
 /** URL sorgu parametresi tanımı — PII/serbest-metin YASAK (yalnızca kapalı değer kümesi veya teknik kimlik). */
@@ -75,28 +74,17 @@ export const SCREENS: readonly ScreenDefinition[] = [
   { key: 'DashboardView', slug: 'dashboard', section: 'general', order: 0 },
   // `internalStatuses`: OrderListView.vue/ClaimListView.vue'nin GERÇEKTEN okuduğu (`parameters?.internalStatuses`)
   // çoklu-seçim durum filtresi alanı (bkz. dosya başı yorumu) — uydurma bir isim DEĞİL.
-  {
-    key: 'OrderListView', slug: 'orders', section: 'orders', order: 0,
-    urlParams: [
-      { name: 'internalStatuses', kind: 'enum', multi: true },
-      // C1.1 (F-01): kalem stok tahsis durumu filtresi — OrderListView `parameters?.allocationStates`'i okur ve
-      // `OrderService/getOrders` `filter.allocationStates`'e gönderir (docs/API_TENANT_SURFACE.md §2.2). Kapalı küme.
-      { name: 'allocationStates', kind: 'enum', multi: true, allowed: ['RESERVED', 'COMMITTED', 'RELEASED', 'OVERSOLD', 'RESTOCKED', 'UNMAPPED'] },
-    ],
-  },
+  { key: 'OrderListView', slug: 'orders', urlParams: [{ name: 'internalStatuses', kind: 'enum', multi: true }], section: 'orders', order: 0 },
   {
     key: 'productDefinitions/ProductListView',
     slug: 'products',
     section: 'catalog',
     order: 0,
-    // PRC-R1: ProductListView `parameters.buybox` (kapalı küme) + `parameters.barcode` (teknik kimlik) okur —
-    // bildirim eylemi `/products?buybox=losing&barcode=…` Trendyol buybox filtresini açar (`buyboxFilterFromParams`).
-    // `barcode` yalnız `buybox` ile birlikte süzgeç olur. `productId` ile çok-örnekli ürün düzenleme derin bağlantısı
-    // ayrıdır (klonlama mantığı, bkz. ADR-0012 Açık Soru 2).
-    urlParams: [
-      { name: 'buybox', kind: 'enum', allowed: ['winning', 'losing', 'not_found', 'unchecked'] },
-      { name: 'barcode', kind: 'id' },
-    ],
+    // NOT: ProductListView.vue şu an `parameters` prop'undan HİÇBİR filtre okumuyor (yalnızca
+    // `ProductUpdateView` klonlama akışında `productId` üretiyor, bkz. ADR-0012 Açık Soru 2) —
+    // bu yüzden burada `urlParams` YOK (var olmayan bir parametreyi URL'ye yazmak yanıltıcı olur).
+    // `productId` ile çok-örnekli ürün düzenleme derin bağlantısı, klonlama mantığının sahibi olan
+    // T4b (ProductListView göçü) kapsamında eklenecek — bkz. BACKLOG.md.
   },
   { key: 'ClaimListView', slug: 'claims', urlParams: [{ name: 'internalStatuses', kind: 'enum', multi: true }], section: 'orders', order: 1 },
   // `status`: MessageListView.vue'nin okuduğu (`parameters?.status`) TEKİL (multi DEĞİL) durum filtresi.
@@ -148,11 +136,6 @@ export const SCREENS: readonly ScreenDefinition[] = [
     key: 'adminPanel/ComplianceView', slug: 'admin/integration-compliance', section: 'admin', order: 7,
     icon: 'mdi-shield-search', titleKey: 'menu.adminPanel.adminIntegrationCompliance',
   },
-  // C1.4 — finans sekmeleri: `tab` FinancialListView.vue'nin GERÇEKTEN okuduğu (`parameters?.tab`) sekme anahtarı.
-  {
-    key: 'FinancialListView', slug: 'finance', section: 'finance', order: 0,
-    urlParams: [{ name: 'tab', kind: 'enum', allowed: ['transactions', 'summary', 'cargo-invoices', 'payouts'] }],
-  },
   // ADR-0014 S4b: kayıt sonrası abonelik ekranı derin bağlantısı (`/subscription?plan=<kod>`). `plan` YALNIZCA
   // kapalı, izinli plan kodu kümesidir (registerIntent.ts; seed ile testle eşit) — PII/serbest metin YOK.
   { key: 'user/SubscriptionView', slug: 'subscription', urlParams: [{ name: 'plan', kind: 'enum', allowed: REGISTER_PLAN_CODES }], section: 'finance', order: 1 },
@@ -161,61 +144,17 @@ export const SCREENS: readonly ScreenDefinition[] = [
   { key: 'integrations/ShippingView', slug: 'integrations/shipping', section: 'integrations', order: 2 },
   { key: 'integrations/EInvoiceView', slug: 'integrations/einvoice', section: 'integrations', order: 3 },
   { key: 'integrations/ErpView', slug: 'integrations/erp', section: 'integrations', order: 4 },
-  // ADR-0015 B4-P1c (yeni ekranlar; yalnızca EKLEME). Menü görünürlüğü bugünkü gibi `MenuService`'ten gelir (ApplicationDB
-  // `menus` kaydı bu bulut görevinin kapsamı DIŞI — B4-P0 ile aynı emsal); `menuSource:'registry'` + `minRole` altyapısı henüz
-  // uygulanmadığı için KULLANILMADI. İkisi de admin kademesidir (backend `capabilities/domains/*` minTier:'admin'); veri
-  // erişiminin sınırı backend RBAC'tir. `urlParams` YOK: filtreler (kullanıcı kimliği/tarih) URL'ye yazılmaz.
-  // `section:'settings'` henüz `sections.ts`'te tanımlı değil → sunum yüzeyleri "Diğer"e düşürür (gizlemez).
-  { key: 'integrations/IntegrationHealthView', slug: 'integrations/health', section: 'integrations', order: 6, icon: 'mdi-heart-pulse', titleKey: 'menu.integrationHealth' },
-  { key: 'AuditLogView', slug: 'settings/audit-log', section: 'settings', order: 0, icon: 'mdi-clipboard-text-clock-outline', titleKey: 'menu.auditLog' },
-  // C1.5 (F-06) bildirim merkezi. Filtreler (tür/okunma) sekme içi durumdur, URL'ye yazılmaz → `urlParams` YOK.
-  // Gerçek menü kaydı (ApplicationDB `menus`, kod `NotificationCenterView`, başlık `notifications`) yerel iştir.
-  { key: 'NotificationCenterView', slug: 'notifications', section: 'general', order: 1, icon: 'mdi-bell-outline', titleKey: 'menu.notifications' },
-  // C2b (ADR-0029 F-N2) kişisel bildirim tercihleri. Ekran parametre okumaz → `urlParams` YOK. Menü kaydı (ApplicationDB `menus`,
-  // kod `NotificationPreferencesView`) yerel iştir; menüde yoksa çekmece/merkez bağlantısı gösterilmez.
-  { key: 'NotificationPreferencesView', slug: 'settings/notifications', section: 'settings', order: 1, icon: 'mdi-bell-cog-outline', titleKey: 'menu.notificationPreferences' },
   // ADR-0015 B4-P0 (yeni ekranlar; yalnızca EKLEME). Menü görünürlüğü bugünkü gibi `MenuService`'ten gelir
   // (ApplicationDB `menus` kaydı bu bulut görevinin kapsamı DIŞI — orkestratör/backend işi); `menuSource:'registry'`
   // + `minRole` altyapısı henüz uygulanmadığı için KULLANILMADI. Bu ekranlar `urlParams` okumaz (PII/serbest metin yok).
   // `titleKey`/`icon`: menüde henüz karşılığı yokken sunum yüzeylerinin (breadcrumb/palet) yedeği.
   { key: 'AccountSecurityView', slug: 'account/security', icon: 'mdi-shield-account-outline', titleKey: 'menu.accountSecurity' },
   { key: 'PrivacyDataView', slug: 'account/privacy', icon: 'mdi-shield-lock-outline', titleKey: 'menu.privacyData' },
-  // MCP-6 (ADR-0035, MCP_UI_CONTRACT §1 S3/S4). Ekranlar parametre okumaz → `urlParams` YOK. Menü kaydı (ApplicationDB
-  // `menus`, kodlar `ConnectedAppsView` / `settings/AiConnectionView`) yerel iştir (MCP-7). S3 herkes; S4 `settings:read`
-  // görür, yalnız sahip değiştirir (asıl sınır backend `canEdit`).
-  { key: 'ConnectedAppsView', slug: 'account/connected-apps', icon: 'mdi-connection', titleKey: 'menu.connectedApps' },
-  { key: 'settings/AiConnectionView', slug: 'settings/ai-connection', section: 'settings', order: 2, icon: 'mdi-robot-outline', titleKey: 'menu.aiConnection' },
   { key: 'StockPolicyView', slug: 'catalog/stock-policy', section: 'catalog', order: 5, icon: 'mdi-scale-balance', titleKey: 'menu.stockPolicy' },
-  // C1.1 (F-01) stok sağlığı (StockService/getStockOverview, member). Ekran filtre/parametre okumaz → `urlParams` YOK.
-  // Gerçek menü kaydı (ApplicationDB `menus`, kod `StockHealthView`, başlık `stockHealth`) yerel iştir.
-  { key: 'StockHealthView', slug: 'catalog/stock-health', section: 'catalog', order: 6, icon: 'mdi-scale-unbalanced', titleKey: 'menu.stockHealth' },
-  // PRC-R2: fiyat kuralları (öneri + onaylı uygulama). `rule` = kural kimliği (PRICE_RULE_PAUSED bildirimi), `tab` = sekme. PII yok.
-  // Gerçek menü kaydı (ApplicationDB `menus`, kod `pricing/PricingRulesView`, başlık `pricingRules`) yerel iştir.
-  {
-    key: 'pricing/PricingRulesView', slug: 'catalog/pricing-rules', section: 'catalog', order: 7, icon: 'mdi-tag-arrow-down-outline', titleKey: 'menu.pricingRules',
-    urlParams: [{ name: 'rule', kind: 'id' }, { name: 'tab', kind: 'enum', allowed: ['suggestions', 'rules', 'history'] }],
-  },
-  // Yardım merkezi (faz3-fe-help): statik içerik, veri erişimi yok → `MenuService` ağacına bağlı DEĞİL; bağlantı istemcide
-  // kurulur (`help/helpLink.ts`) ve kabuk onu "Yardım" bölümünde, yardım menüsünde ve Ctrl+K'da gösterir. `article`:
-  // makale kimliği (kebab-case teknik kimlik; PII/serbest metin DEĞİL) — makaleye derin bağlantı + tarayıcı geri/ileri.
-  {
-    key: 'HelpCenterView', slug: 'help', section: 'help', order: 0, icon: 'mdi-lifebuoy', titleKey: 'help.center.title',
-    urlParams: [
-      { name: 'article', kind: 'id' },
-      // `help/categories.ts` kimlikleri (eşliği tests/help-content.test.ts korur).
-      { name: 'category', kind: 'enum', allowed: ['getting-started', 'using-the-app', 'catalog', 'stock', 'orders', 'integrations', 'finance', 'account', 'troubleshooting', 'faq', 'support'] },
-    ],
-  },
-  // ADR-0034 / CHAT_UI_CONTRACT §7.1 — Otopilot tam sayfa sohbet + Ayarlar → Otopilot (yalnızca EKLEME). Yardım merkezi gibi
-  // `MenuService` ağacına bağlı DEĞİL; bağlantı istemcide (`chat/chatLinks.ts`). Slug ürün adı sabitinden (K39). Parametre
-  // okumazlar → `urlParams` YOK (sohbet metni/bağlam URL'ye YAZILMAZ). Ayarların gerçek menü kaydı (ayarlar bölümü) yerel iştir.
-  { key: 'chat', slug: CHAT_PRODUCT.slug, section: 'general', order: 2, icon: CHAT_ICON },
-  { key: 'OtopilotSettingsView', slug: `settings/${CHAT_PRODUCT.slug}`, section: 'settings', order: 2, icon: 'mdi-cog-outline' },
 ] as const
 
 /** URL'nin ilk segmenti hiçbir zaman bir ekran slug'ı OLAMAZ (ADR-0012 Karar 1 — başka uç noktalar/statikler ile çakışmasın). */
-// `approve`: MCP-6 S2 bant dışı onay sayfası (`/approve/{id}`, sade kabuk) — ekran slug'ı olamaz.
-export const RESERVED_FIRST_SEGMENTS: readonly string[] = ['login', 'oauth', '.well-known', 'api', 'mcp', 'assets', 'approve']
+export const RESERVED_FIRST_SEGMENTS: readonly string[] = ['login', 'oauth', '.well-known', 'api', 'mcp', 'assets']
 
 export function resolveScreenByKey(key: string): ScreenDefinition | undefined {
   return SCREENS.find((s) => s.key === key)

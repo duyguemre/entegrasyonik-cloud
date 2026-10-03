@@ -1,5 +1,5 @@
 /**
- * CHARACTERIZATION: CustomerService (backend/src/api/rpc/handlers/customer-service.ts)
+ * CHARACTERIZATION: CustomerService (backend/src/api/services/customer-service.ts)
  *
  * Kapsam: get, getCustomers, getCustomerDetail, updateCustomer (tenant/clientId kullanımı dahil).
  * `anonymizeCustomer` KAPSAM DIŞI — bkz. tests/characterization/tenant/customer-service-anonymize.test.ts
@@ -16,13 +16,7 @@
 import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
 import { ObjectId } from 'mongodb';
 
-import CustomerService from '@api/rpc/handlers/customer-service';
-import { captureLogs, type LogCapture } from '../../helpers/logCapture';
-
-// F-06 (ADR-0024 P4): api/** console -> eventLog; loglar stdout JSON satırlarından doğrulanır.
-let cap: LogCapture;
-beforeEach(() => { cap = captureLogs(); });
-afterEach(() => { cap.restore(); });
+import CustomerService from '@api/services/customer-service';
 
 // getCustomerDetail `new ObjectId(customerId)` çağırır (recentOrders/recentClaims filtresi) -> geçersiz
 // hex string senkron fırlatır; bu yüzden test genelinde GEÇERLİ bir ObjectId hex string kullanılır.
@@ -156,7 +150,7 @@ describe('CustomerService.getCustomers', () => {
   it('[MEVCUT DAVRANIŞ] hata console.error ile loglanıp olduğu gibi yeniden fırlatılır', async () => {
     customerModel.aggregate.mockRejectedValue(new Error('agg fail'));
     await expect(makeService({}).getCustomers()).rejects.toThrow('agg fail');
-    expect(cap.lines).toContainEqual(expect.objectContaining({ level: 'error' })); // F-06: console.error -> eventLog
+    expect(console.error).toHaveBeenCalled();
   });
 
   it('[TENANT İZOLASYONU, PLATFORM_BASELINE B2] $match içinde clientId/tenant alanı YOK (yalnızca istemci filtreleri); sorgu izolasyonu clientDB seçimine bağlıdır', async () => {
@@ -234,7 +228,7 @@ describe('CustomerService.getCustomerDetail', () => {
     customerModel.findById.mockReturnValue(chain({ _id: CUSTOMER_ID }));
     orderModel.find.mockImplementation(() => { throw new Error('order db down'); });
     await expect(makeService({ customerId: CUSTOMER_ID }).getCustomerDetail()).rejects.toThrow('order db down');
-    expect(cap.lines).toContainEqual(expect.objectContaining({ level: 'error' })); // F-06: console.error -> eventLog
+    expect(console.error).toHaveBeenCalled();
   });
 
   it('[TENANT İZOLASYONU, PLATFORM_BASELINE B2] recentOrders/recentClaims sorguları clientId/tenant alanı içermez (yalnızca customerId); izolasyon clientDB seçimine bağlıdır', async () => {
@@ -270,6 +264,6 @@ describe('CustomerService.updateCustomer', () => {
   it('[MEVCUT DAVRANIŞ] DB hatası console.error ile loglanıp yeniden fırlatılır', async () => {
     customerModel.findByIdAndUpdate.mockRejectedValue(new Error('cast error'));
     await expect(makeService({ customerId: CUSTOMER_ID, updateData: {} }).updateCustomer()).rejects.toThrow('cast error');
-    expect(cap.lines).toContainEqual(expect.objectContaining({ level: 'error' })); // F-06: console.error -> eventLog
+    expect(console.error).toHaveBeenCalled();
   });
 });

@@ -1,7 +1,7 @@
 import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals';
-import { createRateLimiter, rateLimitOptionsFromEnv, registerRateLimitOptionsFromEnv } from '../../../src/platform/rateLimit/rateLimit';
-import { getClientIp, getTrustedProxyHops } from '../../../src/platform/rateLimit/clientIp';
-import { toProfileDto } from '../../../src/api/rpc/dto/profileDto';
+import { createRateLimiter, rateLimitOptionsFromEnv, registerRateLimitOptionsFromEnv } from '../../../src/api/rateLimit';
+import { getClientIp, getTrustedProxyHops } from '../../../src/api/clientIp';
+import { toProfileDto } from '../../../src/api/profileDto';
 import { makeFakeApp, makeReq, makeRes } from './_helpers';
 
 // [ADR-0001 adım 7] login/register rate limit (süreç-içi, IP bazlı sliding window), istemci IP güveni, profil DTO,
@@ -125,9 +125,9 @@ describe('ApiManager: login ve register rotaları rate limit altındadır (aşı
     const runMock = jest.fn(runImpl as any);
     let app: ReturnType<typeof makeFakeApp>;
     jest.isolateModules(() => {
-      jest.doMock('../../../src/api/rpc/RunOperation', () => ({ __esModule: true, default: runMock }));
+      jest.doMock('../../../src/api/RunOperation', () => ({ __esModule: true, default: runMock }));
       jest.doMock('@database/DatabaseManager', () => ({ DatabaseManagerInstance: {} }));
-      const { configureApis } = require('../../../src/api/rpc/ApiManager');
+      const { configureApis } = require('../../../src/api/ApiManager');
       // makeFakeApp yalnızca SON handler'ı tutar; rate limit middleware'ini de görebilmek için tüm zinciri kaydeden sahte app
       const chains: Record<string, any[]> = {};
       const fake: any = {
@@ -257,9 +257,9 @@ describe('ImageApiManager: hata yanıtları istek gövdesini geri yansıtmaz', (
   function load(runImpl: (...a: any[]) => any) {
     const chains: Record<string, any[]> = {};
     jest.isolateModules(() => {
-      jest.doMock('../../../src/api/rpc/RunOperation', () => ({ runImageApi: jest.fn(runImpl as any), default: jest.fn() }));
+      jest.doMock('../../../src/api/RunOperation', () => ({ runImageApi: jest.fn(runImpl as any), default: jest.fn() }));
       jest.doMock('multer', () => ({ __esModule: true, default: Object.assign(() => ({ any: () => (_r: any, _s: any, cb: any) => cb(undefined) }), { memoryStorage: () => ({}) }) }));
-      const { configureImageServices } = require('../../../src/api/files/ImageApiManager');
+      const { configureImageServices } = require('../../../src/api/ImageApiManager');
       const fake: any = {
         get: (p: string, ...h: any[]) => { chains['GET ' + p] = h; },
         post: (p: string, ...h: any[]) => { chains['POST ' + p] = h; },

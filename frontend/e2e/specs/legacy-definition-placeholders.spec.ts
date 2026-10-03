@@ -20,8 +20,6 @@
 // ÇALIŞTIRILDI; ortaya çıkan seçici hataları ve görsel regresyon burada düzeltildi. Görsel
 // onay yine yerelde (Windows tabanları) yapılır.
 import { test, expect } from '@playwright/test'
-import AxeBuilder from '@axe-core/playwright'
-import { settleAnimations } from '../fixtures/settle'
 import { installApiMocks } from '../fixtures/mockApi'
 import { gotoAuthed } from '../fixtures/nav'
 import { HIDDEN_DEFINITION_SCREENS, menuFixtureWithLegacyDefinitions, openHiddenDefinitionScreen } from '../fixtures/definitionsMenu'
@@ -63,53 +61,3 @@ test.describe('B5-1 — Eski/prototip tanım ekranları (7 ekran, aynı sahte i�
     })
   }
 })
-
-// fe-r4d D5 — satır eylemleri bağlı (önceden `onClick: () => {}`). Örnek veri üzerinde, istek ATILMAZ.
-test.describe('fe-r4d D5 — eski tanım ekranları: satır eylemleri bağlı', () => {
-  for (const { screen, title } of cases) {
-    test(`${screen.code}: Sil → onay → satır düşer; Düzenle → kaydet → satır güncellenir; geçersiz ad kaydedilmez; axe = 0`, async ({ page }) => {
-      const apiCalls: string[] = []
-      await installApiMocks(page, { MenuService: menuFixtureWithLegacyDefinitions })
-      await gotoAuthed(page)
-      await openHiddenDefinitionScreen(page, screen)
-      await expect(page.getByRole('heading', { level: 1, name: title })).toBeVisible()
-      page.on('request', (r) => { if (r.url().includes('/api/') && /Definition|delete|update/i.test(r.url())) apiCalls.push(r.url()) })
-      const root = page.locator('.legacy-definition-root').filter({ has: page.getByRole('heading', { level: 1, name: title }) })
-      const rows = root.getByText('Merkez / Karabük / Türkiye')
-      await expect(rows).toHaveCount(6)
-
-      // Sil: tehlikeli onay, varsayılan odak Vazgeç; Vazgeç hiçbir şey silmez, Sil yalnız o satırı kaldırır.
-      await root.getByRole('button', { name: 'Sil' }).first().click()
-      const confirm = page.getByRole('alertdialog')
-      await expect(confirm).toContainText("'Emre Yalçınkaya' satırı silinsin mi?")
-      await expect(confirm.getByRole('button', { name: 'Vazgeç' })).toBeFocused()
-      await settleAnimations(page)
-      expect((await new AxeBuilder({ page }).include('.v-overlay--active').withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze()).violations).toEqual([])
-      await confirm.getByRole('button', { name: 'Vazgeç' }).click()
-      await expect(rows).toHaveCount(6)
-      await root.getByRole('button', { name: 'Sil' }).first().click()
-      await page.getByRole('alertdialog').getByRole('button', { name: 'Sil' }).click()
-      await expect(rows).toHaveCount(5)
-
-      // Düzenle: form satırın değerleriyle açılır; boş ad alan altında hata verir ve kaydetmez; geçerli ad satıra yazılır.
-      await root.getByRole('button', { name: 'Düzenle' }).first().click()
-      const dlg = page.getByRole('dialog', { name: 'Satırı düzenle' })
-      const name = dlg.locator('[data-legacy-field="name"] input')
-      await expect(name).toHaveValue('Emre Yalçınkaya')
-      await name.fill('')
-      await dlg.getByRole('button', { name: 'Kaydet' }).click()
-      await expect(dlg).toContainText('Ad boş olamaz')
-      await expect(dlg).toBeVisible()
-      await name.fill('Ayşe Demir')
-      await settleAnimations(page)
-      expect((await new AxeBuilder({ page }).include('.v-overlay--active').withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze()).violations).toEqual([])
-      await dlg.getByRole('button', { name: 'Kaydet' }).click()
-      await expect(dlg).toBeHidden()
-      // Ekran adı `toLocaleUpperCase()` ile basar (tarayıcı yerel ayarı: İ ya da I).
-      await expect(root.getByText(/^AYŞE DEM[İI]R$/)).toBeVisible()
-      await expect(root.getByText('EMRE YALÇINKAYA')).toHaveCount(4)
-      expect(apiCalls).toEqual([])
-    })
-  }
-})
-

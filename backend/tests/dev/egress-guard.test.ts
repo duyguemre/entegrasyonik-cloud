@@ -88,25 +88,6 @@ describe('egress-guard (Protokol 7: loopback dışına çıkış yok)', () => {
         expect(fakeNetwork).toHaveBeenCalledTimes(1);
     });
 
-    it("web push host'lari VARSAYILAN ENGELLI; yalniz EGRESS_ALLOW_WEBPUSH=1 ile acilir ve liste pushHosts ile AYNIDIR (MOB-04)", () => {
-        const { PUSH_SERVICE_HOSTS } = require('../../src/operations/notifications/push/pushHosts');
-        expect([...guard.PUSH_HOSTS].sort()).toEqual([...PUSH_SERVICE_HOSTS].sort());
-        const samples = ['fcm.googleapis.com', 'updates.push.services.mozilla.com', 'web.push.apple.com', 'wns2-db5p.notify.windows.com'];
-        delete process.env.EGRESS_ALLOW_WEBPUSH;
-        for (const h of samples) expect(guard.isAllowedHost(h)).toBe(false);
-        process.env.EGRESS_ALLOW_WEBPUSH = '1';
-        for (const h of samples) expect(guard.isAllowedHost(h)).toBe(true);
-        expect(guard.isAllowedHost('notify.windows.com')).toBe(false); // joker yalniz alt alan
-        expect(guard.isAllowedHost('evilnotify.windows.com')).toBe(false);
-        expect(guard.isAllowedHost('api.trendyol.com')).toBe(false);
-        expect(guard.isAllowedHost('api.anthropic.com')).toBe(false); // push bayragi LLM'i acmaz
-        // MOB-07: FCM HTTP v1 OAuth2 ucu ayni bayrakla; ayni kaynakla hizali
-        const { FCM_TOKEN_URL } = require('../../src/operations/notifications/push/fcm');
-        expect(guard.FCM_OAUTH_HOSTS).toEqual([new URL(FCM_TOKEN_URL).hostname]);
-        expect(guard.isAllowedHost('oauth2.googleapis.com')).toBe(true);
-        delete process.env.EGRESS_ALLOW_WEBPUSH;
-        expect(guard.isAllowedHost('oauth2.googleapis.com')).toBe(false);
-    });
     it("LLM saglayici host'lari VARSAYILAN ENGELLI; yalniz EGRESS_ALLOW_LLM=1 ile acilir ve liste katalogla AYNIDIR (ADR-0034 BR-5)", () => {
         // eslint-disable-next-line @typescript-eslint/no-require-imports
         const { LLM_HOSTS } = require('../../src/platform/llm/catalog');

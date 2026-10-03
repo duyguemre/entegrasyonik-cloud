@@ -69,7 +69,7 @@ const steps = [
     nav: 'Yönetim',
     app: 'Panel',
     beats: 5,
-    title: 'Satışa odaklanın',
+    title: 'Tek panelden yönetin',
     text: `${homeLine('unified-orders')} Merkezi stok rezervasyonu aşırı satış riskini kontrol altında tutar.`,
   },
 ]
@@ -90,14 +90,16 @@ const chartBars = Array.from({ length: 8 })
 const catalog = Array.from({ length: 3 })
 ---
 
-<Section tone="muted" id="nasil-calisir" labelledby="nasil-baslik" class="how-section">
+<Section tone="stage" id="nasil-calisir" labelledby="nasil-baslik">
   <div class="hw">
     <div class="hw__aside">
       <SectionHeading
         id="nasil-baslik"
+        tone="dark"
         eyebrow="Nasıl çalışır"
-        title="Dört adımda hazırsınız"
-        lead="Hesabınızı açın, kanallarınızı bağlayın, ürünlerinizi aktarın. Kurulum için kod yazmanız gerekmez."
+        title="Dört adımda tek panele geçin"
+        accent="Dört adımda"
+        lead="Hesabınızı açın, kanallarınızı bağlayın, ürünlerinizi aktarın: çok kanallı operasyonunuz tek panelde yönetilmeye hazır."
       />
       <ul class="hw__nav" aria-hidden="true">
         {
@@ -110,7 +112,7 @@ const catalog = Array.from({ length: 3 })
         }
       </ul>
       <div class="how__cta">
-        <Button href={appUrls.register()} variant="primary" size="lg" data-testid="how-cta">Ücretsiz deneyin</Button>
+        <Button href={appUrls.register()} variant="inverse" size="lg" data-testid="how-cta">Ücretsiz dene</Button>
       </div>
     </div>
 
@@ -432,7 +434,6 @@ const catalog = Array.from({ length: 3 })
   :global(.section--stage:has(.hw__aside)) {
     overflow: visible;
   }
-  /* S27a (BRAND §4, N3): bölüm AÇIK zemine alındı — sayfada koyu sahneler hero, Otopilot vitrini ve kapanış. */
   .hw {
     display: grid;
     gap: var(--ek-space-12);
@@ -452,7 +453,7 @@ const catalog = Array.from({ length: 3 })
     display: flex;
     align-items: center;
     gap: var(--ek-space-3);
-    color: var(--site-text-meta);
+    color: var(--site-color-on-primary-muted);
     font-size: var(--ek-font-size-lg);
     font-weight: var(--ek-font-weight-semibold);
     transition: color var(--ek-duration-base) var(--ek-easing-standard);
@@ -463,10 +464,10 @@ const catalog = Array.from({ length: 3 })
     justify-content: center;
     width: var(--ek-space-8);
     height: var(--ek-space-8);
-    border: var(--site-border-width) solid var(--ek-color-border-default);
-    border-radius: var(--ek-radius-md);
-    background: var(--ek-color-background);
-    color: var(--site-text-heading);
+    border: var(--site-border-width) solid var(--site-glass-border);
+    border-radius: var(--ek-radius-full);
+    background: var(--site-glass-bg);
+    color: var(--site-color-on-primary);
     font-size: var(--ek-font-size-md);
     transition:
       background-color var(--ek-duration-base) var(--ek-easing-standard),
@@ -474,12 +475,12 @@ const catalog = Array.from({ length: 3 })
       color var(--ek-duration-base) var(--ek-easing-standard);
   }
   .hw__nav-item[data-active='true'] {
-    color: var(--site-text-heading);
+    color: var(--site-color-on-primary);
   }
   .hw__nav-item[data-active='true'] .hw__nav-dot {
-    border-color: var(--site-action-border);
-    background: var(--site-action-subtle);
-    color: var(--site-action-emphasis);
+    border-color: var(--ek-color-secondary);
+    background: var(--ek-color-secondary);
+    color: var(--ek-color-content-strong);
   }
 
   .how {
@@ -509,11 +510,10 @@ const catalog = Array.from({ length: 3 })
     justify-content: center;
     width: var(--ek-space-12);
     height: var(--ek-space-12);
-    border: var(--site-border-width) solid var(--site-action-border);
-    border-radius: var(--ek-radius-tile);
-    background: var(--site-action-subtle);
-    box-shadow: 0 0 0 var(--ek-space-2) var(--ek-color-surface-muted);
-    color: var(--site-action-emphasis);
+    border-radius: var(--ek-radius-full);
+    background: linear-gradient(140deg, var(--ek-color-primary-darken-1), var(--ek-color-primary));
+    box-shadow: 0 0 0 var(--ek-space-2) var(--site-stage-base);
+    color: var(--site-color-on-primary);
     font-size: var(--ek-font-size-xl);
     font-weight: var(--site-font-display-weight);
   }
@@ -525,7 +525,7 @@ const catalog = Array.from({ length: 3 })
     inset-block-end: calc(var(--ek-space-8) * -1);
     inset-inline-start: calc(var(--ek-space-6) - var(--site-border-width));
     width: calc(var(--site-border-width) * 2);
-    background: var(--site-action-border);
+    background: linear-gradient(180deg, var(--ek-color-secondary), var(--site-glass-border));
   }
   .how__body {
     display: flex;
@@ -536,7 +536,6 @@ const catalog = Array.from({ length: 3 })
     padding-top: var(--ek-space-2);
   }
   .how__title {
-    color: var(--site-text-heading);
     font-size: var(--ek-font-size-2xl);
     font-weight: var(--ek-font-weight-bold);
     letter-spacing: -0.01em;
@@ -550,15 +549,20 @@ const catalog = Array.from({ length: 3 })
   /* Mini arayüz ("ekran"): açık yüzeyli uygulama penceresi                                             */
   /* ------------------------------------------------------------------------------------------------ */
   .how__visual {
-    --accent-soft: var(--site-action-subtle);
+    --accent-soft: color-mix(in srgb, var(--ek-color-secondary) 16%, transparent);
     position: relative;
     display: flex;
     flex-direction: column;
     margin-top: var(--ek-space-4);
     overflow: hidden;
     border: var(--site-border-width) solid var(--ek-color-border-default);
-    border-radius: var(--ek-radius-card);
+    border-radius: var(--site-radius-panel);
     background-color: var(--ek-color-surface);
+    box-shadow:
+      0 0 0 var(--ek-space-1) color-mix(in srgb, var(--ek-color-secondary) 10%, transparent),
+      0 0 var(--ek-space-16) calc(var(--ek-space-4) * -1) color-mix(in srgb, var(--ek-color-secondary) 45%, transparent),
+      var(--site-shadow-panel);
+    transition: transform var(--tilt-transition-duration, var(--ek-duration-fast)) var(--ek-easing-standard);
   }
   .how__chrome {
     position: relative;
@@ -602,11 +606,13 @@ const catalog = Array.from({ length: 3 })
     display: block;
     width: 100%;
     height: 100%;
-    background: var(--site-action);
+    background: var(--site-gradient-accent);
     transform-origin: 0 50%;
   }
   .how__stage {
     padding: var(--ek-space-5);
+    background-image: var(--site-texture-dots);
+    background-size: var(--site-texture-dots-size);
   }
 
   /* --- Ortak parçalar --- */
@@ -633,8 +639,9 @@ const catalog = Array.from({ length: 3 })
   .type__focus {
     position: absolute;
     inset: calc(var(--site-border-width) * -1);
-    border: calc(var(--site-border-width) * 2) solid var(--site-action);
+    border: calc(var(--site-border-width) * 2) solid var(--ek-color-secondary);
     border-radius: inherit;
+    box-shadow: 0 0 0 var(--ek-space-1) var(--accent-soft);
     opacity: 0;
     pointer-events: none;
   }
@@ -676,7 +683,7 @@ const catalog = Array.from({ length: 3 })
     inset-inline-start: 0;
     width: calc(var(--site-border-width) * 2);
     border-radius: var(--ek-radius-full);
-    background: var(--site-action);
+    background: var(--ek-color-primary);
   }
   /* Onay işareti + tamamlanma ışıması */
   .okmark {
@@ -687,9 +694,10 @@ const catalog = Array.from({ length: 3 })
     justify-content: center;
     width: var(--ek-space-8);
     height: var(--ek-space-8);
-    border-radius: var(--ek-radius-md);
-    background: var(--site-action);
+    border-radius: var(--ek-radius-full);
+    background: var(--ek-color-success);
     color: var(--site-color-on-primary);
+    box-shadow: 0 0 0 var(--ek-space-1) color-mix(in srgb, var(--ek-color-success) 18%, transparent);
   }
   .okmark--sm {
     width: var(--ek-space-6);
@@ -698,7 +706,7 @@ const catalog = Array.from({ length: 3 })
   .okmark__glow {
     position: absolute;
     inset: calc(var(--ek-space-1) * -1);
-    border: calc(var(--site-border-width) * 2) solid var(--site-action);
+    border: calc(var(--site-border-width) * 2) solid var(--ek-color-success);
     border-radius: inherit;
     opacity: 0;
     pointer-events: none;
@@ -727,6 +735,7 @@ const catalog = Array.from({ length: 3 })
     stroke: var(--ek-color-surface);
     stroke-width: 1.2;
     stroke-linejoin: round;
+    filter: drop-shadow(0 var(--ek-space-1) var(--ek-space-1) color-mix(in srgb, var(--ek-color-content-strong) 35%, transparent));
     opacity: 0;
     pointer-events: none;
   }
@@ -735,7 +744,8 @@ const catalog = Array.from({ length: 3 })
     overflow: hidden;
     padding: var(--ek-space-3);
     border-radius: var(--ek-radius-md);
-    background: var(--site-action);
+    background: linear-gradient(140deg, var(--ek-color-primary-darken-1), var(--ek-color-primary));
+    box-shadow: 0 var(--ek-space-2) var(--ek-space-4) calc(var(--ek-space-2) * -1) color-mix(in srgb, var(--ek-color-primary) 70%, transparent);
     color: var(--site-color-on-primary);
     font-size: var(--ek-font-size-md);
     font-weight: var(--ek-font-weight-semibold);
@@ -743,17 +753,22 @@ const catalog = Array.from({ length: 3 })
   }
   /* Basınca üzerinden geçen parıltı (statik: görünmez). */
   .acct__shine {
-    /* SITE-DL: parlama geçişi kaldırıldı (öğe DOM'da kalır; demo vuruşu yalnız düğme basışını oynatır). */
-    display: none;
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: 0;
+    width: 40%;
+    background: linear-gradient(100deg, transparent, color-mix(in srgb, var(--ek-color-background) 35%, transparent), transparent);
+    opacity: 0;
+    translate: -100% 0;
   }
   .acct__done {
     display: flex;
     align-items: center;
     gap: var(--ek-space-3);
     padding: var(--ek-space-3);
-    border: var(--site-border-width) solid var(--site-action-border);
-    border-radius: var(--ek-radius-tile);
-    background: var(--site-action-subtle);
+    border: var(--site-border-width) solid color-mix(in srgb, var(--ek-color-success) 35%, var(--ek-color-border-default));
+    border-radius: var(--ek-radius-lg);
+    background: var(--ek-color-success-subtle);
   }
   .acct__done-copy {
     display: flex;
@@ -788,21 +803,22 @@ const catalog = Array.from({ length: 3 })
     height: var(--ek-space-8);
     padding-inline: var(--ek-space-3) var(--ek-space-1);
     border: var(--site-border-width) solid var(--ek-color-border-strong);
-    border-radius: var(--ek-radius-md);
+    border-radius: var(--ek-radius-full);
     background: var(--ek-color-surface);
   }
   .chip__ring {
     position: absolute;
     inset: calc(var(--site-border-width) * -1);
-    border: var(--site-border-width) solid var(--site-action);
+    border: calc(var(--site-border-width) * 2) solid var(--ek-color-secondary);
     border-radius: inherit;
+    box-shadow: 0 0 0 var(--ek-space-1) var(--accent-soft);
     pointer-events: none;
   }
   .chip__dot {
     width: var(--ek-space-3);
     height: var(--ek-space-3);
     border-radius: var(--ek-radius-full);
-    background: var(--chan, var(--site-action));
+    background: var(--chan, var(--ek-color-secondary));
   }
   .chip__name {
     width: var(--ek-space-6);
@@ -816,8 +832,8 @@ const catalog = Array.from({ length: 3 })
     justify-content: center;
     width: var(--ek-space-6);
     height: var(--ek-space-6);
-    border-radius: var(--ek-radius-sm);
-    background: var(--site-action);
+    border-radius: var(--ek-radius-full);
+    background: var(--ek-color-success);
     color: var(--site-color-on-primary);
   }
   .field--key .type__text {
@@ -839,29 +855,30 @@ const catalog = Array.from({ length: 3 })
     width: var(--ek-space-10);
     height: var(--ek-space-10);
     border: var(--site-border-width) solid var(--ek-color-border-strong);
-    border-radius: var(--ek-radius-tile);
+    border-radius: var(--ek-radius-full);
     background: var(--ek-color-surface);
-    color: var(--site-action);
+    color: var(--ek-color-primary-darken-1);
   }
   .wire__node--lock {
-    border-color: var(--site-action-border);
-    background: var(--site-action-subtle);
-    color: var(--site-action-emphasis);
+    border-color: var(--ek-color-secondary);
+    box-shadow: 0 0 0 var(--ek-space-1) var(--accent-soft);
+    color: var(--ek-color-secondary-darken-1);
   }
   .wire__node--hub {
-    border-color: var(--ek-color-chrome);
-    background: var(--ek-color-chrome);
+    border-color: transparent;
+    background: linear-gradient(140deg, var(--ek-color-primary-darken-1), var(--ek-color-primary));
+    box-shadow: 0 var(--ek-space-2) var(--ek-space-4) calc(var(--ek-space-2) * -1) color-mix(in srgb, var(--ek-color-primary) 70%, transparent);
     color: var(--site-color-on-primary);
   }
   .wire__node .okmark__glow {
-    border-color: var(--site-action);
+    border-color: var(--ek-color-secondary);
   }
   .wire__line {
     position: relative;
     container-type: inline-size;
     height: calc(var(--site-border-width) * 2);
     border-radius: var(--ek-radius-full);
-    background: var(--site-action-border);
+    background: linear-gradient(90deg, var(--ek-color-border-strong), var(--ek-color-secondary));
     transform-origin: 0 50%;
   }
   .wire__packet {
@@ -873,7 +890,8 @@ const catalog = Array.from({ length: 3 })
     height: var(--ek-space-2);
     margin-top: calc(var(--ek-space-1) * -1);
     border-radius: var(--ek-radius-full);
-    background: var(--site-action);
+    background: var(--ek-color-secondary);
+    box-shadow: 0 0 var(--ek-space-2) var(--ek-space-1) color-mix(in srgb, var(--ek-color-secondary) 45%, transparent);
     opacity: 0;
   }
   .conn__badge {
@@ -883,10 +901,9 @@ const catalog = Array.from({ length: 3 })
     align-self: flex-start;
     gap: var(--ek-space-2);
     padding: var(--ek-space-1) var(--ek-space-3);
-    border: var(--site-border-width) solid var(--site-action-border);
-    border-radius: var(--ek-radius-md);
-    background: var(--site-action-subtle);
-    color: var(--site-action-emphasis);
+    border-radius: var(--ek-radius-full);
+    background: var(--ek-color-success-subtle);
+    color: var(--ek-color-content-strong);
     font-size: var(--ek-font-size-sm);
     font-weight: var(--ek-font-weight-semibold);
   }
@@ -930,22 +947,26 @@ const catalog = Array.from({ length: 3 })
     border: var(--site-border-width) solid var(--ek-color-border-default);
     border-radius: var(--ek-radius-md);
     background: var(--ek-color-surface);
+    box-shadow: var(--ek-shadow-sm);
   }
   .pcard__thumb {
     flex: none;
     width: var(--ek-space-8);
     height: var(--ek-space-8);
-    border: var(--site-border-width) solid var(--site-action-border);
     border-radius: var(--ek-radius-sm);
-    background: var(--site-action-subtle);
+    background:
+      radial-gradient(circle at 30% 30%, color-mix(in srgb, var(--ek-color-background) 55%, transparent) 0 18%, transparent 20%),
+      linear-gradient(140deg, var(--ek-color-secondary), var(--ek-color-primary));
   }
   .pcard:nth-child(2) .pcard__thumb {
-    border-color: var(--ek-color-border-default);
-    background: var(--ek-color-surface-muted);
+    background:
+      radial-gradient(circle at 30% 30%, color-mix(in srgb, var(--ek-color-background) 55%, transparent) 0 18%, transparent 20%),
+      linear-gradient(140deg, var(--ek-color-primary-lighten), var(--ek-color-primary-darken-1));
   }
   .pcard:nth-child(3) .pcard__thumb {
-    border-color: var(--site-action-border);
-    background: var(--site-action-subtle);
+    background:
+      radial-gradient(circle at 30% 30%, color-mix(in srgb, var(--ek-color-background) 55%, transparent) 0 18%, transparent 20%),
+      linear-gradient(140deg, var(--ek-color-turquoise), var(--ek-color-secondary-darken-1));
   }
   .pcard__lines {
     display: flex;
@@ -984,7 +1005,8 @@ const catalog = Array.from({ length: 3 })
     width: var(--ek-space-3);
     height: var(--ek-space-3);
     border-radius: var(--ek-radius-full);
-    background: var(--chan, var(--site-action));
+    background: var(--chan, var(--ek-color-secondary));
+    box-shadow: 0 0 0 calc(var(--site-border-width) * 3) color-mix(in srgb, var(--chan, var(--ek-color-secondary)) 18%, transparent);
   }
   .ship__bar {
     display: block;
@@ -998,7 +1020,7 @@ const catalog = Array.from({ length: 3 })
     width: 100%;
     height: 100%;
     border-radius: var(--ek-radius-full);
-    background: var(--site-action);
+    background: var(--site-gradient-accent);
     transform-origin: 0 50%;
   }
   /* Uçan kart: katalog sütununun ortasından ilgili kanal satırının noktasına (statik: görünmez). */
@@ -1018,9 +1040,12 @@ const catalog = Array.from({ length: 3 })
     place-items: center;
     width: var(--ek-space-12);
     height: var(--ek-space-12);
-    border: calc(var(--site-border-width) * 2) solid color-mix(in srgb, var(--chan, var(--site-action)) 55%, var(--ek-color-surface));
-    border-radius: var(--ek-radius-tile);
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--ek-radius-lg);
     background: var(--ek-color-surface);
+    box-shadow:
+      0 0 0 calc(var(--site-border-width) * 2) color-mix(in srgb, var(--chan, var(--ek-color-secondary)) 55%, transparent),
+      var(--ek-shadow-lg);
     opacity: 0;
     pointer-events: none;
   }
@@ -1059,8 +1084,9 @@ const catalog = Array.from({ length: 3 })
     gap: var(--ek-space-2);
     padding: var(--ek-space-3);
     border: var(--site-border-width) solid var(--ek-color-border-default);
-    border-radius: var(--ek-radius-tile);
+    border-radius: var(--ek-radius-lg);
     background: var(--ek-color-surface);
+    box-shadow: var(--ek-shadow-sm);
   }
   .kpi__icon {
     display: inline-flex;
@@ -1069,9 +1095,8 @@ const catalog = Array.from({ length: 3 })
     width: var(--ek-space-8);
     height: var(--ek-space-8);
     border-radius: var(--ek-radius-md);
-    border: var(--site-border-width) solid var(--site-action-border);
-    background: var(--site-action-subtle);
-    color: var(--site-action);
+    background: color-mix(in srgb, var(--ek-color-secondary) 14%, var(--ek-color-surface));
+    color: var(--ek-color-primary-darken-1);
   }
   .how__visual .kpi__label {
     overflow: hidden;
@@ -1093,7 +1118,7 @@ const catalog = Array.from({ length: 3 })
     width: 64%;
     height: 100%;
     border-radius: var(--ek-radius-full);
-    background: var(--site-action);
+    background: var(--site-gradient-accent);
     transform-origin: 0 50%;
   }
   .kpi:nth-child(2) .kpi__bar i {
@@ -1115,7 +1140,7 @@ const catalog = Array.from({ length: 3 })
     gap: var(--ek-space-3);
     padding: var(--ek-space-3);
     border: var(--site-border-width) solid var(--ek-color-border-default);
-    border-radius: var(--ek-radius-tile);
+    border-radius: var(--ek-radius-lg);
     background: var(--ek-color-surface);
   }
   .how__visual .panel__head {
@@ -1132,13 +1157,13 @@ const catalog = Array.from({ length: 3 })
     width: var(--ek-space-2);
     height: var(--ek-space-2);
     border-radius: var(--ek-radius-full);
-    background: var(--site-action);
+    background: var(--ek-color-success);
   }
   .beacon i {
     position: absolute;
     inset: 0;
     border-radius: inherit;
-    background: var(--site-action);
+    background: var(--ek-color-success);
     opacity: 0;
   }
   .bars {
@@ -1154,7 +1179,7 @@ const catalog = Array.from({ length: 3 })
     display: block;
     height: 40%;
     border-radius: var(--ek-radius-sm) var(--ek-radius-sm) 0 0;
-    background: var(--site-action-border);
+    background: linear-gradient(180deg, var(--ek-color-secondary), color-mix(in srgb, var(--ek-color-secondary) 35%, var(--ek-color-surface)));
     transform-origin: 50% 100%;
   }
   .bars i:nth-child(2) { height: 55%; }
@@ -1165,7 +1190,7 @@ const catalog = Array.from({ length: 3 })
   .bars i:nth-child(7) { height: 72%; }
   .bars i:nth-child(8) {
     height: 92%;
-    background: var(--site-action);
+    background: linear-gradient(180deg, var(--ek-color-primary), color-mix(in srgb, var(--ek-color-primary) 40%, var(--ek-color-surface)));
   }
   .feed {
     display: flex;
@@ -1184,16 +1209,16 @@ const catalog = Array.from({ length: 3 })
     border: var(--site-border-width) solid var(--ek-color-border-default);
     border-radius: var(--ek-radius-md);
     background: var(--ek-color-surface);
-    color: var(--site-action);
+    color: var(--ek-color-success);
   }
   .feed__row--new {
-    border-color: var(--site-action-border);
-    background: var(--site-action-subtle);
+    border-color: color-mix(in srgb, var(--ek-color-secondary) 60%, var(--ek-color-border-default));
+    box-shadow: 0 0 0 var(--ek-space-1) var(--accent-soft);
   }
   .feed__flash {
     position: absolute;
     inset: 0;
-    background: var(--ek-color-surface);
+    background: linear-gradient(90deg, transparent, var(--accent-soft), transparent);
     opacity: 0;
     translate: -100% 0;
   }
@@ -1202,7 +1227,7 @@ const catalog = Array.from({ length: 3 })
     width: var(--ek-space-3);
     height: var(--ek-space-3);
     border-radius: var(--ek-radius-full);
-    background: var(--chan, var(--site-action));
+    background: var(--chan, var(--ek-color-secondary));
   }
   .feed__lines {
     position: relative;
@@ -1224,10 +1249,9 @@ const catalog = Array.from({ length: 3 })
   .how__visual .feed__pill {
     position: relative;
     padding: 0 var(--ek-space-2);
-    border: var(--site-border-width) solid var(--site-action-border);
-    border-radius: var(--ek-radius-sm);
-    background: var(--ek-color-surface);
-    color: var(--site-action-emphasis);
+    border-radius: var(--ek-radius-full);
+    background: var(--ek-color-secondary);
+    color: var(--ek-color-content-strong);
     font-size: var(--ek-font-size-xs);
     font-weight: var(--ek-font-weight-bold);
     line-height: var(--ek-space-5);

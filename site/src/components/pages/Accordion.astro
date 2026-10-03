@@ -3,8 +3,6 @@
  * Accordion — JS'siz, `<details>` tabanlı (ADR-0014 Karar 1: yerel öğeler tercih edilir). Klavye (Enter/Space) ve
  * ekran okuyucu davranışı tarayıcıdan gelir. Açılma/kapanma geri bildirimi yalnızca ok simgesinin dönmesidir
  * (`--ek-duration-base`); `prefers-reduced-motion` altında global kural geçişi kısaltır.
- * S17: açık öğe vurgusu (sol vurgu çizgisi + hafif zemin), okunabilir cevap genişliği; SSS süzgeci öğeleri `hidden`
- * ile gizlediğinde ayırıcı çizgi yalnızca GÖRÜNÜR öğeler arasında kalır.
  */
 interface Item {
   id: string
@@ -42,22 +40,12 @@ const { items } = Astro.props
     display: flex;
     flex-direction: column;
     border: var(--site-border-width) solid var(--ek-color-border-default);
-    /* SITE-DL-03: tek çerçeveli düz kart; satırlar ince çizgiyle ayrılır. */
-    border-radius: var(--ek-radius-card);
+    border-radius: var(--ek-radius-xl);
     background: var(--ek-color-surface);
     overflow: hidden;
   }
-  .acc__item {
-    position: relative;
-    /* site-wdg W14: üst bar payı html scroll-padding-top’tan (yerel değer onunla toplanıyordu). */
-    transition: background-color var(--ek-duration-base) var(--ek-easing-standard);
-  }
-  .acc__item:not([hidden]) ~ .acc__item:not([hidden]) {
+  .acc__item + .acc__item {
     border-top: var(--site-border-width) solid var(--ek-color-border-default);
-  }
-  /* SITE-DL-03: açık satırda sol şerit/renkli zemin yok — açık durum ikon kutusu ve soru rengiyle anlatılır. */
-  .acc__item[open] > .acc__summary {
-    color: var(--site-action-emphasis);
   }
   .acc__summary {
     display: flex;
@@ -67,7 +55,7 @@ const { items } = Astro.props
     min-height: var(--site-tap-target);
     padding: var(--ek-space-4) var(--ek-space-6);
     color: var(--ek-color-content-strong);
-    font-size: var(--ek-font-size-lg);
+    font-size: var(--ek-font-size-xl);
     font-weight: var(--ek-font-weight-semibold);
     line-height: var(--ek-line-height-tight);
     cursor: pointer;
@@ -78,44 +66,31 @@ const { items } = Astro.props
     display: none;
   }
   .acc__summary:hover {
-    background: var(--site-action-subtle);
+    background: var(--ek-color-surface-muted);
   }
   .acc__summary:focus-visible {
     outline-offset: calc(var(--site-focus-ring-width) * -1);
   }
   .acc__icon {
-    box-sizing: border-box;
     flex: none;
-    width: var(--ek-space-8);
-    height: var(--ek-space-8);
-    padding: var(--ek-space-1);
-    border: var(--site-border-width) solid var(--ek-color-border-default);
-    border-radius: var(--ek-radius-tile);
-    background: var(--ek-color-surface);
+    width: var(--ek-space-6);
+    height: var(--ek-space-6);
     fill: none;
     stroke: currentColor;
     stroke-width: 2;
     stroke-linecap: round;
     stroke-linejoin: round;
     color: var(--ek-color-content-muted);
-    transition:
-      transform var(--ek-duration-base) var(--ek-easing-standard),
-      background-color var(--ek-duration-base) var(--ek-easing-standard),
-      border-color var(--ek-duration-base) var(--ek-easing-standard);
+    transition: transform var(--ek-duration-base) var(--ek-easing-standard);
   }
   .acc__item[open] .acc__icon {
     transform: rotate(180deg);
-    border-color: var(--site-action-border);
-    background: var(--site-action-subtle);
-    color: var(--site-action);
   }
   .acc__body {
     padding: 0 var(--ek-space-6) var(--ek-space-6);
   }
   .acc__body p {
-    max-width: var(--site-measure);
-    color: var(--site-text-body);
+    color: var(--ek-color-content-default);
     font-size: var(--ek-font-size-lg);
-    line-height: var(--site-font-body-line-height);
   }
 </style>

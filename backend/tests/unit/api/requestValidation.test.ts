@@ -26,8 +26,8 @@ const GA = { uc: { _id: 'u1', order: 4, isGlobalAdmin: true, owner: false }, pr:
 function loadRun() {
   let run: any;
   jest.isolateModules(() => {
-    jest.doMock('../../../src/api/rpc/index', () => ({ __esModule: true, default: apis() }));
-    run = require('../../../src/api/rpc/RunOperation').default;
+    jest.doMock('../../../src/api/index', () => ({ __esModule: true, default: apis() }));
+    run = require('../../../src/api/RunOperation').default;
   });
   return run as (uc: any, s: string, o: string, body: any, pr?: any) => Promise<any>;
 }
@@ -152,8 +152,8 @@ describe('RunOperation: şemalı RPC gövde doğrulaması (ADR-0023)', () => {
     let run: any;
     jest.isolateModules(() => {
       class S extends Fake { async getUsers() { return { request: this.request }; } }
-      jest.doMock('../../../src/api/rpc/index', () => ({ __esModule: true, default: { UserService: S } }));
-      run = require('../../../src/api/rpc/RunOperation').default;
+      jest.doMock('../../../src/api/index', () => ({ __esModule: true, default: { UserService: S } }));
+      run = require('../../../src/api/RunOperation').default;
     });
     const r = await run(ADMIN.uc, 'UserService', 'getUsers', { anything: { goes: 1 } }, ADMIN.pr);
     expect(r.request.anything).toEqual({ goes: 1 });
@@ -165,8 +165,8 @@ describe('ApiManager: doğrulama hatası zarfı (ADR-0023)', () => {
     let app: ReturnType<typeof makeFakeApp>;
     jest.isolateModules(() => {
       jest.doMock('@database/DatabaseManager', () => ({ DatabaseManagerInstance: {} }));
-      jest.doMock('../../../src/api/rpc/index', () => ({ __esModule: true, default: apis() }));
-      const { configureApis } = require('../../../src/api/rpc/ApiManager');
+      jest.doMock('../../../src/api/index', () => ({ __esModule: true, default: apis() }));
+      const { configureApis } = require('../../../src/api/ApiManager');
       app = makeFakeApp();
       configureApis(app, '/api');
     });

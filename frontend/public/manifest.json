@@ -1,20 +1,28 @@
 {
-  "id": "/",
-  "name": "Entegrasyonik",
-  "short_name": "Entegrasyonik",
-  "description": "Pazaryeri, e-ticaret ve ERP operasyonlarınız tek ekranda.",
-  "lang": "tr",
-  "dir": "ltr",
-  "start_url": "/",
-  "scope": "/",
-  "display": "standalone",
-  "orientation": "any",
-  "background_color": "#FFFFFF",
-  "theme_color": "#13255B",
-  "categories": ["business", "productivity"],
-  "icons": [
-    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
-  ]
+    "name": "Entegrasyonik",
+    "short_name": "KısaAd",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#0d47a1",
+    "icons": [
+        {
+            "src": "/icons/icon-192.webp",
+            "sizes": "192x192",
+            "type": "image/webp"
+        },
+        {
+            "src": "/icons/icon-512.webp",
+            "sizes": "512x512",
+            "type": "image/webp"
+        }
+    ],
+    "screenshots": [
+        {
+            "src": "/icons/screenshot.png",
+            "sizes": "3820x1886",
+            "type": "image/png",
+            "platform": "wide"
+        }
+    ]
 }

@@ -1,31 +1,63 @@
 <template>
   <ActionDialogComponent :modelValue="modelValue" @update:modelValue="$emit('update:modelValue', $event)"
     title="Yeni Mağaza Oluştur" subtitle="Sisteme yeni bir dükkan ve yönetici hesabı tanımlayın" icon="mdi-store-plus-outline"
-    color="primary" maxWidth="800px" showFooter confirmText="Mağaza oluştur" cancelText="İptal"
+    color="primary" maxWidth="800px" showFooter confirmText="MAĞAZA OLUŞTUR" cancelText="İPTAL"
     confirmButtomColor="primary" :isLoading="saving" @confirm="save" @cancel="$emit('close')" @close="$emit('close')"
     attach=".adminClientListView">
 
-    <EkFormSection title="Mağaza temel bilgileri" icon="mdi-store-outline">
-      <v-text-field v-model="form.name" label="Mağaza adı" placeholder="Örn: Trendyol Mağazam" />
-      <v-text-field v-model="form.title" label="Mağaza Başlığı" placeholder="Örn: MyStore E-Ticaret" />
-    </EkFormSection>
+    <div class="pa-0">
+      <v-row>
+        <!-- Basic Info -->
+        <v-col cols="12">
+          <v-card flat border class="rounded-xl pa-5 border-subtle mb-4 bg-slate-50">
+            <div class="text-subtitle-2 font-weight-black color-slate-800 mb-4 uppercase">MAĞAZA TEMEL BİLGİLERİ</div>
+            <v-row>
+              <v-col cols="12" md="6">
+                <v-text-field v-model="form.name" label="Mağaza Adı" variant="outlined" density="compact"
+                  class="customTextField" hide-details placeholder="Örn: Trendyol Mağazam"></v-text-field>
+              </v-col>
+              <v-col cols="12" md="6">
+                <v-text-field v-model="form.title" label="Mağaza Başlığı" variant="outlined" density="compact"
+                  class="customTextField" hide-details placeholder="Örn: MyStore E-Ticaret"></v-text-field>
+              </v-col>
+            </v-row>
+          </v-card>
+        </v-col>
 
-    <EkFormSection title="Yönetici hesabı (owner)" icon="mdi-account-key-outline" :columns="3">
-      <v-text-field v-model="userForm.fullName" label="Ad Soyad" placeholder="Yönetici Adı" />
-      <v-text-field v-model="userForm.email" label="E-Posta Adresi" placeholder="admin@magaza.com" />
-      <v-text-field v-model="userForm.password" label="Giriş parolası" type="password" />
-    </EkFormSection>
+        <!-- Administrator User Info -->
+        <v-col cols="12">
+          <v-card flat border class="rounded-xl pa-5 border-subtle mb-4 bg-slate-50">
+            <div class="text-subtitle-2 font-weight-black color-slate-800 mb-4 uppercase">YÖNETİCİ HESABI (OWNER)</div>
+            <v-row>
+              <v-col cols="12" md="4">
+                <v-text-field v-model="userForm.fullName" label="Ad Soyad" variant="outlined" density="compact"
+                  class="customTextField" hide-details placeholder="Yönetici Adı"></v-text-field>
+              </v-col>
+              <v-col cols="12" md="4">
+                <v-text-field v-model="userForm.email" label="E-Posta Adresi" variant="outlined" density="compact"
+                  class="customTextField" hide-details placeholder="admin@magaza.com"></v-text-field>
+              </v-col>
+              <v-col cols="12" md="4">
+                <v-text-field v-model="userForm.password" label="Giriş Şifresi" type="password" variant="outlined"
+                  density="compact" class="customTextField" hide-details></v-text-field>
+              </v-col>
+            </v-row>
+          </v-card>
+        </v-col>
 
-    <p class="acc-footnote">
-      <v-icon icon="mdi-information-outline" size="16" aria-hidden="true" />
-      Varsayılan depolama (R2) ayarları otomatik olarak atanacaktır. Daha sonra ayarlardan güncelleyebilirsiniz.
-    </p>
+        <!-- Default Storage Settings (Pre-filled) -->
+        <v-col cols="12">
+          <div class="text-micro font-weight-bold color-slate-400 mb-2 px-2 uppercase">
+            * Varsayılan depolama (R2) ayarları otomatik olarak atanacaktır. Daha sonra ayarlardan güncelleyebilirsiniz.
+          </div>
+        </v-col>
+      </v-row>
+    </div>
   </ActionDialogComponent>
 </template>
 
 <script setup lang="ts">
 import { reactive, ref, watch } from 'vue';
-import { EkFormSection } from '@entegrasyonik/ui/components'
 import useRestApi from '@/composables/restapi';
 import { useSnackbarStore } from '@/stores/snackbarStore';
 import ActionDialogComponent from '@/components/layout/ActionDialogComponent.vue';
@@ -91,14 +123,30 @@ watch(() => props.modelValue, (val) => {
 });
 </script>
 
-<style scoped>
-.acc-footnote {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--ek-space-2);
-  margin: var(--ek-space-5) 0 0;
+<style scoped lang="scss">
+.bg-slate-50 {
+  background-color: var(--ek-color-surface-muted) !important;
+}
+
+.border-subtle {
+  border: 1px solid var(--ek-color-border-default) !important;
+}
+
+.color-slate-800 {
+  color: var(--ek-color-content-strong);
+}
+
+// Bu sınıf yalnızca METİN (yönerge notu) için kullanılıyor: `content-subtle` (slate-400) beyazda
+// 2,56:1 ile AA'yı geçemez ve token belgesi metin için kullanımı yasaklar → `content-muted` (4,76:1).
+.color-slate-400 {
   color: var(--ek-color-content-muted);
-  font-size: var(--ek-type-caption-size);
-  line-height: var(--ek-type-caption-line);
+}
+
+.uppercase {
+  text-transform: uppercase;
+}
+
+.text-micro {
+  font-size: var(--ek-font-size-xs);
 }
 </style>

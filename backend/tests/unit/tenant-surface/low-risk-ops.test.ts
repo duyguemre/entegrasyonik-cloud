@@ -6,11 +6,11 @@ import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals
 jest.mock('@database/DatabaseManager', () => ({ DatabaseManagerInstance: { getApplicationDB: jest.fn(), getClientDB: jest.fn() } }));
 jest.mock('@integration/modules/IntegrationFactory', () => ({ __esModule: true, default: jest.fn() }));
 
-import FinancialService, { CARGO_INVOICES_MAX_ROWS } from '../../../src/api/rpc/handlers/financial-service';
-import ShipmentService, { MAX_SHIPMENTS_PAGE_LIMIT } from '../../../src/api/rpc/handlers/shipment-service';
-import NotificationService from '../../../src/api/rpc/handlers/notification-service';
-import ClaimService from '../../../src/api/rpc/handlers/claim-service';
-import OrderService from '../../../src/api/rpc/handlers/order-service';
+import FinancialService, { CARGO_INVOICES_MAX_ROWS } from '../../../src/api/services/financial-service';
+import ShipmentService, { MAX_SHIPMENTS_PAGE_LIMIT } from '../../../src/api/services/shipment-service';
+import NotificationService from '../../../src/api/services/notification-service';
+import ClaimService from '../../../src/api/services/claim-service';
+import OrderService from '../../../src/api/services/order-service';
 
 function chain(result: any) {
   const c: any = {};

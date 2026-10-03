@@ -1,6 +1,6 @@
 // [ADR-0030 X6-b] RPC intake kapısı: davranış tablosu (on/drain/off × okuma/yazma) ve kapsam.
 import { describe, it, expect, beforeEach, afterAll, jest } from '@jest/globals';
-import { enforceIntakeForRpc, extractRecordIds, isIntakeGatedRpc, resolveIntegrationCodes } from '../../../src/api/rpc/intakeRpcGuard';
+import { enforceIntakeForRpc, extractRecordIds, isIntakeGatedRpc, resolveIntegrationCodes } from '../../../src/api/intakeRpcGuard';
 import { setTargetIntake } from '../../../src/integration/config/platformOverrideStore';
 import { ENGINE_TARGET } from '../../../src/integration/config/targets';
 import { CAPABILITIES, rpcBindingsOf } from '../../../src/capabilities';
@@ -53,8 +53,7 @@ describe('intakeRpcGuard', () => {
     });
     it('kapsam = yetenek kaydı: dış + pazaryeri etki alanı; hesap/faturalama hariç', async () => {
         const gated = CAPABILITIES.filter(c => c.external && rpcBindingsOf(c).some(b => isIntakeGatedRpc(...(b.rpc.split('/') as [string, string])).gated)).map(c => c.domain);
-        // PRC-R2: `pricing.suggestions.apply` (catalog, dış etkili: Trendyol fiyat yayını) da motor acil durdurmasına tabidir.
-        expect(new Set(gated)).toEqual(new Set(['integrations', 'orders', 'claims', 'invoices', 'shipments', 'messages', 'catalog']));
+        expect(new Set(gated)).toEqual(new Set(['integrations', 'orders', 'claims', 'invoices', 'shipments', 'messages']));
     });
     it('kod çözümü', async () => {
         expect(resolveIntegrationCodes({ integrationCode: 'a', selectedIntegrations: ['b'] })).toEqual(['a', 'b']);

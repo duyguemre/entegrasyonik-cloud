@@ -2,9 +2,8 @@
 /**
  * Kapanış CTA (ADR-0014 Karar 2, bölüm 9; S12 PARÇA C) — koyu "stage" zemin. Uygulama bağlantıları site-config'ten.
  * Satın almaya teşvik eden son çağrı: fayda odaklı başlık + üç kazanım (merkezi stok, birleşik sipariş, güvenlik),
- * birincil "ücretsiz başlat", ikincil "Demo talep edin" (ELEV A3; mailto, form yok); altında deneme notu ve kazanım/güvenlik çipleri. Tüm olgular kayıttan
+ * birincil "ücretsiz başlat", ikincil giriş; altında deneme notu ve kazanım/güvenlik çipleri. Tüm olgular kayıttan
  * (deneme süresi/kart gereksinimi: seed; güvenlik çipleri: yetenek kaydı).
- * S27a (N3, SR4 madde 5): güvenlik çipleri kaldırıldı — güvenlik iddiaları sayfada yalnız Güvenlik bölümünde (bir kez).
  * Görsel: eş merkezli halkalar (dekoratif, `cta-rings` döngüsü scenes-loops.css) + yavaşça dönen ışık halkası.
  */
 import Section from '../Section.astro'
@@ -14,19 +13,17 @@ import { appUrls } from '../../lib/site-config'
 import { getPublicTrial } from '../../data/plans'
 import { getPublicCapabilities } from '../../data/capabilities'
 import { pageHref } from './links'
-import { contactEmail, mailtoHref } from '../../lib/contact'
-import { BRAND_SLOGAN } from '../../data/brand'
 
 const trial = getPublicTrial()
 const capabilities = getPublicCapabilities()
 const has = (id: string) => capabilities.some((c) => c.id === id)
+const encrypted = has('secrets-encryption')
+const tenant = has('tenant-database')
 const contactHref = pageHref('/iletisim')
-// ELEV (A3): sayfanın en güçlü dönüşüm anı yeni ziyaretçiye konuşur — ikincil eylem "Demo talep edin" (K43); giriş üst barda.
-const demoHref = mailtoHref(contactEmail, 'Entegrasyonik demo talebi')
 
 // Kazanım satırı: yalnızca kayıtta `available` olan yeteneklere dayanır (kopya, olgu değil).
 const gains = [
-  has('stock-reservation') && { icon: 'stock' as const, text: 'Merkezi stok ve aşırı satış koruması' },
+  has('stock-reservation') && { icon: 'stock' as const, text: 'Merkezi stok ve overselling koruması' },
   has('unified-orders') && { icon: 'orders' as const, text: 'Tüm kanallardan tek sipariş akışı' },
   ].filter((g): g is { icon: 'stock' | 'orders'; text: string } => Boolean(g))
 ---
@@ -35,21 +32,23 @@ const gains = [
   <div class="cta" data-scene="cta-reveal">
     <span class="cta__rings" data-part="cta-rings" aria-hidden="true"><i></i><i></i><i></i></span>
     <span class="cta__orbit" aria-hidden="true"></span>
-    <p class="cta__eyebrow" data-reveal><span class="cta__dot" aria-hidden="true"></span>{BRAND_SLOGAN}</p>
+    <p class="cta__eyebrow" data-reveal><span class="cta__dot" aria-hidden="true"></span>Çok kanallı satışın yeni merkezi</p>
     <h2 id="kapanis-baslik" class="cta__title" data-reveal>
       Tüm kanallarınızı <span class="cta__accent">tek yerde toplayın</span>, büyümeye odaklanın
     </h2>
     <p class="cta__lead" data-reveal>
-      Stok, sipariş ve ürün operasyonunuzu tek panelde birleştirin; aşırı satış riskini azaltın, ekibinize zaman
-      kazandırın. Kurulum için kod yazmanız gerekmez.
+      Stok, sipariş ve ürün operasyonunuzu tek panelde birleştirin; overselling riskini azaltın, ekibinize operasyonel
+      verimlilik kazandırın. Kurulum için kod yazmanız gerekmez.
     </p>
     <div class="cta__actions" data-reveal>
-      <Button href={appUrls.register()} variant="inverse" size="lg" data-testid="closing-cta-primary">Ücretsiz deneyin</Button>
-      <Button href={demoHref} variant="inverse-outline" size="lg" data-testid="closing-cta-demo">Demo talep edin</Button>
+      <Button href={appUrls.register()} variant="inverse" size="lg" data-testid="closing-cta-primary">Ücretsiz denemeyi başlatın</Button>
+      <Button href={appUrls.login()} variant="inverse-outline" size="lg" data-testid="closing-cta-login">Giriş yap</Button>
     </div>
     <p class="cta__note" data-reveal><span data-count={trial.days}>{trial.days}</span> gün ücretsiz deneme{!trial.cardRequired && ', kart bilgisi gerekmez'}.{contactHref && <> Kurumsal ihtiyaçlarınız için <a href={contactHref}>bizimle görüşün</a>.</>}</p>
     <ul class="cta__chips" data-reveal aria-label="Kazanımlar">
       {gains.map((g) => <li><Icon name={g.icon} size="sm" />{g.text}</li>)}
+      {encrypted && <li><Icon name="lock" size="sm" />Şifreli anahtar saklama</li>}
+      {tenant && <li><Icon name="database" size="sm" />Ayrı müşteri veritabanı</li>}
     </ul>
   </div>
 </Section>
@@ -110,7 +109,7 @@ const gains = [
     width: var(--ek-space-2);
     height: var(--ek-space-2);
     border-radius: var(--ek-radius-full);
-    background: var(--site-accent-on-dark);
+    background: var(--ek-color-secondary);
     box-shadow: var(--site-glow-ring);
   }
   .cta__accent {
@@ -129,7 +128,7 @@ const gains = [
     aspect-ratio: 1 / 1;
     translate: -50% -50%;
     border-radius: var(--ek-radius-full);
-    background: conic-gradient(from 0deg, transparent 0 70%, color-mix(in srgb, var(--site-accent-on-dark) 45%, transparent) 88%, transparent 100%);
+    background: conic-gradient(from 0deg, transparent 0 70%, color-mix(in srgb, var(--ek-color-secondary) 45%, transparent) 88%, transparent 100%);
     -webkit-mask-image: radial-gradient(closest-side, transparent calc(100% - var(--ek-space-1)), var(--ek-color-background) calc(100% - var(--ek-space-1)));
     mask-image: radial-gradient(closest-side, transparent calc(100% - var(--ek-space-1)), var(--ek-color-background) calc(100% - var(--ek-space-1)));
     pointer-events: none;
@@ -182,7 +181,7 @@ const gains = [
     font-weight: var(--ek-font-weight-medium);
   }
   .cta__chips :global(.icon) {
-    color: var(--site-accent-on-dark);
+    color: var(--ek-color-secondary);
   }
 
   @media (prefers-reduced-motion: no-preference) {
@@ -197,43 +196,5 @@ const gains = [
     :global(html[data-motion='play']) [data-scene='cta-reveal'][data-state='play'][data-visible='true'] .cta__orbit {
       animation-play-state: running;
     }
-  }
-
-  /* ================= SITE-DL-02 — uygulamanın tasarım dili (frontend/DESIGN_SYSTEM.md §35) =================
-     Düz yüzey + 1px ince çerçeve + kart yarıçapı; gölge, degrade, ışıma, hover yükselmesi yok; tek vurgu eylem
-     mavisi; ikonlar çerçeveli köşeli kutuda; hap rozet yerine köşeli çip. Yukarıdaki kuralları EZER (aynı özgüllük,
-     kaynak sırası). */
-
-  /* Kapanış: sahne zemini (mavi tonlu) kalır; dönen ışık ve nefes alan halkalar yok. */
-  .cta__orbit,
-  .cta__rings {
-    display: none;
-  }
-  /* Bölüm etiketi: 12×2 çizgi + BÜYÜK HARF mikro etiket (hap çerçeve yerine). */
-  .cta__eyebrow {
-    padding: 0;
-    border: 0;
-    border-radius: 0;
-    background: transparent;
-    color: var(--site-eyebrow-color);
-    font-size: var(--site-eyebrow-size);
-    font-weight: var(--site-eyebrow-weight);
-    letter-spacing: var(--site-eyebrow-tracking);
-  }
-  .cta__dot {
-    width: var(--site-eyebrow-mark-width);
-    height: var(--site-eyebrow-mark-height);
-    border-radius: 0;
-    background: var(--site-eyebrow-mark-color);
-    box-shadow: none;
-  }
-  .cta__accent {
-    background: none;
-    -webkit-background-clip: border-box;
-    background-clip: border-box;
-    color: var(--site-accent-on-dark);
-  }
-  .cta__chips li {
-    border-radius: var(--ek-radius-md);
   }
 </style>

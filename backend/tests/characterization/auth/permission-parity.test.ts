@@ -3,7 +3,7 @@ import { CAPABILITIES, CAPABILITY_BY_RPC, findRegistryInvariantViolations } from
 import { PERMISSIONS, PLATFORM_ONLY, isPermission } from '../../../src/capabilities/permissions';
 import { ROLES, ROLE_PERMISSIONS, minTierFromPermission } from '../../../src/capabilities/roles';
 import { can, canFor, permissionsOf, permissionsForProfile, type AuthzActor } from '../../../src/platform/core/authz/can';
-import { isAllowed, getRequiredPermission } from '../../../src/api/rpc/operationPolicy';
+import { isAllowed, getRequiredPermission } from '../../../src/api/operationPolicy';
 import { OPERATION_POLICY_SNAPSHOT } from './operationPolicy.snapshot';
 
 // ADR-0028 WP-A1: izin kataloğu + kademe paritesi. Referans: Aşama A öncesi ELLE tablo (snapshot; bağımsız kaynak).
@@ -19,9 +19,9 @@ describe('WP-A1 parite: 174 operasyon, bugünkü kademe kararı == izin modeli k
   const pairs: Array<[string, string, string]> = [];
   for (const [svc, ops] of Object.entries(OPERATION_POLICY_SNAPSHOT)) for (const [op, tier] of Object.entries(ops)) pairs.push([svc, op, tier as string]);
 
-  it('312 operasyon = 208 tenant + 104 platformAdmin (hepsi aynı karar testinden geçer)', () => {
-    expect(pairs.filter(([, , t]) => t !== 'platformAdmin')).toHaveLength(208); // MOB-04: +3 web push (member); PRC-R0/R1: +5 PricingService (member); PRC-R2: +8 PricingService (3 member + 5 admin); COM-08: +1 FinancialService/getCommissionDrift (member)
-    expect(pairs).toHaveLength(312); // COM-08: +1; MOB-06: +3 backoffice web push (platformAdmin); MOB-08: +BackofficeTenantService/getUsage; PRC-CFG: +3 BackofficeBillingService rekabet ayarı (platformAdmin); PRC-R2: +1 fiyat kuralları özeti (platformAdmin)
+  it('287 operasyon = 191 tenant + 96 platformAdmin (hepsi aynı karar testinden geçer)', () => {
+    expect(pairs.filter(([, , t]) => t !== 'platformAdmin')).toHaveLength(191);
+    expect(pairs).toHaveLength(287);
   });
 
   it('her operasyon ve her aktör için karar birebir aynı (fark listelenir)', () => {

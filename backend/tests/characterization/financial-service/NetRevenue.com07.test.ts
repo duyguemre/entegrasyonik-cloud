@@ -7,7 +7,7 @@ import { computeNetRevenue, roundMoney } from '@operations/finance/netRevenue';
 import { getOrderCommissionSummary, getNetRevenuePreview } from '@operations/finance/commissionQueries';
 import { resolveDeductionRules } from '@integration/config/financeDeductionRules';
 import { getSettingDef } from '@integration/config/catalog';
-import FinancialService from '@api/rpc/handlers/financial-service';
+import FinancialService from '@api/services/financial-service';
 
 const ALL = { commissionVatRate: 20, serviceFeeFixed: 5, serviceFeeRate: 1, shippingContribution: 10, withholdingRate: 1 };
 

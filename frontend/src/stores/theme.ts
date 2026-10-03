@@ -1,22 +1,13 @@
-/**
- * Müşteri uygulamasının tema denetleyicisi (FR2-DARK, ADR-0026 Karar 3). Ortak paketteki `createThemeController`
- * `ek-theme` anahtarıyla — backoffice ile AYNI kural. İlk kareyi `public/theme-boot.js` boyar; bu modül aynı
- * çözümle devralır (titreme yok), kullanıcı menüsündeki seçici `setPreference` çağırır.
- */
-import { THEME_STORAGE_KEYS, createThemeController, type ThemeMode, type ThemePreference } from '@entegrasyonik/ui/theme'
+import { ref } from 'vue'
+import { defineStore } from 'pinia'
 import { useTheme } from 'vuetify'
 
-export const appTheme = createThemeController(THEME_STORAGE_KEYS.app)
-
-export type { ThemeMode, ThemePreference }
-
-/** Kabuğun `provide('useThemeStore')` sözleşmesi (geriye uyumlu adlar). */
 export default function useThemeStore() {
+/*   export const useThemeStore = defineStore('theme', () => { */
   const theme = useTheme()
-  appTheme.bind(theme)
 
   function toggleTheme() {
-    appTheme.setPreference(appTheme.mode.value === 'dark' ? 'light' : 'dark')
+    //theme.global.name.value = theme.global.current.value.dark ? 'lightTheme' : 'darkTheme'
   }
 
   function getTheme() {
@@ -24,15 +15,8 @@ export default function useThemeStore() {
   }
 
   function isDarkMode() {
-    return appTheme.mode.value === 'dark'
+    return theme.global.current.value.dark
   }
 
-  return {
-    mode: appTheme.mode,
-    preference: appTheme.preference,
-    setPreference: appTheme.setPreference,
-    toggleTheme,
-    getTheme,
-    isDarkMode,
-  }
+  return { toggleTheme, getTheme, isDarkMode }
 }

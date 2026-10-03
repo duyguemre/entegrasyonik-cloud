@@ -27,7 +27,7 @@ import { OwnershipService } from '@operations/users/ownership';
 import { AccountLifecycleService } from '@operations/account/AccountLifecycleService';
 import { REAUTH_WINDOW_MS } from '@operations/users/reauth';
 import { hashToken } from '@operations/account/accountTokens';
-import { decide, loadMembership, MEMBERSHIP_CACHE_FIELD } from '../../../src/api/http/membershipAuthz';
+import { decide, loadMembership, MEMBERSHIP_CACHE_FIELD } from '../../../src/api/membershipAuthz';
 import type { SourceMode } from '@operations/users/memberStore';
 
 jest.setTimeout(120000);

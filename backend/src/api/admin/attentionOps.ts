@@ -264,7 +264,7 @@ export class AttentionOps {
         for (const a of rows) {
             const tid = Number(a.detail?.tid);
             if (!Number.isInteger(tid) || tid <= 0) continue;
-            const k: K = { kind: a.ruleId === 'R2' && a.scopeKey.startsWith('auth:') ? 'auth' : a.ruleId === 'R1' ? 'integration' : 'other', integ: code(String(a.detail?.integ ?? '')), ruleId: a.ruleId };
+            const k: K = { kind: a.ruleId === 'R2' ? 'auth' : a.ruleId === 'R1' ? 'integration' : 'other', integ: code(String(a.detail?.integ ?? '')), ruleId: a.ruleId };
             const key = `${k.kind}:${k.kind === 'other' ? code(a.ruleId) : k.integ}`;
             const g = groups.get(key) ?? { k, list: [] }; g.list.push(a); groups.set(key, g);
         }

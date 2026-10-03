@@ -17,7 +17,7 @@ const faqHref = pageHref('/sss')
 const contactHref = pageHref('/iletisim')
 ---
 
-<Section id="sss" labelledby="sss-baslik">
+<Section tone="muted" id="sss" labelledby="sss-baslik">
   <div class="faq">
     <div class="faq__intro">
       <SectionHeading
@@ -105,7 +105,7 @@ const contactHref = pageHref('/iletisim')
       color var(--ek-duration-base) var(--ek-easing-standard);
   }
   .faq__cats a:hover {
-    border-color: var(--site-action);
+    border-color: var(--ek-color-secondary-darken-1);
     color: var(--ek-color-content-strong);
   }
   .faq__more {
@@ -135,8 +135,8 @@ const contactHref = pageHref('/iletisim')
     width: var(--ek-space-10);
     height: var(--ek-space-10);
     border-radius: var(--ek-radius-lg);
-    background: color-mix(in srgb, var(--site-action) 16%, transparent);
-    color: var(--site-action);
+    background: color-mix(in srgb, var(--ek-color-secondary) 16%, transparent);
+    color: var(--ek-color-secondary-darken-1);
   }
   .faq__ask p {
     display: flex;
@@ -251,69 +251,5 @@ const contactHref = pageHref('/iletisim')
       position: sticky;
       inset-block-start: calc(var(--site-header-height) + var(--ek-space-8));
     }
-  }
-
-  /* ================= SITE-DL-02 — uygulamanın tasarım dili (frontend/DESIGN_SYSTEM.md §35) =================
-     Düz yüzey + 1px ince çerçeve + kart yarıçapı; gölge, degrade, ışıma, hover yükselmesi yok; tek vurgu eylem
-     mavisi; ikonlar çerçeveli köşeli kutuda; hap rozet yerine köşeli çip. Yukarıdaki kuralları EZER (aynı özgüllük,
-     kaynak sırası). */
-
-  .faq__cats a {
-    border-radius: var(--ek-radius-md);
-  }
-  .faq__cats a:hover {
-    border-color: var(--site-action-border);
-    background: var(--site-action-subtle);
-    color: var(--site-action-emphasis);
-  }
-  .faq__ask {
-    border-color: var(--ek-color-border-default);
-    border-radius: var(--ek-radius-card);
-    background: var(--ek-color-surface);
-    box-shadow: none;
-  }
-  .faq__ask-icon {
-    border: var(--site-border-width) solid var(--site-action-border);
-    border-radius: var(--ek-radius-tile);
-    background: var(--site-action-subtle);
-    color: var(--site-action);
-  }
-  /* Akordeon: TEK çerçeveli kartta ince çizgili satırlar; ok köşeli kutuda. */
-  .faq__list {
-    gap: 0;
-    overflow: hidden;
-    border: var(--site-border-width) solid var(--ek-color-border-default);
-    border-radius: var(--ek-radius-card);
-    background: var(--ek-color-surface);
-  }
-  .faq__item,
-  .faq__item:hover,
-  .faq__item[open] {
-    border: 0;
-    border-radius: 0;
-    background: transparent;
-    box-shadow: none;
-  }
-  .faq__item + .faq__item {
-    border-top: var(--site-border-width) solid var(--ek-color-border-subtle);
-  }
-  .faq__q {
-    border-radius: 0;
-  }
-  .faq__q:hover {
-    background: var(--site-action-subtle);
-  }
-  .faq__q :global(.faq__chevron) {
-    flex: none;
-    box-sizing: content-box;
-    padding: var(--ek-space-1);
-    border: var(--site-border-width) solid var(--ek-color-border-default);
-    border-radius: var(--ek-radius-md);
-    background: var(--ek-color-surface);
-  }
-  .faq__item[open] .faq__q :global(.faq__chevron) {
-    border-color: var(--site-action-border);
-    background: var(--site-action-subtle);
-    color: var(--site-action);
   }
 </style>

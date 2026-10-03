@@ -66,10 +66,7 @@ async function runFlow(page: Page, how: Leave, next: 'A' | 'B') {
   await expect(page.getByText(next === 'A' ? 'A Mağazası (E2E)' : 'B Mağazası (E2E)').first()).toBeVisible()
   await page.waitForTimeout(500)
 
-  // [DS-v2 Aşama 2, Karar 5.1 izinli değişiklik 1] Sekme başlıkları artık cümle düzeninde (okunaklılık —
-  // kullanıcı brifi madde 4); karşılaştırma büyük harfe çevrilerek yapılır, iddialar ('ANASAYFA' var /
-  // 'İADELER' yok — fe-r3d P05 tek ad kaydı: eski 'İade yönetimi') DEĞİŞMEDİ.
-  const tabTitles = (await page.locator('.workplace-tabs [role="tab"]').allInnerTexts()).join('|').toLocaleUpperCase('tr-TR')
+  const tabTitles = (await page.locator('.workplace-tab').allInnerTexts()).join('|')
   const claimsTabMounted = await page.locator('.claimListView').count()
   // [ADR-0015 A3] Eski ham `img[src="/assets/images/logo6.png"]` seçicisi yerine paylaşılan
   // `openDrawer()` yardımcısı (bkz. dosya başı import) — kabuk artık kalıcı/ray/geçici üç sunumdan
@@ -111,7 +108,7 @@ test.describe('R9b — çıkış sonrası oturum izolasyonu (H-01 / T-15)', () =
 
     // Sekmeler: yalnızca B'nin anasayfası; A'nın iade sekmesi yok ve monte değil.
     expect(o.tabTitles).toContain('ANASAYFA')
-    expect(o.tabTitles).not.toContain('İADELER')
+    expect(o.tabTitles).not.toContain('İADE YÖNETİMİ')
     expect(o.claimsTabMounted).toBe(0)
   })
 
@@ -125,7 +122,7 @@ test.describe('R9b — çıkış sonrası oturum izolasyonu (H-01 / T-15)', () =
 
     expect(o.claimsInDrawer).toBe(0)
     expect(o.customersInDrawer).toBe(0)
-    expect(o.tabTitles).not.toContain('İADELER')
+    expect(o.tabTitles).not.toContain('İADE YÖNETİMİ')
     expect(o.claimsTabMounted).toBe(0)
   })
 
@@ -133,7 +130,7 @@ test.describe('R9b — çıkış sonrası oturum izolasyonu (H-01 / T-15)', () =
     const o = await runFlow(page, 'expire', 'A')
 
     expect(o.tabTitles).toContain('ANASAYFA')
-    expect(o.tabTitles).toContain('İADELER')
+    expect(o.tabTitles).toContain('İADE YÖNETİMİ')
     expect(o.claimsInDrawer).toBe(1) // A'nın kendi menüsü
     expect(o.customersInDrawer).toBe(1)
   })

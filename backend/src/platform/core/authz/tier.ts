@@ -1,5 +1,5 @@
 // ADR-0001 Karar 7 / ADR-0028: aktörün eski kademesinin GÜVENİLİR kaynaklardan türetilmesi (platform katmanı; api'ye bağımlı DEĞİL).
-// `api/rpc/operationPolicy.ts` bunları yeniden dışa verir (dışa açık API değişmez).
+// `api/operationPolicy.ts` bunları yeniden dışa verir (dışa açık API değişmez).
 export type TenantTier = 'member' | 'admin' | 'owner';
 
 export const TENANT_TIER_RANK: Record<TenantTier, number> = { member: 1, admin: 2, owner: 3 };

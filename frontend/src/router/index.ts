@@ -70,83 +70,9 @@ const routes: RouteRecordRaw[] = [
           requiresAuth: false
         }
       },
-      // Faz 3 / C2a — API_ACCOUNT_LIFECYCLE.md §6: davet bağlantısı `${PUBLIC_APP_URL}/invite#t=<token>`. Kimliksiz;
-      // token yalnız parçadan (`#t=`) okunur ve hemen silinir (`composables/fragmentToken.ts`). Kabul oturum AÇMAZ.
-      {
-        path: 'invite',
-        name: 'InvitationAccept',
-        component: () => import('@/views/unsecure/InvitationAcceptView.vue'),
-        meta: {
-          requiresAuth: false
-        }
-      },
-      // §9: sahiplik devri bağlantısı `${PUBLIC_APP_URL}/accept-ownership#t=<token>`. Kabul OTURUM ister (hedef kullanıcı);
-      // sayfa kimliksiz açılır, oturum yoksa token bellekte bekletilip girişe gidilir ve SPA içinde geri dönülür.
-      {
-        path: 'accept-ownership',
-        name: 'OwnershipAccept',
-        component: () => import('@/views/unsecure/OwnershipAcceptView.vue'),
-        meta: {
-          requiresAuth: false
-        }
-      },
-      // MCP-6 (ADR-0035, MCP_UI_CONTRACT §1 S1/S2): sade kabuk (menü yok) ama OTURUM ister — oturum yoksa guard
-      // `/login?redirect=<tam adres>` ile girişe gönderir, giriş sonrası buraya döner. Menüde görünmezler.
-      // S1: dış yapay zekâ uygulamasının OAuth yetkilendirmesinden gelen onay ekranı (`?req={id}`).
-      {
-        path: 'oauth/consent',
-        name: 'OAuthConsent',
-        component: () => import('@/views/unsecure/OAuthConsentView.vue'),
-        meta: {
-          requiresAuth: true
-        }
-      },
-      // Yasal belgeler (kimliksiz): içerik sitenin kanonik verisinden (site/src/data/legal). Eski elle yazılmış
-      // public/legal/*.html kopyaları kaldırıldı; dışarıda kalmış eski bağlantılar karşılığına yönlenir.
-      {
-        path: 'legal/:slug',
-        name: 'Legal',
-        component: () => import('@/views/unsecure/LegalView.vue'),
-        meta: {
-          requiresAuth: false
-        }
-      },
-      { path: 'legal/gizlilik-sozlesmesi.html', redirect: '/legal/gizlilik' },
-      { path: 'legal/kullanim-kosullari.html', redirect: '/legal/kullanim-kosullari' },
-      { path: 'legal/aydinlatma-metni.html', redirect: '/legal/kvkk-aydinlatma' },
-      { path: 'legal/cerez-politikasi.html', redirect: '/legal/cerez' },
-      // S2: bant dışı yazma onayı; URL'de kimlik dışında parametre YOK.
-      {
-        path: 'approve/:id',
-        name: 'McpApproval',
-        component: () => import('@/views/unsecure/McpApprovalView.vue'),
-        meta: {
-          requiresAuth: true
-        }
-      },
     ],
   },
 ]
-
-// DS-v2 Aşama 1 — tasarım sistemi vitrini: YALNIZCA geliştirmede (`vite` dev sunucusu).
-// `import.meta.env.DEV` derleme zamanında sabitlenir; üretim derlemesinde bu dal ve
-// `DesignSystemView` chunk'ı tamamen elenir (statik test: tests/design-system-route.test.ts).
-// Menüde/komut paletinde YOKTUR. Kimlik gerektirmez (API çağrısı yapmaz).
-if (import.meta.env.DEV) {
-  routes.unshift({
-    path: '/design-system',
-    name: 'DesignSystem',
-    component: () => import('@/views/dev/DesignSystemView.vue'),
-    meta: { requiresAuth: false },
-  })
-  // ADR-0034 — Otopilot inceleme tezgâhı (mock taşıyıcı, açık/koyu tema; packages/chat/docs/review görselleri + axe).
-  routes.unshift({
-    path: '/dev/otopilot',
-    name: 'OtopilotHarness',
-    component: () => import('@/views/dev/OtopilotHarnessView.vue'),
-    meta: { requiresAuth: false },
-  })
-}
 
 const router = createRouter({
   history: createWebHistory(process.env.BASE_URL),

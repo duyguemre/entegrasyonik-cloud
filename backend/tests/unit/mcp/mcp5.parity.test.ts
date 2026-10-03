@@ -7,7 +7,7 @@
 import { describe, it, expect } from '@jest/globals';
 import { CAPABILITIES } from '../../../src/capabilities';
 import { chatBindingOf, needsConfirmation, type AvailabilityEnv } from '../../../src/capabilities/availability';
-import { isLiveReadonlyBlockedRpc } from '../../../src/api/rpc/liveReadonlyRpcGuard';
+import { isLiveReadonlyBlockedRpc } from '../../../src/api/liveReadonlyRpcGuard';
 import { can } from '../../../src/platform/core/authz/can';
 import { effectiveScopes } from '../../../src/mcp/McpAuth';
 import { deriveTools } from '../../../src/operations/agent/tools';

@@ -7,7 +7,7 @@
 
       <div v-if="isMapped" :key="'mapped'"
         class="mapped-success-state d-flex align-start pa-4 rounded-lg">
-        <v-icon color="success" size="28" class="mt-1">mdi-check-decagram-outline</v-icon>
+        <v-icon color="success" size="28" class="mt-1">mdi-check-decagram</v-icon>
         <div class="d-flex flex-column flex-grow-1">
           <span class="mapped-title">
             Eşleştirme Doğrulandı
@@ -86,7 +86,7 @@
             </span>
           </template>
           <template v-slot:item="{ item, props: itemProps }: any">
-            <v-list-item role="option" v-bind="itemProps" class="custom-category-item is-leaf-row" title="">
+            <v-list-item v-bind="itemProps" class="custom-category-item is-leaf-row" title="">
               <div class="d-flex align-center w-100 position-relative">
                 <div class="leaf-indicator leaf-indicator--warning"></div>
                 <v-icon size="18" class="mr-2" color="warning">mdi-layers-outline</v-icon>
@@ -179,7 +179,7 @@
             </span>
           </template>
           <template v-slot:item="{ item, props: itemProps }: any">
-            <v-list-item role="option" v-bind="itemProps" class="custom-category-item is-leaf-row" title="">
+            <v-list-item v-bind="itemProps" class="custom-category-item is-leaf-row" title="">
               <div class="d-flex align-center w-100 position-relative">
                 <div class="leaf-indicator leaf-indicator--info"></div>
                 <v-icon size="16" class="mr-2" color="info">mdi-circle-medium</v-icon>
@@ -655,139 +655,5 @@ const handleSaveAttributeValueMapping = async () => {
 
 .is-leaf-row:hover {
   background-color: var(--ek-color-surface-muted) !important;
-}
-
-/* ================= FE-LOCAL-1048 — eşleştirme menüsü: ana sayfa dili =================
-   Menü kartı zaten çerçevedir → iç kutunun ikinci çerçevesi / gölgesi yok. Bağlam satırları ince çizgiyle ayrılan
-   bilgi hücreleri; uyarılar tonun DÜZ açık zemini + ince ton çerçevesi (kalın sol şerit yok); düğme düz, 8px köşe. */
-.mapping-close {
-  top: calc(-1 * var(--ek-space-10));
-  right: 0;
-}
-
-.mapping-step-box {
-  padding: 0;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  box-shadow: none;
-}
-
-.context-card {
-  border-radius: var(--ek-radius-control);
-  background: var(--ek-color-surface-muted);
-}
-
-.context-card :deep(.v-divider) {
-  margin: 0 !important;
-  border-color: var(--ek-color-border-subtle);
-  opacity: 1;
-}
-
-.context-label {
-  font-size: var(--ek-type-micro-size);
-  line-height: var(--ek-type-micro-line);
-  font-weight: var(--ek-type-micro-weight);
-  letter-spacing: var(--ek-type-micro-tracking);
-  margin-bottom: 2px;
-}
-
-.context-value {
-  font-size: var(--ek-type-body-size);
-  font-weight: var(--ek-font-weight-semibold);
-}
-
-.context-value--pending {
-  font-style: normal;
-  font-weight: var(--ek-font-weight-regular);
-}
-
-.info-alert {
-  border-left-width: 1px;
-  border-radius: var(--ek-radius-control) !important;
-}
-
-.info-alert__title {
-  font-size: var(--ek-type-micro-size);
-  font-weight: var(--ek-type-micro-weight);
-  letter-spacing: var(--ek-type-micro-tracking);
-}
-
-.info-alert__text {
-  color: var(--ek-color-content-strong);
-  font-size: var(--ek-type-body-size);
-}
-
-.mapped-success-state {
-  border: 1px solid var(--ek-color-success-border);
-  border-radius: var(--ek-radius-control) !important;
-  background: var(--ek-color-success-subtle);
-}
-
-.mapped-title {
-  color: var(--ek-color-success-emphasis);
-  font-size: var(--ek-type-body-size);
-}
-
-.step-title {
-  font-size: var(--ek-type-body-size);
-}
-
-.premium-btn {
-  height: 40px !important;
-  border-radius: var(--ek-radius-control) !important;
-  letter-spacing: 0;
-  box-shadow: none !important;
-}
-
-.context-label--warning,
-.context-value--warning,
-.info-alert__title--warning {
-  color: var(--ek-color-warning-emphasis);
-}
-
-.context-label--info,
-.context-value--info,
-.info-alert__title--info {
-  color: var(--ek-color-info-emphasis);
-}
-
-.info-alert--warning {
-  border-color: var(--ek-color-warning-border);
-}
-
-.info-alert--info {
-  border-color: var(--ek-color-info-border);
-}
-
-/* Adım rozeti: yuvarlak yerine çerçeveli kapsül (ikon kapsülleriyle aynı aile). */
-.step-badge {
-  border-radius: var(--ek-radius-tile) !important;
-}
-
-.step-badge--warning {
-  border-color: var(--ek-color-warning-border);
-  background: var(--ek-color-warning-subtle) !important;
-}
-
-.step-badge--info {
-  border-color: var(--ek-color-info-border);
-  background: var(--ek-color-info-subtle) !important;
-}
-
-.step-badge__num--warning {
-  color: var(--ek-color-warning-emphasis);
-}
-
-.step-badge__num--info {
-  color: var(--ek-color-info-emphasis);
-}
-
-.custom-category-item {
-  border-bottom-color: var(--ek-color-border-subtle) !important;
-}
-
-.leaf-indicator {
-  display: none;
 }
 </style>

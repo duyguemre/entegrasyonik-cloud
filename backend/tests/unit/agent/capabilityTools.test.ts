@@ -130,24 +130,19 @@ describe('kayit: http bagi + adminChat degismezleri', () => {
 });
 
 describe('arac listesi suzgeci (deriveTools)', () => {
-    // PRC-R0/R1: pricing_* (catalog toolset) — maliyet okuma/yazma, buybox listesi, kâr önizlemesi.
-    // PRC-R2: kural listesi + öneri listesi (okuma) + öneri uygulama (yazma, admin, dış etkili: pazaryeri fiyatı; onay kartı risk high).
-    const all = ['integrations_health_get', 'orders_approve', 'orders_list', 'pricing_buybox_list', 'pricing_cost_list', 'pricing_cost_set', 'pricing_margin_preview',
-        'pricing_rules_list', 'pricing_suggestions_apply', 'pricing_suggestions_list', 'products_search', 'reports_sales_summary', 'stock_low_list'];
-    const adminOnly = ['integrations_health_get', 'pricing_suggestions_apply'];
-    const writes = ['orders_approve', 'pricing_cost_set', 'pricing_suggestions_apply'];
-    it('member: admin izinli araclar (health, fiyat onerisi uygulama) haric hepsi; admin/owner: hepsi; deterministik ad sirasi', () => {
-        expect(toolNames(deriveTools({ actor: ROLES.member, env: ENV }))).toEqual(all.filter((n) => !adminOnly.includes(n)));
+    const all = ['integrations_health_get', 'orders_approve', 'orders_list', 'products_search', 'reports_sales_summary', 'stock_low_list'];
+    it('member: health (admin izni) haric hepsi; admin/owner: hepsi; deterministik ad sirasi', () => {
+        expect(toolNames(deriveTools({ actor: ROLES.member, env: ENV }))).toEqual(all.filter((n) => n !== 'integrations_health_get'));
         expect(toolNames(deriveTools({ actor: ROLES.admin, env: ENV }))).toEqual(all);
         expect(toolNames(deriveTools({ actor: ROLES.owner, env: ENV }))).toEqual(all);
     });
     it('kimliksiz/bilinmeyen aktor: arac yok (varsayilan ret)', () => {
         expect(deriveTools({ actor: undefined, env: ENV })).toEqual([]);
     });
-    it('LIVE_READONLY: dis yazma araclari (orders_approve, pricing_suggestions_apply) listeden duser; okumalar ve yerel yazma (pricing_cost_set, dis etkisiz) kalir', () => {
+    it('LIVE_READONLY: dis yazma araci (orders_approve) listeden duser; okumalar kalir', () => {
         const n = toolNames(deriveTools({ actor: ROLES.admin, env: env({ liveReadonly: true }) }));
         expect(n).not.toContain('orders_approve');
-        expect(n).toEqual(all.filter((x) => x !== 'orders_approve' && x !== 'pricing_suggestions_apply'));
+        expect(n).toEqual(all.filter((x) => x !== 'orders_approve'));
     });
     it('impersonation: yalniz effect:read kalir', () => {
         const n = toolNames(deriveTools({ actor: ROLES.admin, env: env({ imp: true }) }));
@@ -155,14 +150,14 @@ describe('arac listesi suzgeci (deriveTools)', () => {
         for (const t of deriveTools({ actor: ROLES.admin, env: env({ imp: true }) })) expect(t.effect).toBe('read');
     });
     it('bakim modu: yazma duser, okuma/onizleme kalir', () => {
-        expect(toolNames(deriveTools({ actor: ROLES.admin, env: env({ maintenance: true }) }))).toEqual(all.filter((x) => !writes.includes(x)));
+        expect(toolNames(deriveTools({ actor: ROLES.admin, env: env({ maintenance: true }) }))).toEqual(all.filter((x) => x !== 'orders_approve'));
     });
     it('kill-switch: listedeki yetenek gorunmez', () => {
-        expect(toolNames(deriveTools({ actor: ROLES.admin, env: env({ disabled: new Set(['orders.list', 'orders.approve']) }) }))).toEqual(all.filter((x) => x !== 'orders_list' && x !== 'orders_approve'));
+        expect(toolNames(deriveTools({ actor: ROLES.admin, env: env({ disabled: new Set(['orders.list', 'orders.approve']) }) }))).toEqual(['integrations_health_get', 'products_search', 'reports_sales_summary', 'stock_low_list']);
     });
     it('entitlement: abonelik yazmaya izin vermiyorsa yazma araci duser (okuma kalir)', () => {
         const n = toolNames(deriveTools({ actor: ROLES.admin, env: ENV, entitled: (c) => c.effect === 'read' }));
-        expect(n).toEqual(all.filter((x) => !writes.includes(x)));
+        expect(n).toEqual(all.filter((x) => x !== 'orders_approve'));
         expect(deriveTools({ actor: ROLES.admin, env: ENV, entitled: () => false })).toEqual([]);
     });
     it('platform kapsamli ve exposed olmayan yetenek asla listelenmez (gizleme nedenleri)', () => {

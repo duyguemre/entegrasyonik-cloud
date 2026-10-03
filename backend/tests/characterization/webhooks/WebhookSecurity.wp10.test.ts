@@ -14,9 +14,9 @@ jest.mock('@integration/engine/order/OrderQueueProducer', () => ({
 }));
 jest.mock('@database/DatabaseManager', () => ({ DatabaseManagerInstance: { getApplicationDB: jest.fn() } }));
 
-import { handleTrendyolWebhook, configureWebhookRoutes, webhookContentTypeGuard } from '@api/webhooks/WebhookApiManager';
-import { safeEqual, parseBasicAuth, verifyWebhookHeaders } from '@api/webhooks/webhookAuth';
-import { familyOfKey } from '@api/rpc/cacheDump';
+import { handleTrendyolWebhook, configureWebhookRoutes, webhookContentTypeGuard } from '@api/WebhookApiManager';
+import { safeEqual, parseBasicAuth, verifyWebhookHeaders } from '@api/webhookAuth';
+import { familyOfKey } from '@api/cacheDump';
 import { DatabaseManagerInstance } from '@database/DatabaseManager';
 
 function mockClient(integration: any) {

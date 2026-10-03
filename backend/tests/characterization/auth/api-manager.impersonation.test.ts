@@ -11,9 +11,9 @@ function load(runImpl: (...a: any[]) => any) {
   let AuditLogger: any;
   jest.isolateModules(() => {
     AuditLogger = require('../../../src/services/audit/AuditLogger').AuditLogger;
-    jest.doMock('../../../src/api/rpc/RunOperation', () => ({ __esModule: true, default: runMock }));
+    jest.doMock('../../../src/api/RunOperation', () => ({ __esModule: true, default: runMock }));
     jest.doMock('@database/DatabaseManager', () => ({ DatabaseManagerInstance: {} }));
-    const { configureApis } = require('../../../src/api/rpc/ApiManager');
+    const { configureApis } = require('../../../src/api/ApiManager');
     app = makeFakeApp();
     configureApis(app, CTX);
   });

@@ -8,7 +8,7 @@ const recordErrorEvent = jest.fn();
 jest.mock('@platform/runtime/metrics', () => ({ recordErrorEvent }));
 jest.mock('@platform/core/context', () => ({ getRequestId: () => 'req-server-1' }));
 
-import { parseClientLogBody, isBodyTooLarge, handleClientLog, resetClientLogDedupForTests, CLIENT_LOG_MAX_BODY_BYTES } from '@api/http/clientLog';
+import { parseClientLogBody, isBodyTooLarge, handleClientLog, resetClientLogDedupForTests, CLIENT_LOG_MAX_BODY_BYTES } from '@api/clientLog';
 
 function fakeReq(body: any, headers: Record<string, string> = {}): any {
     return { body, headers };

@@ -19,8 +19,8 @@ jest.mock('@database/DatabaseManager', () => ({
 jest.mock('@utils/decorator/cache', () => ({ nodeCache: { getStats: () => ({}), keys: () => [] } }));
 jest.mock('@services/redis/RedisService', () => ({ RedisService: { getInstance: () => ({}) } }));
 
-import SecurityService from '../../../src/api/rpc/handlers/security-service';
-import AdminService from '../../../src/api/rpc/handlers/admin-service';
+import SecurityService from '../../../src/api/services/security-service';
+import AdminService from '../../../src/api/services/admin-service';
 import { makeCentralDb, makeTenantDb } from './_fakes';
 
 let central: ReturnType<typeof makeCentralDb>;

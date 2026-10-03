@@ -1,5 +1,5 @@
 /**
- * CHARACTERIZATION: StockService (backend/src/api/rpc/handlers/stock-service.ts)
+ * CHARACTERIZATION: StockService (backend/src/api/services/stock-service.ts)
  *
  * `getStockOverview` (ana metot) VE tenant izolasyonu ZATEN kapsamlı biçimde
  * `tests/unit/tenant-surface/stock-overview.test.ts`'te sabitlenmiştir (mutlu yol, limit doğrulaması,
@@ -10,7 +10,7 @@
  */
 import { describe, it, expect, jest } from '@jest/globals';
 
-import StockService from '@api/rpc/handlers/stock-service';
+import StockService from '@api/services/stock-service';
 
 describe('StockService.get (IService no-op)', () => {
   it('[MEVCUT DAVRANIŞ] IService arayüzü gereği tanımlı ama gövdesi boş: her zaman undefined döner, hiçbir DB çağrısı yapmaz', async () => {

@@ -28,12 +28,11 @@ export interface DeliveryModelPort {
 const run = async (q: any) => (q && typeof q.lean === 'function' ? q.lean() : q);
 
 export class MongoDeliveryStore implements DeliveryStore {
-    /** `channel`: ayni outbox'u kanal basina ayri gonderici kiralar (MOB-04: 'push'). Ozet yalniz e-postadadir. */
-    constructor(private readonly model: DeliveryModelPort, private readonly channel: 'email' | 'push' = 'email') {}
+    constructor(private readonly model: DeliveryModelPort) {}
 
     async leaseNextInstant(now: Date, leaseUntil: Date): Promise<DeliveryDoc | null> {
         const doc = await run(this.model.findOneAndUpdate(
-            { channel: this.channel, mode: 'instant', $or: [{ status: 'pending', nextAttemptAt: { $lte: now } }, { status: 'sending', leaseUntil: { $lte: now } }] },
+            { channel: 'email', mode: 'instant', $or: [{ status: 'pending', nextAttemptAt: { $lte: now } }, { status: 'sending', leaseUntil: { $lte: now } }] },
             { $set: { status: 'sending', leaseUntil }, $inc: { attempts: 1 } },
             { sort: { nextAttemptAt: 1 }, new: true },
         ));

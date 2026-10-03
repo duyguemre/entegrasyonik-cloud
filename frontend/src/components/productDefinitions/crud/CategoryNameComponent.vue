@@ -1,13 +1,61 @@
 <template>
-  <EkDialog v-model="dialog" activator="parent" :title="$t('productDefinitions.category.new.title')"
-    icon="mdi-shape-plus-outline" width="md" hide-cancel confirm-label="Kapat" @confirm="dialog = false">
-    <v-text-field clearable :label="$t('productDefinitions.category.new.title')" />
-  </EkDialog>
-</template>
+
+
+
+<v-dialog
+        v-model="dialog"
+        activator="parent"
+        width="50%"
+      >
+        <v-card>
+          <v-card-text>
+            <v-text-field clearable  density="comfortable" class="mr-4 pt-2"
+              :label="$t('productDefinitions.category.new.title')" variant="outlined" bg-color="textfieldColor">
+            </v-text-field>
+      
+          </v-card-text>
+          <v-card-actions>
+            <v-btn color="primary" block @click="dialog = false">Kapat</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+
+<!--   <div class="d-flex  align-center">
+    <div>
+      <div class="text-truncate mb-2" :style="{ 'width': contentWidth + 'px!important' }">
+
+        <v-select clearable density="compact" class="mr-4 pt-2" hide-details
+          :label="$t('productDefinitions.category.new.title')" variant="outlined" bg-color="textfieldColor">
+        </v-select>
+
+
+      </div>
+      <div class="text-truncate" :style="{ 'width': contentWidth + 'px!important' }">
+        <v-select clearable density="compact" class="mr-4 pt-1" hide-details
+          :label="$t('productDefinitions.category.new.title')" variant="outlined" bg-color="textfieldColor">
+        </v-select>
+
+      </div>
+      <v-divider class="mb-3 mr-3" />
+      <div class="text-truncate" :style="{ 'width': contentWidth + 'px!important' }">
+        <v-select clearable density="compact" class="mr-4 pt-1" hide-details
+          :label="$t('productDefinitions.category.new.title')" variant="outlined" bg-color="textfieldColor">
+        </v-select>
+
+      </div>
+      <v-divider class="mb-3  mr-3" />
+      <div class="text-truncate" :style="{ 'width': contentWidth + 'px!important' }">
+        <v-select clearable density="compact" class="mr-4 pt-1" hide-details
+          :label="$t('productDefinitions.category.new.title')" variant="outlined" bg-color="textfieldColor">
+        </v-select>
+
+      </div>
+    </div>
+  </div>
+ --></template>
 
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
-import { EkDialog } from '@entegrasyonik/ui/components'
 import { ref, onMounted, watch } from 'vue'
 
 var dialog = ref(false)

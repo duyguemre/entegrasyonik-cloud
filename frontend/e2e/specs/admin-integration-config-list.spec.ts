@@ -46,8 +46,8 @@ test.describe('ADR-0020 Aşama C — Entegrasyonlar (liste)', () => {
     const view = page.locator('.integrationConfigListView')
     await expect(view).toBeVisible()
     await expect(view.getByRole('heading', { name: 'Entegrasyonlar' })).toBeVisible()
-    await expect(view.getByRole('row', { name: /Trendyol/ })).toBeVisible()
-    await expect(view.getByRole('row', { name: /Motor ayarları/ })).toBeVisible()
+    await expect(view.getByText('Trendyol', { exact: true })).toBeVisible()
+    await expect(view.getByText('Motor ayarları', { exact: true })).toBeVisible()
     await expect(view.locator('tbody tr')).toHaveCount(7)
     await expect(view.getByText('Taslak var')).toBeVisible()
   })
@@ -94,16 +94,9 @@ test.describe('ADR-0020 Aşama C — Entegrasyonlar (liste)', () => {
     await openScreen(page, 'IntegrationConfigListView')
 
     const view = page.locator('.integrationConfigListView')
-    // DS-v2 Aşama 2 — BİLİNÇLİ DEĞİŞİKLİK: filtre sayfa içi panelde (onay kutusu) ve "Sorgula" ile uygulanır.
-    await expect(view.locator('tbody tr').first()).toBeVisible()
-    const panel = view.locator('.ek-filter')
-    const toggle = view.getByRole('button', { name: /Filtreler/ })
-    if ((await toggle.getAttribute('aria-expanded')) === 'false') await toggle.click()
-    await expect(panel.locator('form')).toBeVisible()
-    await panel.getByText('Yalnızca taslağı olanlar', { exact: true }).click()
-    await panel.getByRole('button', { name: /Sorgula/ }).click()
+    await view.getByRole('button', { name: 'Yalnızca taslağı olanlar' }).click()
     await expect(view.locator('tbody tr')).toHaveCount(1)
-    await expect(view.getByRole('row', { name: /Trendyol/ })).toBeVisible()
+    await expect(view.getByText('Trendyol', { exact: true })).toBeVisible()
   })
 
   test('yetkisiz: platformAdmin OLMAYAN kullanıcıya "yalnız platform yöneticileri içindir" gösterilir', async ({ page }) => {
@@ -120,7 +113,7 @@ test.describe('ADR-0020 Aşama C — Entegrasyonlar (liste)', () => {
     await installApiMocks(page, withAdmin())
     await gotoAuthed(page)
     await openScreen(page, 'IntegrationConfigListView')
-    await expect(page.locator('.integrationConfigListView').getByRole('row', { name: /Trendyol/ })).toBeVisible()
+    await expect(page.locator('.integrationConfigListView').getByText('Trendyol', { exact: true })).toBeVisible()
     await page.waitForTimeout(300)
     await expect(page).toHaveScreenshot('admin-integration-config-list.png', { fullPage: false })
   })
@@ -129,11 +122,14 @@ test.describe('ADR-0020 Aşama C — Entegrasyonlar (liste)', () => {
     await installApiMocks(page, withAdmin())
     await gotoAuthed(page)
     await openScreen(page, 'IntegrationConfigListView')
-    await expect(page.locator('.integrationConfigListView').getByRole('row', { name: /Trendyol/ })).toBeVisible()
+    await expect(page.locator('.integrationConfigListView').getByText('Trendyol', { exact: true })).toBeVisible()
     await page.waitForTimeout(600)
     const scoped = await new AxeBuilder({ page }).include('.integrationConfigListView').withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze()
     await testInfo.attach('axe-IntegrationConfigListView-sonuclari.json', { body: JSON.stringify(scoped.violations, null, 2), contentType: 'application/json' })
-    // DS-v2 Aşama 2: liste EkDataGrid (yerel tablo) — `knownDsIssues` istisnası kaldırıldı.
-    expect(scoped.violations, JSON.stringify(scoped.violations, null, 2)).toEqual([])
+    // Bilinen DS düzeyi borç (bkz. orders.spec.ts/customers.spec.ts AYNI not) — `EkDataTable`
+    // (salt-oku, bu görevin DIŞI) `role="table"` div'i içine literal `<table>` yerleştiriyor.
+    const knownDsIssues = new Set(['aria-required-children'])
+    const ownViolations = scoped.violations.filter((v) => !knownDsIssues.has(v.id))
+    expect(ownViolations, JSON.stringify(ownViolations, null, 2)).toEqual([])
   })
 })

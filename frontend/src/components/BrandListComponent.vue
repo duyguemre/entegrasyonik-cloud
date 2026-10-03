@@ -1,492 +1,203 @@
-<!--
-  Marka listesi (standart liste iskeleti: EkListScreen). Üstte EkPageBar (Katalog › Markalar + ampul +
-  `#status`ta "N marka · M eksik eşleme"), altında çerçevesiz araç şeridi: solda arama (36px) + segment
-  [Tümü | Eksik eşlemeli], sağ uçta birincil "+ Yeni marka".
-  Satır: 28px mavi kutucuk + ad (13px semibold, gerçek düğme → Enter açar) + meta ("2 kanalda eşli · 1 eksik");
-  sağda kanal kapsamı karoları (eşli kanal = kısa rozet + ✓, eşlenmemişler tek soluk "+n"). Satır tıklanınca/Enter ile detay
-  paneli açılır (üst ekran), seçili satır vurgulu; ↑/↓ satır adları arasında gezinir.
-  Yeni marka: listenin en üstünde satır içi satır (odaklı ad alanı, Enter ekler, Esc vazgeçer; boş/aynı ad uyarısı satır içinde).
-  Kaydedilince yeni marka seçilir ve detay (eşleme akışı) açılır. İstek: BrandService/addBrand (gövde DEĞİŞMEDİ).
--->
 <template>
-  <div class="bl" @keydown="onNavKey">
-    <EkListScreen
-      summary-toggle
-      section="Katalog"
-      title="Markalar"
-      description="Markalarınızı tanımlayın ve her markayı bağlı kanallardaki karşılığıyla eşleyin."
-      label="Marka listesi"
-      noun="marka"
-      row-key="_id"
-      label-key="title"
-      :columns="columns"
-      :rows="tableRows"
-      :row-class="(r) => (r._id === selectedId ? 'bl-row-open' : undefined)"
-      :loading="loading"
-      :error="loadError"
-      error-title="Markalar yüklenemedi"
-      error-text="Bağlantınızı kontrol edip tekrar deneyin."
-      v-model:search="searchText"
-      search-placeholder="Marka ara"
-      :sort="gridSort"
-      :page="pagination.page"
-      :page-size="pagination.limit"
-      :total="filtered.length"
-      :empty-title="hasBrands ? 'Marka bulunamadı' : 'Henüz marka yok'"
-      :empty-text="hasBrands ? 'Arama veya filtreye uyan marka yok. Yazımı kontrol edin ya da filtreyi temizleyin.' : 'Ürünlerinizi gruplamak ve kanallardaki markalarla eşlemek için ilk markanızı ekleyin.'"
-      empty-icon="mdi-tag-multiple-outline"
-      refresh-label="Yenile"
-      @update:sort="(s) => { gridSort = s; pagination.page = 1 }"
-      @update:page="(p) => (pagination.page = p)"
-      @update:page-size="(n) => { pagination.limit = n; pagination.page = 1 }"
-      @row-click="(r) => !r.__new && emit('select', r)"
-      @refresh="reload()"
-    >
-      <!-- FE-LOCAL-1052: Liste | Özet — sayaç çipleri Özet görünümüne taşındı (sayılar bellekteki marka listesinden). -->
-      <template #summary="{ close }">
-        <MappingCoverageDashboard :cells="dashCells" :channels="dashChannels" :loading="loading"
-          subtitle="Markaların kanal markalarıyla eşleme durumu" @select="(key) => { if (key === 'missing') { setSegment('missing'); close() } }" />
-      </template>
+  <div class="brandListComponentView">
+    <LoadingComponent attach=".brandDefinition" ref="loadingComponentRef"></LoadingComponent>
 
-      <template #search-append>
-        <div class="bl-seg" role="group" aria-label="Marka filtresi">
-          <button type="button" class="bl-seg__btn" :class="{ 'is-on': segment === 'all' }" :aria-pressed="segment === 'all'"
-            @click="setSegment('all')">Tümü</button>
-          <button type="button" class="bl-seg__btn" :class="{ 'is-on': segment === 'missing' }" :aria-pressed="segment === 'missing'"
-            @click="setSegment('missing')">Eksik eşlemeli</button>
-        </div>
-      </template>
 
-      <template #create>
-        <EkButton tone="primary" icon="mdi-plus" class="bl-new" @click="startAdd()">Yeni marka</EkButton>
-      </template>
 
-      <template #empty-action>
-        <EkButton v-if="!hasBrands" tone="primary" icon="mdi-plus" @click="startAdd()">İlk markanı ekle</EkButton>
-        <EkButton v-else tone="secondary" size="sm" icon="mdi-filter-remove-outline" @click="clearFilters()">Filtreleri temizle</EkButton>
-      </template>
 
-      <template #cell-title="{ row }">
-        <div v-if="row.__new" class="bl-title-row">
-          <span class="ek-brand-tile" aria-hidden="true"><v-icon icon="mdi-tag-plus-outline" /></span>
-          <v-text-field v-model="newTitle" autofocus clearable maxlength="160" density="compact" variant="outlined"
-            hide-details="auto" autocomplete="off" label="Yeni marka adı" class="bl-new-input"
-            :error-messages="newError" :disabled="newSaving" @update:model-value="newTouched = true"
-            @keyup.enter="submitNew()" @keyup.esc="cancelAdd()" />
-        </div>
-        <div v-else class="bl-title-row">
-          <span class="ek-brand-tile" aria-hidden="true"><v-icon icon="mdi-tag-outline" /></span>
-          <button type="button" class="bl-name" data-brand-open :aria-label="`${row.title} ayrıntısını aç. ${metaOf(row).text}`"
-            @click.stop="emit('select', row)">
-            <span class="bl-name__title">{{ row.title }}</span>
-            <span class="bl-name__meta" :class="metaOf(row).tone">{{ metaOf(row).text }}</span>
-          </button>
-        </div>
-      </template>
+    <!--     <div class="workarea-scroll pa-6 pr-2 pt-0 pb-0"
+      style="margin-top:95px;border-right:0px solid #ddd;border-top:1px solid #ddd;"> -->
+    <div class="workarea-scroll pa-6 pr-2 pt-4 pb-0" style="">
 
-      <template #cell-channels="{ row }">
-        <span v-if="row.__new" class="bl-muted"></span>
-        <span v-else-if="!mappableChannels.length" class="bl-muted">—</span>
-        <span v-else class="bl-ch" role="img" :aria-label="coverageLabel(row)">
-          <ChannelStatusTile v-for="c in summarize(row).mapped" :key="c.code" :status="liveStatus(c.code)" :name="c.title" size="xs" />
-          <span v-if="summarize(row).missing.length" class="bl-absent" :title="`Eşlenmemiş: ${summarize(row).missing.map((c) => c.title).join(', ')}`">
-            <span aria-hidden="true">+{{ summarize(row).missing.length }}</span>
-          </span>
-        </span>
-      </template>
+      <CardComponent icon="mdi-shape" title="Marka Listesi">
 
-      <template #cell-actions="{ row }">
-        <div v-if="row.__new" class="bl-new-actions">
-          <EkButton tone="primary" size="sm" icon="mdi-check" icon-only aria-label="Markayı ekle" :loading="newSaving"
-            :disabled="!!newError || !newTitle?.trim()" @click="submitNew()" />
-          <EkButton tone="ghost" size="sm" icon="mdi-close" icon-only aria-label="Eklemekten vazgeç" :disabled="newSaving"
-            @click="cancelAdd()" />
-        </div>
-        <EkRowActions v-else :label="`${row.title} işlemleri`" :items="[
-          { key: 'open', action: 'edit', label: `${row.title} ayrıntısı ve eşlemeleri`, onClick: () => emit('select', row) },
-          { key: 'delete', action: 'delete', label: `${row.title} markasını sil`, onClick: () => emit('delete', row) },
-        ]" />
-      </template>
-    </EkListScreen>
+        <v-text-field append-inner-icon="mdi-magnify" @click.stop="1" v-ripple.stop variant="outlined" density="compact"
+          type="tel" maxlength="160" class="ma-4 mb-1 ml-0 mr-0 pr-0 customTextField" clearable counter
+          :rules="formRules.searchRules" v-model="brandSearchText"
+          :hint="$t('productDefinitions.brand.brandSearchDesc')">
+
+          <template v-slot:label>
+            <span class="font-weight-light">{{ $t('productDefinitions.brand.search')
+              }}</span>
+          </template>
+        </v-text-field>
+
+        <v-list density="compact" dense nav v-model:opened="open" activatable open-strategy="single" width="100%"
+          active-strategy="single-independent" class="mt-1"
+          style="background-color:#f8f8f8;border:1px solid #ddd;border-radius:5px;background1:linear-gradient(0deg, #fff 10%, #fafaff 20%, #fafaff 80%, #fff 90%)!important">
+
+          <!--       <v-list density="compact" dense nav v-model:opened="open" activatable open-strategy="single" width="100%"
+        active-strategy="single-independent" style="background-color:#eee"> -->
+
+          <div class="mt-1">
+            <div class="d-flex">
+
+              <v-form v-model="brandForm" style="display:contents" @keydown.enter.prevent @submit.prevent>
+                <v-text-field variant="outlined" density="compact" type="tel" maxlength="160" counter clearable
+                  bg-color="textfieldColor" :hint="$t('productDefinitions.brand.brandNameDesc')" class="customTextField"
+                  v-model="brandName" :rules="titleRules"
+                  @keyup.enter="addBrand({ title: brandName }); brandName = undefined">
+                  <template v-slot:label>
+                    <span class="font-ital1ic font-weight-light">{{ $t('productDefinitions.brand.title') }}</span>
+                  </template>
+                  <template v-slot:append-inner>
+                    <v-btn class="fill-height" size="40" flat min-width=0 density="compact" color="processButtonColor"
+                      :disabled="!brandForm || brandName == undefined"
+                      @click="addBrand({ title: brandName }); brandName = undefined"><span class="">
+                        <v-icon>mdi-plus</v-icon>
+                      </span></v-btn>
+                  </template>
+                </v-text-field>
+              </v-form>
+            </div>
+          </div>
+
+
+          <template v-for="(brand, index) of computedBrands" :style="{'background-color':index%2==0?'#eee':'#fff'}">
+            <div v-if="!brand.isMain"
+              style="position:relative;border:1px solid #bbb;border-bottom-left-radius:2px;border-bottom-right-radius:2px;"
+              class="mb-3 brand-menu" :style="{ 'background-color': index % 2 == 0 ? '#f7f7f7' : '#fbfbfb' }">
+              <v-list-group :value="brand._id" @click="eventBus.emit('pageResize', '')">
+                <template v-slot:activator="{ props, isOpen }">
+
+                  <v-list-item v-bind="props" :prepend-icon="brand.icon" :value="brand._id"
+                    class="pt-0 pb-0  pl-2 mb-0 pr-0  elevation-0 brand-list-item"
+                    style="padding-inline-start: 8px!important">
+                    <template v-slot:prepend="{ isSelected, isActive }">
+                      <div style="border:1px solid black" class="pr-3 pl-3 mr-4" @dragover.prevent> {{ index }}
+                      </div>
+                    </template>
+                    <div class="pt-3 pb-3">
+                      <v-icon style="opacity:.6" class="mr-2">mdi-folder-outline</v-icon>
+                      {{ brand.title }}
+                    </div>
+                    <template v-slot:append="{ isSelected, isActive }">
+                      <v-list-item-action end style="height:100%!important">
+
+                                      <v-icon size="large" @click.stop="openBrandSync(brand)" style="opacity:1;" class="mr-4" btn color="processButtonColor">mdi-cog</v-icon>
+
+
+                      </v-list-item-action>
+                    </template>
+                  </v-list-item>
+                </template>
+              </v-list-group>
+            </div>
+          </template>
+        </v-list>
+
+      </CardComponent>
+    </div>
+
+
   </div>
 </template>
 
 <script lang="ts" setup>
-import { computed, nextTick, onBeforeMount, reactive, ref, watch } from 'vue'
-import { EkButton, EkRowActions, EkStatusChip } from '@entegrasyonik/ui/components'
-import type { EkGridColumn, EkGridSort } from '@entegrasyonik/ui/components'
-import { sortRows } from '@entegrasyonik/ui/components/listStandard'
-import EkListScreen from '@/components/page/templates/EkListScreen.vue'
-import type { ListSummaryCell } from '@/components/page/ListSummaryStrip.vue'
-import MappingCoverageDashboard, { type MappingChannelCoverage } from '@/components/productDefinitions/definitions/MappingCoverageDashboard.vue'
-import { formatNumber } from '@entegrasyonik/ui/format'
-import ChannelStatusTile from '@/components/productDefinitions/products/ChannelStatusTile.vue'
-import './brands/brands.css'
+import { computed, inject, ref, onBeforeMount, onBeforeUnmount } from 'vue'
 import useRestApi from '@/composables/restapi'
-import { useBrandsStore } from '@/stores/brandsStore'
-import { useSnackbarStore } from '@/stores/snackbarStore'
-import { useBrandChannels } from '@/composables/brandChannels'
-
-defineProps<{ selectedId?: string }>()
-const emit = defineEmits<{ select: [brand: any]; delete: [brand: any] }>()
+import useFormRules from '@/composables/formrules';
+import { useI18n } from 'vue-i18n';
+import { useBrandsStore } from '@/stores/brandsStore';
+import LoadingComponent from '@/components/LoadingComponent.vue'
+import CardComponent from './CardComponent.vue';
 
 const brandsStore = useBrandsStore()
-const snackbarStore = useSnackbarStore()
+const formRules = useFormRules()
 const restApi = useRestApi()
-const { mappableChannels, summarize, isMapped } = useBrandChannels()
-const brandsRef = brandsStore.getBrands()
+const eventBus: any = inject('eventBus')
+var showBrands = defineModel({ default: false })
 
-const loading = ref(true)
-const loadError = ref(false)
-const searchText = ref('')
-const segment = ref<'all' | 'missing'>('all')
-const gridSort = ref<EkGridSort>(null)
-const pagination = reactive({ page: 1, limit: 25 })
+const emits = defineEmits(['openBrandSync'])
+const open: any = ref(['0'])
+const isEditDialogOpen = ref(false)
+const isConfirmationDialogOpen = ref(false)
+const editingBrand: any = ref()
+const brandSearchText: any = ref()
+const brandForm: any = ref()
+const brandName: any = ref()
+var brandsStoreBrands: any = undefined
+const loadingComponentRef: any = ref(null)
 
-const allBrands = computed<any[]>(() => (brandsRef.value ?? []).filter((b: any) => !b.isMain))
-const hasBrands = computed(() => allBrands.value.length > 0)
-const hasMissing = (b: any) => { const s = summarize(b); return s.total > 0 && s.missing.length > 0 }
-const missingCount = computed(() => allBrands.value.filter(hasMissing).length)
-
-// FE-LOCAL-1052: özet görünümü — toplamlar ve kanal başına eşleme kapsamı.
-const dashCells = computed<ListSummaryCell[]>(() => {
-  const total = allBrands.value.length
-  const hasChannels = mappableChannels.value.length > 0
-  const none = allBrands.value.filter((b) => { const x = summarize(b); return x.total > 0 && !x.mapped.length }).length
-  const cell = (key: string, label: string, n: number | null, icon: string, tone: ListSummaryCell['tone'], hint: string, clickable = false): ListSummaryCell => ({
-    key, label, hint, icon, tone, value: n === null ? '—' : formatNumber(n), zero: !n, clickable,
-  })
-  return [
-    cell('total', 'Marka', total, 'mdi-tag-multiple-outline', 'action', 'Tanımlı tüm markalar'),
-    cell('complete', 'Tam eşli', hasChannels ? total - missingCount.value : null, 'mdi-check-circle-outline', 'success', 'Tüm kanallarda eşli'),
-    cell('missing', 'Eksik eşlemeli', hasChannels ? missingCount.value : null, 'mdi-minus-circle-outline', 'warning', 'Listede göstermek için tıklayın', hasChannels && missingCount.value > 0),
-    cell('none', 'Hiç eşlenmemiş', hasChannels ? none : null, 'mdi-link-variant-off', 'error', 'Hiçbir kanalda karşılığı yok'),
-  ]
-})
-const dashChannels = computed<MappingChannelCoverage[]>(() =>
-  mappableChannels.value.map((ch) => ({ code: ch.code, title: ch.title, total: allBrands.value.length, mapped: allBrands.value.filter((b) => isMapped(b, ch.code)).length })),
-)
-
-const filtered = computed(() => {
-  const q = searchText.value?.trim().toLocaleLowerCase('tr') ?? ''
-  let list = allBrands.value
-  if (q) list = list.filter((b: any) => (b.title ?? '').toLocaleLowerCase('tr').includes(q))
-  if (segment.value === 'missing') list = list.filter(hasMissing)
-  return list
-})
-
-const pagedBrands = computed(() => {
-  const start = (pagination.page - 1) * pagination.limit
-  return sortRows(filtered.value, gridSort.value).slice(start, start + pagination.limit)
-})
-
-watch([searchText, segment], () => { pagination.page = 1 })
-
-// --- Yeni marka (satır içi, listenin en üstünde) ---
-const adding = ref(false)
-const newTitle = ref<string | null>('')
-const newTouched = ref(false)
-const newSaving = ref(false)
-const newFailed = ref(false)
-
-const tableRows = computed(() => (adding.value ? [{ _id: '__new__', __new: true }, ...pagedBrands.value] : pagedBrands.value))
-
-const newError = computed(() => {
-  if (newFailed.value) return 'Marka eklenemedi — bağlantınızı kontrol edip tekrar deneyin.'
-  const v = (newTitle.value ?? '').trim()
-  if (!v) return newTouched.value ? 'Marka adı boş olamaz.' : ''
-  if (v.length < 2 || v.length > 160) return 'Marka adı 2–160 karakter olmalı.'
-  const dup = allBrands.value.some((b: any) => (b.title ?? '').toLocaleLowerCase('tr') === v.toLocaleLowerCase('tr'))
-  return dup ? 'Bu adda bir marka zaten var.' : ''
-})
-watch(newTitle, () => { newFailed.value = false })
-
-const startAdd = () => {
-  newTitle.value = ''
-  newTouched.value = false
-  newFailed.value = false
-  adding.value = true
-  pagination.page = 1
-  nextTick(() => (document.querySelector('.bl-new-input input') as HTMLInputElement | null)?.focus())
-}
-const cancelAdd = () => { adding.value = false; newTitle.value = '' }
-
-const submitNew = async () => {
-  newTouched.value = true
-  const title = (newTitle.value ?? '').trim()
-  if (!title || newError.value || newSaving.value) return
-  newSaving.value = true
-  const response = await restApi.post('BrandService/addBrand', { title })
-  newSaving.value = false
-  if (response && response._id) {
-    adding.value = false
-    newTitle.value = ''
-    await brandsStore.retrieve()
-    snackbarStore.addSnackbar({ show: true, text: 'Marka eklendi', timeout: 2000, color: 'success' })
-    const created = allBrands.value.find((b: any) => b._id === response._id)
-    if (created) emit('select', created)
-  } else {
-    newFailed.value = true
-  }
-}
-
-const setSegment = (s: 'all' | 'missing') => { segment.value = s }
-const clearFilters = () => { searchText.value = ''; segment.value = 'all' }
-
-// --- Yükleme ---
-const reload = async () => {
-  loading.value = true
-  loadError.value = false
-  const result = await brandsStore.retrieve()
-  loadError.value = !Array.isArray(result)
-  loading.value = false
-}
-onBeforeMount(() => reload())
-
-// --- Hücre yardımcıları ---
-const metaOf = (brand: any) => {
-  const s = summarize(brand)
-  if (!s.total) return { text: 'Bağlı kanal yok', tone: '' }
-  if (!s.missing.length) return { text: `${s.mapped.length} kanalda eşli`, tone: 'is-ok' }
-  if (!s.mapped.length) return { text: `Hiçbir kanalda eşli değil · ${s.missing.length} eksik`, tone: 'is-warn' }
-  return { text: `${s.mapped.length} kanalda eşli · ${s.missing.length} eksik`, tone: 'is-warn' }
-}
-
-const liveStatus = (code: string): any => ({ code, key: 'live', tone: 'success', icon: 'mdi-check-circle-outline', label: 'Eşli', ready: false, counts: { live: 1, offsale: 0, failed: 0, waiting: 0, none: 0, total: 1 } })
-
-const coverageLabel = (brand: any) => {
-  const s = summarize(brand)
-  const parts: string[] = []
-  if (s.mapped.length) parts.push(`Eşli: ${s.mapped.map((c) => c.title).join(', ')}`)
-  if (s.missing.length) parts.push(`Eşlenmemiş: ${s.missing.map((c) => c.title).join(', ')}`)
-  return parts.join('. ')
-}
-
-// ↑/↓: marka adı düğmeleri arasında gezinir (Enter düğmenin kendi davranışıyla detayı açar).
-const onNavKey = (e: KeyboardEvent) => {
-  if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return
-  const target = e.target as HTMLElement
-  if (!target?.closest?.('[data-brand-open]')) return
-  const all = Array.from((e.currentTarget as HTMLElement).querySelectorAll<HTMLElement>('[data-brand-open]'))
-  const i = all.indexOf(target.closest('[data-brand-open]') as HTMLElement)
-  const next = all[i + (e.key === 'ArrowDown' ? 1 : -1)]
-  if (next) { e.preventDefault(); next.focus() }
-}
-
-const columns: EkGridColumn[] = [
-  { key: 'title', label: 'Marka', sortable: true, wrap: true },
-  { key: 'channels', label: 'Kanal eşlemeleri' },
-  { key: 'actions', label: 'İşlemler', align: 'end', hideLabel: true, pin: 'end' },
+const { t } = useI18n()
+const titleRules = [
+  (v: any) => !!v || (!v && v === 0) || t("rules.mandatory"),
+  (v: string) => !((v != null && v.length > 0) && (v != null && (v.length < 2 || v.length > 160))) || t("rules.2_160characters"),
 ]
 
-defineExpose({ reload, startAdd })
+onBeforeMount(() => {
+  fetchBrands()
+})
+
+onBeforeUnmount(async () => {
+  open.value = undefined
+})
+
+const computedBrands = computed(() => {
+  if (!brandsStoreBrands.value || !brandSearchText.value || brandSearchText.value.length < 2) return brandsStoreBrands.value
+  return brandsStoreBrands.value.filter((item: any) => item.title.toLowerCase().includes(brandSearchText.value.toLowerCase()))
+})
+
+
+const fetchBrands = () => {
+  brandsStoreBrands = brandsStore.getBrands(true)
+  eventBus.emit('pageResize', "");
+  openBrandSync(undefined)
+}
+
+
+const startEdit = (ec: any) => {
+  editingBrand.value = ec
+  editingBrand.value.updateTitle = ec.title
+  isEditDialogOpen.value = true
+}
+
+const endEdit = () => {
+  isEditDialogOpen.value = false
+  isConfirmationDialogOpen.value = false
+  editingBrand.value = undefined
+}
+
+const openBrandSync = (brand: any) => {
+  emits("openBrandSync", brand)
+}
+
+const addBrand = async (newBrand: any) => {
+  let guid = loadingComponentRef.value.info("")
+  const response = await restApi.post("BrandService/addBrand", { title: newBrand.title })
+  loadingComponentRef.value.remove(guid)
+  if (response && response._id) {
+    update()
+  }
+
+}
+
+const updateBrand = async () => {
+  let guid = loadingComponentRef.value.info("")
+  const response = await restApi.post("BrandService/updateBrand", { _id: editingBrand.value._id, title: editingBrand.value.updateTitle })
+  loadingComponentRef.value.remove(guid)
+  if (response && response.result == true) {
+    update()
+    endEdit()
+  }
+}
+
+const deleteBrand = async () => {
+  if (!editingBrand.value)
+    endEdit()
+  let guid = loadingComponentRef.value.info("")
+  const response = await restApi.post("BrandService/deleteBrand", { _id: editingBrand.value._id, parentId: editingBrand.value.parentId })
+  loadingComponentRef.value.remove(guid)
+  if (response && response.result && response.result.acknowledged == true) {
+    endEdit()
+    update()
+  }
+}
+
+const update = () => {
+  fetchBrands()
+}
+
 </script>
 
-<style scoped>
-.bl {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  min-height: 0;
-}
-
-.bl-title-row {
-  display: flex;
-  align-items: center;
-  gap: var(--ek-space-3);
-  padding: var(--ek-space-2) 0;
-  min-width: 0;
-}
-
-.bl-name {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 1px;
-  min-width: 0;
-  padding: 0;
-  border: 0;
-  background: none;
-  font: inherit;
-  text-align: start;
-  cursor: pointer;
-  border-radius: var(--ek-radius-sm);
-}
-
-.bl-name:focus-visible {
-  outline: none;
-  box-shadow: var(--ek-focus-ring);
-}
-
-.bl-name__title {
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: var(--ek-color-content-strong);
-  font-size: var(--ek-font-size-sm);
-  font-weight: var(--ek-font-weight-semibold);
-}
-
-.bl-name__meta {
-  color: var(--ek-color-content-muted);
-  font-size: var(--ek-type-caption-size);
-  font-weight: var(--ek-font-weight-regular);
-}
-
-.bl-name__meta.is-ok { color: var(--ek-color-success-emphasis); }
-.bl-name__meta.is-warn { color: var(--ek-color-warning-emphasis); }
-
-.bl-new-input {
-  flex: 1;
-  min-width: 160px;
-  max-width: 360px;
-}
-
-.bl-new-actions {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--ek-space-1);
-}
-
-.bl-muted {
-  color: var(--ek-color-content-subtle);
-}
-
-/* Kanal kapsamı: ürün listesindeki karo dili — eşli kanallar rozet + ✓, eşlenmeyenler tek soluk "+n". */
-.bl-ch {
-  display: inline-flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 4px var(--ek-space-2);
-}
-
-.bl-absent {
-  display: inline-flex;
-  align-items: center;
-  height: 20px;
-  padding: 0 6px;
-  border: 1px dashed var(--ek-color-border-strong);
-  border-radius: var(--ek-radius-chip);
-  color: var(--ek-color-content-muted);
-  font-size: var(--ek-type-caption-size);
-  font-weight: var(--ek-font-weight-semibold);
-}
-
-/* Segment filtre: iki konumlu, etkin = site mavisi. */
-.bl-seg {
-  display: inline-flex;
-  flex: none;
-  padding: 2px;
-  border: 1px solid var(--ek-color-border-default);
-  border-radius: var(--ek-radius-control);
-  background: var(--ek-color-surface);
-}
-
-.bl-seg__btn {
-  height: 30px;
-  padding: 0 var(--ek-space-3);
-  border: 0;
-  border-radius: var(--ek-radius-sm);
-  background: none;
-  color: var(--ek-color-content-muted);
-  font: inherit;
-  font-size: var(--ek-font-size-sm);
-  font-weight: var(--ek-font-weight-semibold);
-  white-space: nowrap;
-  cursor: pointer;
-  transition: var(--ek-transition-colors);
-}
-
-.bl-seg__btn:hover {
-  color: var(--ek-color-content-default);
-}
-
-.bl-seg__btn.is-on {
-  background: var(--ek-color-action-subtle);
-  color: var(--ek-color-action);
-}
-
-.bl-seg__btn:focus-visible {
-  outline: none;
-  box-shadow: var(--ek-focus-ring);
-}
-
-/* Seçili (detayı açık) satır. */
-:deep(.bl-row-open) > td {
-  background: var(--ek-color-action-subtle) !important;
-}
-
-:deep(.bl-row-open) > td:first-child {
-  box-shadow: inset 3px 0 0 var(--ek-color-action) !important;
-}
-
-/* Sayfanın birincil eylemi; dar ekranda yalnız "+" (etiket ekran okuyucuya açık). */
-@media (max-width: 599px) {
-  .bl-new {
-    gap: 0;
-    min-width: var(--ek-control-h-md);
-    padding-inline: 0;
-    justify-content: center;
-  }
-
-  .bl-new :deep(.ek-btn__label) {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip: rect(0 0 0 0);
-    white-space: nowrap;
-  }
-}
-
-/* ================= FE-LOCAL-1048 — marka listesi: ortak tasarım dili =================
-   Segment = Liste | Özet anahtarıyla aynı görünüm; eksik eşleme sayacı düz uyarı tonu rozet; seçili satır yalnız eylem
-   renginin açık tonu (soldaki kalın şerit kalktı — tablo seçimiyle aynı). */
-.bl-seg {
-  gap: 2px;
-  border-color: var(--ek-color-border-input);
-  border-radius: var(--ek-radius-tile);
-}
-
-.bl-seg__btn {
-  height: calc(var(--ek-control-h-sm) - 6px);
-  border-radius: var(--ek-radius-md);
-  color: var(--ek-color-content-default);
-  font-size: var(--ek-type-label-size);
-  font-weight: var(--ek-font-weight-medium);
-}
-
-.bl-seg__btn:hover {
-  background: var(--ek-color-surface-muted);
-  color: var(--ek-color-content-strong);
-}
-
-.bl-seg__btn.is-on {
-  background: var(--ek-color-action-subtle);
-  color: var(--ek-color-action-emphasis);
-}
-
-.bl-absent {
-  border: 1px solid var(--ek-color-warning-border);
-  background: var(--ek-color-warning-subtle);
-  color: var(--ek-color-warning-emphasis);
-}
-
-:deep(.bl-row-open) > td:first-child {
-  box-shadow: none !important;
-}
-</style>
-
-<style>
-/* Arama + segment aynı şeritte: arama alanı biraz daha geniş pay alır. */
-.brandDefinition .ek-list-screen__strip-search {
-  flex-basis: 520px;
-}
-
-@media (max-width: 599px) {
-  .brandDefinition .ek-list-screen__strip-search {
-    flex-wrap: wrap;
-  }
-}
-</style>
+<style scoped></style>

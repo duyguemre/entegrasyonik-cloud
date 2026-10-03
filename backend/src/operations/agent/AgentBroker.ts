@@ -20,7 +20,7 @@ import { MoreStore, PENDING_TTL_SEC, PendingActions, hashInput, type PendingActi
 import { CONFIRM_SPECS } from './present/specs';
 import { MAX_TOTAL_ROWS, presentResult, presentRows } from './present/present';
 import type { AgentTool, ToolRuntime } from './tools';
-import { actionQuotaCost, consumeActionQuota, quotaExceededError, resolveAgentEntitlement, type AgentEntitlement } from './agentEntitlement';
+import { consumeActionQuota, quotaExceededError, resolveAgentEntitlement, type AgentEntitlement } from './agentEntitlement';
 import { auditAgent, outcomeOfCode, recordConfirm, recordLlmError, recordToolCall, recordTurn, surfaceOf, type AgentOutcome, type TurnOutcome } from './agentTelemetry';
 
 const log = logger.child({ module: 'agent.broker' });
@@ -424,10 +424,9 @@ export class AgentBroker {
             // Yazma: yurutme YOK. Onay karti + PendingAction (5 dk, tek kullanimlik). Model bu kanala erisemez.
             const spec = CONFIRM_SPECS[tool.capId];
             const typedPhrase = tool.confirm === 'typed' ? (locale === 'tr' ? 'ONAYLA' : 'CONFIRM') : undefined;
-            const changes = await tools.previewChanges?.(ctx, tool.capId, input).catch(() => undefined);
             const pa = await new PendingActions(a.kv, this.now).create({
                 userId: ctx.userId, tid: ctx.tid, conversationId: a.conversationId, messageId, partId: `confirm-${randomUUID()}`.slice(0, 64),
-                capId: tool.capId, version: tool.version, input, confirmMode: tool.confirm, ...(typedPhrase ? { typedPhrase } : {}), ...(changes?.length ? { changes } : {}), locale,
+                capId: tool.capId, version: tool.version, input, confirmMode: tool.confirm, ...(typedPhrase ? { typedPhrase } : {}), locale,
             });
             observe('ok', input, { stage: 'proposed' });
             progress('done', locale === 'tr' ? 'Onay bekleniyor' : 'Awaiting confirmation');
@@ -521,7 +520,7 @@ export class AgentBroker {
                 throw expired(); // yetenek surumu degisti / kayit tahrif edildi: yurutme yok
             }
             const ent = await (this.deps.entitlement ?? resolveAgentEntitlement)(ctx.tid);
-            const q = await consumeActionQuota(this.deps.kv(), ctx.tid, ent, new Date(this.now()), actionQuotaCost(pa.capId, pa.input));
+            const q = await consumeActionQuota(this.deps.kv(), ctx.tid, ent, new Date(this.now()));
             if (!q.allowed) throw quotaExceededError(ent);
         }
 
@@ -533,7 +532,7 @@ export class AgentBroker {
         const loc = claimed.locale;
         const spec = CONFIRM_SPECS[claimed.capId];
         const title = tool?.title ?? { tr: claimed.capId, en: claimed.capId };
-        const cardTool = { capId: claimed.capId, title, effect: tool?.effect ?? 'write', external: tool?.external ?? true, ...(tool?.risk ? { risk: tool.risk } : {}) } as Pick<AgentTool, 'capId' | 'title' | 'effect' | 'external' | 'risk'>;
+        const cardTool = { capId: claimed.capId, title, effect: tool?.effect ?? 'write', external: tool?.external ?? true } as Pick<AgentTool, 'capId' | 'title' | 'effect' | 'external'>;
 
         return {
             run: async (emit) => {
@@ -647,16 +646,16 @@ function knownMessage(code: string, loc: Locale): string {
 }
 
 /** Onay karti parcasi (protokol `confirm`). Risk: destructive=high; dis sisteme giden yazma=medium; yerel yazma=low. */
-function confirmPart(pa: PendingAction, tool: Pick<AgentTool, 'capId' | 'title' | 'effect' | 'external' | 'risk'>, spec: (typeof CONFIRM_SPECS)[string] | undefined, state: ConfirmPart['state']): Part {
+function confirmPart(pa: PendingAction, tool: Pick<AgentTool, 'capId' | 'title' | 'effect' | 'external'>, spec: (typeof CONFIRM_SPECS)[string] | undefined, state: ConfirmPart['state']): Part {
     const loc = pa.locale;
     const effect: 'write' | 'destructive' = tool.effect === 'destructive' ? 'destructive' : 'write';
     const affected = spec?.affected(pa.input) ?? { count: 0, sample: [] };
-    const changes = pa.changes ?? spec?.changes?.(pa.input, loc);
+    const changes = spec?.changes?.(pa.input, loc);
     return {
         id: pa.partId, type: 'confirm', pendingActionId: pa.id, capabilityId: pa.capId,
         title: tool.title[loc].slice(0, 120),
         summary: (spec?.summary(pa.input, loc) ?? (loc === 'tr' ? 'Bu işlem onayınızı bekliyor.' : 'This action awaits your confirmation.')).slice(0, 500),
-        effect, risk: tool.risk ?? (effect === 'destructive' ? 'high' : tool.external ? 'medium' : 'low'), external: tool.external,
+        effect, risk: effect === 'destructive' ? 'high' : tool.external ? 'medium' : 'low', external: tool.external,
         affected: { count: affected.count, sample: affected.sample.slice(0, 10) }, ...(changes ? { changes: changes.slice(0, 20) } : {}),
         confirmMode: pa.confirmMode, ...(pa.typedPhrase ? { typedPhrase: pa.typedPhrase } : {}),
         expiresAt: new Date(pa.expiresAt).toISOString(), state,

@@ -1,10 +1,10 @@
 import type { APIRoute } from 'astro'
 import { siteConfig } from '../lib/site-config'
-import { buildRobots } from '../lib/robots'
-import { previewOnlyPaths } from '../data/seo'
 
-/** robots.txt — kural ve yapay zeka tarayıcı kararı: src/lib/robots.ts (S19). */
-export const GET: APIRoute = () =>
-  new Response(buildRobots({ draft: siteConfig.draft, siteUrl: siteConfig.siteUrl, disallow: previewOnlyPaths() }), {
-    headers: { 'Content-Type': 'text/plain; charset=utf-8' },
-  })
+/** TASLAK: her şey kapalı. Yayın (SITE_DRAFT=false, insan onayı) + PUBLIC_SITE_URL: açık + sitemap. */
+export const GET: APIRoute = () => {
+  const body = siteConfig.draft
+    ? 'User-agent: *\nDisallow: /\n'
+    : `User-agent: *\nAllow: /\n\nSitemap: ${new URL('/sitemap-index.xml', siteConfig.siteUrl).href}\n`
+  return new Response(body, { headers: { 'Content-Type': 'text/plain; charset=utf-8' } })
+}

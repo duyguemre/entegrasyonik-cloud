@@ -1,7 +1,5 @@
 import { nextTick } from 'vue';
 import { createI18n } from 'vue-i18n';
-// MCP-6: `mcp.*` anahtarları ayrı modülde (MCP_UI_CONTRACT §8); yerel dil yüklenince birleştirilir.
-import { MCP_MESSAGES } from '@/components/mcp/mcpMessages';
 
 let i18n:any;
 
@@ -30,8 +28,6 @@ export async function loadLocaleMessages(locale:any) {
 
   // set locale and locale message
   i18n.global.setLocaleMessage(locale, messages.default);
-  const extra = (MCP_MESSAGES as Record<string, object>)[locale];
-  if (extra) i18n.global.mergeLocaleMessage(locale, extra);
 
   return nextTick();
 }

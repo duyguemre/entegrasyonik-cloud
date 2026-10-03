@@ -1,5 +1,5 @@
 /**
- * CHARACTERIZATION: ImageService (backend/src/api/rpc/handlers/image-service.ts) — ADR-0016 B-R-T3.
+ * CHARACTERIZATION: ImageService (backend/src/api/services/image-service.ts) — ADR-0016 B-R-T3.
  * DB/Redis/ağ YOK; `clientDB`/`applicationDB` sahte model nesneleridir; `ImageOperations.prepareImageQueries`
  * ve `storageService.*` jest ile mock'lanır (sharp/R2'ye hiç dokunulmaz). Kod DEĞİŞTİRİLMEDİ, yalnızca
  * mevcut davranış sabitlenir. (NOT: bu dosya `ProductService.copyTempImages`i test eden
@@ -14,15 +14,8 @@
 import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals';
 import { ObjectId } from 'mongodb';
 
-import ImageService from '@api/rpc/handlers/image-service';
-import { storageService } from '@services/index';
-import { imageOperations as ImageOperations } from '@operations/catalog/images/image-operations';
-import { captureLogs, type LogCapture } from '../../helpers/logCapture';
-
-// F-06 (ADR-0024 P4): api/** console -> eventLog; loglar stdout JSON satırlarından doğrulanır.
-let cap: LogCapture;
-beforeEach(() => { cap = captureLogs(); });
-afterEach(() => { cap.restore(); });
+import ImageService from '@api/services/image-service';
+import { ImageOperations, storageService } from '@services/index';
 
 let productModel: any;
 let variantModel: any;
@@ -76,6 +69,43 @@ describe('ImageService.get', () => {
     const err = new Error('boom');
     imageModel.find.mockReturnValue({ sort: jest.fn(function (this: any) { return this; }), lean: jest.fn(async () => { throw err; }) });
     await expect(makeService().get()).rejects.toBe(err);
+  });
+});
+
+describe('ImageService.getIntegrations (platform-geneli, applicationDB)', () => {
+  it('[DÜZELTİLDİ, 2026-09-29] find({}, {settings:0}) ÇAĞRILIR — projeksiyon DOĞRU şekilde doğrudan verilir', async () => {
+    // BULGU DÜZELTMESİ: eskiden mongoose `find(filter, projection)` ikinci argümanı `{projection:{settings:0}}`
+    // ile YANLIŞ SARMALANMIŞTI. Gerçek Mongo'da (mongodb-memory-server ile doğrulandı, bkz.
+    // tests/mongo-semantics/integrationProjectionShape.mongoSemantics.test.ts) bu HATA FIRLATMIYORDU, sessizce
+    // TÜM alanları (settings dahil) döndürüyordu — B4 gereksiz alan sızıntısı. Şimdi projeksiyon DOĞRUDAN geçiriliyor.
+    const res = await makeService().getIntegrations();
+    expect(integrationModel.find).toHaveBeenCalledWith({}, { settings: 0 });
+    expect(res).toEqual([{ code: 'trendyol' }]);
+  });
+
+  it('[MEVCUT DAVRANIŞ] DB hatası olduğu gibi yeniden fırlatılır', async () => {
+    const err = new Error('boom');
+    integrationModel.find.mockRejectedValue(err);
+    await expect(makeService().getIntegrations()).rejects.toBe(err);
+  });
+});
+
+describe('ImageService.getProduct', () => {
+  it('[MEVCUT DAVRANIŞ] _id undefined ise Error("no id") SENKRON fırlatılır (try/catch DIŞINDA), DB\'ye dokunulmaz', async () => {
+    const svc = makeService();
+    await expect(svc.getProduct(undefined as any)).rejects.toThrow('no id');
+    expect(productModel.find).not.toHaveBeenCalled();
+  });
+
+  it('[DÜZELTİLDİ, 2026-09-29] geçerli _id: find({_id}, {title:1,_id:0}) çağrılır (aynı sarmalama hatası düzeltildi)', async () => {
+    const id = new ObjectId().toString();
+    const res = await makeService().getProduct(id);
+    expect(productModel.find).toHaveBeenCalledWith({ _id: new ObjectId(id) }, { title: 1, _id: 0 });
+    expect(res).toEqual([{ _id: 'p1' }]);
+  });
+
+  it('[MEVCUT DAVRANIŞ] geçersiz ObjectId ise try/catch içinde yakalanıp yeniden fırlatılır', async () => {
+    await expect(makeService().getProduct('not-a-valid-id')).rejects.toThrow();
   });
 });
 
@@ -271,7 +301,7 @@ describe('ImageService.addImages', () => {
     productModel.findOneAndUpdate.mockImplementation(() => { throw new Error('write failed'); });
     const res = await makeService({ uploadImageForm: { tempProductId: 'p1' }, files }).addImages();
     expect(res).toBe(false);
-    expect(cap.lines).toContainEqual(expect.objectContaining({ level: 'error' })); // F-06: console.error -> eventLog
+    expect(console.error).toHaveBeenCalled();
   });
 
   it('[MEVCUT DAVRANIŞ] prepareImageQueries hatası DIŞ catch tarafından yeniden fırlatılır (yutulmaz — #2\'deki DB hatasından FARKLI)', async () => {
@@ -288,7 +318,7 @@ describe('ImageService.addImages', () => {
 
     const res = await makeService({ uploadImageForm: { tempProductId: 'p1' }, files }).addImages();
     expect(res).toEqual([{ _id: imgId }]);
-    expect(cap.lines).toContainEqual(expect.objectContaining({ level: 'error' }));
+    expect(console.log).toHaveBeenCalled();
   });
 
   it('[MEVCUT DAVRANIŞ] originalname eşleşmezse (insertedDoc bulunamaz) uploadImage o kayıt için HİÇ çağrılmaz', async () => {

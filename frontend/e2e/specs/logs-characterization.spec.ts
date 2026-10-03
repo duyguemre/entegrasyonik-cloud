@@ -17,12 +17,6 @@ function trLabel(sentence: string) {
   return new RegExp(`${esc(sentence)}|${esc(sentence.toLocaleUpperCase('tr-TR'))}`)
 }
 
-// Pano (DashboardView) sekme-ana bilgisayarında canlı kalır ve getExportJobs'u limit:5 (sortBy yok) ile çağırır;
-// log listesi gövdeleri sortBy taşır — yalnızca onları sayar.
-function listBodies(bodies: any[]) {
-  return bodies.filter((b) => b && 'sortBy' in b)
-}
-
 function recorder(response: any, bodies: any[]) {
   return async (route: Route, headers: Record<string, string>) => {
     bodies.push(route.request().postDataJSON?.() ?? null)
@@ -31,7 +25,7 @@ function recorder(response: any, bodies: any[]) {
 }
 
 async function openImportTab(page: Page) {
-  await page.getByRole('tab', { name: 'Ürün çekim işlemleri' }).click()
+  await page.getByRole('tab', { name: 'Ürün Çekim İşlemleri' }).click()
   await expect(page.locator('.importLogList')).toBeVisible()
 }
 
@@ -45,9 +39,9 @@ test.describe('B3 karakterizasyon — log listeleri istek gövdeleri', () => {
     await installApiMocks(page, { MenuService: menuFixtureWithLogs, 'IntegrationService/getExportJobs': recorder(exportJobsDoluFixture, bodies) })
     await gotoAuthed(page)
     await openScreen(page, 'LogListView')
-    await expect(page.locator('.exportLogList').getByText('E2E Test Ürünü - Gönderim')).toBeVisible()
+    await expect(page.getByText('E2E Test Ürünü - Gönderim')).toBeVisible()
 
-    expect(listBodies(bodies)[0]).toEqual({ page: 1, limit: 25, sortBy: 'createdAt', sortOrder: 'desc' })
+    expect(bodies[0]).toEqual({ page: 1, limit: 13, sortBy: 'createdAt', sortOrder: 'desc' })
   })
 
   test('gönderim listesi: arama kutusunda Enter → globalSearch (kırpılmış) ile sayfa 1 yeniden istenir', async ({ page }) => {
@@ -55,13 +49,13 @@ test.describe('B3 karakterizasyon — log listeleri istek gövdeleri', () => {
     await installApiMocks(page, { MenuService: menuFixtureWithLogs, 'IntegrationService/getExportJobs': recorder(exportJobsDoluFixture, bodies) })
     await gotoAuthed(page)
     await openScreen(page, 'LogListView')
-    await expect(page.locator('.exportLogList').getByText('E2E Test Ürünü - Gönderim')).toBeVisible()
+    await expect(page.getByText('E2E Test Ürünü - Gönderim')).toBeVisible()
 
-    const search = page.getByLabel('Ürün adı, barkod, stok kodu veya kanal').first()
+    const search = page.getByLabel('Ürün Adı, Barkod, Stok Kodu veya Platform Ara').first()
     await search.fill('  E2E-BARKOD  ')
     await search.press('Enter')
-    await expect.poll(() => listBodies(bodies).length).toBeGreaterThanOrEqual(2)
-    expect(listBodies(bodies).at(-1)).toEqual({ page: 1, limit: 25, sortBy: 'createdAt', sortOrder: 'desc', globalSearch: 'E2E-BARKOD' })
+    await expect.poll(() => bodies.length).toBeGreaterThanOrEqual(2)
+    expect(bodies.at(-1)).toEqual({ page: 1, limit: 13, sortBy: 'createdAt', sortOrder: 'desc', globalSearch: 'E2E-BARKOD' })
   })
 
   test('gönderim listesi: yenile düğmesi aynı gövdeyle yeniden ister', async ({ page }) => {
@@ -69,16 +63,14 @@ test.describe('B3 karakterizasyon — log listeleri istek gövdeleri', () => {
     await installApiMocks(page, { MenuService: menuFixtureWithLogs, 'IntegrationService/getExportJobs': recorder(exportJobsDoluFixture, bodies) })
     await gotoAuthed(page)
     await openScreen(page, 'LogListView')
-    await expect(page.locator('.exportLogList').getByText('E2E Test Ürünü - Gönderim')).toBeVisible()
+    await expect(page.getByText('E2E Test Ürünü - Gönderim')).toBeVisible()
 
     await page.getByRole('button', { name: 'Listeyi yenile' }).click()
-    await expect.poll(() => listBodies(bodies).length).toBe(2)
-    expect(listBodies(bodies)[1]).toEqual(listBodies(bodies)[0])
+    await expect.poll(() => bodies.length).toBe(2)
+    expect(bodies[1]).toEqual(bodies[0])
   })
 
-  test('gönderim listesi: sayfa içi filtre paneli açılır, "Sorgula" advancedSearchExportJobs çağırır', async ({ page }) => {
-    // DS-v2 Aşama 2 — BİLİNÇLİ DEĞİŞİKLİK: tam sayfa "Gelişmiş Sorgulama Paneli" diyaloğu kalktı; aynı
-    // alanlar sekme içi katlanır filtre panelinde. İstek gövdesi AYNI (advancedSearchExportJobs).
+  test('gönderim listesi: gelişmiş filtre diyaloğu açılır, "Sonuçları göster" advancedSearchExportJobs çağırır', async ({ page }) => {
     const advBodies: any[] = []
     await installApiMocks(page, {
       MenuService: menuFixtureWithLogs,
@@ -86,15 +78,15 @@ test.describe('B3 karakterizasyon — log listeleri istek gövdeleri', () => {
     })
     await gotoAuthed(page)
     await openScreen(page, 'LogListView')
-    await expect(page.locator('.exportLogList').getByText('E2E Test Ürünü - Gönderim')).toBeVisible()
+    await expect(page.getByText('E2E Test Ürünü - Gönderim')).toBeVisible()
 
-    const view = page.locator('.exportLogList')
-    await view.getByRole('button', { name: /Filtreler/ }).click()
-    const panel = view.locator('.ek-filter')
-    await panel.getByRole('textbox', { name: /Ürün adı/ }).fill('Elbise')
-    await panel.getByRole('button', { name: 'Sorgula' }).click()
+    await page.getByRole('button', { name: 'Gelişmiş arama ve filtreleme seçenekleri' }).click()
+    const dialog = page.getByRole('dialog').filter({ hasText: 'Gelişmiş Sorgulama Paneli' })
+    await expect(dialog).toBeVisible()
+    await dialog.getByLabel('Ürün Adı').fill('Elbise')
+    await dialog.locator('button', { hasText: trLabel('Sonuçları göster') }).click()
     await expect.poll(() => advBodies.length).toBe(1)
-    expect(advBodies[0]).toMatchObject({ page: 1, limit: 25, sortBy: 'createdAt', sortOrder: 'desc', title: 'Elbise', integrationCode: [], statuses: [] })
+    expect(advBodies[0]).toMatchObject({ page: 1, limit: 13, sortBy: 'createdAt', sortOrder: 'desc', title: 'Elbise', integrationCode: [], statuses: [] })
   })
 
   test('aktarım listesi: ilk yüklemede getImportJobs sayfa 1 / limit 13 ile istenir', async ({ page }) => {
@@ -105,7 +97,7 @@ test.describe('B3 karakterizasyon — log listeleri istek gövdeleri', () => {
     await openImportTab(page)
     await expect(page.locator('.importLogList').getByText('Trendyol')).toBeVisible()
 
-    expect(bodies[0]).toMatchObject({ page: 1, limit: 25 })
+    expect(bodies[0]).toMatchObject({ page: 1, limit: 13 })
   })
 
   test('aktarım listesi: iş numarasıyla Enter → getImportJobByJobId çağrılır, dönen tek kayıt listelenir', async ({ page }) => {
@@ -220,11 +212,11 @@ test.describe('B3 karakterizasyon — aktarım detay raporu (DetailedImportLogRe
     await expect(page.getByText('Platform Seçenek Eşleştirme')).toBeVisible()
   })
 
-  test('veri alınamadı: iş kaydı boş dönerse "Rapor verilerine ulaşılamadı" + yeniden dene gösterilir, ham hata sızmaz', async ({ page }) => {
+  test('veri alınamadı: iş kaydı boş dönerse "Rapor Verilerine Ulaşılamadı" + yeniden dene gösterilir, ham hata sızmaz', async ({ page }) => {
     await installApiMocks(page, { MenuService: menuFixtureWithLogs, 'IntegrationService/getImportJobByJobId': {} })
     const dialog = await openImportDetail(page)
 
-    await expect(dialog).toContainText('Rapor verilerine ulaşılamadı')
+    await expect(dialog).toContainText('Rapor Verilerine Ulaşılamadı')
     await expect(dialog.locator('button', { hasText: trLabel('Yeniden dene') })).toBeVisible()
     await expect(dialog).not.toContainText('Veri boş')
   })

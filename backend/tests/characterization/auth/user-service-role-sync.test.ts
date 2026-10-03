@@ -13,7 +13,7 @@ jest.mock('@operations/users/memberStore', () => ({
   MemberStore: jest.fn().mockImplementation(() => ({ find, writeRole })),
 }));
 
-import UserService from '../../../src/api/rpc/handlers/user-service';
+import UserService from '../../../src/api/services/user-service';
 import { getIdentityCache } from '../../../src/platform/core/security/identityCache';
 
 const OID = '507f1f77bcf86cd799439011';

@@ -5,7 +5,7 @@
 import { describe, it, expect, jest } from '@jest/globals';
 import { resolveCommission, summarizeActual, averageRateByCategory, tenantOverrideRate } from '@operations/finance/commissionSummary';
 import { getOrderCommissionSummary, getCommissionByBarcodes, getRealizedCommissionByCategory, codeVariants } from '@operations/finance/commissionQueries';
-import FinancialService from '@api/rpc/handlers/financial-service';
+import FinancialService from '@api/services/financial-service';
 
 const sale = (o: any = {}) => ({ transactionType: 'SALE', commissionRate: 20, commissionAmount: 20, sellerRevenue: 80, orderNumber: '555', paymentOrderId: '42', payoutDate: new Date('2026-02-04T00:00:00Z'), meta: { barcode: 'BC-1', paymentPeriod: 28 }, ...o });
 

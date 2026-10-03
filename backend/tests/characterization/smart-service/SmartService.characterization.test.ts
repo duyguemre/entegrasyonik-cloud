@@ -1,5 +1,5 @@
 /**
- * CHARACTERIZATION: SmartService (backend/src/api/rpc/handlers/smart-service.ts) — Protokol 13.
+ * CHARACTERIZATION: SmartService (backend/src/api/services/smart-service.ts) — Protokol 13.
  * Mock'lu clientDB (DB/Redis/ağ YOK). Bugüne kadar bu serviste test yoktu (audit TB-01: %0).
  */
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
@@ -8,7 +8,7 @@ jest.mock('@database/DatabaseManager', () => ({
   DatabaseManagerInstance: { getApplicationDB: jest.fn(), getClientDB: jest.fn() },
 }));
 
-import SmartService from '@api/rpc/handlers/smart-service';
+import SmartService from '@api/services/smart-service';
 
 let orderModel: any, productModel: any, customerModel: any, claimModel: any;
 

@@ -5,7 +5,7 @@ import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals
 
 jest.mock('@database/DatabaseManager', () => ({ DatabaseManagerInstance: { getClientDB: async () => undefined } }));
 
-import Security from '../../../src/platform/core/security/Security';
+import Security from '../../../src/api/Security';
 import { AuditLogger } from '../../../src/services/audit/AuditLogger';
 import {
   AccountLifecycleService, drainBackground, resolvePublicAppUrl, TOKEN_INVALID_MESSAGE,

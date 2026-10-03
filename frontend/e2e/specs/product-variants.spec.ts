@@ -7,8 +7,6 @@
 // kaydı paylaşılan `menuFixture`'da olmadığı için, B5-1'in `product-definitions.spec.ts`'indeki
 // AYNI desenle bu dosyaya özel sentetik (sidebar'da görünmeyen) bir menü grubu eklenir.
 //
-// FR2-PFORM (varyant izgarası): eski v-data-table yerine sanal kaydırmalı tablo-ızgara (VariantGrid, role=grid);
-// seçenekler ayrı sütun yerine stok kodunun altında tek satır, işlem menüsü "Varyant işlemleri" (EkContextMenu).
 // Bileşen tamamen istemci tarafı veriyle çalışır (`productInfoForm.variants`); satır içi düzenleme,
 // sıralama ve toplu işlemler API çağırmaz (yalnızca kayıtlı bir varyantın silinmesi
 // `VariantService/deleteVariant` çağırır). Seçenek adları açılışta yüklenen `ChoiceService`
@@ -67,8 +65,6 @@ async function openVariantStep(page: Page, product: any = variantProduct, overri
   })
   await gotoAuthed(page)
   await openScreen(page, 'ProductListView')
-  // FR2 kabuk: ilk ziyaret "Uygulamayı tanıyın" teklif kartı (sağ alt/mobilde alt şerit, fixed) alttaki satır eylemlerini örter.
-  await page.getByRole('button', { name: 'Şimdi değil' }).click({ timeout: 3000 }).catch(() => undefined)
   await page.locator('.productListView tbody tr').first().locator('button[aria-label="Ürünü düzenle"]').click()
   const root = page.locator(`.productUpdateView${product._id}`)
   // İlk açılışta view/bileşen parçaları (async chunk) derlenir — geniş bekleme.
@@ -80,59 +76,50 @@ async function openVariantStep(page: Page, product: any = variantProduct, overri
 test.describe('P3 (B5-2) — Ürün varyantları (ProductVariantsComponent)', () => {
   test('smoke: varyant satırları stok kodu/barkod/seçenek/fiyat/stok ile render olur', async ({ page }) => {
     const root = await openVariantStep(page)
-    const grid = root.getByRole('grid', { name: 'Varyantlar' })
 
-    await expect(root.getByRole('heading', { level: 2, name: 'Varyantlar' })).toBeVisible()
-    await expect(root.getByText('2 varyant')).toBeVisible()
-    await expect(grid.getByText('SK-E2E-SIYAH', { exact: true })).toBeVisible()
-    await expect(grid.getByText('8690000000101', { exact: true })).toBeVisible()
-    await expect(grid.getByText('SK-E2E-BEYAZ', { exact: true })).toBeVisible()
-    // Birinci seçenek (rowspan'li grup sütunu, rowheader) değer adı ChoiceService fixture'ından çözülür.
-    await expect(grid.getByRole('rowheader', { name: /Siyah/ })).toBeVisible()
-    await expect(grid.getByRole('rowheader', { name: /Beyaz/ })).toBeVisible()
+    await expect(root.getByText('SK-E2E-SIYAH')).toBeVisible()
+    await expect(root.getByText('8690000000101')).toBeVisible()
+    await expect(root.getByText('SK-E2E-BEYAZ')).toBeVisible()
+    // Birinci seçenek (rowspan'li "Varyant" sütunu) değer adı ChoiceService fixture'ından çözülür.
+    await expect(root.locator('td').getByText('Siyah', { exact: true })).toBeVisible()
+    await expect(root.locator('td').getByText('Beyaz', { exact: true })).toBeVisible()
     // Fiyatlar tr-TR TRY biçiminde (Intl.NumberFormat), stok ve raf ('-' yoksa) gösterilir.
-    await expect(grid.getByText('₺249,90').first()).toBeVisible()
-    await expect(grid.getByText('₺299,90').first()).toBeVisible()
-    await expect(grid.getByText('A-01', { exact: true })).toBeVisible()
-    // Başlık sütunları — grup sütununun başlığı seçenek grubunun adıdır (ChoiceService), yoksa "Grup".
-    for (const name of ['E2E Renk Grubu', 'Stok kodu', 'Barkod', 'Satış fiyatı', 'Piyasa fiyatı', 'Kanal fiyatı', 'Stok', 'Raf']) {
-      await expect(grid.getByRole('columnheader', { name, exact: true })).toBeVisible()
-    }
+    await expect(root.getByText('₺249,90').first()).toBeVisible()
+    await expect(root.getByText('₺299,90').first()).toBeVisible()
+    await expect(root.getByText('A-01')).toBeVisible()
+    // Başlık sütunları (multipleVariantHeaders) — "Grup" başlığı header.choiceTitle slot'undan gelir.
+    await expect(root.getByText('Satış Fiyatı').first()).toBeVisible()
+    await expect(root.getByText('Grup', { exact: true })).toBeVisible()
     // Her satırda düzenle (kalem) + sil butonu vardır (hasVariant).
-    const row = grid.getByRole('row').filter({ hasText: 'SK-E2E-SIYAH' })
-    await expect(row.getByRole('button', { name: 'Varyantı düzenle' })).toHaveCount(1)
-    await expect(row.getByRole('button', { name: 'Varyantı sil' })).toHaveCount(1)
+    await expect(root.locator('tbody tr').filter({ hasText: 'SK-E2E-SIYAH' }).locator('.mdi-pencil')).toHaveCount(1)
+    await expect(root.locator('tbody tr').filter({ hasText: 'SK-E2E-SIYAH' }).locator('.mdi-delete')).toHaveCount(1)
   })
 
-  test('satır içi düzenleme: stok kodu hücresine çift tıklayınca hücre girdiye dönüşür, Enter değeri işler', async ({ page }) => {
+  test('satır içi düzenleme: stok kodu hücresine tıklayınca Stok Kodu/Barkod alanları açılır', async ({ page }) => {
     const root = await openVariantStep(page)
-    const grid = root.getByRole('grid', { name: 'Varyantlar' })
 
-    await grid.getByRole('gridcell').filter({ hasText: 'SK-E2E-SIYAH' }).dblclick()
-    const input = grid.getByRole('textbox', { name: /^Stok kodu/ })
-    await expect(input).toHaveValue('SK-E2E-SIYAH')
-    await input.fill('SK-E2E-DEGISTI')
-    await input.press('Enter')
-    await expect(grid.getByText('SK-E2E-DEGISTI', { exact: true })).toBeVisible()
-    await expect(root.getByRole('status').filter({ hasText: 'kaydedilmedi' })).toContainText('1 hücre değişti')
+    await root.getByText('SK-E2E-SIYAH').click()
+    await expect(root.getByLabel('Stok Kodu', { exact: true })).toHaveValue('SK-E2E-SIYAH')
+    await expect(root.getByLabel('Barkod', { exact: true })).toHaveValue('8690000000101')
   })
 
   test('varyant işlemleri menüsü: menü butonu "Varyant İşlemleri" listesini açar', async ({ page }) => {
     const root = await openVariantStep(page)
 
-    await root.getByRole('button', { name: 'Varyant işlemleri' }).click()
-    // DS-v2 A2: EkContextMenu (role=menu) — eski .v-list seçicisi bilinçli güncellendi.
-    const menu = page.locator('.v-overlay--active [role="menu"]').filter({ hasText: 'Varyant İşlemleri' })
+    await root.locator('thead').getByRole('button').filter({ has: page.locator('.mdi-menu') }).click()
+    const menu = page.locator('.v-overlay--active .v-list').filter({ hasText: 'Varyant İşlemleri' })
     await expect(menu).toBeVisible()
-    for (const label of ['Ara', 'Toplu düzenle', 'Toplu özellik düzenle', 'Toplu Seçenek Eşleştir', 'Stok kodlarını oluştur', 'Barkodları oluştur', 'Toplu Silme']) {
+    for (const label of ['Ara', 'Toplu Özellik Düzenleme', 'Toplu Fiyat Düzenleme', 'Toplu Seçenek Eşleştir', 'Toplu Silme']) {
       await expect(menu.getByText(label, { exact: true })).toBeVisible()
     }
   })
 
-  test('silme: kaydedilmemiş (_id yok) varyant onay sonrası formdan kalkar, API çağırmaz', async ({ page }) => {
-    // Eski GİZLİ DAVRANIŞ ("sil butonu hiçbir şey yapmıyor", satır tabloda kalıyordu) FR2 ızgarasında GİDERİLDİ:
-    // sil → EkConfirmDialog ("Varyant formdan kaldırılır; ürünü kaydedene kadar kalıcı olmaz.") → satır kalkar;
-    // `_id` yoksa VariantService/deleteVariant ÇAĞRILMAZ (kayıtlı varyantta çağrılır).
+  test('silme (GİZLİ DAVRANIŞ): kaydedilmemiş (_id yok) varyantın sil butonu API çağırmaz ve satır tabloda KALIR', async ({ page }) => {
+    // GİZLİ DAVRANIŞ (karakterizasyon, DÜZELTİLMEDİ — BACKLOG önerisi): `deleteVariant()` varyantı
+    // `productInfoForm.variants`'tan splice etmeye çalışır, `_id` yoksa API çağırmadan döner; ancak
+    // tablo (`originalVariants`, değişmeyen `watch(variants)` yalnızca referans değişiminde tetiklenir)
+    // güncellenmez — satır, başka bir satıra tıklanıp yeniden çizildikten SONRA da görünür kalır
+    // (bu oturumda Playwright ile gözlendi). Kullanıcı açısından sil butonu "hiçbir şey yapmıyor".
     let deleteCalled = false
     const root = await openVariantStep(page, variantProduct, {
       'VariantService/deleteVariant': async (route: any, headers: any) => {
@@ -140,21 +127,18 @@ test.describe('P3 (B5-2) — Ürün varyantları (ProductVariantsComponent)', ()
         return route.fulfill({ status: 200, contentType: 'application/json', headers, body: JSON.stringify({ result: true }) })
       },
     })
-    const grid = root.getByRole('grid', { name: 'Varyantlar' })
 
-    await grid.getByRole('row').filter({ hasText: 'SK-E2E-BEYAZ' }).getByRole('button', { name: 'Varyantı sil' }).click()
-    const dialog = page.getByRole('alertdialog')
-    await expect(dialog.getByRole('heading', { level: 2 })).toHaveText("'SK-E2E-BEYAZ' silinsin mi?")
-    await expect(dialog).toContainText('Varyant formdan kaldırılır')
-    await dialog.getByRole('button', { name: 'Sil' }).click()
-    await expect(grid.getByText('SK-E2E-BEYAZ', { exact: true })).toHaveCount(0)
-    await expect(grid.getByText('SK-E2E-SIYAH', { exact: true })).toBeVisible()
+    const row = root.locator('tbody tr').filter({ hasText: 'SK-E2E-BEYAZ' })
+    await row.getByRole('button').filter({ has: page.locator('.mdi-delete') }).click()
+    await page.waitForTimeout(500)
+    await expect(root.getByText('SK-E2E-BEYAZ')).toHaveCount(1)
+    await expect(root.getByText('SK-E2E-SIYAH')).toBeVisible()
     expect(deleteCalled).toBe(false)
   })
 
   test('ekran görüntüsü tabanı (ürün varyantları)', async ({ page }) => {
-    const root = await openVariantStep(page)
-    await expect(root.getByRole('grid', { name: 'Varyantlar' }).getByText('SK-E2E-BEYAZ', { exact: true })).toBeVisible()
+    await openVariantStep(page)
+    await page.waitForTimeout(300)
     // View'ın (B5-1, kapsam dışı) kategori adımından gelen hata bildirimi rastgele bir destek kodu
     // içerir — kararlı taban için maskelenir.
     await expect(page).toHaveScreenshot('product-variants.png', { fullPage: false, mask: [page.locator('.v-snackbar__wrapper')] })
@@ -164,7 +148,7 @@ test.describe('P3 (B5-2) — Ürün varyantları (ProductVariantsComponent)', ()
     const root = await openVariantStep(page)
     await expect(root.getByText('SK-E2E-SIYAH')).toBeVisible()
     const results = await new AxeBuilder({ page })
-      .include(`.productUpdateView${variantProduct._id} .pv-frame`)
+      .include(`.productUpdateView${variantProduct._id} .v-data-table`)
       .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
       .analyze()
     await testInfo.attach('axe-ProductVariantsComponent-sonuclari.json', { body: JSON.stringify(results.violations, null, 2), contentType: 'application/json' })

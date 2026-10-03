@@ -1,10 +1,11 @@
 <template>
-    <div class="scroll-component text-center">
+    <div class="text-center"
+        style="width:50px;he1ight:100%;background-color:transparent;padding-top:5px;padding-bottom:30px">
         <ExpandComponent class="mb-1 ml-2" v-if="isExpandable != false" />
         <v-slider direction="vertical"
-            :class="isExpandable ? 'scroll-component__slider--expandable' : 'scroll-component__slider--compact'"
-            density="default" track-size="8" reverse v-model="sliderValue" min="0"
-            class="scroll-component__slider v-slider--focused" hide-details :thumb-size="32" color="content-muted" :max="sliderMax"
+            :style="{ 'padding-top': isExpandable ? '0px' : '5px', 'padding-bottom': isExpandable ? '30px' : '5px' }"
+            style="height:100%!important;" density="default" track-size="8" reverse v-model="sliderValue" min="0"
+            class="v-slider--focused" hide-details :thumb-size="32" color="processButtonColor" :max="sliderMax"
             @update:focused="updateSliderFocused"></v-slider>
     </div>
 </template>
@@ -107,34 +108,13 @@ watch(sliderValue, (newValue, oldValue) => {
 </script>
 
 <style scoped>
-.scroll-component {
-    width: 50px;
-    background-color: transparent;
-    padding-top: var(--ek-space-1);
-    padding-bottom: var(--ek-space-8);
-}
-
-.scroll-component__slider {
-    height: 100% !important;
-}
-
-.scroll-component__slider--expandable {
-    padding-top: 0;
-    padding-bottom: var(--ek-space-8);
-}
-
-.scroll-component__slider--compact {
-    padding-top: var(--ek-space-1);
-    padding-bottom: var(--ek-space-1);
-}
-
 .v-slider--focused :deep(.v-slider-thumb__surface::before) {
     transform: scale(1) !important;
-    background-color: var(--ek-color-info);
+    background-color: blue;
 }
 
 .v-slider--focused :deep(.v-slider-thumb__surface) {
-    border: 1px solid var(--ek-color-surface) !important
+    border:1px solid white!important
 }
 
 .v-slider--focused :deep(.v-slider-thumb__ripple) {

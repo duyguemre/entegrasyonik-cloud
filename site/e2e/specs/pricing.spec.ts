@@ -38,29 +38,14 @@ test.describe('Fiyatlandırma', () => {
     await expect(cards.nth(2)).toContainText('Özel teklif')
     await expect(cards.nth(2)).toContainText('Özel limit')
 
-    // Taslak/öneri işareti (seed ÖNERİ) görünür — S27b/N4: ziyaretçi dili görünür, iç kayıt öznitelikte birebir
-    await expect(page.getByTestId('pricing-notice')).toContainText('yayın öncesi kesinleşir')
+    // Taslak/öneri işareti (seed ÖNERİ) görünür
+    await expect(page.getByTestId('pricing-notice')).toContainText('ÖNERİ')
     await expect(page.getByTestId('pricing-notice')).toContainText('KDV')
-    await expect(page.getByTestId('pricing-notice')).toHaveAttribute('data-proposal-notice', /ÖNERİ — insan kararı bekliyor/)
-    await expect(page.getByTestId('pricing-notice')).not.toContainText('ADR')
 
     await waitForFonts(page)
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)
     expect(overflow).toBeLessThanOrEqual(0)
     expect(problems).toEqual([])
-  })
-
-  test('S25 (K46): ajan ürünü her planda — bölüm, kart özeti, karşılaştırma satırları; axe 0', async ({ page }) => {
-    await page.goto('/fiyatlandirma')
-    const section = page.getByTestId('plan-ai')
-    await section.scrollIntoViewIfNeeded()
-    await expect(section).toContainText('Kendi yapay zekâ anahtarınızı getirirsiniz; yapay zekâ için bize ekstra ücret ödemezsiniz.')
-    await expect(section.locator('.agent-ladder__step')).toHaveCount(3)
-    await expect(page.getByTestId('plan-agent')).toHaveCount(3)
-    await expect(page.locator('tr[data-row-kind="agent"]')).toHaveCount(5)
-    const text = (await page.locator('main').innerText()).toLocaleLowerCase('tr-TR')
-    for (const w of ['kredi', 'token', 'sınırsız']) expect(text, w).not.toContain(w)
-    await expectNoViolations(page)
   })
 
   test('deneme ifadesi yalnızca deneme planında (seed trial): süre + kartsız', async ({ page }) => {
@@ -84,15 +69,14 @@ test.describe('Fiyatlandırma', () => {
     const cards = page.getByTestId('plan-cards').locator('.plan')
     await expect(cards.nth(0).getByTestId('plan-cta')).toHaveAttribute('href', `${APP_URL}/login?mode=register&plan=starter&interval=month`)
     await expect(cards.nth(1).getByTestId('plan-cta')).toHaveAttribute('href', `${APP_URL}/login?mode=register&plan=growth&interval=month`)
-    await expect(cards.nth(0).getByTestId('plan-cta')).toHaveText('Ücretsiz deneyin')
-    await expect(cards.nth(1).getByTestId('plan-cta')).toHaveText('Büyüme ile başlayın')
+    await expect(cards.nth(0).getByTestId('plan-cta')).toHaveText('Ücretsiz dene')
+    await expect(cards.nth(1).getByTestId('plan-cta')).toHaveText('Planı seç')
     // Kurumsal: kayıt bağlantısı ÜRETİLMEZ (özel teklif)
     const links = await page.locator(`main a[href^="${APP_URL}/login"]`).evaluateAll((els) => els.map((e) => (e as HTMLAnchorElement).href))
     expect(links.some((h) => h.includes('plan=enterprise'))).toBe(false)
-    // Kapanış CTA'sı deneme planıyla; ikincil eylem "Demo talep edin" (ELEV A3 — kapanışta "Giriş yap" yok)
+    // Kapanış CTA'sı deneme planıyla; giriş bağlantısı düz /login
     expect(links).toContain(`${APP_URL}/login?mode=register&plan=starter&interval=month`)
-    expect(links).not.toContain(`${APP_URL}/login`)
-    await expect(page.locator('main a[href^="mailto:"]', { hasText: 'Demo talep edin' })).toHaveCount(1)
+    expect(links).toContain(`${APP_URL}/login`)
   })
 
   test('kurumsal CTA: /iletisim yayımlıysa teklif bağlantısı, değilse kırık link yerine not', async ({ page }) => {
@@ -111,12 +95,7 @@ test.describe('Fiyatlandırma', () => {
     await page.goto('/fiyatlandirma')
     const table = page.getByTestId('compare-table')
     await expect(table.getByRole('columnheader')).toHaveText(['Plan', 'Başlangıç', 'Büyüme', 'Kurumsal'])
-    // S17: fiyat/limit satırları önce ve aynen; ardından özellik satırları (deneme + her planda + plan eklentileri)
-    await expect(table.locator('tbody tr[data-row-kind="limit"] th')).toHaveText(['Aylık fiyat', 'Kanal', 'Ürün varyantı', 'Kullanıcı'])
-    const heads = await table.getByRole('rowheader').allInnerTexts()
-    expect(heads.slice(0, 4)).toEqual(['Aylık fiyat', 'Kanal', 'Ürün varyantı', 'Kullanıcı'])
-    await expect(table.locator('tbody tr[data-row-kind="feature"]').filter({ hasText: 'ERP bağlantısı (Bizimhesap, yalnızca okuma)' })).toHaveCount(1)
-    await expect(table.locator('tbody tr[data-row-kind="feature"]').filter({ hasText: 'Ücretsiz deneme' })).toContainText('14 gün')
+    await expect(table.getByRole('rowheader')).toHaveText(['Aylık fiyat', 'Kanal', 'Ürün varyantı (SKU)', 'Kullanıcı'])
     await expect(table.getByRole('row').nth(2)).toContainText('Özel limit')
     const region = page.getByRole('region', { name: 'Plan karşılaştırma tablosu' })
     await region.focus()
@@ -138,10 +117,10 @@ test.describe('Fiyatlandırma', () => {
   test('üst gezinmede "Fiyatlandırma" yayımlanmış ve çalışır', async ({ page }) => {
     await page.goto('/fiyatlandirma')
     if (isDesktop(page)) {
-      await expect(page.getByRole('navigation', { name: 'Ana gezinme' }).first().getByRole('link', { name: 'Fiyatlar', exact: true })).toBeVisible()
+      await expect(page.getByRole('navigation', { name: 'Ana gezinme' }).first().getByRole('link', { name: 'Fiyatlandırma' })).toBeVisible()
     } else {
       await page.getByTestId('menu-toggle').click()
-      await expect(page.locator('.nav-mobile__panel').getByRole('link', { name: 'Fiyatlar', exact: true })).toBeVisible()
+      await expect(page.locator('.nav-mobile__panel').getByRole('link', { name: 'Fiyatlandırma' })).toBeVisible()
     }
   })
 
@@ -154,25 +133,6 @@ test.describe('Fiyatlandırma', () => {
     await page.goto('/fiyatlandirma')
     await page.getByTestId('pricing-faq').locator('summary').first().click()
     await expectNoViolations(page)
-  })
-
-  test('S27b: önerilen plan tek koyu vitrin kartı; kartlar hero\'ya taşar; güven şeridi kayıttan; aralık geçişi yok', async ({ page }) => {
-    await page.goto('/fiyatlandirma')
-    const featured = page.locator('.plan__card--featured')
-    await expect(featured).toHaveCount(1)
-    await expect(featured).toContainText('Büyüme')
-    await expect(featured).toContainText('Önerilen')
-    // ilk ekranda fiyat görünür (kartlar hero'nun alt kenarına taşar)
-    const vh = page.viewportSize()!.height
-    const hero = (await page.locator('.page-hero').boundingBox())!
-    const card = (await page.getByTestId('plan-cards').locator('.plan').first().boundingBox())!
-    expect(card.y).toBeLessThan(hero.y + hero.height)
-    if (isDesktop(page)) expect((await page.getByTestId('plan-price').first().boundingBox())!.y).toBeLessThan(vh)
-    await expect(page.getByTestId('plan-trust').locator('li')).toHaveCount(6)
-    await expect(page.getByTestId('plan-trust')).toContainText('6 kanal')
-    await expect(page.getByTestId('interval-options')).toHaveCount(0)
-    const text = (await page.locator('main').innerText()).toLocaleLowerCase('tr-TR')
-    for (const w of ['indirim', '%', 'en popüler']) expect(text, w).not.toContain(w)
   })
 
   test('ekran görüntüsü tabanı (fiyatlandırma)', async ({ page }) => {

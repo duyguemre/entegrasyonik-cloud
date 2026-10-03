@@ -3,36 +3,30 @@
  * /sss — sık sorulan sorular (ADR-0014 Karar 2). Kaynak: `getPublicFaqByCategory()` (her cevabın kanıtı `faq.ts`'te).
  * JS'siz `<details>` akordeonu + `FAQPage` JSON-LD şeması.
  *
- * S12 (PARÇA C): sorular altı kategoride; kategori ataması `faq.ts` kaydındadır; `getPublicFaq()` kategori sırasıyla
- * döner, JSON-LD de aynı sırayı kullanır. Boş kategori derleme hatasıdır.
+ * S12 (PARÇA C): sorular altı kategoride (Başlangıç ve kurulum, Pazaryeri ve kanal uyumu, Stok ve sipariş yönetimi,
+ * Güvenlik ve veri, Fiyatlandırma ve plan, Destek ve ölçeklenme). Kategori ataması `faq.ts` kaydındadır;
+ * `getPublicFaq()` kategori sırasıyla döner, JSON-LD de aynı sırayı kullanır. Boş kategori derleme hatasıdır.
  *
- * S14: `/sss#<soru-id>` bağlantısı hedef soruyu açar (ilerlemeli geliştirme; JS'siz durumda sayfa yine soruya kayar).
- *
- * S17 (S16 tasarım dili): arama + kategori sekmeleri.
- *  - JS'SİZ TEMEL: tüm sorular görünür; kategori sekmeleri sıradan sayfa içi bağlantılardır (#kategori); arama kutusu
- *    `hidden` gelir (çalışmayan bir denetim gösterilmez).
- *  - AŞAMALI GELİŞTİRME (`src/scripts/faq-filter.ts`): arama kutusu görünür olur; soru + cevap metninde Türkçe
- *    katlamalı eşleşme, sekmeler tek seçimli süzgece dönüşür (`aria-current`), sonuç sayısı `aria-live` ile duyurulur,
- *    eşleşme yoksa boş durum + destek/iletişim bağlantıları. Yalnızca `hidden` özniteliği değişir; ağ/depolama yok.
- *  - Sekme sayaçları YALNIZCA kayıttan hesaplanır (`data-stat`; tests/pages.test.ts yeniden hesaplar).
+ * S14: `/sss#<soru-id>` bağlantısı (destek merkezi, stok rezervasyonu sayfası) hedef soruyu açar — küçük ilerlemeli
+ * geliştirme betiği; JS'siz durumda sayfa yine soruya kayar, akordeon kapalı kalır.
  */
 import BaseLayout from '../layouts/BaseLayout.astro'
-import { crumbsFor } from '../data/seo'
 import Section from '../components/Section.astro'
 import PageHero from '../components/pages/PageHero.astro'
+import PageMeta from '../components/pages/PageMeta.astro'
 import Accordion from '../components/pages/Accordion.astro'
-import HelpBand from '../components/pages/HelpBand.astro'
 import CtaBand from '../components/pages/CtaBand.astro'
-import Button from '../components/Button.astro'
 import Icon from '../components/home/Icon.astro'
-import { getPublicFaq, getPublicFaqByCategory, getFaqPreview, type FaqCategoryId } from '../data/faq'
+import { getPublicFaq, getPublicFaqByCategory, type FaqCategoryId } from '../data/faq'
+import { breadcrumbJsonLd, faqJsonLd } from '../lib/seo'
 import { appUrls } from '../lib/site-config'
 
-const crumbs = crumbsFor('/sss')
+const title = 'Sık sorulan sorular'
+const description =
+  'Entegrasyonik hakkında sık sorulan sorular: kurulum, pazaryeri uyumu, merkezi stok ve overselling koruması, güvenlik, fiyatlandırma, destek ve ölçeklenme.'
+const crumbs = [{ label: 'Ana sayfa', href: '/' }, { label: 'Sık sorulan sorular' }]
 const items = getPublicFaq()
 const categories = getPublicFaqByCategory()
-/** Hero cam paneli: ana sayfa SSS önizlemesiyle aynı küratörlü seçki (popülerlik iddiası yok). */
-const featured = getFaqPreview().slice(0, 5)
 
 const CATEGORY_ICONS: Record<FaqCategoryId, 'bolt' | 'plug' | 'stock' | 'shield' | 'card' | 'chat'> = {
   baslangic: 'bolt',
@@ -44,455 +38,222 @@ const CATEGORY_ICONS: Record<FaqCategoryId, 'bolt' | 'plug' | 'stock' | 'shield'
 }
 ---
 
-<BaseLayout>
+<BaseLayout title={title} description={description}>
+  <PageMeta
+    slot="head"
+    title={title}
+    description={description}
+    jsonLd={[
+      breadcrumbJsonLd([{ label: 'Ana sayfa', path: '/' }, { label: title, path: '/sss' }]),
+      faqJsonLd(items),
+    ]}
+  />
 
   <PageHero
-    title="Merak ettiklerinize net yanıtlar"
-    accent="net yanıtlar"
-    eyebrow="Sık sorulan sorular"
+    title="Sık sorulan sorular"
     lead="Kurulumdan güvenliğe, stok yönetiminden fiyatlandırmaya: çok kanallı satış operasyonunuzu Entegrasyonik'e taşımadan önce merak ettiğiniz her şey."
     crumbs={crumbs}
-    visualDesktopOnly
   >
-    <div class="search" data-faq-search hidden>
-      <label class="sr-only" for="faq-q">Sorularda ara</label>
-      <span class="search__icon" aria-hidden="true"><Icon name="search" size="sm" /></span>
-      <input
-        id="faq-q"
-        class="search__input"
-        type="search"
-        name="q"
-        placeholder="Sorularda arayın…"
-        autocomplete="off"
-        spellcheck="false"
-        aria-controls="faq-groups"
-        aria-describedby="faq-status"
-        data-faq-input
-      />
-    </div>
-    <Fragment slot="visual">
-      <p class="panel-tag">Öne çıkan sorular</p>
-      <ul class="hero-list" role="list">
-        {
-          featured.map((q) => (
-            <li>
-              <span class="hero-list__icon" aria-hidden="true"><Icon name={CATEGORY_ICONS[q.category]} size="sm" /></span>
-              <a href={`#${q.id}`}>{q.question}</a>
-            </li>
-          ))
-        }
-      </ul>
-    </Fragment>
+    <nav class="toc" aria-label="SSS kategorileri">
+      {categories.map((c) => <a href={`#${c.id}`}>{c.label}</a>)}
+    </nav>
   </PageHero>
 
-  <Section labelledby="sss-title" class="tight-section faq-section">
+  <Section labelledby="sss-title" class="tight-section">
     <h2 id="sss-title" class="sr-only">Sorular ve cevaplar</h2>
     <div class="faq-layout">
-      <nav class="faq-tabs" aria-label="SSS kategorileri" data-faq-tabs>
+      <nav class="faq-nav" aria-label="Kategoriler">
         <ul role="list">
-          <li>
-            <a href="#sss-title" class="faq-tab" data-faq-tab="all" aria-current="true">
-              <span class="faq-tab__icon" aria-hidden="true"><Icon name="help" size="sm" /></span>
-              <span class="faq-tab__label">Tümü</span>
-              <span class="faq-tab__count" data-stat="faq-total">{items.length}</span>
-            </a>
-          </li>
-          {
-            categories.map((c) => (
-              <li>
-                <a href={`#${c.id}`} class="faq-tab" data-faq-tab={c.id}>
-                  <span class="faq-tab__icon" aria-hidden="true"><Icon name={CATEGORY_ICONS[c.id]} size="sm" /></span>
-                  <span class="faq-tab__label">{c.label}</span>
-                  <span class="faq-tab__count" data-stat={`faq-cat-${c.id}`}>{c.items.length}</span>
-                </a>
-              </li>
-            ))
-          }
+          {categories.map((c) => <li><a href={`#${c.id}`}>{c.label}</a></li>)}
         </ul>
       </nav>
-
-      <div class="faq-main">
-        <p class="faq-status" id="faq-status" role="status" aria-live="polite" data-faq-status></p>
-        <div class="faq-groups" id="faq-groups">
-          {
-            categories.map((c) => (
-              <section class="faq-group" id={c.id} aria-labelledby={`${c.id}-title`} data-faq-group={c.id}>
-                <div class="faq-group__head">
-                  <span class="faq-group__icon" aria-hidden="true"><Icon name={CATEGORY_ICONS[c.id]} size="md" /></span>
-                  <div>
-                    <h3 id={`${c.id}-title`}>{c.label}</h3>
-                    <p>{c.lead}</p>
-                  </div>
+      <div class="faq-groups">
+        {
+          categories.map((c) => (
+            <section class="faq-group" id={c.id} aria-labelledby={`${c.id}-title`}>
+              <div class="faq-group__head">
+                <span class="faq-group__icon" aria-hidden="true"><Icon name={CATEGORY_ICONS[c.id]} size="md" /></span>
+                <div>
+                  <h3 id={`${c.id}-title`}>{c.label}</h3>
+                  <p>{c.lead}</p>
                 </div>
-                <Accordion items={c.items} />
-              </section>
-            ))
-          }
-        </div>
-        <div class="faq-empty" data-faq-empty hidden>
-          <span class="faq-empty__icon" aria-hidden="true"><Icon name="search" size="md" /></span>
-          <p class="faq-empty__title">Aramanızla eşleşen bir soru bulamadık</p>
-          <p class="faq-empty__text">Farklı bir sözcük deneyin ya da tüm soruları yeniden gösterin.</p>
-          <button type="button" class="faq-empty__reset" data-faq-reset>Aramayı temizle</button>
-        </div>
-        <HelpBand text="Destek merkezinde adım adım rehberlere göz atın ya da işletmenize özel sorunuzu bize yazın." />
+              </div>
+              <Accordion items={c.items} />
+            </section>
+          ))
+        }
       </div>
     </div>
+    <p class="more">
+      Sorunuzun yanıtını bulamadınız mı? <a href="/iletisim">Ekibimize yazın</a>; işletmenize özel sorularınızı birlikte yanıtlayalım.
+    </p>
   </Section>
 
   <CtaBand
     id="sss-cta"
-    title="Sorularınız yanıtlandıysa, başlayalım"
-    text="Ücretsiz denemeyle kanallarınızı bağlayın; stoğun her kanalda aynı kaldığını kendi operasyonunuzda görün."
+    title="Tüm kanallarınızı tek panelde yönetmeye başlayın"
+    text="Ücretsiz denemeyle kanallarınızı bağlayın; merkezi stok yönetimi ve birleşik sipariş akışını kendi operasyonunuzda görün."
     primary={{ label: 'Ücretsiz deneyin', href: appUrls.register() }}
     secondary={{ label: 'Planları karşılaştırın', href: '/fiyatlandirma' }}
   />
 </BaseLayout>
 
 <script>
-  import '../scripts/faq-filter'
+  function openTarget() {
+    const id = decodeURIComponent(window.location.hash.slice(1))
+    if (!id) return
+    const target = document.getElementById(id)
+    if (target instanceof HTMLDetailsElement) {
+      target.open = true
+      target.scrollIntoView({ block: 'start' })
+    }
+  }
+  openTarget()
+  window.addEventListener('hashchange', openTarget)
 </script>
 
 <style>
-  /* SITE-DL (F4): düz yüzey + 1px çerçeve; gölge/hap/daire yok; seçili kategori = eylem tonu zemin + çerçeve + metin. */
-  :global(.section.tight-section) {
+  .faq-groups :global(.acc__item) {
+    scroll-margin-top: calc(var(--site-header-height) + var(--ek-space-4));
+  }
+  /* Bölümler arası dikey ritim genel olarak sıkılaştırıldı (S11b). */
+  .tight-section:global(.section) {
     padding-block: calc(var(--site-section-y) * 0.72);
   }
-
-  /* --- Hero cam paneli (S16 /guvenlik listesiyle aynı desen). Dar ekranda sorular hemen aşağıda olduğundan
-     yinelenen panel gizlenir (PageHero `visualDesktopOnly`); içerik kaybı yok. --- */
-  .panel-tag {
-    margin: 0 0 var(--ek-space-3);
-    color: var(--site-text-on-dark-meta);
-    font-size: var(--ek-font-size-xs);
-    font-weight: var(--ek-font-weight-semibold);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
-  .hero-list {
+  .toc {
     display: flex;
-    flex-direction: column;
-    margin: 0;
-    padding: 0;
-    list-style: none;
+    flex-wrap: wrap;
+    gap: var(--ek-space-2) var(--ek-space-3);
   }
-  .hero-list li {
-    display: flex;
-    align-items: center;
-    gap: var(--ek-space-3);
-    padding-block: var(--ek-space-2);
-  }
-  .hero-list li + li {
-    border-top: var(--site-border-width) solid var(--site-glass-border);
-  }
-  .hero-list__icon {
-    display: inline-flex;
-    flex: none;
-    align-items: center;
-    justify-content: center;
-    width: var(--ek-space-8);
-    height: var(--ek-space-8);
-
-    border: var(--site-border-width) solid var(--site-glass-border);
-    border-radius: var(--ek-radius-tile);
-    background: var(--site-glass-bg);
-    color: var(--site-accent-on-dark);
-  }
-  .hero-list a {
+  .toc a {
     display: inline-flex;
     align-items: center;
-    gap: var(--ek-space-3);
     min-height: var(--site-tap-target);
-    color: var(--site-text-on-dark-heading);
+    padding-inline: var(--ek-space-4);
+    border: var(--site-border-width) solid var(--site-color-on-primary-muted);
+    border-radius: var(--ek-radius-full);
+    color: var(--site-color-on-primary);
+    font-size: var(--ek-font-size-md);
     font-weight: var(--ek-font-weight-medium);
-    line-height: var(--ek-line-height-tight);
     text-decoration: none;
+    transition:
+      background-color var(--ek-duration-base) var(--ek-easing-standard),
+      border-color var(--ek-duration-base) var(--ek-easing-standard);
   }
-  /* site-wdg W18: beyazdan beyaza hover geri bildirim vermiyordu → açık teal. */
-  .hero-list a:hover {
-    color: var(--site-accent-on-dark);
+  .toc a:hover {
+    background: color-mix(in srgb, var(--ek-color-background) 12%, transparent);
+    border-color: var(--site-color-on-primary);
   }
-  .hero-list a:focus-visible {
+  .toc a:focus-visible {
     outline-color: var(--site-color-on-primary);
   }
 
-  /* --- Hero araması (yalnızca JS ile görünür) --- */
-  .search {
-    position: relative;
-    display: flex;
-    align-items: center;
-    width: 100%;
-    max-width: 36rem;
-  }
-  .search[hidden] {
-    display: none;
-  }
-  .search__icon {
-    position: absolute;
-    inset-inline-start: var(--ek-space-4);
-    display: inline-flex;
-    color: var(--site-text-meta);
-    pointer-events: none;
-  }
-  .search__input {
-    width: 100%;
-    min-height: calc(var(--site-tap-target) + var(--ek-space-2));
-    padding: var(--ek-space-3) var(--ek-space-4) var(--ek-space-3) calc(var(--ek-space-4) * 2 + var(--ek-space-4));
-    border: var(--site-border-width) solid var(--ek-color-border-input);
-    border-radius: var(--ek-radius-md);
-    background: var(--ek-color-surface);
-    color: var(--site-text-heading);
-    font: inherit;
-    font-size: var(--ek-font-size-lg);
-  }
-  .search__input::placeholder {
-    color: var(--site-text-meta);
-  }
-  .search__input:focus-visible {
-    border-color: var(--site-action);
-    outline: var(--site-focus-ring-width) solid var(--site-color-on-primary);
-    outline-offset: var(--site-focus-ring-offset);
-  }
-
-  /* --- Düzen: sekmeler (masaüstünde solda yapışkan dikey, dar ekranda yatay kaydırılan şerit) --- */
   .faq-layout {
     display: grid;
-    gap: var(--ek-space-8);
+    gap: var(--ek-space-10);
   }
-  .faq-tabs {
-    min-width: 0;
-  }
-  .faq-tabs ul {
+  /* Mobil/tablet: kategori menüsü yatay bir şerit (sticky yan sütun için yer yok). */
+  .faq-nav ul {
     display: flex;
-    gap: var(--ek-space-2);
-    margin: 0;
-    /* site-wdg W20: kaydırma kabı odak halkasını kırpmasın (halka payı üst/yanlarda). */
-    padding: calc(var(--site-focus-ring-width) + var(--site-focus-ring-offset));
-    padding-bottom: var(--ek-space-2);
-    margin-inline: calc((var(--site-focus-ring-width) + var(--site-focus-ring-offset)) * -1);
-    overflow-x: auto;
+    flex-wrap: wrap;
+    gap: var(--ek-space-2) var(--ek-space-3);
+    margin: 0 0 var(--ek-space-2);
+    padding: 0;
     list-style: none;
-    scrollbar-width: thin;
   }
-  .faq-tab {
-    display: flex;
+  .faq-nav a {
+    display: inline-flex;
     align-items: center;
-    gap: var(--ek-space-2);
     min-height: var(--site-tap-target);
-    padding: var(--ek-space-1) var(--ek-space-2);
-    border: var(--site-border-width) solid var(--ek-color-border-default);
-    border-radius: var(--ek-radius-tile);
-    background: var(--ek-color-surface);
-    color: var(--site-text-body);
-    font-size: var(--ek-font-size-md);
+    padding-inline: var(--ek-space-4);
+    border: var(--site-border-width) solid var(--ek-color-border-strong);
+    border-radius: var(--ek-radius-full);
+    color: var(--ek-color-content-strong);
+    font-size: var(--ek-font-size-sm);
     font-weight: var(--ek-font-weight-medium);
     text-decoration: none;
-    white-space: nowrap;
-    transition:
-    background-color var(--ek-duration-base) var(--ek-easing-standard),
-    border-color var(--ek-duration-base) var(--ek-easing-standard),
-    color var(--ek-duration-base) var(--ek-easing-standard);
+    transition: border-color var(--ek-duration-base) var(--ek-easing-standard);
   }
-  .faq-tab:hover {
-    border-color: var(--site-action-border);
-    background: var(--site-action-subtle);
-    color: var(--site-action-emphasis);
-  }
-  .faq-tab[aria-current='true'] {
-    border-color: var(--site-action-border);
-    background: var(--site-action-subtle);
-    color: var(--site-action-emphasis);
-    font-weight: var(--ek-font-weight-semibold);
-  }
-  .faq-tab:focus-visible {
-    outline-offset: var(--site-focus-ring-offset);
-  }
-  .faq-tab__icon {
-    display: inline-flex;
-    flex: none;
-    align-items: center;
-    justify-content: center;
-    width: var(--ek-space-8);
-    height: var(--ek-space-8);
-    border: var(--site-border-width) solid var(--ek-color-border-default);
-    border-radius: var(--ek-radius-md);
-    background: var(--ek-color-surface);
-    color: var(--site-action);
-  }
-  .faq-tab[aria-current='true'] .faq-tab__icon {
-    border-color: var(--site-action-border);
-  }
-  .faq-tab__label {
-    flex: 1;
-  }
-  .faq-tab__count {
-    min-width: var(--ek-space-6);
-    padding: 0 var(--ek-space-1);
-    border: var(--site-border-width) solid var(--ek-color-border-default);
-    border-radius: var(--ek-radius-md);
-    background: var(--ek-color-surface-muted);
-    color: var(--site-text-body);
-    font-size: var(--ek-font-size-xs);
-    font-weight: var(--ek-font-weight-semibold);
-    font-variant-numeric: tabular-nums;
-    line-height: calc(var(--ek-space-6) - var(--site-border-width) * 2);
-    text-align: center;
-  }
-  .faq-tab[aria-current='true'] .faq-tab__count {
-    border-color: var(--site-action-border);
-    background: var(--ek-color-surface);
-    color: var(--site-action-emphasis);
+  .faq-nav a:hover {
+    border-color: var(--ek-color-primary);
+    color: var(--ek-color-primary);
   }
 
-  /* --- İçerik --- */
-  .faq-main {
-    min-width: 0;
-  }
-  .faq-status:empty {
-    display: none;
-  }
-  .faq-status {
-    margin-bottom: var(--ek-space-5);
-    color: var(--site-text-meta);
-    font-size: var(--ek-font-size-md);
-    font-weight: var(--ek-font-weight-medium);
-  }
   .faq-groups {
     display: flex;
     flex-direction: column;
     gap: var(--ek-space-12);
+    min-width: 0;
   }
   .faq-group {
-    display: flex;
-    flex-direction: column;
-    gap: var(--ek-space-5);
-    /* site-wdg W14: üst bar payı html scroll-padding-top’ta; burada yalnız ek boşluk. */
-    scroll-margin-top: var(--ek-space-2);
-  }
-  .faq-group[hidden] {
-    display: none;
+    scroll-margin-top: calc(var(--site-header-height) + var(--ek-space-6));
   }
   .faq-group__head {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: var(--ek-space-4);
-  }
-  .faq-group__icon {
-    display: inline-grid;
-    flex: none;
-    place-items: center;
-    width: var(--ek-space-12);
-    height: var(--ek-space-12);
-
-    border: var(--site-border-width) solid var(--site-action-border);
-    border-radius: var(--ek-radius-tile);
-    background: var(--site-action-subtle);
-    color: var(--site-action);
-  }
-  .faq-group h3 {
-    color: var(--site-text-heading);
-    font-size: var(--ek-font-size-2xl);
-    font-weight: var(--ek-font-weight-bold);
-    letter-spacing: -0.01em;
-    line-height: var(--ek-line-height-tight);
+    margin-bottom: var(--ek-space-5);
   }
   .faq-group__head p {
     margin-top: var(--ek-space-1);
-    color: var(--site-text-body);
-    font-size: var(--ek-font-size-md);
+    color: var(--ek-color-content-default);
+    font-size: var(--ek-font-size-lg);
   }
-  .faq-group :global(.acc__item[hidden]) {
-    display: none;
-  }
-
-  /* --- Boş durum (yalnızca JS süzgeci) --- */
-  .faq-empty {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: var(--ek-space-3);
-    padding: var(--ek-space-12) var(--ek-space-6);
-    border: var(--site-border-width) dashed var(--ek-color-border-strong);
-    border-radius: var(--ek-radius-card);
-    background: var(--ek-color-surface-muted);
-    text-align: center;
-  }
-  .faq-empty[hidden] {
-    display: none;
-  }
-  .faq-empty__icon {
+  .faq-group__icon {
     display: inline-flex;
+    flex: none;
     align-items: center;
     justify-content: center;
     width: var(--ek-space-12);
     height: var(--ek-space-12);
-    border: var(--site-border-width) solid var(--ek-color-border-default);
-    border-radius: var(--ek-radius-tile);
-    background: var(--ek-color-surface);
-    color: var(--site-action);
+    border-radius: var(--ek-radius-lg);
+    background: color-mix(in srgb, var(--ek-color-secondary) 16%, transparent);
+    color: var(--ek-color-secondary-darken-1);
   }
-  .faq-empty__title {
-    color: var(--site-text-heading);
-    font-size: var(--ek-font-size-xl);
-    font-weight: var(--ek-font-weight-bold);
+  .faq-nav__count {
+    margin-inline-start: auto;
+    padding-inline-start: var(--ek-space-2);
+    color: var(--ek-color-content-muted);
+    font-variant-numeric: tabular-nums;
   }
-  .faq-empty__text {
-    color: var(--site-text-body);
-  }
-  .faq-empty__reset {
-    min-height: var(--site-tap-target);
-    padding-inline: var(--ek-space-5);
-    border: var(--site-border-width) solid var(--ek-color-border-strong);
-    border-radius: var(--ek-radius-tile);
-    background: var(--ek-color-surface);
-    color: var(--site-text-heading);
-    font: inherit;
-    font-weight: var(--ek-font-weight-semibold);
-    cursor: pointer;
-  }
-  .faq-empty__reset:hover {
-    border-color: var(--site-action-border);
-    background: var(--site-action-subtle);
-    color: var(--site-action-emphasis);
-  }
-  .more strong {
-    display: block;
-    color: var(--site-text-heading);
-    font-size: var(--ek-font-size-xl);
+  .faq-group h3 {
+    scroll-margin-top: var(--ek-space-16);
+    font-size: var(--site-font-display-sm);
+    font-weight: var(--site-font-display-weight);
+    line-height: var(--site-font-display-line-height);
+    letter-spacing: var(--site-font-display-tracking);
   }
 
-  @media (min-width: 1024px) {
+  .more {
+    margin-top: var(--ek-space-8);
+    color: var(--ek-color-content-default);
+    font-size: var(--ek-font-size-lg);
+  }
+
+  @media (min-width: 900px) {
     .faq-layout {
-      grid-template-columns: minmax(0, 17rem) minmax(0, 1fr);
-      gap: var(--ek-space-12);
+      grid-template-columns: minmax(12rem, 15rem) minmax(0, 1fr);
       align-items: start;
+      gap: var(--ek-space-12);
     }
-    .faq-tabs {
+    .faq-nav {
       position: sticky;
       top: calc(var(--site-header-height) + var(--ek-space-6));
-      padding: var(--ek-space-2);
-      border: var(--site-border-width) solid var(--ek-color-border-default);
-      border-radius: var(--ek-radius-card);
-      background: var(--ek-color-surface);
     }
-    .faq-tabs ul {
+    .faq-nav ul {
       flex-direction: column;
-      gap: var(--ek-space-1);
-      padding: 0;
-      overflow: visible;
+      align-items: stretch;
     }
-    .faq-tab {
-      border-color: transparent;
-      background: transparent;
-      white-space: normal;
+    .faq-nav a {
+      justify-content: flex-start;
+      border: none;
+      padding-inline: var(--ek-space-3);
+      border-inline-start: var(--ek-space-1) solid var(--ek-color-border-default);
+      border-radius: 0;
     }
-    .faq-tab:hover {
-      border-color: transparent;
-      background: var(--site-action-subtle);
-    }
-    .faq-tab[aria-current='true'] {
-      border-color: var(--site-action-border);
-      background: var(--site-action-subtle);
+    .faq-nav a:hover {
+      border-inline-start-color: var(--ek-color-primary);
+      background: var(--ek-color-surface-muted);
     }
   }
 </style>

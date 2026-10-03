@@ -9,9 +9,8 @@
 </template>
 <script setup lang="ts">
 import { ref, inject, nextTick, watch, computed, onBeforeMount, onMounted } from 'vue'
-import { useProductImageUrl } from '@/composables/useProductImageUrl'
-// FE-CFG-1: görsel tabanı sabit değil — backend ortam değeri (`stores/publicConfig`), kural `config/imageUrl.ts`.
-const productImageUrl = useProductImageUrl()
+const baseImageURL = ref('https://images.entegrasyonik.com/products/')
+const baseTempImageURL = ref(baseImageURL.value + 'temp/')
 var image: any = defineModel({ default: {} })
 
 const props = withDefaults(defineProps<{
@@ -36,16 +35,17 @@ const computedImage = computed(() => {
   if (!image.value || !image.value._id) {
     return { width: 0, src: undefined }
   }
-  // Önce DB `url`; yoksa backend yolu (`<clientId>/<productId>/<imageId>_t.<ext>`). Önceki kod kurduğu adresi
-  // (clientId'siz) sonda `image.url` ile eziyordu → `url`'siz görsel hep yer tutucu kalıyordu.
-  const src = productImageUrl(image.value, props.productId, { thumbnail: true })
+  var src = image.value.url
   var width = 0
-  if (image.value.url && image.value.height) {
+  if (src == undefined) {
+    src = (image.value.isTempImage == false ? baseImageURL.value : baseTempImageURL.value) + props.productId + '/' + image.value._id + '_t.' + image.value.extension
+  } else {
     width = image.value.width * 100 / image.value.height
   }
   if (aspect.value) {
     width = aspect.value * props.height
   }
+  src = image.value.url
   return {
     width: width,
     src: src

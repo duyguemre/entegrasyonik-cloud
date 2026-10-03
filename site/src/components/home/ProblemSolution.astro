@@ -14,12 +14,10 @@
  * çekilir, marka kartı yükselip tam parlaklığa gelir, akış hatları merkeze doğru uzar (yalnızca transform/opacity).
  * Hareket kapalı / JS'siz: `--scroll-p` yazılmaz → varsayılan 1 = anlamlı statik SON durum (iki taraf da görünür,
  * iyi taraf baskın). Giriş ve döngü: scenes.css / scenes-loops.css.
- * S26 (SR3 madde 12 — sıfır aşırı satış hikâyesi; S15-B'nin sabit "6 — kullanılabilir stok" kartının yerine): her kanal
- * sitenin kanal rozeti (ChannelMono) + stok değeridir. 30 sn'lik sakin döngü = dört perde (farklı ürün, farklı kanal):
- * bir kanaldan sipariş gelir -> ışık paketi merkeze iner -> merkezde stok bir adet düşer ("Rezerve edildi") -> geri
- * dalga ile diğer TÜM kanallar aynı anda yeni değere geçer -> "Tüm kanallarda eşzamanlı · aşırı satış yok".
- * Statik hâl (hareket kapalı / reduced / JS'siz) = 1. perdenin SON karesi: sipariş etiketi, merkezde düşmüş stok ve
- * "Rezerve edildi", tüm kanallarda aynı yeni değer, sonuç etiketi. Yalnızca opacity/translate/scale.
+ * S15-B (tek merkez akışı): her kanal, stok değerini taşıyan isimsiz bir çiptir (`[data-code]` → `--chan`). 12 sn'lik
+ * sakin döngü (yalnızca hareket açık + görünürken): kanallar kendi değerlerini gösterir → ışık paketleri çipin ALTINDAN
+ * çıkıp ortak hatta birleşir ve göbeğe iner → göbekte yumuşak nabız → geri yayılan dalga kanallara döner → değer tüm
+ * kanallarda aynı olur (senkron). Statik hâl = senkron son durum (tüm çipler aynı değer, paket/halka görünmez).
  * Paketler marka kartının içinde kalır (kart `overflow: hidden`): sayfa taşması yok.
  * Stok sayıları senaryoyu anlatan sabit görseldir, gerçek veri değildir (S15-C: ayrı "örnek" etiketi yok; sahne
  * aria-hidden, anlam başlık ve fayda metinlerinde). Fayda metinleri yetenek kayıtlarına dayanır (capabilities.ts).
@@ -27,27 +25,15 @@
 import Section from '../Section.astro'
 import SectionHeading from './SectionHeading.astro'
 import Icon from './Icon.astro'
-import ChannelMono from '../pages/ChannelMono.astro'
 import { getPublicIntegrations } from '../../data/integrations'
-import { homeAgentGain as agentGain } from '../../data/assistant'
 import { getPublicCapabilities } from '../../data/capabilities'
 
 // Örnek senaryo: her kanalın kendi panelinde farklı (çelişen) stok sayısı görmesi — sabit görsel örnek.
 const EXAMPLE_STOCK = [14, 9, 21, 6]
+const SYNCED_STOCK = 6
 const channels = getPublicIntegrations()
   .slice(0, EXAMPLE_STOCK.length)
-  .map((c, i) => ({ code: c.code, name: c.name, stock: EXAMPLE_STOCK[i] }))
-
-// S26 (SR3 madde 12) — sıfır aşırı satış hikâyesi: her perde bir üründür; bir kanaldan (`origin`) sipariş gelir,
-// merkezde stok bir adet düşer ("Rezerve edildi"), ardından TÜM kanallar aynı anda yeni değeri gösterir. Perdeler
-// sırayla farklı kanal ve ürünle döner (scenes-loops.css; perde sayısı = PS_ACTS). Statik hâl = 1. perdenin son karesi.
-// Sayılar ve ürün adları senaryoyu anlatan görsel örnektir (sahne aria-hidden; anlam başlık ve fayda metinlerinde).
-const acts = [
-  { product: 'Keten gömlek', stock: 6, origin: 0 },
-  { product: 'Deri cüzdan', stock: 3, origin: 2 },
-  { product: 'Seramik kupa', stock: 12, origin: 1 },
-  { product: 'Spor çanta', stock: 9, origin: 3 },
-].map((a) => ({ ...a, origin: a.origin % channels.length }))
+  .map((c, i) => ({ code: c.code, stock: EXAMPLE_STOCK[i] }))
 
 const pains = [
   'Stok her panelde ayrı ayrı, elle güncellenir',
@@ -61,7 +47,7 @@ const gains = [
   {
     icon: 'layers' as const,
     title: 'Merkezi stok yönetimi',
-    text: 'Ürün, fiyat ve stok bilgisini bir kez güncellersiniz; bağlı kanallarınıza iletilir.',
+    text: 'Ürün, fiyat ve stok değişiklikleri bağlı kanallara tek yerden iletilir.',
     requires: ['multi-channel-products'],
   },
   {
@@ -73,15 +59,14 @@ const gains = [
   {
     icon: 'orders' as const,
     title: 'Tek sipariş akışı',
-    text: 'Her kanaldan gelen sipariş aynı listede; iade ve alıcı soruları da yanında.',
+    text: 'Farklı kanallardan gelen siparişler tek listede, iade ve sorular tek yerde.',
     requires: ['unified-orders', 'returns', 'questions'],
   },
-  // S27a (SR4 madde 5): güvenlik maddesi Güvenlik bölümüne taşındı (tekrar yok); yerine Otopilot (Zaman sütunu).
   {
-    icon: 'sparkle' as const,
-    title: agentGain.title,
-    text: agentGain.text,
-    requires: ['unified-orders', 'stock-reservation'],
+    icon: 'shield' as const,
+    title: 'Kurumsal düzeyde güvenlik',
+    text: 'Entegrasyon anahtarları şifreli saklanır; her müşterinin verisi kendi veritabanında izole tutulur.',
+    requires: ['secrets-encryption', 'tenant-database'],
   },
 ].filter((g) => g.requires.every((id) => capIds.has(id)))
 ---
@@ -90,8 +75,9 @@ const gains = [
   <SectionHeading
     id="sorun-cozum-baslik"
     eyebrow="Sorun ve çözüm"
-    title="Her kanal ayrı panel, ayrı stok, ayrı mesai"
-    lead="Her pazaryeri kendi panelinde, kendi stok sayısıyla çalıştığında ekibiniz aynı işi defalarca yapar; son adet iki kanalda birden satılır, iptal puanınızı düşürür."
+    title="Dağınık yönetim zaman ve stok kaybettirir"
+    accent="zaman ve stok kaybettirir"
+    lead="Her pazaryeri kendi panelinde, kendi stok sayısıyla çalıştığında ekibiniz aynı işi defalarca yapar ve aşırı satış riski büyür. Entegrasyonik tüm kanalları tek merkezde birleştirir."
   />
 
   <div class="ps" data-scene="problem-solution" data-scroll-progress data-testid="problem-solution">
@@ -141,60 +127,25 @@ const gains = [
       <div class="ps__after-glow" aria-hidden="true"></div>
       <div class="ps__after-head">
         <p class="ps__tag ps__tag--brand">Entegrasyonik ile</p>
-        <h3 id="ps-after-title" class="ps__after-title">Sipariş bir kanalda, <span class="ps__accent">stok her kanalda</span> doğru</h3>
+        <h3 id="ps-after-title" class="ps__after-title">Tek merkez, <span class="ps__accent">tek stok</span>, tek sipariş akışı</h3>
       </div>
 
       <div class="ps__after-body">
-        <div class="ps__net" aria-hidden="true" data-testid="ps-net">
-          <p class="ps__product">
-            <span class="ps__product-icon"><Icon name="stock" size="sm" /></span>
-            <span class="ps__product-names">
-              {
-                acts.map((a, k) => (
-                  <span class="ps__product-name" data-part="act" data-act={k}>
-                    {a.product}
-                  </span>
-                ))
-              }
-            </span>
-          </p>
+        <div class="ps__net" aria-hidden="true">
           <ul class="ps__nodes">
             {
-              channels.map((c, i) => (
+              channels.map((c) => (
                 <li class="ps__node" data-code={c.code}>
-                  <span class="ps__order-slot">
-                    {acts.map((a, k) =>
-                      a.origin === i ? (
-                        <span class="ps__order" data-part="order" data-act={k}>
-                          <Icon name="orders" size="sm" />
-                          Yeni sipariş
-                        </span>
-                      ) : null,
-                    )}
-                  </span>
                   <span class="ps__chip" data-part="chip">
-                    <ChannelMono code={c.code} name={c.name} size="xs" />
+                    <span class="ps__node-dot" />
                     <span class="ps__chip-num">
-                      {acts.map((a, k) => (
-                        <>
-                          <b class="ps__chip-old" data-part={a.origin === i ? 'chip-old-origin' : 'chip-old'} data-act={k}>
-                            {a.stock}
-                          </b>
-                          <b class="ps__chip-new" data-part={a.origin === i ? 'chip-new-origin' : 'chip-new'} data-act={k}>
-                            {a.stock - 1}
-                          </b>
-                        </>
-                      ))}
+                      <b class="ps__chip-old" data-part="chip-old">{c.stock}</b>
+                      <b class="ps__chip-new" data-part="chip-new">{SYNCED_STOCK}</b>
                     </span>
                   </span>
                   <span class="ps__flow" data-part="flow">
-                    {acts.map((a, k) =>
-                      a.origin === i ? (
-                        <i class="ps__packet" data-part="packet" data-act={k} />
-                      ) : (
-                        <i class="ps__packet ps__packet--back" data-part="packet-back" data-act={k} />
-                      ),
-                    )}
+                    <i class="ps__packet" data-part="packet" />
+                    <i class="ps__packet ps__packet--back" data-part="packet-back" />
                   </span>
                 </li>
               ))
@@ -207,24 +158,12 @@ const gains = [
           <div class="ps__hub" data-part="hub">
             <span class="ps__hub-ring" data-part="hub-ring"></span>
             <span class="ps__hub-ring ps__hub-ring--late" data-part="hub-ring"></span>
-            <span class="ps__hub-icon"><Icon name="layers" size="sm" /></span>
-            <span class="ps__hub-copy">
-              <span class="ps__hub-label">Merkezi stok</span>
-              <span class="ps__hub-num">
-                {acts.map((a, k) => (
-                  <>
-                    <b class="ps__chip-old" data-part="hub-old" data-act={k}>{a.stock}</b>
-                    <b class="ps__chip-new" data-part="hub-new" data-act={k}>{a.stock - 1}</b>
-                  </>
-                ))}
-              </span>
-            </span>
-            <span class="ps__resv" data-part="resv"><Icon name="check" size="sm" />Rezerve edildi</span>
+            <Icon name="stock" size="md" />
           </div>
-          <p class="ps__result" data-part="result">
-            <span class="ps__result-icon" data-part="result-text"><Icon name="shield" size="sm" /></span>
-            <span class="ps__result-label" data-part="result-text"><span class="ps__result-part">Tüm kanallarda eşzamanlı</span><span class="ps__result-sep"> · </span><span class="ps__result-part">aşırı satış yok</span></span>
-          </p>
+          <div class="ps__result" data-part="result">
+            <b class="ps__result-num">{SYNCED_STOCK}</b>
+            <span class="ps__result-label">Kullanılabilir stok<br />tek merkezden tüm kanallara</span>
+          </div>
         </div>
 
         <ul class="ps__gains">
@@ -284,8 +223,7 @@ const gains = [
     opacity: calc(1 - var(--p) * 0.22);
   }
   .ps__before-title {
-    /* site-wdg W04: sütun opaklığı (0,78) meta tonunu ~3,1:1'e düşürüyordu → gövde tonu (~5,3:1); "soluk" görünüm opaklıktan gelir. */
-    color: var(--ek-color-content-default);
+    color: var(--site-text-meta);
     font-size: var(--ek-font-size-xl);
     font-weight: var(--ek-font-weight-semibold);
     line-height: var(--ek-line-height-tight);
@@ -369,7 +307,7 @@ const gains = [
     display: flex;
     flex-direction: column;
     gap: var(--ek-space-3);
-    color: var(--ek-color-content-default);
+    color: var(--site-text-meta);
     font-size: var(--ek-font-size-md);
   }
   .ps__pains li {
@@ -437,7 +375,7 @@ const gains = [
     background: var(--site-stage-mesh);
     box-shadow:
       0 2rem 4rem -1.5rem color-mix(in srgb, var(--ek-color-primary) 55%, transparent),
-      0 0 0 var(--site-border-width) color-mix(in srgb, var(--site-accent-on-dark) 35%, transparent);
+      0 0 0 var(--site-border-width) color-mix(in srgb, var(--ek-color-secondary) 35%, transparent);
     color: var(--site-text-on-dark-body);
     transform-origin: 0 50%;
     transform: translateY(calc(var(--q) * var(--ek-space-8))) scale(calc(0.96 + var(--p) * 0.04));
@@ -462,7 +400,7 @@ const gains = [
     width: 70%;
     aspect-ratio: 1;
     border-radius: var(--ek-radius-full);
-    background: radial-gradient(closest-side, color-mix(in srgb, var(--site-accent-on-dark) 34%, transparent), transparent);
+    background: radial-gradient(closest-side, color-mix(in srgb, var(--ek-color-secondary) 34%, transparent), transparent);
     opacity: calc(0.3 + var(--p) * 0.7);
     pointer-events: none;
   }
@@ -479,9 +417,13 @@ const gains = [
     line-height: var(--site-font-display-line-height);
     text-wrap: balance;
   }
-  /* S27c (BRAND §4 vurgu ekonomisi): degrade vurgu yalnız hero, kapanış ve Otopilot vitrininde; burada kırılmaz kelime grubu. */
   .ps__accent {
     white-space: nowrap;
+    background: var(--site-gradient-accent);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: var(--site-accent);
   }
   .ps__after-body {
     display: grid;
@@ -489,53 +431,25 @@ const gains = [
     align-items: center;
   }
 
-  /*
-   * Ağ (S26 hikâyesi): ürün -> kanal rozetleri (sipariş etiketi + stok) -> akış hatları -> ortak hat -> merkezi stok
-   * (rezerve vurgusu) -> "eşzamanlı" sonucu. Perde öğeleri (`[data-act]`) üst üste aynı hücrede durur; statik hâlde
-   * YALNIZCA 1. perde (`data-act="0"`) ve onun SON karesi görünür: tüm kanallar ve merkez aynı yeni değerde.
-   */
+  /* Ağ: kanal noktaları -> akış hatları -> ortak hat -> merkez -> tek stok */
   .ps__net {
     position: relative;
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: var(--ek-space-5) var(--ek-space-3);
+    padding: var(--ek-space-5) var(--ek-space-4);
     border: var(--site-border-width) solid var(--site-glass-border);
     border-radius: var(--ek-radius-xl);
     background: var(--site-glass-bg);
   }
-  .ps__net [data-act]:not([data-act='0']) {
-    opacity: 0;
-  }
-  .ps__product {
-    display: flex;
-    align-items: center;
-    gap: var(--ek-space-2);
-    margin-bottom: var(--ek-space-4);
-    padding: var(--ek-space-1) var(--ek-space-3) var(--ek-space-1) var(--ek-space-1);
-    border: var(--site-border-width) solid var(--site-glass-border);
-    border-radius: var(--ek-radius-full);
-    background: color-mix(in srgb, var(--site-stage-deep) 70%, transparent);
-    color: var(--site-text-on-dark-heading);
-    font-size: var(--ek-font-size-sm);
+  .ps__net-caption {
+    align-self: flex-start;
+    margin-bottom: var(--ek-space-3);
+    color: var(--site-text-on-dark-meta);
+    font-size: var(--ek-font-size-xs);
     font-weight: var(--ek-font-weight-semibold);
-  }
-  .ps__product-icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: var(--ek-space-6);
-    height: var(--ek-space-6);
-    border-radius: var(--ek-radius-full);
-    background: color-mix(in srgb, var(--site-accent-on-dark) 22%, transparent);
-    color: var(--site-accent);
-  }
-  .ps__product-names {
-    display: grid;
-  }
-  .ps__product-name {
-    grid-area: 1 / 1;
-    white-space: nowrap;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
   }
   .ps__nodes {
     display: grid;
@@ -548,43 +462,9 @@ const gains = [
     align-items: center;
     min-width: 0;
   }
-  /* Sipariş etiketi yuvası: tüm kanallarda aynı yükseklik (etiket perdeye göre farklı kanalda belirir). Etiket sütundan
-     geniş olabilir: ortalanır, kenardaki kanallarda içe hizalanır (dar ekranda kart dışına taşmaz). */
-  .ps__order-slot {
-    position: relative;
-    width: 100%;
-    height: var(--ek-space-8);
-  }
-  .ps__order {
-    position: absolute;
-    inset-block-end: 0;
-    inset-inline-start: 50%;
-    transform: translateX(-50%);
-    display: inline-flex;
-    align-items: center;
-    gap: var(--ek-space-1);
-    margin-bottom: var(--ek-space-2);
-    padding: calc(var(--ek-space-1) * 0.5) var(--ek-space-2);
-    border-radius: var(--ek-radius-full);
-    background: var(--ek-color-background);
-    color: var(--site-text-heading);
-    font-size: var(--ek-font-size-xs);
-    font-weight: var(--ek-font-weight-semibold);
-    line-height: var(--ek-line-height-tight);
-    white-space: nowrap;
-    box-shadow: 0 var(--ek-space-1) var(--ek-space-3) color-mix(in srgb, var(--site-stage-deep) 60%, transparent);
-  }
-  .ps__node:first-child .ps__order {
-    inset-inline-start: 0;
-    transform: none;
-  }
-  .ps__node:last-child .ps__order {
-    inset-inline: auto 0;
-    transform: none;
-  }
   /*
-   * Kanal çipi: sitenin kanal rozeti (ChannelMono) + o kanaldaki stok. OPAK yüzey ve `z-index: 1`: ışık paketi çipin
-   * ALTINDAN çıkar / geri döndüğünde altına girer. Statik hâlde yalnızca 1. perdenin yeni değeri görünür.
+   * Kanal çipi: isimsiz renk noktası + o kanaldaki stok değeri. OPAK yüzey ve `z-index: 1`: ışık paketi çipin ALTINDAN
+   * çıkar / geri döndüğünde altına girer. Statik hâlde yalnızca senkron değer (`ps__chip-new`) görünür.
    */
   .ps__chip {
     position: relative;
@@ -592,38 +472,44 @@ const gains = [
     display: inline-flex;
     align-items: center;
     gap: calc(var(--ek-space-1) * 1.5);
-    padding: calc(var(--ek-space-1) * 0.75) calc(var(--ek-space-1) * 2.5) calc(var(--ek-space-1) * 0.75) calc(var(--ek-space-1) * 0.75);
+    padding: var(--ek-space-1) calc(var(--ek-space-1) * 2.5) var(--ek-space-1) calc(var(--ek-space-1) * 1.5);
     border: var(--site-border-width) solid color-mix(in srgb, var(--chan, var(--site-accent)) 45%, transparent);
-    border-radius: var(--ek-radius-lg);
+    border-radius: var(--ek-radius-full);
     background:
       linear-gradient(180deg, color-mix(in srgb, var(--ek-color-background) 8%, transparent), transparent),
-      color-mix(in srgb, var(--site-stage-deep) 84%, var(--site-accent-on-dark));
+      color-mix(in srgb, var(--site-stage-deep) 84%, var(--ek-color-secondary));
     box-shadow:
       inset 0 var(--site-border-width) 0 color-mix(in srgb, var(--ek-color-background) 12%, transparent),
       0 var(--ek-space-2) var(--ek-space-4) calc(var(--ek-space-2) * -1) color-mix(in srgb, var(--chan, var(--site-accent)) 55%, transparent);
   }
-  /* Eşzamanlı güncellemede çipte açılan ince halka (statik hâlde görünmez). */
+  /* Geri yayılan dalganın çipte açtığı ince halka (statik hâlde görünmez). */
   .ps__chip::after {
     content: '';
     position: absolute;
     inset: calc(var(--site-border-width) * -1);
-    border: var(--site-border-width) solid color-mix(in srgb, var(--site-accent-on-dark) 80%, transparent);
+    border: var(--site-border-width) solid color-mix(in srgb, var(--ek-color-secondary) 80%, transparent);
     border-radius: inherit;
     opacity: 0;
     pointer-events: none;
   }
-  .ps__chip-num,
-  .ps__hub-num {
+  .ps__node-dot {
+    flex: none;
+    width: var(--ek-space-3);
+    height: var(--ek-space-3);
+    border-radius: var(--ek-radius-full);
+    background: var(--chan, var(--site-accent));
+    box-shadow:
+      0 0 0 calc(var(--site-border-width) * 3) color-mix(in srgb, var(--chan, var(--site-accent)) 22%, transparent),
+      0 0 var(--ek-space-3) color-mix(in srgb, var(--chan, var(--site-accent)) 60%, transparent);
+  }
+  .ps__chip-num {
     display: grid;
     color: var(--site-text-on-dark-heading);
+    font-size: var(--ek-font-size-sm);
     font-variant-numeric: tabular-nums;
     line-height: 1;
   }
-  .ps__chip-num {
-    font-size: var(--ek-font-size-md);
-  }
-  .ps__chip-num b,
-  .ps__hub-num b {
+  .ps__chip-num b {
     grid-area: 1 / 1;
     min-width: 2ch;
     font-weight: var(--ek-font-weight-semibold);
@@ -666,18 +552,18 @@ const gains = [
     height: var(--ek-space-2);
     translate: -50% -50%;
     border-radius: var(--ek-radius-full);
-    background: color-mix(in srgb, var(--chan, var(--site-accent-on-dark)) 35%, var(--ek-color-background));
+    background: color-mix(in srgb, var(--chan, var(--ek-color-secondary)) 35%, var(--ek-color-background));
     box-shadow:
-      0 0 var(--ek-space-2) var(--chan, var(--site-accent-on-dark)),
-      0 0 var(--ek-space-4) color-mix(in srgb, var(--chan, var(--site-accent-on-dark)) 60%, transparent);
+      0 0 var(--ek-space-2) var(--chan, var(--ek-color-secondary)),
+      0 0 var(--ek-space-4) color-mix(in srgb, var(--chan, var(--ek-color-secondary)) 60%, transparent);
   }
   /* Geri dalga ve gövde paketi marka renginde (merkezden gelen tek değer). */
   .ps__packet--back::before,
   .ps__packet--stem::before {
-    background: color-mix(in srgb, var(--site-accent-on-dark) 35%, var(--ek-color-background));
+    background: color-mix(in srgb, var(--ek-color-secondary) 35%, var(--ek-color-background));
     box-shadow:
-      0 0 var(--ek-space-2) var(--site-accent-on-dark),
-      0 0 var(--ek-space-4) color-mix(in srgb, var(--site-accent-on-dark) 60%, transparent);
+      0 0 var(--ek-space-2) var(--ek-color-secondary),
+      0 0 var(--ek-space-4) color-mix(in srgb, var(--ek-color-secondary) 60%, transparent);
   }
   .ps__bus {
     position: relative;
@@ -689,17 +575,27 @@ const gains = [
     box-shadow: 0 0 var(--ek-space-3) color-mix(in srgb, var(--site-accent) 70%, transparent);
     transform: scaleX(var(--p));
   }
-  /* Ortak hat üzerinde parlayan ışık (döngüde; statik hâlde görünmez). */
+  /* Ortak hat üzerinde iki uçtan ortaya dolan ışık (döngüde; statik hâlde görünmez). */
+  .ps__bus::before,
   .ps__bus::after {
     content: '';
     position: absolute;
     inset-block: calc(var(--site-border-width) * -1);
-    inset-inline: 0;
+    width: 50%;
     border-radius: var(--ek-radius-full);
-    background: color-mix(in srgb, var(--site-accent-on-dark) 40%, var(--ek-color-background));
-    box-shadow: 0 0 var(--ek-space-3) color-mix(in srgb, var(--site-accent-on-dark) 80%, transparent);
+    box-shadow: 0 0 var(--ek-space-3) color-mix(in srgb, var(--ek-color-secondary) 80%, transparent);
     opacity: 0;
     pointer-events: none;
+  }
+  .ps__bus::before {
+    inset-inline-start: 0;
+    transform-origin: 0 50%;
+    background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--ek-color-secondary) 40%, var(--ek-color-background)));
+  }
+  .ps__bus::after {
+    inset-inline-end: 0;
+    transform-origin: 100% 50%;
+    background: linear-gradient(270deg, transparent, color-mix(in srgb, var(--ek-color-secondary) 40%, var(--ek-color-background)));
   }
   .ps__stem {
     position: relative;
@@ -710,134 +606,75 @@ const gains = [
     transform-origin: 50% 0;
     transform: scaleY(var(--p));
   }
-  /* Merkezi stok kartı: simge + etiket + büyük değer; altında kısa "Rezerve edildi" vurgusu. */
   .ps__hub {
     position: relative;
-    display: grid;
-    grid-template-columns: auto auto;
-    align-items: center;
-    column-gap: var(--ek-space-3);
-    row-gap: var(--ek-space-2);
-    padding: var(--ek-space-3) var(--ek-space-5) var(--ek-space-3) var(--ek-space-3);
-    border-radius: var(--ek-radius-xl);
-    background: linear-gradient(140deg, var(--site-accent-on-dark), var(--site-action-emphasis));
-    color: var(--site-color-on-primary);
-    box-shadow:
-      0 0 0 var(--ek-space-2) color-mix(in srgb, var(--site-accent-on-dark) 16%, transparent),
-      0 0 var(--ek-space-12) color-mix(in srgb, var(--site-accent-on-dark) 50%, transparent);
-    transform: scale(calc(0.9 + var(--p) * 0.1));
-  }
-  /* Merkezde nefes alan ışıma (yalnızca oynatma durumunda ve görünürken: scenes-loops.css). */
-  .ps__hub::after {
-    content: '';
-    position: absolute;
-    inset: calc(var(--ek-space-2) * -1);
-    z-index: -1;
-    border-radius: inherit;
-    background: color-mix(in srgb, var(--site-accent-on-dark) 40%, transparent);
-    opacity: 0;
-  }
-  /* Rezervasyon anında karttan dışa açılan iki ince halka (statik hâlde görünmez). */
-  .ps__hub-ring {
-    position: absolute;
-    inset: 0;
-    border: var(--site-border-width) solid color-mix(in srgb, var(--site-accent-on-dark) 80%, transparent);
-    border-radius: inherit;
-    opacity: 0;
-    pointer-events: none;
-  }
-  .ps__hub-icon {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: var(--ek-space-10);
-    height: var(--ek-space-10);
-    border-radius: var(--ek-radius-lg);
-    background: color-mix(in srgb, var(--ek-color-background) 16%, transparent);
-    box-shadow: inset 0 0 0 var(--site-border-width) color-mix(in srgb, var(--ek-color-background) 28%, transparent);
-  }
-  .ps__hub-copy {
-    display: flex;
-    flex-direction: column;
-    gap: calc(var(--ek-space-1) * 0.5);
-  }
-  .ps__hub-label {
-    font-size: var(--ek-font-size-xs);
-    font-weight: var(--ek-font-weight-semibold);
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    opacity: 0.9;
-  }
-  .ps__hub-num {
-    color: inherit;
-    font-size: var(--site-font-display-sm);
-    font-weight: var(--site-font-display-weight);
-    letter-spacing: var(--site-font-display-tracking);
-    justify-items: start;
-  }
-  .ps__hub-num .ps__chip-old {
-    color: inherit;
-  }
-  .ps__hub-num b {
-    text-align: start;
-  }
-  .ps__resv {
-    grid-column: 1 / -1;
-    justify-self: center;
-    display: inline-flex;
-    align-items: center;
-    gap: var(--ek-space-1);
-    padding: calc(var(--ek-space-1) * 0.5) var(--ek-space-2);
+    width: var(--ek-space-16);
+    height: var(--ek-space-16);
     border-radius: var(--ek-radius-full);
-    background: var(--ek-color-background);
-    /* site-wdg W26: koyu sahne içindeki beyaz hap — koyu yüzey eşlemesi açık teal veriyordu (~2,8:1); açık zemin tonu sabitlenir. */
-    color: color-mix(in srgb, var(--site-action-emphasis) 82%, var(--ek-color-content-strong));
-    font-size: var(--ek-font-size-xs);
-    font-weight: var(--ek-font-weight-semibold);
-    line-height: var(--ek-line-height-tight);
-    white-space: nowrap;
+    background: linear-gradient(140deg, var(--ek-color-secondary), var(--ek-color-secondary-darken-1));
+    color: var(--site-color-on-primary);
+    box-shadow:
+      0 0 0 var(--ek-space-2) color-mix(in srgb, var(--ek-color-secondary) 18%, transparent),
+      0 0 var(--ek-space-12) color-mix(in srgb, var(--ek-color-secondary) 55%, transparent);
+    transform: scale(calc(0.8 + var(--p) * 0.2));
+  }
+  /* Göbekte nefes alan ışıma (yalnızca oynatma durumunda ve görünürken: scenes-loops.css). */
+  .ps__hub::after {
+    content: '';
+    position: absolute;
+    inset: calc(var(--ek-space-3) * -1);
+    z-index: -1;
+    border-radius: var(--ek-radius-full);
+    background: color-mix(in srgb, var(--ek-color-secondary) 40%, transparent);
+    opacity: 0;
+  }
+  /* Varış anında göbekten dışa açılan iki ince halka (statik hâlde görünmez). */
+  .ps__hub-ring {
+    position: absolute;
+    inset: 0;
+    border: var(--site-border-width) solid color-mix(in srgb, var(--ek-color-secondary) 80%, transparent);
+    border-radius: inherit;
+    opacity: 0;
+    pointer-events: none;
   }
   .ps__result {
     position: relative;
     display: flex;
     align-items: center;
-    gap: var(--ek-space-2);
+    gap: var(--ek-space-3);
     margin-top: var(--ek-space-5);
-    padding: var(--ek-space-2) var(--ek-space-4) var(--ek-space-2) var(--ek-space-2);
-    border: var(--site-border-width) solid color-mix(in srgb, var(--site-accent-on-dark) 45%, transparent);
-    border-radius: var(--ek-radius-full);
-    background: color-mix(in srgb, var(--site-accent-on-dark) 12%, transparent);
-    color: var(--site-text-on-dark-heading);
-    font-size: var(--ek-font-size-sm);
-    font-weight: var(--ek-font-weight-semibold);
-    line-height: var(--ek-line-height-tight);
+    padding: var(--ek-space-3) var(--ek-space-5);
+    border: var(--site-border-width) solid color-mix(in srgb, var(--ek-color-secondary) 45%, transparent);
+    border-radius: var(--ek-radius-lg);
+    background: color-mix(in srgb, var(--ek-color-secondary) 10%, transparent);
     opacity: calc(0.2 + var(--p) * 0.8);
   }
-  /* Eşzamanlı güncelleme anında kart kenarında beliren ince ışık (döngüde; statik hâlde görünmez). */
+  /* Senkron anında kart kenarında beliren ince ışık (döngüde; statik hâlde görünmez). */
   .ps__result::after {
     content: '';
     position: absolute;
     inset: calc(var(--site-border-width) * -1);
     border-radius: inherit;
     box-shadow:
-      0 0 0 var(--site-border-width) var(--site-accent-on-dark),
-      0 0 var(--ek-space-5) color-mix(in srgb, var(--site-accent-on-dark) 45%, transparent);
+      0 0 0 var(--site-border-width) var(--ek-color-secondary),
+      0 0 var(--ek-space-5) color-mix(in srgb, var(--ek-color-secondary) 45%, transparent);
     opacity: 0;
     pointer-events: none;
   }
-  .ps__result-part {
-    white-space: nowrap;
+  .ps__result-num {
+    color: var(--site-text-on-dark-heading);
+    font-size: var(--site-font-display-md);
+    font-weight: var(--site-font-display-weight);
+    letter-spacing: var(--site-font-display-tracking);
+    line-height: 1;
   }
-  .ps__result-icon {
-    display: inline-flex;
-    flex: none;
-    align-items: center;
-    justify-content: center;
-    width: var(--ek-space-6);
-    height: var(--ek-space-6);
-    border-radius: var(--ek-radius-full);
-    background: color-mix(in srgb, var(--site-accent-on-dark) 30%, transparent);
-    color: var(--site-accent);
+  .ps__result-label {
+    color: var(--site-text-on-dark-body);
+    font-size: var(--ek-font-size-sm);
+    line-height: var(--ek-line-height-tight);
   }
 
   .ps__gains {
@@ -858,8 +695,8 @@ const gains = [
     width: var(--ek-space-8);
     height: var(--ek-space-8);
     border-radius: var(--ek-radius-lg);
-    background: color-mix(in srgb, var(--site-accent-on-dark) 18%, transparent);
-    box-shadow: inset 0 0 0 var(--site-border-width) color-mix(in srgb, var(--site-accent-on-dark) 35%, transparent);
+    background: color-mix(in srgb, var(--ek-color-secondary) 18%, transparent);
+    box-shadow: inset 0 0 0 var(--site-border-width) color-mix(in srgb, var(--ek-color-secondary) 35%, transparent);
     color: var(--site-accent);
   }
   .ps__gain-copy {
@@ -919,121 +756,5 @@ const gains = [
       transform-origin: 0 50%;
       transform: translateX(calc(var(--q) * var(--ek-space-8))) scale(calc(0.95 + var(--p) * 0.05));
     }
-  }
-
-  /* ================= SITE-DL-02 — uygulamanın tasarım dili (frontend/DESIGN_SYSTEM.md §35) =================
-     Düz yüzey + 1px ince çerçeve + kart yarıçapı; gölge, degrade, ışıma, hover yükselmesi yok; tek vurgu eylem
-     mavisi; ikonlar çerçeveli köşeli kutuda; hap rozet yerine köşeli çip. Yukarıdaki kuralları EZER (aynı özgüllük,
-     kaynak sırası). */
-
-  /* Bugün: düz, ince çerçeveli kart; dağınık paneller gölgesiz. */
-  .ps__before {
-    border-style: solid;
-    border-color: var(--ek-color-border-default);
-    border-radius: var(--ek-radius-card);
-  }
-  .ps__mpanel-inner {
-    border-radius: var(--ek-radius-tile);
-    box-shadow: none;
-  }
-  .ps__x {
-    border: var(--site-border-width) solid var(--ek-color-border-default);
-    border-radius: var(--ek-radius-md);
-    background: var(--ek-color-surface);
-  }
-  /* Köprü: düz çizgi + köşeli ok kutusu. */
-  .ps__bridge-line {
-    background: var(--ek-color-border-strong);
-  }
-  .ps__bridge-knob {
-    border: var(--site-border-width) solid var(--site-action-border);
-    border-radius: var(--ek-radius-tile);
-    background: var(--site-action-subtle);
-    box-shadow: none;
-    color: var(--site-action);
-  }
-  /* Entegrasyonik ile: düz marka laciverti kart (sahne degradesi kart yüzeyi olarak kullanılmaz). */
-  .ps__after {
-    border: var(--site-border-width) solid var(--ek-color-chrome-border);
-    border-radius: var(--ek-radius-card);
-    background: var(--ek-color-chrome);
-    box-shadow: none;
-  }
-  .ps__after::before,
-  .ps__after-glow,
-  .ps__hub::after,
-  .ps__hub-ring,
-  .ps__result::after {
-    display: none;
-  }
-  .ps__net {
-    border-radius: var(--ek-radius-tile);
-  }
-  .ps__product {
-    border-radius: var(--ek-radius-md);
-    background: var(--site-glass-bg);
-  }
-  .ps__product-icon {
-    border: var(--site-border-width) solid var(--site-glass-border);
-    border-radius: var(--ek-radius-md);
-    background: transparent;
-  }
-  .ps__order {
-    border-radius: var(--ek-radius-md);
-    box-shadow: none;
-  }
-  .ps__chip {
-    border-radius: var(--ek-radius-md);
-    background: var(--ek-color-chrome-raised);
-    box-shadow: none;
-  }
-  .ps__flow {
-    background: color-mix(in srgb, var(--chan, var(--site-accent-on-dark)) 70%, transparent);
-  }
-  .ps__packet::before,
-  .ps__packet--back::before,
-  .ps__packet--stem::before,
-  .ps__bus,
-  .ps__bus::after {
-    box-shadow: none;
-  }
-  .ps__bus,
-  .ps__stem {
-    background: var(--ek-color-chrome-soft-border);
-  }
-  /* Merkezi stok: koyu kartta AÇIK dolu kutu (lacivert dolgu koyu zeminde görünmez). */
-  .ps__hub {
-    border: var(--site-border-width) solid var(--ek-color-chrome-soft-border);
-    border-radius: var(--ek-radius-tile);
-    background: var(--ek-color-background);
-    box-shadow: none;
-    color: var(--ek-color-primary);
-  }
-  .ps__hub-icon {
-    border: var(--site-border-width) solid var(--site-action-border);
-    border-radius: var(--ek-radius-md);
-    background: var(--site-action-subtle);
-    box-shadow: none;
-  }
-  .ps__resv {
-    border: var(--site-border-width) solid var(--site-action-border);
-    border-radius: var(--ek-radius-md);
-    background: var(--site-action-subtle);
-  }
-  .ps__result {
-    border-color: var(--site-glass-border);
-    border-radius: var(--ek-radius-tile);
-    background: var(--site-glass-bg);
-  }
-  .ps__result-icon {
-    border: var(--site-border-width) solid var(--site-glass-border);
-    border-radius: var(--ek-radius-md);
-    background: transparent;
-  }
-  .ps__gain-icon {
-    border: var(--site-border-width) solid var(--site-glass-border);
-    border-radius: var(--ek-radius-tile);
-    background: var(--site-glass-bg);
-    box-shadow: none;
   }
 </style>

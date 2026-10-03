@@ -1,4 +1,4 @@
-// ADR-0015 Aşama A3 — kabuk v2 (kalıcı/daraltılabilir kenar menü + komut paleti → DS-v2'de birleşik akıllı arama). YENİ spec
+// ADR-0015 Aşama A3 — kabuk v2 (kalıcı/daraltılabilir kenar menü + komut paleti). YENİ spec
 // dosyası (Karar 5.1 "yeni iddialar yeni spec dosyalarına yazılır; mevcutlar değiştirilmez").
 // `shell.spec.ts`'in davranış sözleşmesine DOKUNMAZ — yalnızca A3'te eklenen YENİ davranışları
 // (Ctrl+K, ray daraltma persist'i, klavye ile menü gezinimi) doğrular. 3 viewport (chromium
@@ -11,42 +11,39 @@ import { gotoAuthed, openDrawer } from '../fixtures/nav'
 const SIDEBAR_STORAGE_KEY = 'ek.ui.v1.sidebar'
 
 test.describe('P1 — Kabuk v2 (ADR-0015 A3: ray/komut paleti/klavye)', () => {
-  // [DS-v2 Aşama 2] Komut paleti üst bardaki BİRLEŞİK akıllı aramaya katıldı (DESIGN_SYSTEM §8.1):
-  // aynı davranış sözleşmesi (Ctrl+K odak, yazınca ekran filtresi, Enter ile git, Esc kapat, eşleşme
-  // yoksa mesaj) artık `role=combobox` arama alanında doğrulanır.
-  test('akıllı arama (komut paleti): Ctrl+K odaklar, yazınca filtreler, Enter ile ekrana gider, Esc kapatır', async ({ page }) => {
+  test('komut paleti: Ctrl+K açar, yazınca filtreler, Enter ile ekrana gider, Esc kapatır', async ({ page }) => {
     await installApiMocks(page)
     await gotoAuthed(page)
 
     await page.keyboard.press('Control+k')
-    const input = page.getByRole('combobox', { name: 'Akıllı arama' })
+    const dialog = page.getByRole('dialog')
+    await expect(dialog).toBeVisible()
+
+    const input = dialog.locator('input.ek-cmdk__input')
     await expect(input).toBeFocused()
 
     await input.fill('sipariş')
-    const listbox = page.getByRole('listbox', { name: 'Akıllı arama sonuçları' })
-    await expect(listbox.getByRole('option', { name: /Sipariş/ }).first()).toBeVisible()
+    await expect(dialog.getByText('Sipariş', { exact: false })).toBeVisible()
 
     await page.keyboard.press('Enter')
-    await expect(listbox).toBeHidden()
+    await expect(dialog).toBeHidden()
     await expect(page.locator('.orderListView')).toBeVisible()
 
-    // Esc kapatır ve odak aramadan çıkar.
+    // Esc kapatır (davranış iddiası, komut paleti tekrar açılıp bu sefer Esc ile kapatılır).
     await page.keyboard.press('Control+k')
-    await expect(input).toBeFocused()
-    await input.fill('sip')
-    await expect(listbox).toBeVisible()
+    await expect(page.getByRole('dialog')).toBeVisible()
     await page.keyboard.press('Escape')
-    await expect(listbox).toBeHidden()
-    await expect(input).not.toBeFocused()
+    await expect(page.getByRole('dialog')).toBeHidden()
   })
 
-  test('akıllı arama: eşleşme yoksa "sonuç yok" gösterir, ham hata sızmaz', async ({ page }) => {
+  test('komut paleti: eşleşme yoksa "bulunamadı" gösterir, ham hata sızmaz', async ({ page }) => {
     await installApiMocks(page)
     await gotoAuthed(page)
 
     await page.keyboard.press('Control+k')
-    await page.getByRole('combobox', { name: 'Akıllı arama' }).fill('zzz-eslesmeyen-sorgu-xyz')
-    await expect(page.getByRole('status').filter({ hasText: 'için sonuç yok' })).toBeVisible()
+    const dialog = page.getByRole('dialog')
+    await dialog.locator('input.ek-cmdk__input').fill('zzz-eslesmeyen-sorgu-xyz')
+    await expect(dialog.getByText('Eşleşen ekran bulunamadı.')).toBeVisible()
     await expect(page.locator('body')).not.toContainText('TypeError')
   })
 
@@ -88,16 +85,15 @@ test.describe('P1 — Kabuk v2 (ADR-0015 A3: ray/komut paleti/klavye)', () => {
     await expect(page.locator('.orderListView')).toBeVisible()
   })
 
-  test('axe: akıllı arama açılırı WCAG 2.1 AA (yalnızca kaydediliyor; AA=0 iddiası shell-dsv2.spec.ts\'te)', async ({ page }, testInfo) => {
+  test('axe: komut paleti WCAG 2.1 AA (yalnızca kaydediliyor, bu görevde düzeltilmiyor)', async ({ page }, testInfo) => {
     await installApiMocks(page)
     await gotoAuthed(page)
     await page.keyboard.press('Control+k')
-    await page.getByRole('combobox', { name: 'Akıllı arama' }).fill('sip')
-    await expect(page.getByRole('listbox', { name: 'Akıllı arama sonuçları' })).toBeVisible()
+    await expect(page.getByRole('dialog')).toBeVisible()
 
     const AxeBuilder = (await import('@axe-core/playwright')).default
     const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze()
-    await testInfo.attach('axe-akilli-arama-sonuclari.json', { body: JSON.stringify(results.violations, null, 2), contentType: 'application/json' })
-    console.log(`[axe] Akıllı arama: ${results.violations.length} WCAG 2.1 AA ihlali (bkz. ek).`)
+    await testInfo.attach('axe-komut-paleti-sonuclari.json', { body: JSON.stringify(results.violations, null, 2), contentType: 'application/json' })
+    console.log(`[axe] Komut paleti: ${results.violations.length} WCAG 2.1 AA ihlali (bkz. ek).`)
   })
 })

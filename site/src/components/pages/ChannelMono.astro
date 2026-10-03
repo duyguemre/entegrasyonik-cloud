@@ -1,17 +1,14 @@
 ---
 /**
- * ChannelMono — kanal (pazaryeri/entegrasyon) rozeti (S11; S23 biçimi). Sitede kanal rozetinin TEK bileşenidir
- * (kartlar, kapsam matrisi, kanal sayfaları, destek, üst menü ve çekmece). Logo YOK (marka izni açık soru,
- * ADR-0014 Açık Soru 3): yalnızca ilk harf.
- * S23 (FR2 madde 11/15): kenarlık marka renginin KOYUSU (`--chan-badge-border`), iç zemin AÇIĞI (`--chan-badge-bg`),
- * harf koyu marka tonu (`--chan-badge-fg`, zemine ≥ 4.5:1). Üçü de `[data-code]` eşlemesiyle `src/styles/global.css`
- * formülünden gelir (oranlar `site-tokens.css` `--channel-badge-*`); burada yeni renk tanımlanmaz, gradyan yok.
- * Bilinmeyen kanal nötr (`--channel-neutral` türevi). Anlam metinle taşınır (`aria-hidden`, yanında kanal adı görünür).
+ * ChannelMono — kanal (pazaryeri/entegrasyon) monogram rozeti (S11). Logo YOK (marka izni açık soru,
+ * ADR-0014 Açık Soru 3): yalnızca ilk harf + marka rengi zemini. Renk `[data-code]` eşlemesi ile
+ * `src/styles/global.css`'ten gelir (`--chan`/`--chan-fill`); burada yeni renk tanımlanmaz.
+ * Anlam metinle taşınır (`aria-hidden`, yanında her zaman kanal adı görünür).
  */
 interface Props {
   code: string
   name: string
-  size?: 'xs' | 'sm' | 'md' | 'lg'
+  size?: 'sm' | 'md' | 'lg'
   class?: string
 }
 
@@ -28,21 +25,12 @@ const { code, name, size = 'md', class: className } = Astro.props
     flex: none;
     align-items: center;
     justify-content: center;
-    border: calc(var(--site-border-width) * 1.5) solid var(--chan-badge-border);
-    /* SITE-DL-03: köşeli kutu, gölgesiz (kanal marka renkleri korunur). */
-    border-radius: var(--ek-radius-tile);
-    background: var(--chan-badge-bg);
-    color: var(--chan-badge-fg);
+    border-radius: var(--ek-radius-lg);
+    background: linear-gradient(140deg, var(--chan, var(--ek-color-primary)), var(--chan-fill, var(--ek-color-primary-darken-1)));
+    box-shadow: var(--ek-shadow-md);
+    color: var(--site-color-on-primary);
     font-weight: var(--ek-font-weight-bold);
     line-height: 1;
-  }
-  .chan-mono--xs {
-    width: var(--ek-space-6);
-    height: var(--ek-space-6);
-    border-width: var(--site-border-width);
-    border-radius: var(--ek-radius-sm);
-    box-shadow: none;
-    font-size: var(--ek-font-size-xs);
   }
   .chan-mono--sm {
     width: var(--ek-space-8);
@@ -58,7 +46,6 @@ const { code, name, size = 'md', class: className } = Astro.props
   .chan-mono--lg {
     width: calc(var(--ek-space-16) * 0.85);
     height: calc(var(--ek-space-16) * 0.85);
-    border-width: calc(var(--site-border-width) * 2);
     font-size: var(--site-font-display-sm);
   }
 </style>

@@ -1,6 +1,6 @@
 /**
  * CHARACTERIZATION: IntegrationService import/export log listeleri -- page/limit sayfalama sınırları
- * (BACKLOG C22 / GV-01 ertelenmiş kalem). Kaynak: backend/src/api/rpc/handlers/integration-service.ts
+ * (BACKLOG C22 / GV-01 ertelenmiş kalem). Kaynak: backend/src/api/services/integration-service.ts
  * `advancedSearchExportJobs`, `getExportJobs`, `getImportJobs`.
  *
  * GV-01'de bu dosyanın yalnızca `$regex` satırları düzeltilmişti; `limit`/`page` sınırları K7 çakışması
@@ -20,7 +20,7 @@ jest.mock('@integration/engine/IntegrationEventBus', () => ({
 }));
 jest.mock('@services/notification/NotificationService', () => ({ NotificationService: {} }));
 
-import IntegrationService from '@api/rpc/handlers/integration-service';
+import IntegrationService from '@api/services/integration-service';
 
 let aggregate: any;
 let countDocuments: any;

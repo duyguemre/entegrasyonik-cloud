@@ -29,10 +29,7 @@ export const SECTIONS: readonly SectionDefinition[] = [
   { id: 'orders', labelKey: 'shell.section.orders', order: 2 },
   { id: 'integrations', labelKey: 'shell.section.integrations', order: 3 },
   { id: 'finance', labelKey: 'shell.section.finance', order: 4 },
-  { id: 'settings', labelKey: 'shell.section.settings', order: 5 },
-  { id: 'account', labelKey: 'shell.section.account', order: 6 },
-  { id: 'help', labelKey: 'shell.section.help', order: 6.5 },
-  { id: 'admin', labelKey: 'shell.section.admin', order: 7 },
+  { id: 'admin', labelKey: 'shell.section.admin', order: 5 },
   { id: 'other', labelKey: 'shell.section.other', order: 99 },
 ] as const
 

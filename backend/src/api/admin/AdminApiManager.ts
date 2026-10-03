@@ -7,18 +7,18 @@
 import express, { NextFunction, Request, Response, Router } from 'express';
 import cors from 'cors';
 import { config } from '@config';
-import Security, { ApplicationError, type SessionPrincipal } from '@platform/core/security/Security';
-import runOperation from '@api/rpc/RunOperation';
-import { getRequiredTier } from '@api/rpc/operationPolicy';
-import { buildUserContext } from '@api/http/authenticate';
-import { sendError, sendOk } from '@api/rpc/ApiManager';
-import { getClientIp } from '@platform/rateLimit/clientIp';
+import Security, { ApplicationError, type SessionPrincipal } from '@api/Security';
+import runOperation from '@api/RunOperation';
+import { getRequiredTier } from '@api/operationPolicy';
+import { buildUserContext } from '@api/authenticate';
+import { sendError, sendOk } from '@api/ApiManager';
+import { getClientIp } from '@api/clientIp';
 import { createRateLimiter, rateLimitOptionsFromEnv } from '@platform/rateLimit/rateLimit';
 import { getIdentityCache } from '@platform/core/security/identityCache';
 import { AuditLogger, type AuditEntry } from '@services/audit/AuditLogger';
 import { getRequestId } from '@platform/core/context';
 import { decryptField, encryptField } from '@utils/FieldCrypto';
-import { GENERIC_LOGIN_ERROR } from '@api/rpc/handlers/security-service';
+import { GENERIC_LOGIN_ERROR } from '@api/services/security-service';
 import {
     ADMIN_ABSOLUTE_SECONDS, ADMIN_API_PATH, ADMIN_REAUTH_SECONDS, expireAdminSessionCookie, readAdminCookie, setAdminSessionCookie,
     verifyAdminToken, refreshAdminSession, type AdminPrincipal,
@@ -86,7 +86,7 @@ function adminCors() {
             origin: origins.length ? origins : false,
             credentials: true,
             methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // PUT/DELETE: yalniz /agent/provider + /agent/conversations (BR-4)
-            allowedHeaders: ['Content-Type', 'X-Request-Id', 'X-Client-Platform'],   // MOB-08: istemci platform sınıfı
+            allowedHeaders: ['Content-Type', 'X-Request-Id'],
             exposedHeaders: ['X-Request-Id'],
             maxAge: 600,
             optionsSuccessStatus: 204,

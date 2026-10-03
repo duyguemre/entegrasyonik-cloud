@@ -12,7 +12,7 @@ jest.mock('@database/DatabaseManager', () => ({
   },
 }));
 
-import UserService from '../../../src/api/rpc/handlers/user-service';
+import UserService from '../../../src/api/services/user-service';
 import { AuditLogger } from '../../../src/services/audit/AuditLogger';
 import { isBcryptHash } from '../../../src/operations/users/userRules';
 

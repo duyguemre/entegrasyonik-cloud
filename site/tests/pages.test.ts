@@ -12,12 +12,10 @@ import { buildSite } from '../scripts/lib/build.mjs'
 import { PATHS } from '../src/data/evidence'
 import { integrations, AVAILABLE_INTEGRATION_CODES, getPublicIntegrations } from '../src/data/integrations'
 import { getPublicCapabilities, getStockReservationStory } from '../src/data/capabilities'
-import { getPublicFaq, getPublicFaqByCategory, getSupportCategories } from '../src/data/faq'
+import { getPublicFaq, getSupportCategories } from '../src/data/faq'
 import { connectGuides, getConnectGuide } from '../src/data/connect'
 import { featureDetails } from '../src/data/feature-details'
 import { legalNav, primaryNav, published } from '../src/data/navigation'
-import { AGENT_SURFACES, chatSection, agentsSection, controlSection, ASSISTANT_PATH } from '../src/data/assistant'
-import { AGENT_BRAND, AGENT_LEGACY_PATHS } from '../src/data/agent-brand'
 import { resolveContactEmail, mailtoHref, DEFAULT_CONTACT_EMAIL } from '../src/lib/contact'
 import { company } from '../src/data/company'
 import { securityPrinciples } from '../src/data/security-principles'
@@ -38,7 +36,6 @@ const INNER_PAGES = [
   '/iletisim',
   '/ozellikler/stok-rezervasyonu',
   '/destek',
-  ASSISTANT_PATH, // S18 (S22: ad sabitinden, varsayılan /otopilot)
 ]
 
 let draftDir = ''
@@ -112,7 +109,7 @@ describe('her sayfa: tek h1, başlık, meta, breadcrumb', () => {
       expect(meta(draft, 'property', 'og:title')).toMatch(/· Entegrasyonik$/)
       expect(meta(draft, 'property', 'og:description')).toBe(description)
       expect(meta(draft, 'property', 'og:locale')).toBe('tr_TR')
-      expect(meta(draft, 'name', 'twitter:card')).toBe('summary_large_image') // S19: sayfa başına OG görseli
+      expect(meta(draft, 'name', 'twitter:card')).toBe('summary')
       expect(meta(draft, 'property', 'og:url')).toBeUndefined()
       // breadcrumb: nav + geçerli sayfa + JSON-LD
       expect(draft).toMatch(/<nav class="[^"]*breadcrumb[^"]*" aria-label="Sayfa yolu"/)
@@ -158,13 +155,6 @@ const EXPECTED_STATS: Record<string, number> = {
   'kind-marketplace': getPublicIntegrations('marketplace').length,
   'kind-ecommerce': getPublicIntegrations('ecommerce').length,
   'kind-erp': getPublicIntegrations('erp').length,
-  // S17 /ozellikler "Bir bakışta": çekirdek yetenek kaydından
-  features: getPublicCapabilities('core').length,
-  'features-available': getPublicCapabilities('core').filter((c) => c.status === 'available').length,
-  'features-partial': getPublicCapabilities('core').filter((c) => c.status === 'partial').length,
-  // S17 /sss sekme sayaçları: SSS kaydından
-  'faq-total': getPublicFaq().length,
-  ...Object.fromEntries(getPublicFaqByCategory().map((c) => [`faq-cat-${c.id}`, c.items.length])),
 }
 function withoutVerifiedStats(source: string): string {
   return source.replace(/<(dd|span)([^>]*)\sdata-stat="([^"]+)"([^>]*)>\s*(\d+)\s*<\/\1>/g, (_m, _tag, _a, id: string, _b, value: string) => {
@@ -172,19 +162,6 @@ function withoutVerifiedStats(source: string): string {
     expect(Number(value), `sayaç ${id}`).toBe(EXPECTED_STATS[id])
     return ''
   })
-}
-
-/**
- * DAR İSTİSNA (S18 → S24): yalnızca Otopilot sayfasında ve yalnızca dekoratif sohbet sahnesinin
- * (`<figure data-scene="assistant-chat">`) içindeki kurgusal veri rakam taramasından çıkarılır. Sahne tek olmalı ve
- * etkileşimsizdir; sahne dışındaki her rakam yine yasaktır (sahne verisinin kendisi: tests/agent-claims.test.ts).
- */
-function withoutScenario(route: string, source: string): string {
-  if (!(AGENT_SURFACES.pages as readonly string[]).includes(route)) return source
-  const re = /<figure[^>]*data-scene="assistant-chat"[\s\S]*?<\/figure>/g
-  const scenes = source.match(re) ?? []
-  expect(scenes, `${route}: tek sohbet sahnesi`).toHaveLength(1)
-  return source.replace(re, '')
 }
 
 describe('gizli öğe yok (roadmap, evidence, dahili notlar)', () => {
@@ -197,8 +174,7 @@ describe('gizli öğe yok (roadmap, evidence, dahili notlar)', () => {
   it('hiçbir iç sayfada roadmap adı (tam sözcük), evidence/registry atfı veya dahili not geçmez', () => {
     for (const route of INNER_PAGES) {
       const raw = html(draftDir, route)
-      // Kanıtlı "Geliştirme listemizde" bloğu (2026-10-02 kullanıcı kararı) hariç: adlar yalnızca orada geçebilir.
-      const text = norm(visibleText(raw.replace(/<backlog-block[\s\S]*?<\/backlog-block>/g, ' ')))
+      const text = norm(visibleText(raw))
       for (const name of roadmap) expect(wholeWord(name).test(text), `${route}: ${name}`).toBe(false)
       expect(raw, route).not.toContain('INTEGRATIONS_REGISTRY')
       expect(raw, route).not.toMatch(/"evidence"|internalNotes/)
@@ -215,7 +191,7 @@ describe('gizli öğe yok (roadmap, evidence, dahili notlar)', () => {
   it('doğrulanamaz mutlak/sertifika iddiası ve sabit rakam yok', () => {
     const banned = ['%100', 'kesintisiz', 'sınırsız', 'garanti', '7/24', 'iso 27001', 'soc 2', 'veri merkezi', 'uptime', 'sertifikalı', 'en iyi', 'binlerce']
     for (const route of INNER_PAGES) {
-      const text = visibleText(withoutScenario(route, withoutVerifiedStats(html(draftDir, route))))
+      const text = visibleText(withoutVerifiedStats(html(draftDir, route)))
       const lower = text.toLocaleLowerCase('tr-TR')
       for (const b of banned) expect(lower, `${route}: ${b}`).not.toContain(b)
       // rakam yalnızca kanıtlı belirteçlerde (claims.test.ts NUMERIC_ALLOWLIST ile aynı)
@@ -518,8 +494,7 @@ describe('S14: kanal bağlantı rehberi', () => {
     it(`${i.code}: numaralı rehber, HowTo şeması adımlarla birebir, SEO başlığı`, () => {
       const page = html(draftDir, `/entegrasyonlar/${i.code}`)
       expect(page).toMatch(/<section[^>]*id="baglanti-rehberi"/)
-      // S19: başlık ≤ 60 karakter şablonu (src/data/seo.ts)
-      expect(page).toMatch(new RegExp(`<title>${escapeRe(i.name)} entegrasyonu: kurulum ve kapsam · Entegrasyonik</title>`))
+      expect(page).toMatch(new RegExp(`<title>${escapeRe(i.name)} entegrasyonu: bağlantı rehberi ve kapsam · Entegrasyonik</title>`))
       const ld = [...page.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)].map((m) => JSON.parse(m[1]))
       const howTo = ld.find((x) => x['@type'] === 'HowTo')
       expect(howTo, 'HowTo').toBeTruthy()
@@ -626,89 +601,5 @@ describe('iletişim adresi çözümleyici', () => {
   it('mailto konusu kodlanır', () => {
     expect(mailtoHref(EMAIL, 'Kurumsal teklif talebi')).toBe(`mailto:${EMAIL}?subject=Kurumsal%20teklif%20talebi`)
     expect(mailtoHref(EMAIL)).toBe(`mailto:${EMAIL}`)
-  })
-})
-
-// ------------------------------------------------------------------------------------------ S18→S24 Otopilot (derlenmiş)
-
-describe('S24: Otopilot sayfası derlenmiş — sade hero, aşama/örnek etiketi yok, demo talebi, form yok', () => {
-  const page = () => html(draftDir, ASSISTANT_PATH)
-  /** `<li ... data-testid="X" ...>…</li>` bloklarını (iç içe li olmadan) döndürür. */
-  const blocks = (src: string, testid: string) => [...src.matchAll(new RegExp(`<li[^>]*data-testid="${testid}"[\\s\\S]*?</li>`, 'g'))].map((m) => m[0])
-
-  it('yetenek kartları (ajan + sohbet) kayıttaki metinle ve aşama rozetsiz', () => {
-    const cards = blocks(page(), 'assistant-card')
-    const all = [...agentsSection.cards, ...chatSection.cards]
-    expect(cards).toHaveLength(all.length)
-    cards.forEach((c, i) => {
-      expect(c, all[i].id).toContain(all[i].title)
-      expect(c).not.toMatch(/stage-badge|data-stage=/)
-    })
-  })
-
-  it('kontrol bölümü: beş güvence maddesi, onay kapısı akışı; beş adımlı döngü, tek insan adımı', () => {
-    const src = page()
-    expect(blocks(src, 'guardrail')).toHaveLength(controlSection.items.length)
-    expect([...src.matchAll(/data-testid="loop-step"/g)]).toHaveLength(5)
-    expect([...src.matchAll(/data-testid="loop-step" data-actor="you"/g)]).toHaveLength(1)
-    expect(src).toContain('data-testid="gate-flow"')
-    // S24 (K45): açık standart / yerel uygulama bölümü yok
-    expect(src).not.toContain('data-testid="protocol-explainer"')
-    expect(src).not.toMatch(/id="yerel"/)
-  })
-
-  it('hero: tek h1, ad çipi, tek CTA (#demo); aşama rozeti ve durum notu yok; sahneler etiketsiz ve etkileşimsiz', () => {
-    const src = page()
-    expect([...src.matchAll(/<h1\b/g)]).toHaveLength(1)
-    expect(src).toMatch(/data-testid="agent-hero-chip"/)
-    expect(src).toMatch(/href="#demo"[^>]*data-testid="agent-hero-cta"|data-testid="agent-hero-cta"[^>]*href="#demo"/)
-    expect(src).not.toContain('data-testid="early-access-badge"')
-    expect(src).not.toContain('data-testid="assistant-status-note"')
-    expect(src).not.toContain('data-testid="console-label"')
-    expect(src).not.toContain('data-testid="scenario-label"')
-    const consoleFig = src.match(/data-scene="agent-console"[\s\S]*?<\/figure>/)![0]
-    expect(consoleFig).not.toMatch(/<button\b|<a\b/)
-    expect(src).toContain('data-testid="scenario-approval"')
-    const scene = src.match(/data-scene="assistant-chat"[\s\S]*?<\/figure>/)![0]
-    expect(scene).not.toMatch(/<button\b|<a\b/)
-  })
-
-  it('demo: form yok, mailto konusu "<ad> demo talebi", kayıt bağlantısı ("Hemen başlayın")', () => {
-    const src = page()
-    expect(src).not.toMatch(/<form\b/)
-    expect(src).toContain(`subject=${encodeURIComponent(`${AGENT_BRAND} demo talebi`)}`)
-    expect(src).toMatch(new RegExp(`<a[^>]*href="${APP}/login\\?mode=register"[^>]*data-testid="agent-start-link"`))
-    expect(src).toContain('id="demo"')
-  })
-
-  it('ana sayfa bölümü ve hero girişi ajan sayfasına bağlanır (aşama rozeti yok); Özellikler köprüsü de bağlanır', () => {
-    const home = readFileSync(path.join(draftDir, 'index.html'), 'utf8')
-    const band = home.match(/data-testid="assistant-teaser"[\s\S]*?<\/section>/)![0]
-    expect(band).toContain(`href="${ASSISTANT_PATH}"`)
-    expect(band).toContain(`href="${ASSISTANT_PATH}#demo"`)
-    expect(band).not.toMatch(/stage-badge|Erken erişim|Yakında/i)
-    const hero = home.match(/data-testid="hero"[\s\S]*?data-testid="hero-visual"/)![0]
-    expect(hero).toMatch(new RegExp(`<a[^>]*href="${ASSISTANT_PATH}"[^>]*data-testid="hero-agent-entry"`))
-    expect(hero).toContain(`Entegrasyonik ${AGENT_BRAND}`)
-    expect(hero).not.toContain('Erken erişim')
-    expect(html(draftDir, '/ozellikler')).toMatch(new RegExp(`<a[^>]*href="${ASSISTANT_PATH}"[^>]*data-testid="assistant-bridge"`))
-  })
-
-  it('header: ajan bağlantısı (etiket = ad sabiti) "Yeni" rozetli ve sayfasında aria-current="page"', () => {
-    // S25: Ürün panelinin öne çıkan kartı (başlık = ad sabiti + "Yeni"); bağlantı sayfasında aria-current, mobil
-    // çekmecenin kartı da aynı hedefe gider.
-    const card = page().match(/data-testid="nav-feature-agent"[\s\S]*?<\/a>/)![0]
-    expect(card).toMatch(new RegExp(`>\\s*${AGENT_BRAND}\\s*<span class="nav-badge[^"]*"[^>]*>Yeni</span>`))
-    expect(card).toMatch(new RegExp(`<a class="mega-feature__cta"[^>]*href="${ASSISTANT_PATH}"[^>]*aria-current="page"`))
-    expect(page()).toMatch(new RegExp(`<a class="drawer-feature"[^>]*href="${ASSISTANT_PATH}"[^>]*aria-current="page"`))
-  })
-
-  it('S22: eski adresler için dist/_redirects 301 kuralları yazılır; eski rota sayfa olarak derlenmez', () => {
-    const rules = readFileSync(path.join(draftDir, '_redirects'), 'utf8')
-    for (const old of AGENT_LEGACY_PATHS) {
-      expect(rules).toContain(`${old} ${ASSISTANT_PATH} 301`)
-      expect(rules).toContain(`${old}/ ${ASSISTANT_PATH} 301`)
-      expect(existsSync(htmlPath(draftDir, old)), old).toBe(false)
-    }
   })
 })
