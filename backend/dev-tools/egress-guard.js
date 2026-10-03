@@ -10,6 +10,7 @@
  * Kullanım:   node -r ./dev-tools/egress-guard.js dist/entegrasyonik.js      (bkz. `npm run start:local`)
  * İzinli ek host'lar (ör. docker ağındaki servis adı):  EGRESS_ALLOW=redis,mongo
  * Sohbet LLM sağlayıcıları (Anthropic/OpenAI/Google; yalnız insan, gerçek anahtarla):  EGRESS_ALLOW_LLM=1
+ * Google ile giriş (ID token JWKS: www.googleapis.com; yalnız insan, gerçek OAuth istemcisiyle):  EGRESS_ALLOW_GOOGLE_AUTH=1
  * Kapsam dışı: UDP/DNS sorguları (yalnızca ad çözümleme; veri taşınmaz).
  */
 const net = require('net');
@@ -31,10 +32,15 @@ function extraAllowed() {
 const LLM_HOSTS = ['api.anthropic.com', 'api.openai.com', 'generativelanguage.googleapis.com'];
 const llmAllowed = () => ['1', 'true'].includes(String(process.env.EGRESS_ALLOW_LLM || '').toLowerCase());
 
+// Google ile giris: yalniz JWKS ucu icin `www.googleapis.com`. VARSAYILAN KAPALI; `EGRESS_ALLOW_GOOGLE_AUTH=1` ile acilir.
+// Liste outboundHosts.ts `google-auth` ile AYNI olmak zorunda (tests/dev/egress-guard.test.ts dogrular).
+const GOOGLE_AUTH_HOSTS = ['www.googleapis.com', 'oauth2.googleapis.com'];
+const googleAuthAllowed = () => ['1', 'true'].includes(String(process.env.EGRESS_ALLOW_GOOGLE_AUTH || '').toLowerCase());
+
 function isAllowedHost(host) {
     if (host === undefined || host === null || host === '') return true; // Node host'suz bağlantıda localhost kullanır
     const h = String(host).toLowerCase().replace(/^\[|\]$/g, '');
-    return LOOPBACK.has(h) || extraAllowed().includes(h) || (llmAllowed() && LLM_HOSTS.includes(h)) || (extraPredicate !== null && extraPredicate(h) === true);
+    return LOOPBACK.has(h) || extraAllowed().includes(h) || (llmAllowed() && LLM_HOSTS.includes(h)) || (googleAuthAllowed() && GOOGLE_AUTH_HOSTS.includes(h)) || (extraPredicate !== null && extraPredicate(h) === true);
 }
 
 function install() {
@@ -67,7 +73,7 @@ function uninstall() {
     warned.clear();
 }
 
-module.exports = { install, uninstall, isAllowedHost, setHostPredicate, LLM_HOSTS };
+module.exports = { install, uninstall, isAllowedHost, setHostPredicate, LLM_HOSTS, GOOGLE_AUTH_HOSTS };
 
 // `node -r` ile yüklendiğinde otomatik devreye girer (test ortamı EGRESS_GUARD_NO_AUTOINSTALL=1 ile kapatır).
 if (!process.env.EGRESS_GUARD_NO_AUTOINSTALL) install();

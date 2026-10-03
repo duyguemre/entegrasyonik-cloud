@@ -29,6 +29,8 @@ export class Service extends AdapterHttpService {
         const urls = this.params.integrationSettings?.urls || {};
         const realBase: string = urls.BASEURL || 'https://mpop.hepsiburada.com';
         if (path.includes('product/api/categories')) return realBase;
+        // Sipariş/paket/iade (OMS) uçları ayrı tabandadır: 2026-10-03 canlı salt-okuma ile doğrulandı (oms-external 200, mpop 404).
+        if (/^\/?(orders|packages|claims)\//i.test(path)) return urls.OMSBASEURL || 'https://oms-external.hepsiburada.com';
         if (path.includes('listings/')) return urls.LISTINGBASEURL || 'https://listing-external.hepsiburada.com';
         if (path.includes('settlements/')) return urls.ACCOUNTINGBASEURL || 'https://accounting-external.hepsiburada.com';
         if (path.includes('ticket-api/')) return urls.TICKETBASEURL || 'https://ticket-api.hepsiburada.com';

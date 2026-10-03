@@ -82,6 +82,11 @@ export const ERROR_CODES = {
     SAME_PASSWORD: { status: 400, group: 'hesap', message: 'Yeni parola mevcut parolayla aynı olamaz.', description: 'changePassword: yeni parola eskiyle aynı.' },
     WEAK_PASSWORD: { status: 400, group: 'hesap', message: 'Parola politikayı karşılamıyor.', description: 'Parola politikası ihlali (uzunluk/karmaşıklık).' },
     TOKEN_INVALID: { status: 400, group: 'hesap', message: 'Bağlantı geçersiz veya süresi dolmuş.', description: 'Parola sıfırlama / e-posta doğrulama belirteci geçersiz.' },
+    // --- Google ile giriş/kayıt (docs/GOOGLE_SIGN_IN.md) ---
+    GOOGLE_DISABLED: { status: 503, group: 'hesap', message: 'Google ile giriş etkin değil.', description: 'GOOGLE_OAUTH_CLIENT_ID tanımsız; googleSignIn kapalı.' },
+    GOOGLE_TOKEN_INVALID: { status: 401, group: 'hesap', message: 'Google doğrulaması başarısız.', description: 'Google ID token imzası/aud/iss/süre geçersiz veya Google anahtarları alınamadı (gövde yansıtılmaz).' },
+    GOOGLE_EMAIL_UNVERIFIED: { status: 403, group: 'hesap', message: 'Google e-posta adresi doğrulanmamış.', description: 'ID token email_verified=true değil.' },
+    GOOGLE_ACCOUNT_MISMATCH: { status: 409, group: 'hesap', message: 'Bu e-posta başka bir Google hesabına bağlı.', description: 'Kullanıcıya daha önce farklı bir Google hesabı (googleSub) bağlanmış.' },
     EMAIL_NOT_CONFIGURED: { status: 503, group: 'hesap', message: 'E-posta gönderimi yapılandırılmamış.', description: 'PUBLIC_APP_URL/SMTP tanımsız; e-posta gerektiren uçlar kapalı.' },
     COOLDOWN: { status: 429, group: 'hesap', message: 'Lütfen yeni bir istekten önce bekleyin.', description: 'Aynı e-posta türü için bekleme süresi dolmadı.' },
     MAIL_FAILED: { status: 502, group: 'hesap', message: 'E-posta gönderilemedi.', description: 'SMTP gönderimi başarısız.' },

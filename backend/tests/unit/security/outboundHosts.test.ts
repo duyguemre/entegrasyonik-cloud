@@ -27,6 +27,7 @@ describe('assertAllowedOutboundHost: gerçek platform host\'ları geçer', () =>
         ['hepsiburada', 'https://listing-external.hepsiburada.com/listings/merchantid/x'],
         ['hepsiburada', 'https://accounting-external.hepsiburada.com/x'],
         ['hepsiburada', 'https://ticket-api.hepsiburada.com/x'],
+        ['hepsiburada', 'https://oms-external.hepsiburada.com/orders/merchantid/x?limit=1&offset=0'], // 2026-10-03 canlı doğrulama: sipariş/paket (OMS)
         ['n11', 'https://api.n11.com/ws/ProductService.wsdl'],
         ['n11-soap', 'https://api.n11.com/ws/ProductService.wsdl'],
         ['pazarama', 'https://isortagimapi.pazarama.com/brand/getBrands'],
@@ -51,6 +52,18 @@ describe('assertAllowedOutboundHost: LLM saglayicilari (ADR-0034 BR-5)', () => {
         bad('llm-anthropic', 'https://evil.example/v1/messages');
         bad('llm-google', 'https://generativelanguage.googleapis.com.evil.example/x');
         bad('llm-openai', 'http://api.openai.com/v1/models');
+    });
+});
+
+describe('assertAllowedOutboundHost: Google ile giris JWKS (google-auth)', () => {
+    it('JWKS + token ucu https gecer', () => {
+        expect(() => ok('google-auth', 'https://www.googleapis.com/oauth2/v3/certs')).not.toThrow();
+        expect(() => ok('google-auth', 'https://oauth2.googleapis.com/token')).not.toThrow(); // code->token degisimi
+        bad('google-auth', 'https://accounts.google.com/o/oauth2/auth');
+        bad('google-auth', 'https://oauth2.googleapis.com.evil.example/token');
+        bad('google-auth', 'https://www.googleapis.com.evil.example/oauth2/v3/certs');
+        bad('google-auth', 'http://www.googleapis.com/oauth2/v3/certs');
+        bad('llm-google', 'https://www.googleapis.com/oauth2/v3/certs'); // capraz saglayici gecmez
     });
 });
 

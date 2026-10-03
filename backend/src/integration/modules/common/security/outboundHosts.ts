@@ -25,8 +25,10 @@ import { LLM_HOSTS } from '@platform/llm/catalog';
  */
 export const ALLOWED_OUTBOUND_HOSTS: Readonly<Record<string, readonly string[]>> = {
     trendyol: ['api.trendyol.com', 'apigw.trendyol.com', 'stageapigw.trendyol.com'],
+    // oms-external: sipariş/paket (OMS) API'si — 2026-10-03 canlı salt-okuma ile DOĞRULANDI (orders/packages burada 200; mpop'ta 404).
     hepsiburada: [
         'mpop.hepsiburada.com', 'listing-external.hepsiburada.com', 'accounting-external.hepsiburada.com', 'ticket-api.hepsiburada.com',
+        'oms-external.hepsiburada.com',
     ],
     n11: ['api.n11.com'],
     pazarama: ['isortagim.pazarama.com', 'isortagimapi.pazarama.com', 'isortagimgiris.pazarama.com'],
@@ -39,6 +41,8 @@ export const ALLOWED_OUTBOUND_HOSTS: Readonly<Record<string, readonly string[]>>
     'llm-anthropic': [LLM_HOSTS.anthropic],
     'llm-openai': [LLM_HOSTS.openai],
     'llm-google': [LLM_HOSTS.google],
+    // Google ile giris: ID token dogrulamasi icin JWKS (yalniz GET https://www.googleapis.com/oauth2/v3/certs). Adaptor DEGILDIR (`google-auth`; adapterKeys'te yer almaz).
+    'google-auth': ['www.googleapis.com', 'oauth2.googleapis.com'], // JWKS (GET) + code->token degisimi (POST /token)
 };
 
 /** ResilientHttpClient'a verilen kod (`n11-soap` gibi eklerle) -> izin listesi anahtarı + mock ön eki. */

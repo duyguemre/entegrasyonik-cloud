@@ -69,6 +69,7 @@ Durum: `GEÇERLİ` · `UYGULANIYOR` · `DEĞİŞTİ → Kxx` · `KALDIRILDI`
 | K33 | 2026-10-01 | xlsx bakımsız paket → exceljs | Onaylandı; sharp ve nodemailer testlerle yükseltilir | docs/DEPENDENCY_AUDIT_2026-10-01.md | UYGULANIYOR |
 | K34 | 2026-09-30 | BACKLOG: backoffice WhatsApp, sosyal medya (Instagram, X, Facebook, YouTube), kampanya modülü | Ayrı kalemler + ortak sosyal kanal adaptörü; hukuk/Meta doğrulaması insan görevi | BACKLOG WA-*, SOC-*, CMP-* | GEÇERLİ (planlı) |
 | K35 | 2026-10-01 | Android ve iOS uygulaması; native yazmadan, uygulama içinden web; telefon/tablet foto vb. özellikler olabilir; bakım maliyeti artmasın, 80/20, acelesi yok | Tek web kod tabanı. Önce PWA (kurulabilir, kamera `capture`, web push); mağaza gerekirse aynı derlemeyi saran ince Capacitor kabuğu (tetikleyicili). Native ekran yazılmaz. Öncelik düşük | BACKLOG MOB-00..05 | GEÇERLİ (planlı, sonra) |
+| K75 | 2026-10-03 | Entegrasyonlardan şimdilik SADECE okuma; eski DB'deki canlı API bilgileri `duyguemre@gmail.com` (client 1) tanımlarında kullanılsın; entegrasyonların okuma bölümleri ekranlardan review edilsin (review kullanıcı, client/API/backend düzeni ajan) | Yerel backend `npm run start:live-readonly` kipinde (be-google worktree); veri göçü gerekmedi (client 1 sırları legacy ile birebir). Yazma yasağı (K06/live-readonly) AYNEN sürer; Pazarama anahtarı, Ideasoft refresh ve Google-giriş istisnası insan kararı bekler | docs/LIVE_READONLY.md, BACKLOG "2026-10-03 canlı salt-okuma turu" | Uygulandı (2026-10-03) |
 
 ## Kullanıcı kararı bekleyenler
 

@@ -22,7 +22,8 @@ describe('ADAPTER_KEYS tek kod tablosu (ADR-0033 INT-02)', () => {
     });
     it('ALLOWED_OUTBOUND_HOSTS anahtarları tablo kodlarıyla birebir aynı', () => {
         // `llm-*` anahtarlari adaptor DEGILDIR (ADR-0034 BR-5: sohbet LLM saglayici host'lari; tek K7 listesi).
-        expect(Object.keys(ALLOWED_OUTBOUND_HOSTS).filter((k) => !k.startsWith('llm-')).sort()).toEqual([...ADAPTER_CODES].sort());
+        // `google-auth`: Google ile giris JWKS ucu (adaptor degil).
+        expect(Object.keys(ALLOWED_OUTBOUND_HOSTS).filter((k) => !k.startsWith('llm-') && k !== 'google-auth').sort()).toEqual([...ADAPTER_CODES].sort());
     });
     it('env MOCK_PREFIXES ve kategori haritası tablodan türer', () => {
         expect([...MOCK_PREFIXES]).toEqual(ADAPTER_KEYS.map(k => k.mockPrefix));

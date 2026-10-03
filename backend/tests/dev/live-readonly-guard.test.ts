@@ -154,13 +154,17 @@ describe('live-readonly-guard.preflight (süreç öncesi kapılar)', () => {
         expect(exit).toHaveBeenCalledWith(1);
         spy.mockRestore();
     });
-    it('yerel DB_URL geçer; LIVE_READONLY=1 kurulur; mock kipleri ZORLA kapatılır', () => {
+    it("yerel DB_URL geçer; LIVE_READONLY='true' kurulur (config `t.bool` yalnız 'true' sayar — '1' Katman B'yi açmaz); mock kipleri ZORLA kapatılır", () => {
         const exit = jest.fn();
         const env: any = { DB_URL: 'mongodb://127.0.0.1:27017/{{DBNAME}}', TY_MOCK_MODE: 'true', N11_MOCK_MODE: 'true', HEPSIBURADA_MOCK_MODE: 'false' };
         const spy = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
         expect(guard.preflight(policy, env, exit)).toBe(true);
         expect(exit).not.toHaveBeenCalled();
-        expect(env.LIVE_READONLY).toBe('1');
+        expect(env.LIVE_READONLY).toBe('true');
+        // Regresyon (2026-10-03): guard'ın kurduğu değer gerçek ayrıştırıcıdan `enabled: true` olarak ÇIKMALI; aksi halde yalnız ağ katmanı çalışır.
+        const { parseEnv } = require('../../src/config/env');
+        expect(parseEnv({ LIVE_READONLY: env.LIVE_READONLY }, { strict: false }).liveReadonly.enabled).toBe(true);
+        expect(parseEnv({ LIVE_READONLY: '1' }, { strict: false }).liveReadonly.enabled).toBe(false); // eski hatalı değer: kapalı sayılır
         expect(env.TY_MOCK_MODE).toBe('false');
         expect(env.N11_MOCK_MODE).toBe('false');
         spy.mockRestore();

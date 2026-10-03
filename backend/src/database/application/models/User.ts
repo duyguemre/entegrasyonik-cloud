@@ -21,6 +21,8 @@ export const UserSchema = new mongoose.Schema({
     emailVerified: { type: Boolean, default: false },
     emailVerifiedAt: { type: Date },
     passwordChangedAt: { type: Date },
+    // Google ile giriş: Google hesap kimliği (ID token `sub`). Yalnız Google ile bağlanmış kullanıcıda bulunur; API yanıtlarında DÖNMEZ (profileDto beyaz listesi).
+    googleSub: { type: String },
     resources: [
         { type: String, required: true }
     ]
@@ -36,6 +38,8 @@ UserSchema.index({ email: 1 }, { unique: true, name: 'uniq_email', partialFilter
 // D11'de alan resmen eklenecek) ama strict:false altında beyansız alana indeks kurmak geçerlidir.
 // Uygulama: backend/migrations/0001-d9-indexes-app.js.
 UserSchema.index({ clientId: 1 }, { name: 'clientId_1' });
+// Google ile giriş: seyrek (kısmi) tekil indeks -- googleSub'u olmayan kullanıcılar etkilenmez. Uygulama: backend/migrations/0020-users-google-sub-app.js (ÇALIŞTIRILMADI).
+UserSchema.index({ googleSub: 1 }, { unique: true, name: 'uniq_googleSub', partialFilterExpression: { googleSub: { $type: 'string' } } });
 
 export const ResourceSchema = new mongoose.Schema({
     code: { type: String, required: true },

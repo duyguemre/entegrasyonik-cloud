@@ -64,6 +64,8 @@ describe('ApiManager: rota tablosu', () => {
       'POST /api/AccountService/changePassword',
       'POST /api/SecurityService/register',
       'POST /api/SecurityService/login',
+      'POST /api/SecurityService/googleSignIn', // Google ile giriş/kayıt: loginLimiter'li özel rota (çerez basar)
+      'GET /api/SecurityService/authConfig', // kimliksiz önyüz yapılandırması ({ googleClientId | null })
       'POST /api/SecurityService/redeemImpersonation', // [ADR-0026 Karar 4.9] impersonation bileti tuketimi (kimliksiz, hiz sinirli)
       'POST /api/SecurityService/endImpersonation',
       'POST /api/SecurityService/logout',

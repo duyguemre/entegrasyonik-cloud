@@ -4,7 +4,7 @@
  * (Katman B: uygulama içi — yazan işçiler başlatılmaz, yazma RPC'leri 423; bkz. docs/LIVE_READONLY.md.)
  *
  * Kullanım:   node -r ./dev-tools/egress-guard.js -r ./dev-tools/live-readonly-guard.js dist/entegrasyonik.js   (bkz. `npm run start:live-readonly`)
- * Bu dosya `-r` ile yüklenince KENDİLİĞİNDEN: (1) LIVE_READONLY=1 kurar, (2) .env'i okur, (3) *_MOCK_MODE'ları ZORLA kapatır,
+ * Bu dosya `-r` ile yüklenince KENDİLİĞİNDEN: (1) LIVE_READONLY=true kurar, (2) .env'i okur, (3) *_MOCK_MODE'ları ZORLA kapatır,
  * (4) DB_URL yerel (loopback) değilse süreci BAŞLATMAZ (Atlas'a dokunulmaz), (5) guard'ı kurar.
  * Karar mantığı TEK yerdedir: src/integration/modules/common/security/liveReadonlyPolicy.ts (derlenmiş `dist` kopyası yüklenir;
  * yüklenemezse FAIL-CLOSED: loopback dışı her şey bloklu ve süreç başlamaz).
@@ -181,9 +181,10 @@ function uninstall() {
     state = null;
 }
 
-/** Ön-yükleme: LIVE_READONLY=1, .env, mock kapatma, yerel-DB kapısı. Başarısızlıkta ÇIKIŞ (süreç başlamaz). */
+/** Ön-yükleme: LIVE_READONLY=true, .env, mock kapatma, yerel-DB kapısı. Başarısızlıkta ÇIKIŞ (süreç başlamaz). */
 function preflight(policy, env = process.env, exit = (c) => process.exit(c)) {
-    env.LIVE_READONLY = '1';
+    // 'true' ŞART: src/config/env.ts `t.bool` yalnız 'true' dizesini açık sayar ('1' -> false -> Katman B hiç devreye girmez; 2026-10-03'te yaşandı).
+    env.LIVE_READONLY = 'true';
     if (env === process.env) { try { require('dotenv').config({ quiet: true }); } catch { /* dotenv yok: env zaten ortamda */ } }
     const forced = [];
     for (const k of Object.keys(env)) if (/_MOCK_MODE$/.test(k) && String(env[k]).toLowerCase() === 'true') { env[k] = 'false'; forced.push(k); }

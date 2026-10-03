@@ -1,7 +1,7 @@
 import { IService } from '@interfaces/index'
 import { BaseApi } from '../BaseApi'
 import { ApplicationError } from '../Security'
-import { containsRegex, clampPage, clampLimit } from '@utils/search'
+import { containsRegex, clampPage, clampLimit, toInList } from '@utils/search'
 import { listCommissionOverrides, setCommissionOverride, deleteCommissionOverride } from '@operations/finance/commissionOverrides'
 import { getOrderCommissionSummary, getCommissionByBarcodes, getRealizedCommissionByCategory, getNetRevenuePreview, MAX_NET_PREVIEW_ITEMS } from '@operations/finance/commissionQueries'
 
@@ -34,14 +34,12 @@ export default class FinancialService extends BaseApi implements IService {
             const filterQuery: any = {};
 
             // Çoklu platform filtresi
-            if (integrationCodes && integrationCodes.length > 0) {
-                filterQuery.integrationCode = { $in: integrationCodes };
-            }
+            const integrationCodeList = toInList(integrationCodes); // [2026-10-03] tek dize de kabul
+            if (integrationCodeList) filterQuery.integrationCode = { $in: integrationCodeList };
 
             // Çoklu işlem tipi filtresi
-            if (transactionTypes && transactionTypes.length > 0) {
-                filterQuery.transactionType = { $in: transactionTypes };
-            }
+            const transactionTypeList = toInList(transactionTypes);
+            if (transactionTypeList) filterQuery.transactionType = { $in: transactionTypeList };
 
             // İşlem No (externalId) araması
             if (externalIdSearch) {
@@ -157,12 +155,10 @@ export default class FinancialService extends BaseApi implements IService {
             const matchQuery: any = {};
 
             // Frontend'deki aktif filtrelerle aynı koşullar
-            if (integrationCodes && integrationCodes.length > 0) {
-                matchQuery.integrationCode = { $in: integrationCodes };
-            }
-            if (transactionTypes && transactionTypes.length > 0) {
-                matchQuery.transactionType = { $in: transactionTypes };
-            }
+            const integrationCodeList = toInList(integrationCodes); // [2026-10-03] tek dize de kabul
+            if (integrationCodeList) matchQuery.integrationCode = { $in: integrationCodeList };
+            const transactionTypeList = toInList(transactionTypes);
+            if (transactionTypeList) matchQuery.transactionType = { $in: transactionTypeList };
             // İşlem No (externalId) araması
             if (externalIdSearch) {
                 matchQuery.externalId = containsRegex(externalIdSearch); // [GV-01]

@@ -30,6 +30,7 @@ Resmi doküman (arama sonuçlarıyla çok kaynaklı doğrulandı): format `"{sel
 
 - Listing base URL (`https://listing-external.hepsiburada.com`) kod ile arama sonucu **birebir eşleşiyor** — DOĞRU.
 - Sipariş/paket (`packages/merchantid/{merchantId}`) kodda VARSAYILAN `mpop.hepsiburada.com` üzerinden çözülüyor; bir arama sonucu (tek kaynak, doğrudan sayfa 403 verdiği için doğrulanamadı) bu işlemin `oms-external.hepsiburada.com` kullanabileceğini ima ediyor. **Tek kaynaklı ve doğrudan teyit edilemediği için "olası, doğrulanamadı" olarak işaretlendi — C11 gibi kesin bir bulgu DEĞİL.**
+  - **GÜNCELLEME 2026-10-03 (canlı salt-okuma, gerçek tenant bilgileriyle GET):** `oms-external.hepsiburada.com` DOĞRULANDI — `orders/merchantid/{id}` 200 (`totalCount,limit,offset,pageCount,items`), `packages/merchantid/{id}` 200, `claims/merchantId/{id}` 200; aynı yollar `mpop` üzerinde 404. `settlements/merchantid/{id}` oms-external'da 404 (accounting-external denenmedi). User-Agent `entegrasyonik` kabul; `<merchantId> - app` biçimi 401. Kod düzeltildi (Service.baseUrlFor OMS yönlendirmesi, K7 host listesi).
 
 ## ⚪ N11, Pazarama, Ideasoft, Bizimhesap — doğrulanamadı (dürüst durum)
 

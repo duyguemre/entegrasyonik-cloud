@@ -3,7 +3,7 @@ import { BaseApi } from '../BaseApi'
 import IntegrationFactory from '@integration/modules/IntegrationFactory';
 import { ApplicationError } from '../Security'
 import { ClaimInternalStatusEnum } from '@interfaces/claim';
-import { containsRegex, normalizePagination } from '@utils/search';
+import { containsRegex, normalizePagination, toInList } from '@utils/search';
 
 /**
  * [MM-08 / ADR-0021 aynı desen] getClaims sıralama alanı izin listesi. `ClaimSchema` (Claim.ts) alanlarından,
@@ -66,8 +66,11 @@ export default class ClaimService extends BaseApi implements IService {
                 }
             }
 
-            if (filterData.integrationCodes?.length > 0) filterQuery.integrationCode = { $in: filterData.integrationCodes };
-            if (filterData.internalStatuses?.length > 0) filterQuery.internalStatus = { $in: filterData.internalStatuses };
+            // [2026-10-03] tek dize de kabul (`$in` dize alırsa Mongo 500); bkz. utils/search.toInList
+            const integrationCodes = toInList(filterData.integrationCodes);
+            if (integrationCodes) filterQuery.integrationCode = { $in: integrationCodes };
+            const internalStatuses = toInList(filterData.internalStatuses);
+            if (internalStatuses) filterQuery.internalStatus = { $in: internalStatuses };
             if (filterData.types?.length > 0) filterQuery.type = { $in: filterData.types };
 
             const skipCount = (pagination.page - 1) * pagination.limit;

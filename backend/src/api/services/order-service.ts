@@ -3,7 +3,7 @@ import { BaseApi } from '../BaseApi'
 import IntegrationFactory from '@integration/modules/IntegrationFactory';
 import { ApplicationError } from '../Security'
 import { ORDER_ITEM_ALLOCATION_STATES } from '@operations/stock/allocationStates'
-import { containsRegex, normalizePagination } from '@utils/search'
+import { containsRegex, normalizePagination, toInList } from '@utils/search'
 import { PLATFORM_TIME_ZONE, startOfDayInZone, endOfDayInZone, addDaysInZone, dayKeyInZone } from '@utils/timeZone'
 
 /**
@@ -84,13 +84,12 @@ export default class OrderService extends BaseApi implements IService {
             }
 
             // 2.C - Platform ve Statü Filtreleri (Multi Select)
-            if (filterData.integrationCodes && filterData.integrationCodes.length > 0) {
-                filterQuery.integrationCode = { $in: filterData.integrationCodes };
-            }
+            // [2026-10-03] tek dize de kabul (eskiden `$in: "trendyol"` -> Mongo 500 "$in needs an array")
+            const integrationCodes = toInList(filterData.integrationCodes);
+            if (integrationCodes) filterQuery.integrationCode = { $in: integrationCodes };
 
-            if (filterData.internalStatuses && filterData.internalStatuses.length > 0) {
-                filterQuery.internalStatus = { $in: filterData.internalStatuses };
-            }
+            const internalStatuses = toInList(filterData.internalStatuses);
+            if (internalStatuses) filterQuery.internalStatus = { $in: internalStatuses };
 
             // 2.D - [N6 / ADR-0004] Kalem düzeyi rezervasyon durumu (ör. ['OVERSOLD']): en az bir kalemi bu durumlardan birinde olan siparişler.
             // Değerler beyaz listeyle doğrulanır (operatör/nesne enjeksiyonu yok); geçersiz değer => 400.

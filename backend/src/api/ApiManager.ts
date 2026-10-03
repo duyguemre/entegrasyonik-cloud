@@ -14,7 +14,8 @@ import { sanitizeResponse } from "./responseSanitizer";
 import { AuditLogger } from "@services/audit/AuditLogger";
 import { getRequestId } from "@platform/core/context";
 import { AppError, ERROR_CODES } from "@platform/core/errors";
-import { logger } from "@platform/core/logger";
+import { logger } from "@platform/core/logger"
+import { config } from "@config";
 
 const log = logger.child({ module: 'ApiManager' });
 
@@ -86,6 +87,8 @@ const DEDICATED_ONLY_OPERATIONS: ReadonlySet<string> = new Set([
     // [ADR-0026] cerez basan/kapatan impersonation operasyonlari yalniz ozel rotalardan (SessionResult jenerik rotada cerezsiz sizardi)
     'securityservice/redeemimpersonation',
     'securityservice/endimpersonation',
+    // Google ile giris: cerez basar (SessionResult) + loginLimiter'li ozel rota; jenerik rotadan reddedilir
+    'securityservice/googlesignin',
 ])
 
 export function configureApis(
@@ -196,6 +199,30 @@ export function configureApis(
             void AuditLogger.log({ event: 'login', result: credentialFailure ? 'fail' : 'error', ip })
             sendError(req, res, e)
         }
+    })
+    // Google ile giriş/kayıt (docs/GOOGLE_SIGN_IN.md): `credential` = GIS ID token. Kullanıcı varsa login ile AYNI oturum (çerez), yoksa
+    // `{ status:'signup_required', signupToken, profile }` (çerez YOK). Parola girişiyle aynı hız sınırı.
+    app.post(context + '/SecurityService/googleSignIn', loginLimiter, async (req: Request, res: Response) => {
+        const ip = getClientIp(req)
+        try {
+            const result = await runOperation(undefined, "SecurityService", "googleSignIn", req.body, undefined, { ip })
+            if (isSessionResult(result)) {
+                Security.setSessionCookie(res, result.sessionClaims)
+                void AuditLogger.log({ event: 'login', result: 'ok', sub: result.sessionClaims.sub, tid: result.sessionClaims.tid, ip, meta: { method: 'google' } })
+                res.status(200).send(result.body)
+                return
+            }
+            res.status(200).send(result)
+        } catch (e: any) {
+            const credentialFailure = e && [400, 401, 403, 409].includes(e.statusCode)
+            void AuditLogger.log({ event: 'login', result: credentialFailure ? 'fail' : 'error', ip, meta: { method: 'google' } })
+            sendError(req, res, e)
+        }
+    })
+    // Kimliksiz, önbelleklenebilir önyüz yapılandırması: Google OAuth istemci kimliği (kamu bilgisi; yoksa null = düğme gizlenir).
+    app.get(context + '/SecurityService/authConfig', (_req: Request, res: Response) => {
+        res.setHeader('Cache-Control', 'public, max-age=300')
+        res.status(200).send({ googleClientId: config.auth.googleClientId || null })
     })
     // [ADR-0026 Karar 4.9] Backoffice bileti tüketir, `imp:true` oturum çerezini basar (30 dk - K41, UZATILMAZ). Açık rota (kimlik = bilet); hız sınırlı.
     app.post(context + '/SecurityService/redeemImpersonation', accountTokenLimiter, async (req: Request, res: Response) => {

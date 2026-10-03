@@ -68,6 +68,8 @@ export const OPEN_OPERATIONS: ReadonlyArray<string> = [
     'AccountService/acceptInvitation',
     // [ADR-0026 Karar 4.9] backoffice'in ürettiği tek kullanımlık impersonation bileti = kimlik (dedicated rota; hız sınırlı).
     'SecurityService/redeemImpersonation',
+    // Google ile giriş: kimlik = Google ID token (özel rota + loginLimiter; jenerik rotadan reddedilir). authConfig GET'tir -> authenticate.ts OPEN_ROUTES.
+    'SecurityService/googleSignIn',
 ];
 
 const hasOwn = (o: object, k: string) => Object.prototype.hasOwnProperty.call(o, k);

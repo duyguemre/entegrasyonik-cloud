@@ -60,11 +60,13 @@ describe('authenticate: açık rota listesi (ADR-0001 Karar 1)', () => {
   it('[ADR-0001 adım 3] açık liste tam olarak: login, register, logout (POST) ve checkAuthentication + public-config (GET)', () => {
     expect(OPEN_ROUTES.map(([m, p]) => m + ' ' + p).sort()).toEqual([
       'GET checkAuthentication',
+      'GET SecurityService/authConfig', // Google ile giriş: kimliksiz önyüz yapılandırması ({ googleClientId | null })
       'GET public-config', // [ADR-0031 BE-CFG-3] kimliksiz kamu açılış yapılandırması (sır içermez; yalnız exposure:'public' + 2 env alanı)
       // Hesap yaşam döngüsü: giriş yapamayan kullanıcının akışları (rate limit ApiManager'daki özel rotalarda)
       'POST AccountService/confirmPasswordReset', 'POST AccountService/requestPasswordReset', 'POST AccountService/verifyEmail',
       'POST AccountService/getInvitation', 'POST AccountService/acceptInvitation', // [ADR-0028 WP-A4]
       'POST SecurityService/redeemImpersonation', // [ADR-0026 Karar 4.9] impersonation bileti = kimlik
+      'POST SecurityService/googleSignIn', // Google ile giriş: kimlik = Google ID token (özel rota + loginLimiter)
       'POST SecurityService/login', 'POST SecurityService/logout', 'POST SecurityService/register',
     ].sort());
   });

@@ -10,6 +10,8 @@ import { TenantProvisioningService } from '@operations/tenant/TenantProvisioning
 import { AccountLifecycleService, runInBackground } from '@operations/account/AccountLifecycleService'
 import { config } from '@config'
 import { buildUserContext } from '../authenticate'
+import { exchangeGoogleCode, getDefaultTokenPoster, verifyGoogleIdToken, signGoogleSignupToken, verifyGoogleSignupToken } from '@operations/account/googleIdToken';
+import crypto from 'crypto';
 import { defaultTicketRedis, IMPERSONATION_SESSION_SECONDS, redeemImpersonationTicket } from '../admin/impersonationTicket'
 
 /** ADR-0001 Karar 10: kullanıcı-yok / yanlış-parola / kilitli / pasif için AYNI mesaj (kullanıcı enumeration yok). */
@@ -31,16 +33,37 @@ export default class SecurityService extends BaseApi implements IService {
             throw new ApplicationError('Geçersiz istek.', 400);
         }
         const provisioning = new TenantProvisioningService({ applicationDB: this.applicationDB });
+        // Google ile kayıt: `googleSignupToken` (googleSignIn'in döndürdüğü, 15 dk) gövde (registerValues) veya üst düzeyde gelebilir.
+        // E-posta YALNIZCA belirteçten alınır (gövdedeki farklıysa ret); parola verilmediyse hesap kullanılmaz rastgele parolayla açılır
+        // (giriş Google ile; ileride "parola belirle" = mevcut parola sıfırlama akışı). Diğer tüm kurallar (zorunlu alanlar, hız sınırı) aynen.
+        const signupToken = values.googleSignupToken ?? this.request.googleSignupToken;
+        let google: ReturnType<typeof verifyGoogleSignupToken> | undefined;
+        if (signupToken !== undefined && signupToken !== null && signupToken !== '') google = verifyGoogleSignupToken(signupToken);
+        let input: any = {
+            name: values.name,
+            surname: values.surname,
+            email: values.email,
+            password: values.password,
+            password2: values.password2,
+            storeName: values.storeName,
+        };
+        if (google) {
+            if (typeof values.email === 'string' && values.email.trim() !== '' && values.email.trim().toLowerCase() !== google.email) {
+                throw new ApplicationError('E-posta Google hesabıyla eşleşmiyor.', 400);
+            }
+            const hasPassword = typeof values.password === 'string' && values.password.length > 0;
+            input = {
+                ...input,
+                email: google.email,
+                name: typeof values.name === 'string' && values.name.trim() ? values.name : (google.givenName ?? google.name),
+                surname: typeof values.surname === 'string' && values.surname.trim() ? values.surname : (google.familyName ?? google.givenName ?? google.name),
+                password: hasPassword ? values.password : crypto.randomBytes(32).toString('base64url'),
+                password2: hasPassword ? values.password2 : undefined,
+            };
+        }
         const result = await provisioning.provision(
-            {
-                name: values.name,
-                surname: values.surname,
-                email: values.email,
-                password: values.password,
-                password2: values.password2,
-                storeName: values.storeName,
-            },
-            { ip: this.request.requestMeta?.ip },
+            input,
+            { ip: this.request.requestMeta?.ip, ...(google ? { googleSub: google.sub } : {}) },
         );
         const u: any = result.user;
         const created = typeof u.toObject === 'function' ? u.toObject() : u;
@@ -92,25 +115,7 @@ export default class SecurityService extends BaseApi implements IService {
                     $unset: { lockUntil: 1 }
                 });
 
-                const userObj = user.toObject();
-                // [ADR-0026 Aşama 3, BAYRAK: ADMIN_API_ONLY; varsayılan false] platform yöneticisi girişi `/api` üzerinde kapalı; yönetim uygulamasından.
-                if (userObj.isGlobalAdmin && config.admin.apiOnly) {
-                    throw new ApplicationError("Yönetim girişi yönetim uygulamasından yapılır.", 403, 'ADMIN_API_ONLY');
-                }
-                const sessionClaims = Security.claimsFromUser(userObj);
-                // ADR-0028 WP-A3: `membership` modunda profil (permissions[]) üyelik rolünden; üyelik yok/askıda -> 403. legacy/dual: aynen.
-                const profile = toProfileDto(await resolveProfileSource(this.applicationDB, userObj));
-
-                // SÜPER YÖNETİCİ: Giriş sonrası mağaza seçimi zorunlu
-                if (userObj.isGlobalAdmin) {
-                    const clients = await this.applicationDB.getClientModel().find({ status: 'ACTIVE' }, 'clientId title').lean();
-                    return {
-                        sessionClaims,
-                        body: { requireStoreSelection: true, clients: clients, user: profile }
-                    } as SessionResult;
-                }
-
-                return { sessionClaims, body: profile } as SessionResult;
+                return await this.buildSessionResult(user);
             } else {
                 // Hatalı giriş: Deneme sayısını arttır
                 const attempts = user.failedLoginAttempts + 1;
@@ -129,6 +134,77 @@ export default class SecurityService extends BaseApi implements IService {
         } catch (error) {
             throw error;
         }
+    }
+
+    /** Parola ve Google girişinin ORTAK oturum akışı (aynı yanıt biçimi/çerez): claim'ler + profil DTO; süper yönetici için mağaza seçimi. */
+    private async buildSessionResult(user: any, extraBody: Record<string, unknown> = {}): Promise<SessionResult> {
+        const userObj = user.toObject();
+        // [ADR-0026 Aşama 3, BAYRAK: ADMIN_API_ONLY; varsayılan false] platform yöneticisi girişi `/api` üzerinde kapalı; yönetim uygulamasından.
+        if (userObj.isGlobalAdmin && config.admin.apiOnly) {
+            throw new ApplicationError("Yönetim girişi yönetim uygulamasından yapılır.", 403, 'ADMIN_API_ONLY');
+        }
+        const sessionClaims = Security.claimsFromUser(userObj);
+        // ADR-0028 WP-A3: `membership` modunda profil (permissions[]) üyelik rolünden; üyelik yok/askıda -> 403. legacy/dual: aynen.
+        const profile = toProfileDto(await resolveProfileSource(this.applicationDB, userObj));
+
+        // SÜPER YÖNETİCİ: Giriş sonrası mağaza seçimi zorunlu
+        if (userObj.isGlobalAdmin) {
+            const clients = await this.applicationDB.getClientModel().find({ status: 'ACTIVE' }, 'clientId title').lean();
+            return {
+                sessionClaims,
+                body: { requireStoreSelection: true, clients: clients, user: profile, ...extraBody }
+            } as SessionResult;
+        }
+
+        return { sessionClaims, body: Object.keys(extraBody).length ? { ...profile, ...extraBody } : profile } as SessionResult;
+    }
+
+    /**
+     * Google ile giriş (GIS ID token). Kullanıcı e-postayla VARSA parola girişiyle AYNI oturum akışı (yanıt + `status:'ok'`); YOKSA oturum AÇILMAZ:
+     * `{ status:'signup_required', signupToken, profile }` (belirteç 15 dk, `aud:'google-signup'`; `register` bunu `googleSignupToken` olarak kabul eder).
+     * Pasif/kilitli: parola girişiyle aynı genel hata. Hatalar sabit ileti/kodla döner (token/gövde yansıtılmaz).
+     */
+    async googleSignIn(): Promise<SessionResult | Record<string, unknown>> {
+        const clientId = config.auth.googleClientId;
+        if (!clientId) throw new ApplicationError('Google ile giriş etkin değil.', 503, 'GOOGLE_DISABLED');
+        // `credential` (GIS ID token) YA DA `code` (popup authorization code; sunucuda id_token'a cevrilir, sonra AYNI dogrulama).
+        const { credential, code } = this.request;
+        let idToken: unknown = credential;
+        if (typeof credential !== 'string' || !credential) {
+            if (typeof code !== 'string' || !code) throw new ApplicationError('Geçersiz istek.', 400);
+            const clientSecret = config.auth.googleClientSecret;
+            if (!clientSecret) throw new ApplicationError('Google ile giriş etkin değil.', 503, 'GOOGLE_DISABLED');
+            idToken = await exchangeGoogleCode(code, { clientId, clientSecret, poster: getDefaultTokenPoster() });
+        }
+        const id = await verifyGoogleIdToken(idToken, { clientId });
+
+        const userModel = this.applicationDB.getUserModel();
+        const user: any = await userModel.findOne({ email: id.email });
+        if (!user) {
+            return {
+                status: 'signup_required',
+                signupToken: signGoogleSignupToken(id),
+                profile: { email: id.email, name: id.name, ...(id.picture ? { picture: id.picture } : {}) },
+            };
+        }
+        const locked = !!(user.lockUntil && user.lockUntil > new Date());
+        if (user.isActive === false || locked) throw new ApplicationError(GENERIC_LOGIN_ERROR, 401);
+
+        if (typeof user.googleSub === 'string' && user.googleSub) {
+            if (user.googleSub !== id.sub) throw new ApplicationError('Bu e-posta başka bir Google hesabına bağlı.', 409, 'GOOGLE_ACCOUNT_MISMATCH');
+        } else {
+            // İlk Google girişi: aynı (Google'ın doğruladığı) e-postaya hesap bağlanır; e-posta doğrulanmış sayılır.
+            const set: Record<string, unknown> = { googleSub: id.sub };
+            if (user.emailVerified !== true) { set.emailVerified = true; set.emailVerifiedAt = new Date(); }
+            try {
+                await userModel.updateOne({ _id: user._id, $or: [{ googleSub: { $exists: false } }, { googleSub: null }] }, { $set: set });
+            } catch (e: any) {
+                if (e && (e.code === 11000 || e.code === 11001)) throw new ApplicationError('Bu Google hesabı başka bir kullanıcıya bağlı.', 409, 'GOOGLE_ACCOUNT_MISMATCH');
+                throw e;
+            }
+        }
+        await userModel.updateOne({ _id: user._id }, { $set: { failedLoginAttempts: 0 }, $unset: { lockUntil: 1 } });
+        return await this.buildSessionResult(user, { status: 'ok' });
     }
 
     /**

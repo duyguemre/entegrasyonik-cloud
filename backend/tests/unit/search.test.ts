@@ -1,5 +1,5 @@
 import { describe, it, expect } from '@jest/globals';
-import { escapeRegex, toSearchString, containsRegex, clampLimit, clampPage, MAX_SEARCH_LENGTH, MAX_PAGE_LIMIT } from '@utils/search';
+import { escapeRegex, toSearchString, containsRegex, clampLimit, clampPage, toInList, MAX_SEARCH_LENGTH, MAX_PAGE_LIMIT } from '@utils/search';
 
 describe('escapeRegex', () => {
   it('tüm regex meta karakterlerini kaçırır; kaçışlı desen girdiyi birebir (sabit metin) eşler', () => {
@@ -62,5 +62,17 @@ describe('clampLimit / clampPage', () => {
   it('clampPage: ≥1 tamsayı, geçersiz → 1', () => {
     expect(clampPage(3)).toBe(3);
     for (const v of [0, -2, NaN, 'x', null, undefined]) expect(clampPage(v)).toBe(1);
+  });
+});
+
+describe('toInList (çoklu seçim süzgeci -> $in dizisi)', () => {
+  it('[2026-10-03 sipariş listesi 500] tek dize diziye sarılır; dizi aynen; boş/dizi-dışı -> undefined', () => {
+    expect(toInList('trendyol')).toEqual(['trendyol']);
+    expect(toInList(['trendyol', 'n11'])).toEqual(['trendyol', 'n11']);
+    for (const v of ['', [], undefined, null, 5, {}, { $ne: 'x' }]) expect(toInList(v)).toBeUndefined();
+  });
+  it('dize olmayan/boş öğeler atılır (operatör nesnesi enjekte edilemez); üst sınır uygulanır', () => {
+    expect(toInList(['a', '', 7, { $gt: '' }, 'b'])).toEqual(['a', 'b']);
+    expect(toInList(Array.from({ length: 150 }, (_, i) => 's' + i), 100)).toHaveLength(100);
   });
 });

@@ -34,6 +34,20 @@
             }
           }
         }
+      },
+      {
+        "name": "uniq_googleSub",
+        "fields": {
+          "googleSub": 1
+        },
+        "options": {
+          "unique": true,
+          "partialFilterExpression": {
+            "googleSub": {
+              "$type": "string"
+            }
+          }
+        }
       }
     ],
     "GlobalRoles": [

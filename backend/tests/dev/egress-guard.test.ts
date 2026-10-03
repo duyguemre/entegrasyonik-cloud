@@ -101,6 +101,20 @@ describe('egress-guard (Protokol 7: loopback dışına çıkış yok)', () => {
         delete process.env.EGRESS_ALLOW_LLM;
     });
 
+    it("Google giris JWKS host'u VARSAYILAN ENGELLI; yalniz EGRESS_ALLOW_GOOGLE_AUTH=1 ile acilir ve K7 listesiyle AYNIDIR", () => {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const { ALLOWED_OUTBOUND_HOSTS } = require('../../src/integration/modules/common/security/outboundHosts');
+        expect([...guard.GOOGLE_AUTH_HOSTS].sort()).toEqual([...ALLOWED_OUTBOUND_HOSTS['google-auth']].sort());
+        delete process.env.EGRESS_ALLOW_GOOGLE_AUTH;
+        for (const h of guard.GOOGLE_AUTH_HOSTS) expect(guard.isAllowedHost(h)).toBe(false);
+        process.env.EGRESS_ALLOW_GOOGLE_AUTH = '1';
+        for (const h of guard.GOOGLE_AUTH_HOSTS) expect(guard.isAllowedHost(h)).toBe(true);
+        expect(guard.isAllowedHost('oauth2.googleapis.com')).toBe(true); // code->token degisimi
+        expect(guard.isAllowedHost('accounts.google.com')).toBe(false);
+        expect(guard.isAllowedHost('api.openai.com')).toBe(false); // LLM bayragi ayri
+        delete process.env.EGRESS_ALLOW_GOOGLE_AUTH;
+    });
+
     it('EGRESS_ALLOW ile ek host izinli olur', () => {
         process.env.EGRESS_ALLOW = 'redis, mongo';
         expect(guard.isAllowedHost('redis')).toBe(true);

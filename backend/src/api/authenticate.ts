@@ -29,6 +29,8 @@ export const OPEN_ROUTES: ReadonlyArray<readonly [string, string]> = [
     ['GET', 'checkAuthentication'],
     // [ADR-0031 BE-CFG-3] kamu açılış yapılandırması (bakım/duyuru/destek iletişimi giriş ekranında da gerekir); sır içermez, bellekten yanıtlanır.
     ['GET', 'public-config'],
+    // Google ile giriş: kimliksiz önyüz yapılandırması ({ googleClientId | null }); sır içermez.
+    ['GET', 'SecurityService/authConfig'],
 ];
 
 function normalizePath(p: string): string {
