@@ -142,7 +142,7 @@ Yerelde `npm run start:live-readonly` ile; her madde için yanıtın PII temizle
 | L-17 | PZ | token (`scope` ile) + `GET brand/getBrands?Page=1&Size=100` | D-PZ-1/2 (önce anahtar yenilenmeli: canlı tur "geçersiz anahtar") |
 | L-18 | PZ | `GET product/products?Approved=true&Page=1&Size=1` | PascalCase kabulü |
 | L-19 | PZ | `POST order/getOrdersForApi` (1 gün) | adres sözlüğü, durum kodları |
-| L-20 | IS | `urls.baseUrl/tokenUrl` DB kontrolü → `LIVE_READONLY_ALLOW_TOKEN_REFRESH=ideasoft` ile tek yenileme → `GET /admin-api/orders?limit=1`, `/products?limit=1`, `/brands?limit=1` | D-IS-1/5 (token süresi dolmuş; yenileme üretimi bozabilir — **kullanıcı kararı**) |
+| L-20 (SONRA, K-H) | IS | `urls.baseUrl/tokenUrl` DB kontrolü → `LIVE_READONLY_ALLOW_TOKEN_REFRESH=ideasoft` ile tek yenileme → `GET /admin-api/orders?limit=1`, `/products?limit=1`, `/brands?limit=1` | D-IS-1/5 (token süresi dolmuş; yenileme üretimi bozabilir — **kullanıcı kararı**) |
 | L-21 | BH | `GET https://bizimhesap.com/api/b2b/products` (`Key`+`Token`) | host/başlık (canlı 402'nin nedeni) |
 
 **Çağrılmayacaklar:** HB `labels`, HB/TY/PZ/N11 tüm POST/PUT yazma uçları, TY `PUT shipment-packages`, IS `PUT orders/{id}`, PZ `product/create`.

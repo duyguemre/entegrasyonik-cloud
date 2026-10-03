@@ -21,7 +21,7 @@ const TARGETS = [
 ];
 
 module.exports = {
-    id: '0020-users-google-sub-app',
+    id: '0025-users-google-sub-app',
     scope: 'app',
     kind: 'index',
     description: 'Google ile giris (App): Users.googleSub kismi tekil indeksi (uniq_googleSub).',

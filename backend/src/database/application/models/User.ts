@@ -38,7 +38,7 @@ UserSchema.index({ email: 1 }, { unique: true, name: 'uniq_email', partialFilter
 // D11'de alan resmen eklenecek) ama strict:false altında beyansız alana indeks kurmak geçerlidir.
 // Uygulama: backend/migrations/0001-d9-indexes-app.js.
 UserSchema.index({ clientId: 1 }, { name: 'clientId_1' });
-// Google ile giriş: seyrek (kısmi) tekil indeks -- googleSub'u olmayan kullanıcılar etkilenmez. Uygulama: backend/migrations/0020-users-google-sub-app.js (ÇALIŞTIRILMADI).
+// Google ile giriş: seyrek (kısmi) tekil indeks -- googleSub'u olmayan kullanıcılar etkilenmez. Uygulama: backend/migrations/0025-users-google-sub-app.js (ÇALIŞTIRILMADI).
 UserSchema.index({ googleSub: 1 }, { unique: true, name: 'uniq_googleSub', partialFilterExpression: { googleSub: { $type: 'string' } } });
 
 export const ResourceSchema = new mongoose.Schema({

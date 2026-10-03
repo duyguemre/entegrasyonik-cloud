@@ -47,7 +47,7 @@ KAPALIDIR; gercek Google ile denemek icin (yalniz insan) `EGRESS_ALLOW_GOOGLE_AU
 
 - `GOOGLE_OAUTH_CLIENT_SECRET` (SIR; yalniz `code` akisi icin; bos = code yolu kapali).
 - `GOOGLE_OAUTH_CLIENT_ID` (`backend/.env.example`; sir degil, bos = ozellik kapali).
-- `Users.googleSub` (istege bagli, profil DTO'sunda donmez). Seyrek tekil indeks `uniq_googleSub`: `backend/migrations/0020-users-google-sub-app.js`
+- `Users.googleSub` (istege bagli, profil DTO'sunda donmez). Seyrek tekil indeks `uniq_googleSub`: `backend/migrations/0025-users-google-sub-app.js`
   (CALISTIRILMADI; CLAUDE.md kural 3: yedek dogrulanmadan DB degismez; once yerel, Atlas ayri onay). Indeks olmadan da kod calisir (E11000 yakalanir) ama sub tekilligi yalniz goc ile saglanir.
 
 ## Insan adimi (Protokol 12): Google Cloud Console'da OAuth istemcisi

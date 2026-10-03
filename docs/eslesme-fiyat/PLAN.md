@@ -1,6 +1,6 @@
 # PLAN — Eşleme, fiyat, entegrasyon mapping'leri ve modül uyumluluğu yeniden yapılandırması (Bölüm 12, adım 6)
 
-Tarih: 2026-10-03 · Dal: `feature/eslesme-fiyat-yeniden-yapilandirma` · Durum: **ONAY BEKLİYOR** (adım 6; onaydan sonra adım 7 uygulama başlar).
+Tarih: 2026-10-03 · Dal: `feature/eslesme-fiyat-yeniden-yapilandirma` · Durum: **ONAYLANDI 2026-10-03** (kullanıcı yanıtları §2a; adım 7 uygulama WP0'dan başlar, WP'ler arasında onay beklenmez).
 
 Girdiler: `01-mevcut-yapi.md` (+Ek A–E), `02-ekler/{trendyol,n11,pazarama,bizimhesap}.md`, `API_HEPSIBURADA.md`, `API_IDEASOFT.md`, `03-uyumluluk-analizi.md`.
 Bu plandaki `D-*` kimlikleri 03 §2–3'teki düzeltmelerdir; `F-*`/`P0-*` kimlikleri 01 eklerine atıftır.
@@ -36,6 +36,25 @@ modüllerinin her entegrasyonda güncel API ile uyumlu, idempotent ve izlenebili
 | K-J | Webhook abonelikleri (TY panel/API, HB destek, IS `client_webhooks`) | (1) Alıcılar yazılır (HB, IS), abonelik kaydı insan/kullanıcı onaylı; (2) Yalnız polling | **(1)** | Bölüm 8; abonelik kaydı yazma işlemidir, kullanıcı yapar. |
 | K-K | Çekim süreleri (§5 tablosu) | Tabloyu onayla / değiştir | tablo | Backoffice ayar kataloğu (ADR-0031) ile plan bazlı değiştirilebilir. |
 | K-L | Yan düzeltmeler (bu işin dışı ama kırık): iki `0020` göç numarası, `ERROR_CODES.md` üretimi, operation-policy FE envanteri (Google ikilisi), HB testConnection 403 testi | (1) Bu dalda WP0'da; (2) Ayrı iş | **(1)** | Test paketinin yeşil olması diğer adımların ön koşulu. |
+
+## 2a. Kullanıcı kararları (2026-10-03, sohbette alındı; docs/adr/USER_DECISIONS.md'ye yerelde işlenecek satırlar `USER_DECISIONS_EKLER.md`'de)
+
+| # | Karar | Plana etkisi |
+|---|---|---|
+| K-A | **Evet, şimdi**: `channel` fiyat kural tipi | WP5 |
+| K-A2 | **Evet, yalnız channel tipi** insan onaysız uygulanabilir (kill-switch, günlük sınır, geçmiş) | WP5 |
+| K-B | **Yerel → kanal otomatik** (`pricePending`); kanal → yerel asla; fark uyarısı + kullanıcı seçimi | WP5 |
+| K-C | **Öneri kabul**: TY/PZ/IS marka eşlemesi; HB marka adı (ekran gizli); N11 "Marka" özelliği; BH yok | WP2, WP3, WP4 |
+| K-D | **Tenant ayarı** `trendyol.shippingModel` (marketplace/seller) | WP4, WP6 |
+| K-E | **Hepsi şimdi**: entegrasyon başına kuyruk + jobId dedup + lease'li üretici **ve** Redis paylaşımlı platform-geneli hız sınırlayıcı + devre kesici paylaşımı | WP7 (kapsam genişledi; §3.5'e "paylaşımlı limiter" eklendi) |
+| K-F | **Öneri kabul**: `Orders.history[]` + normalize alanlar | WP6 |
+| K-G | **Öneri kabul**: iptal / iade-reddi sebep katalogları ayrı | WP6 |
+| K-H | **Ideasoft canlı doğrulama bu işte kapsam dışı**: kod düzeltmeleri (D-IS-1..6) yazılır, mock testlenir, canlı/token doğrulaması yapılmaz; 03 §5 L-20 "sonra" listesine taşındı | WP4 |
+| K-I | **HB SIT hesabı talep edilecek** (insan görevi); kod SIT host'larını destekler; yazma testleri yerelde SIT'te | WP3, yerel kontrol listesi |
+| K-J | **Evet, ikisi de**: HB ve Ideasoft webhook alıcıları; abonelik kaydı kullanıcıda | WP7 |
+| K-K | **Tablo onaylı** (§3.6) | WP7 |
+| K-L | **Yan düzeltmeler bu dalda** (WP0) | WP0 |
+| Sıra | **WP0→WP9 onaylı, WP'ler arasında onay beklenmez**; her WP sonunda commit + push + özet | — |
 
 ## 3. Hedef yapı (mimari; ADR gerekenler işaretli)
 
@@ -85,6 +104,7 @@ interface IntegrationIssue {
 - `Clients.integrations[].sync: { orders|claims|messages|finance|products|catalog: { lastSuccessAt, lastAttemptAt, lastError?: {code, at}, cursor? } }`. Mevcut `lastSuccessfulOrderSync/lastClaimSync/...` alanları **kalır** (motor ikisini de yazar; göç yok); `health.ts` yeni alanı okur; üst seviye `Clients.lastSuccessfulOrderSync` türetilir (F-07).
 - RPC `IntegrationService/syncNow {integrationCode, kind}`: jobId `manual_<client>_<kod>_<kind>_<5 dk pencere>` (dedup), tenant başına kind başına 5 dk soğuma, kill-switch ve LIVE_READONLY kapısı; önyüzde entegrasyon kartı ve liste başlıklarında "Son senkron: 4 dk önce · Şimdi senkronize et".
 - Üretici: `OrderQueueProducer` `startJob` altına (lease + JobState), `Clients` projeksiyonlu okuma, `addBulk`, tenant dilimleme (`order % 60` saniye dilimi → yük 60 sn'ye yayılır), kind başına ayrı iş (orders/claims/messages/finance) ayrı aralıkla.
+- Paylaşımlı hız sınırlayıcı (K-E 'hepsi şimdi'): `RateLimiter.throttle()` arayüzü korunur; Redis Lua token-bucket uygulaması anahtar `platform[:grup]` (global) + mevcut tenant kovası; devre kesici durumu platform bazında Redis'te paylaşılır (açıkken iş eklenmez / `moveToDelayed`); Redis yoksa süreç-içi davranışa düşer (fail-open, uyarı logu).
 - Kuyruklar (K-E): `order-sync:<integrationCode>` (6 kuyruk) + kind'e göre iş; concurrency kanal başına (TY 5, HB 3, N11 3, PZ 3, IS 2, BH 1 — başlangıç; backoffice ayarı); jobId çift+kind sabit, bekleyen/aktif varken eklenmez; RATE_LIMITED → `moveToDelayed(retryAfterMs)`; AUTH 3 ardışık → entegrasyon `needsAttention` + bildirim, üretim durur; DLQ `originalJobId` unique + 30 g TTL (göç 0029).
 - Zamanlayıcı: `jitterPct` tüm işlerde (%10), `runOnStart` yayılır; tenant tarayıcı işler dilimli (stock.publish `order % 4` dört ayrı lease).
 - Webhook (K-J): HB alıcısı `/hooks/hepsiburada/:token/:event` (PUT, 5 sn 2xx, gövde okunmaz → `syncNow(orders|claims)` sinyali), IS alıcısı `/hooks/ideasoft/:token` (HMAC `X-Ideashop-Hmac-Sha256` doğrulama; `order/*`, `product/update`); Trendyol mevcut. Webhook sağlıklı kanal = seyrek mutabakat.
