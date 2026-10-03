@@ -100,7 +100,9 @@ export class TenantProvisioningService {
     }
 
     /** Tek giriş noktası. Doğrulama hatası: 400; e-posta kullanımda: 409; adım hatası: 500 (kayıt PROVISIONING_FAILED). */
-    public async provision(rawInput: unknown, opts: { ip?: string } = {}): Promise<ProvisionResult> {
+    public async provision(rawInput: unknown, opts: { ip?: string; googleSub?: string } = {}): Promise<ProvisionResult> {
+        // Google ile kayıt: e-posta Google tarafından doğrulanmıştır; `googleSub` kullanıcıya bağlanır (parola yolundaki yeniden deneme
+        // doğrulaması yerine aynı googleSub eşleşmesi aranır).
         const input = validateProvisionInput(rawInput);
 
         const clientModel = this.applicationDB.getClientModel();
@@ -113,8 +115,9 @@ export class TenantProvisioningService {
             // E-posta zaten kayıtlı: yalnızca PROVISIONING_FAILED kalmış kendi tenant'ı ve doğru parola ile devam edilir; aksi hâlde ret.
             const owned: any = await clientModel.findOne({ order: Number(existingUser.order) }).lean();
             const sameOwner = owned && owned.status === TENANT_STATUS.PROVISIONING_FAILED
-                && typeof existingUser.password === 'string'
-                && await this.security.comparePassword(input.password, existingUser.password);
+                && (opts.googleSub !== undefined
+                    ? existingUser.googleSub === opts.googleSub
+                    : typeof existingUser.password === 'string' && await this.security.comparePassword(input.password, existingUser.password));
             if (!sameOwner) throw new ApplicationError(EMAIL_TAKEN_MESSAGE, 409);
             resumeClient = owned;
         } else {
@@ -156,6 +159,7 @@ export class TenantProvisioningService {
                         owner: true,
                         isGlobalAdmin: false, // kayıt olanlar client sahibidir
                         roleCode: 'ROLE_OWNER',
+                        ...(opts.googleSub !== undefined ? { googleSub: opts.googleSub, emailVerified: true, emailVerifiedAt: new Date() } : {}),
                     });
                 } catch (e: any) {
                     if (isDuplicateKeyError(e)) throw new ApplicationError(EMAIL_TAKEN_MESSAGE, 409);

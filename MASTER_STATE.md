@@ -265,3 +265,7 @@ Kapalı (BACKLOG DB bölümü): liste `$sort` `$facet` dışında + Customers/Ti
 ## Rekabet/fiyat ve mobil (2026-10-01, mimari + iş kararları) — ADR-0036, ADR-0037
 - ADR-0036 rekabet ve fiyat modülü: yalnız resmi API (Trendyol buybox), kazıma yok; B-10 kural tipi (ayrı servis yok); deterministik karar; tenant izolasyonu mutlak; yük/tazeleme backoffice ayarı (ADR-0031); maliyet zorunlu; hukuk K1-K20 R2'de de; R3 (insan onaysız) avukat yanıtı + sözleşme okuması + 4 hafta R2 + 14 gün gölge moda kadar KAPALI; site yalnız ilke dili (K56-K58).
 - ADR-0037 mobil: tek web kod tabanı; PWA (uygulama + backoffice ayrı, API/tenant verisi cihazda önbelleklenmez); mağazasız Capacitor Android kabuğu (Camera/Push/Share, sırlar yalnız yerelde); webpush kanalı (VAPID env); kullanımda platform boyutu (ham UA/IP yok); mağaza yayını Protokol 12 (K35, K36, K53-K55).
+
+
+## Google ile giris/kayit (2026-10-02, dal `faz4-google-login`) - docs/GOOGLE_SIGN_IN.md
+Backend tamam (BACKLOG GSI-1): `authConfig`, `googleSignIn`, `register`+`googleSignupToken`, `Users.googleSub` (goc 0020 yazildi, CALISTIRILMADI). Insan: Google Cloud OAuth istemcisi + `GOOGLE_OAUTH_CLIENT_ID`; yerelde gercek deneme icin `EGRESS_ALLOW_GOOGLE_AUTH=1`.

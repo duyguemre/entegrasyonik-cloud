@@ -678,9 +678,9 @@ describe('Açık rotalar (login/register/logout) politika kaydına takılmaz', (
       jest.doMock('@database/DatabaseManager', () => ({ DatabaseManagerInstance: {} }));
       const { OPEN_ROUTES } = require('../../../src/api/http/authenticate');
       const ACCOUNT_OPEN = ['requestPasswordReset', 'confirmPasswordReset', 'verifyEmail', 'getInvitation', 'acceptInvitation'].map((o) => 'AccountService/' + o); // hesap yaşam döngüsü
-      const IMP_OPEN = ['SecurityService/redeemImpersonation']; // [ADR-0026 Karar 4.9] bilet = kimlik (dedicated rota)
+      const IMP_OPEN = ['SecurityService/redeemImpersonation', 'SecurityService/googleSignIn']; // [ADR-0026 Karar 4.9] bilet = kimlik; Google ile giriş: kimlik = ID token (dedicated rotalar)
       expect(OPEN_OPERATIONS).toEqual([...OPEN.map((o) => 'SecurityService/' + o), ...ACCOUNT_OPEN, ...IMP_OPEN]);
-      expect(OPEN_ROUTES).toEqual([...OPEN.map((o) => ['POST', 'SecurityService/' + o]), ...ACCOUNT_OPEN.map((o) => ['POST', o]), ...IMP_OPEN.map((o) => ['POST', o]), ['GET', 'checkAuthentication'], ['GET', 'public-config']]);
+      expect(OPEN_ROUTES).toEqual([...OPEN.map((o) => ['POST', 'SecurityService/' + o]), ...ACCOUNT_OPEN.map((o) => ['POST', o]), ...IMP_OPEN.map((o) => ['POST', o]), ['GET', 'checkAuthentication'], ['GET', 'public-config'], ['GET', 'SecurityService/authConfig']]);
     });
   });
 

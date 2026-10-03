@@ -45,18 +45,27 @@ const hbParams = (tenantSettings: any, platformUrls: any = {}) => ({
 describe('K7 (1) Hepsiburada: tenant settings.urls ARTIK kullanılmaz (yalnız platform urls)', () => {
   it('[K7 2026-09-28] ÖNCEKİ: tenant settings.urls.BASEURL isteği başka host\'a yönlendirirdi. ŞİMDİ: platform varsayılan/urls host\'u kullanılır', async () => {
     const spy = jest.spyOn(axios, 'get').mockResolvedValue({ status: 200, data: {} } as any);
-    const svc = new HbService(hbParams({ urls: { BASEURL: 'https://tenant-controlled.example' } }));
-    await svc.get('orders/merchantid/M-1');
+    const svc = new HbService(hbParams({ urls: { BASEURL: 'https://tenant-controlled.example', OMSBASEURL: 'https://tenant-controlled.example' } }));
+    await svc.get('product/api/categories/get-all-categories'); await svc.get('orders/merchantid/M-1');
     const [url, cfg]: any = spy.mock.calls[0];
     expect(new URL(url).hostname).toBe('mpop.hepsiburada.com');
+    expect(new URL(spy.mock.calls[1][0]).hostname).toBe('oms-external.hepsiburada.com');
     expect(cfg.auth).toEqual({ username: 'k', password: 's' });
   });
 
   it('[K7 2026-09-28] platform Integrations.urls (üst düzey) hâlâ geçerli kaynaktır', async () => {
     const spy = jest.spyOn(axios, 'get').mockResolvedValue({ status: 200, data: {} } as any);
-    const svc = new HbService(hbParams({}, { BASEURL: 'https://mpop.hepsiburada.com', LISTINGBASEURL: 'https://listing-external.hepsiburada.com' }));
-    await svc.get('orders/x'); await svc.get('listings/x');
-    expect(spy.mock.calls.map((c: any) => new URL(c[0]).hostname)).toEqual(['mpop.hepsiburada.com', 'listing-external.hepsiburada.com']);
+    const svc = new HbService(hbParams({}, { BASEURL: 'https://mpop.hepsiburada.com', LISTINGBASEURL: 'https://listing-external.hepsiburada.com', OMSBASEURL: 'https://oms-external.hepsiburada.com' }));
+    await svc.get('product/api/categories/x'); await svc.get('listings/x'); await svc.get('orders/x');
+    expect(spy.mock.calls.map((c: any) => new URL(c[0]).hostname)).toEqual(['mpop.hepsiburada.com', 'listing-external.hepsiburada.com', 'oms-external.hepsiburada.com']);
+  });
+
+  it('[2026-10-03 canlı doğrulama] sipariş/paket (OMS) uçları varsayılan olarak oms-external tabanına gider (mpop 404 veriyordu); diğer yollar mpop', async () => {
+    const spy = jest.spyOn(axios, 'get').mockResolvedValue({ status: 200, data: {} } as any);
+    const svc = new HbService(hbParams({}));
+    await svc.get('orders/merchantid/M-1'); await svc.get('/packages/merchantid/M-1'); await svc.get('claims/merchantId/M-1'); await svc.get('product/api/products/status/T1'); await svc.get('suppliers/M-1/addresses');
+    expect(spy.mock.calls.map((c: any) => new URL(c[0]).hostname)).toEqual(
+      ['oms-external.hepsiburada.com', 'oms-external.hepsiburada.com', 'oms-external.hepsiburada.com', 'mpop.hepsiburada.com', 'mpop.hepsiburada.com']);
   });
 
   it('[K7 2026-09-28] ÖNCEKİ: listing/settlement/ticket tabanları tenant ile değişirdi. ŞİMDİ: varsayılan platform host\'ları', async () => {
@@ -69,7 +78,8 @@ describe('K7 (1) Hepsiburada: tenant settings.urls ARTIK kullanılmaz (yalnız p
 
   it('[K7 2026-09-28] savunma derinliği: platform urls\'e (hatayla) yabancı host yazılsa bile istek AĞA ÇIKMAZ (VALIDATION, OUTBOUND_HOST_NOT_ALLOWED)', async () => {
     const spy = jest.spyOn(axios, 'get').mockResolvedValue({ status: 200, data: {} } as any);
-    const svc = new HbService(hbParams({}, { BASEURL: 'https://evil.example' }));
+    const svc = new HbService(hbParams({}, { BASEURL: 'https://evil.example', OMSBASEURL: 'https://evil-oms.example' }));
+    await expect(svc.get('product/api/categories/x')).rejects.toMatchObject({ name: 'IntegrationError', code: 'VALIDATION', platformCode: 'OUTBOUND_HOST_NOT_ALLOWED' });
     await expect(svc.get('orders/x')).rejects.toMatchObject({ name: 'IntegrationError', code: 'VALIDATION', platformCode: 'OUTBOUND_HOST_NOT_ALLOWED' });
     expect(spy).not.toHaveBeenCalled();
   });

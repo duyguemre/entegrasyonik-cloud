@@ -1,7 +1,7 @@
 import IntegrationFactory from '@integration/modules/IntegrationFactory';
 import { ApplicationError } from '@platform/core/security/Security';
 import { ClaimInternalStatusEnum } from '@interfaces/claim';
-import { containsRegex, normalizePagination } from '@utils/search';
+import { containsRegex, normalizePagination, toInList } from '@utils/search';
 import type { ClaimPanelRepository } from '@database/repositories/tenant/ClaimPanelRepository';
 
 /**
@@ -60,8 +60,11 @@ export async function listClaims(repo: ClaimPanelRepository, searchClaimForm: an
         }
     }
 
-    if (filterData.integrationCodes?.length > 0) filterQuery.integrationCode = { $in: filterData.integrationCodes };
-    if (filterData.internalStatuses?.length > 0) filterQuery.internalStatus = { $in: filterData.internalStatuses };
+    // [2026-10-03] tek dize de kabul (`$in` dize alırsa Mongo 500); bkz. utils/search.toInList
+    const integrationCodes = toInList(filterData.integrationCodes);
+    if (integrationCodes) filterQuery.integrationCode = { $in: integrationCodes };
+    const internalStatuses = toInList(filterData.internalStatuses);
+    if (internalStatuses) filterQuery.internalStatus = { $in: internalStatuses };
     if (filterData.types?.length > 0) filterQuery.type = { $in: filterData.types };
 
     const skipCount = (pagination.page - 1) * pagination.limit;

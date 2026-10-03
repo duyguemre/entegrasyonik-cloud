@@ -174,6 +174,10 @@ function buildShape(m: Mode) {
         JWT_SECRET_PREVIOUS: m.strict
             ? z.preprocess(blank, z.string().refine(s => Buffer.byteLength(s, 'utf8') >= JWT_SECRET_MIN_BYTES, `tanımlıysa en az ${JWT_SECRET_MIN_BYTES} bayt olmalı`).optional())
             : t.str(),
+        // Google ile giriş/kayıt (GIS ID token): OAuth istemci kimliği (kamu bilgisi, sır DEĞİL). Boş = özellik kapalı.
+        GOOGLE_OAUTH_CLIENT_ID: t.str(),
+        // SIR: yalniz Google `code` (popup) akisi icin sunucudan token degisimi. Bos = `code` yolu GOOGLE_DISABLED; `credential` yolu etkilenmez.
+        GOOGLE_OAUTH_CLIENT_SECRET: t.str(),
         JWT_ISSUER: z.preprocess(v => (typeof v === 'string' ? v.trim() : v), z.string().optional()).transform(v => (v ? v : 'entegrasyonik')),
 
         // --- Alan şifreleme (ADR-0003 C.10): biçim doğrulaması FieldCrypto'dadır; burada yalnız varlık ---
@@ -419,7 +423,7 @@ function nest(e: Record<string, any>) {
             ipAllowlist: e.ADMIN_IP_ALLOWLIST as string[],
             apiOnly: e.ADMIN_API_ONLY as boolean,
         },
-        auth: { jwtSecret: e.JWT_SECRET as string | undefined, jwtSecretPrevious: e.JWT_SECRET_PREVIOUS as string | undefined, jwtIssuer: e.JWT_ISSUER as string },
+        auth: { jwtSecret: e.JWT_SECRET as string | undefined, jwtSecretPrevious: e.JWT_SECRET_PREVIOUS as string | undefined, jwtIssuer: e.JWT_ISSUER as string, googleClientId: e.GOOGLE_OAUTH_CLIENT_ID as string | undefined, googleClientSecret: e.GOOGLE_OAUTH_CLIENT_SECRET as string | undefined },
         fieldEncryption: { keys: e.FIELD_ENCRYPTION_KEYS as string | undefined, activeKid: e.FIELD_ENCRYPTION_ACTIVE_KID as string | undefined },
         db: {
             url: e.DB_URL as string | undefined, user: e.DB_USER as string | undefined, password: e.DB_PASSWORD as string | undefined,

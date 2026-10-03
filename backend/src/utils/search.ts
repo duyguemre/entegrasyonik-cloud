@@ -49,6 +49,17 @@ export function normalizePagination(raw: any, defaultLimit: number, max: number 
 }
 
 /**
+ * Çoklu seçim süzgeci (`integrationCodes`, `internalStatuses` vb.) için `$in` dizisi: tek dize -> `[dize]`; dizi -> yalnız boş olmayan
+ * dize öğeleri (en fazla `max`); boş/tanımsız/başka tür -> `undefined` (süzgeç uygulanmaz). Mongo `$in`'e dize/nesne gitmez
+ * ("$in needs an array" 500'ü, 2026-10-03 sipariş listesi) ve operatör nesnesi enjekte edilemez.
+ */
+export function toInList(raw: unknown, max: number = 100): string[] | undefined {
+    const arr = typeof raw === 'string' ? [raw] : Array.isArray(raw) ? raw : [];
+    const out = arr.filter((v): v is string => typeof v === 'string' && v.length > 0).slice(0, max);
+    return out.length > 0 ? out : undefined;
+}
+
+/**
  * [DB-02 / DBR-06] Sıralama alanı İZİN LİSTESİ: liste uçlarında `sortBy.key` yalnız bu listedeki alanlardan biri olabilir.
  * Bilinmeyen/tür dışı alan HATA vermez (mevcut FE akışı bozulmasın) — `fallback` (varsayılan sıralama alanı) kullanılır.
  * Dönüş: `{ field, usedFallback }`; yön çağıranın mevcut kuralında kalır.

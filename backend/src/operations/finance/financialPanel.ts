@@ -1,5 +1,5 @@
 import { ApplicationError } from '@platform/core/security/Security'
-import { containsRegex, clampPage, clampLimit } from '@utils/search'
+import { containsRegex, clampPage, clampLimit, toInList } from '@utils/search'
 import type { FinancialPanelRepository } from '@database/repositories/tenant/FinancialPanelRepository'
 
 /** getCargoInvoices tek yanıtta en fazla bu kadar satır döner (en yeni önce). */
@@ -13,14 +13,12 @@ function transactionFilter(r: any): Record<string, any> {
     const filterQuery: any = {};
 
     // Çoklu platform filtresi
-    if (integrationCodes && integrationCodes.length > 0) {
-        filterQuery.integrationCode = { $in: integrationCodes };
-    }
+    const integrationCodeList = toInList(integrationCodes); // [2026-10-03] tek dize de kabul
+    if (integrationCodeList) filterQuery.integrationCode = { $in: integrationCodeList };
 
     // Çoklu işlem tipi filtresi
-    if (transactionTypes && transactionTypes.length > 0) {
-        filterQuery.transactionType = { $in: transactionTypes };
-    }
+    const transactionTypeList = toInList(transactionTypes);
+    if (transactionTypeList) filterQuery.transactionType = { $in: transactionTypeList };
 
     // İşlem No (externalId) araması
     if (externalIdSearch) {

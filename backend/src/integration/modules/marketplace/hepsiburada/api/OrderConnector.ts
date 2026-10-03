@@ -6,6 +6,16 @@ import { fromHttpError } from '@integration/modules/common/IntegrationError';
 import { integrationCode } from '../constants';
 import { paginateOffset, readTotal } from './paginateOffset';
 
+/**
+ * Platform `Integrations.urls` içindeki ESKİ sipariş yolları (`rest/delivery/v1/shipmentPackages[...]`) OMS API'sinde yoktur (404; 2026-10-03 canlı
+ * salt-okuma ile doğrulandı). Bu değerler yok sayılır -> kod varsayılanı (`orders/merchantid/...`) kullanılır; DB kaydı ayrıca düzeltilmeli (BACKLOG).
+ * Dize değil/boş -> undefined (çağıran varsayılanı kullanır); başka özel değerlere dokunulmaz.
+ */
+export function legacyOmsPath(value: unknown): string | undefined {
+    if (typeof value !== 'string' || !value) return undefined;
+    return /^\/?rest\/delivery\/v1\//i.test(value) ? undefined : value;
+}
+
 export class OrderConnector {
     constructor(private service: Service, private params: any) { }
 
@@ -17,7 +27,7 @@ export class OrderConnector {
     private orderListUrl(): string {
         const merchantId = this.getMerchantId();
         const urls = this.params.integrationSettings.urls || {};
-        const url: string = urls.orderListUrl || urls.orders || `orders/merchantid/${merchantId}`;
+        const url: string = legacyOmsPath(urls.orderListUrl || urls.orders) ?? `orders/merchantid/${merchantId}`;
         return url.replace('<MERCHANTID>', merchantId);
     }
 
@@ -43,8 +53,8 @@ export class OrderConnector {
     public async fetchOrderDetails(orderNumber: string): Promise<any> {
         const merchantId = this.getMerchantId();
         const urls = this.params.integrationSettings.urls || {};
-        let url = urls.orderDetailUrl || `orders/merchantid/${merchantId}/ordernumber/${orderNumber}`;
-        
+        let url = legacyOmsPath(urls.orderDetailUrl) ?? `orders/merchantid/${merchantId}/ordernumber/${orderNumber}`;
+
         url = url.replace('<MERCHANTID>', merchantId).replace('<ORDERNUMBER>', orderNumber).replace('<PACKAGEID>', orderNumber);
         
         const response = await this.service.get(url);

@@ -25,7 +25,8 @@ const respondJson = (status = 200, body: any = {}) => (req: any, res: any) => {
 
 const params = (baseUrl: string, settings: Record<string, any> = { APIKEY: 'key-1', APISECRET: 'sec-1', SELLERID: 'M-1' }) => ({
     clientId: 91,
-    integrationSettings: { settings, urls: { BASEURL: baseUrl } },
+    // OMSBASEURL: sipariş/paket yolları 2026-10-03'ten beri ayrı (oms-external) tabana gider; testte her iki taban yerel sunucu.
+    integrationSettings: { settings, urls: { BASEURL: baseUrl, OMSBASEURL: baseUrl } },
 });
 const basic = (u: string, p: string) => `Basic ${Buffer.from(`${u}:${p}`).toString('base64')}`;
 

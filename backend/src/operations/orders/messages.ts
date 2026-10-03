@@ -1,5 +1,5 @@
 import IntegrationFactory from '@integration/modules/IntegrationFactory';
-import { containsRegex, normalizePagination } from '@utils/search';
+import { containsRegex, normalizePagination, toInList } from '@utils/search';
 import type { MessagePanelRepository } from '@database/repositories/tenant/MessagePanelRepository';
 
 /**
@@ -45,7 +45,8 @@ export async function listMessages(repo: MessagePanelRepository, request: any): 
         filterQuery.isRejected = data.isRejected;
     }
 
-    if (data.integrationCodes?.length > 0) filterQuery.integrationCode = { $in: data.integrationCodes };
+    const integrationCodes = toInList(data.integrationCodes); // [2026-10-03] tek dize de kabul
+    if (integrationCodes) filterQuery.integrationCode = { $in: integrationCodes };
 
     if (data.startDate || data.endDate) {
         filterQuery.date = {};

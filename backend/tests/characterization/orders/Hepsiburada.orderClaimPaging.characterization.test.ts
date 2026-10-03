@@ -3,7 +3,7 @@
 import { captureLogs, LogCapture } from '../../helpers/logCapture';
 let cap: LogCapture;
 import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
-import { OrderConnector } from '@integration/modules/marketplace/hepsiburada/api/OrderConnector';
+import { OrderConnector, legacyOmsPath } from '@integration/modules/marketplace/hepsiburada/api/OrderConnector';
 import { ClaimConnector } from '@integration/modules/marketplace/hepsiburada/api/ClaimConnector';
 
 const params = { clientId: 7, integrationSettings: { settings: { MERCHANTID: 'M-1' }, urls: {} } };
@@ -32,6 +32,19 @@ describe('(A) karakterizasyon — tek sayfa davranışı korunur', () => {
     it('siparis: items yoksa [] döner', async () => {
         const { service } = fakeService([{}]);
         expect(await new OrderConnector(service, params).fetchOrdersFromPlatform()).toEqual([]);
+    });
+    it('[2026-10-03 canlı doğrulama] platform urls\'teki ESKİ `rest/delivery/v1/shipmentPackages` yolu yok sayılır (OMS 404), kod varsayılanı kullanılır; özel yol korunur', async () => {
+        const legacy = { ...params, integrationSettings: { settings: { MERCHANTID: 'M-1' }, urls: { orderListUrl: 'rest/delivery/v1/shipmentPackages', orderDetailUrl: 'rest/delivery/v1/shipmentPackages/<PACKAGEID>' } } };
+        const { service, get } = fakeService([{ items: mk(1) }, { orderNumber: 'O1' }]);
+        await new OrderConnector(service, legacy).fetchOrdersFromPlatform();
+        await new OrderConnector(service, legacy).fetchOrderDetails('O1');
+        expect(get.mock.calls.map(c => c[0])).toEqual(['orders/merchantid/M-1', 'orders/merchantid/M-1/ordernumber/O1']);
+
+        const custom = { ...params, integrationSettings: { settings: { MERCHANTID: 'M-1' }, urls: { orderListUrl: 'orders/merchantid/<MERCHANTID>' } } };
+        const c2 = fakeService([{ items: mk(1) }]);
+        await new OrderConnector(c2.service, custom).fetchOrdersFromPlatform();
+        expect(c2.get.mock.calls[0][0]).toBe('orders/merchantid/M-1');
+        expect(legacyOmsPath('')).toBeUndefined(); expect(legacyOmsPath(undefined)).toBeUndefined(); expect(legacyOmsPath('/REST/delivery/v1/x')).toBeUndefined();
     });
     it('iade: dizi gövde -> tek istek, limit:100 offset:0', async () => {
         const { service, get } = fakeService([[{ claimId: 1 }]]);
