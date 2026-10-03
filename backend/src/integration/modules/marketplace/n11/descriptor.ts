@@ -17,6 +17,7 @@ const N11Descriptor: IntegrationDescriptor = {
         requiredSettings: ['APIKEY', 'APISECRET'],
         tokenLifecycle: 'none',
     },
+    brandMapping: 'attribute', // [eslesme-fiyat WP2, K-C]
     capabilities: {
         products: {
             level: 'supported',

@@ -17,6 +17,7 @@ const PazaramaDescriptor: IntegrationDescriptor = {
         requiredSettings: ['APIKEY', 'APISECRET'],
         tokenLifecycle: 'cached_refresh',
     },
+    brandMapping: 'id', // [eslesme-fiyat WP2, K-C]
     capabilities: {
         products: {
             level: 'supported',

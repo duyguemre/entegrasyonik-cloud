@@ -17,6 +17,7 @@ const HepsiburadaDescriptor: IntegrationDescriptor = {
         requiredSettings: ['APISECRET', 'APIKEY', 'SELLERID'],
         tokenLifecycle: 'none',
     },
+    brandMapping: 'name', // [eslesme-fiyat WP2, K-C]
     capabilities: {
         products: {
             level: 'supported',

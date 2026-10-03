@@ -86,3 +86,12 @@ describe('explainChannelProduct', () => {
     expect(await explainChannelProduct({ variantId: 'yok', integrationCode: 'trendyol' }, deps())).toBeNull();
   });
 });
+
+describe('descriptor brandMapping (K-C, WP2)', () => {
+  it('her descriptor brandMapping taşır; TY/PZ/IS=id, HB=name, N11=attribute, BH=none', () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { listIntegrationDescriptors } = require('@integration/catalog/IntegrationDescriptorRegistry');
+    const map = Object.fromEntries(listIntegrationDescriptors().map((d: any) => [d.code, d.brandMapping]));
+    expect(map).toEqual({ trendyol: 'id', pazarama: 'id', ideasoft: 'id', hepsiburada: 'name', n11: 'attribute', bizimhesap: 'none' });
+  });
+});

@@ -17,6 +17,7 @@ const BizimhesapDescriptor: IntegrationDescriptor = {
         requiredSettings: ['key', 'secret'],
         tokenLifecycle: 'none',
     },
+    brandMapping: 'none', // [eslesme-fiyat WP2, K-C]
     capabilities: {
         // ERP kaynak (yalnız okuma): streamProducts çalışır; transferProducts/updateProduct*/updateProductStock/Price
         // hepsi `productService.notSupported(op)` üzerinden IntegrationError('NOT_SUPPORTED') fırlatır. Tek bir yeteneği

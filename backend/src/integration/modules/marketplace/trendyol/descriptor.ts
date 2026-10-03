@@ -64,6 +64,7 @@ const TrendyolDescriptor: IntegrationDescriptor = {
         requiredSettings: ['SELLERID', 'APIKEY', 'APISECRET'],
         tokenLifecycle: 'none',
     },
+    brandMapping: 'id', // [eslesme-fiyat WP2, K-C]
     capabilities: {
         products: {
             level: 'supported',

@@ -206,6 +206,7 @@ const __PASCAL__Descriptor: IntegrationDescriptor = {
     adapterVersion: '0.1.0',
     protocol: 'rest', // TODO
     auth: { type: 'api_key_header', requiredSettings, tokenLifecycle: 'none' }, // TODO
+    brandMapping: 'none', // TODO: 'id' | 'name' | 'attribute' | 'none' (eslesme-fiyat K-C)
     capabilities: {
 ${lines}
     },

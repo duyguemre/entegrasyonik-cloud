@@ -285,6 +285,7 @@ export default class IntegrationService extends BaseApi implements IService {
             category: d.category,
             status: d.status,
             adapterVersion: d.adapterVersion,
+            brandMapping: d.brandMapping,
             capabilities: Object.fromEntries(
                 Object.entries(d.capabilities).map(([key, cap]) => [key, { level: cap!.level, note: cap!.note }]),
             ),

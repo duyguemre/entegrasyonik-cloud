@@ -52,7 +52,7 @@ function fakeDescriptor(code: string, mockPrefix: string | undefined, probeCount
     return {
         code, displayName: code, category: 'marketplace', status: 'available', adapterVersion: '1.0.0',
         protocol: 'rest', auth: { type: 'api_key_header', requiredSettings: [] },
-        capabilities: {}, limitations: [], rateLimits: { configured: {}, verified: false },
+        brandMapping: 'none', capabilities: {}, limitations: [], rateLimits: { configured: {}, verified: false },
         api: { hosts: [], docs: [] },
         config: { hosts: [] },
         mock: { available: !!mockPrefix, prefix: mockPrefix, contractFixtures: [] },

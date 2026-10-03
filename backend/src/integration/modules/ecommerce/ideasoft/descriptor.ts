@@ -17,6 +17,7 @@ const IdeasoftDescriptor: IntegrationDescriptor = {
         requiredSettings: ['storeName', 'key', 'secret'],
         tokenLifecycle: 'user_consent',
     },
+    brandMapping: 'id', // [eslesme-fiyat WP2, K-C]
     capabilities: {
         products: {
             level: 'limited',

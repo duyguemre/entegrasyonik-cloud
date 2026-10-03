@@ -15,11 +15,12 @@ import { checkChannelReadiness } from '@integration/catalog/preflight/readiness'
 import { AttributeResolver, IAttributeResolverProvider } from '@integration/catalog/attributeResolver';
 import { mapPlatformMessage } from '@integration/modules/common/errors/errorMap';
 import { errorRulesFor } from '@integration/modules/common/errors/registry';
+import { getIntegrationDescriptor } from '@integration/catalog/IntegrationDescriptorRegistry';
 
 export const PREFLIGHT_MAX_VARIANTS = 200;
 
-/** Marka KİMLİĞİ eşlemesi gereken kanallar (K-C: TY/PZ/IS). HB marka adını, N11 "Marka" özelliğini kullanır. WP2'de descriptor yeteneğine taşınır. */
-export const BRAND_ID_CHANNELS: ReadonlySet<string> = new Set(['trendyol', 'pazarama', 'ideasoft']);
+/** Marka KİMLİĞİ eşlemesi gereken kanal mı (K-C; tek kaynak descriptor `brandMapping === 'id'`: TY/PZ/IS). */
+export const needsBrandId = (code: string) => getIntegrationDescriptor(code)?.brandMapping === 'id';
 
 export interface ChannelMappingSource extends IAttributeResolverProvider {
     getAllAttributeMappings(): Promise<any[]>;
@@ -84,7 +85,7 @@ async function evaluate(variant: any, product: any, code: string, mode: string, 
             platformCategoryId = await source.getPlatformCategoryId(localCategoryId);
             if (platformCategoryId === undefined || platformCategoryId === null || String(platformCategoryId) === '') issues.push(makeIssue('MAP_CATEGORY_MISSING', { ...ctx, field: 'category' }));
         }
-        if (localBrandId && BRAND_ID_CHANNELS.has(code)) {
+        if (localBrandId && needsBrandId(code)) {
             platformBrandId = variant?.platforms?.[code]?.mapping?.brandId ?? await source.getPlatformBrandId(localBrandId);
             if (platformBrandId === undefined || platformBrandId === null || String(platformBrandId) === '') issues.push(makeIssue('MAP_BRAND_MISSING', { ...ctx, field: 'brand' }));
         }
@@ -112,7 +113,7 @@ async function evaluate(variant: any, product: any, code: string, mode: string, 
         issues,
         preview: {
             category: { localId: localCategoryId ?? null, platformId: platformCategoryId ?? null },
-            brand: { localId: localBrandId ?? null, platformId: platformBrandId ?? null, usesName: code === 'hepsiburada' },
+            brand: { localId: localBrandId ?? null, platformId: platformBrandId ?? null, usesName: getIntegrationDescriptor(code)?.brandMapping === 'name' },
             attributes: work?.platforms?.[code]?.attributes ?? {},
             attributesFromMapping: attributes.added,
             title: vMapping?.title || product?.title || null,
@@ -177,10 +178,12 @@ export async function explainChannelProduct(input: { variantId: string; integrat
     if (s.localBrandId) {
         const title = await source.getLocalBrandTitle(s.localBrandId);
         const chain = [`yerel marka: ${title}`];
-        if (code === 'hepsiburada') chain.push('Hepsiburada marka ADI gönderilir (Brands.title)');
-        else if (BRAND_ID_CHANNELS.has(code)) chain.push(s.vMapping?.brandId ? `kanal marka kimliği ← ürün kanal formu (variant.platforms.${code}.mapping.brandId)` : s.platformBrandId ? `kanal marka kimliği ${s.platformBrandId} ← Brands.platforms.${code}` : 'marka eşlemesi yapılmamış');
+        const brandMode = getIntegrationDescriptor(code)?.brandMapping;
+        if (brandMode === 'name') chain.push('marka ADI gönderilir (Brands.title)');
+        else if (brandMode === 'attribute') chain.push('marka kategori özelliği olarak gider ("Marka")');
+        else if (brandMode === 'id') chain.push(s.vMapping?.brandId ? `kanal marka kimliği ← ürün kanal formu (variant.platforms.${code}.mapping.brandId)` : s.platformBrandId ? `kanal marka kimliği ${s.platformBrandId} ← Brands.platforms.${code}` : 'marka eşlemesi yapılmamış');
         else chain.push('kanal marka eşlemesi kullanmaz');
-        fields.push({ field: 'brand', value: s.platformBrandId ?? (code === 'hepsiburada' ? title : null), source: chain[1], chain });
+        fields.push({ field: 'brand', value: s.platformBrandId ?? (brandMode === 'name' ? title : null), source: chain[1], chain });
     }
     const price = r.preview.price;
     fields.push({ field: 'price', value: price.salePrice, source: price.source,

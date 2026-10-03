@@ -158,6 +158,15 @@ export interface DescriptorConfig {
 }
 
 /**
+ * [eslesme-fiyat WP2, K-C] Kanalın marka eşleme biçimi (FE `hasBrandMapping` ve preflight bunu okur):
+ *  - id: platform marka KİMLİĞİ eşlemesi gerekir (`Brands.platforms.<kod>.id`) — TY/PZ/IS.
+ *  - name: marka ADI gönderilir (`Brands.title`), eşleme ekranı gizli — HB.
+ *  - attribute: marka bir kategori ÖZELLİĞİ olarak gider ("Marka") — N11.
+ *  - none: kanal marka taşımaz — BH.
+ */
+export type BrandMappingMode = 'id' | 'name' | 'attribute' | 'none';
+
+/**
  * Entegrasyon yetenek manifestosu (ADR-0018 Karar 1.2, kategori belgesi §4). Her adaptörün yanında
  * `descriptor.ts` içinde durur, kodla birlikte sürümlenir, DB'ye YAZILMAZ.
  */
@@ -177,6 +186,8 @@ export interface IntegrationDescriptor {
         tokenLifecycle?: 'none' | 'cached_refresh' | 'user_consent';
     };
     capabilities: Partial<Record<CapabilityKey, CapabilityEntry>>;
+    /** [eslesme-fiyat WP2, K-C] Marka eşleme biçimi (bkz. `BrandMappingMode`); her descriptor'da ZORUNLU (tutarlılık testi). */
+    brandMapping: BrandMappingMode;
     /** Görünür kapsam sınırları (dürüstlük ilkesi, E3). */
     limitations: string[];
     rateLimits: RateLimitInfo;
