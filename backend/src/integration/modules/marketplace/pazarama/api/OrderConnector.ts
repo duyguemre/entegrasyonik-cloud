@@ -70,6 +70,17 @@ export class OrderConnector {
         return true;
     }
 
+    /**
+     * [eslesme-fiyat WP4, D-PZ-9 (P0 oversell), 02-ekler/pazarama C-11] Siparişin TÜM kalemlerinin statüsünü tek istekte günceller:
+     * `PUT order/updateOrderStatusList {orderNumber, status}`. Onay (12) ve tedarik edememe (13) bu uçla yapılır; kalem bazlı uç
+     * yalnız kargo bildirimi ve kısmi işlemler için kalır. Yazma ucu (canlıda guard bloklar; doğrulama yerelde).
+     */
+    public async updateOrderStatusList(orderNumber: string, status: number): Promise<boolean> {
+        const baseUrl = this.params.integrationSettings?.urls?.orderStatusListUpdateUrl || 'order/updateOrderStatusList';
+        await this.service.put(baseUrl, { orderNumber, status }, { operation: 'updateOrderStatusList' });
+        return true;
+    }
+
     public async sendOrderInvoice(payload: ISendInvoicePayload): Promise<IPlatformResponse> {
         const baseUrl = this.params.integrationSettings?.urls?.orderInvoiceUpdateUrl || 'order/invoice-link';
         try {

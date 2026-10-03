@@ -66,18 +66,16 @@ export class OrderService {
     public async rejectOrder(externalOrderId: string, params: IOrderRejectParams): Promise<boolean> {
         try {
             // Pazarama dökümanına göre satıcı tarafından reddedilen (stok yok vb.) siparişler 13 (Tedarik Edilemedi) statüsüne alınmalıdır.
-            // Siparişteki tüm kalemler için bu işlemi yapıyoruz.
-            const items = params.lineItems || [];
-            
+            // [eslesme-fiyat WP4, D-PZ-9] Kalem verilmemişse TÜM kalemler `updateOrderStatusList` ile tek istekte (eski fallback
+            // `orderItemId = externalOrderId` kesin hatalıydı); kalem verilmişse yalnız o kalemler (kısmi tedarik edememe).
+            const items = (params?.lineItems || []).filter((i: any) => i?.externalLineId);
             if (items.length === 0) {
-                // Eğer kalem bilgisi yoksa (fail-safe), externalOrderId'yi orderItemId olarak deniyoruz
-                await this.connector.updateOrderStatus(externalOrderId, externalOrderId, 13);
+                await this.connector.updateOrderStatusList(externalOrderId, 13);
             } else {
                 for (const item of items) {
                     await this.connector.updateOrderStatus(externalOrderId, item.externalLineId, 13);
                 }
             }
-            
             return true;
         } catch (error: any) {
             if (IntegrationError.isIntegrationError(error)) throw error;
@@ -93,13 +91,24 @@ export class OrderService {
 
             // If the external status is 3, we MUST move it to 12 first.
             if (payload.meta?.currentExternalStatus === '3' || payload.meta?.status === 3 || payload.meta?.orderStatus === 3) {
-                await this.connector.updateOrderStatus(payload.orderId, payload.lineItems?.[0]?.externalLineItemId || payload.meta?.orderItemId || payload.orderId, 12);
+                // [eslesme-fiyat WP4, D-PZ-9] tüm kalemler tek istekte 12'ye (eski: yalnız ilk kalem / orderId fallback)
+                await this.connector.updateOrderStatusList(payload.orderId, 12);
             }
 
             return await this.connector.sendOrderShipping(payload);
         } catch (error: any) {
             if (IntegrationError.isIntegrationError(error)) throw error;
             throw new Error(`[${this.clientId}][PazaramaOrderService:sendOrderShipping] ${error.message}`);
+        }
+    }
+
+    /** [eslesme-fiyat WP4, D-PZ-9] Onay: siparişin tüm kalemleri `updateOrderStatusList` ile 12'ye (tek istek). */
+    public async approveOrder(orderNumber: string): Promise<boolean> {
+        try {
+            return await this.connector.updateOrderStatusList(orderNumber, 12);
+        } catch (error: any) {
+            if (IntegrationError.isIntegrationError(error)) throw error;
+            throw new Error(`[${this.clientId}][PazaramaOrderService:approveOrder] ${error.message}`);
         }
     }
 

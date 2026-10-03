@@ -77,18 +77,10 @@ export default class Pazarama implements IPlatform {
 
     public async retrieveOrders(query?: Record<string, any>): Promise<IOrderPackage[]> { return this.orderService.fetchOrders(query); }
     public async approveOrder(externalOrderId: string, params?: { meta?: any }): Promise<boolean | IPlatformResponse> {
-        // Pazarama'da onaylama işlemi hazırlanıyor (12) statüsüne geçmektir.
-        // LineItemID meta içinde gelmeli. Eğer modelden (externalLineItemId) gelmiyorsa, meta içindeki ham veriden (items[0].orderItemId) bulmaya çalışıyoruz.
-        let lineItemId = params?.meta?.externalLineItemId;
-
-        if (!lineItemId && params?.meta?.items?.[0]?.orderItemId) {
-            lineItemId = params.meta.items[0].orderItemId;
-        }
-
-        // Son çare externalOrderId (genelde yanlıştır ama akışı bozmamak için)
-        lineItemId = lineItemId || externalOrderId;
-
-        return this.orderService.updateOrderPackageStatus(externalOrderId, lineItemId, OrderInternalStatusEnum.APPROVED);
+        // Pazarama'da onaylama "hazırlanıyor" (12) statüsüne geçmektir. [eslesme-fiyat WP4, D-PZ-9 (P0 oversell)] ÖNCEKİ: yalnız ilk
+        // kalem 12'ye alınıyor, kalem kimliği yoksa `externalOrderId` kalem kimliği diye gönderiliyordu (kesin hatalı; diğer kalemler
+        // onaysız kalıp iptal/oversell riski). YENİ: `updateOrderStatusList` ile tüm kalemler tek istekte.
+        return this.orderService.approveOrder(externalOrderId);
     }
     public async rejectOrder(externalOrderId: string, params: IOrderRejectParams): Promise<boolean> { return this.orderService.rejectOrder(externalOrderId, params); }
     public async sendOrderShipping(payload: ISendTrackingPayload): Promise<IPlatformResponse> { return this.orderService.sendOrderShipping(payload); }
