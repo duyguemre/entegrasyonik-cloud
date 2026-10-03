@@ -94,6 +94,13 @@ const DYNAMIC_CALL_FILES_RESOLVED = [
   'components/adminPanel/integrations/useIntegrationComplianceApi.ts', // ADR-0018 B: `call(operation,...)` ->
   // `IntegrationComplianceService/${operation}`; sabitler 'list'/'summary'/'getDetail'/'transition' — backend
   // `integration-compliance-service.ts` public metotları ve capabilities/domains/platform.ts bağlarıyla eşleşiyor (2026-09-30).
+  // [eslesme-fiyat WP0, 2026-10-03] faz3 FE senkronu ile gelen dört dinamik dosya, elle çözüldü:
+  'components/dashboard/useDashboardResource.ts', // `restApi.post(rpc, ...)`: rpc her çağrı sitesinde düz metin sabit
+  // (ProductListDashboard/OrderListDashboard/InvoiceListDashboard/ClaimListDashboard: 'ProductService/getProductStatistics',
+  // 'StockService/getStockOverview', 'IntegrationService/getExportJobs', 'OrderService/getOrderDashboardInsights', ...).
+  'composables/googleSignIn.ts', // `restApi.get(s, false)`: s = 'SecurityService/authConfig' (açık GET rotası, OPEN_ROUTES); POST user.ts'te düz metin.
+  'composables/useIntegrationError.ts', // yalnız JSDoc yorumundaki `restApi.post(...)` örneği (gerçek çağrı yok).
+  'composables/useTeamApi.ts', // `post(rpc, ...)` sarmalayıcısı: tüm uçlar aynı dosyada düz metin ('UserService/inviteUser' vb.).
 ];
 
 /**
@@ -107,25 +114,21 @@ const DYNAMIC_CALL_FILES_RESOLVED = [
  */
 const BACKEND_ONLY_NOT_YET_IN_FE = [
   'TenantDataService/cancelDeletion',
-  // [ADR-0028 WP-A4] davet/askıya alma/sahiplik devri/step-up: backend hazır, FE ekranları (F-A4) bulut işi.
-  'UserService/inviteUser', 'UserService/resendInvitation', 'UserService/revokeInvitation', 'UserService/listInvitations',
-  'UserService/suspendUser', 'UserService/reactivateUser', 'UserService/initiateOwnershipTransfer', 'UserService/cancelOwnershipTransfer',
-  'UserService/acceptOwnershipTransfer', 'AccountService/reauthenticate',
-  'CustomerService/anonymizeCustomer',
+  // [ADR-0028 WP-A4] davet/askıya alma/sahiplik devri/step-up: FE (useTeamApi.ts, reauth.ts) artık çağırıyor -> listeden çıktı (2026-10-03).
+  // [eslesme-fiyat WP0, 2026-10-03] faz3 FE senkronunda FE çağrısı KALDIRILAN eski uçlar; backend'den silme ya da yeniden bağlama
+  // kararı yerelde (WP2 eşleme tek kaynak: getCategoryMapping/saveOrUpdateIntegrationBrand; varyant ekranı yeniden yazımı: VariantService/*).
+  'AttributeMappingService/getCategoryMapping', 'IntegrationService/saveOrUpdateIntegrationBrand', 'ImageService/assignImages',
+  'VariantService/addVariant', 'VariantService/addVariants', 'VariantService/batchProcessDelete', 'VariantService/batchProcessUpdate',
+  'VariantService/getVariantsList', 'VariantService/updateVariants',
   // [ADR-0005 Karar 8] webhook token üretme/rotasyon; FE ekranı Faz 2/3 kapsamında (bugün webhook kurulumu yok)
-  'IntegrationService/generateWebhookToken',
   // Hesap yaşam döngüsü (docs/API_ACCOUNT_LIFECYCLE.md): FE ekranları (Hesabım/Güvenlik, ChangePasswordView yeniden yazımı) ADR-0015 sonrası.
   // Kimliksiz üç uç (requestPasswordReset/confirmPasswordReset/verifyEmail) kayıtta DEĞİL, OPEN_OPERATIONS'tadır.
   // [API_TENANT_SURFACE] tenant-yüzlü yeni uçlar: backend hazır, FE ekranları ADR-0015 sonrası (bkz. docs/API_TENANT_SURFACE.md)
-  'IntegrationService/getIntegrationHealth', // §3 entegrasyon sağlığı
   // [ADR-0018 Aşama A] yetenek manifestosu; uç hazır, FE kapsam rozeti bağlanması ayrı görev (ADR-0015 sonrası).
-  'IntegrationService/getCatalog',
   // [ADR-0027 §C] doğrudan (imzalı PUT) görsel yükleme bileti + onayı: backend hazır, FE sözleşmesi docs/IMAGE_UPLOAD_CONTRACT.md (bulut FE görevi).
   'ImageService/createUploadUrl', 'ImageService/confirmUpload',
-  'StockService/getStockOverview', // §2 OVERSOLD/rezervasyon özeti
   // [Faz-3] stok özellikleri (docs/API_STOCK_FEATURES.md): backend hazır, FE ekranları ADR-0015 sonrası.
   'StockService/listLowStock', 'StockService/listMovements', 'StockService/getPublishLagSummary',
-  'AuditService/getAuditLogs', // §4 denetim günlüğü okuma
   // [COM-04] tenant komisyon override (docs/API_TENANT_SURFACE.md §10): backend hazır, FE "Komisyon oranları" tablosu bulut FE görevi.
   'FinancialService/listCommissionOverrides', 'FinancialService/setCommissionOverride', 'FinancialService/deleteCommissionOverride',
   'IntegrationService/testConnection', // [INT-01] baglantiyi test et (API_TENANT_SURFACE 11): FE dugmesi bulut FE gorevi
@@ -166,15 +169,14 @@ const BACKEND_ONLY_NOT_YET_IN_FE = [
   // [B1/B7] genel bakış + motor ve kuyruklar (yalnız /admin-api): backoffice SPA ayrı yüzey.
   'BackofficeOverviewService/getHealth', 'BackofficeOverviewService/getAttention', 'BackofficeOverviewService/getPulse', 'BackofficeEngineService/getQueues', 'BackofficeEngineService/listFailedJobs', 'BackofficeEngineService/retryJob', 'BackofficeEngineService/retryJobs', 'BackofficeEngineService/discardJob', 'BackofficeEngineService/getStateMachineJobs', 'BackofficeEngineService/releaseStuckLease', 'BackofficeEngineService/listJobRuns',
   // §6 politika kaydı eksik olan, FE'nin (N9/N14/N15/iade detayı) ihtiyaç duyacağı güvenli/tenant-izole salt-okunur + düşük riskli uçlar
-  'FinancialService/getFinancialSummary', 'FinancialService/getCargoInvoices', 'FinancialService/getPayoutDetails',
   // [COM-03/COM-07] komisyon kaynagi RPC'leri: FE net fiyat gosterimi (COM-07 FE) bagli degil
   'FinancialService/getOrderCommissionSummary', 'FinancialService/getCommissionByBarcodes', 'FinancialService/getNetRevenuePreview', 'FinancialService/getRealizedCommissionByCategory',
   // [COM-08] komisyon sapmasi okumasi: FE gosterimi bagli degil (bildirim /finance'a yonlendirir)
   'FinancialService/getCommissionDrift',
-  'ShipmentService/getShipments', 'OrderService/markAsPrinted', 'ClaimService/getClaimById', 'NotificationService/getUnreadCount',
+  'ShipmentService/getShipments', 'OrderService/markAsPrinted', 'ClaimService/getClaimById',
   // [ADR-0029 NB4] bildirim merkezi v2 / tercihler: backend hazır, FE bulut işi (F-N1/F-N2)
-  'NotificationService/archive', 'NotificationService/unarchive', 'NotificationService/getCatalog', 'NotificationService/getPreferences',
-  'NotificationService/updatePreferences', 'NotificationService/getTenantDefaults', 'NotificationService/updateTenantDefaults',
+  'NotificationService/archive', 'NotificationService/unarchive',
+  'NotificationService/getTenantDefaults', 'NotificationService/updateTenantDefaults',
 ];
 
 // ADR-0008 frontend SONUÇ (Faz 3): `LgsService/retrieveLGS`/`saveLGS` (LgsService zaten HİÇ yoktu) yalnızca
@@ -182,12 +184,13 @@ const BACKEND_ONLY_NOT_YET_IN_FE = [
 // o içerik gerçek abonelik/plan ekranıyla DEĞİŞTİRİLDİĞİNDEN literal artık FE'de YOK, listeden ÇIKARILDI (bu satırın
 // kendi kuralı: "FE'den silinirse kırılır").
 const FE_CALLS_WITHOUT_BACKEND = [
-  'SecurityService/getCaptcha', // [WP-A5] backend'de KALDIRILDI (sahte captcha); FE çağrısı yalnız eski requireCaptcha dalında (artık tetiklenmez) — FE temizliği bulut görevi
+  // [eslesme-fiyat WP0] 'SecurityService/getCaptcha' listeden çıktı: FE artık çağırmıyor (WP-A5 FE temizliği yapıldı).
+  'IntegrationService/retrieveCategories', // yalnız DsFeedback.vue tasarım sistemi örnek metninde (gerçek çağrı yok; tarama düz metni yakalar)
   'ECommerceService/retrieveProductsFromIntegration', // ECommerceService kayıtlı değil (api/rpc/index.ts'te yorum satırı)
   'IntegrationService/checkProductStatus', 'IntegrationService/processPlatformProduct', 'IntegrationService/retrieveProductsFromClientMarketplace',
   'ProductService/batchProcessUpdate', 'ProductService/batchProcessDelete', // yalnızca VariantService'te var
   'ClaimService/bulkDeleteClaims', 'CustomerService/bulkDeleteCustomers', 'CustomerService/deleteCustomer',
-  'ImageApi/getImage', 'ImageApi/downloadImage', // ImageApiManager rotası var ama ImageService.getImage metodu HİÇ yok (bugün de 500)
+  'ImageApi/downloadImage', // [eslesme-fiyat WP0] getImage: FE artık çağırmıyor, listeden çıktı. ImageApiManager rotası var ama ImageService.getImage metodu HİÇ yok (bugün de 500)
 ];
 
 interface FeInventory {
@@ -421,18 +424,21 @@ describeFe('FE envanteri kayıtla uyumlu (statik tarama: frontend/src)', () => {
   });
 
   it('FE\'nin çağırdığı HER operasyon ya kayıttadır ya da bilinen "backend karşılığı olmayan" listesindedir (yeni FE çağrısı + unutulan kayıt = kırılır)', () => {
-    const missing = [...inv.ops].filter((op) => !registered.has(op) && !FE_CALLS_WITHOUT_BACKEND.includes(op) && !/^SecurityService\/(login|register|logout)$/.test(op) && !/^AccountService\/(requestPasswordReset|confirmPasswordReset|verifyEmail|getInvitation|acceptInvitation)$/.test(op)).sort();
+    const missing = [...inv.ops].filter((op) => !registered.has(op) && !FE_CALLS_WITHOUT_BACKEND.includes(op) && !/^SecurityService\/(login|register|logout|googleSignIn|authConfig)$/.test(op) && !/^AccountService\/(requestPasswordReset|confirmPasswordReset|verifyEmail|getInvitation|acceptInvitation)$/.test(op)).sort();
     expect(missing).toEqual([]);
   });
 
   it('"backend karşılığı olmayan" liste güncel: hâlâ gerçekten karşılıksız ve FE\'de hâlâ çağrılıyor (backend\'e eklenirse/FE\'den silinirse kırılır)', () => {
+    // Tüm uyumsuzluklar tek seferde raporlanır (ilk hatada durmaz).
+    const stale: string[] = [];
     for (const op of FE_CALLS_WITHOUT_BACKEND) {
       const [svc, name] = op.split('/');
       const backendHas = svc === 'ImageApi' ? name in IMAGE_API_TARGETS : !!SERVICE_METHODS[svc]?.includes(name);
-      expect([op, 'backendde var mı', backendHas]).toEqual([op, 'backendde var mı', false]);
-      expect([op, 'FE çağırıyor mu', inv.ops.has(op)]).toEqual([op, 'FE çağırıyor mu', true]);
-      expect([op, 'kayıtta mı', registered.has(op)]).toEqual([op, 'kayıtta mı', false]);
+      if (backendHas) stale.push(op + ' : backendde var');
+      if (!inv.ops.has(op)) stale.push(op + ' : FE çağırmıyor');
+      if (registered.has(op)) stale.push(op + ' : kayıtta');
     }
+    expect(stale).toEqual([]);
   });
 
   it('kayıtta FE\'nin çağırmadığı operasyon YOK (ADR: FE\'nin çağırmadığı kayda girmez); istisnalar AdminService/get + ADR-0003 adım 8 backend-only KVKK uçları (bkz. BACKEND_ONLY_NOT_YET_IN_FE)', () => {
@@ -441,10 +447,12 @@ describeFe('FE envanteri kayıtla uyumlu (statik tarama: frontend/src)', () => {
   });
 
   it('BACKEND_ONLY_NOT_YET_IN_FE listesi güncel: hâlâ kayıtta VE hâlâ FE tarafından çağrılMIYOR (FE eklerse/kayıttan çıkarsa kırılır)', () => {
+    const stale: string[] = [];
     for (const op of BACKEND_ONLY_NOT_YET_IN_FE) {
-      expect([op, 'kayıtta mı', registered.has(op)]).toEqual([op, 'kayıtta mı', true]);
-      expect([op, 'FE çağırıyor mu', inv.ops.has(op)]).toEqual([op, 'FE çağırıyor mu', false]);
+      if (!registered.has(op)) stale.push(op + ' : kayıtta değil');
+      if (inv.ops.has(op)) stale.push(op + ' : FE çağırıyor');
     }
+    expect(stale).toEqual([]);
   });
 
   it('dinamik (değişken/şablon) ilk argümanlı restApi çağrıları yalnızca ELLE ÇÖZÜLMÜŞ dosyalarda (bkz. DYNAMIC_CALL_FILES_RESOLVED); yeni dinamik çağrı kırar', () => {
