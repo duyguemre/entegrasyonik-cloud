@@ -200,6 +200,8 @@ export interface IApplicationDB {
     getPushSubscriptionModel(): any
     /** MOB-08 / K55: gunluk aktif kullanim (gun+tenant+platform). */
     getUsageDailyModel(): any
+    /** [eslesme-fiyat WP2] platform katalog önbelleği (App, tenant'tan bağımsız). */
+    getPlatformCatalogModel(): any
     getOAuthClientModel(): any
     getOAuthAuthCodeModel(): any
     getOAuthRefreshTokenModel(): any

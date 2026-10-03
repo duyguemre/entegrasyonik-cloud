@@ -39,6 +39,7 @@ import { OAuthRefreshTokenSchema } from './models/OAuthRefreshToken';
 import { BackofficeViewSchema } from './models/BackofficeView';
 import { PushSubscriptionSchema } from './models/PushSubscription';
 import { UsageDailySchema } from './models/UsageDaily';
+import { PlatformCatalogSchema } from './models/PlatformCatalog';
 
 export default (mongooseConnection: Connection): Record<string, Model<any>> => {
     return {
@@ -106,5 +107,7 @@ export default (mongooseConnection: Connection): Record<string, Model<any>> => {
         push_subscription: mongooseConnection.model('push_subscription', PushSubscriptionSchema),
         // MOB-08 / K55: gunluk aktif kullanim (gun+tenant+platform). autoIndex kapali; indeksler yalniz onayli gocle: migrations/0021.
         usage_daily: mongooseConnection.model('usage_daily', UsageDailySchema),
+        // [eslesme-fiyat WP2] platform katalog onbellegi (tenant'tan bagimsiz). autoIndex kapali; indeksler yalniz onayli gocle: migrations/0030.
+        platform_catalog: mongooseConnection.model('platform_catalog', PlatformCatalogSchema),
     }
 }

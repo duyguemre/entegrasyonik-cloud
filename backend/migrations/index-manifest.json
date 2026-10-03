@@ -1208,6 +1208,29 @@
           "unique": true
         }
       }
+    ],
+    "PlatformCatalog": [
+      {
+        "name": "ttl_fetchedAt",
+        "fields": {
+          "fetchedAt": 1
+        },
+        "options": {
+          "expireAfterSeconds": 604800
+        }
+      },
+      {
+        "name": "uniq_integration_kind_cat_attr",
+        "fields": {
+          "integrationCode": 1,
+          "kind": 1,
+          "platformCategoryId": 1,
+          "platformAttributeId": 1
+        },
+        "options": {
+          "unique": true
+        }
+      }
     ]
   },
   "tenant": {

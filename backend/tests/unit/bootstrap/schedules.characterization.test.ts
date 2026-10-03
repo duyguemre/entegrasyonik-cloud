@@ -53,6 +53,8 @@ const EXPECTED: Array<[string, number, number, string, string, 'worker' | 'any']
   ['pricing.buyboxRefresh', 60 * 1000, 50 * 1000, 'normal', 'always', 'worker'],
   // COM-08: komisyon sapma taramasi (gunluk, ifDue).
   ['finance.commissionDrift', DAY, 15 * MIN, 'normal', 'ifDue', 'worker'],
+  // [eslesme-fiyat WP2] platform katalog yenileme + esleme bayatlik taramasi (haftalik, ifDue).
+  ['catalog.platformRefresh', 7 * DAY, HOUR, 'normal', 'ifDue', 'worker'],
   // RET-02: AuditLogs IP maskeleme (gunluk, ifDue).
   ['retention.auditIpMask', DAY, 15 * MIN, 'normal', 'ifDue', 'worker'],
   ['observability.metrics-flush', 60 * 1000, 30 * 1000, 'normal', 'always', 'any'],

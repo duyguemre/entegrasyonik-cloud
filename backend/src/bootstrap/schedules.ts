@@ -35,6 +35,8 @@ import { writeResilienceSnapshot } from '@integration/modules/common/http/resili
 import { RedisService } from '@services/redis/RedisService';
 import { AUDIT_IP_MASK_JOB_NAME, runAuditIpMaskProd } from '@operations/retention/auditIpMask';
 import { COMMISSION_DRIFT_JOB_NAME, createCommissionDriftDeps, runCommissionDrift, type CommissionDriftJobDeps } from '@operations/finance/commissionDriftJob';
+import { PLATFORM_CATALOG_JOB_NAME, createPlatformCatalogDeps } from '@operations/catalog/platformCatalogJob';
+import { runPlatformCatalogCycle, type PlatformCatalogDeps } from '@operations/catalog/platformCatalog';
 import { runsWorker } from './roles';
 
 const log = logger.child({ module: 'bootstrap.schedules' });
@@ -154,6 +156,18 @@ export const SCHEDULES: readonly ScheduleSpec[] = [
         d ??= createCommissionDriftDeps();
         const r = await runCommissionDrift(d, { signal: ctx.signal });
         return { skipped: r.skipped, processed: r.evaluated, failed: r.failedTenants, note: `tenants=${r.tenants} drifted=${r.drifted} notified=${r.notified}` };
+      } });
+  } },
+  // [eslesme-fiyat WP2] platform katalog yenileme + esleme bayatlik taramasi (haftalik, ifDue). Platforma YAZMA yok (salt katalog okuma);
+  // kendi DB'mize yazdigi icin LIVE_READONLY'de BASLAMAZ (varsayilan liste). Bildirim: FE `stale` alanini gosterir (bildirim olayi WP7/WP8).
+  { id: PLATFORM_CATALOG_JOB_NAME, runsOn: 'worker', build: (impl?: PlatformCatalogDeps) => {
+    let d: PlatformCatalogDeps | undefined = impl;
+    return defineJob({
+      name: PLATFORM_CATALOG_JOB_NAME, everyMs: 7 * DAY, maxDurationMs: HOUR, criticality: 'normal', runOnStart: 'ifDue',
+      run: async (ctx) => {
+        d ??= createPlatformCatalogDeps();
+        const r = await runPlatformCatalogCycle({ ...d, signal: ctx.signal });
+        return { processed: r.entries, failed: r.failed, note: `channels=${r.channels} calls=${r.calls} tenants=${r.tenantsScanned} stale+=${r.marked} stale-=${r.cleared}` };
       } });
   } },
   // RET-02: 90 gunden eski AuditLogs IP maskeleme (gunluk; deploy'da yeniden kosmaz -> 'ifDue'). Yalniz kendi DB'mize yazar; LIVE_READONLY'de baslamaz (varsayilan liste).
