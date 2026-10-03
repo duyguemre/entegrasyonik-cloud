@@ -55,12 +55,13 @@ export class FinancialConnector {
     /**
      * Belirli bir ödeme emrine ait işlemleri çekmek için Settlements servisini kullanır
      */
-    public async fetchSettlementsByPaymentId(paymentOrderId: string): Promise<any> {
+    public async fetchSettlementsByPaymentId(paymentOrderId: string, paging: { page: number; size: number } = { page: 0, size: 1000 }): Promise<any> {
         const baseUrl = this.getFormattedUrl('financeSettlementsUrl');
 
         const queryParams = {
             paymentOrderId: paymentOrderId,
-            size: 1000
+            page: paging.page,
+            size: paging.size
         };
 
         const response = await this.service.get(baseUrl, queryParams, FINANCE_CALL_OPTS);

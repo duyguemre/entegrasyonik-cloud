@@ -10,7 +10,9 @@ const PAGE_SIZE = 500;
 /** 500 x 200 = 100.000 satır / (tip x pencere); aşılırsa kalan sonraki turda (imleç örtüşmesi + günlük tarama) yakalanır. */
 const MAX_PAGES = 200;
 /** settlements `transactionType` (komisyon/hakediş satırları). */
-const SETTLEMENT_TYPES = ['Sale', 'Return'] as const;
+// [eslesme-fiyat WP4, 02-ekler/trendyol D-TY-9] Discount/Coupon satırları da settlements'ta (eskiden çekilmiyordu → kampanya
+// indirim/kupon kesintileri finans görünümünde yoktu). Provizyon türlerinin settlements adları doğrulanamadı (eklenmedi).
+const SETTLEMENT_TYPES = ['Sale', 'Return', 'Discount', 'Coupon'] as const;
 /** otherfinancials `transactionType` (çağrı başına tek tip). */
 const OTHER_FINANCIAL_TYPES = ['PaymentOrder', 'DeductionInvoices', 'CreditNote', 'CommissionInvoice'] as const;
 
@@ -123,8 +125,10 @@ export class FinancialService {
      */
     public async fetchSettlementsByPaymentId(paymentOrderId: string): Promise<IFinancialTransaction[]> {
         try {
-            const rawData = await this.connector.fetchSettlementsByPaymentId(paymentOrderId);
-            return this.mapper.toInternalTransactions(rawData, 'TRENDYOL');
+            // [D-TY-9] ödeme emri satırları sayfalı (eskiden tek istek size=1000 → büyük ödeme emrinde sessiz kesik).
+            const raw = await this.fetchAllPages(p => this.connector.fetchSettlementsByPaymentId(paymentOrderId, p));
+            const rows = this.mapper.toInternalTransactions(raw, 'TRENDYOL');
+            return raw.capped ? markIncomplete(rows, { reason: 'PAGINATION_PAGE_CAP', collected: rows.length }) : rows;
         } catch (error: any) {
             if (IntegrationError.isIntegrationError(error)) throw error;
             throw new Error(`[${this.clientId}][FinancialService:fetchSettlementsByPaymentId] ${error.message}`);

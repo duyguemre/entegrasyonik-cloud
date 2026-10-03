@@ -25,15 +25,23 @@ const row = (id: number, type = 'Sale') => ({ id, transactionType: type, orderNu
 const window1 = { startDate: new Date('2026-01-01T00:00:00Z'), endDate: new Date('2026-01-05T00:00:00Z') };
 
 describe('FinancialService.fetchFinancials (COM-03)', () => {
-    it('settlements icin Sale ve Return, otherfinancials icin 4 tip AYRI cagrilir (cagri basina tek transactionType)', async () => {
+    // [BİLİNÇLİ DÜZELTME - eslesme-fiyat WP4 D-TY-9] settlements'a Discount/Coupon eklendi (eskiden yalnız Sale/Return).
+    it('settlements icin Sale/Return/Discount/Coupon, otherfinancials icin 4 tip AYRI cagrilir (cagri basina tek transactionType)', async () => {
         const get = jest.fn(async () => ({ data: { content: [], totalPages: 1 } }));
         await new FinancialService(params, { get } as any).fetchFinancials(window1);
         const calls = get.mock.calls as any[];
         const st = calls.filter(c => c[0].includes('/settlements')).map(c => c[1].transactionType);
         const of = calls.filter(c => c[0].includes('/otherfinancials')).map(c => c[1].transactionType);
-        expect(st).toEqual(['Sale', 'Return']);
+        expect(st).toEqual(['Sale', 'Return', 'Discount', 'Coupon']);
         expect(of).toEqual(['PaymentOrder', 'DeductionInvoices', 'CreditNote', 'CommissionInvoice']);
         expect(calls.every(c => c[1].transactionTypes === undefined)).toBe(true);
+    });
+
+    it('[WP4 D-TY-9] ödeme emri satırları sayfalı çekilir (eskiden tek istek size=1000)', async () => {
+        const get = jest.fn(async (_u: string, q: any) => ({ data: { content: [{ id: q.page, transactionType: 'Sale', credit: 1, debt: 0 }], totalPages: 2 } }));
+        const rows = await new FinancialService(params, { get } as any).fetchSettlementsByPaymentId('PO1');
+        expect((get.mock.calls as any[]).map(c => [c[1].paymentOrderId, c[1].page])).toEqual([['PO1', 0], ['PO1', 1]]);
+        expect(rows).toHaveLength(2);
     });
 
     it('transactionTypes verilirse yalniz kesisim cagrilir', async () => {
