@@ -27,8 +27,8 @@ export default class N11 implements IPlatform {
     constructor(private params: any) {
         this.service = new Service(this.params);
         this.orderService = new OrderService(this.params, this.service);
-        this.productService = new ProductService(this.params, this.service);
         this.categoryService = new CategoryService(this.params, this.service);
+        this.productService = new ProductService(this.params, this.service, this.categoryService);
         this.claimService = new ClaimService(this.params, this.service);
         this.messageService = new MessageService(this.params, this.service);
         this.brandService = new BrandService(this.params, this.service);

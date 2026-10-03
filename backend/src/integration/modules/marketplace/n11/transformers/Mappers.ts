@@ -1,4 +1,27 @@
-import { IMessage, ICategoryAttribute, ICategoryAttributeValue, IFinancialTransaction, UniversalTransactionType } from '@interfaces/index';
+import { IMessage, ICategoryAttribute, ICategoryAttributeValue, IFinancialTransaction, UniversalTransactionType, IExportStagedProduct } from '@interfaces/index';
+import { normalizeAttrValue, indexCategoryAttributes, findValueById, findValueByText, missingRequiredAttributes, labelAttribute } from '@integration/catalog/attributePayload';
+import { integrationCode } from '../constants';
+
+/** [eslesme-fiyat WP4, 02-ekler/n11 C-1] N11'de marka ayrı servis değil, kategori özelliği "Marka" (attributeId 1, zorunlu, isCustomValue). */
+export const N11_BRAND_ATTRIBUTE_ID = '1';
+/** `ms/product/tasks/product-create` istek başına en çok SKU (resmî 10393). */
+export const N11_MAX_SKUS_PER_TASK = 1000;
+/** Resmî `vatRate` değerleri (10393). */
+export const N11_VAT_RATES = [0, 1, 10, 20] as const;
+export const N11_DEFAULT_PREPARING_DAY = 3;
+
+export interface IN11SkuContext {
+    /** N11 kategori kimliği (AttributeMappings ya da içe aktarılmış `mapping.categoryId`). */
+    categoryId: string | number;
+    /** Yerel marka adı (`Brands.title`); Marka özelliği varyantta yoksa bundan üretilir. */
+    brandName?: string;
+    /** Kategori özellikleri (verilirse kimlik/değer doğrulaması ve zorunlu denetim yapılır). */
+    catAttrs?: ICategoryAttribute[];
+    /** Tenant ayarları (`shippingId` = kargo şablonu ADI, `shippingDuration`, `taxPercentage`, `maxPurchaseQuantity`). */
+    settings?: Record<string, any>;
+}
+
+const filled = (v: any) => v !== undefined && v !== null && String(v).trim() !== '';
 
 export class ProductMapper {
     public mapToCreateProduct(sp: any) {
@@ -23,6 +46,118 @@ export class ProductMapper {
         };
     }
 
+    /**
+     * [eslesme-fiyat WP4, 02-ekler/n11 C-1 / D-N11-1 / D-N11-4 (P0)] `product-create` SKU gövdesi (resmî 10393). ÖNCEKİ GÖVDE
+     * (`mapToRestBulkCreate`) `attributes`, `shipmentTemplate`, `vatRate`, `productMainId`, `preparingDay` göndermiyordu → her ürün ret
+     * ("shipmentTemplate boş değer olamaz", "marka özellik değeri boş"). SAF: ağ/DB yok; eksik/geçersiz alanlar `errors[]` ile döner
+     * (varyant gönderilmez, alan bazlı mesaj). Özellik: `{id, valueId}` (listeden) | `{id, customValue}` (isCustomValue) — iki alan
+     * KARIŞTIRILMAZ. Marka varyant özelliklerinde yoksa yerel marka adından (kategori değer listesinde varsa kimlikle). Boş `attributes`/
+     * `images` `[]` olarak gider (resmî kural).
+     */
+    public toRestCreateSku(sp: IExportStagedProduct, ctx: IN11SkuContext): { sku: any; errors: string[] } {
+        const variant: any = sp.payload || {};
+        const errors: string[] = [];
+        const vMap = variant.platforms?.[integrationCode]?.mapping || {};
+        const settings = ctx.settings || {};
+
+        const { attributes, errors: attrErrors } = this.prepareAttributes(variant, ctx);
+        errors.push(...attrErrors);
+
+        const shipmentTemplate = [vMap.shippingId, settings.shippingId].find(filled);
+        if (!filled(shipmentTemplate)) errors.push('shipmentTemplate (kargo şablonu): N11 ayarlarında kargo şablonu seçilmemiş');
+
+        const vatRaw = [vMap.taxPercentage, variant.taxPercentage, variant.product?.taxPercentage, settings.taxPercentage].find(filled);
+        const vatRate = vatRaw === undefined ? 20 : Number(vatRaw);
+        if (!(N11_VAT_RATES as readonly number[]).includes(vatRate)) errors.push(`vatRate (KDV): %${vatRaw} N11'de geçersiz (izinli: ${N11_VAT_RATES.join(', ')})`);
+
+        const preparingDay = Number([vMap.shippingDuration, vMap.preparingDay, settings.shippingDuration].find(filled) ?? N11_DEFAULT_PREPARING_DAY);
+        const maxPurchase = [vMap.maxPurchaseQuantity, settings.maxPurchaseQuantity].find(filled);
+
+        const stockCode = sp.stockcode || variant.stockcode || sp.productId;
+        const productMainId = variant.maincode || stockCode;
+        const salePrice = parseFloat(String(sp.price ?? variant.platforms?.[integrationCode]?.prices?.salePrice ?? variant.prices?.salePrice ?? 0));
+        if (!(salePrice > 0)) errors.push('salePrice (fiyat): sıfırdan büyük olmalı');
+        const quantity = parseInt(String(sp.stock ?? variant.stock ?? 0), 10);
+        const rawImages: any[] = Array.isArray(variant.images) && variant.images.length ? variant.images : ((sp as any).images || []);
+        const images = rawImages
+            .map((img: any) => (typeof img === 'string' ? img : img?.url))
+            .filter(filled)
+            .map((url: string, idx: number) => ({ url, order: idx + 1 }));
+
+        const sku: any = {
+            title: vMap.title || variant.product?.title || sp.title || '',
+            description: vMap.description || variant.product?.description || variant.description || sp.title || '',
+            categoryId: Number(ctx.categoryId),
+            productMainId,
+            stockCode,
+            barcode: sp.barcode || variant.barcode,
+            quantity: Number.isFinite(quantity) ? quantity : 0,
+            salePrice,
+            // Liste fiyatı ayrı kaynaktan beslenmesi WP5 (fiyat) kapsamı; bugün satış fiyatıyla aynı (eski davranış).
+            listPrice: salePrice,
+            currencyType: 'TL',
+            vatRate,
+            shipmentTemplate,
+            preparingDay,
+            images,
+            attributes,
+        };
+        if (filled(maxPurchase)) sku.maxPurchaseQuantity = Number(maxPurchase);
+        if (!sku.title) errors.push('title (ürün adı): boş olamaz');
+        if (!filled(sku.barcode)) errors.push('barcode: boş olamaz');
+        if (!filled(stockCode)) errors.push('stockCode: boş olamaz');
+        return { sku, errors };
+    }
+
+    private prepareAttributes(variant: any, ctx: IN11SkuContext): { attributes: any[]; errors: string[] } {
+        const vAttrs: Record<string, any> = variant.platforms?.[integrationCode]?.attributes || {};
+        const { byId } = indexCategoryAttributes(ctx.catAttrs);
+        const haveCategory = byId.size > 0;
+        const attributes: any[] = [];
+        const errors: string[] = [];
+        const sent = new Set<string>();
+
+        const push = (attrId: string, norm: { valueId?: string; text?: string }, nameHint?: string) => {
+            const catAttr = haveCategory ? byId.get(attrId) : undefined;
+            const label = labelAttribute(attrId, catAttr?.title ?? nameHint);
+            const hasList = !!catAttr?.values && catAttr.values.length > 0;
+            const allowCustom = catAttr ? catAttr.allowCustom === true : true;
+            const numericId = norm.valueId !== undefined && /^\d+$/.test(norm.valueId) ? norm.valueId : undefined;
+            if (numericId !== undefined && (!hasList || !!findValueById(catAttr, numericId))) {
+                attributes.push({ id: Number(attrId), valueId: Number(numericId) });
+            } else {
+                const byText = norm.text !== undefined && hasList ? findValueByText(catAttr, norm.text) : undefined;
+                if (byText && /^\d+$/.test(String(byText.id))) attributes.push({ id: Number(attrId), valueId: Number(byText.id) });
+                else if (norm.text !== undefined && allowCustom) attributes.push({ id: Number(attrId), customValue: norm.text });
+                else { errors.push(`${label}: '${String(norm.text ?? norm.valueId).slice(0, 40)}' değeri N11 değer listesinde yok — özelliği yeniden seçin`); return; }
+            }
+            sent.add(attrId);
+        };
+
+        for (const [rawId, attrData] of Object.entries(vAttrs)) {
+            const attrId = String(rawId).trim();
+            if (!/^\d+$/.test(attrId)) { errors.push(`özellik kimliği geçersiz: '${attrId.slice(0, 30)}'`); continue; }
+            if (haveCategory && !byId.has(attrId)) continue; // bayat (kategori değişti): gönderme
+            const norm = normalizeAttrValue(attrData);
+            if (!norm) continue;
+            push(attrId, norm, typeof attrData === 'object' ? attrData?.attributeName : undefined);
+        }
+
+        // [D-N11-4] Marka: varyantta seçilmemişse yerel marka adı (değer listesinde varsa kimlik, yoksa customValue).
+        if (!sent.has(N11_BRAND_ATTRIBUTE_ID) && filled(ctx.brandName) && (!haveCategory || byId.has(N11_BRAND_ATTRIBUTE_ID))) {
+            push(N11_BRAND_ATTRIBUTE_ID, { text: String(ctx.brandName).trim() }, 'Marka');
+        }
+
+        if (haveCategory) {
+            const missing = missingRequiredAttributes(ctx.catAttrs, sent);
+            if (missing.length) errors.push(`zorunlu özellik eksik: ${missing.map(c => labelAttribute(String(c._id), c.title)).join(', ')}`);
+        } else if (!sent.has(N11_BRAND_ATTRIBUTE_ID)) {
+            errors.push(`${labelAttribute(N11_BRAND_ATTRIBUTE_ID, 'Marka')}: marka boş olamaz (ürünün markasını seçin)`);
+        }
+        return { attributes, errors };
+    }
+
+    /** Eski gövde: yalnız `updateProduct` (product-update; resmî güncelleme alan listesi görülemedi, C-13) için korunur. */
     public mapToRestBulkCreate(stagedProducts: any[], integrator: string) {
         return {
             payload: {
