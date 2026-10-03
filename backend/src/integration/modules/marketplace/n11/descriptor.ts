@@ -72,7 +72,7 @@ const N11Descriptor: IntegrationDescriptor = {
         shippingNotice: {
             level: 'limited',
             methods: ['sendOrderShipping'],
-            note: 'Kargo bilgisi yalnızca siparişin ilk kalemi için iletilir (SOAP orderItemShipment).',
+            note: 'Kargo bilgisi siparişin tüm kalemleri için iletilir (SOAP MakeOrderItemShipment, orderItemList); kargo firması N11 kargo firmaları listesinden kimliğe çözülür. Gövde şeması resmî WSDL ile canlıda doğrulanmadı.',
             evidence: ['marketplace/n11/services/OrderService.ts sendOrderShipping'],
         },
         invoiceNotice: {

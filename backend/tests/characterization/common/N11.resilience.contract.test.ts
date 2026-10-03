@@ -94,7 +94,7 @@ describe('N11 SOAP (Service.soapRequest -> executeCustom) - gerçek yerel sunucu
         const p = params(srv.baseUrl);
         const svc = new Service(p);
         const orderService = new OrderService(p, svc);
-        await expect(orderService.sendOrderShipping({ orderId: 'ORD-1', trackingCode: 'TRK1' } as any)).rejects.toMatchObject({ code: 'UNKNOWN_OUTCOME' });
+        await expect(orderService.sendOrderShipping({ orderId: 'ORD-1', trackingCode: 'TRK1', carrierCode: '1' } as any)).rejects.toMatchObject({ code: 'UNKNOWN_OUTCOME' });
         // Yazma: 5xx'te otomatik retry YOK (ADR-0006 Karar 1) -> tam olarak 1 çağrı.
         expect(calls).toBe(1);
     });
@@ -107,7 +107,7 @@ describe('N11 SOAP (Service.soapRequest -> executeCustom) - gerçek yerel sunucu
         const p = params(srv.baseUrl);
         const svc = new Service(p);
         const orderService = new OrderService(p, svc);
-        await expect(orderService.sendOrderShipping({ orderId: 'ORD-1', trackingCode: 'TRK1' } as any)).rejects.toMatchObject({ code: 'RATE_LIMITED' });
+        await expect(orderService.sendOrderShipping({ orderId: 'ORD-1', trackingCode: 'TRK1', carrierCode: '1' } as any)).rejects.toMatchObject({ code: 'RATE_LIMITED' });
     });
 
     it('[ADR-0006 Karar 2] SOAP business fault (HTTP 200, status=failure) -> IntegrationError(VALIDATION), retry/breaker tetiklenmez', async () => {
@@ -118,7 +118,7 @@ describe('N11 SOAP (Service.soapRequest -> executeCustom) - gerçek yerel sunucu
         const p = params(srv.baseUrl);
         const svc = new Service(p);
         const orderService = new OrderService(p, svc);
-        await expect(orderService.sendOrderShipping({ orderId: 'ORD-1', trackingCode: 'TRK1' } as any)).rejects.toMatchObject({ code: 'VALIDATION' });
+        await expect(orderService.sendOrderShipping({ orderId: 'ORD-1', trackingCode: 'TRK1', carrierCode: '1' } as any)).rejects.toMatchObject({ code: 'VALIDATION' });
         expect(srv.requestCount()).toBe(1); // business fault retry'ı tetiklemez (4xx sayılmaz)
     });
 

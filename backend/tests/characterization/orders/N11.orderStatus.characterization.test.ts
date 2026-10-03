@@ -62,7 +62,6 @@ describe('N11 OrderMapper.toInternalOrderPackages — bilinmeyen statü reportUn
     afterEach(() => resetUnknownEnumState());
 
     it.each([
-        ['UnPacked', 'UnPacked'],       // anlamı doğrulanamadı (Trendyol'daki eşdeğeri gibi kasıtlı olarak tabloya girmedi)
         ['TotallyNewN11Status', 'TotallyNewN11Status'],
         ['', 'MISSING'],
         [undefined, 'MISSING'],
@@ -74,6 +73,13 @@ describe('N11 OrderMapper.toInternalOrderPackages — bilinmeyen statü reportUn
         expect(events[0].contractId).toBe(N11_ORDERS_CONTRACT_ID);
         expect(events[0].field).toBe('status');
         expect(events[0].value).toBe(expectedValue);
+    });
+
+    it('[BİLİNÇLİ DÜZELTME - eslesme-fiyat WP4 C-8] UnPacked -> UNAPPROVED + meta.statusFlag=unpacked, bilinmeyen raporu YOK (eskiden APPROVED)', () => {
+        const [pkg] = new OrderMapper().toInternalOrderPackages(soapResponse('UnPacked'));
+        expect(pkg.order.internalStatus).toBe(OrderInternalStatusEnum.UNAPPROVED);
+        expect((pkg.order.meta as any).statusFlag).toBe('unpacked');
+        expect(events).toHaveLength(0);
     });
 
     it('bilinen ham statü -> reportUnknownEnum ÇAĞRILMAZ', () => {

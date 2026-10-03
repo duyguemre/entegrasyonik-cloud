@@ -67,7 +67,7 @@ describe('N11 approveOrder / rejectOrder (ADR-0006 adım 4 - BACKLOG C9 ters çe
   it('[MEVCUT DAVRANIŞ - DEĞİŞMEDİ] KONTROL: gerçek çağrı yapan sendOrderShipping HTTP istemcisini çağırır ("0 çağrı" assertion boş değil)', async () => {
     http.post.mockRejectedValue(new Error('taklit ağ hatası') as never);
     const n11 = new N11(params);
-    await expect(n11.sendOrderShipping({ orderId: 'ORD-1', trackingCode: 'TRK1' } as any)).rejects.toThrow();
+    await expect(n11.sendOrderShipping({ orderId: 'ORD-1', trackingCode: 'TRK1', carrierCode: '1' } as any)).rejects.toThrow();
     expect(http.post).toHaveBeenCalledTimes(1);
   });
 });

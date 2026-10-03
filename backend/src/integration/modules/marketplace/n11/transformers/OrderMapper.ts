@@ -17,8 +17,10 @@ export const N11_ORDERS_CONTRACT_ID = 'n11.orders.list';
  * alan; order seviyesine uygulanabilirliği doğrulanamadı, bu yüzden KULLANILMADI — uydurma değer yazılmadı).
  * REST ve SOAP'ın aynı sözleşmeyi (yaşam döngüsü) paylaştığı varsayımıyla bu tablo HER İKİ taşıma için de
  * kullanılıyor; yanlışsa `reportUnknownEnum` bunu görünür kılar (davranış bozulmaz, yalnız gözlem).
- * `UnPacked`, Trendyol'daki eşdeğeri gibi (`OrderTransformer.ts` `unpacked`) anlamı doğrulanamadığı için
- * KASITLI OLARAK tabloya eklenmedi: bilinmeyen dalına düşer (APPROVED + reportUnknownEnum).
+ * [eslesme-fiyat WP4, 02-ekler/n11 C-8] `UnPacked` (resmî 10705: paket bölündü; ana paket UnPacked olur, kalemler YENİ `Picking`
+ * paketlerinde yaşar): ESKİDEN bilinmeyen dalına düşüp APPROVED sayılıyordu → bölünen ana paket tekrar onaylı işlenip çift işlem riski.
+ * Artık Trendyol kararıyla aynı: UNAPPROVED (aksiyon açılmaz) + `meta.statusFlag='unpacked'`; stok kovasına girmez
+ * (`orderStatusMapping` SKIP_RAW_STATUSES). Yeni paketler kendi `id`'leriyle ayrı sipariş olarak gelir.
  */
 const STATUS_RULES: Record<string, OrderInternalStatusEnum> = {
     created: OrderInternalStatusEnum.UNAPPROVED,
@@ -27,7 +29,12 @@ const STATUS_RULES: Record<string, OrderInternalStatusEnum> = {
     delivered: OrderInternalStatusEnum.DELIVERED,
     cancelled: OrderInternalStatusEnum.CANCELLED,
     unsupplied: OrderInternalStatusEnum.CANCELLED,
+    unpacked: OrderInternalStatusEnum.UNAPPROVED,
 };
+
+/** Hesaplanan durum bayrağı ham alanların ÜSTÜNE yazılır (ham kayıt `statusFlag` taşımaz). */
+const withStatusFlag = (o: any, status: unknown) =>
+    (String(status ?? '').toLowerCase() === 'unpacked' ? { ...o, statusFlag: 'unpacked' } : o);
 
 export class OrderMapper {
     public toInternalOrderPackages(rawResponse: any): IOrderPackage[] {
@@ -88,7 +95,7 @@ export class OrderMapper {
                     },
                     items: internalItems,
                     fulfillment: [],
-                    meta: o
+                    meta: withStatusFlag(o, o.status)
                 },
                 customer: {
                     email: o.buyer?.email || '',
@@ -216,7 +223,7 @@ export class OrderMapper {
                     },
                     items: internalItems,
                     fulfillment: [],
-                    meta: o,
+                    meta: withStatusFlag(o, o.shipmentPackageStatus),
                 },
                 customer: {
                     email: o.customerEmail || '',

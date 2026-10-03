@@ -150,18 +150,27 @@ export class OrderService {
         });
     }
 
+    /**
+     * [eslesme-fiyat WP4, 02-ekler/n11 C-9] `MakeOrderItemShipment` gövdesi kaynaklardaki yapıya göre: `orderItemList.orderItem[]{ id,
+     * shipmentInfo{ shipmentCompany{id}, campaignNumber, trackingNumber, shipmentMethod } }`. ESKİDEN yalnız İLK kalem, firma ADI
+     * (`shipmentCompany.name`) ve takip numarası `campaignNumber`'a da yazılıyordu. Artık TÜM kalemler; firma kimliği `carrierCode`
+     * sayısalsa doğrudan, değilse `GetShipmentCompanies` listesinden ad/kısa ad/kodla çözülür (bulunamazsa ağa gitmeden VALIDATION);
+     * `campaignNumber` yalnız `meta.campaignNumber` verilirse. Şema [İKİNCİL] kaynaktan: resmî WSDL ile yerelde doğrulanacak.
+     */
     public async sendOrderShipping(payload: ISendTrackingPayload): Promise<IPlatformResponse> {
         try {
+            const fromLines = (payload.lineItems || []).map(l => l?.externalLineItemId).filter((v): v is string => v !== undefined && v !== null && String(v) !== '');
+            const fromMeta = Array.isArray(payload.meta?.lines) ? payload.meta!.lines.map((l: any) => l?.orderLineId ?? l?.id).filter((v: any) => v !== undefined && v !== null && String(v) !== '') : [];
+            const itemIds = [...new Set((fromLines.length ? fromLines : fromMeta.length ? fromMeta : [payload.orderId]).map(String))];
+            const companyId = await this.resolveShipmentCompanyId(payload);
+            const shipmentInfo: Record<string, any> = {
+                shipmentCompany: { id: companyId },
+                trackingNumber: payload.trackingCode,
+                shipmentMethod: 1,
+            };
+            if (payload.meta?.campaignNumber) shipmentInfo.campaignNumber = String(payload.meta.campaignNumber);
             const soapPayload = {
-                'sch:orderItemShipment': {
-                    orderItemId: payload.lineItems?.[0]?.externalLineItemId || payload.orderId,
-                    shipmentCompany: {
-                        name: payload.carrierName || 'Yurtiçi Kargo'
-                    },
-                    campaignNumber: payload.trackingCode,
-                    trackingNumber: payload.trackingCode,
-                    shipmentMethod: '1'
-                }
+                'sch:orderItemList': { orderItem: itemIds.map(id => ({ id, shipmentInfo })) },
             };
 
             await this.connector.makeOrderItemShipment(soapPayload);
@@ -170,6 +179,32 @@ export class OrderService {
             if (IntegrationError.isIntegrationError(error)) throw error;
             throw new Error(`[${this.clientId}][N11OrderService:sendOrderShipping] ${error.message}`);
         }
+    }
+
+    private shipmentCompanies?: Promise<any[]>;
+
+    private async resolveShipmentCompanyId(payload: ISendTrackingPayload): Promise<string> {
+        const code = String(payload.carrierCode ?? '').trim();
+        if (/^\d+$/.test(code)) return code;
+        const name = String(payload.carrierName ?? '').trim();
+        const wanted = [code, name].filter(Boolean).map(v => v.toLocaleLowerCase('tr'));
+        if (!wanted.length) {
+            throw new IntegrationError('VALIDATION', `N11 kargo bildirimi: kargo firması belirtilmedi (${payload.orderId}).`, {
+                integrationCode, operation: 'sendOrderShipping', clientId: this.clientId,
+            });
+        }
+        this.shipmentCompanies ??= this.connector.fetchShipmentCompanies().then((r: any) => {
+            const list = r?.shipmentCompanies?.shipmentCompany ?? [];
+            return Array.isArray(list) ? list : [list];
+        }).catch((e: any) => { this.shipmentCompanies = undefined; throw e; });
+        const list = await this.shipmentCompanies;
+        const hit = list.find((c: any) => [c?.name, c?.shortName, c?.code].some(v => v !== undefined && v !== null && wanted.includes(String(v).trim().toLocaleLowerCase('tr'))));
+        if (!hit?.id) {
+            throw new IntegrationError('VALIDATION', `N11 kargo bildirimi: '${name || code}' N11 kargo firmaları listesinde bulunamadı.`, {
+                integrationCode, operation: 'sendOrderShipping', clientId: this.clientId,
+            });
+        }
+        return String(hit.id);
     }
 
     /**

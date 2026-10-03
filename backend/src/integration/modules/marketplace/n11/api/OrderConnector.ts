@@ -37,6 +37,11 @@ export class OrderConnector {
         return await this.service.soapRequest('shipmentCompanyService', 'sch:MakeOrderItemShipmentRequest', payload);
     }
 
+    /** Kargo firması listesi (okuma; kargo bildiriminde firma kimliği çözümü için). */
+    public async fetchShipmentCompanies(): Promise<any> {
+        return await this.service.soapRequest('shipmentCompanyService', 'sch:GetShipmentCompaniesRequest', {}, { idempotent: true });
+    }
+
     public async saveLinkSellerInvoice(payload: any): Promise<any> {
         return await this.service.soapRequest('sellerInvoiceService', 'sch:SaveLinkSellerInvoiceRequest', payload);
     }
