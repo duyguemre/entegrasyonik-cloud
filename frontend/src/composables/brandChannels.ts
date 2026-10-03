@@ -3,19 +3,39 @@
  * Kanal = müşterinin bağladığı pazaryeri + e-ticaret + ERP; yalnız marka eşlemesi sunanlar
  * ("mappable") sayılır. Eşleme bilgisi markanın `platforms[kod] = { id, title }` alanındadır.
  * Yeni backend alanı YOK: durum bu alandan türetilir (eşli = id dolu, eksik = boş).
+ * [eslesme-fiyat WP2, Ek C P1-10 / K-C] "mappable" kaynağı backend yetenek manifestosu (`getCatalog` → `brandMapping === 'id'`:
+ * TY/PZ/IS). HB marka ADI gönderir, N11 markayı özellik olarak taşır, BH marka taşımaz → eşleme istenmez ("Eşlenmedi" uyarısı çıkmaz).
+ * Katalog alınamazsa eski bayrağa (`hasBrandMapping !== false`) düşülür.
  */
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useIntegrationStore } from '@/stores/integrationStore'
+import { useIntegrationCatalog, type BrandMappingMode } from '@/components/integrations/integrationCatalog'
+
+/** Oturum boyunca paylaşılan kanal → marka eşleme biçimi (katalog bir kez yüklenir). */
+const brandModes = ref<Map<string, BrandMappingMode>>(new Map())
+let catalogRequested = false
+
+/** Saf: kanal marka eşlemesi istiyor mu (katalog biçimi öncelikli; yoksa eski bayrak). */
+export function isBrandMappable(mode: BrandMappingMode | undefined, legacyFlag: unknown): boolean {
+  return mode ? mode === 'id' : legacyFlag !== false
+}
 
 export interface BrandChannel {
   code: string
   title: string
-  /** Platform marka eşleme yeteneği sunuyor mu (hasBrandMapping !== false). */
+  /** Platform marka KİMLİĞİ eşlemesi istiyor mu (katalog `brandMapping === 'id'`; yoksa eski `hasBrandMapping !== false`). */
   mappable: boolean
 }
 
 export function useBrandChannels() {
   const integrationStore = useIntegrationStore()
+  if (!catalogRequested) {
+    catalogRequested = true
+    void useIntegrationCatalog().getCatalog().then((r) => {
+      if (!r.ok) { catalogRequested = false; return }
+      brandModes.value = new Map(r.data.filter((e) => e.brandMapping).map((e) => [e.code, e.brandMapping as BrandMappingMode]))
+    })
+  }
 
   const channels = computed<BrandChannel[]>(() => {
     const list = [
@@ -26,7 +46,7 @@ export function useBrandChannels() {
     return list.map((i: any) => ({
       code: i.code,
       title: i.title || (i.code ? String(i.code).charAt(0).toUpperCase() + String(i.code).slice(1) : ''),
-      mappable: i.hasBrandMapping !== false,
+      mappable: isBrandMappable(brandModes.value.get(String(i.code).toLowerCase()), i.hasBrandMapping),
     }))
   })
 

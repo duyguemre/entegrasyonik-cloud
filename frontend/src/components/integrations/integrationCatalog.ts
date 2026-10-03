@@ -23,8 +23,14 @@ export interface CatalogCapability {
   note?: string
 }
 
+/** [eslesme-fiyat WP2, K-C] Kanalın marka eşleme biçimi (backend descriptor `brandMapping`). */
+export type BrandMappingMode = 'id' | 'name' | 'attribute' | 'none'
+const BRAND_MODES: BrandMappingMode[] = ['id', 'name', 'attribute', 'none']
+
 export interface CatalogEntry {
   code: string
+  /** Eski backend yanıtında yok → undefined (tüketici eski bayrağa düşer). */
+  brandMapping?: BrandMappingMode
   displayName: string
   category: CatalogCategory
   status: string
@@ -64,6 +70,7 @@ export function normalizeCatalog(raw: any): CatalogEntry[] | null {
     category: entry.category,
     status: typeof entry.status === 'string' ? entry.status : '',
     adapterVersion: typeof entry.adapterVersion === 'string' ? entry.adapterVersion : undefined,
+    brandMapping: BRAND_MODES.includes(entry.brandMapping) ? (entry.brandMapping as BrandMappingMode) : undefined,
     capabilities: Object.fromEntries(
       Object.entries(entry.capabilities as Record<string, any>).map(([key, cap]) => [
         key,

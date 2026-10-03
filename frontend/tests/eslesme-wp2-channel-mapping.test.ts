@@ -88,3 +88,19 @@ describe('kategori eşleme tek kaynak (P0-1)', () => {
     expect(get).toHaveBeenCalledTimes(1)
   })
 })
+
+describe('marka eşleme kanalı (P1-10, K-C)', () => {
+  it('katalog biçimi öncelikli: yalnız id eşlenebilir; katalog yoksa eski bayrak', async () => {
+    const { isBrandMappable } = await import('@/composables/brandChannels')
+    expect(isBrandMappable('id', false)).toBe(true)
+    expect(isBrandMappable('name', true)).toBe(false)
+    expect(isBrandMappable('attribute', undefined)).toBe(false)
+    expect(isBrandMappable(undefined, undefined)).toBe(true)
+    expect(isBrandMappable(undefined, false)).toBe(false)
+  })
+  it('normalizeCatalog brandMapping alanını taşır; bilinmeyen değer atılır', async () => {
+    const { normalizeCatalog } = await import('@/components/integrations/integrationCatalog')
+    const out = normalizeCatalog([{ code: 'TRENDYOL', capabilities: {}, brandMapping: 'id' }, { code: 'x', capabilities: {}, brandMapping: 'evil' }])!
+    expect(out.map((e) => e.brandMapping)).toEqual(['id', undefined])
+  })
+})
