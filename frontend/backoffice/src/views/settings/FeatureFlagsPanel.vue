@@ -100,4 +100,13 @@ const tenantList = (key: string): string[] => {
 .bo-flags__empty {
   padding: var(--ek-space-4);
 }
+
+/* BO-LOCAL-01 — değişen bayrak satırı: tek vurgu eylem rengi (bilgi mavisi değil); son satırda alt çizgi yok. */
+.bo-flag.is-changed {
+  background: var(--ek-color-action-subtle);
+}
+
+.bo-flag:last-child {
+  border-bottom: 0;
+}
 </style>

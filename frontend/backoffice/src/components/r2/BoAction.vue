@@ -144,4 +144,16 @@ const accessibleLabel = computed(() => (props.label && !props.object ? props.lab
 .bo-action--danger:not(:hover):not(:focus-visible) {
   --ek-btn-fg: var(--ek-color-content-muted);
 }
+
+/* BO-LOCAL-01 — bağlantı düğmesi: ikincil düğmeyle aynı çerçeve (`border-default`); üzerine gelince eylem tonu
+   (çerçeve + açık zemin), gölge yok. Birincil ve hayalet tonlar aynen. */
+.bo-action-link {
+  border-color: var(--ek-color-border-default);
+}
+
+.bo-action-link:not(.is-primary):not(.is-ghost):hover {
+  border-color: var(--ek-color-action-border);
+  background: var(--ek-color-action-subtle);
+  color: var(--ek-color-action-emphasis);
+}
 </style>

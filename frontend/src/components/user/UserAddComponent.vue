@@ -122,4 +122,44 @@ onActivated(async () => {
   background: var(--ek-color-warning-subtle);
   color: var(--ek-color-warning-emphasis);
 }
+
+/* ================= FE-LOCAL-1049 — kullanıcı ekle / düzenle: ana sayfa diliyle =================
+   Bölüm başlıkları kısa eylem çizgili mikro etiket (ikon yok); bölümler ince çizgiyle ayrılır; rol açıklaması ve
+   uyarı düz tonlu, kutu köşeli paneller. */
+.user-form-container :deep(.ek-form-section + .ek-form-section) {
+  margin-top: var(--ek-space-5);
+  padding-top: var(--ek-space-5);
+}
+
+.user-form-container :deep(.ek-form-section__legend) {
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-micro-size);
+  line-height: var(--ek-type-micro-line);
+  font-weight: var(--ek-type-micro-weight);
+  letter-spacing: var(--ek-type-micro-tracking);
+  text-transform: uppercase;
+}
+
+.user-form-container :deep(.ek-form-section__legend)::before {
+  content: '';
+  flex: none;
+  width: 12px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--ek-color-action);
+}
+
+.user-form-container :deep(.ek-form-section__icon) {
+  display: none;
+}
+
+.uac-note {
+  gap: var(--ek-space-3);
+  padding: var(--ek-space-3) var(--ek-space-4);
+  border-radius: var(--ek-radius-tile);
+}
+
+.uac-note strong {
+  font-weight: var(--ek-font-weight-semibold);
+}
 </style>

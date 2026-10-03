@@ -128,4 +128,10 @@ const micros = (us: number) => (us < 1000 ? `${us} µs` : formatDuration(us / 10
   font-size: var(--ek-type-caption-size);
   line-height: var(--ek-type-caption-line);
 }
+
+/* BO-LOCAL-01 — keyspace satırları: üstte ince çizgiyle ayrılan sakin liste. */
+.bo-redis__ks {
+  padding-top: var(--ek-space-3);
+  border-top: 1px solid var(--ek-color-border-subtle);
+}
 </style>

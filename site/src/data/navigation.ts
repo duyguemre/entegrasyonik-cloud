@@ -85,6 +85,7 @@ export const primaryNav: NavItem[] = [
   { label: 'Entegrasyonlar', href: '/entegrasyonlar', published: true, group: 'solutions', slot: 'strip', cta: 'Tüm entegrasyonlar', icon: 'plug', description: 'Bağlanabilen kanallar ve kapsamları' }, // S2b → S25 Çözümler şeridi
   { label: AGENT_BRAND, href: AGENT_PATH, published: true, badge: 'Yeni', group: 'product', slot: 'feature', icon: 'sparkle' }, // S18 → S22: etiket ve hedef ad sabitinden (src/data/agent-brand.ts); S25 öne çıkan kart
   { label: 'Güvenlik', href: '/guvenlik', published: true, group: 'product', icon: 'shield', description: 'Verileriniz şifreli, erişim rol rol sizin elinizde' }, // S2b
+  { label: 'Mobil uygulama', href: '/mobil-uygulama', published: true, group: 'product', slot: 'strip', cta: 'Android uygulaması' }, // APK-DL: Ürün şeridi + footer + mobil çekmece
   { label: 'Fiyatlar', href: '/fiyatlandirma', published: true }, // S4b — üst barda doğrudan bağlantı (S24: kısa etiket "Fiyatlar")
   { label: 'Rehber', href: '/rehber', published: true, group: 'resources', icon: 'book', description: 'Pazaryeri, mevzuat ve operasyon rehberleri' }, // S20 (bilgi merkezi — src/data/kb/**)
   { label: 'SSS', href: '/sss', published: true, group: 'resources', icon: 'help', description: 'Merak edilenlere net yanıtlar' }, // S2b

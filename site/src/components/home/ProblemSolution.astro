@@ -437,7 +437,7 @@ const gains = [
     background: var(--site-stage-mesh);
     box-shadow:
       0 2rem 4rem -1.5rem color-mix(in srgb, var(--ek-color-primary) 55%, transparent),
-      0 0 0 var(--site-border-width) color-mix(in srgb, var(--ek-color-secondary) 35%, transparent);
+      0 0 0 var(--site-border-width) color-mix(in srgb, var(--site-accent-on-dark) 35%, transparent);
     color: var(--site-text-on-dark-body);
     transform-origin: 0 50%;
     transform: translateY(calc(var(--q) * var(--ek-space-8))) scale(calc(0.96 + var(--p) * 0.04));
@@ -462,7 +462,7 @@ const gains = [
     width: 70%;
     aspect-ratio: 1;
     border-radius: var(--ek-radius-full);
-    background: radial-gradient(closest-side, color-mix(in srgb, var(--ek-color-secondary) 34%, transparent), transparent);
+    background: radial-gradient(closest-side, color-mix(in srgb, var(--site-accent-on-dark) 34%, transparent), transparent);
     opacity: calc(0.3 + var(--p) * 0.7);
     pointer-events: none;
   }
@@ -527,7 +527,7 @@ const gains = [
     width: var(--ek-space-6);
     height: var(--ek-space-6);
     border-radius: var(--ek-radius-full);
-    background: color-mix(in srgb, var(--ek-color-secondary) 22%, transparent);
+    background: color-mix(in srgb, var(--site-accent-on-dark) 22%, transparent);
     color: var(--site-accent);
   }
   .ps__product-names {
@@ -597,7 +597,7 @@ const gains = [
     border-radius: var(--ek-radius-lg);
     background:
       linear-gradient(180deg, color-mix(in srgb, var(--ek-color-background) 8%, transparent), transparent),
-      color-mix(in srgb, var(--site-stage-deep) 84%, var(--ek-color-secondary));
+      color-mix(in srgb, var(--site-stage-deep) 84%, var(--site-accent-on-dark));
     box-shadow:
       inset 0 var(--site-border-width) 0 color-mix(in srgb, var(--ek-color-background) 12%, transparent),
       0 var(--ek-space-2) var(--ek-space-4) calc(var(--ek-space-2) * -1) color-mix(in srgb, var(--chan, var(--site-accent)) 55%, transparent);
@@ -607,7 +607,7 @@ const gains = [
     content: '';
     position: absolute;
     inset: calc(var(--site-border-width) * -1);
-    border: var(--site-border-width) solid color-mix(in srgb, var(--ek-color-secondary) 80%, transparent);
+    border: var(--site-border-width) solid color-mix(in srgb, var(--site-accent-on-dark) 80%, transparent);
     border-radius: inherit;
     opacity: 0;
     pointer-events: none;
@@ -666,18 +666,18 @@ const gains = [
     height: var(--ek-space-2);
     translate: -50% -50%;
     border-radius: var(--ek-radius-full);
-    background: color-mix(in srgb, var(--chan, var(--ek-color-secondary)) 35%, var(--ek-color-background));
+    background: color-mix(in srgb, var(--chan, var(--site-accent-on-dark)) 35%, var(--ek-color-background));
     box-shadow:
-      0 0 var(--ek-space-2) var(--chan, var(--ek-color-secondary)),
-      0 0 var(--ek-space-4) color-mix(in srgb, var(--chan, var(--ek-color-secondary)) 60%, transparent);
+      0 0 var(--ek-space-2) var(--chan, var(--site-accent-on-dark)),
+      0 0 var(--ek-space-4) color-mix(in srgb, var(--chan, var(--site-accent-on-dark)) 60%, transparent);
   }
   /* Geri dalga ve gövde paketi marka renginde (merkezden gelen tek değer). */
   .ps__packet--back::before,
   .ps__packet--stem::before {
-    background: color-mix(in srgb, var(--ek-color-secondary) 35%, var(--ek-color-background));
+    background: color-mix(in srgb, var(--site-accent-on-dark) 35%, var(--ek-color-background));
     box-shadow:
-      0 0 var(--ek-space-2) var(--ek-color-secondary),
-      0 0 var(--ek-space-4) color-mix(in srgb, var(--ek-color-secondary) 60%, transparent);
+      0 0 var(--ek-space-2) var(--site-accent-on-dark),
+      0 0 var(--ek-space-4) color-mix(in srgb, var(--site-accent-on-dark) 60%, transparent);
   }
   .ps__bus {
     position: relative;
@@ -696,8 +696,8 @@ const gains = [
     inset-block: calc(var(--site-border-width) * -1);
     inset-inline: 0;
     border-radius: var(--ek-radius-full);
-    background: color-mix(in srgb, var(--ek-color-secondary) 40%, var(--ek-color-background));
-    box-shadow: 0 0 var(--ek-space-3) color-mix(in srgb, var(--ek-color-secondary) 80%, transparent);
+    background: color-mix(in srgb, var(--site-accent-on-dark) 40%, var(--ek-color-background));
+    box-shadow: 0 0 var(--ek-space-3) color-mix(in srgb, var(--site-accent-on-dark) 80%, transparent);
     opacity: 0;
     pointer-events: none;
   }
@@ -720,11 +720,11 @@ const gains = [
     row-gap: var(--ek-space-2);
     padding: var(--ek-space-3) var(--ek-space-5) var(--ek-space-3) var(--ek-space-3);
     border-radius: var(--ek-radius-xl);
-    background: linear-gradient(140deg, var(--ek-color-secondary), var(--ek-color-secondary-darken-1));
+    background: linear-gradient(140deg, var(--site-accent-on-dark), var(--site-action-emphasis));
     color: var(--site-color-on-primary);
     box-shadow:
-      0 0 0 var(--ek-space-2) color-mix(in srgb, var(--ek-color-secondary) 16%, transparent),
-      0 0 var(--ek-space-12) color-mix(in srgb, var(--ek-color-secondary) 50%, transparent);
+      0 0 0 var(--ek-space-2) color-mix(in srgb, var(--site-accent-on-dark) 16%, transparent),
+      0 0 var(--ek-space-12) color-mix(in srgb, var(--site-accent-on-dark) 50%, transparent);
     transform: scale(calc(0.9 + var(--p) * 0.1));
   }
   /* Merkezde nefes alan ışıma (yalnızca oynatma durumunda ve görünürken: scenes-loops.css). */
@@ -734,14 +734,14 @@ const gains = [
     inset: calc(var(--ek-space-2) * -1);
     z-index: -1;
     border-radius: inherit;
-    background: color-mix(in srgb, var(--ek-color-secondary) 40%, transparent);
+    background: color-mix(in srgb, var(--site-accent-on-dark) 40%, transparent);
     opacity: 0;
   }
   /* Rezervasyon anında karttan dışa açılan iki ince halka (statik hâlde görünmez). */
   .ps__hub-ring {
     position: absolute;
     inset: 0;
-    border: var(--site-border-width) solid color-mix(in srgb, var(--ek-color-secondary) 80%, transparent);
+    border: var(--site-border-width) solid color-mix(in srgb, var(--site-accent-on-dark) 80%, transparent);
     border-radius: inherit;
     opacity: 0;
     pointer-events: none;
@@ -791,7 +791,7 @@ const gains = [
     border-radius: var(--ek-radius-full);
     background: var(--ek-color-background);
     /* site-wdg W26: koyu sahne içindeki beyaz hap — koyu yüzey eşlemesi açık teal veriyordu (~2,8:1); açık zemin tonu sabitlenir. */
-    color: color-mix(in srgb, var(--ek-color-secondary-darken-1) 82%, var(--ek-color-content-strong));
+    color: color-mix(in srgb, var(--site-action-emphasis) 82%, var(--ek-color-content-strong));
     font-size: var(--ek-font-size-xs);
     font-weight: var(--ek-font-weight-semibold);
     line-height: var(--ek-line-height-tight);
@@ -804,9 +804,9 @@ const gains = [
     gap: var(--ek-space-2);
     margin-top: var(--ek-space-5);
     padding: var(--ek-space-2) var(--ek-space-4) var(--ek-space-2) var(--ek-space-2);
-    border: var(--site-border-width) solid color-mix(in srgb, var(--ek-color-secondary) 45%, transparent);
+    border: var(--site-border-width) solid color-mix(in srgb, var(--site-accent-on-dark) 45%, transparent);
     border-radius: var(--ek-radius-full);
-    background: color-mix(in srgb, var(--ek-color-secondary) 12%, transparent);
+    background: color-mix(in srgb, var(--site-accent-on-dark) 12%, transparent);
     color: var(--site-text-on-dark-heading);
     font-size: var(--ek-font-size-sm);
     font-weight: var(--ek-font-weight-semibold);
@@ -820,8 +820,8 @@ const gains = [
     inset: calc(var(--site-border-width) * -1);
     border-radius: inherit;
     box-shadow:
-      0 0 0 var(--site-border-width) var(--ek-color-secondary),
-      0 0 var(--ek-space-5) color-mix(in srgb, var(--ek-color-secondary) 45%, transparent);
+      0 0 0 var(--site-border-width) var(--site-accent-on-dark),
+      0 0 var(--ek-space-5) color-mix(in srgb, var(--site-accent-on-dark) 45%, transparent);
     opacity: 0;
     pointer-events: none;
   }
@@ -836,7 +836,7 @@ const gains = [
     width: var(--ek-space-6);
     height: var(--ek-space-6);
     border-radius: var(--ek-radius-full);
-    background: color-mix(in srgb, var(--ek-color-secondary) 30%, transparent);
+    background: color-mix(in srgb, var(--site-accent-on-dark) 30%, transparent);
     color: var(--site-accent);
   }
 
@@ -858,8 +858,8 @@ const gains = [
     width: var(--ek-space-8);
     height: var(--ek-space-8);
     border-radius: var(--ek-radius-lg);
-    background: color-mix(in srgb, var(--ek-color-secondary) 18%, transparent);
-    box-shadow: inset 0 0 0 var(--site-border-width) color-mix(in srgb, var(--ek-color-secondary) 35%, transparent);
+    background: color-mix(in srgb, var(--site-accent-on-dark) 18%, transparent);
+    box-shadow: inset 0 0 0 var(--site-border-width) color-mix(in srgb, var(--site-accent-on-dark) 35%, transparent);
     color: var(--site-accent);
   }
   .ps__gain-copy {
@@ -919,5 +919,121 @@ const gains = [
       transform-origin: 0 50%;
       transform: translateX(calc(var(--q) * var(--ek-space-8))) scale(calc(0.95 + var(--p) * 0.05));
     }
+  }
+
+  /* ================= SITE-DL-02 — uygulamanın tasarım dili (frontend/DESIGN_SYSTEM.md §35) =================
+     Düz yüzey + 1px ince çerçeve + kart yarıçapı; gölge, degrade, ışıma, hover yükselmesi yok; tek vurgu eylem
+     mavisi; ikonlar çerçeveli köşeli kutuda; hap rozet yerine köşeli çip. Yukarıdaki kuralları EZER (aynı özgüllük,
+     kaynak sırası). */
+
+  /* Bugün: düz, ince çerçeveli kart; dağınık paneller gölgesiz. */
+  .ps__before {
+    border-style: solid;
+    border-color: var(--ek-color-border-default);
+    border-radius: var(--ek-radius-card);
+  }
+  .ps__mpanel-inner {
+    border-radius: var(--ek-radius-tile);
+    box-shadow: none;
+  }
+  .ps__x {
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--ek-radius-md);
+    background: var(--ek-color-surface);
+  }
+  /* Köprü: düz çizgi + köşeli ok kutusu. */
+  .ps__bridge-line {
+    background: var(--ek-color-border-strong);
+  }
+  .ps__bridge-knob {
+    border: var(--site-border-width) solid var(--site-action-border);
+    border-radius: var(--ek-radius-tile);
+    background: var(--site-action-subtle);
+    box-shadow: none;
+    color: var(--site-action);
+  }
+  /* Entegrasyonik ile: düz marka laciverti kart (sahne degradesi kart yüzeyi olarak kullanılmaz). */
+  .ps__after {
+    border: var(--site-border-width) solid var(--ek-color-chrome-border);
+    border-radius: var(--ek-radius-card);
+    background: var(--ek-color-chrome);
+    box-shadow: none;
+  }
+  .ps__after::before,
+  .ps__after-glow,
+  .ps__hub::after,
+  .ps__hub-ring,
+  .ps__result::after {
+    display: none;
+  }
+  .ps__net {
+    border-radius: var(--ek-radius-tile);
+  }
+  .ps__product {
+    border-radius: var(--ek-radius-md);
+    background: var(--site-glass-bg);
+  }
+  .ps__product-icon {
+    border: var(--site-border-width) solid var(--site-glass-border);
+    border-radius: var(--ek-radius-md);
+    background: transparent;
+  }
+  .ps__order {
+    border-radius: var(--ek-radius-md);
+    box-shadow: none;
+  }
+  .ps__chip {
+    border-radius: var(--ek-radius-md);
+    background: var(--ek-color-chrome-raised);
+    box-shadow: none;
+  }
+  .ps__flow {
+    background: color-mix(in srgb, var(--chan, var(--site-accent-on-dark)) 70%, transparent);
+  }
+  .ps__packet::before,
+  .ps__packet--back::before,
+  .ps__packet--stem::before,
+  .ps__bus,
+  .ps__bus::after {
+    box-shadow: none;
+  }
+  .ps__bus,
+  .ps__stem {
+    background: var(--ek-color-chrome-soft-border);
+  }
+  /* Merkezi stok: koyu kartta AÇIK dolu kutu (lacivert dolgu koyu zeminde görünmez). */
+  .ps__hub {
+    border: var(--site-border-width) solid var(--ek-color-chrome-soft-border);
+    border-radius: var(--ek-radius-tile);
+    background: var(--ek-color-background);
+    box-shadow: none;
+    color: var(--ek-color-primary);
+  }
+  .ps__hub-icon {
+    border: var(--site-border-width) solid var(--site-action-border);
+    border-radius: var(--ek-radius-md);
+    background: var(--site-action-subtle);
+    box-shadow: none;
+  }
+  .ps__resv {
+    border: var(--site-border-width) solid var(--site-action-border);
+    border-radius: var(--ek-radius-md);
+    background: var(--site-action-subtle);
+  }
+  .ps__result {
+    border-color: var(--site-glass-border);
+    border-radius: var(--ek-radius-tile);
+    background: var(--site-glass-bg);
+  }
+  .ps__result-icon {
+    border: var(--site-border-width) solid var(--site-glass-border);
+    border-radius: var(--ek-radius-md);
+    background: transparent;
+  }
+  .ps__gain-icon {
+    border: var(--site-border-width) solid var(--site-glass-border);
+    border-radius: var(--ek-radius-tile);
+    background: var(--site-glass-bg);
+    box-shadow: none;
   }
 </style>

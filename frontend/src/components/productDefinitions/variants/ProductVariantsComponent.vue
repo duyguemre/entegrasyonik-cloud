@@ -12,15 +12,12 @@
         <ProductVariantImagesComponent v-model="isVariantImagesDialog" :variant="selectedVariantForEdit" key="ProductVariantImagesComponent"
           @close="isVariantImagesDialog = false" v-if="isVariantImagesDialog == true" :productInfoForm="productInfoForm" />
       </keep-alive>
-      <keep-alive>
-        <ProductVariantAttributesComponent v-model="isVariantAttributesDialog" :editingVariant="editingVariant" key="ProductVariantAttributesComponent"
-          @close="isVariantAttributesDialog = false" v-if="isVariantAttributesDialog == true" :productInfoForm="productInfoForm" />
-      </keep-alive>
-      <keep-alive>
-        <ProductBatchVariantAttributesComponent v-model="isBatchVariantDialog" :batchVariant="batchVariant"
-          @batchVariantAttributesUpdate="batchVariantAttributesUpdate" key="ProductBatchVariantAttributesComponent"
-          @close="isBatchVariantDialog = false" v-if="isBatchVariantDialog == true" :productInfoForm="productInfoForm" />
-      </keep-alive>
+      <!-- keep-alive YOK: her açılışta düzenlenen varyantın taslağı yeniden kurulur (önbellekteki eski taslak başka varyanta taşınmasın). -->
+      <ProductVariantAttributesComponent v-if="isVariantAttributesDialog" v-model="isVariantAttributesDialog" :editingVariant="editingVariant"
+        :key="`pva-${editingVariant?._id || editingVariant?.tempId || ''}`" @close="isVariantAttributesDialog = false" :productInfoForm="productInfoForm" />
+      <ProductBatchVariantAttributesComponent v-if="isBatchVariantDialog" key="ProductBatchVariantAttributesComponent"
+        :variants="bulkTargets" :all-count="variantList.length" :product-info-form="productInfoForm"
+        @close="isBatchVariantDialog = false" @applied="onBatchAttrsApplied" />
       <ProductVariantPlatformPricesComponent v-if="isVariantPlatformPricesMenu == true" v-model="isVariantPlatformPricesMenu"
         :editingVariant="editingVariant" key="ProductVariantPlatformPricesComponent" @close="isVariantPlatformPricesMenu = false"
         :productInfoForm="productInfoForm" />
@@ -28,6 +25,8 @@
         :product-info-form="productInfoForm" :preset="bulkPreset" @close="isBulkEditor = false" @applied="onBulkApplied" />
     </EkDialogHost>
 
+    <ProductVariantGeneratorComponent v-model="isVariantGeneratorMenu" :attach="dialogAttach" :productInfoForm="productInfoForm"
+      @generate-variants="generateVariants" @close="isVariantGeneratorMenu = false" />
     <EkConfirmDialog v-model="deleteConfirm.open" :attach="dialogAttach" danger icon="mdi-trash-can-outline"
       :title="deleteConfirm.title" :description="deleteConfirm.description" confirm-label="Sil" confirm-icon="mdi-trash-can-outline"
       @confirm="runDelete" />
@@ -38,6 +37,7 @@
       <EkBulkBar class="pv-bar" :count="selectedVariants.length" noun="varyant" @clear="selectedVariants = []">
         <template #actions>
           <EkButton size="sm" icon="mdi-table-edit" @click="openBulkEditor('selected')">Seçilenleri toplu düzenle</EkButton>
+          <EkButton size="sm" icon="mdi-tag-multiple-outline" @click="openBatchAttributes('selected')">Özellik düzenle</EkButton>
           <EkActionButton action="delete" show-label label="Seçilenleri sil" @click="askDelete('selected')" />
         </template>
         <template #start>
@@ -45,6 +45,15 @@
             <EkIconTile icon="mdi-view-list-outline" size="md" class="pv-bar__icon" />
             <h2 id="pv-title" class="pv-title">Varyantlar</h2>
             <span class="pv-meta ek-num">{{ variantList.length }} varyant<template v-if="groupCount > 1"> · {{ groupCount }} {{ groupNoun }}</template></span>
+            <!-- Hücre sorunları başlıkta (eskiden tablonun altındaki şeritteydi): sayı hapı + ilk hataya git. -->
+            <span v-if="variantList.length" class="pv-issues" role="status">
+              <template v-if="issues.errors || issues.warnings">
+                <span v-if="issues.errors" class="pv-issue pv-issue--error"><v-icon icon="mdi-alert-circle-outline" aria-hidden="true" />{{ issues.errors }} hata</span>
+                <span v-if="issues.warnings" class="pv-issue pv-issue--warning"><v-icon icon="mdi-alert-outline" aria-hidden="true" />{{ issues.warnings }} uyarı</span>
+                <button v-if="issues.errors" type="button" class="pv-link" @click="gridRef?.goToFirstIssue()">İlk hataya git</button>
+              </template>
+              <span v-else class="pv-issue pv-issue--ok"><v-icon icon="mdi-check-circle-outline" aria-hidden="true" />Sorun yok</span>
+            </span>
             <span v-if="changedCount > 0" class="pv-changed" role="status">
               <v-icon icon="mdi-circle-medium" aria-hidden="true" />{{ changedCount }} hücre değişti · kaydedilmedi
             </span>
@@ -55,6 +64,8 @@
             <v-text-field v-model="filterText" class="pv-search" density="compact" variant="outlined" hide-details
               prepend-inner-icon="mdi-magnify" placeholder="Stok kodu, barkod, seçenek" aria-label="Varyantlarda ara"
               clearable ref="searchRef" />
+            <!-- Klavye kısayolları: ortak kart (toplu düzenleyici ve galeriyle aynı). -->
+            <KeyboardHelpMenu :keys="tableKeys" />
             <EkTooltip text="Geri al (Ctrl+Z)">
               <EkButton size="sm" tone="ghost" icon="mdi-undo" icon-only aria-label="Geri al"
                   :disabled="!gridRef?.sheet.canUndo" @click="gridRef?.sheet.undo()" />
@@ -68,13 +79,9 @@
               @click="isImagesDialog = true"><span class="pv-bulk-btn__label">Görseller</span></EkButton>
             <EkButton size="sm" icon="mdi-table-edit" class="pv-bulk-btn" :disabled="!variantList.length" aria-label="Toplu düzenle"
               @click="openBulkEditor('all')"><span class="pv-bulk-btn__label">Toplu düzenle</span></EkButton>
-            <v-menu :close-on-content-click="false" v-model="isVariantGeneratorMenu" location="bottom end">
-              <template v-slot:activator="{ props: mp }">
-                <EkButton v-bind="mp" size="sm" icon="mdi-plus" id="myfeature-2" class="pv-bulk-btn" aria-label="Varyant oluştur"><span class="pv-bulk-btn__label">Varyant oluştur</span></EkButton>
-              </template>
-              <ProductVariantGeneratorComponent :productInfoForm="productInfoForm"
-                @generate-variants="generateVariants" @close="isVariantGeneratorMenu = false" />
-            </v-menu>
+            <!-- Ana eylem: varyant oluşturucu penceresi (seçenek çipleri + canlı önizleme). -->
+            <EkButton size="sm" tone="primary" icon="mdi-layers-plus" id="myfeature-2" class="pv-bulk-btn" aria-label="Varyant oluştur"
+              @click="isVariantGeneratorMenu = true"><span class="pv-bulk-btn__label">Varyant oluştur</span></EkButton>
             <EkContextMenu :groups="variantOpsMenu" label="Varyant işlemleri" title="Varyant İşlemleri"
               description="İşlem yalnızca bu ürün için uygulama kataloğunda yapılır." @select="onVariantOp">
               <template #activator="{ props: mp }">
@@ -98,28 +105,12 @@
         </template>
       </VariantGrid>
 
-      <footer class="pv-foot">
-        <div class="pv-foot__issues" role="status">
-          <template v-if="issues.errors || issues.warnings">
-            <span v-if="issues.errors" class="pv-issue pv-issue--error"><v-icon icon="mdi-alert-circle-outline" aria-hidden="true" />{{ issues.errors }} hata</span>
-            <span v-if="issues.warnings" class="pv-issue pv-issue--warning"><v-icon icon="mdi-alert-outline" aria-hidden="true" />{{ issues.warnings }} uyarı</span>
-            <button v-if="issues.errors" type="button" class="pv-link" @click="gridRef?.goToFirstIssue()">İlk hataya git</button>
-          </template>
-          <span v-else-if="variantList.length" class="pv-issue pv-issue--ok"><v-icon icon="mdi-check-circle-outline" aria-hidden="true" />Hücrelerde sorun yok</span>
-        </div>
-        <div class="pv-foot__keys" aria-hidden="true">
-          <span><EkKbd :keys="['↑', '↓', '←', '→']" /> gezin</span>
-          <span><EkKbd keys="Enter" /> düzenle</span>
-          <span><EkKbd :keys="['Ctrl', 'V']" /> tablodan yapıştır</span>
-          <span><EkKbd :keys="['Ctrl', 'Z']" /> geri al</span>
-        </div>
-      </footer>
     </section>
   </div>
 </template>
 
 <script setup lang="ts">
-import { EkBulkBar, EkActionButton, EkDialogHost, EkContextMenu, EkButton, EkConfirmDialog, EkEmptyState, EkIconTile, EkKbd, EkTooltip } from '@entegrasyonik/ui/components'
+import { EkBulkBar, EkActionButton, EkDialogHost, EkContextMenu, EkButton, EkConfirmDialog, EkEmptyState, EkIconTile, EkTooltip } from '@entegrasyonik/ui/components'
 import type { EkMenuGroup, EkMenuItem } from '@entegrasyonik/ui/components'
 import { ref, inject, watch, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n';
@@ -127,6 +118,7 @@ import { useChoicesStore } from '@/stores/choicesStore';
 import LoadingComponent from '@/components/LoadingComponent.vue'
 import useRestApi from '@/composables/restapi'
 import ProductImagesComponent from '../crud/ProductImagesComponent.vue';
+import KeyboardHelpMenu, { type KeyHelp } from '../KeyboardHelpMenu.vue';
 import ProductVariantAttributesComponent from './ProductVariantAttributesComponent.vue';
 import ProductBatchVariantAttributesComponent from './ProductBatchVariantAttributesComponent.vue';
 import ProductVariantPlatformPricesComponent from './ProductVariantPlatformPricesComponent.vue';
@@ -158,8 +150,17 @@ const loadingComponentRef: any = ref(null)
 const gridRef = ref<InstanceType<typeof VariantGrid> | null>(null)
 const searchRef: any = ref(null)
 const filterText = ref<string | null>('')
+/** Tablo kısayolları — ortak kart (KeyboardHelpMenu). */
+const tableKeys: KeyHelp[] = [
+  { keys: ['↑', '↓', '←', '→'], text: 'hücreler arasında gezin' },
+  { keys: 'Enter', text: 'düzenle / kaydet ve aşağı in' },
+  { keys: 'Esc', text: 'düzenlemeden vazgeç' },
+  { keys: ['Ctrl', 'C'], text: 'kopyala' },
+  { keys: ['Ctrl', 'V'], text: 'tablodan yapıştır (Excel)' },
+  { keys: ['Ctrl', 'Z'], text: 'geri al' },
+  { keys: ['Ctrl', 'Y'], text: 'yinele' },
+]
 const selectedVariants = ref<string[]>([])
-const batchVariant: any = ref({})
 const editingVariant: any = ref({})
 const selectedVariantForEdit: any = ref(0)
 
@@ -247,21 +248,14 @@ const openVariantPlatformPrices = (variant: any) => {
   isVariantPlatformPricesMenu.value = true
 }
 
-// ── toplu özellik (kanal özellikleri) ──
-const batchVariantAttributesUpdate = () => {
-  for (const variant of props.productInfoForm.variants) {
-    for (const platform of integrationStore.getPlatforms()) {
-      const incomingAttrs = batchVariant.value.platforms?.[platform.code]?.attributes || {};
-      const incomingMapping = batchVariant.value.platforms?.[platform.code]?.mapping || {};
-      variant.platforms = variant.platforms || {}
-      variant.platforms[platform.code] = variant.platforms[platform.code] || {}
-      variant.platforms[platform.code].attributes = variant.platforms[platform.code].attributes || {}
-      variant.platforms[platform.code].mapping = variant.platforms[platform.code].mapping || {}
-      for (const [id, infoValue] of Object.entries(incomingMapping)) variant.platforms[platform.code].mapping[id] = infoValue
-      for (const [id, integrationId] of Object.entries(incomingAttrs)) variant.platforms[platform.code].attributes[id] = integrationId;
-    }
-  }
-  snackbarStore.addSnackbar({ show: true, text: 'Toplu özellik ataması tamamlandı', timeout: 2000, color: 'success' })
+// ── toplu özellik (kanal özellikleri + kanal bilgileri): seçili varyantlar ya da tümü ──
+function openBatchAttributes(scope: 'all' | 'selected') {
+  bulkScope.value = scope
+  isBatchVariantDialog.value = true
+}
+function onBatchAttrsApplied(count: number) {
+  isBatchVariantDialog.value = false
+  snackbarStore.addSnackbar({ show: true, text: `${count} özellik değişikliği varyantlara yazıldı — kaydetmek için ürünü kaydedin`, timeout: 4000, color: 'success' })
 }
 
 // ── seçenek eşleme (kanal özellik değerleri seçenek eşlemesinden) ──
@@ -416,9 +410,9 @@ const variantOpsMenu: EkMenuGroup[] = [
     label: 'Düzenle',
     items: [
       { key: 'search', label: 'Ara', icon: 'mdi-magnify' },
-      { key: 'bulk', label: 'Toplu düzenle', icon: 'mdi-table-edit' },
-      { key: 'batchPrices', label: 'Toplu Fiyat Düzenleme', icon: 'mdi-currency-try' },
-      { key: 'batchAttributes', label: 'Toplu Özellik Düzenleme', icon: 'mdi-checkbox-multiple-marked-outline' },
+      // Fiyat (genel + kanal), stok, kod ve raf tek tabloda; ayrı "Toplu Fiyat Düzenleme" aynı ekranı açtığı için kaldırıldı.
+      { key: 'bulk', label: 'Toplu düzenle', icon: 'mdi-table-edit', description: 'Fiyat, kanal fiyatı, stok, kod, raf' },
+      { key: 'batchAttributes', label: 'Toplu özellik düzenle', icon: 'mdi-tag-multiple-outline', description: 'Pazaryeri özellikleri ve kanal bilgileri' },
       { key: 'mapChoices', label: 'Toplu Seçenek Eşleştir', icon: 'mdi-map-outline' },
     ],
   },
@@ -435,8 +429,7 @@ function onVariantOp(item: EkMenuItem) {
   switch (item.key) {
     case 'search': searchRef.value?.focus?.(); break
     case 'bulk': openBulkEditor(selectedVariants.value.length ? 'selected' : 'all'); break
-    case 'batchPrices': openBulkEditor(selectedVariants.value.length ? 'selected' : 'all', 'channelPrices'); break
-    case 'batchAttributes': isBatchVariantDialog.value = true; break
+    case 'batchAttributes': openBatchAttributes(selectedVariants.value.length ? 'selected' : 'all'); break
     case 'mapChoices': mapAllChoices(); break
     case 'genStockcode': stockcodeBatchProcess(); break
     case 'genBarcode': barcodeBatchProcess(); break
@@ -497,20 +490,8 @@ void eventBus
 .pv-search { width: 260px; flex: 0 1 260px; }
 .pv-danger-text { color: var(--ek-color-error) !important; }
 
-.pv-foot {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--ek-space-2) var(--ek-space-4);
-  min-height: 44px;
-  padding: var(--ek-space-2) var(--ek-space-4);
-  border-top: 1px solid var(--ek-color-border-default);
-  background: var(--ek-color-surface-muted);
-  font-size: var(--ek-type-caption-size);
-  line-height: var(--ek-type-caption-line);
-}
-.pv-foot__issues { display: flex; align-items: center; flex-wrap: wrap; gap: var(--ek-space-3); }
+.pv-issues { display: inline-flex; align-items: center; flex-wrap: wrap; gap: var(--ek-space-1) var(--ek-space-3); font-size: var(--ek-type-caption-size); line-height: var(--ek-type-caption-line); }
+
 .pv-issue { display: inline-flex; align-items: center; gap: var(--ek-space-1); font-weight: 600; }
 .pv-issue .v-icon { font-size: var(--ek-icon-sm); }
 .pv-issue--error { color: var(--ek-color-error-emphasis); }
@@ -527,18 +508,33 @@ void eventBus
   border-radius: var(--ek-radius-control);
 }
 .pv-link:focus-visible { outline: none; box-shadow: var(--ek-focus-ring); }
-.pv-foot__keys { display: flex; flex-wrap: wrap; gap: var(--ek-space-3); color: var(--ek-color-content-muted); }
-.pv-foot__keys > span { display: inline-flex; align-items: center; gap: 2px; }
 
 @media (max-width: 760px) {
   .pv-bar { padding: var(--ek-space-2) var(--ek-space-3); }
   .pv-bar__tools { width: 100%; gap: var(--ek-space-1); }
   .pv-bar :deep(.ek-bulk__end) { width: 100%; }
   .pv-search { flex: 1 1 100%; width: auto; margin-bottom: var(--ek-space-1); }
-  .pv-foot__keys { display: none; }
 }
 @media (max-width: 480px) {
   /* dar ekranda "Görseller / Toplu düzenle / Varyant oluştur" yalnız ikon (aria-label korunur) — araç çubuğu tek satır */
   .pv-bulk-btn__label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+}
+
+/* FE-LOCAL-1054 — varyantlar paneli: düz kart (gölge yok); başlık bandı sakin zeminde (adım kartlarıyla aynı). */
+.pv-frame {
+  box-shadow: none;
+}
+
+.pv-bar {
+  background: var(--ek-color-surface-muted);
+}
+
+.pv-bar :deep(.ek-icon-tile) {
+  background: var(--ek-color-surface);
+}
+
+.pv-changed {
+  border: 1px solid var(--ek-color-warning-border);
+  border-radius: var(--ek-radius-md);
 }
 </style>

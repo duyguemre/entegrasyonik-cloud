@@ -111,4 +111,10 @@ onMounted(() => res.load())
   color: var(--ek-color-content-muted);
   font-size: var(--ek-type-label-size);
 }
+
+/* BO-LOCAL-01 — "ölçüm yok" notu: kutu köşeli, sakin zeminde kesik çerçeveli boş durum. */
+.bo-queues__nometric {
+  border-radius: var(--ek-radius-tile);
+  background: var(--ek-color-surface-muted);
+}
 </style>

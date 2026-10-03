@@ -15,6 +15,8 @@
     description="Ürün tipi, marka, başlık ve açıklama; görseller galeriden yönetilir.">
   <div class="pif-layout">
     <div class="pif-gallery">
+      <!-- Sağdaki bölüm başlıklarıyla aynı stil ve aynı başlangıç çizgisi (iki sütun üstten hizalı). -->
+      <h3 class="pif-gallery__head"><v-icon icon="mdi-image-multiple-outline" class="pif-gallery__head-icon" aria-hidden="true" />Görseller</h3>
       <!-- FR2-PFORM 27: kapak + sıradaki görseller görünür; düğmenin ne yaptığı yazılı. -->
       <button type="button" class="pif-gallery__tile" data-pf-field="gallery" :disabled="galleryDisabled"
         :aria-label="images.length ? `Resim galerisini düzenle — ${images.length} görsel` : 'Resim galerisine görsel ekle'"
@@ -43,6 +45,16 @@
     </div>
 
     <div class="pif-fields">
+      <EkFormSection title="Temel bilgiler" icon="mdi-text-box-outline"
+        description="Marka, listenizdeki ana marka (yoksa ilk marka) olarak önceden seçilir; ürününüz başka bir markaya aitse değiştirin.">
+        <div class="ek-span-full" data-pf-field="brand">
+          <BrandSelectBoxComponent v-model="productInfoForm.brand" :mandatory="true" />
+        </div>
+        <v-text-field class="ek-span-full" clearable :rules="formRules.titleRules" maxlength="160" counter
+          data-pf-field="title" v-model="productInfoForm.title" :label="`${$t('productDefinitions.product.define.productTitle')} *`"
+          :hint="$t('productDefinitions.product.define.productTitleDesc')" persistent-hint />
+      </EkFormSection>
+
       <EkFormSection title="Ürün tipi" icon="mdi-shape-outline">
         <div class="ek-span-full">
           <v-radio-group inline hide-details v-model="productInfoForm.hasVariant" class="pif-radios" aria-label="Ürün tipi">
@@ -59,22 +71,24 @@
           :hint="$t('productDefinitions.product.define.maincodeDesc')" persistent-hint />
       </EkFormSection>
 
-      <EkFormSection title="Temel bilgiler" icon="mdi-text-box-outline"
-        description="Marka, listenizdeki ana marka (yoksa ilk marka) olarak önceden seçilir; ürününüz başka bir markaya aitse değiştirin.">
-        <div class="ek-span-full" data-pf-field="brand">
-          <BrandSelectBoxComponent v-model="productInfoForm.brand" :mandatory="true" />
-        </div>
-        <v-text-field class="ek-span-full" clearable :rules="formRules.titleRules" maxlength="160" counter
-          data-pf-field="title" v-model="productInfoForm.title" :label="`${$t('productDefinitions.product.define.productTitle')} *`"
-          :hint="$t('productDefinitions.product.define.productTitleDesc')" persistent-hint />
-      </EkFormSection>
-
-      <EkFormSection title="Ürün açıklaması" icon="mdi-text-long" :columns="1">
+      <EkFormSection class="pif-desc" title="Ürün açıklaması" icon="mdi-text-long" :columns="1">
+        <template #legend-extra>
+          <EkButton class="pif-desc__expand" size="sm" tone="ghost" icon="mdi-arrow-expand" @click="descDialog = true">Geniş düzenleyici</EkButton>
+        </template>
         <div class="pif-editor">
-          <QuillEditor v-model:content="productInfoForm.description" content-type="html" theme="snow"
+          <QuillEditor v-if="!descDialog" v-model:content="productInfoForm.description" content-type="html" theme="snow"
             :toolbar="quillToolbar" @ready="labelToolbar" />
         </div>
       </EkFormSection>
+
+      <!-- Uzun açıklama: sayfa kısa kalır, geniş düzenleyici pencerede açılır (aynı model). -->
+      <EkDialog v-model="descDialog" title="Ürün açıklaması" icon="mdi-text-long" width="xl" hide-cancel confirm-label="Tamam"
+        @confirm="descDialog = false">
+        <div class="pif-editor pif-editor--dialog">
+          <QuillEditor v-if="descDialog" v-model:content="productInfoForm.description" content-type="html" theme="snow"
+            :toolbar="quillToolbar" @ready="labelToolbar" />
+        </div>
+      </EkDialog>
     </div>
   </div>
   </ProductStepCard>
@@ -83,10 +97,13 @@
 <script setup lang="ts">
 import { QuillEditor } from '@vueup/vue-quill'
 import '@vueup/vue-quill/dist/vue-quill.snow.css'
-import { EkFormSection } from '@entegrasyonik/ui/components'
+import { EkButton, EkDialog, EkFormSection } from '@entegrasyonik/ui/components'
 import ProductStepCard from './ProductStepCard.vue'
 import BrandSelectBoxComponent from '@/components/common/BrandSelectBoxComponent.vue'
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
+
+/** Geniş açıklama düzenleyicisi açık mı (açıkken satır içi editör kaldırılır; tek Quill örneği). */
+const descDialog = ref(false)
 import GalleryThumb from '@/components/productDefinitions/images/GalleryThumb.vue'
 import { useProductImageUrl } from '@/composables/useProductImageUrl'
 import useFormRules from '@/composables/formrules'
@@ -144,6 +161,23 @@ function labelToolbar(quill: any) {
   display: flex;
   flex-direction: column;
   gap: var(--ek-space-2);
+}
+
+/* Başlık = EkFormSection başlığı; alt boşluk (gap ile) = başlık altı + ızgara üst boşluğu → kutucuk, sağdaki ilk alanla aynı yükseklikte. */
+.pif-gallery__head {
+  display: flex;
+  align-items: center;
+  gap: var(--ek-space-2);
+  margin: 0 0 var(--ek-space-2);
+  color: var(--ek-color-content-strong);
+  font-size: var(--ek-type-subheading-size);
+  line-height: var(--ek-type-subheading-line);
+  font-weight: var(--ek-type-subheading-weight);
+}
+
+.pif-gallery__head-icon {
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-subheading-icon);
 }
 
 .pif-gallery__tile {
@@ -332,8 +366,9 @@ function labelToolbar(quill: any) {
   }
 }
 
+/* Satır içi editör kısa: adım ve altbilgi kaydırmadan görünür; uzun metin geniş düzenleyicide. */
 .pif-editor {
-  height: 360px;
+  height: 200px;
   display: flex;
   flex-direction: column;
 }
@@ -343,12 +378,72 @@ function labelToolbar(quill: any) {
   border-radius: var(--ek-radius-control) var(--ek-radius-control) 0 0;
 }
 
+/* Görünüm dosyasındaki genel `.ql-editor { min/max-height: 345px }` kuralı kısa editörü taşırıyordu: editör kabı doldurur. */
+.pif-editor :deep(.ql-editor) {
+  min-height: 0;
+  max-height: none;
+  height: 100%;
+  overflow-y: auto;
+}
+
 .pif-editor :deep(.ql-container) {
   flex: 1;
   min-height: 0;
   border-color: var(--ek-color-border-input);
   border-radius: 0 0 var(--ek-radius-control) var(--ek-radius-control);
   font-family: inherit;
+}
+
+.pif-editor--dialog {
+  height: min(60vh, 560px);
+}
+
+.pif-desc :deep(.ek-form-section__legend) {
+  width: 100%;
+}
+
+/* Düğme başlık satırını yükseltmesin (üç sütunun başlıkları aynı çizgide kalsın). */
+.pif-desc__expand {
+  margin-left: auto;
+  margin-block: calc(-1 * var(--ek-space-2));
+}
+
+/* Geniş ekran: üç sütun — Görseller · Ürün tipi + Temel bilgiler · Ürün açıklaması. Üç başlık aynı çizgide,
+   ayırıcı çizgi yok (sütun boşluğu = galeri boşluğu); açıklama editörü orta sütunun yüksekliğine uzar. */
+@media (min-width: 1360px) {
+  .pif-fields {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+    grid-template-rows: auto 1fr;
+    column-gap: var(--ek-space-8);
+    align-items: stretch;
+  }
+
+  .pif-fields > :not(.pif-desc) {
+    grid-column: 1;
+  }
+
+  /* `.pif-fields > .pif-desc.ek-form-section`: EkFormSection'ın ardışık bölüm kuralını (üst boşluk + çizgi) yenecek öncelik. */
+  .pif-fields > .pif-desc.ek-form-section {
+    display: flex;
+    flex-direction: column;
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    min-width: 0;
+    margin-top: 0;
+    padding-top: 0;
+    border-top: 0;
+  }
+
+  .pif-desc :deep(.ek-form-section__grid) {
+    flex: 1;
+    grid-template-rows: minmax(0, 1fr);
+  }
+
+  .pif-desc .pif-editor {
+    height: 100%;
+    min-height: 200px;
+  }
 }
 
 @media (max-width: 1023px) {
@@ -367,4 +462,42 @@ function labelToolbar(quill: any) {
   }
 }
 
+/* FE-LOCAL-1054 — görseller sütunu: başlık mikro etiket; karoda gölge yok; kapak rozeti ve sayaç köşeli. */
+.pif-gallery__head {
+  display: flex;
+  align-items: center;
+  gap: var(--ek-space-2);
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-micro-size);
+  line-height: var(--ek-type-micro-line);
+  font-weight: var(--ek-type-micro-weight);
+  letter-spacing: var(--ek-type-micro-tracking);
+  text-transform: uppercase;
+}
+
+.pif-gallery__head::before {
+  content: '';
+  flex: none;
+  width: 12px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--ek-color-action);
+}
+
+.pif-gallery__head-icon {
+  display: none;
+}
+
+.pif-gallery__tile:hover:not(:disabled) {
+  box-shadow: none;
+}
+
+.pif-gallery__cover,
+.pif-gallery__count {
+  border-radius: var(--ek-radius-md);
+}
+
+.pif-gallery__count {
+  border: 1px solid var(--ek-color-border-default);
+}
 </style>

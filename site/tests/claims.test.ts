@@ -37,6 +37,7 @@ import {
   PROPOSAL_NOTICE,
   PLAN_SEED_PATH,
 } from '../src/data/plans'
+import { developmentItems, getDevelopmentItems, DEVELOPMENT_NOTICE } from '../src/data/in-development'
 import { getPlanCards, getPlanTrustPoints } from '../src/data/plan-cards'
 import { getComparisonRows, getPricingFaq, getPricingFaqRecords, getPlanPitch, getPlanCommonFeatures, getPlanAgentRows, getPlanAgentSummary, planAgentIntro } from '../src/data/pricing'
 import { menuGroups } from '../src/data/nav-menu'
@@ -45,6 +46,8 @@ import { featuresBridge, heroAgentEntry } from '../src/data/assistant'
 const siteRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const repoRoot = path.resolve(siteRoot, '..')
 const read = (rel: string) => readFileSync(path.join(repoRoot, rel), 'utf8')
+/** Kanıtlı "Geliştirme listemizde" blokları (DevelopmentList.astro) — yol haritası adlarının geçebildiği TEK yer. */
+const stripRoadmapBlocks = (html: string) => html.replace(/<backlog-block\b[\s\S]*?<\/backlog-block>/g, ' ')
 
 // ------------------------------------------------------------------------------------------ yardımcılar
 
@@ -708,13 +711,72 @@ describe('(4) gizli roadmap öğeleri hiçbir yerde görünmez', () => {
     const hits: string[] = []
     const names = [...new Set([...STATIC_FORBIDDEN_NAMES, ...integrations.filter((i) => i.status === 'roadmap').flatMap((i) => [i.name, ...i.aliases])])]
     for (const f of distHtml) {
-      const html = readFileSync(f, 'utf8')
+      const html = stripRoadmapBlocks(readFileSync(f, 'utf8'))
         .replace(/<script[\s\S]*?<\/script>/g, '')
         .replace(/<style[\s\S]*?<\/style>/g, '')
         .replace(/<[^>]+>/g, ' ')
       const text = norm(html)
       if (!isRehber(f)) for (const n of names) if (phraseRe(n).test(text)) hits.push(`${path.relative(siteRoot, f)}: "${n}"`)
       for (const p of ABSOLUTE_PREFIXES) if (prefixRe(p).test(text)) hits.push(`${path.relative(siteRoot, f)}: "${p}"`)
+    }
+    expect(hits).toEqual([])
+  })
+})
+
+// ------------------------------------------------------------------------------------------ (5) geliştirme listesi
+
+/**
+ * 2026-10-02 kullanıcı kararı (ADR-0014 Açık Soru 5 kısmen açıldı): bugün üründe OLMAYAN ama BACKLOG.md'de kayıtlı
+ * başlıklar YALNIZCA `<backlog-block data-backlog>` içinde ve her biri BACKLOG kanıtıyla gösterilebilir.
+ */
+describe('(5) geliştirme listesi: yalnızca BACKLOG kanıtlı, yalnızca işaretli blokta', () => {
+  const backlogText = read(PATHS.backlog)
+  const distHtml = walk(path.join(siteRoot, 'dist'), ['.html']).filter((f) => !f.includes(`${path.sep}yasal${path.sep}`))
+
+  it('her öğenin kanıtı BACKLOG.md ve birebir metni dosyada geçiyor', () => {
+    expect(developmentItems.length).toBeGreaterThan(0)
+    for (const i of developmentItems) {
+      expect(i.proof.path, i.id).toBe(PATHS.backlog)
+      expect(backlogText.includes(i.proof.contains!), `${i.id}: ${i.proof.contains}`).toBe(true)
+      if (i.namesProof) {
+        expect(i.namesProof.path, i.id).toBe(PATHS.backlog)
+        expect(backlogText.includes(i.namesProof.contains!), `${i.id}: ${i.namesProof.contains}`).toBe(true)
+      }
+    }
+  })
+
+  it('gösterilen her ad kanıt metninde birebir geçiyor (backlog dışı ad eklenemez)', () => {
+    for (const i of developmentItems) {
+      const proofs = [i.proof.contains ?? '', i.namesProof?.contains ?? ''].join(' | ')
+      for (const n of i.names ?? []) expect(proofs.includes(n), `${i.id}: ${n}`).toBe(true)
+    }
+  })
+
+  it('metinlerde tarih/sayı, mutlak iddia ve "yakında/planlanıyor" dili yok; seçici kanıtı sızdırmaz', () => {
+    const pub = getDevelopmentItems()
+    const hits: string[] = []
+    for (const l of leaves({ items: pub.map(({ title, summary }) => ({ title, summary })), notice: DEVELOPMENT_NOTICE })) {
+      if (/\d/.test(l.text)) hits.push(`${l.path}: sayı`)
+      for (const p of ABSOLUTE_PREFIXES) if (prefixRe(p).test(norm(l.text))) hits.push(`${l.path}: "${p}"`)
+      if (FORBIDDEN_PATTERNS[3][1].test(norm(l.text))) hits.push(`${l.path}: yol haritası dili`)
+    }
+    expect(hits).toEqual([])
+    expect(JSON.stringify(pub)).not.toMatch(/"proof"|"namesProof"|BACKLOG/)
+  })
+
+  it('bileşen kök öğesi tekil işaretli blok; dürüstlük notu "bugün üründe yoktur" der', () => {
+    const comp = read('site/src/components/pages/DevelopmentList.astro')
+    expect(comp).toMatch(/<backlog-block[^>]*data-backlog/)
+    expect(DEVELOPMENT_NOTICE).toContain('bugün üründe yoktur')
+  })
+
+  it.skipIf(distHtml.length === 0)('derleme çıktısında blok dışında geliştirme listesi adı geçmez', () => {
+    const names = [...new Set(developmentItems.flatMap((i) => i.names ?? []))]
+    const hits: string[] = []
+    // Rehber (kavram anlatımı) bu taramanın dışındadır — seo.test.ts / fair-play NON_MARKETING ile aynı dar istisna.
+    for (const f of distHtml.filter((x) => !x.includes(`${path.sep}rehber${path.sep}`))) {
+      const text = norm(stripRoadmapBlocks(readFileSync(f, 'utf8')).replace(/<script[\s\S]*?<\/script>/g, '').replace(/<[^>]+>/g, ' '))
+      for (const n of names) if (phraseRe(n).test(text)) hits.push(`${path.relative(siteRoot, f)}: "${n}"`)
     }
     expect(hits).toEqual([])
   })

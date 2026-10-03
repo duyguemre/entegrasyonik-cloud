@@ -42,6 +42,10 @@ interface Props {
     | 'pin'
     | 'book'
     | 'help'
+    | 'phone'
+    | 'android'
+    | 'download'
+    | 'camera'
   size?: 'sm' | 'md' | 'lg'
   class?: string
 }
@@ -84,6 +88,11 @@ const PATHS: Record<Props['name'], string> = {
   pin: 'M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z M12 12a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z',
   book: 'M4 5a2 2 0 0 1 2-2h14v15H6a2 2 0 0 0-2 2V5z M4 20a2 2 0 0 0 2 2h14v-4 M9 7h7',
   help: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6v.6 M12 17h.01',
+  // Android başı (antenli yarım kubbe + iki göz) — çizgi set biçiminde.
+  android: 'M2.5 19.5a9.5 9.5 0 0 1 19 0Z M7.2 11.4 4.9 7.6 M16.8 11.4 19.1 7.6 M8.4 15.6h.01 M15.6 15.6h.01',
+  phone: 'M7 3h10a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z M11 18h2',
+  download: 'M12 4v11 M7 10l5 5 5-5 M5 20h14',
+  camera: 'M4 8h3l2-3h6l2 3h3v11H4z M12 16a3 3 0 1 0 0-6 3 3 0 0 0 0 6z',
   sparkle: 'M12 3v4 M12 17v4 M3 12h4 M17 12h4 M6 6l2.5 2.5 M15.5 15.5 18 18 M18 6l-2.5 2.5 M8.5 15.5 6 18',
 }
 

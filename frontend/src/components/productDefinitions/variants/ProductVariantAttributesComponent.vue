@@ -1,1348 +1,395 @@
+<!--
+  frontend/src/components/productDefinitions/variants/ProductVariantAttributesComponent.vue
+
+  VARYANT BİLGİLERİ — tek varyantın pazaryeri özellikleri ve kanal bilgileri (ızgarada satırın kalem düğmesi).
+  Toplu özellik düzenle (ProductBatchVariantAttributesComponent) ile AYNI yapı ve ortak parçalar
+  (channelAttributes.ts · AttrValueField.vue · channelAttributeEditor.css):
+    · kanal seçici (ad + renk + değişiklik sayısı) · eşleştirme eksikse anlaşılır uyarı · katlanır, yumuşak açılan kanal bilgileri
+    · aranabilir, süzülebilir (Tümü / Varyant ekseni / Zorunlu / Eksik zorunlu / Değişen), sayfalı özellik tablosu — yatay kaydırma yok
+    · değişiklikler TASLAKTA (eskiden alanlar varyanta anında yazılıyor, "Varyanta Ata" yalnız kapatıyordu); değişen satırda
+      önceki değer görünür; önizleme → "Varyanta uygula"; uygulanmamış değişiklikte kapatmadan önce satır içi onay
+    · kayıtlı değeri kanal listesinde artık olmayan özellik işaretlenir (eskiden açılışta sessizce siliniyordu)
+  Veri yolu değişmedi: `variant.platforms[kanal].attributes[özellikId] = { attributeName, attributeValue, attributeValueId }`,
+  `variant.platforms[kanal].mapping`. Kalıcı kayıt ürün kaydet/güncelle ile.
+-->
 <template>
-
-  <CardComponent icon="mdi-checkbox-multiple-marked-outline" title="Varyant Bilgileri" :isHovered="false" class="pva-s1">
-    <LoadingComponent attach=".productDefinitionView" ref="loadingComponentRef"></LoadingComponent>
-
-    <template #header>
-
-      <EkButton tone="primary" size="sm" icon="mdi-check" @click="save()">Varyanta Ata</EkButton>
-
-      <EkButton tone="ghost" size="sm" icon="mdi-close" icon-only aria-label="Kapat" @click="emits('close')" />
-
+  <EkDialogCard class="bva" title="Varyant bilgileri" icon="mdi-tag-outline" width="custom" hide-actions
+    :description="`${variantLabel}${editingVariant?.stockcode ? ` · ${editingVariant.stockcode}` : ''} · değişiklikler önizlenir, sonra varyanta yazılır`"
+    @close="requestClose">
+    <template v-if="!channels.length">
+      <EkEmptyState variant="not-connected" title="Bağlı pazaryeri yok"
+        message="Varyant özellikleri pazaryerine özgüdür. Önce Entegrasyonlar ekranından bir pazaryeri bağlayın." />
     </template>
 
-    <template v-if="tab">
-
-      <div
-        class="pt-0 pva-s4">
-
-        <!-- DS-v2 A6a: adlı, klavyeyle gezilebilir kanal sekmeleri (eski logo kutuları yerine) -->
-        <ChannelTabList :model-value="tab?.code" label="Özellikleri düzenlenecek kanal"
-          @select="(ch: any) => { changeIntegration(ch.code); tab = ch }" />
-
+    <template v-else-if="step === 'edit'">
+      <!-- kanal -->
+      <div class="bva-chans" role="radiogroup" aria-label="Özellikleri düzenlenen kanal">
+        <span class="bva-label">Kanal</span>
+        <button v-for="ch in channels" :key="ch.code" type="button" role="radio" class="bva-chan" :class="[channelClass(ch.code), { 'is-on': ch.code === active }]"
+          :aria-checked="ch.code === active" @click="setChannel(ch.code)">
+          <EkPlatformMark :code="ch.code" :name="ch.title" />
+          <span v-if="channelChangeCount(ch.code)" class="bva-dot ek-num" :aria-label="`${channelChangeCount(ch.code)} değişiklik`">{{ channelChangeCount(ch.code) }}</span>
+        </button>
       </div>
 
+      <EkAlert v-if="mappingState.code === 'PLATFORM'" tone="warning" dense :title="`${activeTitle} kategori eşleştirmesi eksik`"
+        :text="`Kategoriler ekranında “${categoryTitle}” kategorisini ${activeTitle} kategorisiyle eşleştirin; özellik listesi eşleştirmeden sonra gelir.`" />
+      <EkAlert v-else-if="mappingState.code === 'CHOICE'" tone="warning" dense :title="`${activeTitle} seçenek eşleştirmesi eksik`"
+        :text="`“${categoryTitle}” kategorisinin ${activeTitle} ayarlarında şu seçenekleri eşleştirin: ${mappingState.choices.map((c: string) => choicesStore.getChoiceTitle(c as any)).join(', ')}.`" />
 
-      <div v-if="editingVariant.platforms" class="pva-s6">
-
-        <!-- DS-v2 A6a: erişilebilir akordeon (eski v-list/v-list-group: axe aria-required-children / aria-allowed-attr) -->
-        <v-expansion-panels class="pva-s7 pva-acc" variant="accordion" flat>
-          <v-expansion-panel value="batch" class="pva-acc__panel">
-            <v-expansion-panel-title class="pva-acc__title">
-              <v-icon class="mr-2" icon="mdi-information-outline" aria-hidden="true" />Platform Bazında Bilgiler
-            </v-expansion-panel-title>
-            <v-expansion-panel-text>
-              <template v-if="editingVariant.platforms[tab.code]">
-                <VariantInfoComponent v-model="editingVariant.platforms[tab.code].mapping" :productInfoForm="productInfoForm" />
-                <component :is="platformInfoComponentsMap.get(tab.code)"
-                  v-model="editingVariant.platforms[tab.code].mapping" :productInfoForm="productInfoForm" />
-              </template>
-            </v-expansion-panel-text>
-          </v-expansion-panel>
-        </v-expansion-panels>
-        <v-divider class="mb-8" />
-
-
-
-        <div>
-          <div class="d-flex justify-center" v-if="checkCategoryPlatformMappingResult.code != 'SUCCESS'">
-            <LoadingComponent :info="$t('productDefinitions.category.platformChoiceLoading')" />
-
-
-            <div v-if="checkCategoryPlatformMappingResult.code == 'PLATFORM'">
-
-              <div class="d-flex justify-center mt-4 text-error font-weight-medium">
-                Kategorisi Eşleştirmesi Yapılmalı.
+      <template v-else>
+        <!-- kanal bilgileri (katlanır, yumuşak açılır) -->
+        <section class="bva-info" :class="{ 'is-open': infoOpen }">
+          <button type="button" class="bva-info__head" :aria-expanded="infoOpen" aria-controls="pva-info-body" @click="infoOpen = !infoOpen">
+            <v-icon class="bva-chev" icon="mdi-chevron-right" aria-hidden="true" />
+            <span class="bva-info__title">Kanal bilgileri</span>
+            <span class="bva-caption bva-info__sub">Başlık, kargo, desi, garanti… — boş bırakılan alan ürün varsayılanını kullanır</span>
+            <span v-if="mappingChanges(active).length" class="bva-dot ek-num" :aria-label="`${mappingChanges(active).length} alan değişti`">{{ mappingChanges(active).length }}</span>
+          </button>
+          <div id="pva-info-body" class="bva-info__reveal" :inert="!infoOpen || undefined">
+            <div class="bva-info__clip">
+              <div v-if="draft[active]" class="bva-info__body ci-grid">
+                <VariantInfoComponent v-model="draft[active].mapping" :productInfoForm="productInfoForm" :channel="active" />
+                <component :is="platformInfoComponents.get(active)" v-if="platformInfoComponents.get(active)"
+                  v-model="draft[active].mapping" :productInfoForm="productInfoForm" />
               </div>
-              <div class="d-flex justify-center mt-1 mb-4">
-                <ul class="">
-                  <li v-for="choice of checkCategoryPlatformMappingResult.choices">
-                    <div class="font-weight-bold">
-                      {{ choicesStore.getChoiceTitle(choice) }}
-                    </div>
-                  </li>
-                </ul>
-              </div>
-
-              <HintComponent>
-                Kategoriler sayfasında
-                <span class="font-weight-bold mr-1 ml-1">
-                  {{ categoriesStore.getCategoryTitle(productInfoForm.category) }}
-                </span>
-                kategorisi ayarlarında
-                <span class="font-weight-bold mr-1 ml-1">
-                  {{ integrationStore.getIntegrationTitle(tab.code) }}
-                </span>
-                eşleştirmesi yapılmalı.
-              </HintComponent>
-
             </div>
-            <div v-else-if="checkCategoryPlatformMappingResult.code == 'CHOICE'">
-
-              <div class="d-flex justify-center mt-4 text-error font-weight-medium">
-                Seçenek Eşleştirmesi Yapılmalı.
-              </div>
-              <div class="d-flex justify-center mt-1 mb-4">
-                <ul class="">
-                  <li v-for="choice of checkCategoryPlatformMappingResult.choices">
-                    <div class="font-weight-bold">
-                      {{ choicesStore.getChoiceTitle(choice) }}
-                    </div>
-                  </li>
-                </ul>
-              </div>
-
-              <HintComponent>
-                Kategoriler sayfasında
-                <span class="font-weight-bold mr-1 ml-1">
-                  {{ categoriesStore.getCategoryTitle(productInfoForm.category) }}
-                </span>
-                kategorisi ayarlarında
-                <span class="font-weight-bold mr-1 ml-1">
-                  {{ integrationStore.getIntegrationTitle(tab.code) }}
-                </span>
-                platformu için seçenek eşleştirmeleri tamamlanmalıdır.
-                <div>
-                </div>
-
-              </HintComponent>
-
-            </div>
-
           </div>
-          <template v-else>
-            <template v-if="editingVariant.platforms[selectedIntegrationCode]?.attributes">
+        </section>
 
-              <template v-if="platformAttributes.get(selectedIntegrationCode)">
+        <!-- özellik araçları -->
+        <div class="bva-tools">
+          <v-text-field v-model="query" class="bva-search" density="compact" variant="outlined" hide-details clearable
+            prepend-inner-icon="mdi-magnify" placeholder="Özellik ara" aria-label="Özelliklerde ara" />
+          <div class="bva-seg" role="radiogroup" aria-label="Gösterilen özellikler">
+            <button v-for="f in filters" :key="f.key" type="button" role="radio" class="bva-seg__btn" :class="{ 'is-on': filter === f.key }"
+              :aria-checked="filter === f.key" @click="filter = f.key">
+              {{ f.label }}<span class="bva-seg__n ek-num" :class="{ 'is-warn': f.key === 'missing' && f.count > 0 }">{{ f.count }}</span>
+            </button>
+          </div>
+          <EkHelpHint hint="attributes.required" />
+        </div>
 
+        <!-- özellik tablosu -->
+        <div class="bva-frame">
+          <div ref="scrollRef" class="bva-scroll">
+            <div v-if="attrErrors.get(active)" class="bva-state">
+              <IntegrationErrorPanel :info="attrErrors.get(active)!" :retrying="retrying" :autofocus="false" @retry="retry(active)" />
+            </div>
+            <AttrTableSkeleton v-else-if="!attrs.get(active)" :columns="2" :label="`${activeTitle} kategori özellikleri alınıyor…`" />
+            <table v-else-if="pageAttrs.length" class="bva-table">
+              <caption class="ek-sr-only">{{ activeTitle }} özellikleri</caption>
+              <colgroup><col class="pva-c-name" /><col class="pva-c-value" /></colgroup>
+              <thead>
+                <tr><th scope="col">Özellik</th><th scope="col">Değer</th></tr>
+              </thead>
+              <tbody>
+                <tr v-for="a in pageAttrs" :key="a._id" :class="{ 'is-changed': isChanged(a), 'is-missing': isMissing(a) || isInvalid(a) }">
+                  <th scope="row">
+                    <span class="bva-name" :title="a.title">{{ a.title }}</span>
+                    <span class="pva-tags">
+                      <span v-if="a.varianter || a.slicer" class="bva-req pva-axis">Varyant ekseni</span>
+                      <span v-if="a.required" class="bva-req" :class="{ 'is-missing': isMissing(a) }">Zorunlu</span>
+                      <span v-if="isChanged(a)" class="pva-before" :title="`Önceki: ${beforeText(a)}`">Önceki: {{ beforeText(a) }}</span>
+                      <span v-else-if="isInvalid(a)" class="pva-before is-warn">Kayıtlı değer kanalda yok — yeniden seçin</span>
+                    </span>
+                  </th>
+                  <td class="bva-valuecell">
+                    <AttrValueField :attribute="a" :model-value="draft[active]?.attributes[a._id]" :loading="lazyLoading.has(a._id)"
+                      :placeholder="a.allowCustom ? 'Yazın ya da seçin' : 'Seçin'"
+                      @open="loadLazyValues(active, a)" @update:model-value="(v) => setValue(a, v)" />
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <EkEmptyState v-else-if="query || filter !== 'all'" class="bva-empty" variant="no-results" title="Bu ölçüte uyan özellik yok"
+              message="Aramayı temizleyin ya da “Tümü” süzgecine dönün."
+              show-action action-text="Tümünü göster" action-icon="mdi-close" @action="query = ''; filter = 'all'" />
+            <EkEmptyState v-else class="bva-empty" variant="no-data" title="Düzenlenecek özellik yok"
+              :message="`${activeTitle} bu kategori için varyant düzeyinde özellik istemiyor.`" />
+          </div>
+          <EkPagerBar v-if="visibleAttrs.length > PAGE_SIZES[0]" :page="page" :page-size="pageSize" :total="visibleAttrs.length"
+            :page-size-options="PAGE_SIZES" label="Özellik sayfaları" @update:page="(p: number) => (page = p)"
+            @update:page-size="(n: number) => { pageSize = n; page = 1 }" />
+        </div>
+      </template>
 
-
-
-                <CardComponent title="Varyant Özellikleri (*)">
-                  <v-row>
-                    <v-col cols="12" md="4" sm="6" lg="3" xl="2"
-                      v-for="attribute of platformAttributes.get(selectedIntegrationCode).filter((item: any) => item.varianter || item.slicer)">
-
-                      <v-combobox v-if="attribute.allowCustom" @click.stop="1" v-ripple.stop auto-select-first="exact"
-                        clearable variant="outlined" density="compact" type="tel" maxlength="160" min-width="170"
-                        item-value="id" class="customTextField"
-                        :items="getLimitedAttributeValues(attribute, selectedIntegrationCode)"
-                        :hint="$t('productDefinitions.category.platformChoiceDesc')" persistent-hint hide-details
-                        :model-value="getComboboxDisplayValue(attribute, selectedIntegrationCode)"
-                        @update:model-value="(val: any) => handleUpdate(val, selectedIntegrationCode, attribute)">
-
-                        <template v-slot:label>
-                          <span class="font-weight-light">
-                            {{ attribute.title }}</span>
-                        </template>
-                        <template v-slot:no-data>
-                          <div class="d-flex justify-center align-center font-weight-bold">
-                            {{ attribute.lazyValues == true ? 'Yükleniyor' : 'Veri Yok' }}
-                          </div>
-                        </template>
-
-                        <template v-slot:prepend-item>
-                          <v-list-item class="pva-s12">
-                            <v-text-field append-inner-icon="mdi-magnify" @click.stop="1" v-ripple.stop
-                              variant="outlined" @keydown.stop @mousedown.stop="1" density="compact" type="tel"
-                              maxlength="160" class="mt-2 customTextField" clearable counter
-                              v-model="attributeSearchText[selectedIntegrationCode + '_' + attribute._id]"
-                              :hint="$t('productDefinitions.category.searchDesc')">
-                              <template v-slot:label>
-                                <span class="font-weight-light">Filtrele</span>
-                              </template>
-                            </v-text-field>
-                          </v-list-item>
-                        </template>
-
-                        <template v-slot:item="{ item, index, props }: any">
-                          <v-list-item role="option" v-bind="props" class="pva-s12">
-                            <template #title>
-                            </template>
-                            <div class="d-flex justify-start align-center ml-6">
-                              <div v-if="item.raw.level && item.raw.level > 0" v-for="n in item.raw.level" class="pva-s13">
-                              </div>
-                              <div class="mr-2 font-weight-thin">{{ index + 1 }}</div> {{ item.title }} <span
-                                v-if="item.raw.mandatory == true" class="ml-2 font-weight-bold pva-s14">Zorunlu</span>
-                            </div>
-                          </v-list-item>
-                        </template>
-
-                      </v-combobox>
-
-                      <v-select v-else @click.stop v-ripple.stop variant="outlined" density="compact" type="tel"
-                        clearable maxlength="160" min-width="170" item-value="id" class="customTextField"
-                        :items="getLimitedAttributeValues(attribute, selectedIntegrationCode)"
-                        :hint="$t('productDefinitions.category.platformChoiceDesc')" persistent-hint hide-details
-                        :model-value="getSelectDisplayValue(attribute, selectedIntegrationCode)"
-                        @update:model-value="(val: any) => handleUpdate(val, selectedIntegrationCode, attribute)"
-                        :readonly="disabledAttributes.includes(attribute._id)">
-
-                        <template v-slot:label>
-                          <span class="font-weight-light">
-                            {{ attribute.title }}</span>
-                        </template>
-                        <template v-slot:no-data>
-                          <div class="d-flex justify-center align-center font-weight-bold">
-                            {{ attribute.lazyValues == true ? 'Yükleniyor' : 'Veri Yok' }}
-                          </div>
-                        </template>
-
-                        <template v-slot:prepend-item>
-                          <v-list-item class="pva-s12">
-                            <v-text-field append-inner-icon="mdi-magnify" @click.stop="1" v-ripple.stop
-                              variant="outlined" @keydown.stop @mousedown.stop="1" density="compact" type="tel"
-                              maxlength="160" class="mt-2 customTextField" clearable counter
-                              v-model="attributeSearchText[selectedIntegrationCode + '_' + attribute._id]"
-                              :hint="$t('productDefinitions.category.searchDesc')">
-                              <template v-slot:label>
-                                <span class="font-weight-light">Filtrele</span>
-                              </template>
-                            </v-text-field>
-                          </v-list-item>
-                        </template>
-
-                        <template v-slot:item="{ item, index, props }: any">
-                          <v-list-item role="option" v-bind="props" class="pva-s12">
-                            <template #title>
-                            </template>
-                            <div class="d-flex justify-start align-center ml-6">
-                              <div v-if="item.raw.level && item.raw.level > 0" v-for="n in item.raw.level" class="pva-s13">
-                              </div>
-                              <div class="mr-2 font-weight-thin">{{ index + 1 }}</div> {{ item.title }} <span
-                                v-if="item.raw.mandatory == true" class="ml-2 font-weight-bold pva-s14">Zorunlu</span>
-                            </div>
-                          </v-list-item>
-                        </template>
-
-                      </v-select>
-                    </v-col>
-                  </v-row>
-                </CardComponent>
-
-                <div class="mt-8"></div>
-                <CardComponent title="Zorunlu Özellikleri (*)">
-                  <template #header><EkHelpHint hint="attributes.required" /></template>
-
-                  <v-row>
-                    <v-col cols="4" md="4" sm="6" lg="3" xl="2"
-                      v-for="attribute of platformAttributes.get(selectedIntegrationCode).filter((item: any) => item.required && item.varianter == false && item.slicer == false)">
-                      <v-combobox v-if="attribute.allowCustom" @click.stop="1" v-ripple.stop auto-select-first="exact"
-                        clearable variant="outlined" density="compact" type="tel" maxlength="160" min-width="170"
-                        item-value="id" class="customTextField"
-                        :items="getLimitedAttributeValues(attribute, selectedIntegrationCode)"
-                        :hint="$t('productDefinitions.category.platformChoiceDesc')" persistent-hint hide-details
-                        :model-value="getComboboxDisplayValue(attribute, selectedIntegrationCode)"
-                        @update:model-value="(val: any) => handleUpdate(val, selectedIntegrationCode, attribute)"
-                        :readonly="disabledAttributes.includes(attribute._id)">
-
-                        <template v-slot:label>
-                          <span class="font-weight-light">
-                            {{ attribute.title }}</span>
-                        </template>
-                        <template v-slot:no-data>
-                          <div class="d-flex justify-center align-center font-weight-bold">
-                            {{ attribute.lazyValues == true ? 'Yükleniyor' : 'Veri Yok' }}
-                          </div>
-                        </template>
-
-                        <template v-slot:prepend-item>
-                          <v-list-item class="pva-s12">
-                            <v-text-field append-inner-icon="mdi-magnify" @click.stop="1" v-ripple.stop
-                              variant="outlined" @keydown.stop @mousedown.stop="1" density="compact" type="tel"
-                              maxlength="160" class="mt-2 customTextField" clearable counter
-                              v-model="attributeSearchText[selectedIntegrationCode + '_' + attribute._id]"
-                              :hint="$t('productDefinitions.category.searchDesc')">
-                              <template v-slot:label>
-                                <span class="font-weight-light">Filtrele</span>
-                              </template>
-                            </v-text-field>
-                          </v-list-item>
-                        </template>
-
-                        <template v-slot:item="{ item, index, props }: any">
-                          <v-list-item role="option" v-bind="props" class="pva-s12">
-                            <template #title>
-                            </template>
-                            <div class="d-flex justify-start align-center ml-6">
-                              <div v-if="item.raw.level && item.raw.level > 0" v-for="n in item.raw.level" class="pva-s13">
-                              </div>
-                              <div class="mr-2 font-weight-thin">{{ index + 1 }}</div> {{ item.title }} <span
-                                v-if="item.raw.mandatory == true" class="ml-2 font-weight-bold pva-s14">Zorunlu</span>
-                            </div>
-                          </v-list-item>
-                        </template>
-
-                      </v-combobox>
-
-                      <v-select v-else @click.stop v-ripple.stop variant="outlined" density="compact" type="tel"
-                        clearable maxlength="160" min-width="170" item-value="id" class="customTextField"
-                        :items="getLimitedAttributeValues(attribute, selectedIntegrationCode)"
-                        :hint="$t('productDefinitions.category.platformChoiceDesc')" persistent-hint hide-details
-                        :model-value="getSelectDisplayValue(attribute, selectedIntegrationCode)"
-                        @update:model-value="(val: any) => handleUpdate(val, selectedIntegrationCode, attribute)"
-                        :readonly="disabledAttributes.includes(attribute._id)">
-                        <template v-slot:label>
-                          <span class="font-weight-light">
-                            {{ attribute.title }}</span>
-                        </template>
-                        <template v-slot:no-data>
-                          <div class="d-flex justify-center align-center font-weight-bold">
-                            {{ attribute.lazyValues == true ? 'Yükleniyor' : 'Veri Yok' }}
-                          </div>
-                        </template>
-
-                        <template v-slot:prepend-item>
-                          <v-list-item class="pva-s12">
-                            <v-text-field append-inner-icon="mdi-magnify" @click.stop="1" v-ripple.stop
-                              variant="outlined" @keydown.stop @mousedown.stop="1" density="compact" type="tel"
-                              maxlength="160" class="mt-2 customTextField" clearable counter
-                              v-model="attributeSearchText[selectedIntegrationCode + '_' + attribute._id]"
-                              :hint="$t('productDefinitions.category.searchDesc')">
-                              <template v-slot:label>
-                                <span class="font-weight-light">Filtrele</span>
-                              </template>
-                            </v-text-field>
-                          </v-list-item>
-                        </template>
-
-                        <template v-slot:item="{ item, index, props }: any">
-                          <v-list-item role="option" v-bind="props" class="pva-s12">
-                            <template #title>
-                            </template>
-                            <div class="d-flex justify-start align-center ml-6">
-                              <div v-if="item.raw.level && item.raw.level > 0" v-for="n in item.raw.level" class="pva-s13">
-                              </div>
-                              <div class="mr-2 font-weight-thin">{{ index + 1 }}</div> {{ item.title }} <span
-                                v-if="item.raw.mandatory == true" class="ml-2 font-weight-bold pva-s14">Zorunlu</span>
-                            </div>
-                          </v-list-item>
-                        </template>
-
-                      </v-select>
-                    </v-col>
-                  </v-row>
-                </CardComponent>
-
-                <div class="mt-8"></div>
-                <CardComponent title="Opsiyonel Özellikleri">
-
-                  <v-row>
-                    <v-col cols="12" md="4" sm="6" lg="3" xl="2"
-                      v-for="attribute of platformAttributes.get(selectedIntegrationCode).filter((item: any) => item.required == false && item.varianter == false)">
-
-                      <v-combobox v-if="attribute.allowCustom" @click.stop="1" v-ripple.stop auto-select-first="exact"
-                        clearable variant="outlined" density="compact" type="tel" maxlength="160" min-width="170"
-                        item-value="id" class="customTextField"
-                        :items="getLimitedAttributeValues(attribute, selectedIntegrationCode)"
-                        :hint="$t('productDefinitions.category.platformChoiceDesc')" persistent-hint hide-details
-                        :model-value="getComboboxDisplayValue(attribute, selectedIntegrationCode)"
-                        @update:model-value="(val: any) => handleUpdate(val, selectedIntegrationCode, attribute)"
-                        :readonly="disabledAttributes.includes(attribute._id)">
-                        <template v-slot:label>
-                          <span class="font-weight-light">
-                            {{ attribute.title }}</span>
-                        </template>
-                        <template v-slot:no-data>
-                          <div class="d-flex justify-center align-center font-weight-bold">
-                            {{ attribute.lazyValues == true ? 'Yükleniyor' : 'Veri Yok' }}
-                          </div>
-                        </template>
-                        <template v-slot:prepend-item>
-                          <v-list-item class="pva-s12">
-                            <v-text-field append-inner-icon="mdi-magnify" @click.stop="1" v-ripple.stop
-                              variant="outlined" @keydown.stop @mousedown.stop="1" density="compact" type="tel"
-                              maxlength="160" class="mt-2 customTextField" clearable counter
-                              v-model="attributeSearchText[selectedIntegrationCode + '_' + attribute._id]"
-                              :hint="$t('productDefinitions.category.searchDesc')">
-                              <template v-slot:label>
-                                <span class="font-weight-light">Filtrele</span>
-                              </template>
-                            </v-text-field>
-                          </v-list-item>
-                        </template>
-
-                        <template v-slot:item="{ item, index, props }: any">
-                          <v-list-item role="option" v-bind="props" class="pva-s12">
-                            <template #title>
-                            </template>
-                            <div class="d-flex justify-start align-center ml-6">
-                              <div v-if="item.raw.level && item.raw.level > 0" v-for="n in item.raw.level" class="pva-s13">
-                              </div>
-                              <div class="mr-2 font-weight-thin">{{ index + 1 }}</div> {{ item.title }} <span
-                                v-if="item.raw.mandatory == true" class="ml-2 font-weight-bold pva-s14">Zorunlu</span>
-                            </div>
-                          </v-list-item>
-                        </template>
-
-                      </v-combobox>
-
-                      <v-select v-else @click.stop v-ripple.stop variant="outlined" density="compact" type="tel"
-                        clearable maxlength="160" min-width="170" item-value="id" class="customTextField"
-                        :items="getLimitedAttributeValues(attribute, selectedIntegrationCode)"
-                        :hint="$t('productDefinitions.category.platformChoiceDesc')" persistent-hint hide-details
-                        :model-value="getSelectDisplayValue(attribute, selectedIntegrationCode)"
-                        @update:model-value="(val: any) => handleUpdate(val, selectedIntegrationCode, attribute)"
-                        :readonly="disabledAttributes.includes(attribute._id)">
-                        <template v-slot:label>
-                          <span class="font-weight-light">
-                            {{ attribute.title }}</span>
-                        </template>
-                        <template v-slot:no-data>
-                          <div class="d-flex justify-center align-center font-weight-bold">
-                            {{ attribute.lazyValues == true ? 'Yükleniyor' : 'Veri Yok' }}
-                          </div>
-                        </template>
-
-                        <template v-slot:prepend-item>
-                          <v-list-item class="pva-s12">
-                            <v-text-field append-inner-icon="mdi-magnify" @click.stop="1" v-ripple.stop
-                              variant="outlined" @keydown.stop @mousedown.stop="1" density="compact" type="tel"
-                              maxlength="160" class="mt-2 customTextField" clearable counter
-                              v-model="attributeSearchText[selectedIntegrationCode + '_' + attribute._id]"
-                              :hint="$t('productDefinitions.category.searchDesc')">
-                              <template v-slot:label>
-                                <span class="font-weight-light">Filtrele</span>
-                              </template>
-                            </v-text-field>
-                          </v-list-item>
-                        </template>
-
-                        <template v-slot:item="{ item, index, props }: any">
-                          <v-list-item role="option" v-bind="props" class="pva-s12">
-                            <template #title>
-                            </template>
-                            <div class="d-flex justify-start align-center ml-6">
-                              <div v-if="item.raw.level && item.raw.level > 0" v-for="n in item.raw.level" class="pva-s13">
-                              </div>
-                              <div class="mr-2 font-weight-thin">{{ index + 1 }}</div> {{ item.title }} <span
-                                v-if="item.raw.mandatory == true" class="ml-2 font-weight-bold pva-s14">Zorunlu</span>
-                            </div>
-                          </v-list-item>
-                        </template>
-
-                      </v-select>
-                    </v-col>
-                  </v-row>
-                </CardComponent>
-
-              </template>
-              <template v-else>
-                <!-- DS-v2 A6a: pazaryeri özellik listesi alınamazsa sonsuz "yükleniyor" yerine anlaşılır hata / boş durum
-                     (useIntegrationError — kategori/özellik eşleme ekranlarıyla aynı eşleme). -->
-                <div class="pva-state">
-                  <IntegrationErrorPanel v-if="platformAttributeErrors.get(selectedIntegrationCode)"
-                    :info="platformAttributeErrors.get(selectedIntegrationCode)!" :retrying="attributesRetrying" :autofocus="false"
-                    @retry="retryPlatformAttributes(selectedIntegrationCode)" />
-                  <IntegrationLoadingBlock v-else
-                    :label="`${integrationStore.getIntegrationTitle(selectedIntegrationCode) || 'Pazaryeri'} kategori özellikleri alınıyor…`" />
-                </div>
-              </template>
-            </template>
-          </template>
+      <div class="bva-foot">
+        <div class="bva-foot__summary" role="status">
+          <span class="bva-sum" :class="{ 'is-on': changes.length > 0 }"><strong class="ek-num">{{ changes.length }}</strong> değişiklik</span>
+          <span v-if="changedChannels > 1" class="bva-sum">{{ changedChannels }} kanalda</span>
+        </div>
+        <div v-if="confirmDiscard" class="bva-discard" role="alert">
+          <v-icon icon="mdi-alert-outline" aria-hidden="true" />
+          <span><strong>{{ changes.length }} değişiklik uygulanmadı.</strong> Çıkarsanız bu değişiklikler kaybolur.</span>
+          <EkButton size="sm" @click="confirmDiscard = false">Düzenlemeye dön</EkButton>
+          <EkButton size="sm" tone="danger" icon="mdi-trash-can-outline" @click="emits('close')">Değişiklikleri at</EkButton>
+        </div>
+        <div v-else class="bva-foot__actions">
+          <EkButton @click="requestClose">Vazgeç</EkButton>
+          <EkButton tone="primary" icon="mdi-eye-outline" :disabled="!changes.length" @click="openPreview">
+            Değişiklikleri gözden geçir ({{ changes.length }})
+          </EkButton>
         </div>
       </div>
     </template>
 
-  </CardComponent>
-
+    <!-- önizleme -->
+    <template v-else>
+      <div class="bva-preview">
+        <div class="bva-preview__head">
+          <EkIconTile icon="mdi-format-list-checks" tone="action" size="sm" />
+          <div>
+            <h3 class="bva-preview__title">{{ changes.length }} değişiklik · {{ variantLabel }}</h3>
+            <p class="bva-preview__desc">Uygula ile değerler varyanta yazılır; kalıcı olması için ardından ürünü kaydedin.</p>
+          </div>
+        </div>
+        <div class="bva-frame">
+          <div class="bva-diffwrap">
+            <table class="bva-diff">
+              <caption class="ek-sr-only">Değişiklik önizlemesi</caption>
+              <colgroup><col class="bva-d-ch" /><col class="bva-d-name" /><col /><col /></colgroup>
+              <thead><tr><th scope="col">Kanal</th><th scope="col">Alan</th><th scope="col">Önce</th><th scope="col">Sonra</th></tr></thead>
+              <tbody>
+                <tr v-for="c in previewRows" :key="c.key">
+                  <td><EkPlatformMark :code="c.channel" :name="channelTitle(c.channel)" /></td>
+                  <th scope="row"><span class="bva-ellipsis">{{ c.label }}</span><span class="bva-diff__sub">{{ c.kind === 'info' ? 'Kanal bilgisi' : 'Özellik' }}</span></th>
+                  <td class="bva-diff__before"><span class="bva-ellipsis" :title="c.before">{{ c.before }}</span></td>
+                  <td class="bva-diff__after"><span class="bva-ellipsis" :title="c.after">{{ c.after }}</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <EkPagerBar v-if="changes.length > PAGE_SIZES[0]" :page="previewPage" :page-size="previewSize" :total="changes.length"
+            :page-size-options="PAGE_SIZES" label="Önizleme sayfaları" @update:page="(p: number) => (previewPage = p)"
+            @update:page-size="(n: number) => { previewSize = n; previewPage = 1 }" />
+        </div>
+      </div>
+      <div class="bva-foot">
+        <div class="bva-foot__summary"></div>
+        <div class="bva-foot__actions">
+          <EkButton icon="mdi-arrow-left" @click="step = 'edit'">Düzenlemeye dön</EkButton>
+          <EkButton tone="primary" icon="mdi-check" @click="apply">Varyanta uygula</EkButton>
+        </div>
+      </div>
+    </template>
+  </EkDialogCard>
 </template>
 
 <script setup lang="ts">
+import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import { EkAlert, EkButton, EkPlatformMark, EkDialogCard, EkEmptyState, EkIconTile, EkPagerBar } from '@entegrasyonik/ui/components'
+import { channelClass } from '@entegrasyonik/ui/tokens'
+import { useChoicesStore } from '@/stores/choicesStore'
+import { useSnackbarStore } from '@/stores/snackbarStore'
 import EkHelpHint from '@/components/page/EkHelpHint.vue'
-import { formatNumber } from '@entegrasyonik/ui/format'
-import { Sortable } from "sortablejs-vue3";
-import { EkButton } from '@entegrasyonik/ui/components'
-
-import { ref, computed, onMounted, onBeforeMount, nextTick, reactive, onActivated, defineAsyncComponent, shallowRef } from 'vue'
-import { useI18n } from 'vue-i18n';
-import LoadingComponent from '@/components/LoadingComponent.vue'
-import useRestApi from '@/composables/restapi'
-import { useChoicesStore } from '@/stores/choicesStore';
-import HintComponent from '@/components/HintComponent.vue';
-import CardComponent from '@/components/CardComponent.vue';
-
-
-import { useIntegrationStore } from '@/stores/integrationStore';
-import ChannelTabList from './ChannelTabList.vue'
 import IntegrationErrorPanel from '@/components/integrations/IntegrationErrorPanel.vue'
-import IntegrationLoadingBlock from '@/components/integrations/IntegrationLoadingBlock.vue'
-import type { IntegrationErrorInfo } from '@/composables/useIntegrationError'
-import { useBrandsStore } from '@/stores/brandsStore';
-import { useCategoriesStore } from '@/stores/categoriesStore';
-const categoriesStore = useCategoriesStore()
-const attributeSearchText: any = ref({})
-import { useSnackbarStore } from '@/stores/snackbarStore';
-import VariantInfoComponent from "./platformInfos/VariantInfoComponent.vue";
-const snackbarStore = useSnackbarStore();
+import AttrTableSkeleton from './AttrTableSkeleton.vue'
+import VariantInfoComponent from './platformInfos/VariantInfoComponent.vue'
+import AttrValueField from './AttrValueField.vue'
+import {
+  INFO_LABELS, attrValueText, infoDisplay, isFilled, normalizeStored, platformInfoComponents, sameStored, useChannelAttributes,
+  type StoredAttr,
+} from './channelAttributes'
 
-const integrationStore = useIntegrationStore()
-const brandStore = useBrandsStore()
-const platformAttributes: any = ref(new Map())
-const choicesStore = useChoicesStore()
-var choicesStoreChoices: any = ref()
-const tab: any = ref()
-const isImages = defineModel({ default: false })
+const PAGE_SIZES = [10, 25, 50, 100]
 
+// Çağıran `v-model` bağlıyor (açık/kapalı); panel kendisi kullanmaz, `close` yayar.
+defineModel({ default: false })
 const emits = defineEmits(['refreshImages', 'close'])
-const props = defineProps<{
-  productInfoForm: any,
-  editingVariant: any
-}>()
+const props = defineProps<{ productInfoForm: any; editingVariant: any }>()
 
-const selectedIntegrationCode: any = ref()
-const restApi = useRestApi()
-const variantsList: any = ref()
-const loadingComponentRef: any = ref(null)
-const fileInputRef: any = ref(null)
-const selectedImages: any = ref([])
-const checkCategoryPlatformMappingResult: any = ref({})
-const productImagesInfo: any = ref(
-  {
-    isVariant: false,
-    selectedChoice: { choiceId: -1, choiceValueId: -1 },
-    selectedChoiceForFilter: { choiceId: -1, choiceValueId: -1 },
+const choicesStore = useChoicesStore()
+const snackbarStore = useSnackbarStore()
+const {
+  channels, channelTitle, categoryTitle, mappingState: mappingOf, attrs, attrErrors, retrying, loadAttrs, retry, loadLazyValues, lazyLoading,
+} = useChannelAttributes({ category: () => props.productInfoForm.category })
+
+const variantLabel = computed(() => (props.editingVariant?.choices || [])
+  .map((c: any) => choicesStore.getDirectChoiceValueTitle(c.choiceValueId)).filter(Boolean).join(' / ') || 'Varyant')
+
+// ── kanal + taslak (varyantın o kanaldaki değerlerinin kopyası; varyanta "Varyanta uygula" ile yazılır) ──
+const active = ref<string>(channels.value[0]?.code || '')
+const activeTitle = computed(() => channelTitle(active.value))
+const mappingState = computed(() => mappingOf(active.value))
+type ChannelDraft = { attributes: Record<string, StoredAttr>; mapping: Record<string, any> }
+const draft = reactive<Record<string, ChannelDraft>>({})
+const base: Record<string, ChannelDraft> = {}
+function ensureDraft(code: string) {
+  if (draft[code]) return
+  const src = props.editingVariant?.platforms?.[code] || {}
+  const attrsCopy: Record<string, StoredAttr> = {}
+  for (const [id, v] of Object.entries(src.attributes || {})) {
+    const n = normalizeStored({ title: (v as any)?.attributeName }, v)
+    if (n) attrsCopy[id] = n
   }
-)
-
-const { t } = useI18n()
-
-const platformInfoComponentsMap = new Map<string, any>([
-  ['hepsiburada', defineAsyncComponent(() => import('./platformInfos/HepsiburadaVariantInfoComponent.vue'))],
-  ['trendyol', defineAsyncComponent(() => import('./platformInfos/TrendyolVariantInfoComponent.vue'))],
-  ['n11', defineAsyncComponent(() => import('./platformInfos/N11VariantInfoComponent.vue'))],
-  ['pazarama', defineAsyncComponent(() => import('./platformInfos/PazaramaVariantInfoComponent.vue'))],
-  ['ideasoft', defineAsyncComponent(() => import('./platformInfos/IdeasoftVariantInfoComponent.vue'))],
-])
-
-const isCustomMap = (integrationCode: any, attributeId: any) => {
-  const customMap = integrationStore.getIntegrationCustomMap(integrationCode)
-  const found = customMap?.find((item: any) => String(item.attributeId) === String(attributeId))
-  if (found) return true
-  return false
+  base[code] = { attributes: JSON.parse(JSON.stringify(attrsCopy)), mapping: JSON.parse(JSON.stringify(src.mapping || {})) }
+  draft[code] = { attributes: attrsCopy, mapping: JSON.parse(JSON.stringify(src.mapping || {})) }
+}
+function setChannel(code: string) {
+  active.value = code
+  ensureDraft(code)
+  page.value = 1
+  void loadAttrs(code)
+}
+onMounted(() => { if (active.value) setChannel(active.value) })
+function setValue(a: any, v: StoredAttr | null) {
+  const d = draft[active.value]
+  if (!d) return
+  if (v) d.attributes[a._id] = v
+  else delete d.attributes[a._id]
 }
 
-// ---- YENİ FONKSİYONLAR (Nesne yapısı gösterimi için) ----
-
-// Combobox (Serbest metin/Custom) için gösterim değeri
-const getComboboxDisplayValue = (attribute: any, integrationCode: string) => {
-  const attrObj = props.editingVariant.platforms[integrationCode]?.attributes?.[attribute._id];
-  if (!attrObj) return null;
-
-  let valId = typeof attrObj === 'object' ? attrObj.attributeValueId : attrObj;
-  let valText = typeof attrObj === 'object' ? attrObj.attributeValue : attrObj;
-
-  if (typeof attrObj === 'object') {
-    if (valId) {
-      const found = attribute.values?.find((item: any) => String(item.id) === String(valId));
-      if (found) return found;
-    }
-    return valText;
-  } else {
-    const found = attribute.values?.find((item: any) => String(item.id) === String(attrObj));
-    return found || attrObj;
-  }
-};
-
-// Select Box (Sadece liste seçimi/Id üzerinden) için gösterim değeri
-const getSelectDisplayValue = (attribute: any, integrationCode: string) => {
-  const attrObj = props.editingVariant.platforms[integrationCode]?.attributes?.[attribute._id];
-  if (!attrObj) return null;
-
-  let valId = typeof attrObj === 'object' ? attrObj.attributeValueId : attrObj;
-  return valId ? String(valId) : null;
-};
-// --------------------------------------------------------
-
-const getLimitedAttributeValues = (attribute: any, integrationCode: any) => {
-  const searchText =
-    (attributeSearchText.value[integrationCode + '_' + attribute._id] || '').toLowerCase();
-
-  const attrObj = props.editingVariant.platforms[integrationCode].attributes[attribute._id];
-
-  const selectedId = attrObj && typeof attrObj === 'object' ? attrObj.attributeValueId : attrObj;
-
-  // filtre
-  const filtered =
-    (attribute.values || []).filter((v: any) =>
-      !searchText ||
-      searchText.length < 1 ||
-      (selectedId && String(selectedId) === String(v.id)) ||
-      (v.title || '').toLowerCase().startsWith(searchText) // ✅ includes → startsWith
-    );
-
-  // ilk 500
-  let limited = filtered.slice(0, 500);
-
-  if (!selectedId) return limited;
-
-  const idEq = (a: any, b: any) => String(a) === String(b);
-
-  const selIndexInFiltered = filtered.findIndex((v: any) => idEq(v.id, selectedId));
-  if (selIndexInFiltered === -1) return limited; // seçili id yoksa
-
-  const selIndexInLimited = limited.findIndex((v: any) => idEq(v.id, selectedId));
-
-  if (selIndexInLimited === 0) {
-    // zaten en başta
-    return limited;
-  } else if (selIndexInLimited > -1) {
-    // limited içindeyse başa taşı, diğerlerinin sırası bozulmaz
-    const [sel] = limited.splice(selIndexInLimited, 1);
-    limited.unshift(sel);
-    return limited;
-  } else {
-    // limited dışında ise başa ekle ve uzunluğu 500'de tut
-    const sel = filtered[selIndexInFiltered];
-    if (sel) {
-      if (limited.length === 500) limited.pop();
-      limited.unshift(sel);
-    }
-    return limited;
-  }
-};
-
-
-const loadAttributeValuesIfNeeded = async (attribute: any) => {
-  if (attribute.lazyValues == true && (!attribute.values || attribute.values.length == 0)) {
-    const tempValue = props.editingVariant?.platforms?.[selectedIntegrationCode.value]?.attributes?.[attribute._id]
-    const entegrasyonikCategory = categoriesStore.getCategory(props.productInfoForm.category)
-    const integrationCategoryId = entegrasyonikCategory?.platforms?.[selectedIntegrationCode.value]
-    const attributeValues = await integrationStore.retrieveIntegrationCategoryAttributeValues(selectedIntegrationCode.value, integrationCategoryId, attribute._id)
-    if (tempValue)
-      props.editingVariant.platforms[selectedIntegrationCode.value].attributes[attribute._id] = tempValue
-
-    attribute.values = attributeValues
-  }
+// ── durumlar ──
+const isChanged = (a: any, code = active.value) => !sameStored(draft[code]?.attributes[a._id], base[code]?.attributes[a._id])
+const hasValue = (a: any) => !!draft[active.value]?.attributes[a._id]
+const isMissing = (a: any) => !!a.required && !hasValue(a)
+/** Liste değerli özellikte kayıtlı kimlik kanal listesinde yok (kanal değeri kaldırmış / kategori değişmiş). */
+const isInvalid = (a: any) => {
+  const cur = draft[active.value]?.attributes[a._id]
+  if (!cur || a.allowCustom || a.lazyValues || !a.values?.length || !cur.attributeValueId) return false
+  return !a.values.some((v: any) => String(v.id) === cur.attributeValueId)
 }
+const beforeText = (a: any) => attrValueText(a, base[active.value]?.attributes[a._id]) || 'boş'
 
-const save = () => {
-  snackbarStore.addSnackbar({
-    show: true,
-    text: 'Varyant Özellikleri Kaydedildi',
-    timeout: 2000,
-    color: 'success'
+// ── süzme / sayfalama ──
+type Filter = 'all' | 'axis' | 'required' | 'missing' | 'changed'
+const filter = ref<Filter>('all')
+const query = ref<string | null>('')
+const page = ref(1)
+const pageSize = ref(25)
+const activeAttrs = computed(() => attrs.value.get(active.value) || [])
+const isAxis = (a: any) => !!(a.varianter || a.slicer)
+const filters = computed(() => [
+  { key: 'all' as Filter, label: 'Tümü', count: activeAttrs.value.length },
+  { key: 'axis' as Filter, label: 'Varyant ekseni', count: activeAttrs.value.filter(isAxis).length },
+  { key: 'required' as Filter, label: 'Zorunlu', count: activeAttrs.value.filter((a) => a.required).length },
+  { key: 'missing' as Filter, label: 'Eksik zorunlu', count: activeAttrs.value.filter(isMissing).length },
+  { key: 'changed' as Filter, label: 'Değişen', count: activeAttrs.value.filter((a) => isChanged(a)).length },
+].filter((f) => f.key !== 'axis' || f.count > 0))
+const visibleAttrs = computed(() => {
+  const q = (query.value || '').trim().toLocaleLowerCase('tr')
+  return activeAttrs.value.filter((a) => {
+    if (q && !String(a.title || '').toLocaleLowerCase('tr').includes(q)) return false
+    if (filter.value === 'axis') return isAxis(a)
+    if (filter.value === 'required') return !!a.required
+    if (filter.value === 'missing') return isMissing(a)
+    if (filter.value === 'changed') return isChanged(a)
+    return true
   })
+})
+const pageAttrs = computed(() => visibleAttrs.value.slice((page.value - 1) * pageSize.value, page.value * pageSize.value))
+watch([query, filter], () => { page.value = 1 })
+watch(() => visibleAttrs.value.length, (n) => { const max = Math.max(1, Math.ceil(n / pageSize.value)); if (page.value > max) page.value = max })
+
+// ── kanal bilgileri ──
+const infoOpen = ref(false)
+const norm = (v: any) => (isFilled(v) ? JSON.stringify(v) : '')
+function mappingChanges(code: string) {
+  const d = draft[code]?.mapping || {}
+  const b = base[code]?.mapping || {}
+  return [...new Set([...Object.keys(d), ...Object.keys(b)])].filter((k) => norm(d[k]) !== norm(b[k]))
+}
+
+// ── değişiklikler ──
+interface Change { key: string; channel: string; kind: 'attr' | 'info'; label: string; before: string; after: string }
+const attrById = (code: string, id: string) => (attrs.value.get(code) || []).find((a: any) => a._id === id)
+const changes = computed<Change[]>(() => {
+  const out: Change[] = []
+  for (const ch of channels.value) {
+    const d = draft[ch.code]
+    if (!d) continue
+    for (const k of mappingChanges(ch.code)) {
+      out.push({ key: `${ch.code}|i|${k}`, channel: ch.code, kind: 'info', label: INFO_LABELS[k] || k, before: infoDisplay(base[ch.code].mapping[k]), after: infoDisplay(d.mapping[k]) })
+    }
+    const ids = new Set([...Object.keys(d.attributes), ...Object.keys(base[ch.code]?.attributes || {})])
+    for (const id of ids) {
+      const cur = d.attributes[id]
+      const prev = base[ch.code]?.attributes[id]
+      if (sameStored(cur, prev)) continue
+      const a = attrById(ch.code, id)
+      out.push({ key: `${ch.code}|a|${id}`, channel: ch.code, kind: 'attr', label: a?.title || cur?.attributeName || prev?.attributeName || id,
+        before: prev?.attributeValue || '—', after: cur?.attributeValue || 'Kaldırıldı' })
+    }
+  }
+  return out
+})
+const channelChangeCount = (code: string) => changes.value.filter((c) => c.channel === code).length
+const changedChannels = computed(() => new Set(changes.value.map((c) => c.channel)).size)
+
+// ── önizleme / uygula / kapat ──
+const step = ref<'edit' | 'preview'>('edit')
+const confirmDiscard = ref(false)
+const previewPage = ref(1)
+const previewSize = ref(25)
+const previewRows = computed(() => changes.value.slice((previewPage.value - 1) * previewSize.value, previewPage.value * previewSize.value))
+function openPreview() { previewPage.value = 1; step.value = 'preview' }
+function requestClose() {
+  if (step.value === 'edit' && changes.value.length && !confirmDiscard.value) { confirmDiscard.value = true; return }
+  if (step.value === 'preview') { step.value = 'edit'; confirmDiscard.value = true; return }
+  emits('close')
+}
+function apply() {
+  const v = props.editingVariant
+  const count = changes.value.length
+  v.platforms = v.platforms || {}
+  for (const ch of channels.value) {
+    const d = draft[ch.code]
+    if (!d || !channelChangeCount(ch.code)) continue
+    const p = (v.platforms[ch.code] = v.platforms[ch.code] || {})
+    p.attributes = p.attributes || {}
+    p.mapping = p.mapping || {}
+    for (const id of Object.keys(base[ch.code].attributes)) if (!d.attributes[id]) delete p.attributes[id]
+    for (const [id, val] of Object.entries(d.attributes)) p.attributes[id] = { ...val }
+    for (const k of mappingChanges(ch.code)) {
+      if (isFilled(d.mapping[k])) p.mapping[k] = Array.isArray(d.mapping[k]) ? [...d.mapping[k]] : d.mapping[k]
+      else delete p.mapping[k]
+    }
+  }
+  snackbarStore.addSnackbar({ show: true, text: `${count} değişiklik varyanta yazıldı — kaydetmek için ürünü kaydedin`, timeout: 3000, color: 'success' })
   emits('close')
 }
 
-// ---- YENİ NESNE KAYIT FONKSİYONU ----
-const handleUpdate = (val: any, platformCode: any, attribute: any) => {
-  const attrId = attribute._id;
-
-  if (val === null || val === undefined || val === '') {
-    delete props.editingVariant.platforms[platformCode].attributes[attrId];
-    return;
-  }
-
-  const attrName = attribute.title;
-  let valId = "";
-  let valText = "";
-
-  if (typeof val === 'object') {
-    valId = String(val.id || "");
-    valText = String(val.title || val.name || val.value || "");
-  } else {
-    if (attribute.allowCustom) {
-      valText = String(val);
-      const matchedItem = attribute.values?.find((v: any) => (v.title || '').toLowerCase() === valText.toLowerCase());
-      if (matchedItem) {
-        valId = String(matchedItem.id);
-        valText = String(matchedItem.title);
-      }
-    } else {
-      valId = String(val);
-      const matchedItem = attribute.values?.find((v: any) => String(v.id) === String(valId));
-      if (matchedItem) valText = String(matchedItem.title || matchedItem.name || "");
-    }
-  }
-
-  props.editingVariant.platforms[platformCode].attributes[attrId] = {
-    attributeName: attrName,
-    attributeValue: valText,
-    attributeValueId: valId
-  };
-}
-// -------------------------------------
-
-const changeIntegration = async (integrationCode: string) => {
-  props.editingVariant.platforms = props.editingVariant.platforms || {}
-  props.editingVariant.platforms[integrationCode] = props.editingVariant.platforms[integrationCode] || {}
-  props.editingVariant.platforms[integrationCode].attributes = props.editingVariant.platforms[integrationCode].attributes || {}
-  props.editingVariant.platforms[integrationCode].mapping = props.editingVariant.platforms[integrationCode].mapping || {}
-  let guid = loadingComponentRef.value.info(t('loading.info.sortingImages'))
-  await retrieveAndSetPlatformAttributes(integrationCode)
-  loadingComponentRef.value.remove(guid)
-
-
-  /* fillPlatformAttributes(integrationCode) */
-  selectedIntegrationCode.value = integrationCode
-
-  checkCategoryPlatformMappingResult.value = categoriesStore.checkCategoryPlatformMapping(props.productInfoForm.category, integrationCode)
-}
-
-
-const disabledAttributes: any = ref([])
-const fillPlatformAttributes = (integrationCode: string) => {
-  disabledAttributes.value = []
-  props.editingVariant.choices.forEach((choice: any) => {
-    const mapping = categoriesStore.getCategoryPlatformMappingForChoiceId(props.productInfoForm.category, integrationCode, choice.choiceId)
-    platformAttributes.value.get(integrationCode)?.forEach((attribute: any) => {
-      if (mapping && mapping.integrationCategoryChoiceId == attribute._id) {
-        props.editingVariant.platforms[integrationCode].attributes[attribute._id] = mapping.values[choice.choiceValueId]
-      }
-    })
-  })
-
-  const customMap = integrationStore.getIntegrationCustomMap(integrationCode)
-  if (customMap && customMap.length > 0) {
-    customMap.forEach((item: any) => {
-      platformAttributes.value.get(integrationCode)?.forEach((attribute: any) => {
-        if (String(item.attributeId) == String(attribute._id)) {
-          disabledAttributes.value.push(attribute._id)
-          props.editingVariant.platforms[integrationCode].attributes[attribute._id] = brandStore.getBrandTitle(props.productInfoForm[item.value])
-        }
-      })
-    })
-
-  }
-}
-
-// DS-v2 A6a: hata yolu artık görünür (eskiden yanıt yoksa sessizce "yükleniyor"da kalıyordu).
-const platformAttributeErrors = ref(new Map<string, IntegrationErrorInfo>())
-const attributesRetrying = ref(false)
-const retrieveAndSetPlatformAttributes = async (integrationCode: string) => {
-  if (platformAttributes.value.get(integrationCode)) return platformAttributes.value.get(integrationCode)
-  const result = await integrationStore.loadIntegrationCategoryChoices(integrationCode, categoriesStore.getIntegrationCategoryId(integrationCode, props.productInfoForm.category))
-  const errors = new Map(platformAttributeErrors.value)
-  if (result.ok) {
-    errors.delete(integrationCode)
-    const filtered = result.data.filter((attribute: any) => !isCustomMap(integrationCode, attribute._id));
-    platformAttributes.value.set(integrationCode, filtered)
-  } else {
-    errors.set(integrationCode, result.error)
-  }
-  platformAttributeErrors.value = errors
-}
-const retryPlatformAttributes = async (integrationCode: string) => {
-  attributesRetrying.value = true
-  try { await retrieveAndSetPlatformAttributes(integrationCode) } finally { attributesRetrying.value = false }
-}
-
-const computedPlatformList = computed(() => {
-  return integrationStore.getClientMarketplaces().filter((item: any) => item.type.code == 'marketplace')
-})
-
-const sleep = (ms: number) => {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-var id = -1
-const width = 160
-var dragging = ref(false)
-
-const onEndSort = (event: any) => {
-  const { newIndex, oldIndex, from, to, item } = event
-  if (newIndex == oldIndex) return
-  const sortedImageIds = Array.from(to.children).map((item: any) => item.dataset.id)
-  sortImages(newIndex, Number(item.dataset.id), sortedImageIds)
-}
-
-
-const sortImages = async (itemIndex: number, imageId: number, sortedImageIds: Array<number>) => {
-  let guid = loadingComponentRef.value.info(t('loading.info.sortingImages'))
-  const response = await restApi.postImage('sortImages', { sortedImageIds: sortedImageIds, order: props.productInfoForm.images[itemIndex].order, orderChangeId: imageId, productId: props.productInfoForm._id ? props.productInfoForm._id : props.productInfoForm.tempId })
-  loadingComponentRef.value.remove(guid)
-  if (response && response.modifiedCount > 0) {
-    getImages()
-  }
-}
-
-const toggleSelectedImagesForId = (imageId: number) => {
-  const index = isSelectionExist(imageId)
-  if (index == -1) {
-    selectedImages.value.push(imageId);
-  } else {
-    selectedImages.value.splice(index, 1);
-  }
-}
-
-const isSelectionExist = (imageId: number) => {
-  return selectedImages.value.indexOf(imageId)
-}
-
-const selectAllImages = computed({
-  get() {
-    if (!props.productInfoForm.images || props.productInfoForm.images.length == 0) return false
-    return selectedImages.value.length === props.productInfoForm.images.length
-  },
-  set(newValue: boolean) {
-    selectedImages.value = []
-    if (newValue) {
-      for (let currentImage of props.productInfoForm.images) {
-        selectedImages.value.push(currentImage._id)
-      }
-    }
-  }
-})
-
-
-const init = async () => {
-  tab.value = computedPlatformList.value[0]
-  choicesStoreChoices.value = choicesStore.getChoices()
-  fileInputRef.value = ""
-
-  const firstIntegrationCode = computedPlatformList.value[0]?.code
-  changeIntegration(firstIntegrationCode)
-  /* console.log("emre",firstIntegrationCode)
-    retrieveAndSetPlatformAttributes(firstIntegrationCode) */
-  /* await getImages() */
-}
-
-
-const checkVariantAttributes = async () => {
-  const platforms = integrationStore.getClientMarketplaces().filter((item: any) => item.type.code == 'marketplace')
-  const variants = [props.editingVariant]
-  const currentCategory = categoriesStore.getCategory(props.productInfoForm.category)
-  if (currentCategory == undefined) {
-    console.error('Current category not found')
-    return
-  }
-  for (const platform of platforms) {
-    const integrationCategoryId = currentCategory.platforms[platform.code]
-    const integrationCategoryAttributes = await integrationStore.retrieveIntegrationCategoryChoices(platform.code, integrationCategoryId)
-    if (!Array.isArray(integrationCategoryAttributes)) continue
-    for (const variant of variants) {
-      variant.platforms = variant.platforms || {}
-
-      const variantAttributes = variant.platforms[platform.code]?.attributes
-      if (variantAttributes) {
-        for (const variantIntegrationAttributeId in variantAttributes) {
-          const integrationCategoryAttribute = integrationCategoryAttributes.find((item: any) => item._id == variantIntegrationAttributeId)
-          let deleteFlag = false
-          if (integrationCategoryAttribute?.allowCustom == false) {
-
-            // YENİ NESNE YAPISI İÇİN VAL KONTROLÜ EKLENDİ
-            const attrObj = variantAttributes[variantIntegrationAttributeId];
-            const valIdToCheck = attrObj && typeof attrObj === 'object' ? attrObj.attributeValueId : attrObj;
-
-            const found = integrationCategoryAttribute?.values?.find((item: any) => item.id == valIdToCheck)
-            if (!found) deleteFlag = true
-          }
-          if (deleteFlag || !integrationCategoryAttribute || !variantAttributes[variantIntegrationAttributeId]) {
-            delete variant.platforms[platform.code].attributes[variantIntegrationAttributeId]
-          }
-        }
-      }
-    }
-  }
-}
-
-onBeforeMount(() => {
-  /* init() */
-})
-
-onActivated(() => {
-  checkVariantAttributes()
-  console.log("activated att")
-  init()
-})
-
+// ── sabit yükseklik: süzme/arama tabloyu kısaltınca diyalog zıplamasın ──
+const scrollRef = ref<HTMLElement | null>(null)
+const lockH = ref(0)
+const lockMin = computed(() => (lockH.value ? `min(${lockH.value}px, max(240px, calc(100dvh - 480px)))` : '240px'))
+let ro: ResizeObserver | null = null
 onMounted(() => {
-  console.log("mounted att")
-  init()
+  if (typeof ResizeObserver === 'undefined') return
+  ro = new ResizeObserver(() => { const h = scrollRef.value?.offsetHeight || 0; if (h > lockH.value) lockH.value = h })
+  if (scrollRef.value) ro.observe(scrollRef.value)
 })
+watch(scrollRef, (el) => { if (el && ro) ro.observe(el) })
+onBeforeUnmount(() => ro?.disconnect())
 
-
-const downloadImage = (imageId: any) => {
-  const link = document.createElement('a');
-  link.href = restApi.downloadImage(imageId)
-  link.target = "_blank"
-  link.click();
-}
-
-const constructImageUrl = async (image: any) => {
-  let binaryImageData = await restApi.postImage('getImage', image)
-
-  return URL.createObjectURL(binaryImageData)
-
-}
-
-const getVariantsList = async () => {
-  await nextTick(() => { })
-  let guid = loadingComponentRef.value.info(t('loading.info.getVariantsList'))
-  await sleep(1)
-  let response = await restApi.post("VariantService/getVariantsList", { _id: props.productInfoForm._id })
-  loadingComponentRef.value.remove(guid)
-  if (response && response.variants) {
-    variantsList.value = []
-    let flag = true
-    for (let variant of response.variants) {
-      variantsList.value.push({ title: variant.title, value: variant._id })
-      if (flag == true) {
-        console.log(variantsList.value, variantsList.value[0])
-        /* productImagesInfo.value.selectedChoice = variantsList.value[0].value */
-        flag = false
-      }
-    }
-  }
-}
-
-defineExpose({
-  getVariantsList
-});
-
-const images = ref<Array<{ file: File, id: number }>>(
-  []
-)
-const thumbnails = ref<Array<{ url: string, id: number, width: number, height: number }>>(
-  []
-)
-
-
-
-var getFileName = (id: number) => {
-  for (var image of images.value) {
-    if (image.id == id) return image.file.name
-  }
-}
-
-var getFileSizeOld = (id: number) => {
-  for (var image of images.value) {
-    if (image.id == id) {
-      var suffix = "MB"
-      var conversion = 1000000
-      if (image.file.size < 1000000) {
-        conversion = 1000
-        suffix = "KB"
-      }
-      return formatNumber(Math.round(image.file.size / conversion * 10) / 10) + suffix
-
-    }
-  }
-}
-
-var getFileSize = (size: number) => {
-  if (size == undefined) return 0
-  var suffix = "MB"
-  var conversion = 1000000
-  if (size < 1000000) {
-    conversion = 1000
-    suffix = "KB"
-  }
-  return formatNumber(Math.round(size / conversion * 10) / 10) + suffix
-}
-
-var files = ref([])
-function addImage1() {
-  console.log(files)
-}
-
-const deleteImage = async (imageId: number) => {
-  let guid = loadingComponentRef.value.info(t('loading.info.getVariantsList'))
-  const response = await restApi.postImage('deleteImage', { imageId, productId: props.productInfoForm._id ? props.productInfoForm._id : props.productInfoForm.tempId })
-  loadingComponentRef.value.remove(guid)
-
-  if (response && response.acknowledged == true && response.modifiedCount == 1) {
-    getImages()
-  }
-}
-
-
-const deleteImageSelected = async () => {
-  let guid = loadingComponentRef.value.info(t('loading.info.getVariantsList'))
-  await sleep(1)
-  const response = await restApi.postImage('deleteImageSelected', { productId: props.productInfoForm._id ? props.productInfoForm._id : props.productInfoForm.tempId, tempProductId: props.productInfoForm.tempId, selectedImages: selectedImages.value })
-  loadingComponentRef.value.remove(guid)
-  if (response && response.acknowledged == true) {
-    getImages()
-  }
-}
-
-
-
-const getImages = async () => {
-  if (selectedImages.value) selectedImages.value.length = 0
-  emits('refreshImages', '')
-  /* await nextTick(() => { })
-  
-    let selectedChoice = productImagesInfo.value.selectedChoiceForFilter
-      if(selectedChoice.choiceId==-1 || selectedChoice.choiceValueId==-1) selectedChoice = undefined
-  
-    let guid = loadingComponentRef.value.info(t('loading.info.getImages'))
-    props.productInfoForm.images = await restApi.postImage('getImages', {
-      productId: props.productInfoForm._id ? props.productInfoForm._id : props.productInfoForm.tempId,
-      selectedChoice: selectedChoice
-    })
-    selectedImages.value.length = 0
-    await sleep(1)
-    loadingComponentRef.value.remove(guid) */
-}
-
-const assignImages = async () => {
-  await nextTick(() => { })
-  let selectedChoice = productImagesInfo.value.selectedChoice
-  if (selectedChoice.choiceId == -1 || selectedChoice.choiceValueId == -1) selectedChoice = undefined
-
-  let guid = loadingComponentRef.value.info(t('loading.info.getImages'))
-  await restApi.post('ImageService/assignImages', {
-    productId: props.productInfoForm._id,
-    selectedChoice: selectedChoice,
-    selectedImages: selectedImages.value
-  })
-  await sleep(1)
-  loadingComponentRef.value.remove(guid)
-  getImages()
-}
-
-const addImage = async ($event: Event) => {
-  const target = $event.target as HTMLInputElement;
-  if (target && target.files) {
-    if (target.files.length > 5 || !uploadLimit.accept(target.files)) {
-      target.value = ""
-      return false
-    }
-    id++
-
-
-    const formData = new FormData();
-    const pid = productImagesInfo.value._id
-    const tempId = productImagesInfo.value.tempId
-    let selectedChoice = productImagesInfo.value.selectedChoice
-    if (selectedChoice.choiceId == -1 || selectedChoice.choiceValueId == -1) selectedChoice = undefined
-
-    formData.append('product', JSON.stringify({
-      _id: props.productInfoForm._id,
-      tempId: props.productInfoForm.tempId,
-      selectedChoice: selectedChoice
-    }));
-    for (let i = 0; i < target.files.length; i++) {
-      formData.append('files', target.files[i]);
-    }
-
-
-    let guid = loadingComponentRef.value.info(t('loading.info.imageUploading'))
-    await restApi.postImageUpload(formData)
-    loadingComponentRef.value.remove(guid)
-    await getImages()
-
-
-    target.value = ""
-    /* for (let currentImage of currentImages.value) {
-          currentImage.imageSrc = await constructImageUrl(currentImage)
-        }
-      */
-    /* images.value.push({ file: target.files[0], id })
-      */    //reader.readAsDataURL(target.files[0])
-  }
-}
-
-
-const reader = new FileReader();
-reader.onload = (event) => {
-  const image = new Image();
-  if (event.target)
-    (<any>image.src) = event.target.result;
-  image.onload = () => {
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    const thumbnailWidth = width + 400;
-    const thumbnailHeight = (thumbnailWidth / image.width) * image.height;
-    canvas.width = thumbnailWidth;
-    canvas.height = thumbnailHeight;
-    if (ctx)
-      ctx.drawImage(image, 0, 0, thumbnailWidth, thumbnailHeight);
-    thumbnails.value.push({ url: canvas.toDataURL('image/png'), id, width: canvas.width, height: canvas.height })
-  };
-};
-
-
-
-
-const file = ref<File | null>();
-const form = ref<HTMLFormElement>();
-var thumbnailUrl = ref("")
-
-import { useUploadLimit } from '@/composables/useUploadLimit'
-// FE-CFG-1: yükleme tavanı backend ortam değeri (`env.images.uploadMaxBytes`); eski kullanılmayan 2 MB `maxSize` sabiti kaldırıldı.
-const uploadLimit = useUploadLimit()
-/* function onFileChanged($event: Event) {
-  const target = $event.target as HTMLInputElement;
-  if (target && target.files) {
-    file.value = target.files[0];
-    generateThumbnail(file.value)
-  }
-}
- */
-async function saveImage() {
-  if (file.value) {
-    try {
-      // save file.value
-    } catch (error) {
-      console.error(error);
-      form.value?.reset();
-      file.value = null;
-    } finally {
-    }
-  }
-};
-
-function generateThumbnail1(file: any) {
-  const reader = new FileReader();
-  reader.onload = (event) => {
-    const image = new Image();
-    if (event.target)
-      (<any>image.src) = event.target.result;
-
-    image.onload = () => {
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-
-      // Set the canvas size to the thumbnail size you desire
-      const thumbnailWidth = 100;
-      const thumbnailHeight = (thumbnailWidth / image.width) * image.height;
-
-      canvas.width = thumbnailWidth;
-      canvas.height = thumbnailHeight;
-
-      // Draw the image on the canvas
-      if (ctx)
-        ctx.drawImage(image, 0, 0, thumbnailWidth, thumbnailHeight);
-
-      // Convert the canvas content to a data URL
-      thumbnailUrl.value = canvas.toDataURL('image/jpeg');
-    };
-  };
-
-  // Read the file as a data URL
-  reader.readAsDataURL(file);
-}
-
-const imageSrc = computed(() => {
-  if (file.value)
-    console.log(file.value.size)
-  if (!file.value) return "ffff"
-  console.log(file)
-  var a = URL.createObjectURL(file.value)
-  console.log(a)
-  return a
-
-})
-
+defineExpose({ changes, apply, requestClose })
 </script>
 
-<style>
-/* DS-v2 A6a — pazaryeri özellik listesi hata/yükleniyor alanı + kanal bilgileri akordeonu */
-.pva-acc__panel { border: 1px solid var(--ek-color-border-default); border-radius: var(--ek-radius-card) !important; background: var(--ek-color-surface-muted) !important; }
-.pva-acc__title { min-height: 48px !important; font-weight: 600; color: var(--ek-color-content-strong); }
-.pva-state { padding: var(--ek-space-4) 0; }
-.dropZone {
-  position: relative;
-  border: 1px dashed var(--ek-color-border-strong);
-}
-
-.dropZone:hover {
-  background-color: var(--ek-color-error-subtle);
-}
-
-.dropZone:hover .dropZone-title {
-  color: var(--ek-color-info);
-}
-
-.dropZone-info {
+<style scoped src="./channelAttributeEditor.css"></style>
+<style scoped>
+/* tablo alanı yalnız büyür (diyalog zıplamasın) */
+.bva-scroll { min-height: v-bind(lockMin); }
+/* tek varyant: 2 kolon (özellik | değer) */
+.pva-c-name { width: 36%; }
+.pva-c-value { width: 64%; }
+.pva-tags { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ek-space-1) var(--ek-space-2); margin-top: 2px; }
+.pva-tags .bva-req { margin-left: 0; }
+.pva-axis { background: var(--ek-color-action-subtle); color: var(--ek-color-action-emphasis); }
+.pva-before {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
   color: var(--ek-color-content-muted);
-  position: absolute;
-  text-align: center;
+  font-size: var(--ek-type-caption-size);
+  line-height: var(--ek-type-caption-line);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
-
-.dropZone-title {
-  color: var(--ek-color-content-muted);
-}
-
-.fileInput {
-  position: absolute;
-  cursor: pointer;
-  opacity: 0;
-  height: 100%;
-  width: 100%;
-}
-
-.dragDropOn .dragDropOnZone {
-  background-color: var(--ek-color-info);
-}
-
-.dragDropOff .dragDropOnZone {}
-
-.dragDropOn {
-  background-color: var(--ek-color-info);
-}
-
-.dragDropOff {}
-
-.dragDropOn .dragCard {
-  /* top: 204px; */
-
-}
-
-.dragCard {
-  /* position: absolute; */
-  /* top: 184px; */
-  /* top: 150px;
-  bottom: 2px;
-  right: 0;
-  left: 0; */
-  border: 0px dashed var(--ek-color-border-default);
-
-}
-
-.dropZone input {
-  cursor: pointer;
-  opacity: 1;
-}
-
-.dropZone-upload-limit-info {
-  display: flex;
-  justify-content: flex-start;
-  flex-direction: column;
-}
-
-.dropZone-over {
-  background: var(--ek-color-surface-sunken);
-  opacity: 0.8;
-}
-
-.dropZone-uploaded {
-  width: 80%;
-  height: 200px;
-  position: relative;
-  border: 0px dashed var(--ek-color-border-default);
-}
-
-.dropZone-uploaded-info {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  color: var(--ek-color-content-muted);
-  position: absolute;
-  top: 50%;
-  width: 100%;
-  transform: translate(0, -50%);
-  text-align: center;
-}
-
-.removeFile {
-  width: 200px;
-}
-</style>
-
-<style>
-/* ADR-0015 B5-2 — satir ici stillerden tasinan siniflar (autostyle). Satir ici stilin onceligi
-   !important ile korunur; ayni ozellikte Vuetify yardimci sinifi/`color` prop cakismasi varsa
-   (satir ici stil zaten yeniliyordu) !important eklenmez. Scope'suz: v-dialog/v-menu ve alt
-   bilesen kokleri scoped ozniteligi almayabilir; onek dosyaya ozgudur. */
-.pva-s1 {
-  overflow-y: scroll !important;
-  border: 1px solid var(--ek-color-border-default) !important;
-  height: calc(100vh - 110px) !important;
-}
-
-.pva-s2 {
-  min-width: 150px !important;
-  border: 1px solid var(--ek-color-border-strong) !important;
-}
-
-.pva-s3 {
-  border: 1px solid var(--ek-color-border-strong) !important;
-  width: 30px !important;
-  opacity: .9 !important;
-}
-
-.pva-s4 {
-  position: fixed !important;
-  z-index: 0 !important;
-  background-color: transparent !important;
-  height: 100% !important;
-  min-width: 150px !important;
-  border-right: 0px solid var(--ek-color-border-default) !important;
-}
-
-.pva-s5 {
-  cursor: pointer !important;
-  border-radius: 5px !important;
-  border: 1px solid var(--ek-color-surface) !important;
-}
-
-.pva-s6 {
-  margin-left: 184px !important;
-}
-
-/* DS-v2 A6a — dar ekran: sabit kanal kolonu içeriğin üstüne binmesin; sekmeler üstte yatay şerit */
+.pva-before.is-warn { color: var(--ek-color-warning-emphasis); }
+.bva-table tbody th { height: auto; padding-top: var(--ek-space-2); padding-bottom: var(--ek-space-2); }
 @media (max-width: 600px) {
-  .pva-s4 { position: static !important; height: auto !important; min-width: 0 !important; margin-bottom: var(--ek-space-3); }
-  .pva-s6 { margin-left: 0 !important; }
-}
-
-.pva-s7 {
-  z-index: 0 !important;
-}
-
-.pva-s8 {
-  border-radius: 0px !important;
-  min-height: 40px !important;
-  border: 1px solid var(--ek-color-border-default) !important;
-}
-
-.pva-s9 {
-  font-size: .8em !important;
-}
-
-.pva-s10 {
-  font-size: 1.1em !important;
-}
-
-.pva-s11 {
-  padding-inline-start: 0px !important;
-}
-
-.pva-s12 {
-  border: 1px solid var(--ek-color-border-default) !important;
-  border-top: none !important;
-}
-
-.pva-s13 {
-  width: 25px !important;
-}
-
-.pva-s14 {
-  color: var(--ek-color-error) !important;
-}
-
-/* Platform sekme logolari (onceki dinamik satir ici stil; arka plan VERI rengi olarak satir icinde kalir). */
-.pva-tab--active {
-  filter: brightness(1);
-}
-
-.pva-tab--idle-8 {
-  opacity: .8;
-  filter: brightness(0.9);
-}
-
-.pva-tab--idle-9 {
-  opacity: .9;
-  filter: brightness(0.9);
-}
-
-.pva-logo--active,
-.pva-logo--idle {
-  height: 70px !important;
-  transition: width var(--ek-motion-layout), box-shadow var(--ek-motion-layout);
-}
-
-.pva-logo--active {
-  width: 130px !important;
-}
-
-.pva-logo--idle {
-  width: 80px !important;
+  .pva-c-name { width: 40%; }
+  .pva-c-value { width: 60%; }
 }
 </style>

@@ -68,22 +68,17 @@ import { loopSection as l } from '../../data/assistant'
     justify-content: center;
     width: var(--node);
     height: var(--node);
-    border: var(--site-border-width) solid var(--site-accent-line);
-    border-radius: var(--ek-radius-full);
-    background: var(--ek-color-surface);
-    box-shadow:
-      0 0 0 var(--ek-space-1) var(--ek-color-background),
-      0 0 0 calc(var(--ek-space-1) + var(--site-border-width)) var(--site-accent-soft);
-    color: var(--site-accent);
+    /* SITE-DL: çerçeveli kare düğüm (daire/hale yok). Zemin renginde tek halka yalnız iz çizgisini keser. */
+    border: var(--site-border-width) solid var(--site-action-border);
+    border-radius: var(--ek-radius-tile);
+    background: var(--site-action-subtle);
+    box-shadow: 0 0 0 var(--ek-space-1) var(--ek-color-background);
+    color: var(--site-action);
   }
   .step--you .step__node {
-    border-color: transparent;
-    background: linear-gradient(140deg, var(--ek-color-primary), var(--ek-color-primary-darken-1));
-    box-shadow:
-      0 0 0 var(--ek-space-1) var(--ek-color-background),
-      0 0 0 calc(var(--ek-space-1) + var(--site-border-width)) color-mix(in srgb, var(--ek-color-amber) 70%, transparent),
-      0 var(--ek-space-2) var(--ek-space-6) calc(var(--ek-space-2) * -1) color-mix(in srgb, var(--ek-color-primary) 60%, transparent);
-    color: var(--site-color-on-primary);
+    border-color: var(--ek-color-warning-border);
+    background: var(--ek-color-warning-subtle);
+    color: var(--ek-color-warning-emphasis);
   }
   .step__actor {
     /* küçük metin: AA için --site-accent (4,36:1) yerine koyu bağlantı vurgusu */
@@ -107,9 +102,10 @@ import { loopSection as l } from '../../data/assistant'
   }
   .step__who {
     padding: 0 var(--ek-space-2);
-    border-radius: var(--ek-radius-full);
+    border: var(--site-border-width) solid var(--ek-color-warning-border);
+    border-radius: var(--ek-radius-md);
     background: var(--ek-color-warning-subtle);
-    color: var(--ek-color-content-strong);
+    color: var(--ek-color-warning-emphasis);
     font-size: var(--ek-font-size-xs);
     font-weight: var(--ek-font-weight-semibold);
     letter-spacing: 0;
@@ -127,7 +123,7 @@ import { loopSection as l } from '../../data/assistant'
     inset-inline-start: calc(var(--node) / 2);
     width: var(--site-border-width);
     overflow: hidden;
-    background: linear-gradient(180deg, var(--site-accent-line), color-mix(in srgb, var(--ek-color-amber) 55%, transparent), var(--site-accent-line));
+    background: var(--ek-color-border-default);
   }
   .loop__trace {
     display: none;
@@ -154,7 +150,7 @@ import { loopSection as l } from '../../data/assistant'
       inset-inline: calc(var(--node) / 2) calc(20% - var(--ek-space-6) * 0.8 - var(--node) / 2);
       width: auto;
       height: var(--site-border-width);
-      background: linear-gradient(90deg, var(--site-accent-line), color-mix(in srgb, var(--ek-color-amber) 55%, transparent), var(--site-accent-line));
+      background: var(--ek-color-border-default);
     }
     .loop__trace {
       position: absolute;
@@ -167,11 +163,10 @@ import { loopSection as l } from '../../data/assistant'
       position: absolute;
       inset-block-start: 50%;
       inset-inline-start: 0;
-      width: var(--ek-space-16);
-      height: calc(var(--site-border-width) * 3);
+      width: var(--ek-space-8);
+      height: calc(var(--site-border-width) * 2);
       translate: -100% -50%;
-      border-radius: var(--ek-radius-full);
-      background: linear-gradient(90deg, transparent, var(--ek-color-secondary));
+      background: var(--site-action);
     }
   }
 

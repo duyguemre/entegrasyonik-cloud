@@ -926,4 +926,94 @@ defineExpose({ focus: () => inputRef.value?.focus(), blur: () => inputRef.value?
     font-size: 1rem;
   }
 }
+
+/* ================= FE-LOCAL-1039 — ana sayfa / sol menü diliyle arama =================
+   Düz yüzey, ince çizgi, çerçeveli ikon kutuları, tek vurgu rengi (degrade/ışıma yok).
+   · Alan: sol menü kutularıyla aynı yarıçap; odakta beyaz yüzey + eylem renginde çerçeve (ışıma yok).
+   · Panel: kart yüzeyi + ince çerçeve; grup başlığı = mikro etiket + eylem renginde kısa çizgi.
+   · Satır: ikon çerçeveli tonlu kutuda; ETKİN satır = eylem renginin açık tonu + ince çerçeve (etkin menü öğesi).
+   · ⋯ düğmesi çerçeveli küçük kutu; alt şerit sakin zeminli. */
+.ek-search__field {
+  border-radius: var(--ek-radius-tile);
+}
+
+.ek-search.is-focused .ek-search__field,
+.ek-search.is-open .ek-search__field {
+  border-color: var(--ek-color-action);
+  box-shadow: none;
+}
+
+.ek-search--refined .ek-search__panel {
+  border-color: var(--ek-color-border-default);
+  border-radius: var(--ek-radius-card);
+  background: var(--ek-color-surface);
+}
+
+.ek-search--refined .ek-search__group-head {
+  padding: var(--ek-space-4) var(--ek-space-4) var(--ek-space-2);
+  background: var(--ek-color-surface);
+}
+
+.ek-search--refined .ek-search__group-label {
+  display: flex;
+  align-items: center;
+  gap: var(--ek-space-2);
+}
+
+.ek-search--refined .ek-search__group-label::before {
+  content: '';
+  flex: none;
+  width: 12px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--ek-color-action);
+}
+
+.ek-search--refined .ek-search__option {
+  margin: 2px var(--ek-space-2);
+  border: 1px solid transparent;
+  border-radius: var(--ek-radius-tile);
+}
+
+.ek-search--refined .ek-search__option.is-active {
+  border-color: var(--ek-color-action-border);
+  background: var(--ek-color-action-subtle);
+}
+
+.ek-search--refined .ek-search__option.is-active .ek-search__option-text {
+  color: var(--ek-color-action-emphasis);
+}
+
+/* İkon kutusu: tonun açık zemini + ince çerçevesi (ana sayfadaki ikon kapsülleriyle aynı aile). */
+.ek-search--refined .ek-search__avatar {
+  border-radius: var(--ek-radius-md);
+  box-shadow: inset 0 0 0 1px var(--ek-color-action-border);
+}
+
+.ek-search--refined .ek-search__avatar--success { box-shadow: inset 0 0 0 1px var(--ek-color-success-border); }
+.ek-search--refined .ek-search__avatar--info { box-shadow: inset 0 0 0 1px var(--ek-color-info-border); }
+.ek-search--refined .ek-search__avatar--warning { box-shadow: inset 0 0 0 1px var(--ek-color-warning-border); }
+.ek-search--refined .ek-search__avatar--neutral { box-shadow: inset 0 0 0 1px var(--ek-color-neutral-border); }
+
+.ek-search__more {
+  border: 1px solid transparent;
+  border-radius: var(--ek-radius-md);
+}
+
+.ek-search__option:hover .ek-search__more,
+.ek-search__option.is-active .ek-search__more {
+  border-color: var(--ek-color-border-default);
+  background: var(--ek-color-surface);
+  color: var(--ek-color-content-default);
+}
+
+.ek-search__more:hover {
+  border-color: var(--ek-color-action-border);
+  background: var(--ek-color-surface);
+  color: var(--ek-color-action);
+}
+
+.ek-search--refined .ek-search__footer {
+  background: var(--ek-color-surface-muted);
+}
 </style>

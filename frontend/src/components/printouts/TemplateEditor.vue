@@ -968,4 +968,36 @@ defineExpose({ save, dirty })
 @media (prefers-reduced-motion: reduce) {
   .ek-tpl-palette-item, .ek-tpl-block, .ek-tpl-seg button { transition: none; }
 }
+
+/* ================= FE-LOCAL-1047 — düzenleyici: ortak tasarım dili =================
+   Dış kart düz yüzey + ince çerçeve; kâğıt gölgesi sakin; seçili parça düğmesi eylem renginin açık tonu (gölge yok). */
+.ek-tpl-editor {
+  border-color: var(--ek-color-border-default);
+  box-shadow: none;
+}
+
+.ek-tpl-editor__bar {
+  background: var(--ek-color-surface-muted);
+  border-bottom-color: var(--ek-color-border-default);
+}
+
+.ek-tpl-block {
+  border-color: var(--ek-color-border-default);
+  border-radius: var(--ek-radius-tile);
+}
+
+.ek-tpl-block:hover {
+  border-color: var(--ek-color-action-border);
+}
+
+.ek-tpl-canvas__frame {
+  box-shadow: var(--ek-shadow-card);
+  outline-color: var(--ek-color-border-default);
+}
+
+.ek-tpl-seg button[aria-pressed='true'] {
+  background: var(--ek-color-action-subtle);
+  box-shadow: inset 0 0 0 1px var(--ek-color-action-border);
+  color: var(--ek-color-action-emphasis);
+}
 </style>

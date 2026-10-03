@@ -9,20 +9,30 @@
     </BoDataTable>
 -->
 <template>
-  <div class="bo-dt" :class="{ 'bo-dense': density === 'compact' }" role="region" :aria-label="label" data-bo-datatable>
+  <!-- STANDART LİSTE: üst bant (satır sayısı · klavye ipuçları) → tablo → alt bant (sayfalama; sayfa vermediyse kayıt bilgisi). -->
+  <div ref="root" class="bo-dt bo-listframe" :class="{ 'bo-dense': density === 'compact' }" role="region" :aria-label="label" data-bo-datatable>
     <StateBlock v-if="phase && phase !== 'ready'" :phase="phase" :error="error" skeleton="table" :rows="skeletonRows" :empty-title="emptyTitle" :empty-message="emptyMessage" @retry="emit('retry')" />
-    <!-- bo-wdg: kök `.ek-data-table` yatay kaydırma kabıdır → klavyeyle odaklanır bölge (BoTableFrame ile aynı ad deseni).
-         Öznitelikler yalnız burada verilir; web uygulamasının EkDataTable'ı değişmez. -->
-    <EkDataTable v-else v-bind="$attrs" :items="items" :columns="columns" :row-key="rowKey" tabindex="0" role="region" :aria-label="`${label} tablosu`">
-      <template v-for="(_, name) in $slots" #[name]="slotProps"><slot :name="name" v-bind="slotProps ?? {}" /></template>
-    </EkDataTable>
-    <slot name="footer" />
+    <template v-else>
+      <BoTableBar :count="items.length" :show-count="!ext.count"><slot name="toolbar" /></BoTableBar>
+      <!-- bo-wdg: kök `.ek-data-table` yatay kaydırma kabıdır → klavyeyle odaklanır bölge (BoTableFrame ile aynı ad deseni).
+           Öznitelikler yalnız burada verilir; web uygulamasının EkDataTable'ı değişmez. -->
+      <EkDataTable v-bind="$attrs" :items="items" :columns="columns" :row-key="rowKey" tabindex="0" role="region" :aria-label="`${label} tablosu`">
+        <template v-for="name in cellSlots" #[name]="slotProps"><slot :name="name" v-bind="slotProps ?? {}" /></template>
+      </EkDataTable>
+    </template>
+    <slot name="footer">
+      <BoPagination v-if="(!phase || phase === 'ready') && !ext.pager && items.length" :count="items.length" />
+    </slot>
   </div>
 </template>
 
 <script setup lang="ts">
 import { EkDataTable, type EkTableColumn } from '@entegrasyonik/ui/components'
 import StateBlock from '@bo/components/kit/StateBlock.vue'
+import BoPagination from './BoPagination.vue'
+import BoTableBar from './BoTableBar.vue'
+import { useListChrome } from './listChrome'
+import { computed, useSlots } from 'vue'
 import type { DescribedError } from '@bo/utils/errors'
 
 defineOptions({ inheritAttrs: false })
@@ -42,6 +52,10 @@ withDefaults(
   { rowKey: 'id', density: 'compact', skeletonRows: 5 },
 )
 const emit = defineEmits<{ retry: [] }>()
+const slots = useSlots()
+/** EkDataTable'a yalnız hücre/başlık yuvaları geçer (toolbar/footer bu kabın yuvalarıdır). */
+const cellSlots = computed(() => Object.keys(slots).filter((n) => n !== 'toolbar' && n !== 'footer'))
+const { root, ext } = useListChrome()
 </script>
 
 <style scoped>
@@ -49,6 +63,12 @@ const emit = defineEmits<{ retry: [] }>()
   display: flex;
   flex-direction: column;
   min-width: 0;
+}
+
+/* Çerçeve dış kapta (backoffice.css `.bo-listframe`); iç tablonun kendi çerçevesi yok. */
+.bo-dt :deep(.ek-data-table) {
+  border: 0;
+  border-radius: 0;
 }
 
 /* §12.2 tablo rolü (13/20): paket hücresi 14 px (`--ek-font-size-md`) → BoTableFrame ile aynı ölçü. */
@@ -60,5 +80,14 @@ const emit = defineEmits<{ retry: [] }>()
 .bo-dt :deep(.ek-data-table:focus-visible) {
   outline: none;
   box-shadow: var(--ek-focus-ring);
+}
+
+/* BO-LOCAL-01 — seçili satır: eylem renginin düz açık tonu (uydurma karışım yok); satır çizgisi ince. */
+.bo-dt :deep(.ek-data-table__row--selected) {
+  background-color: var(--ek-color-action-subtle);
+}
+
+.bo-dt :deep(.ek-data-table__row) {
+  border-bottom-color: var(--ek-color-border-subtle);
 }
 </style>

@@ -283,4 +283,53 @@ function confirm() {
     gap: var(--ek-space-1);
   }
 }
+
+/* ================= BO-LOCAL-01 — tehlikeli işlem diyaloğu: uygulamanın tasarım diliyle =================
+   Bilgi listesi ince çerçeveli kutu (kutu köşeli); satır etiketleri mikro etiket. Üretim / staging ortam satırında sol
+   kalın şerit YOK: tonun düz açık zemini + alt kenarda ince ton çizgisi. */
+.bo-danger__facts {
+  overflow: hidden;
+  border-color: var(--ek-color-border-default);
+  border-radius: var(--ek-radius-tile);
+  background: var(--ek-color-surface);
+}
+
+.bo-danger__fact dt {
+  align-items: center;
+  align-self: start;
+  min-height: 22px;
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-micro-size);
+  line-height: var(--ek-type-micro-line);
+  font-weight: var(--ek-type-micro-weight);
+  letter-spacing: var(--ek-type-micro-tracking);
+  text-transform: uppercase;
+}
+
+.bo-danger__fact.is-env-production,
+.bo-danger__fact.is-env-staging {
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.bo-danger__fact.is-env-production {
+  border-bottom: 1px solid var(--ek-color-error-border);
+}
+
+.bo-danger__fact.is-env-production dt {
+  color: var(--ek-color-error-emphasis);
+}
+
+.bo-danger__fact.is-env-staging {
+  border-bottom: 1px solid var(--ek-color-warning-border);
+}
+
+.bo-danger__fact.is-env-staging dt {
+  color: var(--ek-color-warning-emphasis);
+}
+
+.bo-danger__fact.is-env-production + .bo-danger__fact,
+.bo-danger__fact.is-env-staging + .bo-danger__fact {
+  border-top: 0;
+}
 </style>

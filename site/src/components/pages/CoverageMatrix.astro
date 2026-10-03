@@ -168,8 +168,8 @@ const stateOf = (i: PublicIntegration, k: CapabilityKey): State => {
   }
 
   /*
-   * Durum ikonu: dolu turkuaz + onay = destekleniyor; yarım dolu halka = temel düzeyde; kısa çizgi = bu kanalda
-   * yok. Uyarı sarısı KULLANILMAZ (sakin dil): fark, doluluk ile anlatılır.
+   * Durum ikonu (SITE-DL-03): köşeli kutu. Eylem tonlu kutu + onay = destekleniyor; çerçeveli kutu + küçük dolu
+   * kare = temel düzeyde; kısa çizgi = bu kanalda yok. Uyarı sarısı KULLANILMAZ (sakin dil); degrade/daire yok.
    */
   .cm__state {
     box-sizing: border-box;
@@ -179,21 +179,29 @@ const stateOf = (i: PublicIntegration, k: CapabilityKey): State => {
     justify-content: center;
     width: var(--ek-space-6);
     height: var(--ek-space-6);
-    border-radius: var(--ek-radius-full);
-    color: var(--site-color-on-primary);
+    border: var(--site-border-width) solid transparent;
+    border-radius: var(--ek-radius-md);
+    color: var(--site-action);
   }
   .cm__state[data-state='yes'] {
-    background: var(--ek-color-secondary-darken-1);
+    border-color: var(--site-action-border);
+    background: var(--site-action-subtle);
   }
   .cm__state[data-state='limited'] {
-    border: calc(var(--site-border-width) * 2) solid var(--ek-color-secondary-darken-1);
-    background: conic-gradient(var(--ek-color-secondary-darken-1) 0 50%, transparent 50% 100%);
+    border-color: var(--ek-color-border-strong);
+    background: var(--ek-color-surface);
+  }
+  .cm__state[data-state='limited']::before {
+    content: '';
+    width: 34%;
+    height: 34%;
+    border-radius: calc(var(--site-border-width) * 2);
+    background: var(--site-action);
   }
   .cm__state[data-state='none']::before {
     content: '';
     width: 45%;
     height: calc(var(--site-border-width) * 2);
-    border-radius: var(--ek-radius-full);
     background: var(--ek-color-border-strong);
   }
   .cm__state--sm {
@@ -219,10 +227,14 @@ const stateOf = (i: PublicIntegration, k: CapabilityKey): State => {
     text-align: center;
     transition: background-color var(--ek-duration-base) var(--ek-easing-standard);
   }
+  /* Başlık satırı: `surface-muted` bant + mikro BÜYÜK HARF etiket. */
   .cm__table thead th {
     background: var(--ek-color-surface-muted);
-    color: var(--ek-color-content-strong);
+    color: var(--site-text-meta);
+    font-size: var(--ek-font-size-xs);
     font-weight: var(--ek-font-weight-semibold);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
     vertical-align: bottom;
   }
   .cm__table .cm__corner {
@@ -233,11 +245,11 @@ const stateOf = (i: PublicIntegration, k: CapabilityKey): State => {
     flex-direction: column;
     align-items: center;
     gap: var(--ek-space-1);
-    color: var(--ek-color-content-default);
+    color: var(--site-text-meta);
     line-height: var(--ek-line-height-tight);
   }
   .cm__col :global(.icon) {
-    color: var(--ek-color-primary-darken-1);
+    color: var(--site-action);
   }
   .cm__table th[scope='row'] {
     background: var(--ek-color-surface);
@@ -254,7 +266,7 @@ const stateOf = (i: PublicIntegration, k: CapabilityKey): State => {
     text-decoration: none;
   }
   .cm__rowhead:hover {
-    color: var(--site-color-link-hover);
+    color: var(--site-action-emphasis);
   }
   .cm__table tbody tr:last-child > * {
     border-bottom: 0;
@@ -264,7 +276,7 @@ const stateOf = (i: PublicIntegration, k: CapabilityKey): State => {
   }
   .cm__table tbody tr:hover > *,
   .cm__table tbody tr:focus-within > * {
-    background-color: var(--ek-color-surface-muted);
+    background-color: var(--site-action-subtle);
   }
 
   /* --- Kompakt kartlar (<768px) --- */
@@ -276,10 +288,8 @@ const stateOf = (i: PublicIntegration, k: CapabilityKey): State => {
   .cm__card {
     padding: var(--ek-space-4);
     border: var(--site-border-width) solid var(--ek-color-border-default);
-    /* site-wdg W19: bağımsız kart = panel yarıçapı + kart gölgesi (site geneli tek kart dili). */
-    border-radius: var(--site-radius-panel);
+    border-radius: var(--ek-radius-card);
     background: var(--ek-color-surface);
-    box-shadow: var(--site-shadow-card);
   }
   .cm__card-head {
     display: flex;
@@ -331,9 +341,8 @@ const stateOf = (i: PublicIntegration, k: CapabilityKey): State => {
       overflow-x: auto;
       overscroll-behavior-x: contain;
       border: var(--site-border-width) solid var(--ek-color-border-default);
-      border-radius: var(--site-radius-panel);
+      border-radius: var(--ek-radius-card);
       background: var(--ek-color-surface);
-      box-shadow: var(--site-shadow-card);
     }
     /* Yalnızca yatay: ilk sütun sabit; kaydırılan hücrelerle arasında ince ayraç gölgesi. */
     .cm__table th[scope='row'],

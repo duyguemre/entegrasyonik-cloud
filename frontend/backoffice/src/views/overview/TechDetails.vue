@@ -447,4 +447,53 @@ const auditState = computed<PanelState>(() => (audit.value === null ? (auditFail
 .bo-ov-qstats .bo-ov-bad dd {
   color: var(--ek-color-error-emphasis);
 }
+
+/* ================= BO-LOCAL-01 — teknik ayrıntılar: uygulamanın tasarım diliyle =================
+   Kuyruk sayaçları tek şeritte, hücreler ince çizgiyle ayrılır (ayrı kutucuklar değil); tablo kutu köşeli; denetim
+   satırındaki "aç" düğmesi çerçeveli ikon kutusu; "tümü" bağlantısının oku token hızıyla kayar. */
+.bo-table-wrap--flat {
+  border-radius: var(--ek-radius-tile);
+}
+
+.bo-ov-qstats {
+  gap: 1px;
+  overflow: hidden;
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-tile);
+  background: var(--ek-color-border-subtle);
+}
+
+.bo-ov-qstats > div {
+  border: 0;
+  border-radius: 0;
+  background: var(--ek-color-surface);
+}
+
+.bo-ov-audit li:last-child {
+  border-bottom: 0;
+}
+
+.bo-ov-audit__open {
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-md);
+  background: var(--ek-color-surface);
+  transition: var(--ek-transition-colors);
+}
+
+.bo-ov-audit__open:hover {
+  border-color: var(--ek-color-action-border);
+  background: var(--ek-color-action-subtle);
+  color: var(--ek-color-action-emphasis);
+}
+
+.bo-link-more .v-icon {
+  transition: transform var(--ek-motion-feedback);
+}
+
+.bo-ov-intake-ok {
+  padding: var(--ek-space-3);
+  border: 1px solid var(--ek-color-success-border);
+  border-radius: var(--ek-radius-tile);
+  background: var(--ek-color-success-subtle);
+}
 </style>

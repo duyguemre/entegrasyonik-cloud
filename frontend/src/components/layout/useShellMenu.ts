@@ -19,7 +19,7 @@ import { SECTIONS } from '@/navigation/sections'
 import { firstMessage, humanizeKey, resolveMenuTitle } from '@/navigation/menuTitle'
 import type { EkSideSection, EkSideItem } from '@entegrasyonik/ui/components'
 import { HELP_SCREEN_KEY, helpCenterLink } from '@/help/helpLink'
-import { inheritedIcon, regroupMenu, shapeGroupLinks } from '@/navigation/menuShape'
+import { inheritedIcon, regroupMenu, SETTINGS_GROUP_CODES, shapeGroupLinks } from '@/navigation/menuShape'
 
 /** Sidebar'ın sağında favori yıldızı taşıyabilen öğe (menü `isConstant` değilse). */
 export interface ShellMenuEntry {
@@ -121,6 +121,51 @@ export function useShellMenu() {
       }
       if (items.length) sections.push({ label, items })
     }
+    // FE-LOCAL-1048 (kullanıcı kararı): "Ayarlar" bölümünün altında ikinci bir "Ayarlar" alt grubu olmaz — bölümle AYNI
+    // adı taşıyan alt grup (menü verisi nasıl gelirse gelsin) açılır; alt öğeleri "Ayarlar" bölümünün sonuna eklenir.
+    const settingsLabel = t('shell.section.settings')
+    const sameName = (a: string | undefined) => (a ?? '').trim().toLocaleLowerCase('tr-TR') === settingsLabel.trim().toLocaleLowerCase('tr-TR')
+    const lifted: EkSideItem[] = []
+    for (const sec of sections) {
+      sec.items = sec.items.filter((it) => {
+        if (!it.children?.length || !sameName(it.label)) return true
+        lifted.push(...it.children)
+        return false
+      })
+    }
+    if (lifted.length) {
+      const target = sections.find((sec) => sameName(sec.label))
+      if (target) target.items.push(...lifted)
+      else sections.push({ label: settingsLabel, items: lifted })
+    }
+    // FE-LOCAL-1047: ayar ekranları (Uygulama ayarları, Çıktılar, Yetkilendirme) menü verisinde iki yerde gelebiliyor
+    // (kök öğe + "Ayarlar" grubunun çocuğu) → menüde aynı ekran iki kez görünüyordu. Aynı ekranın ÜSTTEKİ kaydı düşer.
+    const lastSeen = new Map<string, EkSideItem>()
+    const flat = sections.flatMap((sec) => sec.items.flatMap((it) => (it.children?.length ? it.children : [it])))
+    for (const it of flat) {
+      const code = String(byKey.get(it.key)?.code ?? '')
+      if (SETTINGS_GROUP_CODES.includes(code)) lastSeen.set(code, it)
+    }
+    const isDuplicate = (it: EkSideItem) => {
+      const code = String(byKey.get(it.key)?.code ?? '')
+      return lastSeen.has(code) && lastSeen.get(code) !== it
+    }
+    for (const sec of sections) {
+      sec.items = sec.items
+        .filter((it) => it.children?.length || !isDuplicate(it))
+        .map((it) => (it.children?.length ? { ...it, children: it.children.filter((c) => !isDuplicate(c)) } : it))
+        .filter((it) => it.children === undefined || it.children.length > 0)
+    }
+    // FE-LOCAL-1048 (kullanıcı kararı): "Destek talepleri" kendi bölümünde değil, en alttaki "Yardım" bölümünde durur.
+    const supportItems: EkSideItem[] = []
+    for (const sec of sections) {
+      sec.items = sec.items.filter((it) => {
+        if (it.children?.length || byKey.get(it.key)?.code !== 'TicketListView') return true
+        supportItems.push(it)
+        return false
+      })
+    }
+    for (let i = sections.length - 1; i >= 0; i--) if (!sections[i].items.length) sections.splice(i, 1)
     // Yardım merkezi (faz3-fe-help): statik içerik, veri erişimi yok → her kullanıcıya açık; `MenuService` ağacında
     // DEĞİL, istemci bağlantısıyla (`help/helpLink.ts`) kabuğun kendi "Yardım" bölümüne eklenir (sol menü, ray, Ctrl+K).
     const helpLink = helpCenterLink(menuStore)
@@ -131,31 +176,48 @@ export function useShellMenu() {
       byKey.set(HELP_SCREEN_KEY, helpLink)
       const item: EkSideItem = { key: HELP_SCREEN_KEY, label: helpTitle, icon: 'mdi-lifebuoy' }
       const existing = sections.find((sec) => sec.label === helpSection)
-      if (existing) existing.items.push(item)
-      else sections.push({ label: helpSection, items: [item] })
+      if (existing) existing.items.push(item, ...supportItems)
+      else sections.push({ label: helpSection, items: [item, ...supportItems] })
+      supportItems.length = 0
       entries.push({ key: HELP_SCREEN_KEY, link: helpLink, title: helpTitle, icon: 'mdi-lifebuoy', sectionLabel: helpSection })
     }
-    // FR3 madde 2: Favoriler — menünün EN ÜSTÜNDE kendi bölümü (kayıtlı sırayla); boşken kapatılabilir tek satır ipucu.
+    // Yardım bölümü kurulmadıysa (menü boş değil ama yardım zaten ağaçta) destek talepleri yine "Yardım" altında.
+    if (supportItems.length) {
+      const helpSection = t('shell.section.help')
+      const existing = sections.find((sec) => sec.label === helpSection)
+      if (existing) existing.items.push(...supportItems)
+      else sections.push({ label: helpSection, items: [...supportItems] })
+    }
+    // FE-LOCAL-1049 (kullanıcı kararı): "Çıkış" menünün EN ALTINDA, kendi başlıksız bölümünde durur (hangi grubun
+    // içinde gelirse gelsin). Bağlantı nesnesi aynı kalır → davranış aynı (üst düzey çıkış oturumu kapatır, alt öğe ekranı açar).
+    const exitItems: EkSideItem[] = []
+    const isExit = (it: EkSideItem) => !it.children?.length && byKey.get(it.key)?.code === 'ExitView'
+    for (const sec of sections) {
+      sec.items = sec.items
+        .filter((it) => (isExit(it) ? (exitItems.push(it), false) : true))
+        .map((it) => {
+          if (!it.children?.some(isExit)) return it
+          exitItems.push(...it.children.filter(isExit))
+          return { ...it, children: it.children.filter((c) => !isExit(c)) }
+        })
+        .filter((it) => it.children === undefined || it.children.length > 0)
+    }
+    for (let i = sections.length - 1; i >= 0; i--) if (!sections[i].items.length) sections.splice(i, 1)
+    if (exitItems.length) sections.push({ label: '', items: [{ ...exitItems[0], icon: exitItems[0].icon ?? 'mdi-logout' }] })
+    // FR3 madde 2: Favoriler (kayıtlı sırayla). Kullanıcı kararı (2026-10-03): sol menüde AYRI bölüm olarak GÖSTERİLMEZ —
+    // genel bakıştaki Favoriler kartında (DashboardFavorites) ve akıllı aramada durur; ekleme/çıkarma yine menü öğesinin
+    // yanındaki yıldızla. (`favHintDismissed` / FAVORITES_SECTION_ID geriye uyum için duruyor.)
+    const favorites: EkSideItem[] = []
     if (groups.value.length > 0) {
       const favLinks: any[] = typeof menuStore?.getFavorites === 'function' ? menuStore.getFavorites() : []
-      const favItems: EkSideItem[] = []
       for (const link of favLinks) {
         const key = screenKeyForLink(link)
-        if (!byKey.has(key) || favItems.some((i) => i.key === key)) continue
-        favItems.push({ key, label: titleOf(link), icon: iconByKey.get(key) ?? link.icon })
-      }
-      if (favItems.length || !favHintDismissed.value) {
-        sections.unshift({
-          id: FAVORITES_SECTION_ID,
-          label: t('shell.section.favorites'),
-          icon: 'mdi-star-outline',
-          reorderable: true,
-          emptyText: t('shell.favorites.empty'),
-          items: favItems,
-        })
+        if (!byKey.has(key) || favorites.some((i) => i.key === key)) continue
+        favorites.push({ key, label: titleOf(link), icon: iconByKey.get(key) ?? link.icon })
       }
     }
-    return { sections, byKey, entries }
+    void favHintDismissed.value
+    return { sections, byKey, entries, favorites }
   })
 
   /** Etkin sekmenin menü anahtarı (çok örnekli bir kayıt sekmesinde menüde karşılığı yoksa boş). */

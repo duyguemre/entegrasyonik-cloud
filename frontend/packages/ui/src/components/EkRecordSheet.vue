@@ -224,4 +224,20 @@ const isOpen = computed({
     flex: 1 1 auto;
   }
 }
+
+/* ================= FE-LOCAL-1045 — detay sayfası: ana sayfa dili =================
+   Tür etiketi (SİPARİŞ / MÜŞTERİ KARTI …) eylem renginde kısa çizgiyle başlar (bölüm başlıklarıyla aynı). */
+.ek-record-sheet__kind {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ek-space-2);
+}
+
+.ek-record-sheet__kind::before {
+  content: '';
+  width: 12px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--ek-color-action);
+}
 </style>

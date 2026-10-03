@@ -272,4 +272,81 @@ function factLink(f: StatusFact): Record<string, unknown> {
     padding-left: 0;
   }
 }
+
+/* ================= BO-LOCAL-01 — durum başlığı: uygulamanın tasarım diliyle =================
+   Sol kalın şerit ve gölge YOK: sorun varken tonun düz açık zemini + ince ton çerçevesi ("sıradaki iş" paneliyle aynı).
+   İkon beyaz zeminde çerçeveli köşeli kutuda; özet rozetleri köşeli. */
+.bo-sh {
+  --bo-sh-line: var(--ek-color-border-default);
+  border: 1px solid var(--bo-sh-line);
+  box-shadow: none;
+}
+
+.bo-sh.is-warning {
+  --bo-sh-line: var(--ek-color-warning-border);
+  border-color: var(--bo-sh-line);
+  background: var(--ek-color-warning-subtle);
+}
+
+.bo-sh.is-critical {
+  --bo-sh-line: var(--ek-color-error-border);
+  border-color: var(--bo-sh-line);
+  background: var(--ek-color-error-subtle);
+}
+
+.bo-sh__icon {
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--bo-sh-line);
+  border-radius: var(--ek-radius-tile);
+  background: var(--ek-color-surface);
+  font-size: var(--ek-icon-md);
+}
+
+.bo-sh.is-ok .bo-sh__icon {
+  border-color: var(--ek-color-success-border);
+  background: var(--ek-color-success-subtle);
+  color: var(--ek-color-success-emphasis);
+}
+
+.bo-sh__verdict {
+  font-size: var(--ek-type-heading-size);
+}
+
+.bo-sh__facts,
+.bo-sh__next {
+  padding-left: calc(36px + var(--ek-space-3));
+}
+
+.bo-sh__fact {
+  min-height: 28px;
+  padding: 0 var(--ek-space-2);
+  border-radius: var(--ek-radius-md);
+}
+
+.bo-sh__fact.is-link:hover {
+  border-color: var(--ek-color-action-border);
+  background: var(--ek-color-action-subtle);
+}
+
+.bo-sh__fact-dot {
+  border-radius: 2px;
+}
+
+@media (max-width: 600px) {
+  .bo-sh__facts,
+  .bo-sh__next {
+    padding-left: 0;
+  }
+
+  .bo-sh__text {
+    flex: 1 1 calc(100% - 36px - var(--ek-space-3));
+  }
+
+  .bo-sh__badge {
+    margin-left: calc(36px + var(--ek-space-3));
+  }
+}
 </style>

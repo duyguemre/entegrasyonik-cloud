@@ -38,8 +38,8 @@
       @refresh="loadClients()"
       @row-click="viewDetail"
     >
-      <template #header-actions>
-        <EkButton icon="mdi-plus" @click="openCreateDialog()">Yeni mağaza oluştur</EkButton>
+      <template #create>
+        <EkButton tone="primary" icon="mdi-plus" @click="openCreateDialog()">Yeni mağaza oluştur</EkButton>
       </template>
 
       <template #toolbar-start>

@@ -101,6 +101,20 @@ const routes: RouteRecordRaw[] = [
           requiresAuth: true
         }
       },
+      // Yasal belgeler (kimliksiz): içerik sitenin kanonik verisinden (site/src/data/legal). Eski elle yazılmış
+      // public/legal/*.html kopyaları kaldırıldı; dışarıda kalmış eski bağlantılar karşılığına yönlenir.
+      {
+        path: 'legal/:slug',
+        name: 'Legal',
+        component: () => import('@/views/unsecure/LegalView.vue'),
+        meta: {
+          requiresAuth: false
+        }
+      },
+      { path: 'legal/gizlilik-sozlesmesi.html', redirect: '/legal/gizlilik' },
+      { path: 'legal/kullanim-kosullari.html', redirect: '/legal/kullanim-kosullari' },
+      { path: 'legal/aydinlatma-metni.html', redirect: '/legal/kvkk-aydinlatma' },
+      { path: 'legal/cerez-politikasi.html', redirect: '/legal/cerez' },
       // S2: bant dışı yazma onayı; URL'de kimlik dışında parametre YOK.
       {
         path: 'approve/:id',

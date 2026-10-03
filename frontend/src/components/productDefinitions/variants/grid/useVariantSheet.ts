@@ -73,11 +73,12 @@ export function useVariantSheet(opts: SheetOptions) {
   }
 
   // ── Yazma (tek yol: tüm değişiklikler buradan geçer, geçmişe tek adım yazılır) ──
-  function write(targets: Array<{ row: number; col: number; value: CellValue }>, label?: string): CellChange[] {
+  /** `column` verilirse görünen kolon yerine o kolona yazılır (ör. görünmeyen diğer kanalların aynı alanı). */
+  function write(targets: Array<{ row: number; col: number; value: CellValue; column?: SheetColumn }>, label?: string): CellChange[] {
     const step: CellChange[] = []
     for (const t of targets) {
       const v = rows.value[t.row]
-      const column = columns.value[t.col]
+      const column = t.column ?? columns.value[t.col]
       if (!v || !column || opts.readonly?.(v, column)) continue
       const before = getCell(v, column.key)
       setCell(v, column.key, t.value)
@@ -137,18 +138,22 @@ export function useVariantSheet(opts: SheetOptions) {
   const cancelEdit = () => { editing.value = null }
 
   // ── Toplu işlemler ─────────────────────────────────────────────────────────
-  /** Seçili hücrelere işlem uygular. Uygulanamayan hücreler (ör. metne yüzde) atlanır ve sayısı döner. */
-  function applyToSelection(op: BulkOp, onlyKinds?: SheetColumn['kind'][]) {
+  /**
+   * Seçili hücrelere işlem uygular. Uygulanamayan hücreler (ör. metne yüzde) atlanır ve sayısı döner.
+   * `expand`: görünen kolonu birden çok kolona yayar (ör. bir kanalın satış fiyatı → tüm kanalların satış fiyatı).
+   */
+  function applyToSelection(op: BulkOp, onlyKinds?: SheetColumn['kind'][], expand?: (column: SheetColumn) => SheetColumn[]) {
     const g = range.value
-    const targets: Array<{ row: number; col: number; value: CellValue }> = []
+    const targets: Array<{ row: number; col: number; value: CellValue; column: SheetColumn }> = []
     let skipped = 0
     for (let r = g.r1; r <= g.r2; r++) {
       for (let c = g.c1; c <= g.c2; c++) {
-        const column = columns.value[c]
-        if ((onlyKinds && !onlyKinds.includes(column.kind)) || opts.readonly?.(rows.value[r], column)) { skipped++; continue }
-        const res = applyBulk(column.kind, getCell(rows.value[r], column.key), op)
-        if ('error' in res) { skipped++; continue }
-        targets.push({ row: r, col: c, value: res.value })
+        for (const column of expand ? expand(columns.value[c]) : [columns.value[c]]) {
+          if ((onlyKinds && !onlyKinds.includes(column.kind)) || opts.readonly?.(rows.value[r], column)) { skipped++; continue }
+          const res = applyBulk(column.kind, getCell(rows.value[r], column.key), op)
+          if ('error' in res) { skipped++; continue }
+          targets.push({ row: r, col: c, value: res.value, column })
+        }
       }
     }
     const changed = write(targets, 'Toplu uygula')

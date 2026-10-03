@@ -231,4 +231,14 @@ function timeText(inv: Invitation): string {
     display: none;
   }
 }
+
+/* FE-LOCAL-1047: davet satırı ikonu — yuvarlak yerine çerçeveli ikon kapsülü (uygulamanın ortak ikon ailesi). */
+.ek-invitation__avatar {
+  border: 1px solid var(--ek-color-info-border);
+  border-radius: var(--ek-radius-tile);
+}
+
+.ek-invitation.is-expired .ek-invitation__avatar {
+  border-color: var(--ek-color-warning-border);
+}
 </style>

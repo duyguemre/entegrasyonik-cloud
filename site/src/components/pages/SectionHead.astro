@@ -12,18 +12,31 @@ interface Props {
   lead?: string
   inverse?: boolean
   compact?: boolean
+  /** Başlıkta düz vurgu rengiyle işaretlenecek birebir alt dize. */
+  accent?: string
   align?: 'start' | 'center'
 }
 
 import Eyebrow from '../Eyebrow.astro'
 
-const { id, title, eyebrow, lead, inverse = false, compact = false, align = 'start' } = Astro.props
+const { id, title, eyebrow, lead, inverse = false, compact = false, accent, align = 'start' } = Astro.props
+const parts = accent && title.includes(accent) ? title.split(accent) : null
 const hasSlot = Astro.slots.has('default')
 ---
 
 <div class:list={['shead', { 'shead--inverse': inverse, 'shead--compact': compact, 'shead--center': align === 'center' }]}>
   {eyebrow && <Eyebrow>{eyebrow}</Eyebrow>}
-  <h2 id={id}>{title}</h2>
+  <h2 id={id}>
+    {parts ? (
+      <>
+        {parts[0]}
+        <span class="shead__accent">{accent}</span>
+        {parts[1]}
+      </>
+    ) : (
+      title
+    )}
+  </h2>
   {lead && <p class="shead__lead">{lead}</p>}
   {hasSlot && <div class="shead__lead"><slot /></div>}
 </div>
@@ -32,9 +45,12 @@ const hasSlot = Astro.slots.has('default')
   .shead {
     display: flex;
     flex-direction: column;
-    gap: var(--ek-space-2);
-    max-width: 46rem;
-    margin-bottom: var(--ek-space-10);
+    gap: var(--ek-space-3);
+    max-width: var(--site-container-narrow);
+    margin-bottom: var(--ek-space-12);
+  }
+  .shead__accent {
+    color: var(--site-accent);
   }
   .shead--compact {
     margin-bottom: 0;
@@ -46,15 +62,17 @@ const hasSlot = Astro.slots.has('default')
   }
   .shead h2 {
     color: var(--site-text-heading);
-    font-size: var(--site-font-display-sm);
+    text-wrap: balance;
+    font-size: var(--site-font-display-md);
     font-weight: var(--site-font-display-weight);
     line-height: var(--site-font-display-line-height);
     letter-spacing: var(--site-font-display-tracking);
   }
   .shead__lead {
     color: var(--site-text-body);
-    font-size: var(--ek-font-size-lg);
+    font-size: var(--ek-font-size-xl);
     line-height: var(--site-font-body-line-height);
+    text-wrap: pretty;
   }
   .shead__lead :global(p + p) {
     margin-top: var(--ek-space-2);
@@ -65,6 +83,9 @@ const hasSlot = Astro.slots.has('default')
   }
   .shead--inverse h2 {
     color: var(--site-text-on-dark-heading);
+  }
+  .shead--inverse .shead__accent {
+    color: var(--site-accent-on-dark);
   }
   .shead--inverse .shead__lead {
     color: var(--site-text-on-dark-body);

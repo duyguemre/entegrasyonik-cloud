@@ -1,10 +1,6 @@
 <template>
   <div class="bo-page">
-    <BoPageHeader :updated-at="res.loadedAt.value ?? undefined" :stale="res.stale.value">
-      <template #actions>
-        <BoAction kind="refresh" :loading="res.refreshing.value || res.phase.value === 'loading'" data-page-refresh @click="res.load()" />
-      </template>
-    </BoPageHeader>
+    <BoPageHeader :updated-at="res.loadedAt.value ?? undefined" :stale="res.stale.value" refreshable :refreshing="res.refreshing.value || res.phase.value === 'loading'" @refresh="res.load()" />
 
     <PageVerdict :verdict="verdict" />
 

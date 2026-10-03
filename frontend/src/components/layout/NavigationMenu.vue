@@ -168,15 +168,9 @@ function onReorder(sectionId: string, keys: string[]) {
 <style scoped>
 /* Çekmece genişliği Vuetify'dan (rail ↔ width); süre/eğri/gecikme B4 koreografisinden (app.css --ek-app-nav-*):
    ray'a giderken içerik solduktan sonra (`lag`) daralır, açılırken hemen genişler. */
-/* Menü zemini: üst barın kimlik lacivertinin (`chrome`) çok açık tonu — üstte biraz daha açık, aşağı doğru bir tık
-   koyulaşan yumuşak geçiş. Koyu temada aynı karışım menü yüzeyine hafif lacivert verir. */
+/* Menü zemini: DÜZ yüzey (degrade yok) — ana sayfa kartlarıyla aynı beyaz/koyu yüzey; iş alanından ince çizgiyle ayrılır. */
 .ek-shell-nav {
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--ek-color-action) 5%, var(--ek-color-sidebar-bg)) 0%,
-      color-mix(in srgb, var(--ek-color-action) 8%, var(--ek-color-sidebar-bg)) 100%
-    ) !important;
+  background: var(--ek-color-surface) !important;
   border-right: 1px solid var(--ek-color-sidebar-border) !important;
   transition-duration: var(--ek-app-nav-move) !important;
   transition-timing-function: var(--ek-motion-layout-easing) !important;

@@ -21,11 +21,14 @@ interface Props {
   align?: 'start' | 'center'
   /** S27b: sonraki bölüm hero'nun alt kenarına taşar (fiyat kartları) — hero altına ek boşluk bırakır. */
   overlap?: boolean
+  /** Başlıkta vurgulanacak birebir alt dize (düz vurgu rengi; degrade YOK — kullanıcı kuralı 2026-10-02). */
+  accent?: string
 }
 
 import Eyebrow from '../Eyebrow.astro'
 
-const { title, lead, crumbs, eyebrow, visualDesktopOnly = false, align = 'start', overlap = false } = Astro.props
+const { title, lead, crumbs, eyebrow, visualDesktopOnly = false, align = 'start', overlap = false, accent } = Astro.props
+const parts = accent && title.includes(accent) ? title.split(accent) : null
 const hasVisual = Astro.slots.has('visual')
 ---
 
@@ -34,12 +37,22 @@ const hasVisual = Astro.slots.has('visual')
   <div class:list={['page-hero__grid', { 'page-hero__grid--split': hasVisual }]}>
     <div class="page-hero__body">
       {eyebrow && <Eyebrow>{eyebrow}</Eyebrow>}
-      <h1 id="page-title">{title}</h1>
+      <h1 id="page-title">
+        {parts ? (
+          <>
+            {parts[0]}
+            <span class="page-hero__accent">{accent}</span>
+            {parts[1]}
+          </>
+        ) : (
+          title
+        )}
+      </h1>
       {lead && <p class="page-hero__lead">{lead}</p>}
       <div class="page-hero__extra"><slot /></div>
     </div>
     {hasVisual && (
-      <div class:list={['page-hero__visual', { 'page-hero__visual--desktop': visualDesktopOnly }]} data-tilt>
+      <div class:list={['page-hero__visual', { 'page-hero__visual--desktop': visualDesktopOnly }]}>
         <slot name="visual" />
       </div>
     )}
@@ -49,11 +62,17 @@ const hasVisual = Astro.slots.has('visual')
 <style>
   /* Bölüm ritmini iç sayfa için kısaltır (ana sayfa hero'su kadar geniş boşluk gerekmez). */
   :global(.section.page-hero) {
-    padding-block: var(--ek-space-8) calc(var(--site-section-y) * 0.6);
+    padding-block: var(--ek-space-8) calc(var(--site-section-y) * 0.75);
+  }
+  /* Alt kenarda ince ışık çizgisi: koyu sahneyi açık içerikten zarifçe ayırır (dekoratif). */
+  :global(.section.page-hero)::after {
+    inset-block: auto 0;
+    height: var(--site-border-width);
+    background: var(--ek-color-chrome-border);
   }
   /* Taşan bölüm (S27b): hero altında kartların yarısı kadar ek boşluk; sonraki bölüm negatif üst boşlukla yukarı çıkar. */
   :global(.section.page-hero--overlap) {
-    padding-bottom: calc(var(--site-section-y) * 0.6 + var(--site-hero-overlap));
+    padding-bottom: calc(var(--site-section-y) * 0.75 + var(--site-hero-overlap));
   }
   :global(.page-hero--center) .page-hero__body {
     align-items: center;
@@ -68,13 +87,13 @@ const hasVisual = Astro.slots.has('visual')
   }
   .page-hero__grid {
     display: grid;
-    gap: var(--ek-space-10);
-    margin-top: var(--ek-space-6);
+    gap: var(--ek-space-12);
+    margin-top: var(--ek-space-10);
   }
   .page-hero__body {
     display: flex;
     flex-direction: column;
-    gap: var(--ek-space-4);
+    gap: var(--ek-space-5);
     max-width: calc(var(--site-container-narrow) + var(--ek-space-16));
     min-width: 0;
   }
@@ -87,10 +106,16 @@ const hasVisual = Astro.slots.has('visual')
     font-weight: var(--site-font-display-weight);
     line-height: var(--site-font-display-line-height);
     letter-spacing: var(--site-font-display-tracking);
+    text-wrap: balance;
+  }
+  .page-hero__accent {
+    color: var(--site-accent-on-dark);
+    white-space: nowrap;
   }
   .page-hero__lead {
     font-size: var(--ek-font-size-xl);
     line-height: var(--ek-line-height-normal);
+    text-wrap: pretty;
   }
   .page-hero__extra:empty {
     display: none;
@@ -103,26 +128,16 @@ const hasVisual = Astro.slots.has('visual')
     margin-top: var(--ek-space-2);
   }
 
-  /* Sayfaya özgü görsel kompozisyon: cam panel, sahne zemininin üstünde hafif yükselir. */
+  /* Sayfaya özgü görsel kompozisyon: sahne zemininin üstünde düz, çerçeveli panel. */
   .page-hero__visual {
     position: relative;
     min-width: 0;
     padding: var(--ek-space-6);
-    border-radius: var(--site-radius-panel);
+    /* SITE-DL-03: düz "cam" panel — ince çerçeve; bulanıklık, gölge, ışıma yok. */
+    border-radius: var(--ek-radius-card);
     background: var(--site-glass-bg);
     border: var(--site-border-width) solid var(--site-glass-border);
-    backdrop-filter: blur(var(--site-glass-blur));
-    -webkit-backdrop-filter: blur(var(--site-glass-blur));
-    box-shadow: var(--site-shadow-panel);
-    transform: perspective(75rem) rotateX(var(--rx)) rotateY(var(--ry));
-    transition: transform var(--ek-duration-base) var(--ek-easing-standard);
   }
-  @media (prefers-reduced-motion: reduce), (pointer: coarse) {
-    .page-hero__visual {
-      transform: none;
-    }
-  }
-
   @media (max-width: 1023.98px) {
     .page-hero__visual--desktop {
       display: none;
@@ -134,5 +149,9 @@ const hasVisual = Astro.slots.has('visual')
       grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
       align-items: center;
     }
+  }
+
+  .page-hero__extra :global(.badge) {
+    align-self: center;
   }
 </style>

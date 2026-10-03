@@ -99,4 +99,11 @@ const commit = () => {
 }
 
 .dv-add__ok:disabled { color: var(--ek-color-content-subtle); cursor: default; }
+
+/* FE-LOCAL-1048: değer çipleriyle aynı yükseklik. */
+.dv-add__trigger,
+.dv-add {
+  box-sizing: border-box;
+  height: 24px;
+}
 </style>

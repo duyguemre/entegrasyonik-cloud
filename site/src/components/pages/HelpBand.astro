@@ -61,11 +61,9 @@ const {
     align-items: center;
     padding: var(--ek-space-6);
     border: var(--site-border-width) solid var(--ek-color-border-default);
-    border-radius: var(--site-radius-panel);
-    background:
-      radial-gradient(60% 120% at 0% 0%, color-mix(in srgb, var(--ek-color-secondary) 10%, transparent), transparent 70%),
-      var(--ek-color-surface);
-    box-shadow: var(--site-shadow-card);
+    /* SITE-DL-03: düz kart — degrade ve gölge yok. */
+    border-radius: var(--ek-radius-card);
+    background: var(--ek-color-surface);
   }
   .help-band__icon {
     display: inline-flex;
@@ -73,9 +71,10 @@ const {
     justify-content: center;
     width: var(--ek-space-12);
     height: var(--ek-space-12);
-    border-radius: var(--ek-radius-lg);
-    background: linear-gradient(140deg, var(--ek-color-primary), var(--ek-color-primary-darken-1));
-    color: var(--site-color-on-primary);
+    border: var(--site-border-width) solid var(--site-action-border);
+    border-radius: var(--ek-radius-tile);
+    background: var(--site-action-subtle);
+    color: var(--site-action);
   }
   .help-band__body {
     display: flex;
@@ -106,7 +105,7 @@ const {
     min-height: var(--site-tap-target);
     padding-inline: var(--ek-space-5);
     border: var(--site-border-width) solid var(--ek-color-border-strong);
-    border-radius: var(--ek-radius-lg);
+    border-radius: var(--ek-radius-tile);
     background: var(--ek-color-surface);
     color: var(--site-text-heading);
     font-size: var(--ek-font-size-md);
@@ -117,15 +116,20 @@ const {
       border-color var(--ek-duration-base) var(--ek-easing-standard);
   }
   .help-band__link:hover {
-    border-color: var(--ek-color-primary);
+    border-color: var(--site-action-border);
+    background: var(--site-action-subtle);
+    color: var(--site-action-emphasis);
   }
+  /* Birincil = marka laciverti (Button ile aynı). */
   .help-band__link--primary {
-    border-color: var(--ek-color-primary);
-    background: var(--ek-color-primary);
+    border-color: var(--site-action);
+    background: var(--site-action);
     color: var(--site-color-on-primary);
   }
   .help-band__link--primary:hover {
-    background: var(--ek-color-primary-darken-1);
+    border-color: var(--site-action-hover);
+    background: var(--site-action-hover);
+    color: var(--site-color-on-primary);
   }
   @container (min-width: 52rem) {
     .help-band {

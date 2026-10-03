@@ -15,6 +15,11 @@
  * durum) gösterir, arkasında yörünge halkaları ve ışıma; onay kapısı konsolun altında öne taşan ayrı bir kart. Üç adım
  * BAĞLI bir akış: numara + oklu hat, karar adımı ("Onayınızla uygular") vurgulu. Sayfadaki yeri yükseldi (Yetenekler'in
  * hemen ardından). Hâlâ hareketsiz (döngü bütçesi hero vitrininde).
+ *
+ * SITE-DL-02: vitrin düzleşti (aurora/degrade çerçeve/yörünge yok) ve konsola SAKİN bir yürüyüş eklendi: vurgu dört
+ * ajan satırını (gözlüyor → öneri hazır → onayınızı bekliyor → raporlandı) sırayla gezer, sonunda onay kapısında durur —
+ * "gözler, önerir, onayınızla uygular" döngüsü. Yalnız opacity; durağan hâlde vurgu yok (`data-scene="reveal"` yalnız
+ * oynat/görünür kancası sağlar).
  */
 import Section from '../Section.astro'
 import Icon from './Icon.astro'
@@ -48,7 +53,7 @@ const rows = agentConsole.rows
       </div>
     </div>
 
-    <div class="teaser__visual" aria-hidden="true">
+    <div class="teaser__visual" aria-hidden="true" data-scene="reveal">
       <span class="teaser__orbit teaser__orbit--a"></span>
       <span class="teaser__orbit teaser__orbit--b"></span>
       <div class="deck">
@@ -111,7 +116,7 @@ const rows = agentConsole.rows
     padding: var(--ek-space-8) var(--ek-space-5);
     border-radius: calc(var(--site-radius-panel) + var(--ek-space-2));
     background:
-      radial-gradient(70% 60% at 85% -10%, color-mix(in srgb, var(--ek-color-secondary) 22%, transparent), transparent 70%),
+      radial-gradient(70% 60% at 85% -10%, color-mix(in srgb, var(--site-accent-on-dark) 22%, transparent), transparent 70%),
       radial-gradient(60% 70% at -10% 110%, color-mix(in srgb, var(--ek-color-primary-lighten) 45%, transparent), transparent 70%),
       linear-gradient(160deg, var(--site-stage-base) 0%, var(--site-stage-deep) 70%);
     box-shadow: var(--site-shadow-panel);
@@ -127,10 +132,10 @@ const rows = agentConsole.rows
     border-radius: inherit;
     background: linear-gradient(
       135deg,
-      color-mix(in srgb, var(--ek-color-secondary) 70%, transparent),
+      color-mix(in srgb, var(--site-accent-on-dark) 70%, transparent),
       color-mix(in srgb, var(--ek-color-background) 10%, transparent) 40%,
       color-mix(in srgb, var(--ek-color-background) 6%, transparent) 70%,
-      color-mix(in srgb, var(--ek-color-secondary) 40%, transparent)
+      color-mix(in srgb, var(--site-accent-on-dark) 40%, transparent)
     );
     -webkit-mask:
       linear-gradient(var(--ek-color-content-strong) 0 0) content-box,
@@ -146,7 +151,7 @@ const rows = agentConsole.rows
     z-index: -1;
     height: 70%;
     border-radius: 50%;
-    background: radial-gradient(closest-side, color-mix(in srgb, var(--ek-color-secondary) 26%, transparent), transparent);
+    background: radial-gradient(closest-side, color-mix(in srgb, var(--site-accent-on-dark) 26%, transparent), transparent);
     filter: blur(2.5rem);
     pointer-events: none;
   }
@@ -232,7 +237,7 @@ const rows = agentConsole.rows
     transition: background-color var(--ek-duration-base) var(--ek-easing-standard);
   }
   .teaser__cta:hover {
-    background: color-mix(in srgb, var(--ek-color-background) 88%, var(--ek-color-secondary));
+    background: color-mix(in srgb, var(--ek-color-background) 88%, var(--site-accent-on-dark));
   }
   .teaser__link {
     display: inline-flex;
@@ -321,7 +326,7 @@ const rows = agentConsole.rows
     width: var(--ek-space-8);
     height: var(--ek-space-8);
     border-radius: var(--ek-radius-md);
-    background: color-mix(in srgb, var(--ek-color-secondary) 14%, transparent);
+    background: color-mix(in srgb, var(--site-accent-on-dark) 14%, transparent);
     color: var(--site-accent-on-dark);
   }
   .deck__id {
@@ -351,7 +356,7 @@ const rows = agentConsole.rows
     margin-inline-start: auto;
     padding: 0 var(--ek-space-2);
     border-radius: var(--ek-radius-full);
-    background: color-mix(in srgb, var(--ek-color-secondary) 14%, transparent);
+    background: color-mix(in srgb, var(--site-accent-on-dark) 14%, transparent);
     color: var(--site-text-on-dark-heading);
     font-size: var(--ek-font-size-xs);
     font-weight: var(--ek-font-weight-semibold);
@@ -361,7 +366,7 @@ const rows = agentConsole.rows
     width: var(--ek-space-2);
     height: var(--ek-space-2);
     border-radius: 50%;
-    background: var(--ek-color-secondary);
+    background: var(--site-accent-on-dark);
   }
   .deck__row[data-state-kind='wait'] {
     border-color: color-mix(in srgb, var(--ek-color-amber) 45%, transparent);
@@ -418,7 +423,7 @@ const rows = agentConsole.rows
     margin-inline-start: auto;
     padding: var(--ek-space-1) var(--ek-space-3);
     border-radius: var(--ek-radius-md);
-    background: var(--ek-color-secondary);
+    background: var(--site-accent-on-dark);
     color: var(--site-stage-deep);
     font-weight: var(--ek-font-weight-bold);
     box-shadow: var(--site-glow-ring);
@@ -434,14 +439,14 @@ const rows = agentConsole.rows
     z-index: -1;
     inset: 50% auto auto 50%;
     aspect-ratio: 1 / 1;
-    border: var(--site-border-width) solid color-mix(in srgb, var(--ek-color-secondary) 22%, transparent);
+    border: var(--site-border-width) solid color-mix(in srgb, var(--site-accent-on-dark) 22%, transparent);
     border-radius: var(--ek-radius-full);
     translate: -50% -50%;
     pointer-events: none;
   }
   .teaser__orbit--a {
     width: 115%;
-    background: radial-gradient(closest-side, color-mix(in srgb, var(--ek-color-secondary) 16%, transparent), transparent);
+    background: radial-gradient(closest-side, color-mix(in srgb, var(--site-accent-on-dark) 16%, transparent), transparent);
   }
   .teaser__orbit--b {
     width: 145%;
@@ -468,7 +473,7 @@ const rows = agentConsole.rows
     position: relative;
   }
   .step--you .step__icon {
-    border-color: var(--ek-color-secondary);
+    border-color: var(--site-accent-on-dark);
     background: var(--site-gradient-accent-on-dark);
     color: var(--site-stage-deep);
     box-shadow: var(--site-glow-ring);
@@ -480,7 +485,7 @@ const rows = agentConsole.rows
     flex: none;
     width: var(--ek-space-8);
     height: var(--ek-space-8);
-    border: var(--site-border-width) solid color-mix(in srgb, var(--ek-color-secondary) 40%, transparent);
+    border: var(--site-border-width) solid color-mix(in srgb, var(--site-accent-on-dark) 40%, transparent);
     border-radius: var(--ek-radius-md);
     color: var(--site-accent-on-dark);
   }
@@ -533,15 +538,15 @@ const rows = agentConsole.rows
       inset-inline-end: var(--ek-space-1);
       width: var(--ek-space-8);
       height: var(--site-border-width);
-      background: linear-gradient(90deg, transparent, var(--ek-color-secondary));
+      background: linear-gradient(90deg, transparent, var(--site-accent-on-dark));
     }
     .step:not(:last-child)::before {
       inset-inline-end: var(--ek-space-1);
       width: var(--ek-space-2);
       height: var(--ek-space-2);
       margin-block-start: calc(var(--ek-space-1) * -1);
-      border-block-start: var(--site-border-width) solid var(--ek-color-secondary);
-      border-inline-end: var(--site-border-width) solid var(--ek-color-secondary);
+      border-block-start: var(--site-border-width) solid var(--site-accent-on-dark);
+      border-inline-end: var(--site-border-width) solid var(--site-accent-on-dark);
       rotate: 45deg;
     }
   }
@@ -555,6 +560,157 @@ const rows = agentConsole.rows
     }
     .teaser__steps {
       grid-column: 1 / -1;
+    }
+  }
+
+  /* ================= SITE-DL-02 — uygulamanın tasarım dili (frontend/DESIGN_SYSTEM.md §35) =================
+     Düz yüzey + 1px ince çerçeve + kart yarıçapı; gölge, degrade, ışıma, hover yükselmesi yok; tek vurgu eylem
+     mavisi; ikonlar çerçeveli köşeli kutuda; hap rozet yerine köşeli çip. Yukarıdaki kuralları EZER (aynı özgüllük,
+     kaynak sırası). */
+
+  /* Otopilot vitrini: düz marka laciverti kart; aurora, degrade çerçeve, ızgara, yörünge halkaları yok. */
+  .teaser {
+    border: var(--site-border-width) solid var(--ek-color-chrome-border);
+    border-radius: var(--ek-radius-card);
+    background: var(--ek-color-chrome);
+    box-shadow: none;
+  }
+  .teaser::before,
+  .teaser__aurora,
+  .teaser__grid,
+  .teaser__orbit {
+    display: none;
+  }
+  .teaser__eyebrow-icon,
+  .deck__glyph {
+    border: var(--site-border-width) solid var(--site-glass-border);
+    border-radius: var(--ek-radius-md);
+    background: var(--site-glass-bg);
+    color: var(--site-accent-on-dark);
+  }
+  .teaser__brand {
+    background: none;
+    -webkit-background-clip: border-box;
+    background-clip: border-box;
+    color: var(--site-accent-on-dark);
+  }
+  .teaser__cta {
+    border-radius: var(--ek-radius-tile);
+  }
+  .teaser__cta:hover {
+    background: var(--site-action-subtle);
+  }
+  .deck {
+    border-radius: var(--ek-radius-card);
+    background: var(--site-glass-bg);
+    box-shadow: none;
+  }
+  .deck__mode {
+    border-radius: var(--ek-radius-md);
+  }
+  .deck__row {
+    border-radius: var(--ek-radius-tile);
+    background: transparent;
+  }
+  .deck__icon {
+    border: var(--site-border-width) solid var(--site-glass-border);
+    border-radius: var(--ek-radius-md);
+    background: transparent;
+  }
+  .deck__state {
+    padding: calc(var(--ek-space-1) * 0.5) var(--ek-space-2);
+    border: var(--site-border-width) solid var(--site-glass-border);
+    border-radius: var(--ek-radius-md);
+    background: transparent;
+  }
+  .deck__row[data-state-kind='propose'] .deck__state i {
+    box-shadow: none;
+  }
+  .deck__gate {
+    border-style: solid;
+    border-radius: var(--ek-radius-tile);
+    box-shadow: none;
+  }
+  .deck__lock {
+    border-radius: var(--ek-radius-md);
+  }
+  .deck__approve {
+    border-radius: var(--ek-radius-md);
+    background: var(--ek-color-background);
+    color: var(--ek-color-chrome);
+    box-shadow: none;
+  }
+  .step__icon {
+    border-color: var(--site-glass-border);
+    border-radius: var(--ek-radius-tile);
+    background: var(--site-glass-bg);
+  }
+  .step--you .step__icon {
+    border-color: var(--ek-color-background);
+    background: var(--ek-color-background);
+    box-shadow: none;
+    color: var(--ek-color-chrome);
+  }
+  @media (min-width: 768px) {
+    .step:not(:last-child)::after {
+      background: var(--site-glass-border);
+    }
+    .step:not(:last-child)::before {
+      border-color: var(--site-glass-border);
+    }
+  }
+
+  /* SITE-DL-02 (akış) — konsol yürüyüşü: vurgu satır satır iner, onay kapısında biter (yalnız opacity). */
+  .deck__row,
+  .deck__gate {
+    position: relative;
+  }
+  .deck__row::after,
+  .deck__gate::after {
+    content: '';
+    position: absolute;
+    inset: calc(var(--site-border-width) * -1);
+    border: var(--site-border-width) solid var(--site-accent-on-dark);
+    border-radius: inherit;
+    background: var(--site-glass-bg);
+    opacity: 0;
+    pointer-events: none;
+  }
+  .deck__row:nth-child(2) {
+    --n: 1;
+  }
+  .deck__row:nth-child(3) {
+    --n: 2;
+  }
+  .deck__row:nth-child(4) {
+    --n: 3;
+  }
+  .deck__gate {
+    --n: 4;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    @keyframes deck-current {
+      0%,
+      2% {
+        opacity: 0;
+      }
+      5%,
+      17% {
+        opacity: 1;
+      }
+      21%,
+      100% {
+        opacity: 0;
+      }
+    }
+    :global(html[data-motion='play']) .teaser__visual[data-state='play'] .deck__row::after,
+    :global(html[data-motion='play']) .teaser__visual[data-state='play'] .deck__gate::after {
+      animation: deck-current calc(var(--site-motion-loop-scene) * 1.25) linear infinite backwards paused;
+      animation-delay: calc(var(--site-motion-duration-reveal-lg) + var(--site-motion-loop-scene) * 0.25 * var(--n, 0));
+    }
+    :global(html[data-motion='play']) .teaser__visual[data-state='play'][data-visible='true'] .deck__row::after,
+    :global(html[data-motion='play']) .teaser__visual[data-state='play'][data-visible='true'] .deck__gate::after {
+      animation-play-state: running;
     }
   }
 </style>

@@ -1,21 +1,25 @@
 <!--
   Sipariş durum dağılımı — `getOrderDashboardInsights.statusDistribution` (tüm zamanlar, iç durum).
-  Halka grafik + durum listesi; ton `status-map.ts` `ORDER_STATUS_TONE`'dan (ekran renk seçmez).
-  Satıra tıklamak sipariş listesini o durum filtresiyle açar (`internalStatuses`).
+  FE-LOCAL-1025: halka grafik yerine toplam + tek yatay dağılım çubuğu + durum listesi (daha sakin, dar sütunda
+  okunaklı; ayrı grafik motoru gerekmez). Ton `status-map.ts` `ORDER_STATUS_TONE`'dan (ekran renk seçmez).
+  Satıra tıklamak sipariş listesini o durum filtresiyle açar (`internalStatuses`). Sıfır olan durumlar listede
+  sakin tonda kalır (bilgi kaybolmaz, göz yormaz).
 -->
 <template>
   <EkCard
     title="Sipariş durumları"
     subtitle="Tüm siparişlerin iç durum dağılımı"
     icon="mdi-chart-donut"
+    icon-tone="info"
     :heading-level="3"
     :to-label="linkable ? 'Sipariş listesini aç' : undefined"
     class="dash-status"
     @open="open('orderList')"
   >
     <div v-if="loading" class="dash-status__layout" aria-hidden="true">
-      <span class="dash-status__ring-skeleton"></span>
-      <div class="dash-status__rows-skeleton"><span v-for="n in 5" :key="n"></span></div>
+      <span class="dash-status__skeleton dash-status__skeleton--total"></span>
+      <span class="dash-status__skeleton dash-status__skeleton--bar"></span>
+      <div class="dash-status__rows-skeleton"><span v-for="n in 5" :key="n" class="dash-status__skeleton"></span></div>
     </div>
     <EkErrorState v-else-if="error" size="inline" message="Sipariş durumları yüklenemedi — tekrar deneyin." @retry="emit('retry')" />
     <DashboardEmpty
@@ -25,12 +29,20 @@
       text="İlk sipariş geldiğinde durum dağılımı burada görünür."
     />
     <div v-else class="dash-status__layout">
-      <div class="dash-status__ring">
-        <v-chart class="dash-status__chart" :theme="chartTheme" :option="option" autoresize aria-hidden="true" />
-        <div class="dash-status__center" aria-hidden="true">
-          <span class="dash-status__total">{{ fmt(total) }}</span>
-          <span class="dash-status__total-label">sipariş</span>
-        </div>
+      <p class="dash-status__summary">
+        <span class="dash-status__total ek-num">{{ fmt(total) }}</span>
+        <span class="dash-status__total-label">sipariş</span>
+      </p>
+      <!-- Dağılım çubuğu: yalnız görsel; sayılar ve yüzdeler aşağıdaki listede. -->
+      <div class="dash-status__bar" aria-hidden="true">
+        <span
+          v-for="row in rows.filter((r) => r.count > 0)"
+          :key="row.status"
+          class="dash-status__seg"
+          :class="`dash-status__swatch--${row.swatch}`"
+          :style="{ flexGrow: row.count }"
+          :title="`${row.label}: ${fmt(row.count)} (${pct(row.count)})`"
+        ></span>
       </div>
       <ul class="dash-status__list" aria-label="Duruma göre sipariş sayıları">
         <li v-for="row in rows" :key="row.status">
@@ -38,7 +50,7 @@
             :is="linkable ? 'button' : 'div'"
             :type="linkable ? 'button' : undefined"
             class="dash-status__row"
-            :class="{ 'dash-status__row--link': linkable }"
+            :class="{ 'dash-status__row--link': linkable, 'is-zero': row.count === 0 }"
             :aria-label="linkable ? `${row.label}: ${fmt(row.count)} sipariş — listede göster` : undefined"
             @click="linkable && open('orderList', { internalStatuses: [row.status] })"
           >
@@ -56,23 +68,13 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { use } from 'echarts/core'
-import { CanvasRenderer } from 'echarts/renderers'
-import { PieChart } from 'echarts/charts'
-import { TooltipComponent } from 'echarts/components'
-import VChart from 'vue-echarts'
 import { EkCard, EkErrorState } from '@entegrasyonik/ui/components'
 import DashboardEmpty from './DashboardEmpty.vue'
 import { formatNumber, formatPercent } from '@entegrasyonik/ui/format'
 import { ORDER_STATUS_TONE, type StatusTone } from '@/design/status-map'
 import { OrderInternalStatusEnum } from '@/types/OrderTypes'
-import { useDashboardChartTheme } from './chartTheme'
 import { useDashboardNavigation } from './useDashboardNavigation'
 import type { OrderInsights } from './dashboardTypes'
-
-use([CanvasRenderer, PieChart, TooltipComponent])
-// FR2-DARK: tema adı ve seri renkleri etkin moda göre (light/dark).
-const { theme: chartTheme, colors: themeColors } = useDashboardChartTheme()
 
 const props = defineProps<{ data: OrderInsights | null; loading: boolean; error: boolean }>()
 const emit = defineEmits<{ retry: [] }>()
@@ -92,19 +94,6 @@ const ORDER: OrderInternalStatusEnum[] = [
 
 // Aynı tondaki ikinci durum, tonun koyu (`-emphasis`) adımıyla ayrışır; anlamı yine etiket taşır.
 type Swatch = 'success' | 'warning' | 'danger' | 'info' | 'neutral' | 'warning-2' | 'info-2' | 'danger-2'
-const toneColor = computed<Record<Swatch, string>>(() => {
-  const chartColors = themeColors.value
-  return {
-    success: chartColors.success,
-    warning: chartColors.warning,
-    'warning-2': chartColors['warning-emphasis'],
-    info: chartColors.info,
-    'info-2': chartColors['info-emphasis'],
-    danger: chartColors.error,
-    'danger-2': chartColors['error-emphasis'],
-    neutral: chartColors.neutral,
-  }
-})
 
 const fmt = (v: number) => formatNumber(v ?? 0)
 const total = computed(() => ORDER.reduce((a, s) => a + (props.data?.statusDistribution?.[s] ?? 0), 0))
@@ -119,76 +108,55 @@ const rows = computed(() => {
     return { status, label: t(ORDER_STATUS_TONE[status].labelKey), count: props.data?.statusDistribution?.[status] ?? 0, swatch }
   })
 })
-
-const option = computed(() => ({
-  tooltip: {
-    trigger: 'item',
-    formatter: (p: any) => `${p.name}<br/><strong>${fmt(p.value)}</strong> sipariş (${pct(p.value)})`,
-  },
-  series: [
-    {
-      type: 'pie',
-      radius: ['68%', '92%'],
-      avoidLabelOverlap: true,
-      label: { show: false },
-      labelLine: { show: false },
-      itemStyle: { borderColor: themeColors.value.surface, borderWidth: 2 },
-      emphasis: { scale: false },
-      data: rows.value
-        .filter((r) => r.count > 0)
-        .map((r) => ({ name: r.label, value: r.count, itemStyle: { color: toneColor.value[r.swatch] } })),
-    },
-  ],
-}))
 </script>
 
 <style scoped>
 .dash-status__layout {
-  display: grid;
-  grid-template-columns: 152px minmax(0, 1fr);
-  align-items: center;
-  gap: var(--ek-space-5);
-}
-
-.dash-status__ring {
-  position: relative;
-  width: 152px;
-  height: 152px;
-}
-
-.dash-status__chart {
-  width: 100%;
-  height: 100%;
-}
-
-.dash-status__center {
-  position: absolute;
-  inset: 0;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  pointer-events: none;
+  gap: var(--ek-space-4);
+}
+
+.dash-status__summary {
+  display: flex;
+  align-items: baseline;
+  gap: var(--ek-space-2);
+  margin: 0;
 }
 
 .dash-status__total {
   color: var(--ek-color-content-strong);
-  font-size: var(--ek-type-metric-size);
-  line-height: var(--ek-type-metric-line);
+  font-size: var(--ek-type-display-size);
+  line-height: 1.15;
   font-weight: var(--ek-type-metric-weight);
-  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.025em;
 }
 
 .dash-status__total-label {
   color: var(--ek-color-content-muted);
-  font-size: var(--ek-type-caption-size);
-  line-height: var(--ek-type-caption-line);
+  font-size: var(--ek-type-body-size);
+  line-height: var(--ek-type-body-line);
+}
+
+/* Dağılım çubuğu: parçalar sayıyla orantılı; aralarında ince boşluk (yüzey rengi). */
+.dash-status__bar {
+  display: flex;
+  gap: 2px;
+  height: 10px;
+  overflow: hidden;
+  border-radius: var(--ek-radius-full);
+}
+
+.dash-status__seg {
+  flex-basis: 0;
+  min-width: 4px;
+  background: var(--ek-color-neutral);
 }
 
 .dash-status__list {
   display: flex;
   flex-direction: column;
-  margin: 0;
+  margin: 0 calc(-1 * var(--ek-space-2));
   padding: 0;
   list-style: none;
 }
@@ -199,7 +167,7 @@ const option = computed(() => ({
   align-items: center;
   gap: var(--ek-space-3);
   width: 100%;
-  min-height: 32px;
+  min-height: 34px;
   padding: 0 var(--ek-space-2);
   border: 0;
   border-radius: var(--ek-radius-control);
@@ -257,40 +225,26 @@ const option = computed(() => ({
   text-align: right;
 }
 
-.dash-status__ring-skeleton {
-  width: 152px;
-  height: 152px;
-  border-radius: 50%;
-  border: 24px solid var(--ek-color-surface-sunken);
+/* Sıfır olan durum: sayı vurgusuz (etiket okunur kalır). */
+.dash-status__row.is-zero .dash-status__count {
+  color: var(--ek-color-content-muted);
+  font-weight: var(--ek-font-weight-regular);
 }
 
-.dash-status__rows-skeleton {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ek-space-3);
-}
-
-.dash-status__rows-skeleton span {
+.dash-status__skeleton {
+  display: block;
   height: 16px;
   border-radius: var(--ek-radius-sm);
   background: var(--ek-color-surface-sunken);
 }
 
+.dash-status__skeleton--total { width: 96px; height: 36px; }
+.dash-status__skeleton--bar { height: 10px; border-radius: var(--ek-radius-full); }
 
-.dash-status {
-  container-type: inline-size;
-}
-
-@container (max-width: 440px) {
-  .dash-status__layout {
-    grid-template-columns: minmax(0, 1fr);
-    justify-items: center;
-    gap: var(--ek-space-4);
-  }
-
-  .dash-status__list {
-    width: 100%;
-  }
+.dash-status__rows-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ek-space-3);
 }
 
 /* MOB-00: dokunmatikte satır/bağlantı hedefi en az 44 px (--ek-control-h-touch). */

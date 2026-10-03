@@ -1,141 +1,52 @@
+<!--
+  Pazarama'ya özgü kanal bilgileri (teslimat şekli, teslimat şehirleri) — ayar satırı (InfoRow) dili; kök öğesi yok.
+  Kanal yanıtı NESNE (`{ deliveries, cities }`); eski "dizi değilse boşalt" koruması bu yanıtı her zaman boşaltıyordu.
+-->
 <template>
-
-  <v-card variant="elevated" elevation="0" class="vinfo-card ma-0 mt-2 pa-0" color="transparent">
-
-
-    <v-card-title class="vinfo-title d-flex">
-
-      <v-row>
-
-        <v-col cols="12" md="4" sm="6" lg="3" xl="2">
-          <v-select item-value="id" item-title="name" @click.stop v-if="shipments"
-            v-model="variantPlatformInfo.shippingId" label="Teslimat Şekli" :items="computedDeliveryOptions"
-            density="compact" class="vinfo-field" variant="outlined" clearable>
-            <template #label>
-              Teslimat Şekli (Varsayılan <span class="font-weight-medium">{{ computedDefaultShipment }}</span>)
-            </template>
-          </v-select>
-        </v-col>
-
-        <v-col cols="12" md="4" sm="6" lg="3" xl="2">
-          <v-select multiple item-value="id" item-title="name" @click.stop v-if="shipments"
-            v-model="variantPlatformInfo.cities" label="Teslimat Şehirleri" :items="shipments.cities" density="compact"
-            class="vinfo-field" variant="outlined" clearable>
-            <template #label>
-              Teslimat Şehirleri (Varsayılan <span class="font-weight-medium">{{ computedDefaultCities }}</span>)
-            </template>
-
-          </v-select>
-
-
-        </v-col>
-
-      </v-row>
-
-    </v-card-title>
-  </v-card>
-
+  <InfoRow id="ci-pz-delivery" label="Teslimat şekli" desc="Pazarama'da bu varyant için kullanılacak teslimat yöntemi." :custom="filled(m.shippingId)"
+    :default-text="defaultDelivery" :note="failed && !filled(m.shippingId) ? 'Teslimat seçenekleri alınamadı — mağaza ayarı kullanılır.' : undefined"
+    @reset="m.shippingId = undefined">
+    <v-select id="ci-pz-delivery" v-model="m.shippingId" :items="deliveryOptions" item-title="name" item-value="id" variant="outlined"
+      hide-details clearable :placeholder="defaultDelivery || 'Mağaza ayarı'" :disabled="!deliveryOptions.length && !filled(m.shippingId)"
+      aria-describedby="ci-pz-delivery-state" />
+  </InfoRow>
+  <InfoRow id="ci-pz-cities" label="Teslimat şehirleri" desc="Ürünün gönderilebileceği şehirler." :custom="filled(m.cities)"
+    :default-text="defaultCities" :note="failed && !filled(m.cities) ? 'Şehir listesi alınamadı — mağaza ayarı kullanılır.' : undefined"
+    @reset="m.cities = undefined">
+    <v-autocomplete id="ci-pz-cities" v-model="m.cities" :items="cities" item-title="name" item-value="id" multiple chips closable-chips
+      variant="outlined" hide-details clearable :placeholder="defaultCities ? 'Mağaza ayarı' : 'Şehir seçin'"
+      :disabled="!cities.length && !filled(m.cities)" aria-describedby="ci-pz-cities-state" />
+  </InfoRow>
 </template>
 
 <script setup lang="ts">
-import { ref, onBeforeMount, onMounted, computed } from 'vue'
-import { useI18n } from 'vue-i18n';
-import { useStaticsStore } from '@/stores/staticsStore';
-import { useIntegrationStore } from '@/stores/integrationStore';
+import { computed, onMounted, ref } from 'vue'
+import { useIntegrationStore } from '@/stores/integrationStore'
+import InfoRow from './InfoRow.vue'
 
-import useFormRules from '@/composables/formrules';
-
-const show = ref(true)
-const emits = defineEmits(['refreshImages', 'refreshVariants', 'refreshTotalVariantsStockCount', 'close'])
-const staticsStore = useStaticsStore()
+defineProps<{ productInfoForm: any }>()
+const m: any = defineModel({ default: {} })
 const integrationStore = useIntegrationStore()
 
-const formRules = useFormRules()
-
-var choicesStoreChoices: any = undefined
-const loadingComponentRef: any = ref(null)
-const isVariantAttributesDialog = ref(false)
-const isVariantPlatformPricesDialog = ref(false)
-const shipments: any = ref()
-const { t } = useI18n()
-const variantPlatformInfo: any = defineModel({ default: {} })
-const integrationCode = "pazarama"
-const props = defineProps<{
-  productInfoForm: any
-}>()
-
-
-const computedClientMarketplace = computed(() => {
-  return integrationStore.getClientIntegration(integrationCode)
+const settings = computed(() => integrationStore.getClientIntegration('pazarama')?.settings || {})
+const info = ref<any>(null)
+const failed = ref(false)
+const EMPTY_ID = '00000000-0000-0000-0000-000000000000'
+const deliveryOptions = computed(() => Object.entries(info.value?.deliveries || {})
+  .filter(([, v]: any) => v && typeof v === 'object' && 'id' in v && v.id !== EMPTY_ID)
+  .map(([name, v]: any) => ({ name, id: v.id })))
+const cities = computed<any[]>(() => (Array.isArray(info.value?.cities) ? info.value.cities : []))
+const defaultDelivery = computed(() => deliveryOptions.value.find((x) => x.id === settings.value.shipmentId)?.name || '')
+const defaultCities = computed(() => {
+  const ids: any[] = settings.value.cities || []
+  const names = cities.value.filter((c) => ids.includes(c.id)).map((c) => c.name)
+  return names.length > 3 ? `${names.slice(0, 3).join(', ')} +${names.length - 3}` : names.join(', ')
 })
+const filled = (v: any) => !(v === undefined || v === null || v === '' || (Array.isArray(v) && !v.length))
 
-const computedDefaultShipment = computed(() => {
-  return computedDeliveryOptions.value.find((item: any) => item.id === computedClientMarketplace.value?.settings?.shipmentId)?.name
+onMounted(async () => {
+  const r: any = await integrationStore.retrievePlatformInfos('pazarama')
+  info.value = r && typeof r === 'object' && !(r instanceof Error) && !r.response ? r : null
+  failed.value = !deliveryOptions.value.length && !cities.value.length
 })
-
-const computedDefaultCities = computed(() => {
-  return shipments.value?.cities
-    .filter((item: any) =>
-      computedClientMarketplace.value?.settings?.cities?.includes(item.id)
-    )
-    .map((item: any) => item.name)
-    .join(', ');
-})
-
-const computedDefaultDesi = computed(() => {
-  return props.productInfoForm.desi ? props.productInfoForm.desi : computedClientMarketplace.value?.settings?.desi ? computedClientMarketplace.value?.settings?.desi : staticsStore.desi
-})
-
-const computedDefaultMaxPurchaseQuantity = computed(() => {
-  return props.productInfoForm.maxPurchaseQuantity ? props.productInfoForm.maxPurchaseQuantity : computedClientMarketplace.value?.settings?.maxPurchaseQuantity ? computedClientMarketplace.value?.settings?.maxPurchaseQuantity : staticsStore.maxPurchaseQuantity
-})
-
-const computedDeliveryOptions = computed(() => {
-  if (!shipments.value?.deliveries) return []
-  return Object.entries(shipments.value?.deliveries)
-    .filter(([key, value]: any) =>
-      value && typeof value === 'object' && 'id' in value && value.id !== '00000000-0000-0000-0000-000000000000'
-    )
-    .map(([key, value]: any) => ({
-      name: key,
-      id: value.id
-    }));
-})
-
-onBeforeMount(() => {
-})
-
-onMounted(() => {
-  retrieveShipments()
-})
-
-const sleep = (ms: number) => {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-
-const retrieveShipments = async () => {
-  // DS-v2 A6a: yanıt dizi değilse (hata/boş) liste boş kalır — eskiden .find patlıyor, genel hata bildirimi çıkıyordu.
-  { const r = await integrationStore.retrievePlatformInfos(integrationCode); shipments.value = Array.isArray(r) ? r : [] }
-}
-
-
 </script>
-
-
-<style scoped>
-.vinfo-card {
-  transition: none !important;
-  box-shadow: none;
-  transform: none !important;
-  right: 0;
-}
-
-.vinfo-title {
-  display: block !important;
-}
-
-.vinfo-field {
-  min-width: 200px;
-}
-</style>

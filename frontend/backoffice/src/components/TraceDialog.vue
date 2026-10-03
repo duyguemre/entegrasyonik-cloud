@@ -254,4 +254,24 @@ function barStyle(e: TraceEvent) {
     left: 13px;
   }
 }
+
+/* ================= BO-LOCAL-01 — istek zinciri: uygulamanın tasarım diliyle =================
+   Özet satırı ince çerçeveli sakin kutu; olay düğümleri yuvarlak değil çerçeveli KÖŞELİ kutu; bağlantı çizgisi ince;
+   durum etiketi köşeli. */
+.bo-trace__summary {
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-tile);
+}
+
+.bo-trace__node {
+  border-radius: var(--ek-radius-md);
+}
+
+.bo-trace__item + .bo-trace__item::before {
+  border-left-width: 1px;
+}
+
+.bo-trace__status {
+  border-radius: var(--ek-radius-md);
+}
 </style>

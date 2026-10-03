@@ -17,13 +17,13 @@ test.describe('P1 — Giriş', () => {
   test('smoke: giriş formu render olur (sekmeler + alanlar + buton)', async ({ page }) => {
     await page.goto('/login')
 
-    await expect(page.getByRole('tab', { name: 'Giriş' })).toBeVisible()
-    await expect(page.getByRole('tab', { name: 'Kayıt' })).toBeVisible()
+    await expect(page.getByRole('tab', { name: 'Hesabım var' })).toBeVisible()
+    await expect(page.getByRole('tab', { name: 'Yeni hesap' })).toBeVisible()
     await expect(page.getByRole('tab', { name: 'Parolamı unuttum' })).toHaveCount(0)
     await expect(page.getByRole('button', { name: 'Parolanızı mı unuttunuz?' })).toBeVisible()
     await expect(page.getByLabel('E-posta')).toBeVisible()
     await expect(page.getByLabel('Parola', { exact: true })).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Giriş' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Devam et' })).toBeVisible()
   })
 
   // Silindi: CAPTCHA "gizli iş kuralı" testi — Faz 4 hesap sözleşmesiyle captcha kaldırıldı (LoginComponent artık `requireCaptcha` işlemez).
@@ -37,7 +37,7 @@ test.describe('P1 — Giriş', () => {
     await page.goto('/login')
     await page.getByLabel('E-posta').fill('yanlis@example.invalid')
     await page.getByLabel('Parola', { exact: true }).fill('yanlis-sifre')
-    await page.getByRole('button', { name: 'Giriş' }).click()
+    await page.getByRole('button', { name: 'Devam et' }).click()
 
     await expect(page.getByText('Bilgiler hatalı, lütfen kontrol ediniz.')).toBeVisible()
     await expect(page.locator('body')).not.toContainText('Unauthorized')
@@ -60,7 +60,7 @@ test.describe('P1 — Giriş', () => {
     await page.goto('/login')
     await page.getByLabel('E-posta').fill('e2e@example.invalid')
     await page.getByLabel('Parola', { exact: true }).fill('e2e-pass-1234')
-    await page.getByRole('button', { name: 'Giriş' }).click()
+    await page.getByRole('button', { name: 'Devam et' }).click()
 
     // ADR-0012 Karar 1/2 (kasıtlı davranış değişikliği, T4a): giriş sonrası artık kanonik
     // aktif-ekran adresine (`/dashboard`, `redirect` yoksa) `router.replace` ile gidiliyor —
@@ -71,7 +71,7 @@ test.describe('P1 — Giriş', () => {
 
   test('ekran görüntüsü tabanı (giriş formu)', async ({ page }) => {
     await page.goto('/login')
-    await expect(page.getByRole('tab', { name: 'Giriş' })).toBeVisible()
+    await expect(page.getByRole('tab', { name: 'Hesabım var' })).toBeVisible()
     // ADR-0011 Açık Soru 1 (Inter göçü) — bkz. `nav.ts` `waitForShellReady` yorumu: Inter'in
     // tam yüklendiğinden emin olmadan alınan ekran görüntüsü FOUT/reflow nedeniyle kararsız
     // olabiliyor; bu ekran `waitForShellReady` kullanmadığından aynı bekleme burada tekrarlanır.

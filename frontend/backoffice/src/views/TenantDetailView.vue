@@ -2,7 +2,7 @@
   <div class="bo-page">
     <EkEmptyState v-if="notFound" variant="no-results" title="Müşteri bulunamadı" :message="`#${tid} numaralı kayıt yok ya da kaldırılmış.`" />
     <template v-else>
-      <BoPageHeader :title="title" lede="" :extra-crumbs="[{ label: title }]" :updated-at="life.loadedAt.value ?? undefined" :stale="life.stale.value">
+      <BoPageHeader :title="title" lede="" :extra-crumbs="[{ label: title }]" :updated-at="life.loadedAt.value ?? undefined" :stale="life.stale.value" refreshable :refreshing="life.refreshing.value" @refresh="refresh">
         <template #status>
           <EkStatusChip v-if="life.data.value" :tone="TENANT_STATUS[life.data.value.status].tone" :label="life.data.value.status === 'DELETION_PENDING' ? 'Silme talebi bekliyor' : TENANT_STATUS[life.data.value.status].label" dot />
           <EkStatusChip v-if="life.data.value?.trial" :tone="SUB_STATUS[life.data.value.trial.subscriptionStatus].tone" :label="`Abonelik: ${planLabel(life.data.value.trial.planCode)} · ${SUB_STATUS[life.data.value.trial.subscriptionStatus].label}`" />
@@ -18,7 +18,6 @@
           <BoAction kind="detail" :to="{ path: '/denetim', query: { tid: String(tid) } }">Denetim kaydı</BoAction>
           <BoAction v-if="life.data.value?.trial" kind="detail" :to="`/abonelikler/${tid}`">Abonelik</BoAction>
           <CopyViewLink />
-          <BoAction kind="refresh" :loading="life.refreshing.value" data-page-refresh @click="refresh" />
           <EkButton tone="primary" icon="mdi-account-eye-outline" :disabled="!canImpersonate" data-testid="impersonate" @click="imp.open(tid)">Müşterinin gözünden aç</EkButton>
         </template>
       </BoPageHeader>
@@ -649,5 +648,85 @@ a.bo-now__row:focus-visible {
   .bo-tenant__detail {
     grid-template-columns: 1fr;
   }
+}
+
+/* ================= BO-LOCAL-01 — müşteri ayrıntısı: uygulamanın tasarım diliyle =================
+   Kart içi alt başlıklar kısa eylem çizgili mikro etiket; "İz sür" ve liste satırları ince çizgili, ikonlar çerçeveli
+   köşeli kutuda, üzerine gelince eylem renginin açık tonu (gölge yok); kanal türü köşeli düz rozet. */
+.bo-now__h {
+  align-items: center;
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-micro-size);
+  line-height: var(--ek-type-micro-line);
+  font-weight: var(--ek-type-micro-weight);
+  letter-spacing: var(--ek-type-micro-tracking);
+  text-transform: uppercase;
+}
+.bo-now__h::before {
+  content: '';
+  flex: none;
+  width: 12px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--ek-color-action);
+}
+.bo-now__n {
+  letter-spacing: 0;
+  text-transform: none;
+}
+.bo-now__row {
+  border-radius: var(--ek-radius-tile);
+}
+a.bo-now__row:hover {
+  background: var(--ek-color-action-subtle);
+}
+a.bo-now__row:hover .bo-now__main {
+  color: var(--ek-color-action-emphasis);
+}
+.bo-trace__link {
+  padding: var(--ek-space-2);
+  border-radius: var(--ek-radius-tile);
+}
+.bo-trace__link:hover {
+  background: var(--ek-color-action-subtle);
+}
+.bo-trace__icon {
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-tile);
+  background: var(--ek-color-surface);
+  color: var(--ek-color-content-default);
+}
+.bo-trace__link:hover .bo-trace__icon {
+  border-color: var(--ek-color-action-border);
+  color: var(--ek-color-action-emphasis);
+}
+.bo-trace__link:hover .bo-trace__go {
+  color: var(--ek-color-action);
+}
+.bo-tenant__chan {
+  border-top-color: var(--ek-color-border-default);
+}
+.bo-tenant__channels {
+  gap: 0;
+}
+.bo-tenant__channels li {
+  min-height: 40px;
+  padding: var(--ek-space-1) 0;
+}
+.bo-tenant__channels li + li {
+  border-top: 1px solid var(--ek-color-border-subtle);
+}
+.bo-tenant__channels li .bo-muted {
+  padding: 1px var(--ek-space-2);
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-md);
+  background: var(--ek-color-surface-muted);
+  color: var(--ek-color-content-default);
+  font-weight: var(--ek-font-weight-semibold);
+}
+.bo-tenant__events li {
+  border-top-color: var(--ek-color-border-subtle);
 }
 </style>

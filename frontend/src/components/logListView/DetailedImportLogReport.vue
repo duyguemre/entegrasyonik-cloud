@@ -1,3 +1,14 @@
+<!--
+  frontend/src/components/logListView/DetailedImportLogReport.vue
+
+  FE-LOCAL-1048 — Ürün Çekim İşlemi Detaylı Raporu, ana sayfa / bölüm panolarıyla AYNI dilde (yalnız sunum; veri,
+  yoklama, eşleştirme menüleri ve API çağrıları DEĞİŞMEDİ):
+    kayıt özeti        işlem no + kanal + durum · ince çizgiyle ayrılan bilgi hücreleri (başlangıç / bitiş)
+    AKIŞ               çerçeveli ikon kapsülleriyle adımlar (+ aktarım sürerken ilerleme çubuğu)
+    SONUÇ ÖZETİ        özet şeridi — iş kaydındaki 6 sayaç
+    DAĞILIM            toplam + tek yatay oran çubuğu + satırlar (ListDistributionCard) · sütun grafiği
+    EKSİK EŞLEŞTİRME   düz kart; kategori satırları ince çizgiyle ayrılır, tıklanınca eşleştirme menüsü açılır
+-->
 <template>
   <div class="report-content-wrapper">
     <LoadingComponent attach=".reportContainer" ref="loadingComponentRef"></LoadingComponent>
@@ -6,228 +17,198 @@
 
     <div v-if="reportData && localItem" class="report-body">
 
-      <div class="panel panel--muted">
-        <div class="meta-row">
-          <div class="meta-item">
-            <span class="meta-item__label">İşlem No:</span>
-            <span class="meta-item__value">{{ localItem.jobId }}</span>
+      <!-- Kayıt özeti -->
+      <section class="panel record" aria-label="Çekim işlemi">
+        <div class="record__main">
+          <EkIconTile icon="mdi-download-outline" tone="action" size="lg" />
+          <div class="record__titles">
+            <div class="record__eyebrow">Çekim işlemi</div>
+            <div class="meta-item">
+              <span class="meta-item__label ek-sr-only">İşlem No:</span>
+              <span class="meta-item__value record__id ek-num">{{ localItem.jobId }}</span>
+            </div>
           </div>
-          <div class="meta-item">
-            <span class="meta-item__label">Platform:</span>
+          <div class="record__channel">
+            <span class="meta-item__label ek-sr-only">Platform:</span>
             <PlatformImageComponent :integrationCode="localItem.integrationCode" :width="80" :height="35">
             </PlatformImageComponent>
-          </div>
-          <div class="meta-item">
-            <v-icon size="16" aria-hidden="true">mdi-clock-start</v-icon>
-            <span class="meta-item__label">Başlangıç:</span>
-            <span class="meta-item__value">{{ formatDate(localItem.startedAt) }}</span>
-          </div>
-          <div class="meta-item">
-            <v-icon size="16" aria-hidden="true">mdi-clock-check-outline</v-icon>
-            <span class="meta-item__label">Bitiş:</span>
-            <span class="meta-item__value">{{ formatDate(localItem.completedAt) }}</span>
+            <EkStatusChip :tone="statusTone(localItem.status)" :label="statusLabel" />
           </div>
         </div>
+        <div class="field-row">
+          <div class="field">
+            <span class="field__label">Başlangıç</span>
+            <span class="field__value ek-num">{{ formatDate(localItem.startedAt) }}</span>
+          </div>
+          <div class="field">
+            <span class="field__label">Bitiş</span>
+            <span class="field__value ek-num">{{ formatDate(localItem.completedAt) }}</span>
+          </div>
+          <div class="field">
+            <span class="field__label">Adım</span>
+            <span class="field__value ek-num">{{ currentStepIndex + 1 }} / {{ steps.length }}</span>
+          </div>
+        </div>
+      </section>
 
-        <div class="stepper-wrapper">
-          <div class="stepper-content">
-            <div class="stepper-line"></div>
-            <div v-for="(step, index) in steps" :key="index" class="step-item">
+      <ListDashSection label="Akış">
+        <div class="panel stepper-wrapper">
+          <ol class="stepper-content" aria-label="Çekim adımları">
+            <li v-for="(step, index) in steps" :key="index" class="step-item"
+              :class="{ 'is-passed': currentStepIndex > index, 'is-active': currentStepIndex === index, 'is-upcoming': currentStepIndex < index }"
+              :aria-current="currentStepIndex === index ? 'step' : undefined">
               <span class="step-dot"
-                :class="[stepDotClass(index, step.status), currentStepIndex === index && isProcessing ? 'step-dot--processing' : '']"></span>
+                :class="[stepDotClass(index, step.status), currentStepIndex === index && isProcessing ? 'step-dot--processing' : '']">
+                <EkIconTile :icon="stepIcon(index, step.icon)" :tone="stepTone(index)" />
+              </span>
               <span class="step-title"
                 :class="{ 'active-text': currentStepIndex === index, 'passed-text': currentStepIndex > index }">
                 {{ currentStepIndex === index && localItem.status === 'FAILED' ? 'Hata oluştu' : (currentStepIndex
                   ===
                   index && localItem.status === 'CANCELLED' ? 'İptal edildi' : step.title) }}
               </span>
-            </div>
+            </li>
+          </ol>
+
+          <div v-if="showProgress" class="progress">
+            <v-progress-linear :model-value="progressPercentage" height="8" color="primary" rounded
+              class="progress-bar" :aria-label="`İlerleme yüzde ${progressPercentage}`" />
+            <strong class="progress-bar__text ek-num">{{ Math.ceil(progressPercentage) }}%</strong>
           </div>
         </div>
+      </ListDashSection>
 
-        <v-progress-linear v-if="showProgress" :model-value="progressPercentage" height="16" color="primary"
-          class="progress-bar" :aria-label="`İlerleme yüzde ${progressPercentage}`">
-          <template v-slot:default="{ value }">
-            <strong class="progress-bar__text">{{ Math.ceil(value) }}%</strong>
-          </template>
-        </v-progress-linear>
-      </div>
+      <ListDashSection label="Sonuç özeti">
+        <ListSummaryStrip :cells="countCells" label="Sonuç özeti" />
+      </ListDashSection>
 
-      <v-row class="mb-2" align="stretch">
-        <v-col cols="12" md="5" class="d-flex flex-column">
-          <div class="info-grid flex-grow-1">
-            <div class="info-pair">
-              <div class="info-item-card info-item-card--neutral">
-                <div class="info-item-card__label">Toplam Çekilen</div>
-                <b class="info-item-card__value info-item-card__value--lg">{{ localItem.totalCount || 0 }}</b>
-                <div class="info-item-card__hint">Mağazanızdan çekilen toplam ham ürün ve varyant kaydı.</div>
-              </div>
-              <div class="info-item-card info-item-card--warning">
-                <div class="info-item-card__label info-item-card__label--warning">Kritik Veri Eksikliği</div>
-                <b class="info-item-card__value info-item-card__value--warning">{{ localItem.invalidCount || 0 }}</b>
-                <div class="info-item-card__hint">Eksik eşleşme nedeniyle işleme alınamayan ürünler.</div>
-              </div>
-            </div>
-
-            <div class="info-item-card info-item-card--info">
-              <div class="info-item-card__head">
-                <v-icon color="info" size="small" aria-hidden="true">mdi-check-decagram-outline</v-icon>
-                <span class="info-item-card__label info-item-card__label--info">Aday Aktarım</span>
-                <v-spacer></v-spacer>
-                <b class="info-item-card__value info-item-card__value--info">{{ localItem.validCount || 0 }}</b>
-              </div>
-              <div class="info-item-card__hint">Zenginleştirme süreci tamamlanmış, sisteme girmeye hazır ürünler.</div>
-            </div>
-            <div class="info-item-card info-item-card--success">
-              <div class="info-item-card__head">
-                <v-icon color="success" size="small" aria-hidden="true">mdi-check-circle-outline</v-icon>
-                <span class="info-item-card__label info-item-card__label--success">Aktarılan Varyant</span>
-                <v-spacer></v-spacer>
-                <b class="info-item-card__value info-item-card__value--success">{{ localItem.processedCount || 0 }}</b>
-              </div>
-              <div class="info-item-card__hint">Tüm kontrollerden geçerek sisteme işlenen nihai ürünler.</div>
-            </div>
-            <div class="info-item-card info-item-card--neutral">
-              <div class="info-item-card__head">
-                <v-icon size="small" aria-hidden="true">mdi-content-copy</v-icon>
-                <span class="info-item-card__label">Mevcut/Mükerrer Ürünler</span>
-                <v-spacer></v-spacer>
-                <b class="info-item-card__value">{{ localItem.duplicateCount || 0 }}</b>
-              </div>
-              <div class="info-item-card__hint">Sistemde zaten kayıtlı olduğu için atlanan ürünler.</div>
-            </div>
-            <div class="info-item-card info-item-card--danger">
-              <div class="info-item-card__head">
-                <v-icon color="error" size="small" aria-hidden="true">mdi-close-octagon-outline</v-icon>
-                <span class="info-item-card__label info-item-card__label--danger">İşlem Hatası</span>
-                <v-spacer></v-spacer>
-                <b class="info-item-card__value info-item-card__value--danger">{{ localItem.failedCount || 0 }}</b>
-              </div>
-              <div class="info-item-card__hint">İşlem sırasında oluşan beklenmedik teknik kesintiler.</div>
-            </div>
-          </div>
-        </v-col>
-        <v-col cols="12" md="7">
-          <div class="chart-card">
+      <ListDashSection label="Dağılım">
+        <div class="dist-grid">
+          <ListDistributionCard title="Ürün sonuçları" subtitle="Çekilen kayıtların sonuca göre dağılımı" icon="mdi-chart-donut"
+            unit="ürün" :rows="distribution" empty-text="Bu işlemde henüz sonuçlanan ürün yok." />
+          <EkCard title="Sonuç karşılaştırması" subtitle="Eksik veri · aktarılan · mevcut · hata" icon="mdi-chart-bar" icon-tone="info">
             <v-chart v-if="isMounted" class="chart" :theme="chartTheme" :option="chartOption" autoresize />
-          </div>
-        </v-col>
-      </v-row>
-
-      <div v-if="allImpactedCategories.length" class="panel panel--muted mapping-section">
-        <div class="mapping-section__head">
-          <v-icon color="error" aria-hidden="true">mdi-tag-off-outline</v-icon>
-          <h3 class="mapping-section__title">Eksik Eşleştirme Detayları</h3>
+          </EkCard>
         </div>
-        <div class="mapping-section__desc">
-          Pazaryerinden çekilen ürünlerin sisteme tam entegre edilebilmesi için kategori eşleşmelerinin ve ürün
-          özellik tanımlamalarının tamamlanması gerekmektedir.
-        </div>
+      </ListDashSection>
 
-        <div class="legend-row">
-          <div class="legend-item">
-            <span class="legend-dot legend-dot--success"></span>
-            <span class="legend-item__text">Eşleşme Tamam</span>
+      <ListDashSection v-if="allImpactedCategories.length" label="Eşleştirme">
+        <div class="panel mapping-section">
+          <div class="mapping-section__head">
+            <EkIconTile icon="mdi-tag-off-outline" tone="error" size="sm" />
+            <div class="mapping-section__titles">
+              <h3 class="mapping-section__title">Eksik Eşleştirme Detayları</h3>
+              <div class="mapping-section__desc">
+                Pazaryerinden çekilen ürünlerin sisteme tam entegre edilebilmesi için kategori eşleşmelerinin ve ürün
+                özellik tanımlamalarının tamamlanması gerekmektedir.
+              </div>
+            </div>
           </div>
-          <div class="legend-item">
-            <span class="legend-dot legend-dot--danger"></span>
-            <span class="legend-item__text">Eşleşme Bekleniyor</span>
+
+          <div class="legend-row">
+            <div class="legend-item">
+              <span class="legend-dot legend-dot--success"></span>
+              <span class="legend-item__text">Eşleşme Tamam</span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-dot legend-dot--danger"></span>
+              <span class="legend-item__text">Eşleşme Bekleniyor</span>
+            </div>
+            <span class="legend-hint">
+              Kategori ve seçeneklerin üzerine tıklayarak eşleştirmeleri anlık olarak tamamlayabilirsiniz.
+            </span>
           </div>
-          <v-divider vertical class="mx-1 hidden-xs-only"></v-divider>
-          <span class="legend-hint">
-            * Kategori ve seçeneklerin üzerine tıklayarak eşleştirmeleri anlık olarak tamamlayabilirsiniz.
-          </span>
-        </div>
 
-        <div class="d-flex flex-column cat-list">
-          <div v-for="(catId, index) in allImpactedCategories" :key="index" class="cat-row"
-            :class="reportData.missingCategories?.includes(catId) ? 'cat-row--danger' : 'cat-row--warning'">
+          <div class="d-flex flex-column cat-list">
+            <div v-for="(catId, index) in allImpactedCategories" :key="index" class="cat-row"
+              :class="reportData.missingCategories?.includes(catId) ? 'cat-row--danger' : 'cat-row--warning'">
 
-            <div class="cat-row__head">
-              <div class="cat-row__path">
-                <span v-if="resolvedCategories[catId]" class="cat-row__path-inner">
-                  <template v-if="resolvedCategories[catId].path">
-                    <span class="cat-row__crumb">{{
-                      resolvedCategories[catId].path.replaceAll('/', ' / ') }}</span>
-                  </template>
-
-                  <v-menu :model-value="activeMenuCatId === catId" scroll-strategy="block"
-                    @update:model-value="(val) => val ? activeMenuCatId = catId : activeMenuCatId = null"
-                    v-if="reportData.missingCategories?.includes(catId)" :close-on-content-click="false"
-                    location="bottom start" offset="5" transition="scale-transition">
-                    <template v-slot:activator="{ props: menuProps }">
-                      <button v-bind="menuProps" type="button" class="map-chip"
-                        :class="attributeMappingStore.isIntegrationCategoryMapped(localItem.integrationCode, catId) ? 'map-chip--success' : 'map-chip--danger'">
-                        {{ resolvedCategories[catId].last }}
-                      </button>
+              <div class="cat-row__head">
+                <div class="cat-row__path">
+                  <span v-if="resolvedCategories[catId]" class="cat-row__path-inner">
+                    <template v-if="resolvedCategories[catId].path">
+                      <span class="cat-row__crumb">{{
+                        resolvedCategories[catId].path.replaceAll('/', ' / ') }}</span>
                     </template>
 
-                    <v-card :width="$vuetify.display.smAndDown ? '95vw' : '700'" class="map-menu-card"
-                      :class="{ 'map-menu-card--mobile': $vuetify.display.smAndDown }">
-                      <div class="map-menu-card__head">
-                        <v-icon size="14" color="warning" aria-hidden="true">mdi-link-variant</v-icon>
-                        <span class="map-menu-card__title">Platform Kategori Eşleştirme</span>
-                      </div>
-                      <DetailedImportLogReportMissingCategory :integrationCode="localItem.integrationCode"
-                        :platformCategoryId="catId" @close="activeMenuCatId = null">
-                      </DetailedImportLogReportMissingCategory>
-                    </v-card>
-                  </v-menu>
+                    <v-menu :model-value="activeMenuCatId === catId" scroll-strategy="block"
+                      @update:model-value="(val) => val ? activeMenuCatId = catId : activeMenuCatId = null"
+                      v-if="reportData.missingCategories?.includes(catId)" :close-on-content-click="false"
+                      location="bottom start" offset="5" transition="scale-transition">
+                      <template v-slot:activator="{ props: menuProps }">
+                        <button v-bind="menuProps" type="button" class="map-chip"
+                          :class="attributeMappingStore.isIntegrationCategoryMapped(localItem.integrationCode, catId) ? 'map-chip--success' : 'map-chip--danger'">
+                          {{ resolvedCategories[catId].last }}
+                        </button>
+                      </template>
 
-                  <span v-else class="cat-row__name-warning">
-                    {{ resolvedCategories[catId].last }}
+                      <v-card :width="$vuetify.display.smAndDown ? '95vw' : '700'" class="map-menu-card"
+                        :class="{ 'map-menu-card--mobile': $vuetify.display.smAndDown }">
+                        <div class="map-menu-card__head">
+                          <EkIconTile icon="mdi-link-variant" tone="action" size="sm" />
+                          <span class="map-menu-card__title">Platform Kategori Eşleştirme</span>
+                        </div>
+                        <DetailedImportLogReportMissingCategory :integrationCode="localItem.integrationCode"
+                          :platformCategoryId="catId" @close="activeMenuCatId = null">
+                        </DetailedImportLogReportMissingCategory>
+                      </v-card>
+                    </v-menu>
+
+                    <span v-else class="cat-row__name-warning">
+                      {{ resolvedCategories[catId].last }}
+                    </span>
                   </span>
-                </span>
-                <span v-else class="cat-row__loading">Kategori bilgisi yükleniyor...</span>
+                  <span v-else class="cat-row__loading">Kategori bilgisi yükleniyor...</span>
+                </div>
+
+                <button type="button" class="count-chip"
+                  :class="reportData.missingCategories?.includes(catId) ? 'count-chip--danger' : 'count-chip--warning'"
+                  @click="copyToClipboard(catId)"
+                  :aria-label="`${getMissingCategoryProductCount(catId)} ürün — kategori kimliğini kopyala`">
+                  {{ getMissingCategoryProductCount(catId) }}
+                </button>
               </div>
 
-              <button type="button" class="count-chip"
-                :class="reportData.missingCategories?.includes(catId) ? 'count-chip--danger' : 'count-chip--warning'"
-                @click="copyToClipboard(catId)"
-                :aria-label="`${getMissingCategoryProductCount(catId)} ürün — kategori kimliğini kopyala`">
-                {{ getMissingCategoryProductCount(catId) }}
-              </button>
-            </div>
+              <div v-if="groupedMissingAttributes[catId]" class="attr-groups">
+                <div v-for="(attrData, attrName) in groupedMissingAttributes[catId]" :key="attrName"
+                  class="attr-group">
+                  <span class="attr-group__name"
+                    :class="attributeMappingStore.isIntegrationAttributeMapped(localItem.integrationCode, catId, attrData.id) ? 'attr-group__name--success' : 'attr-group__name--warning'">
+                    {{ attrName }}
+                  </span>
 
-            <div v-if="groupedMissingAttributes[catId]" class="attr-groups">
-              <div v-for="(attrData, attrName) in groupedMissingAttributes[catId]" :key="attrName"
-                class="attr-group">
-                <span class="attr-group__name"
-                  :class="attributeMappingStore.isIntegrationAttributeMapped(localItem.integrationCode, catId, attrData.id) ? 'attr-group__name--success' : 'attr-group__name--warning'">
-                  {{ attrName }}
-                </span>
+                  <div class="attr-group__values">
+                    <v-menu scroll-strategy="block"
+                      :model-value="activeMenuCatId === catId + attr.attributeId + attr.attributeValueId + attr.attributeValue"
+                      @update:model-value="(val) => val ? activeMenuCatId = catId + attr.attributeId + attr.attributeValueId + attr.attributeValue : activeMenuCatId = null"
+                      v-for="(attr, aIdx) in attrData.values" :key="aIdx" :close-on-content-click="false"
+                      location="bottom start" offset="5" transition="scale-transition">
+                      <template v-slot:activator="{ props: menuProps }">
+                        <button v-bind="menuProps" type="button" class="map-chip"
+                          :class="attributeMappingStore.isIntegrationAttributeValueMapped(localItem.integrationCode, catId,
+                            attr.attributeId, attr.attributeValuId, attr.attributeValue) ? 'map-chip--success' : 'map-chip--warning'">
+                          {{ attr.attributeValue }}
+                        </button>
+                      </template>
 
-                <div class="attr-group__values">
-                  <v-menu scroll-strategy="block"
-                    :model-value="activeMenuCatId === catId + attr.attributeId + attr.attributeValueId + attr.attributeValue"
-                    @update:model-value="(val) => val ? activeMenuCatId = catId + attr.attributeId + attr.attributeValueId + attr.attributeValue : activeMenuCatId = null"
-                    v-for="(attr, aIdx) in attrData.values" :key="aIdx" :close-on-content-click="false"
-                    location="bottom start" offset="5" transition="scale-transition">
-                    <template v-slot:activator="{ props: menuProps }">
-                      <button v-bind="menuProps" type="button" class="map-chip"
-                        :class="attributeMappingStore.isIntegrationAttributeValueMapped(localItem.integrationCode, catId,
-                          attr.attributeId, attr.attributeValuId, attr.attributeValue) ? 'map-chip--success' : 'map-chip--warning'">
-                        {{ attr.attributeValue }}
-                      </button>
-                    </template>
-
-                    <v-card :width="$vuetify.display.smAndDown ? '95vw' : '700'" class="map-menu-card"
-                      :class="{ 'map-menu-card--mobile': $vuetify.display.smAndDown }">
-                      <div class="map-menu-card__head">
-                        <v-icon size="14" color="warning" aria-hidden="true">mdi-link-variant</v-icon>
-                        <span class="map-menu-card__title">Platform Seçenek Eşleştirme</span>
-                      </div>
-                      <DetailedImportLogReportMissingAttribute :integrationCode="localItem.integrationCode"
-                        :platformCategoryId="catId" :attribute="attr" @close="activeMenuCatId = null">
-                      </DetailedImportLogReportMissingAttribute>
-                    </v-card>
-                  </v-menu>
+                      <v-card :width="$vuetify.display.smAndDown ? '95vw' : '700'" class="map-menu-card"
+                        :class="{ 'map-menu-card--mobile': $vuetify.display.smAndDown }">
+                        <div class="map-menu-card__head">
+                          <EkIconTile icon="mdi-link-variant" tone="action" size="sm" />
+                          <span class="map-menu-card__title">Platform Seçenek Eşleştirme</span>
+                        </div>
+                        <DetailedImportLogReportMissingAttribute :integrationCode="localItem.integrationCode"
+                          :platformCategoryId="catId" :attribute="attr" @close="activeMenuCatId = null">
+                        </DetailedImportLogReportMissingAttribute>
+                      </v-card>
+                    </v-menu>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      </ListDashSection>
     </div>
 
     <EkEmptyState v-else-if="!loading" variant="error" title="Rapor verilerine ulaşılamadı"
@@ -252,8 +233,11 @@ import { useAttributeMappingStore } from '@/stores/site/attributeMapping'
 import DetailedImportLogReportMissingCategory from './DetailedImportLogReportMissingCategory.vue'
 import DetailedImportLogReportMissingAttribute from './DetailedImportLogReportMissingAttribute.vue'
 import PlatformImageComponent from '../platforms/PlatformImageComponent.vue'
-import { EkEmptyState, EkSkeleton } from '@entegrasyonik/ui/components'
-import { formatDateTime } from '@entegrasyonik/ui/format'
+import { EkCard, EkEmptyState, EkIconTile, EkSkeleton, EkStatusChip, type EkTone } from '@entegrasyonik/ui/components'
+import ListDashSection from '@/components/page/ListDashSection.vue'
+import ListSummaryStrip, { type ListSummaryCell } from '@/components/page/ListSummaryStrip.vue'
+import ListDistributionCard, { type ListDistributionRow } from '@/components/page/ListDistributionCard.vue'
+import { formatDateTime, formatNumber } from '@entegrasyonik/ui/format'
 import { useChartColors, useChartTheme } from '@/composables/useChartTheme'
 import type { StatusTone } from '@/design/status-map'
 import { reportPollInterval } from '@/stores/publicConfig'
@@ -463,6 +447,53 @@ const stepDotClass = (index: number, stepStatus: string) => {
 
 const formatDate = (date: any) => date ? formatDateTime(date) : '-';
 
+// ---- FE-LOCAL-1048: sunum yardımcıları (özet şeridi, dağılım kartı, adım tonu, durum etiketi) ----
+/** Akış adımının ikon kapsülü tonu: geçilen = başarı, etkin = işin durum tonu, sıradaki = nötr. */
+const stepTone = (index: number): EkTone => {
+  if (currentStepIndex.value > index) return 'success'
+  if (currentStepIndex.value < index) return 'neutral'
+  const tone = TONE_KEY[statusTone(localItem.value?.status)]
+  return tone === 'neutral' ? 'action' : tone
+}
+
+/** Geçilen adım onay imi, hata/iptal ile biten etkin adım uyarı imi, diğerleri adımın kendi ikonu. */
+const stepIcon = (index: number, icon: string) => {
+  if (currentStepIndex.value > index) return 'mdi-check'
+  const status = String(localItem.value?.status ?? '').toUpperCase()
+  if (currentStepIndex.value === index && status === 'FAILED') return 'mdi-alert-circle-outline'
+  if (currentStepIndex.value === index && status === 'CANCELLED') return 'mdi-cancel'
+  return icon
+}
+
+const STATUS_TITLES: Record<string, string> = { FAILED: 'Hata oluştu', CANCELLED: 'İptal edildi' }
+const statusLabel = computed(() => {
+  const status = String(localItem.value?.status ?? '').toUpperCase()
+  return STATUS_TITLES[status] ?? steps.find((s) => s.status === status)?.title ?? (localItem.value?.status || '—')
+})
+
+const countOf = (field: string) => Number(localItem.value?.[field]) || 0
+const countCell = (key: string, label: string, hint: string, icon: string, tone: EkTone): ListSummaryCell => {
+  const n = countOf(key)
+  return { key, label, hint, icon, tone, value: formatNumber(n), zero: !n }
+}
+/** İş kaydındaki 6 sayaç (etiketler karakterizasyonla aynı). */
+const countCells = computed<ListSummaryCell[]>(() => [
+  countCell('totalCount', 'Toplam Çekilen', 'Mağazadan çekilen ham kayıt', 'mdi-package-variant-closed', 'action'),
+  countCell('validCount', 'Aday Aktarım', 'Sisteme girmeye hazır', 'mdi-check-decagram-outline', 'info'),
+  countCell('processedCount', 'Aktarılan Varyant', 'Sisteme işlenen ürün', 'mdi-check-circle-outline', 'success'),
+  countCell('duplicateCount', 'Mevcut / Mükerrer', 'Zaten kayıtlı, atlandı', 'mdi-content-copy', 'neutral'),
+  countCell('invalidCount', 'Kritik Veri Eksikliği', 'Eksik eşleşme nedeniyle', 'mdi-alert-outline', 'warning'),
+  countCell('failedCount', 'İşlem Hatası', 'Teknik kesinti', 'mdi-close-octagon-outline', 'error'),
+])
+
+/** Sonuca göre dağılım (grafikle aynı dört sonuç). */
+const distribution = computed<ListDistributionRow[]>(() => [
+  { key: 'processedCount', label: 'Aktarılan', count: countOf('processedCount'), tone: 'success' },
+  { key: 'duplicateCount', label: 'Zaten mevcut', count: countOf('duplicateCount'), tone: 'neutral' },
+  { key: 'invalidCount', label: 'Eksik veri', count: countOf('invalidCount'), tone: 'warning' },
+  { key: 'failedCount', label: 'Hata alan', count: countOf('failedCount'), tone: 'error' },
+])
+
 onMounted(() => {
   isMounted.value = true
   getReport()
@@ -475,38 +506,82 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
+/* FE-LOCAL-1050: TEK kaydırma — rapor kendi içinde kaymaz (sabit yükseklik + iç kaydırma kaldırıldı); kaydıran yalnız
+   diyalog gövdesidir. Önceden gövde ve rapor ayrı ayrı kayıyordu (sağda iki kaydırma çubuğu). */
 .report-content-wrapper {
-  overflow-y: auto;
-  flex: 1 1 auto;
-  height: calc(100vh - 280px);
+  min-height: 240px;
 }
 
 .report-body {
   display: flex;
   flex-direction: column;
-  gap: var(--ek-space-4);
+  gap: var(--ek-space-5);
   padding-right: var(--ek-space-3);
 }
 
+/* Düz yüzey + ince çerçeve (gölge / degrade yok). */
 .panel {
-  border: 1px solid var(--ek-color-border-default);
-  border-radius: var(--ek-radius-lg);
-  background: var(--ek-color-surface);
-  padding: var(--ek-space-4);
   position: relative;
+  margin: 0;
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-card);
+  background: var(--ek-color-surface);
   overflow: hidden;
 }
 
-.panel--muted {
-  background: var(--ek-color-surface-muted);
+/* Kayıt özeti */
+.record {
+  display: flex;
+  flex-direction: column;
 }
 
-.meta-row {
+.record__main {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--ek-space-5);
-  padding-bottom: var(--ek-space-3);
+  gap: var(--ek-space-4);
+  padding: var(--ek-space-4) var(--ek-space-5);
+}
+
+.record__titles {
+  display: flex;
+  flex: 1 1 220px;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.record__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ek-space-2);
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-micro-size);
+  line-height: var(--ek-type-micro-line);
+  font-weight: var(--ek-type-micro-weight);
+  letter-spacing: var(--ek-type-micro-tracking);
+  text-transform: uppercase;
+}
+
+.record__eyebrow::before {
+  content: '';
+  width: 12px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--ek-color-action);
+}
+
+.record__id {
+  font-size: var(--ek-type-heading-size);
+  line-height: var(--ek-type-heading-line);
+  overflow-wrap: anywhere;
+}
+
+.record__channel {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ek-space-3);
 }
 
 .meta-item {
@@ -517,206 +592,222 @@ onBeforeUnmount(() => {
 }
 
 .meta-item__label {
-  font-size: var(--ek-font-size-xs);
-  font-weight: var(--ek-font-weight-medium);
   color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-caption-size);
 }
 
 .meta-item__value {
-  font-size: var(--ek-font-size-sm);
-  font-weight: var(--ek-font-weight-semibold);
   color: var(--ek-color-content-strong);
+  font-weight: var(--ek-font-weight-semibold);
 }
 
-/* Sayaç kartları */
-.info-grid {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ek-space-2);
-  height: 100%;
-}
-
-.info-pair {
+/* Bilgi hücreleri: ince çizgiyle ayrılır (KPI şeridiyle aynı aile). */
+.field-row {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--ek-space-2);
+  gap: var(--ek-space-3) 0;
+  padding: var(--ek-space-3) var(--ek-space-5);
+  border-top: 1px solid var(--ek-color-border-subtle);
+  background: var(--ek-color-surface-muted);
 }
 
-.info-pair > .info-item-card {
-  flex: 1 1 180px;
-}
-
-.info-item-card {
+.field {
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  flex-grow: 1;
-  gap: var(--ek-space-1);
-  padding: var(--ek-space-3) var(--ek-space-4);
-  border: 1px solid var(--ek-color-border-default);
-  border-left: 4px solid var(--ek-color-border-strong);
-  border-radius: var(--ek-radius-lg);
+  gap: 2px;
+  min-width: 0;
+  padding: 0 var(--ek-space-5);
+}
+
+.field:first-child {
+  padding-left: 0;
+}
+
+.field + .field {
+  border-left: 1px solid var(--ek-color-border-default);
+}
+
+.field__label {
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-micro-size);
+  line-height: var(--ek-type-micro-line);
+  font-weight: var(--ek-type-micro-weight);
+  letter-spacing: var(--ek-type-micro-tracking);
+  text-transform: uppercase;
+}
+
+.field__value {
+  color: var(--ek-color-content-strong);
+  font-size: var(--ek-type-body-size);
+  font-weight: var(--ek-font-weight-semibold);
+}
+
+/* Akış adımları: çerçeveli ikon kapsülleri, aralarında ince çizgi. */
+.stepper-wrapper {
+  display: flex;
+  flex-direction: column;
+}
+
+.stepper-content {
+  display: flex;
+  justify-content: space-between;
+  margin: 0;
+  padding: var(--ek-space-5) var(--ek-space-4) var(--ek-space-4);
+  list-style: none;
+}
+
+.step-item {
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ek-space-2);
+  min-width: 0;
+}
+
+/* Adımı bir sonrakine bağlayan çizgi (geçilen adımdan sonra başarı tonu). */
+.step-item + .step-item::before {
+  content: '';
+  position: absolute;
+  top: 18px;
+  right: calc(50% + 26px);
+  left: calc(-50% + 26px);
+  height: 2px;
+  border-radius: 1px;
+  background: var(--ek-color-border-default);
+}
+
+.step-item.is-passed + .step-item::before {
+  background: var(--ek-color-success);
+}
+
+.step-dot {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  border-radius: var(--ek-radius-tile);
   background: var(--ek-color-surface);
 }
 
-.info-item-card--neutral {
-  border-left-color: var(--ek-color-content-subtle);
+.step-item.is-upcoming .step-dot {
+  opacity: 0.6;
 }
 
-.info-item-card--warning {
-  border-left-color: var(--ek-color-warning);
+/* İşlemde olan adım: sakin, statik halka (sonsuz animasyon yok). */
+.step-dot--processing {
+  box-shadow: 0 0 0 3px var(--ek-color-info-subtle);
 }
 
-.info-item-card--info {
-  border-left-color: var(--ek-color-info);
+.step-title {
+  padding: 0 var(--ek-space-1);
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-caption-size);
+  line-height: var(--ek-type-caption-line);
+  font-weight: var(--ek-font-weight-medium);
+  text-align: center;
 }
 
-.info-item-card--success {
-  border-left-color: var(--ek-color-success);
-}
-
-.info-item-card--danger {
-  border-left-color: var(--ek-color-error);
-}
-
-.info-item-card__head {
-  display: flex;
-  align-items: center;
-  gap: var(--ek-space-2);
-}
-
-.info-item-card__label {
-  font-size: var(--ek-font-size-sm);
+.active-text {
+  color: var(--ek-color-content-strong);
   font-weight: var(--ek-font-weight-semibold);
+}
+
+.passed-text {
   color: var(--ek-color-content-default);
 }
 
-.info-item-card__label--warning {
-  color: var(--ek-color-warning);
-}
-
-.info-item-card__label--info {
-  color: var(--ek-color-info);
-}
-
-.info-item-card__label--success {
-  color: var(--ek-color-success);
-}
-
-.info-item-card__label--danger {
-  color: var(--ek-color-error);
-}
-
-.info-item-card__value {
-  font-size: var(--ek-font-size-xl);
-  font-weight: var(--ek-font-weight-semibold);
-  color: var(--ek-color-content-strong);
-}
-
-.info-item-card__value--lg {
-  font-size: var(--ek-font-size-2xl);
-}
-
-.info-item-card__value--warning {
-  color: var(--ek-color-warning);
-}
-
-.info-item-card__value--info {
-  color: var(--ek-color-info);
-}
-
-.info-item-card__value--success {
-  color: var(--ek-color-success);
-}
-
-.info-item-card__value--danger {
-  color: var(--ek-color-error);
-}
-
-.info-item-card__hint {
-  font-size: var(--ek-font-size-xs);
-  color: var(--ek-color-content-muted);
-}
-
-.chart-card {
+.progress {
   display: flex;
   align-items: center;
-  height: 100%;
-  width: 100%;
-  padding: var(--ek-space-4);
-  border: 1px solid var(--ek-color-border-default);
-  border-radius: var(--ek-radius-lg);
-  background: var(--ek-color-surface);
-}
-
-.chart {
-  min-height: 400px;
-  width: 100%;
+  gap: var(--ek-space-3);
+  padding: var(--ek-space-3) var(--ek-space-5);
+  border-top: 1px solid var(--ek-color-border-subtle);
+  background: var(--ek-color-surface-muted);
 }
 
 .progress-bar {
-  margin-top: var(--ek-space-3);
+  flex: 1;
   border-radius: var(--ek-radius-full);
 }
 
 .progress-bar__text {
-  font-size: var(--ek-font-size-xs);
+  color: var(--ek-color-content-strong);
+  font-size: var(--ek-type-caption-size);
   font-weight: var(--ek-font-weight-semibold);
-  color: var(--ek-color-surface);
+}
+
+/* Dağılım: oran kartı + sütun grafiği yan yana. */
+.dist-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  gap: var(--ek-space-4);
+  align-items: stretch;
+}
+
+.chart {
+  min-height: 280px;
+  width: 100%;
 }
 
 /* Eksik eşleştirme */
 .mapping-section {
-  margin-top: var(--ek-space-4);
+  display: flex;
+  flex-direction: column;
 }
 
 .mapping-section__head {
   display: flex;
-  align-items: center;
-  gap: var(--ek-space-2);
-  margin-bottom: var(--ek-space-1);
+  align-items: flex-start;
+  gap: var(--ek-space-3);
+  padding: var(--ek-space-4) var(--ek-space-5);
+  border-bottom: 1px solid var(--ek-color-border-subtle);
+}
+
+.mapping-section__titles {
+  min-width: 0;
 }
 
 .mapping-section__title {
-  font-size: var(--ek-font-size-lg);
-  font-weight: var(--ek-font-weight-semibold);
+  margin: 0;
   color: var(--ek-color-content-strong);
+  font-size: var(--ek-type-heading-size);
+  line-height: var(--ek-type-heading-line);
+  font-weight: var(--ek-type-heading-weight);
 }
 
 .mapping-section__desc {
-  font-size: var(--ek-font-size-xs);
   color: var(--ek-color-content-muted);
-  margin-bottom: var(--ek-space-4);
+  font-size: var(--ek-type-caption-size);
+  line-height: var(--ek-type-caption-line);
 }
 
 .legend-row {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: var(--ek-space-4);
-  margin-bottom: var(--ek-space-4);
+  gap: var(--ek-space-2) var(--ek-space-4);
+  padding: var(--ek-space-2) var(--ek-space-5);
+  border-bottom: 1px solid var(--ek-color-border-subtle);
+  background: var(--ek-color-surface-muted);
 }
 
 .legend-item {
   display: flex;
   align-items: center;
   gap: var(--ek-space-2);
-  padding: var(--ek-space-1) var(--ek-space-3);
-  border: 1px dashed var(--ek-color-border-strong);
-  border-radius: var(--ek-radius-full);
-  background: var(--ek-color-surface);
 }
 
 .legend-item__text {
-  font-size: var(--ek-font-size-xs);
-  font-weight: var(--ek-font-weight-medium);
   color: var(--ek-color-content-default);
+  font-size: var(--ek-type-caption-size);
+  font-weight: var(--ek-font-weight-medium);
 }
 
 .legend-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: var(--ek-radius-full);
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
 }
 
 .legend-dot--success {
@@ -728,33 +819,21 @@ onBeforeUnmount(() => {
 }
 
 .legend-hint {
-  font-size: var(--ek-font-size-xs);
-  font-style: italic;
+  margin-left: auto;
   color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-caption-size);
 }
 
-.cat-list {
-  gap: var(--ek-space-3);
-}
-
+/* Kategori satırları: düz, ince çizgiyle ayrılır; ton solda küçük karede (kalın kenar şeridi yok). */
 .cat-row {
   display: flex;
   flex-direction: column;
   gap: var(--ek-space-3);
-  padding: var(--ek-space-3);
-  border: 1px solid var(--ek-color-border-default);
-  border-left: 4px solid var(--ek-color-border-strong);
-  border-radius: var(--ek-radius-lg);
-  background: var(--ek-color-surface);
-  box-shadow: var(--ek-shadow-sm);
+  padding: var(--ek-space-3) var(--ek-space-5);
 }
 
-.cat-row--danger {
-  border-left-color: var(--ek-color-error);
-}
-
-.cat-row--warning {
-  border-left-color: var(--ek-color-warning);
+.cat-row + .cat-row {
+  border-top: 1px solid var(--ek-color-border-subtle);
 }
 
 .cat-row__head {
@@ -765,10 +844,24 @@ onBeforeUnmount(() => {
   gap: var(--ek-space-2);
 }
 
+.cat-row__head::before {
+  content: '';
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  background: var(--ek-color-warning);
+}
+
+.cat-row--danger .cat-row__head::before {
+  background: var(--ek-color-error);
+}
+
 .cat-row__path {
-  font-size: var(--ek-font-size-xs);
-  line-height: var(--ek-line-height-normal);
+  flex: 1;
   min-width: 0;
+  font-size: var(--ek-type-body-size);
+  line-height: var(--ek-line-height-normal);
 }
 
 .cat-row__path-inner {
@@ -780,16 +873,14 @@ onBeforeUnmount(() => {
 
 .cat-row__crumb {
   color: var(--ek-color-content-muted);
-  font-weight: var(--ek-font-weight-medium);
 }
 
 .cat-row__name-warning {
+  color: var(--ek-color-content-strong);
   font-weight: var(--ek-font-weight-semibold);
-  color: var(--ek-color-warning);
 }
 
 .cat-row__loading {
-  font-style: italic;
   color: var(--ek-color-content-muted);
 }
 
@@ -797,77 +888,83 @@ onBeforeUnmount(() => {
 .count-chip {
   display: inline-flex;
   align-items: center;
-  padding: 0 var(--ek-space-2);
   min-height: 24px;
-  border: 1px solid var(--ek-color-border-strong);
-  border-radius: var(--ek-radius-sm);
+  padding: 0 var(--ek-space-2);
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-md);
   background: var(--ek-color-surface);
-  font-size: var(--ek-font-size-xs);
+  font-size: var(--ek-type-caption-size);
   font-weight: var(--ek-font-weight-semibold);
   cursor: pointer;
-  transition: background-color var(--ek-motion-feedback);
+  transition: var(--ek-transition-colors);
 }
 
 .map-chip:focus-visible,
 .count-chip:focus-visible {
-  outline: 2px solid var(--ek-color-primary);
-  outline-offset: 2px;
+  outline: none;
+  box-shadow: var(--ek-focus-ring);
 }
 
 .map-chip--danger {
-  color: var(--ek-color-error);
+  border-color: var(--ek-color-error-border);
   background: var(--ek-color-error-subtle);
+  color: var(--ek-color-error-emphasis);
 }
 
 .map-chip--warning {
-  color: var(--ek-color-warning);
+  border-color: var(--ek-color-warning-border);
   background: var(--ek-color-warning-subtle);
+  color: var(--ek-color-warning-emphasis);
 }
 
 .map-chip--success {
-  color: var(--ek-color-success);
+  border-color: var(--ek-color-success-border);
   background: var(--ek-color-success-subtle);
+  color: var(--ek-color-success-emphasis);
 }
 
 .map-chip:hover {
-  background: var(--ek-color-surface-sunken);
+  border-color: var(--ek-color-border-strong);
 }
 
 .count-chip {
-  border-style: dashed;
+  background: var(--ek-color-surface-muted);
+  color: var(--ek-color-content-strong);
 }
 
-.count-chip--danger {
-  color: var(--ek-color-error);
-}
-
-.count-chip--warning {
-  color: var(--ek-color-warning);
+.count-chip:hover {
+  border-color: var(--ek-color-border-strong);
 }
 
 .attr-groups {
   display: flex;
   flex-direction: column;
-  gap: var(--ek-space-3);
+  gap: var(--ek-space-2);
+  padding-left: calc(10px + var(--ek-space-2));
 }
 
 .attr-group {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
+  align-items: center;
   gap: var(--ek-space-2);
 }
 
 .attr-group__name {
-  font-size: var(--ek-font-size-xs);
-  font-weight: var(--ek-font-weight-semibold);
+  min-width: 96px;
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-micro-size);
+  font-weight: var(--ek-type-micro-weight);
+  letter-spacing: var(--ek-type-micro-tracking);
+  text-transform: uppercase;
 }
 
 .attr-group__name--success {
-  color: var(--ek-color-success);
+  color: var(--ek-color-success-emphasis);
 }
 
 .attr-group__name--warning {
-  color: var(--ek-color-warning);
+  color: var(--ek-color-warning-emphasis);
 }
 
 .attr-group__values {
@@ -876,15 +973,16 @@ onBeforeUnmount(() => {
   gap: var(--ek-space-2);
 }
 
+/* Eşleştirme menüsü: düz yüzey + ince çerçeve; açılır katman olduğu için tek yükseltme gölgesi. */
 .map-menu-card {
   display: flex;
   flex-direction: column;
   max-height: 80vh;
   overflow-y: auto;
   margin: 0 auto;
-  padding: var(--ek-space-3);
+  padding: var(--ek-space-4);
   border: 1px solid var(--ek-color-border-default);
-  border-radius: var(--ek-radius-lg);
+  border-radius: var(--ek-radius-card);
   box-shadow: var(--ek-shadow-lg);
 }
 
@@ -895,130 +993,58 @@ onBeforeUnmount(() => {
 .map-menu-card__head {
   display: flex;
   align-items: center;
-  gap: var(--ek-space-1);
-  margin-bottom: var(--ek-space-2);
+  gap: var(--ek-space-2);
+  margin-bottom: var(--ek-space-3);
 }
 
 .map-menu-card__title {
-  font-size: var(--ek-font-size-xs);
-  font-weight: var(--ek-font-weight-semibold);
   color: var(--ek-color-content-strong);
+  font-size: var(--ek-type-heading-size);
+  font-weight: var(--ek-type-heading-weight);
 }
 
-/* Akış adımları */
-.stepper-content {
-  display: flex;
-  justify-content: space-between;
-  position: relative;
-  z-index: 1;
-}
-
-.step-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--ek-space-2);
-  flex: 1;
-  z-index: 2;
-  position: relative;
-}
-
-.stepper-line {
-  position: absolute;
-  top: 8px;
-  left: 10%;
-  right: 10%;
-  height: 1px;
-  background: var(--ek-color-border-strong);
-  z-index: 1;
-}
-
-.step-dot {
-  width: 16px;
-  height: 16px;
-  border-radius: var(--ek-radius-full);
-  border: 2px solid var(--ek-color-surface);
-  background: var(--ek-color-border-strong);
-  position: relative;
-  z-index: 2;
-  transition: background-color var(--ek-motion-layout);
-}
-
-.step-dot--upcoming {
-  background: var(--ek-color-border-strong);
-}
-
-.step-dot--success {
-  background: var(--ek-color-success);
-}
-
-.step-dot--danger {
-  background: var(--ek-color-error);
-}
-
-.step-dot--info {
-  background: var(--ek-color-info);
-}
-
-.step-dot--warning {
-  background: var(--ek-color-warning);
-}
-
-.step-dot--neutral {
-  background: var(--ek-color-content-subtle);
-}
-
-.step-dot--done {
-  opacity: 0.7;
-}
-
-/* İşlemde olan adım: sakin, statik halka (sonsuz animasyon yok). */
-.step-dot--processing {
-  box-shadow: 0 0 0 4px var(--ek-color-info-subtle);
-}
-
-.step-title {
-  font-size: var(--ek-font-size-xs);
-  font-weight: var(--ek-font-weight-medium);
-  text-transform: uppercase;
-  text-align: center;
-  color: var(--ek-color-content-muted);
-}
-
-.active-text {
-  color: var(--ek-color-content-strong);
-  font-weight: var(--ek-font-weight-semibold);
-}
-
-.passed-text {
-  color: var(--ek-color-content-muted);
+@media (max-width: 959px) {
+  .dist-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 @media (max-width: 600px) {
+  .field,
+  .field:first-child {
+    flex: 1 1 40%;
+    padding: 0;
+  }
+
+  .field + .field {
+    border-left: 0;
+  }
+
   .stepper-content {
     flex-direction: column;
-    align-items: flex-start;
-    gap: var(--ek-space-5);
-    padding-left: var(--ek-space-3);
+    gap: var(--ek-space-3);
   }
 
   .step-item {
+    flex: none;
     flex-direction: row;
-    gap: var(--ek-space-4);
-    width: 100%;
-    align-items: center;
+    gap: var(--ek-space-3);
   }
 
-  .stepper-line {
-    left: 22px;
-    top: 20px;
-    bottom: 20px;
-    width: 1px;
-    height: auto;
+  .step-item + .step-item::before {
+    top: calc(-1 * var(--ek-space-3));
+    right: auto;
+    left: 17px;
+    width: 2px;
+    height: var(--ek-space-3);
   }
 
   .step-title {
     text-align: left;
+  }
+
+  .legend-hint {
+    margin-left: 0;
   }
 }
 </style>

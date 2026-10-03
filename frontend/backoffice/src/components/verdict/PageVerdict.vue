@@ -1,72 +1,62 @@
 <!--
-  PageVerdict — sayfanın "Durum → Karar → Eylem" katmanları (K51; BO_UI_PATTERNS §11). Ayrıntı (mevcut tablolar,
-  paneller) bu bloğun ALTINDA, "Ayrıntılar" etiketinden sonra gelir (§11.6 madde 4: ayrıntı = sayfanın kendisi).
+  PageVerdict — sayfanın "Durum → Karar → Eylem" katmanları (K51; BO_UI_PATTERNS §11), genel bakışla AYNI hiyerarşide:
+  tek müdahale kutusu (BoVerdictCard) → hüküm + "Önce bu" (ilk yıkıcı olmayan eylem) → kapalı başlayan "Dikkat
+  isteyenler" dalı (BoAttentionBranch: maddeler → yerinde ayrıntı) → kutunun alt şeridinde diğer eylemler.
+  Ayrıntı (mevcut tablolar, paneller) bu bloğun ALTINDA, "Ayrıntılar" etiketinden sonra gelir.
 
     <PageVerdict :verdict="verdict" />      // verdict: PageVerdict | null (null → durum denetleniyor)
 
-  bo-r1b UYARLAYICISI: sayfalar yalnız bu bileşeni ve `utils/verdict.ts` modelini kullanır; çizim bo-r1a'nın triyaj
-  bileşenleridir — BoStatusHeader (Durum) · BoActionCard "Önerilen ilk adım" (Eylem) · BoAttentionList (Karar).
   Eşleme: tone success/info → ok · warning → warning · error → critical · neutral → unknown; madde error → critical.
-  `unreadable()` maddeleri listeye değil BoAttentionList'in "X okunamadı — Yeniden dene" notuna gider. Acil madde yokken
-  bilgi maddeleri Durum'daki bağlantılı özet çipleri olur (`facts`) — sakin sayfada liste ayrıntıyı aşağı itmez.
-  Kalan eylemler sakin bağlantı satırıdır (sayfada tek dolgu/kart kuralı — §11.3).
+  `unreadable()` maddeleri listeye değil dalın "X okunamadı — Yeniden dene" notuna gider.
 -->
 <template>
-  <BoStatusHeader
+  <BoVerdictCard
     :health="health"
     :verdict="verdict?.summary ?? ''"
     :summary="verdict?.note"
     :badge-label="badgeLabel"
-    :facts="facts"
     :loading="!verdict"
+    :first="firstCard"
+    :pills="pills"
+    first-testid="verdict-first-action"
     label="Sayfa durumu"
     data-testid="page-verdict"
     :data-tone="verdict?.tone ?? 'loading'"
+    @first-act="first?.onSelect?.()"
   >
-    <BoActionCard
-      v-if="first"
-      eyebrow="Önerilen ilk adım"
-      :title="first.label"
-      :text="first.detail"
-      :action-label="firstCta"
-      :to="first.to"
-      :tone="cardTone"
-      :icon="first.icon ?? 'mdi-lightbulb-on-outline'"
-      :guarded="first.guarded"
-      :heading-level="2"
-      data-testid="verdict-first-action"
-      @act="first.onSelect?.()"
-    />
-  </BoStatusHeader>
-
-  <section v-if="verdict && (listed.length || degraded.length || verdict.checks?.length)" class="bo-verdict-decide" aria-label="Dikkat isteyenler">
-    <BoAttentionList
+    <BoAttentionBranch
+      v-if="verdict && (listed.length || degraded.length || verdict.checks?.length)"
+      :id="branchId"
+      title="Dikkat isteyenler"
+      icon="mdi-clipboard-alert-outline"
       :items="listed"
+      :health="branchHealth"
+      :answer="branchAnswer"
       state="ready"
       :degraded="degraded"
-      :checks="verdict.checks"
+      :checks="verdict.checks ?? []"
       :ok-title="verdict.okTitle ?? 'Müdahale gereken bir şey yok'"
-      list-label="Bu sayfada dikkat isteyenler"
       :limit="3"
-      :heading-level="3"
       data-testid="verdict-attention"
       @retry="retry"
     />
-  </section>
 
-  <nav v-if="rest.length" class="bo-verdict-more" aria-label="Diğer eylemler" data-testid="verdict-actions">
-    <span class="bo-verdict-more__k">Diğer eylemler</span>
-    <ul>
-      <li v-for="a in rest" :key="a.id" :data-id="a.id">
-        <RouterLink v-if="a.to" :to="a.to" class="bo-verdict-more__link" :class="{ 'is-danger': a.danger }">
-          <v-icon :icon="a.icon ?? 'mdi-arrow-right'" aria-hidden="true" />{{ a.label }}
-        </RouterLink>
-        <button v-else type="button" class="bo-verdict-more__link" :class="{ 'is-danger': a.danger }" @click="a.onSelect?.()">
-          <v-icon :icon="a.guarded ? 'mdi-shield-lock-outline' : (a.icon ?? 'mdi-play-circle-outline')" aria-hidden="true" />{{ a.label }}<span v-if="a.guarded" class="ek-sr-only"> (kimlik doğrulama ve gerekçe istenir)</span>
-        </button>
-      </li>
-    </ul>
-  </nav>
+    <template v-if="rest.length" #footer>
+      <nav class="bo-verdict-more" aria-label="Diğer eylemler" data-testid="verdict-actions">
+        <span class="bo-verdict-more__k">Diğer eylemler</span>
+        <ul>
+          <li v-for="a in rest" :key="a.id" :data-id="a.id">
+            <RouterLink v-if="a.to" :to="a.to" class="bo-verdict-more__link" :class="{ 'is-danger': a.danger }">
+              <v-icon :icon="a.icon ?? 'mdi-arrow-right'" aria-hidden="true" />{{ a.label }}
+            </RouterLink>
+            <button v-else type="button" class="bo-verdict-more__link" :class="{ 'is-danger': a.danger }" @click="a.onSelect?.()">
+              <v-icon :icon="a.guarded ? 'mdi-shield-lock-outline' : (a.icon ?? 'mdi-play-circle-outline')" aria-hidden="true" />{{ a.label }}<span v-if="a.guarded" class="ek-sr-only"> (kimlik doğrulama ve gerekçe istenir)</span>
+            </button>
+          </li>
+        </ul>
+      </nav>
+    </template>
+  </BoVerdictCard>
 
   <h2 v-if="detailsLabel" class="bo-verdict-details" data-testid="details-label">{{ detailsLabel }}</h2>
 </template>
@@ -74,9 +64,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
-import BoStatusHeader, { type StatusFact } from '@bo/components/triage/BoStatusHeader.vue'
-import BoAttentionList from '@bo/components/triage/BoAttentionList.vue'
-import BoActionCard from '@bo/components/triage/BoActionCard.vue'
+import BoVerdictCard, { type VerdictFirst } from '@bo/components/triage/BoVerdictCard.vue'
+import BoAttentionBranch from '@bo/components/triage/BoAttentionBranch.vue'
 import type { AttentionEntry, Health, Severity } from '@bo/components/triage/triage'
 import type { AttentionTone, PageVerdict, SuggestedAction, VerdictTone } from '@bo/utils/verdict'
 
@@ -93,24 +82,32 @@ function defaultBadge(t: VerdictTone) {
 }
 
 const linked = computed(() => (props.verdict?.attention ?? []).filter((a) => !a.source && a.to))
-/** Acil (kırmızı/sarı) madde yoksa bilgi maddeleri büyük liste yerine Durum'daki bağlantılı özet çiplerine iner (en çok 4). */
-const calmInfo = computed(() => !linked.value.some((a) => a.tone !== 'info'))
-// bo-wdg: BoStatusHeader `to`'yu RouterLink'e doğru bağlıyor → özet çipleri doğrudan `to` taşır (SPA gezinmesi + Ctrl/orta tık).
-const facts = computed<StatusFact[]>(() => (calmInfo.value ? linked.value.slice(0, 4).map((a) => ({ label: a.title, value: '', tone: 'unknown' as Health, to: a.to! })) : []))
 const listed = computed<AttentionEntry[]>(() =>
-  linked.value
-    .filter(() => !calmInfo.value)
-    .map((a) => ({
-      id: a.id,
-      severity: SEV[a.tone],
-      title: a.title,
-      impact: a.impact ?? a.detail ?? '',
-      advice: a.advice ?? '',
-      action: { label: a.cta ?? 'Göster', to: a.to! },
-      since: a.since,
-      subjects: a.tenant ? [a.tenant] : undefined,
-    })),
+  linked.value.map((a) => ({
+    id: a.id,
+    severity: SEV[a.tone],
+    title: a.title,
+    why: a.detail ?? undefined,
+    impact: a.impact ?? null,
+    advice: a.advice ?? '',
+    action: { label: a.cta ?? 'Göster', to: a.to! },
+    since: a.since,
+    subjects: a.tenant ? [a.tenant] : undefined,
+  })),
 )
+const pills = computed(() => {
+  const c = listed.value.filter((i) => i.severity === 'critical').length
+  const w = listed.value.filter((i) => i.severity === 'warning').length
+  return [...(c ? [{ tone: 'critical' as const, label: `${c} kritik` }] : []), ...(w ? [{ tone: 'warning' as const, label: `${w} uyarı` }] : [])]
+})
+/** Dal başlığı: acil madde yoksa bilgi sayısı / eksik veri / sorun yok (acil maddelerde rozetleri dal kendisi sayar). */
+const branchHealth = computed<Health>(() => (listed.value.some((i) => i.severity !== 'info') ? health.value : degraded.value.length ? 'warning' : 'ok'))
+const branchAnswer = computed(() => {
+  const infos = listed.value.filter((i) => i.severity === 'info').length
+  if (infos) return `${infos} bilgi notu`
+  return degraded.value.length ? 'Eksik veri' : 'Sorun yok'
+})
+const branchId = `dikkat-${Math.random().toString(36).slice(2, 8)}`
 const unreadableItems = computed(() => (props.verdict?.attention ?? []).filter((a) => a.source))
 const degraded = computed(() => unreadableItems.value.map((a) => a.source!))
 function retry() {
@@ -131,20 +128,26 @@ const firstCta = computed(() => {
   const key = JSON.stringify(f.to)
   return props.verdict?.attention.find((a) => a.cta && a.to && JSON.stringify(a.to) === key)?.cta ?? 'Aç'
 })
-const cardTone = computed(() => (health.value === 'critical' ? 'critical' : health.value === 'warning' ? 'warning' : 'neutral'))
+const firstCard = computed<VerdictFirst | undefined>(() => {
+  const f = first.value
+  if (!f) return undefined
+  return {
+    severity: health.value === 'critical' ? 'critical' : health.value === 'warning' ? 'warning' : 'neutral',
+    title: f.label,
+    detail: f.detail,
+    actionLabel: firstCta.value,
+    to: f.to,
+    guarded: f.guarded,
+  }
+})
 </script>
 
 <style scoped>
-.bo-verdict-decide {
-  min-width: 0;
-}
-
 .bo-verdict-more {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--ek-space-1) var(--ek-space-3);
-  margin-top: calc(var(--ek-space-2) * -1);
 }
 
 .bo-verdict-more__k,
@@ -216,14 +219,43 @@ const cardTone = computed(() => (health.value === 'critical' ? 'critical' : heal
   height: 1px;
   background: var(--ek-color-border-subtle);
 }
-</style>
 
-<style>
-/* Yalnız sayfa hükmü (genel bakış değil): BoStatusHeader dar ekranda rozeti sıraya alıyor ama metin esnediği için hüküm
-   rozetin yanında dar bir sütuna sıkışıyordu (bo-r1a'ya bildirildi). Metin satırı tam genişlik → rozet alta iner. */
-@media (max-width: 600px) {
-  .bo-sh[data-testid='page-verdict'] .bo-sh__text {
-    flex-basis: calc(100% - var(--ek-icon-lg) - var(--ek-space-3) * 3);
-  }
+/* BO-LOCAL-01 — "Ayrıntılar" ve "Diğer eylemler" etiketleri: kısa eylem çizgili mikro etiket (uzun ayraç çizgisi yok);
+   diğer eylem bağlantıları çerçeveli köşeli düğmeler. */
+.bo-verdict-more__k,
+.bo-verdict-details {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ek-space-2);
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-micro-size);
+  line-height: var(--ek-type-micro-line);
+  font-weight: var(--ek-type-micro-weight);
+  letter-spacing: var(--ek-type-micro-tracking);
+  text-transform: uppercase;
+}
+
+.bo-verdict-more__k::before,
+.bo-verdict-details::before {
+  content: '';
+  flex: none;
+  width: 12px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--ek-color-action);
+}
+
+.bo-verdict-details::after {
+  display: none;
+}
+
+.bo-verdict-more__link {
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-tile);
+}
+
+.bo-verdict-more__link:hover {
+  border-color: var(--ek-color-action-border);
+  background: var(--ek-color-action-subtle);
 }
 </style>

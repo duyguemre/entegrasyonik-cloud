@@ -197,7 +197,8 @@ describe('gizli öğe yok (roadmap, evidence, dahili notlar)', () => {
   it('hiçbir iç sayfada roadmap adı (tam sözcük), evidence/registry atfı veya dahili not geçmez', () => {
     for (const route of INNER_PAGES) {
       const raw = html(draftDir, route)
-      const text = norm(visibleText(raw))
+      // Kanıtlı "Geliştirme listemizde" bloğu (2026-10-02 kullanıcı kararı) hariç: adlar yalnızca orada geçebilir.
+      const text = norm(visibleText(raw.replace(/<backlog-block[\s\S]*?<\/backlog-block>/g, ' ')))
       for (const name of roadmap) expect(wholeWord(name).test(text), `${route}: ${name}`).toBe(false)
       expect(raw, route).not.toContain('INTEGRATIONS_REGISTRY')
       expect(raw, route).not.toMatch(/"evidence"|internalNotes/)

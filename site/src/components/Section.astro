@@ -34,18 +34,6 @@ const { tone = 'default', id, labelledby, size = 'default', class: className } =
     background: var(--ek-color-surface-muted);
     border-block: var(--site-border-width) solid var(--ek-color-border-default);
   }
-  .section--muted::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    background-image: var(--site-texture-dots);
-    background-size: var(--site-texture-dots-size);
-    -webkit-mask-image: linear-gradient(180deg, var(--ek-color-content-strong), transparent 55%);
-    mask-image: linear-gradient(180deg, var(--ek-color-content-strong), transparent 55%);
-    opacity: 0.6;
-    pointer-events: none;
-  }
   .section--stage {
     overflow: hidden;
     isolation: isolate;
@@ -62,18 +50,6 @@ const { tone = 'default', id, labelledby, size = 'default', class: className } =
     background-size: var(--site-texture-grid-size);
     -webkit-mask-image: var(--site-texture-fade);
     mask-image: var(--site-texture-fade);
-    pointer-events: none;
-  }
-  /* Yumuşak bölüm geçişi: koyu sahnenin üst kenarında hafif bir ışık sızıntısı — komşu (açık) bölümden
-     gelen sert kesimi yumuşatır (yalnızca dekoratif, içerik etkilenmez). */
-  .section--stage::after {
-    content: '';
-    position: absolute;
-    inset-block-start: 0;
-    inset-inline: 0;
-    z-index: -1;
-    height: var(--site-space-24);
-    background: linear-gradient(180deg, color-mix(in srgb, var(--ek-color-background) 16%, transparent), transparent);
     pointer-events: none;
   }
   .section--stage :global(h1),

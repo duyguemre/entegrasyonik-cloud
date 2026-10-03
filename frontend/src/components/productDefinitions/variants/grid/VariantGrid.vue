@@ -12,13 +12,13 @@
 -->
 <template>
   <div class="vg" :class="{ 'vg--narrow': narrow }" ref="rootRef">
-    <div class="vg-scroll" ref="scrollRef" @scroll.passive="onScroll">
+    <div class="vg-scroll" ref="scrollRef" :style="fitH ? { height: `${fitH}px` } : undefined" @scroll.passive="onScroll">
       <table class="vg-table" role="grid" :aria-label="ariaLabel" :aria-rowcount="rows.length + 1" aria-colcount="11"
         aria-multiselectable="true" @keydown="onKeydown" @copy="onCopy" @paste="onPaste">
         <colgroup>
-          <col class="vg-c-sel" /><col class="vg-c-group" /><col class="vg-c-code" /><col class="vg-c-barcode" />
-          <col class="vg-c-money" /><col class="vg-c-money" /><col class="vg-c-chan" />
-          <col class="vg-c-int" /><col class="vg-c-shelf" /><col class="vg-c-cost" /><col class="vg-c-actions" />
+          <col class="vg-c-sel" /><col class="vg-c-group" /><col class="vg-c-code" /><col v-if="shown('barcode')" class="vg-c-barcode" />
+          <col class="vg-c-money" /><col v-if="shown('marketPrice')" class="vg-c-money" /><col v-if="shown('channel')" class="vg-c-chan" />
+          <col class="vg-c-int" /><col v-if="shown('shelf')" class="vg-c-shelf" /><col v-if="shown('costPrice')" class="vg-c-cost" /><col class="vg-c-actions" />
         </colgroup>
         <thead>
           <tr role="row" aria-rowindex="1">
@@ -36,11 +36,18 @@
               </button>
               <span v-else>{{ h.label }}</span>
             </th>
-            <th class="vg-th vg-sticky-end" aria-colindex="11" scope="col"><span class="ek-sr-only">İşlemler</span></th>
+            <th class="vg-th vg-sticky-end" aria-colindex="11" scope="col">
+              <span class="ek-sr-only">İşlemler</span>
+              <!-- Dar alanda gizlenen sütunlar: yatay kaydırma yerine öncelik sırasıyla gizlenir; tümü Toplu düzenle'de. -->
+              <span v-if="hiddenCols.length" class="vg-hidden" :class="{ 'is-warn': hiddenIssues }" tabindex="0" role="note"
+                :title="`Gizli sütunlar: ${hiddenCols.join(', ')} — tümünü Toplu düzenle'de görebilirsiniz.${hiddenIssues ? ' Gizli sütunlarda sorun var.' : ''}`"
+                :aria-label="`${hiddenCols.length} sütun gizli: ${hiddenCols.join(', ')}. Tümü Toplu düzenle'de.`">
+                <v-icon :icon="hiddenIssues ? 'mdi-alert-outline' : 'mdi-table-column-plus-after'" size="16" aria-hidden="true" />+{{ hiddenCols.length }}
+              </span>
+            </th>
           </tr>
         </thead>
         <tbody>
-          <tr v-if="win.start > 0" class="vg-pad vg-pad--top" aria-hidden="true"><td colspan="11"></td></tr>
           <tr v-for="r in windowRows" :key="r.key" role="row" class="vg-row"
             :class="{ 'is-picked': isPicked(r.variant), 'is-group-start': r.groupStart, 'is-group-odd': r.groupIndex % 2 === 1 }"
             :aria-rowindex="r.index + 2" :aria-selected="isPicked(r.variant)">
@@ -53,7 +60,7 @@
               class="vg-td vg-sticky vg-s-group vg-group" :title="r.groupTitle" :count="r.groupSize" :alt="r.groupIndex % 2 === 1" />
 
             <!-- stok kodu (+ küçük resim) -->
-            <td v-bind="cellAttrs(r, 0)" class="vg-td vg-sticky vg-s-code vg-cell" :class="cellClass(r, 0)">
+            <td v-bind="cellAttrs(r, ci('stockcode'))" class="vg-td vg-sticky vg-s-code vg-cell" :class="cellClass(r, ci('stockcode'))">
               <div class="vg-code">
                 <!-- Faz 3 B2: görselsiz varyant belirgin (uyarı tonu + ekle ikonu), birden çok görselde sayı rozeti. -->
                 <button type="button" class="vg-thumb" :class="{ 'is-empty': !imageCount(r.variant) }"
@@ -64,21 +71,21 @@
                   <span v-if="imageCount(r.variant) > 1" class="vg-thumb__n ek-num" aria-hidden="true">{{ imageCount(r.variant) }}</span>
                 </button>
                 <span class="vg-code__text">
-                  <CellBody :sheet="sheet" :r="r.index" :c="0" :value="r.variant.stockcode" kind="text" strong
-                    :issue="issueOf(r, 0)" :label="`Stok kodu, ${rowTitle(r.variant)}`" />
+                  <CellBody :sheet="sheet" :r="r.index" :c="ci('stockcode')" :value="r.variant.stockcode" kind="text" strong
+                    :issue="issueOf(r, ci('stockcode'))" :label="`Stok kodu, ${rowTitle(r.variant)}`" />
                   <!-- FR2-PFORM 24: seçenekler ayrı sütun yerine kodun altında (tablo sığar, satır kendini anlatır) -->
                   <span class="vg-code__opts" :title="optionLine(r.variant)">{{ optionLine(r.variant) }}</span>
                 </span>
               </div>
             </td>
-            <td v-bind="cellAttrs(r, 1)" class="vg-td vg-cell vg-mono" :class="cellClass(r, 1)">
-              <CellBody :sheet="sheet" :r="r.index" :c="1" :value="r.variant.barcode" kind="text"
-                :issue="issueOf(r, 1)" :label="`Barkod, ${rowTitle(r.variant)}`" />
+            <td v-if="shown('barcode')" v-bind="cellAttrs(r, ci('barcode'))" class="vg-td vg-cell vg-mono" :class="cellClass(r, ci('barcode'))">
+              <CellBody :sheet="sheet" :r="r.index" :c="ci('barcode')" :value="r.variant.barcode" kind="text"
+                :issue="issueOf(r, ci('barcode'))" :label="`Barkod, ${rowTitle(r.variant)}`" />
             </td>
 
             <!-- fiyatlar -->
             <template v-if="r.variant.prices?.isPlatformBasedPrice">
-              <td class="vg-td vg-num vg-chanrange" colspan="2" aria-colindex="5">
+              <td class="vg-td vg-num vg-chanrange" :colspan="shown('marketPrice') ? 2 : 1" aria-colindex="5">
                 <button type="button" class="vg-rangebtn" @click="emit('channelPrices', r.variant)"
                   :aria-label="`Kanal fiyatlarını düzenle: ${rowTitle(r.variant)}`">
                   <span class="vg-rangebtn__val ek-num">{{ priceRange(r.variant, 'salePrice') }}</span>
@@ -87,49 +94,50 @@
               </td>
             </template>
             <template v-else>
-              <td v-bind="cellAttrs(r, 2)" class="vg-td vg-cell vg-num" :class="cellClass(r, 2)">
-                <CellBody :sheet="sheet" :r="r.index" :c="2" :value="r.variant.prices?.salePrice" kind="money"
-                  :issue="issueOf(r, 2)" :label="`Satış fiyatı, ${rowTitle(r.variant)}`" />
+              <td v-bind="cellAttrs(r, ci('salePrice'))" class="vg-td vg-cell vg-num" :class="cellClass(r, ci('salePrice'))">
+                <CellBody :sheet="sheet" :r="r.index" :c="ci('salePrice')" :value="r.variant.prices?.salePrice" kind="money"
+                  :issue="issueOf(r, ci('salePrice'))" :label="`Satış fiyatı, ${rowTitle(r.variant)}`" />
               </td>
-              <td v-bind="cellAttrs(r, 3)" class="vg-td vg-cell vg-num" :class="cellClass(r, 3)">
-                <CellBody :sheet="sheet" :r="r.index" :c="3" :value="r.variant.prices?.marketPrice" kind="money"
-                  :issue="issueOf(r, 3)" :label="`Piyasa fiyatı, ${rowTitle(r.variant)}`" />
+              <td v-if="shown('marketPrice')" v-bind="cellAttrs(r, ci('marketPrice'))" class="vg-td vg-cell vg-num" :class="cellClass(r, ci('marketPrice'))">
+                <CellBody :sheet="sheet" :r="r.index" :c="ci('marketPrice')" :value="r.variant.prices?.marketPrice" kind="money"
+                  :issue="issueOf(r, ci('marketPrice'))" :label="`Piyasa fiyatı, ${rowTitle(r.variant)}`" />
               </td>
             </template>
-            <td class="vg-td vg-chan" aria-colindex="7">
+            <td v-if="shown('channel')" class="vg-td vg-chan" aria-colindex="7">
               <v-checkbox-btn density="compact" :model-value="!!r.variant.prices?.isPlatformBasedPrice"
                 :aria-label="`${$t('productDefinitions.product.platformPrice')}: ${rowTitle(r.variant)}`"
                 @update:model-value="(on: boolean | null) => setChannelBased(r.variant, !!on)" />
             </td>
 
-            <td v-bind="cellAttrs(r, 4)" class="vg-td vg-cell vg-num" :class="cellClass(r, 4)">
-              <CellBody :sheet="sheet" :r="r.index" :c="4" :value="r.variant.stock" kind="int"
-                :issue="issueOf(r, 4)" :label="`Stok, ${rowTitle(r.variant)}`" />
+            <td v-bind="cellAttrs(r, ci('stock'))" class="vg-td vg-cell vg-num" :class="cellClass(r, ci('stock'))">
+              <CellBody :sheet="sheet" :r="r.index" :c="ci('stock')" :value="r.variant.stock" kind="int"
+                :issue="issueOf(r, ci('stock'))" :label="`Stok, ${rowTitle(r.variant)}`" />
             </td>
-            <td v-bind="cellAttrs(r, 5)" class="vg-td vg-cell" :class="cellClass(r, 5)">
-              <CellBody :sheet="sheet" :r="r.index" :c="5" :value="r.variant.shelf" kind="text"
-                :issue="issueOf(r, 5)" :label="`Raf, ${rowTitle(r.variant)}`" placeholder="—" />
+            <td v-if="shown('shelf')" v-bind="cellAttrs(r, ci('shelf'))" class="vg-td vg-cell" :class="cellClass(r, ci('shelf'))">
+              <CellBody :sheet="sheet" :r="r.index" :c="ci('shelf')" :value="r.variant.shelf" kind="text"
+                :issue="issueOf(r, ci('shelf'))" :label="`Raf, ${rowTitle(r.variant)}`" placeholder="—" />
             </td>
 
             <!-- PRC-R0: birim alış maliyeti (KDV hariç). Boş = maliyet yok (0 DEĞİL); yalnız `PricingService/setVariantCosts` ile yazılır. -->
-            <td v-bind="cellAttrs(r, 6)" class="vg-td vg-cell vg-num" :class="cellClass(r, 6)">
-              <CellBody :sheet="sheet" :r="r.index" :c="6" :value="r.variant.costPrice" kind="moneyOpt"
-                :issue="issueOf(r, 6)" :label="`${$t('pricing.cost.label')}, ${rowTitle(r.variant)}`" placeholder="—" />
+            <td v-if="shown('costPrice')" v-bind="cellAttrs(r, ci('costPrice'))" class="vg-td vg-cell vg-num" :class="cellClass(r, ci('costPrice'))">
+              <CellBody :sheet="sheet" :r="r.index" :c="ci('costPrice')" :value="r.variant.costPrice" kind="moneyOpt"
+                :issue="issueOf(r, ci('costPrice'))" :label="`${$t('pricing.cost.label')}, ${rowTitle(r.variant)}`" placeholder="—" />
             </td>
 
             <td class="vg-td vg-sticky-end vg-actions" aria-colindex="11">
-              <EkRowActions :label="`${rowTitle(r.variant)} işlemleri`" :items="[
-                { key: 'edit', action: 'edit', label: 'Varyantı düzenle', onClick: () => emit('edit', r.variant) },
-                { key: 'delete', action: 'delete', label: 'Varyantı sil', onClick: () => emit('delete', r.variant) },
-              ]" />
+              <EkRowActions :label="`${rowTitle(r.variant)} işlemleri`" :items="rowActions(r.variant)" />
             </td>
           </tr>
-          <tr v-if="win.end < rows.length" class="vg-pad vg-pad--bottom" aria-hidden="true"><td colspan="11"></td></tr>
         </tbody>
       </table>
       <div v-if="!rows.length" class="vg-empty">
         <slot name="empty" />
       </div>
+    </div>
+    <!-- Sayfalama: liste ekranlarıyla AYNI çubuk (EkPagerBar, standart 10/25/50/100); tablonun dibinde sabit.
+         Grup hücreleri sayfa sınırında bölünse de doğru birleşir (windowRowspans). -->
+    <div v-if="rows.length" class="vg-pager">
+      <EkPagerBar v-model:page="page" v-model:page-size="pageSize" :total="rows.length" label="Varyant sayfalama" />
     </div>
     <div class="ek-sr-only" aria-live="polite">{{ liveMessage }}</div>
   </div>
@@ -137,7 +145,7 @@
 
 <script setup lang="ts">
 import { computed, defineComponent, h, nextTick, onBeforeUnmount, onMounted, ref, watch, type PropType } from 'vue'
-import { EkRowActions } from '@entegrasyonik/ui/components'
+import { EkPagerBar, EkRowActions } from '@entegrasyonik/ui/components'
 import { useI18n } from 'vue-i18n'
 import { formatMoney } from '@entegrasyonik/ui/format'
 import { useChoicesStore } from '@/stores/choicesStore'
@@ -149,7 +157,7 @@ import VariantGroupCell from '../VariantGroupCell.vue'
 import { useVariantGrouping } from '../useVariantGrouping'
 import { variantImageIds } from '../../images/galleryModel'
 import {
-  BASE_COLUMNS, diff, duplicateIndex, getCell, rowId, validateCell, visibleWindow,
+  BASE_COLUMNS, diff, duplicateIndex, getCell, rowId, validateCell,
   windowRowspans, type CellChange, type CellIssue, type ColumnKey, type GroupedRow, type Snapshot,
 } from './variantSheet'
 import { useVariantSheet, type VariantSheet } from './useVariantSheet'
@@ -241,7 +249,7 @@ function optionChips(v: any) {
   }))
 }
 
-const dataHeads = computed(() => [
+const dataHeads = computed(() => ([
   { idx: 3, label: 'Stok kodu', sortKey: 'stockcode' as SortKey, cls: 'vg-sticky vg-s-code' },
   { idx: 4, label: 'Barkod', sortKey: 'barcode' as SortKey, cls: '' },
   { idx: 5, label: 'Satış fiyatı', sortKey: 'salePrice' as SortKey, cls: 'vg-th--num' },
@@ -250,23 +258,108 @@ const dataHeads = computed(() => [
   { idx: 8, label: 'Stok', sortKey: 'stock' as SortKey, cls: 'vg-th--num' },
   { idx: 9, label: 'Raf', sortKey: null, cls: '' },
   { idx: 10, label: t('pricing.cost.label'), sortKey: 'costPrice' as SortKey, cls: 'vg-th--num' },
-])
+] as const).filter((h) => shown(HEAD_KEY[h.idx])))
+
+// ── duyarlı sütunlar: yatay kaydırma yerine öncelik sırasıyla gizleme ──
+// Eşik = görünen sabit sütunların toplamı + stok kodu için ~220px. Önce en az kullanılan gizlenir.
+const HIDE_ORDER: { key: string; label: string; min: number }[] = [
+  { key: 'costPrice', label: 'Maliyet', min: 1280 },
+  { key: 'shelf', label: 'Raf', min: 1110 },
+  { key: 'channel', label: 'Kanal fiyatı', min: 1030 },
+  { key: 'marketPrice', label: 'Piyasa fiyatı', min: 930 },
+  { key: 'barcode', label: 'Barkod', min: 815 },
+]
+const HEAD_KEY: Record<number, string> = { 3: 'stockcode', 4: 'barcode', 5: 'salePrice', 6: 'marketPrice', 7: 'channel', 8: 'stock', 9: 'shelf', 10: 'costPrice' }
+const gridW = ref(1600)
+const shown = (key: string) => {
+  const rule = HIDE_ORDER.find((h) => h.key === key)
+  return !rule || gridW.value >= rule.min
+}
+const hiddenCols = computed(() => HIDE_ORDER.filter((h) => !shown(h.key)).map((h) => h.label))
+const hiddenIssues = computed(() => rows.value.some((r) => BASE_COLUMNS.some((col) => !shown(col.key) && !!validateCell(r.variant, col, dupes.value))))
 
 // ── sanal kaydırma ──
 const rootRef = ref<HTMLElement | null>(null)
 const scrollRef = ref<HTMLElement | null>(null)
 const scrollTop = ref(0)
-const viewport = ref(600)
 const narrow = ref(false)
 const HEAD_H = 44
-const win = computed(() => visibleWindow(Math.max(0, scrollTop.value - HEAD_H), viewport.value, ROW_H, rows.value.length, 10))
+// Sayfalama (sanal kaydırma yerine): pencere = geçerli sayfa.
+const page = ref(1)
+const pageSize = ref(25)
+const pageCount = computed(() => Math.max(1, Math.ceil(rows.value.length / pageSize.value)))
+const win = computed(() => {
+  const start = (Math.min(page.value, pageCount.value) - 1) * pageSize.value
+  return { start, end: Math.min(rows.value.length, start + pageSize.value) }
+})
+watch(() => props.filter, () => { page.value = 1 })
+watch(pageSize, () => { page.value = 1 })
+watch(pageCount, (n) => { if (page.value > n) page.value = n })
+watch(page, () => { if (scrollRef.value) scrollRef.value.scrollTop = 0 })
 const windowRows = computed(() => rows.value.slice(win.value.start, win.value.end))
 const spans = computed(() => windowRowspans(rows.value, win.value.start, win.value.end))
-const padTop = computed(() => `${win.value.start * ROW_H}px`)
-const padBottom = computed(() => `${Math.max(0, rows.value.length - win.value.end) * ROW_H}px`)
 const onScroll = () => { scrollTop.value = scrollRef.value?.scrollTop || 0 }
 let ro: ResizeObserver | null = null
+// ── ekrana sığdırma: tablo kalan yüksekliği doldurur; altındaki her şey (sayfalama, ipucu, adım düğmeleri)
+// sayfa kaydırmadan görünür, satırlar tablonun içinde kayar. Ölçüm sayfa EN ÜSTTEYKEN geçerli konuma göre yapılır.
+const fitH = ref(0)
+const FIT_MIN = 240
+/**
+ * Gerçek kaydırma kabı: atalardan `overflow-y: auto|scroll` olanların İÇİNDEN önce şu an gerçekten kayanı,
+ * yoksa EN DIŞTAKİNİ (çalışma alanı) seçer. İçerik kadar uzayan ara kaplar (sekme paneli vb.) kaymaz ve
+ * ekran yüksekliğini temsil etmez — onları seçmek tabloyu ekrandan uzun yapıyordu.
+ */
+function scrollerOf(el: HTMLElement | null): HTMLElement | null {
+  const autos: HTMLElement[] = []
+  let n = el?.parentElement ?? null
+  while (n && n !== document.body) {
+    const oy = getComputedStyle(n).overflowY
+    if (oy === 'auto' || oy === 'scroll') autos.push(n)
+    n = n.parentElement
+  }
+  return autos.find((a) => a.scrollHeight > a.clientHeight + 1) ?? autos[autos.length - 1] ?? null
+}
+/**
+ * Sığdırma (geometri): sayfa EN ÜSTTEYKEN sayfa kökünün alt kenarı kaydırma kabının görünen alt kenarına otursun.
+ * Kabın alt dolgusu (ör. tur teklif kartı payı `--ek-tour-offer-space`) hesaba KATILMAZ — geçici kart tabloyu küçültmez.
+ * Fark tablonun kendi yüksekliğine eklenir; sonuç tablo yüksekliğinden bağımsız → tek adımda oturur, döngü yok.
+ */
+function fit() {
+  const el = scrollRef.value
+  if (!el || typeof window === 'undefined') return
+  const page = rootRef.value?.closest('.pdv-root') as HTMLElement | null
+  const sc = (rootRef.value?.closest('.workplace-area') as HTMLElement | null) ?? scrollerOf(page ?? rootRef.value)
+  if (!sc || !page) return
+  const cur = el.getBoundingClientRect().height
+  const viewBottom = Math.min(window.innerHeight, sc.getBoundingClientRect().bottom)
+  // Kökün yüksekliği içerikle değil kapla belirlenir (h-100) → içerik altı = `.pdv-flow` (içerik boyutlu) alt kenarı
+  // + kökün alt dolgusu (adım düğmeleri dibe yapışmasın diye bırakılan pay).
+  const flow = page.querySelector<HTMLElement>('.pdv-flow') ?? page
+  const padBottom = parseFloat(getComputedStyle(page).paddingBottom || '0')
+  const pageBottomAtTop = flow.getBoundingClientRect().bottom + sc.scrollTop + padBottom
+  const diff = viewBottom - pageBottomAtTop
+  if (Math.abs(diff) < 1) return
+  const next = Math.max(FIT_MIN, Math.floor(cur + diff))
+  if (next !== fitH.value) fitH.value = next
+}
+let fitFrame = 0
+const scheduleFit = () => { cancelAnimationFrame(fitFrame); fitFrame = requestAnimationFrame(fit) }
+const onWinResize = () => scheduleFit()
+watch(() => [rows.value.length > 0, pageCount.value > 1], scheduleFit)
+
+// Sayfa kökünün boyu değişince (adım düğmeleri/alt panel sonradan yerleşir, adım değişimi) yeniden ölç.
+// Sonuç tablonun kendi yüksekliğinden bağımsızdır → döngü oluşmaz.
+let pageRo: ResizeObserver | null = null
 onMounted(() => {
+  window.addEventListener('resize', onWinResize)
+  nextTick(scheduleFit)
+  // Gözlenen: içerik boyutlu akış (`.pdv-flow`) — kök kapla sabit boyda olduğu için değişmez.
+  const page = rootRef.value?.closest('.pdv-root')
+  const flow = page?.querySelector('.pdv-flow') ?? page
+  if (flow && typeof ResizeObserver !== 'undefined') {
+    pageRo = new ResizeObserver(scheduleFit)
+    pageRo.observe(flow)
+  }
   if (typeof ResizeObserver !== 'undefined' && scrollRef.value) {
     // Ölçüm bir sonraki kareye ertelenir: gözlem içinde düzeni değiştirmek (dar kip) tarayıcının
     // "ResizeObserver loop" uyarısını tetikler; genel hata dinleyicisi bunu kullanıcıya hata olarak gösteriyordu.
@@ -274,14 +367,14 @@ onMounted(() => {
     ro = new ResizeObserver(() => {
       cancelAnimationFrame(frame)
       frame = requestAnimationFrame(() => {
-        viewport.value = scrollRef.value?.clientHeight || 600
-        narrow.value = (rootRef.value?.clientWidth || 1000) < 720
+        gridW.value = rootRef.value?.clientWidth || 1600
+        narrow.value = gridW.value < 720
       })
     })
     ro.observe(scrollRef.value)
   }
 })
-onBeforeUnmount(() => ro?.disconnect())
+onBeforeUnmount(() => { ro?.disconnect(); pageRo?.disconnect(); window.removeEventListener('resize', onWinResize); cancelAnimationFrame(fitFrame) })
 
 // ── seçim (satır onay kutuları) ──
 const pickedSet = computed(() => new Set(selected.value))
@@ -299,7 +392,11 @@ function toggleAll(on: boolean | null) {
 
 // ── hücre düzenleme (useVariantSheet) ──
 const liveMessage = ref('')
-const columns = computed(() => BASE_COLUMNS)
+/** Görünen sayfa sütunları (dar alanda öncelik sırasıyla gizlenenler hariç); klavye gezinmesi bunlarla. */
+const columns = computed(() => BASE_COLUMNS.filter((c) => shown(c.key)))
+/** Görünen sütun dizisinde anahtarın sırası (hücrelerin `c` değeri). */
+const ci = (key: ColumnKey) => columns.value.findIndex((c) => c.key === key)
+const ARIA_COL: Record<string, number> = { stockcode: 3, barcode: 4, salePrice: 5, marketPrice: 6, stock: 8, shelf: 9, costPrice: 10 }
 const sheet: VariantSheet = useVariantSheet({
   rows: rowVariants,
   columns,
@@ -313,13 +410,13 @@ function cellAttrs(r: ViewRow, c: number): Record<string, any> {
   const issue = issueOf(r, c)
   return {
     role: 'gridcell',
-    'aria-colindex': [3, 4, 5, 6, 8, 9, 10][c],
+    'aria-colindex': ARIA_COL[columns.value[c]?.key],
     'aria-selected': sheet.isSelected(r.index, c),
     'aria-invalid': issue?.level === 'error' ? 'true' : undefined,
     tabindex: sheet.isActive(r.index, c) ? 0 : -1,
     'data-r': r.index,
     'data-c': c,
-    'data-cell': BASE_COLUMNS[c].key,
+    'data-cell': columns.value[c]?.key,
     onMousedown: (e: MouseEvent) => onCellDown(e, r.index, c),
     onMouseenter: () => onCellEnter(r.index, c),
     onDblclick: () => { sheet.activate(r.index, c); sheet.startEdit() },
@@ -329,7 +426,8 @@ function cellAttrs(r: ViewRow, c: number): Record<string, any> {
 const dupes = computed(() => ({ barcode: duplicateIndex(props.variants || [], 'barcode'), stockcode: duplicateIndex(props.variants || [], 'stockcode') }))
 function issueOf(r: ViewRow, c: number): CellIssue | null {
   if (sheet.isEditing(r.index, c) && sheet.editing.value?.error) return { level: 'error', message: sheet.editing.value.error }
-  return validateCell(r.variant, BASE_COLUMNS[c], dupes.value)
+  const col = columns.value[c]
+  return col ? validateCell(r.variant, col, dupes.value) : null
 }
 const changedKeys = computed(() => new Set(diff(props.baseline || {}, props.variants || [], BASE_COLUMNS).map((x) => `${x.id}|${x.key}`)))
 const isChanged = (v: any, key: ColumnKey) => changedKeys.value.has(`${rowId(v)}|${key}`)
@@ -339,7 +437,7 @@ function cellClass(r: ViewRow, c: number) {
     'is-sel': sheet.isSelected(r.index, c) && sheet.selectedCount.value > 1,
     'is-active': sheet.isActive(r.index, c),
     'is-editing': sheet.isEditing(r.index, c),
-    'is-changed': isChanged(r.variant, BASE_COLUMNS[c].key),
+    'is-changed': !!columns.value[c] && isChanged(r.variant, columns.value[c].key),
     'is-error': issue?.level === 'error',
     'is-warning': issue?.level === 'warning',
   }
@@ -368,9 +466,11 @@ function focusActive() {
   })
 }
 function ensureVisible(row: number) {
+  // Klavye/ilk hataya git başka sayfadaki satıra giderse o sayfaya geç.
+  if (row < win.value.start || row >= win.value.end) page.value = Math.floor(row / pageSize.value) + 1
   const s = scrollRef.value
   if (s) {
-    const top = row * ROW_H
+    const top = (row - win.value.start) * ROW_H
     const bottom = top + ROW_H
     const viewTop = s.scrollTop
     const viewBottom = s.scrollTop + s.clientHeight - HEAD_H
@@ -410,6 +510,17 @@ function onPaste(e: ClipboardEvent) {
   sheet.pasteText(text)
 }
 
+/** Satır menüsü; kanal fiyatı sütunu gizliyken aç/kapa buraya taşınır. */
+function rowActions(v: any) {
+  const items: any[] = [{ key: 'edit', action: 'edit', label: 'Varyantı düzenle', onClick: () => emit('edit', v) }]
+  if (!shown('channel')) {
+    const on = !!v.prices?.isPlatformBasedPrice
+    items.push({ key: 'channel', icon: on ? 'mdi-tag-off-outline' : 'mdi-tag-multiple-outline', label: on ? 'Kanal bazlı fiyatı kapat' : 'Kanal bazlı fiyat kullan', onClick: () => setChannelBased(v, !on) })
+  }
+  items.push({ key: 'delete', action: 'delete', label: 'Varyantı sil', onClick: () => emit('delete', v) })
+  return items
+}
+
 function setChannelBased(v: any, on: boolean) {
   v.prices = v.prices || {}
   v.prices.isPlatformBasedPrice = on
@@ -427,10 +538,12 @@ function priceRange(v: any, field: 'salePrice' | 'marketPrice') {
 
 const issueCounts = computed(() => {
   let errors = 0; let warnings = 0; let first: { row: number; col: number } | null = null
-  rows.value.forEach((r) => BASE_COLUMNS.forEach((col, c) => {
+  // Sayım TÜM sütunlar üzerinden (gizli sütundaki hata da sayılır); "ilk hataya git" yalnız görünen sütuna gider.
+  rows.value.forEach((r) => BASE_COLUMNS.forEach((col) => {
     const i = validateCell(r.variant, col, dupes.value)
     if (!i) return
-    if (i.level === 'error') { errors++; if (!first) first = { row: r.index, col: c } } else warnings++
+    const c = ci(col.key)
+    if (i.level === 'error') { errors++; if (!first && c >= 0) first = { row: r.index, col: c } } else warnings++
   }))
   return { errors, warnings, first: first as { row: number; col: number } | null }
 })
@@ -501,12 +614,19 @@ const CellBody = defineComponent({
 .vg-scroll {
   position: relative;
   overflow: auto;
+  /* Yükseklik JS ile ekrana sığdırılır (fit); ölçüm yoksa eski sınır. */
   max-height: max(360px, calc(100dvh - 360px));
   overscroll-behavior: contain;
 }
+.vg-scroll[style*='height'] { max-height: none; }
+/* Sayfalama tablonun dibinde (liste çerçevesindeki gibi; görünüm EkPagerBar'ın kendisi). */
+.vg-pager {
+  flex: none;
+}
 .vg-table {
   width: 100%;
-  min-width: 1040px;
+  /* Sabit en küçük genişlik YOK: sığmayan sütunlar öncelik sırasıyla gizlenir (HIDE_ORDER); yatay kaydırma yalnız telefon genişliğinde. */
+  min-width: 600px;
   border-collapse: separate;
   border-spacing: 0;
   table-layout: fixed;
@@ -516,7 +636,7 @@ const CellBody = defineComponent({
 }
 .vg-c-sel { width: var(--vg-w-sel); }
 .vg-c-group { width: var(--vg-w-group); }
-.vg-c-code { width: var(--vg-w-code); }
+.vg-c-code { width: auto; } /* kalan genişliği stok kodu + seçenek satırı alır */
 .vg-c-barcode { width: 132px; }
 .vg-c-opts { width: auto; }
 .vg-c-money { width: 118px; }
@@ -576,25 +696,39 @@ const CellBody = defineComponent({
   text-overflow: ellipsis;
 }
 .vg-row.is-group-start > .vg-td { border-top: 1px solid var(--ek-color-border-strong); }
-.vg-row:first-child > .vg-td, .vg-pad + .vg-row > .vg-td { border-top-color: transparent; }
+.vg-row:first-child > .vg-td { border-top-color: transparent; }
 .vg-row:hover > .vg-td:not(.vg-group) { background: var(--ek-color-surface-muted); }
 .vg-row.is-picked > .vg-td:not(.vg-group) { background: var(--ek-color-selection); }
-.vg-pad--top td { height: v-bind(padTop); padding: 0; border: 0; }
-.vg-pad--bottom td { height: v-bind(padBottom); padding: 0; border: 0; }
 
 /* yapışkan kolonlar */
 .vg-sticky { position: sticky; z-index: 1; }
 .vg-th.vg-sticky { z-index: 4; }
 .vg-s-sel { left: 0; padding: 0; text-align: center; }
 .vg-s-group { left: var(--vg-w-sel); }
-.vg-s-code { left: calc(var(--vg-w-sel) + var(--vg-w-group)); box-shadow: var(--ek-shadow-scroll-start); }
+.vg-s-code { left: calc(var(--vg-w-sel) + var(--vg-w-group)); }
 .vg--narrow .vg-s-sel { position: static; }
 .vg--narrow .vg-s-group { left: 0; }
 .vg--narrow .vg-s-code, .vg--narrow .vg-cell.vg-s-code { position: relative; left: auto; box-shadow: none; }
-.vg--narrow .vg-s-group { box-shadow: var(--ek-shadow-scroll-start); }
-.vg-sticky-end { position: sticky; right: 0; z-index: 1; box-shadow: var(--ek-shadow-scroll-end); }
+
+.vg-sticky-end { position: sticky; right: 0; z-index: 1; }
 .vg-th.vg-sticky-end { z-index: 4; }
 .vg--narrow .vg-sticky-end { position: static; box-shadow: none; }
+
+/* Gizli sütun göstergesi (başlığın sağ ucu): sayı + simge; gizli sütunda sorun varsa uyarı tonu. */
+.vg-hidden {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0 6px;
+  border-radius: var(--ek-radius-full);
+  background: var(--ek-color-surface-muted);
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-caption-size);
+  font-weight: var(--ek-font-weight-medium);
+  cursor: help;
+}
+.vg-hidden.is-warn { background: var(--ek-color-warning-subtle); color: var(--ek-color-warning-emphasis); }
+.vg-hidden:focus-visible { outline: none; box-shadow: var(--ek-focus-ring); }
 
 /* grup (rowspan) — görünüm ortak `VariantGroupCell`; burada yalnız ızgaraya özgü konum/zemin önceliği */
 .vg-group { --ek-vgroup-top: var(--vg-head); vertical-align: top; padding: 0; background: var(--ek-color-surface-sunken); }

@@ -1,0 +1,184 @@
+---
+/**
+ * DevelopmentList — "Geliştirme listemizde" bloğu (2026-10-02, kullanıcı kararı; veri: src/data/in-development.ts).
+ * Bugün üründe OLMAYAN, BACKLOG.md ile kanıtlı başlıklar. Görsel dil bilerek "ikincil": kesikli çerçeve, düz yüzey,
+ * soluk ikon karosu ve her kartta "Geliştirmede" etiketi — mevcut özellik kartlarıyla karıştırılmasın.
+ * Kök öğe tekil `<backlog-block data-backlog>` (iç içe geçmeyen özel öğe; testler bloğu düz regex ile ayıklar):
+ * yol haritası adları derleme çıktısında YALNIZCA bu blokta geçebilir (claims + pages testleri).
+ */
+import Icon from '../home/Icon.astro'
+import { getDevelopmentItems, DEVELOPMENT_NOTICE, type DevelopmentArea } from '../../data/in-development'
+
+interface Props {
+  area?: DevelopmentArea
+  /** Başlık id'si (sayfada `aria-labelledby` için). */
+  id: string
+  title: string
+  lead?: string
+}
+
+const { area, id, title, lead } = Astro.props
+const items = getDevelopmentItems(area)
+// Öksüz kart kalmasın: üçün katıysa üç sütun, değilse iki sütun (masaüstü).
+const cols = items.length % 3 === 0 ? 3 : 2
+---
+
+{
+  items.length > 0 && (
+    <backlog-block class="dev" data-backlog data-testid="development-list">
+      <div class="dev__head">
+        <p class="dev__eyebrow">
+          <span class="dev__dot" aria-hidden="true" />
+          Geliştirme listemizde
+        </p>
+        <h2 id={id} class="dev__title">
+          {title}
+        </h2>
+        {lead && <p class="dev__lead">{lead}</p>}
+        <p class="dev__notice">{DEVELOPMENT_NOTICE}</p>
+      </div>
+      <ul class="dev__grid" role="list" aria-labelledby={id} data-cols={cols}>
+        {items.map((i) => (
+          <li class="dev__card" data-dev={i.id}>
+            <div class="dev__top">
+              <span class="dev__icon" aria-hidden="true">
+                <Icon name={i.icon} size="md" />
+              </span>
+              <span class="dev__tag">Geliştirmede</span>
+            </div>
+            <h3 class="dev__card-title">{i.title}</h3>
+            <p class="dev__summary">{i.summary}</p>
+            {i.names && (
+              <ul class="dev__names" role="list" aria-label={`${i.title}: hedeflenen adlar`}>
+                {i.names.map((n) => (
+                  <li>{n}</li>
+                ))}
+              </ul>
+            )}
+          </li>
+        ))}
+      </ul>
+    </backlog-block>
+  )
+}
+
+<style>
+  .dev {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-10);
+  }
+  .dev__head {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-3);
+    max-width: var(--site-container-narrow);
+  }
+  .dev__eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ek-space-2);
+    /* SITE-DL-03: bölüm etiketi = 12×2 çizgi + mikro büyük harf (Eyebrow ile aynı tokenlar). */
+    gap: var(--site-eyebrow-gap);
+    color: var(--site-eyebrow-color);
+    font-size: var(--site-eyebrow-size);
+    font-weight: var(--site-eyebrow-weight);
+    letter-spacing: var(--site-eyebrow-tracking);
+    text-transform: uppercase;
+  }
+  .dev__dot {
+    flex: none;
+    width: var(--site-eyebrow-mark-width);
+    height: var(--site-eyebrow-mark-height);
+    background: var(--site-eyebrow-mark-color);
+  }
+  .dev__title {
+    font-size: var(--site-font-display-sm);
+    font-weight: var(--site-font-display-weight);
+    line-height: var(--site-font-display-line-height);
+    letter-spacing: var(--site-font-display-tracking);
+  }
+  .dev__lead {
+    color: var(--site-text-body);
+    font-size: var(--ek-font-size-lg);
+  }
+  .dev__notice {
+    color: var(--site-text-meta);
+    font-size: var(--ek-font-size-md);
+  }
+  .dev__grid {
+    display: grid;
+    gap: var(--ek-space-4);
+  }
+  .dev__card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-3);
+    padding: var(--ek-space-6);
+    /* Kesikli çerçeve "henüz yayında değil" anlamını taşır (düz, gölgesiz). */
+    border: var(--site-border-width) dashed var(--ek-color-border-strong);
+    border-radius: var(--ek-radius-card);
+    background: var(--ek-color-surface);
+  }
+  .dev__top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--ek-space-3);
+  }
+  .dev__icon {
+    display: inline-grid;
+    place-items: center;
+    width: var(--ek-space-10);
+    height: var(--ek-space-10);
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--ek-radius-tile);
+    background: var(--ek-color-surface-muted);
+    color: var(--site-text-meta);
+  }
+  .dev__tag {
+    padding: var(--ek-space-1) var(--ek-space-2);
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--ek-radius-md);
+    background: var(--ek-color-surface-muted);
+    color: var(--site-text-meta);
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--ek-font-weight-semibold);
+    letter-spacing: 0.04em;
+  }
+  .dev__card-title {
+    font-size: var(--ek-font-size-lg);
+    font-weight: var(--ek-font-weight-bold);
+  }
+  .dev__summary {
+    color: var(--site-text-body);
+    font-size: var(--ek-font-size-md);
+  }
+  .dev__names {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ek-space-2);
+    margin-top: auto;
+    padding-top: var(--ek-space-2);
+  }
+  .dev__names li {
+    padding: var(--ek-space-1) var(--ek-space-2);
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--ek-radius-md);
+    background: var(--ek-color-surface-muted);
+    color: var(--site-text-heading);
+    font-size: var(--ek-font-size-sm);
+    font-weight: var(--ek-font-weight-medium);
+  }
+
+  @media (min-width: 640px) {
+    .dev__grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @media (min-width: 1024px) {
+    .dev__grid[data-cols='3'] {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+</style>

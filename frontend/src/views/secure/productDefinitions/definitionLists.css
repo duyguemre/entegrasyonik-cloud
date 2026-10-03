@@ -262,3 +262,103 @@
 .def-title-row > .def-title-cell {
   padding: 0;
 }
+
+/* ================= FE-LOCAL-1048 — Seçenek grupları + Etiketler: ortak tasarım dili =================
+   Grup kutucuğu çerçeveli kapsül (grubun rengiyle tonlu); özellik hapları açıkken eylem renginin açık tonu + ince
+   çerçeve; düzenleme kartı ince çerçeveli düz yüzey, başlıkları mikro etiket; renk kutuları sakin kareler, seçili olan
+   eylem renginde halka. */
+.def-group-tile {
+  border: 1px solid color-mix(in srgb, var(--grp) 32%, var(--ek-color-surface));
+  border-radius: var(--ek-radius-tile);
+  background: color-mix(in srgb, var(--grp) 10%, var(--ek-color-surface));
+}
+
+.def-flag {
+  border-color: var(--ek-color-border-default);
+  background: var(--ek-color-surface);
+}
+
+.def-flag.is-on {
+  border-color: var(--ek-color-action-border);
+  background: var(--ek-color-action-subtle);
+  color: var(--ek-color-action-emphasis);
+}
+
+.def-pop {
+  border-color: var(--ek-color-border-default);
+}
+
+.def-pop__caption {
+  display: flex;
+  align-items: center;
+  gap: var(--ek-space-2);
+  color: var(--ek-color-sidebar-section);
+  font-size: var(--ek-type-micro-size);
+  line-height: var(--ek-type-micro-line);
+  font-weight: var(--ek-type-micro-weight);
+  letter-spacing: var(--ek-type-micro-tracking);
+  text-transform: uppercase;
+}
+
+.def-pop__caption::before {
+  content: '';
+  width: 12px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--ek-color-action);
+}
+
+.def-swatches {
+  gap: 6px;
+}
+
+.def-swatch {
+  border-radius: var(--ek-radius-md);
+}
+
+.def-swatch.is-selected {
+  border: 1px solid var(--ek-color-surface);
+  outline: 2px solid var(--ek-color-action);
+  outline-offset: 1px;
+}
+
+/* ================= FE-LOCAL-1052 — Seçenek grupları + Etiketler: yeni düzen =================
+   "Yeni grup" küçük kartta sorulur (satır içi ad alanı kalktı); özellik hapları cümle düzeninde, köşeli ve açıkken
+   onay işaretli; grup kutucuğu ortak ikon kapsülü; açılır kartlar kart köşeli, başlığı kısa eylem çizgili mikro etiket. */
+.def-pop .def-new-form {
+  display: block;
+  margin: var(--ek-space-3) 0;
+}
+
+.def-pop .def-new-input {
+  width: 100%;
+}
+
+.def-tile {
+  flex: none;
+  margin-top: 2px;
+}
+
+.def-flag {
+  height: 24px;
+  padding: 0 var(--ek-space-2);
+  border-radius: var(--ek-radius-md);
+  font-size: var(--ek-type-caption-size);
+  font-weight: var(--ek-font-weight-medium);
+  letter-spacing: 0;
+}
+
+.def-flag.is-on {
+  font-weight: var(--ek-font-weight-semibold);
+}
+
+.def-pop {
+  border-radius: var(--ek-radius-card) !important;
+  background: var(--ek-color-surface);
+  box-shadow: var(--ek-shadow-popover) !important;
+}
+
+.def-pop__caption {
+  margin-bottom: var(--ek-space-3);
+  color: var(--ek-color-content-muted);
+}

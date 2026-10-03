@@ -15,6 +15,12 @@
 -->
 <template>
   <!-- FE R4 B: iki kök — adım şeridi (akışta) + kayıt çubuğu (iş alanında yapışkan; uzun adımlarda Kaydet hep erişilir). -->
+  <!-- FE-LOCAL-1002b: Geri / Devam (simge düğmeler) alttaki ayrı satır yerine şeridin iki ucunda (yükseklik eklemez; Alt+← / Alt+→). -->
+  <div class="pfw-head" :data-pfw="uid">
+  <EkTooltip :text="current > 0 ? 'Önceki adım (Alt+←)' : 'İlk adımdasınız'">
+    <EkButton class="pfw-head__prev" size="sm" tone="ghost" icon="mdi-chevron-left" icon-only aria-label="Geri"
+      :disabled="current <= 0" @click="go(current - 1)" />
+  </EkTooltip>
   <nav class="pfw-nav" aria-label="Ürün formu adımları">
     <ol class="pfw-steps">
       <li v-for="s in stepItems" :key="s.index" class="pfw-steps__item"
@@ -43,8 +49,19 @@
       </li>
     </ol>
   </nav>
+  <span v-if="current < 3" class="pfw-head__next">
+    <span v-if="nextLockedReason" :id="`${uid}-why`" class="ek-sr-only">{{ nextLockedReason }}</span>
+    <EkTooltip :text="nextLockedReason || 'Sonraki adım (Alt+→)'">
+      <EkButton size="sm" tone="ghost" icon="mdi-chevron-right" icon-only aria-label="Devam" :disabled="!!nextLockedReason"
+        :aria-describedby="nextLockedReason ? `${uid}-why` : undefined" @click="go(current + 1)" />
+    </EkTooltip>
+  </span>
+  </div>
 
-  <section class="pfw-bar" :class="{ 'is-ready': progress.canSave, 'is-open': panelOpen }" aria-label="Ürün formu ilerlemesi">
+  <!-- FE-LOCAL-1002b: `teleportTo` verilirse kayıt çubuğu sayfa başlığının durum yuvasına taşınır (alan kazanılır);
+       kontrol paneli o zaman açılır pencerede. Verilmezse eski yerinde (adım şeridinin altında, yapışkan). -->
+  <Teleport defer :to="teleportTo || 'body'" :disabled="!teleportTo">
+  <section class="pfw-bar" :class="{ 'is-ready': progress.canSave, 'is-open': panelOpen, 'is-inline': inline }" aria-label="Ürün formu ilerlemesi">
     <div class="pfw-bar__row">
       <span class="pfw-bar__icon" aria-hidden="true">
         <v-icon :icon="progress.canSave ? 'mdi-check-circle-outline' : 'mdi-progress-check'" />
@@ -64,7 +81,19 @@
         <p :id="`${uid}-hint`" class="pfw-hint" :class="{ 'is-ready': progress.canSave }" data-testid="pfw-hint">{{ hint }}</p>
       </div>
       <div class="pfw-actions">
+        <v-menu v-if="inline" v-model="panelOpen" :close-on-content-click="false" location="bottom end" offset="8">
+          <template #activator="{ props: mp }">
+            <EkButton v-bind="mp" tone="ghost" class="pfw-toggle" :icon="panelOpen ? 'mdi-chevron-up' : 'mdi-format-list-checks'"
+              :aria-controls="`${uid}-panel`">
+              <span class="pfw-toggle__label">{{ progress.canSave ? 'Kayıt özeti' : 'Eksikleri göster' }}</span>
+              <span v-if="!progress.canSave" class="pfw-toggle__count ek-num" aria-hidden="true">{{ progress.missing.length }}</span>
+            </EkButton>
+          </template>
+          <ProductFormCheckPanel :id="`${uid}-panel`" class="pfw-panel--pop" :progress="progress" :summary-rows="summaryRows"
+            :save-label="saveLabel" @issue="onIssue" />
+        </v-menu>
         <EkButton
+          v-else
           tone="ghost"
           class="pfw-toggle"
           :icon="panelOpen ? 'mdi-chevron-up' : 'mdi-format-list-checks'"
@@ -81,56 +110,16 @@
       </div>
     </div>
 
-    <div v-if="panelOpen" :id="`${uid}-panel`" class="pfw-panel" role="region" aria-label="Kayıt öncesi kontrol">
-      <div class="pfw-panel__col">
-        <h3 class="pfw-panel__heading">
-          Eksik zorunlu bilgiler
-          <EkStatusChip v-if="progress.missing.length" tone="warning" :label="`${progress.missing.length} eksik`" />
-          <EkStatusChip v-else tone="success" label="Tamam" />
-        </h3>
-        <ul v-if="progress.missing.length" class="pfw-issues">
-          <li v-for="m in progress.missing" :key="m.key">
-            <button type="button" class="pfw-issue" @click="onIssue(m)">
-              <v-icon icon="mdi-alert-circle-outline" size="18" class="pfw-issue__icon pfw-issue__icon--missing" aria-hidden="true" />
-              <span class="pfw-issue__label">{{ m.label }}</span>
-              <span class="pfw-issue__where">Adım {{ m.step + 1 }}</span>
-              <v-icon icon="mdi-chevron-right" size="18" class="pfw-issue__go" aria-hidden="true" />
-            </button>
-          </li>
-        </ul>
-        <p v-else class="pfw-panel__ok">
-          <v-icon icon="mdi-check-circle-outline" size="18" aria-hidden="true" />
-          Tüm zorunlu bilgiler girildi. {{ saveLabel }} düğmesi etkin.
-        </p>
-
-        <template v-if="progress.warnings.length">
-          <h3 class="pfw-panel__heading pfw-panel__heading--spaced">
-            Uyarılar
-            <EkStatusChip tone="info" :label="`${progress.warnings.length}`" />
-          </h3>
-          <ul class="pfw-issues">
-            <li v-for="w in progress.warnings" :key="w.key">
-              <button type="button" class="pfw-issue" @click="onIssue(w)">
-                <v-icon icon="mdi-information-outline" size="18" class="pfw-issue__icon" aria-hidden="true" />
-                <span class="pfw-issue__label">{{ w.label }}</span>
-                <span class="pfw-issue__where">Adım {{ w.step + 1 }}</span>
-                <v-icon icon="mdi-chevron-right" size="18" class="pfw-issue__go" aria-hidden="true" />
-              </button>
-            </li>
-          </ul>
-        </template>
-      </div>
-      <div class="pfw-panel__col pfw-panel__col--summary">
-        <h3 class="pfw-panel__heading">Kayıt özeti</h3>
-        <EkDescriptionList class="pfw-summary" :items="summaryRows" />
-      </div>
-    </div>
+    <ProductFormCheckPanel v-if="panelOpen && !inline" :id="`${uid}-panel`" :progress="progress" :summary-rows="summaryRows"
+      :save-label="saveLabel" @issue="onIssue" />
   </section>
+  </Teleport>
 </template>
 
 <script setup lang="ts">
-import { computed, ref, useId } from 'vue'
-import { EkButton, EkDescriptionList, EkStatusChip } from '@entegrasyonik/ui/components'
+import { computed, onBeforeUnmount, onMounted, ref, useId } from 'vue'
+import { EkButton, EkTooltip } from '@entegrasyonik/ui/components'
+import ProductFormCheckPanel from './ProductFormCheckPanel.vue'
 import {
   buildSummaryRows,
   evaluateProductForm,
@@ -149,6 +138,8 @@ const props = defineProps<{
   /** Kayıt özeti için görünen adlar (id yerine). */
   categoryTitle?: string
   brandTitle?: string
+  /** Kayıt çubuğunun taşınacağı hedef (ör. sayfa başlığındaki durum yuvası `#pf-status-…`). */
+  teleportTo?: string
 }>()
 
 const emit = defineEmits<{
@@ -162,6 +153,9 @@ const panelOpen = ref(false)
 const progress = computed(() => evaluateProductForm(props.form))
 const hint = computed(() => saveHint(progress.value, props.saveLabel))
 const summaryRows = computed(() => buildSummaryRows(props.form, { category: props.categoryTitle, brand: props.brandTitle }))
+
+/** Çubuk sayfa başlığında mı (kompakt tek satır + açılır panel). */
+const inline = computed(() => !!props.teleportTo)
 
 interface StepItem extends StepInfo {
   title: string
@@ -195,6 +189,29 @@ const stepItems = computed<StepItem[]>(() =>
   }),
 )
 
+/** Sonraki adım kilitliyse nedeni (Devam kapalı; ipucu + aria-describedby). */
+const nextLockedReason = computed(() => {
+  const next = progress.value.steps[props.current + 1]
+  return next?.locked ? next.lockedReason : undefined
+})
+
+function go(step: number) {
+  if (step < 0 || step > 3) return
+  if (step > props.current && nextLockedReason.value) return
+  emit('navigate', { step: step as StepIndex })
+}
+
+/** Alt+← / Alt+→: adımlar arası (yalnız bu form görünürken; tarayıcının geri/ileri kısayolunu bastırır). */
+function onKey(e: KeyboardEvent) {
+  if (!e.altKey || e.ctrlKey || e.metaKey || (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight')) return
+  const head = document.querySelector<HTMLElement>(`[data-pfw="${uid}"]`)
+  if (!head || head.offsetParent === null) return // başka sekme etkin (form gizli)
+  e.preventDefault()
+  go(props.current + (e.key === 'ArrowRight' ? 1 : -1))
+}
+onMounted(() => window.addEventListener('keydown', onKey))
+onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
+
 function onStep(s: StepItem) {
   if (s.locked) return
   emit('navigate', { step: s.index })
@@ -209,12 +226,25 @@ function onIssue(item: ProgressItem) {
 
 <style scoped>
 /* ── adım şeridi ─────────────────────────────────────────────────────────────────────────────── */
-.pfw-nav {
-  padding: var(--ek-space-3) var(--ek-space-4);
+/* Şerit kartı: [‹] adımlar [Devam ›] */
+.pfw-head {
+  display: flex;
+  align-items: center;
+  gap: var(--ek-space-3);
+  padding: var(--ek-space-3) var(--ek-space-3);
   border: 1px solid var(--ek-color-border-default);
   border-radius: var(--ek-radius-card);
   background: var(--ek-color-surface);
   box-shadow: var(--ek-shadow-card);
+}
+
+.pfw-nav {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.pfw-head__next {
+  flex: none;
 }
 
 .pfw-steps {
@@ -248,8 +278,9 @@ function onIssue(item: ProgressItem) {
   transition: background-color var(--ek-motion-feedback);
 }
 
+/* Tamamlanan adımlar site aksiyon tonunda (mavi) — yeşil yerine (FE-LOCAL-1002b). */
 .pfw-steps__item.is-complete .pfw-steps__link {
-  background: var(--ek-color-success);
+  background: var(--ek-color-action);
   opacity: 0.55;
 }
 
@@ -321,9 +352,9 @@ function onIssue(item: ProgressItem) {
 }
 
 .is-complete:not(.is-current) .pfw-step__marker {
-  border-color: var(--ek-color-success-border);
-  background: var(--ek-color-success-subtle);
-  color: var(--ek-color-success-emphasis);
+  border-color: var(--ek-color-action-border);
+  background: var(--ek-color-action-subtle);
+  color: var(--ek-color-action);
 }
 
 .is-locked .pfw-step__marker {
@@ -363,7 +394,7 @@ function onIssue(item: ProgressItem) {
 }
 
 .pfw-step__status--ok {
-  color: var(--ek-color-success-emphasis);
+  color: var(--ek-color-action-emphasis);
 }
 
 .pfw-step__status--warn {
@@ -384,7 +415,47 @@ function onIssue(item: ProgressItem) {
   border: 1px solid var(--ek-color-border-default);
   border-radius: var(--ek-radius-card);
   background: var(--ek-color-surface);
-  box-shadow: var(--ek-shadow-raised);
+}
+
+/* Başlıktaki kompakt hâl (teleportTo): kart/yapışkanlık yok, tek satır; ipucu cümlesi ekran okuyucuya kalır
+   (Kaydet'in aria-describedby hedefi) ve sayaç üzerine gelince görünür (title). */
+.pfw-bar.is-inline {
+  position: static;
+  margin: 0;
+  border: 0;
+  background: transparent;
+}
+
+.pfw-bar.is-inline::before {
+  display: none;
+}
+
+.pfw-bar.is-inline .pfw-bar__row {
+  gap: var(--ek-space-3);
+  padding: 0;
+}
+
+.pfw-bar.is-inline .pfw-bar__icon {
+  width: 28px;
+  height: 28px;
+}
+
+.pfw-bar.is-inline .pfw-progress__head {
+  max-width: none;
+}
+
+.pfw-bar.is-inline .pfw-meter {
+  flex: none;
+  width: 120px;
+}
+
+.pfw-bar.is-inline .pfw-hint {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
 }
 
 /* Yapışkanken üstteki boşluktan kayan içerik görünmesin: zemin renginde perde. */
@@ -415,7 +486,7 @@ function onIssue(item: ProgressItem) {
   height: 36px;
   border-radius: var(--ek-radius-tile);
   background: var(--ek-color-warning-subtle);
-  color: var(--ek-color-warning-emphasis);
+  color: var(--ek-color-content-strong);
   transition: var(--ek-transition-colors);
 }
 
@@ -521,151 +592,13 @@ function onIssue(item: ProgressItem) {
   padding: 0 6px;
   border-radius: var(--ek-radius-full);
   background: var(--ek-color-warning-subtle);
-  color: var(--ek-color-warning-emphasis);
+  color: var(--ek-color-content-strong); /* sarı üzerine koyu metin (kırmızımsı ton yok) */
   font-size: var(--ek-type-caption-size);
   font-weight: var(--ek-font-weight-semibold);
 }
 
-/* ── kontrol paneli (çubuğun içinde açılır) ──────────────────────────────────────────────────── */
-.pfw-panel {
-  display: grid;
-  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
-  gap: var(--ek-space-6);
-  max-height: min(60vh, 560px);
-  padding: var(--ek-space-4) var(--ek-space-5) var(--ek-space-5);
-  border-top: 1px solid var(--ek-color-border-subtle);
-  border-radius: 0 0 var(--ek-radius-card) var(--ek-radius-card);
-  background: var(--ek-color-surface-muted);
-  overflow: auto;
-  overscroll-behavior: contain;
-}
-
-.pfw-panel__col--summary {
-  padding: var(--ek-space-4);
-  border: 1px solid var(--ek-color-border-subtle);
-  border-radius: var(--ek-radius-tile);
-  background: var(--ek-color-surface);
-  align-self: start;
-}
-
-.pfw-panel__heading {
-  display: flex;
-  align-items: center;
-  gap: var(--ek-space-2);
-  margin: 0 0 var(--ek-space-3);
-  color: var(--ek-color-content-strong);
-  font-size: var(--ek-type-subheading-size);
-  line-height: var(--ek-type-subheading-line);
-  font-weight: var(--ek-type-subheading-weight);
-}
-
-.pfw-panel__heading--spaced {
-  margin-top: var(--ek-space-5);
-}
-
-.pfw-panel__ok {
-  display: flex;
-  align-items: center;
-  gap: var(--ek-space-2);
-  margin: 0;
-  padding: var(--ek-space-3);
-  border: 1px solid var(--ek-color-success-border);
-  border-radius: var(--ek-radius-tile);
-  background: var(--ek-color-success-subtle);
-  color: var(--ek-color-success-emphasis);
-  font-size: var(--ek-type-label-size);
-}
-
-.pfw-issues {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ek-space-1);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.pfw-issue {
-  display: flex;
-  align-items: center;
-  gap: var(--ek-space-2);
-  width: 100%;
-  min-height: var(--ek-control-h-lg);
-  padding: var(--ek-space-1) var(--ek-space-3);
-  border: 1px solid var(--ek-color-border-subtle);
-  border-radius: var(--ek-radius-control);
-  background: var(--ek-color-surface);
-  color: var(--ek-color-content-default);
-  font-family: inherit;
-  font-size: var(--ek-type-label-size);
-  text-align: left;
-  cursor: pointer;
-  transition: var(--ek-transition-colors);
-}
-
-.pfw-issue:hover {
-  border-color: var(--ek-color-action-border);
-  background: var(--ek-color-action-subtle);
-}
-
-.pfw-issue:focus-visible {
-  outline: none;
-  box-shadow: var(--ek-focus-ring);
-}
-
-.pfw-issue__icon {
-  flex: none;
-  color: var(--ek-color-info-emphasis);
-}
-
-.pfw-issue__icon--missing {
-  color: var(--ek-color-warning-emphasis);
-}
-
-.pfw-issue__label {
-  flex: 1 1 auto;
-  min-width: 0;
-}
-
-.pfw-issue__where {
-  flex: none;
-  padding: 0 var(--ek-space-2);
-  border-radius: var(--ek-radius-full);
-  background: var(--ek-color-surface-muted);
-  color: var(--ek-color-content-muted);
-  font-size: var(--ek-type-caption-size);
-  line-height: var(--ek-type-caption-line);
-}
-
-.pfw-issue__go {
-  flex: none;
-  color: var(--ek-color-content-muted);
-}
-
-.pfw-summary {
-  grid-template-columns: 1fr;
-  gap: var(--ek-space-2);
-}
-
-.pfw-summary :deep(.ek-description-list__row) {
-  flex-direction: row;
-  justify-content: space-between;
-  gap: var(--ek-space-4);
-}
-
-.pfw-summary :deep(.ek-description-list__value) {
-  margin: 0;
-  min-width: 0;
-  text-align: right;
-  overflow-wrap: anywhere;
-}
-
 /* Tablet: adım durum metni gizlenmez; şerit yatay kaydırılmaz — başlıklar kısalır (…). */
 @media (max-width: 1023px) {
-  .pfw-panel {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
   .pfw-step {
     gap: var(--ek-space-2);
     padding-right: var(--ek-space-2);
@@ -684,8 +617,9 @@ function onIssue(item: ProgressItem) {
 
 /* Mobil: işaretçiler bağlantıyla tek sıra, başlık + durum altta ortalı; kayıt çubuğu iki satır (akışta, yapışkan değil). */
 @media (max-width: 599px) {
-  .pfw-nav {
-    padding: var(--ek-space-3);
+  .pfw-head {
+    padding: var(--ek-space-2);
+    gap: var(--ek-space-1);
   }
 
   .pfw-steps {
@@ -742,7 +676,6 @@ function onIssue(item: ProgressItem) {
 
   .pfw-bar {
     position: static;
-    box-shadow: var(--ek-shadow-card);
   }
 
   .pfw-bar::before {
@@ -785,5 +718,48 @@ function onIssue(item: ProgressItem) {
   .pfw-meter::-webkit-progress-value {
     transition: none;
   }
+}
+
+/* ================= FE-LOCAL-1054 — ürün formu adım şeridi: uygulamanın tasarım diliyle =================
+   Şerit düz yüzey (gölge yok). Adım işaretleri yuvarlak değil ÇERÇEVELİ KÖŞELİ kutu; etkin adım hap değil, kutu
+   köşeli — eylem renginin açık tonu + ince çerçeve, işareti dolu eylem rengi (parıltı halkası yok). Adımlar arası
+   bağlantı ince çizgi; tamamlanan adımdan sonra eylem tonunda. */
+.pfw-head {
+  box-shadow: none;
+}
+
+.pfw-step {
+  border-radius: var(--ek-radius-tile);
+  padding: var(--ek-space-1) var(--ek-space-3) var(--ek-space-1) var(--ek-space-1);
+}
+
+.pfw-step__marker {
+  border-color: var(--ek-color-border-default);
+  border-radius: var(--ek-radius-md);
+}
+
+.is-current .pfw-step__marker {
+  box-shadow: none;
+}
+
+.is-complete:not(.is-current) .pfw-step__marker {
+  color: var(--ek-color-action-emphasis);
+}
+
+.pfw-steps__link {
+  height: 1px;
+  border-radius: 0;
+}
+
+.pfw-steps__item.is-complete .pfw-steps__link {
+  background: var(--ek-color-action-border);
+  opacity: 1;
+}
+
+.pfw-head__prev,
+.pfw-head__next :deep(.ek-btn) {
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-tile);
+  background: var(--ek-color-surface);
 }
 </style>

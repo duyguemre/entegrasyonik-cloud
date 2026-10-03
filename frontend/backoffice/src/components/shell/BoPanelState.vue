@@ -120,4 +120,16 @@ const degradedCause = computed(() =>
   color: var(--ek-color-content-muted);
   font-size: var(--ek-type-label-size);
 }
+
+/* BO-LOCAL-01 — boş durum: ikon çerçeveli köşeli kutuda (yuvarlak / çıplak büyük ikon yok). */
+.bo-state__empty .v-icon {
+  width: 44px;
+  height: 44px;
+  margin-bottom: var(--ek-space-3);
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-tile);
+  background: var(--ek-color-surface-muted);
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-icon-md);
+}
 </style>

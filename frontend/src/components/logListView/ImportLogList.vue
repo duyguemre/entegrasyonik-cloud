@@ -15,6 +15,7 @@
     <LoadingComponent :attach="dialogAttach" ref="loadingComponentRef"></LoadingComponent>
 
     <EkListScreen channel-key="integrationCode"
+      summary-toggle
       label="Aktarım işlemleri tablosu"
       noun="kayıt"
       row-key="_id"
@@ -46,8 +47,10 @@
       @update:page-size="onPageSizeChange"
       @remove-chip="() => getJobs(true)"
       @clear-filters="() => getJobs(true)"
-      @refresh="getJobs(true)"
+      @refresh="() => { dashRef?.refresh(); getJobs(true) }"
     >
+      <!-- FE-LOCAL-1047: Liste | Özet — son çekim işlemlerinin özeti listenin yerine açılır. -->
+      <template #summary><ImportLogDashboard ref="dashRef" /></template>
       <template #bulk-actions>
         <EkButton size="sm" icon="mdi-trash-can-outline" class="ek-log-danger" :disabled="validSelectedJobsCount === 0"
           aria-label="Seçili kayıtları sil" @click="openDeleteConfirm($event, 'batch')">
@@ -108,6 +111,7 @@ import { ref, onMounted, onBeforeMount, reactive, computed } from 'vue'
 import useRestApi from '@/composables/restapi'
 import LoadingComponent from '@/components/LoadingComponent.vue'
 import DetailedImportLogReport from '@/components/logListView/DetailedImportLogReport.vue'
+import ImportLogDashboard from '@/components/logListView/ImportLogDashboard.vue'
 import ActionDialogComponent from '@/components/layout/ActionDialogComponent.vue'
 import ConfirmationDialogComponent from '@/components/layout/ConfirmationDialogComponent.vue'
 import EkListScreen from '@/components/page/templates/EkListScreen.vue'
@@ -233,6 +237,7 @@ const translateStatus = (status: string) => {
 
 // --- DS-v2 liste standardı yardımcıları ---
 const loadError = ref(false)
+const dashRef = ref<InstanceType<typeof ImportLogDashboard> | null>(null)
 const appliedSearch = ref('')
 const activeChips = computed<EkActiveFilterChip[]>(() => (appliedSearch.value ? [{ key: 'search', label: 'İşlem no', value: appliedSearch.value }] : []))
 

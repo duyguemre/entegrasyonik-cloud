@@ -99,7 +99,7 @@ const intakeTone = (m: IntakeMode): StatusTone => (m === 'on' ? 'success' : m ==
   font-size: var(--ek-type-caption-size);
   line-height: var(--ek-type-caption-line);
 }
-.bo-res__frame :deep(tr.is-drift > *) {
+:deep(.bo-res__frame tr.is-drift > *) {
   background: var(--ek-color-warning-subtle);
 }
 .bo-res__pod {
@@ -122,5 +122,19 @@ const intakeTone = (m: IntakeMode): StatusTone => (m === 'on' ? 'success' : m ==
 .bo-res__line {
   color: var(--ek-color-content-default);
   font-size: var(--ek-type-caption-size);
+}
+
+/* BO-LOCAL-01 — pod başlığı ve hücre: sapma satırı düz uyarı zemini (şerit yok); hücre satırları ince çizgiyle ayrılır. */
+:deep(.bo-res__frame tr.is-drift > *) {
+  background: var(--ek-color-warning-subtle);
+}
+
+.bo-res__line + .bo-res__line {
+  padding-top: var(--ek-space-1);
+  border-top: 1px solid var(--ek-color-border-subtle);
+}
+
+.bo-res__cell {
+  gap: var(--ek-space-1);
 }
 </style>

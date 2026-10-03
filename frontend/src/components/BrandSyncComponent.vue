@@ -13,6 +13,8 @@
       <span class="ek-brand-tile ek-brand-tile--lg" aria-hidden="true"><v-icon icon="mdi-tag-outline" /></span>
 
       <div class="bd__titlebox">
+        <!-- FE-LOCAL-1048: tür etiketi (kısa eylem çizgisiyle) — kayıt sayfası başlığıyla aynı dil. -->
+        <span class="bd__kind">Marka</span>
         <div v-if="!renaming" class="bd__titlerow">
           <h2 class="bd__title" :title="brand.title">{{ brand.title }}</h2>
           <EkButton tone="ghost" size="sm" icon="mdi-pencil-outline" icon-only aria-label="Marka adını düzenle"
@@ -37,6 +39,15 @@
       </EkContextMenu>
       <EkButton tone="ghost" size="sm" icon="mdi-close" icon-only aria-label="Paneli kapat" @click="emit('close')" />
     </header>
+
+    <!-- FE-LOCAL-1048: özet hücreleri (ince çizgiyle ayrılan bilgi şeridi). -->
+    <dl v-if="mappableChannels.length" class="bd__facts">
+      <div class="bd__fact"><dt>Bağlı kanal</dt><dd class="ek-num">{{ mappableChannels.length }}</dd></div>
+      <div class="bd__fact" :class="{ 'is-success': mapped.length === mappableChannels.length }"><dt>Eşli</dt><dd class="ek-num">{{ mapped.length }}</dd></div>
+      <div class="bd__fact" :class="{ 'is-warning': mapped.length < mappableChannels.length }">
+        <dt>Eksik eşleme</dt><dd class="ek-num">{{ mappableChannels.length - mapped.length || 'Yok' }}</dd>
+      </div>
+    </dl>
 
     <div class="bd__body">
       <div class="bd__section-head">
@@ -245,6 +256,94 @@ const onSaved = (code: string, value: any) => {
 
   .bd__body {
     padding: var(--ek-space-3) var(--ek-space-4) var(--ek-space-5);
+  }
+}
+
+/* ================= FE-LOCAL-1048 — marka detay paneli: kayıt sayfası dili ================= */
+.bd__head {
+  border-bottom: 0;
+  padding-bottom: var(--ek-space-3);
+}
+
+.bd__kind,
+.bd__section-title {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ek-space-2);
+  color: var(--ek-color-sidebar-section);
+  font-size: var(--ek-type-micro-size);
+  line-height: var(--ek-type-micro-line);
+  font-weight: var(--ek-type-micro-weight);
+  letter-spacing: var(--ek-type-micro-tracking);
+  text-transform: uppercase;
+}
+
+.bd__kind::before,
+.bd__section-title::before {
+  content: '';
+  width: 12px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--ek-color-action);
+}
+
+.bd__facts {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  gap: var(--ek-space-3) 0;
+  margin: 0;
+  padding: var(--ek-space-3) var(--ek-space-5);
+  border-block: 1px solid var(--ek-color-border-subtle);
+  background: var(--ek-color-surface-muted);
+}
+
+.bd__fact {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0 var(--ek-space-5);
+}
+
+.bd__fact:first-child {
+  padding-inline-start: 0;
+}
+
+.bd__fact + .bd__fact {
+  border-inline-start: 1px solid var(--ek-color-border-default);
+}
+
+.bd__fact dt {
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-micro-size);
+  line-height: var(--ek-type-micro-line);
+  font-weight: var(--ek-type-micro-weight);
+  letter-spacing: var(--ek-type-micro-tracking);
+  text-transform: uppercase;
+}
+
+.bd__fact dd {
+  margin: 0;
+  color: var(--ek-color-content-strong);
+  font-size: var(--ek-type-body-size);
+  line-height: var(--ek-type-body-line);
+  font-weight: var(--ek-font-weight-semibold);
+}
+
+.bd__fact.is-success dd { color: var(--ek-color-success-emphasis); }
+.bd__fact.is-warning dd { color: var(--ek-color-warning-emphasis); }
+
+.bd__section-head {
+  margin-bottom: var(--ek-space-3);
+}
+
+@media (max-width: 599px) {
+  .bd__facts {
+    padding: var(--ek-space-3) var(--ek-space-4);
+  }
+
+  .bd__fact {
+    padding: 0 var(--ek-space-3);
   }
 }
 </style>

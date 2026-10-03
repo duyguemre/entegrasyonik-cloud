@@ -7,7 +7,8 @@
       icon="mdi-trash-can-outline" color="error" confirmText="Sil" cancelText="İptal" @confirm="removeHashtag()"
       @cancel="confirmationDelete.isDialogOpen = false" />
 
-    <EkListScreen
+    <EkListScreen ref="listScreenRef"
+      summary-toggle
       section="Katalog"
       :title="$t('menu.productDefinitions.hashtagList')"
       label="Etiket grupları tablosu"
@@ -36,16 +37,31 @@
       @update:page-size="(n) => { pagination.limit = n; pagination.page = 1 }"
       @refresh="retrieveHashtags()"
     >
-      <!-- Araç şeridi (sağ): satır içi yeni etiket grubu — arama solda (EkListScreen standart şeridi). -->
+      <!-- FE-LOCAL-1052: Liste | Özet — özet listenin yerine açılır; gruba tıklayınca liste o gruba süzülür. -->
+      <template #summary="{ close }">
+        <DefinitionGroupsDashboard :cells="dashCells" :groups="dashGroups" group-noun="Etiket grubu" value-noun="etiket"
+          icon="mdi-pound" :loading="loading" empty-text="Henüz etiket grubu yok."
+          @select="(title) => { searchText = title; close() }" />
+      </template>
+
+      <!-- Araç şeridi (sağ): "Yeni grup" (sayfanın TEK birincil eylemi; ad küçük kartta sorulur) — arama solda. -->
       <template #create>
-        <v-form v-model="newHashtagForm" @submit.prevent="addHashtag" class="def-new-form">
-          <v-text-field v-model="newHashtagTitle" variant="outlined" density="compact" hide-details
-            :rules="newHashtagRules" class="def-new-input"
-            :placeholder="$t('productDefinitions.hashtag.new.title')"
-            :aria-label="$t('productDefinitions.hashtag.new.title')" />
-          <EkButton tone="primary" icon="mdi-plus" class="def-new" :disabled="!newHashtagForm || !newHashtagTitle"
-            @click="addHashtag">Grup ekle</EkButton>
-        </v-form>
+        <v-menu v-model="newMenu" :close-on-content-click="false" location="bottom end" :offset="6">
+          <template v-slot:activator="{ props }">
+            <EkButton v-bind="props" tone="primary" icon="mdi-plus" class="def-new">Yeni grup</EkButton>
+          </template>
+          <v-card class="def-pop" width="300">
+            <div class="def-pop__caption">Yeni etiket grubu</div>
+            <v-form v-model="newHashtagForm" class="def-new-form" @submit.prevent="submitNew">
+              <v-text-field v-model="newHashtagTitle" variant="outlined" density="compact" hide-details autofocus
+                :rules="newHashtagRules" class="def-new-input" label="Grup adı" placeholder="Örn. Kampanya, Sezon" />
+            </v-form>
+            <div class="def-pop__row">
+              <EkButton tone="secondary" size="sm" @click="newMenu = false">Vazgeç</EkButton>
+              <EkButton tone="primary" size="sm" icon="mdi-plus" :disabled="!newHashtagForm || !newHashtagTitle" @click="submitNew">Grup ekle</EkButton>
+            </div>
+          </v-card>
+        </v-menu>
       </template>
 
       <template #cell-title="{ row: item }">
@@ -64,10 +80,11 @@
               </button>
             </template>
             <v-card class="def-pop" width="300">
-              <v-text-field v-model="item.tempTitle" label="Grup Adını Düzenle" variant="outlined" density="compact"
+              <div class="def-pop__caption">Grup adı</div>
+              <v-text-field v-model="item.tempTitle" label="Grup adını düzenle" variant="outlined" density="compact"
                 hide-details autofocus class="mb-3" @keyup.enter="saveRename(item)" />
 
-              <div class="def-pop__caption">Grup Rengi</div>
+              <div class="def-pop__caption">Grup rengi</div>
               <div class="def-swatches" role="group" aria-label="Grup Rengi">
                 <v-btn v-for="c in swatchList" :key="c" :color="c" variant="flat" icon density="compact" size="24"
                   class="def-swatch" :class="{ 'is-selected': item.color === c }"
@@ -93,7 +110,7 @@
                 label="Etiket Adı" hide-details autofocus class="mb-3"
                 @keyup.enter="updateHashtagValue(item); close()" />
 
-              <div class="def-pop__caption">Etiket Rengi</div>
+              <div class="def-pop__caption">Etiket rengi</div>
               <div class="def-swatches" role="group" aria-label="Etiket Rengi">
                 <v-btn v-for="c in swatchList" :key="c" :color="c" variant="flat" icon density="compact" size="22"
                   class="def-swatch" :class="{ 'is-selected': item.editingHashtagValue.color === c }"
@@ -136,6 +153,9 @@ import ConfirmationDialogComponent from '@/components/layout/ConfirmationDialogC
 import EkListScreen from '@/components/page/templates/EkListScreen.vue';
 import DefinitionValueChip from '@/components/productDefinitions/definitions/DefinitionValueChip.vue';
 import DefinitionValueAdd from '@/components/productDefinitions/definitions/DefinitionValueAdd.vue';
+import DefinitionGroupsDashboard from '@/components/productDefinitions/definitions/DefinitionGroupsDashboard.vue';
+import type { ListSummaryCell } from '@/components/page/ListSummaryStrip.vue';
+import { formatNumber } from '@entegrasyonik/ui/format';
 import { isRequestError, sortRows } from '@entegrasyonik/ui/components/listStandard';
 import './definitionLists.css'
 
@@ -164,6 +184,27 @@ const pagination = reactive({
 })
 
 const newHashtagRules = [...formRules.mandatoryRule, ...formRules.length_2_160]
+
+// FE-LOCAL-1052: "Yeni grup" kartı + özet görünümü (sayılar bellekteki listeden; ek istek yok).
+const listScreenRef = ref<InstanceType<typeof EkListScreen> | null>(null)
+const newMenu = ref(false)
+const submitNew = async () => {
+  if (!newHashtagForm.value || !newHashtagTitle.value) return
+  newMenu.value = false
+  await addHashtag()
+}
+const dashCells = computed<ListSummaryCell[]>(() => {
+  const all = hashtagsStoreHashtags.value
+  const values = all.reduce((a, g) => a + (g.values?.length ?? 0), 0)
+  const empty = all.filter((g) => !(g.values?.length)).length
+  const cell = (key: string, label: string, n: number, icon: string, tone: ListSummaryCell['tone'], hint: string): ListSummaryCell => ({ key, label, hint, icon, tone, value: formatNumber(n), zero: !n })
+  return [
+    cell('groups', 'Etiket grubu', all.length, 'mdi-pound', 'action', 'Tanımlı grup'),
+    cell('values', 'Etiket', values, 'mdi-tag-outline', 'info', 'Tüm gruplardaki etiket'),
+    cell('empty', 'Boş grup', empty, 'mdi-alert-outline', 'warning', 'Henüz etiketi yok'),
+  ]
+})
+const dashGroups = computed(() => hashtagsStoreHashtags.value.map((g) => ({ key: String(g.title), label: String(g.title), count: g.values?.length ?? 0 })))
 
 // Etiket rengi VERİdir (DB'de '#RRGGBB' olarak saklanır) — tasarım token'ı değil, kullanıcının seçtiği palet.
 // 24-bit tamsayı olarak tutulur, kayıt biçimine (`#RRGGBB`) çevrilir.

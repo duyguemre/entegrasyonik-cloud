@@ -53,7 +53,7 @@ test.describe('ADR-0012 — Derin bağlantı', () => {
 
     await page.getByLabel('E-posta').fill('e2e@example.invalid')
     await page.getByLabel('Parola', { exact: true }).fill('e2e-pass-1234')
-    await page.getByRole('button', { name: 'Giriş' }).click()
+    await page.getByRole('button', { name: 'Devam et' }).click()
 
     await expect(page).toHaveURL(/\/orders\?internalStatuses=APPROVED$/, { timeout: 10_000 })
     await expect(page.locator('.orderListView')).toBeVisible()
@@ -69,7 +69,7 @@ test.describe('ADR-0012 — Derin bağlantı', () => {
       checkAuthentication: true,
       userContext: userContextFixture,
     })
-    await page.getByRole('button', { name: 'Giriş' }).click()
+    await page.getByRole('button', { name: 'Devam et' }).click()
 
     await expect(page).toHaveURL(/\/dashboard$/, { timeout: 10_000 })
   })

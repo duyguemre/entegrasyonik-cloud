@@ -1,10 +1,6 @@
 <template>
   <div class="bo-page">
-    <BoPageHeader :updated-at="cfg.loadedAt ?? undefined" :stale="cfg.stale">
-      <template #actions>
-        <BoAction kind="refresh" :loading="cfg.refreshing || cfg.phase === 'loading'" data-page-refresh @click="cfg.load()" />
-      </template>
-    </BoPageHeader>
+    <BoPageHeader :updated-at="cfg.loadedAt ?? undefined" :stale="cfg.stale" refreshable :refreshing="cfg.refreshing || cfg.phase === 'loading'" @refresh="cfg.load()" />
 
     <PageVerdict :verdict="verdict" />
 
@@ -39,7 +35,6 @@
 
 <script setup lang="ts">
 import BoPageHeader from '@bo/components/shell/BoPageHeader.vue'
-import BoAction from '@bo/components/r2/BoAction.vue'
 import BoTabs from '@bo/components/r2/BoTabs.vue'
 import { computed, nextTick, onMounted, reactive, watch } from 'vue'
 import { useRoute } from 'vue-router'

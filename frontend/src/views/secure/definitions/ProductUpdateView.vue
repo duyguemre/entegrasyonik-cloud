@@ -6,7 +6,9 @@
       :record="productRecord"
       :title="$t('definitions.product.update.title')"
       :description="$t('definitions.product.update.description')"
-    />
+    >
+      <template #status><div :id="statusId" class="pdv-status" /></template>
+    </EkPageHeader>
 
     <ProductCompetitivePricesComponent v-model="isCompetitivePricesDialog" ref="productCompetitivePricesComponentRef"
       :productInfoForm="productInfoForm" v-if="isCompetitivePricesDialog" />
@@ -25,7 +27,7 @@
       v-if="initialized">
 
       <div class="pdv-flow">
-        <ProductFormWizardBar :form="productInfoForm" :current="stepper" save-label="Güncelle"
+        <ProductFormWizardBar :form="productInfoForm" :current="stepper" :teleport-to="`#${statusId}`" save-label="Güncelle"
           :saving="isSaving" :category-title="categoriesStore.getCategoryTitle(productInfoForm.category)"
           :brand-title="brandsStore.getBrandTitle(productInfoForm.brand)" @navigate="onNavigate" @save="updateProduct" />
 
@@ -74,7 +76,6 @@
         <CompetitionPanel v-if="stepper == 2 && productInfoForm._id" class="pdv-competition" :key="`${productInfoForm._id}-${competitionKey}`"
           :product-id="String(productInfoForm._id)" :variants="productInfoForm.variants || []" @focus-cost="focusCostColumn" />
 
-        <ProductFormStepFooter :form="productInfoForm" :current="stepper" @navigate="onNavigate" />
       </div>
 
     </v-form>
@@ -87,13 +88,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onBeforeMount, nextTick, onBeforeUnmount, onMounted, onActivated, onDeactivated, inject } from 'vue'
+import { ref, computed, watch, onBeforeMount, nextTick, onBeforeUnmount, onMounted, onActivated, onDeactivated, inject, useId } from 'vue'
 import { useI18n } from 'vue-i18n';
 import { useDisplay } from 'vuetify'
 
 import EkPageHeader from '@/components/page/EkPageHeader.vue'
 import ProductFormWizardBar from '@/components/productDefinitions/crud/ProductFormWizardBar.vue'
-import ProductFormStepFooter from '@/components/productDefinitions/crud/ProductFormStepFooter.vue'
 import { focusProductField } from '@/composables/productFormFocus'
 import type { StepIndex } from '@/composables/useProductFormProgress'
 import { EkSkeleton, EkDialogHost } from '@entegrasyonik/ui/components'
@@ -120,7 +120,10 @@ import ProductDetailsComponent from '@/components/productDefinitions/variants/Pr
 import CompetitionPanel from '@/components/pricing/CompetitionPanel.vue'
 import { useCostSave } from '@/composables/useCostSave'
 import type { CostBaseline } from '@/composables/usePricingApi'
-import ProductInfoFormComponent from '@/components/productDefinitions/crud/ProductInfoFormComponent.vue';
+import ProductInfoFormComponent from '@/components/productDefinitions/crud/ProductInfoFormComponent.vue';
+
+/** Sayfa başlığındaki durum yuvası (zorunlu bilgi çubuğu buraya taşınır); sekme başına benzersiz. */
+const statusId = `pf-status-${useId()}`
 const snackbarStore = useSnackbarStore();
 const costSave = useCostSave()
 // PRC-R0: açılıştaki (sunucudaki) maliyetler — kaydetmede yalnız DEĞİŞENLER `setVariantCosts` ile gider.
@@ -602,9 +605,20 @@ const headers = [
 </style>
 
 <style scoped>
+/* Başlıktaki durum yuvası: zorunlu bilgi çubuğu başlığın sağındaki alanı doldurur. */
+.pdv-root :deep(.ek-page-bar__status) {
+  flex: 1 1 auto;
+  overflow: visible;
+}
+
+.pdv-status {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
 /* Sayfa kenar boşluğu — başlık/adım şeridi/içerik iş alanı kenarına yapışmasın. */
 .pdv-root {
-  padding: var(--ek-space-2) var(--ek-space-6) var(--ek-space-8);
+  padding: var(--ek-space-2) var(--ek-space-6) var(--ek-space-4);
 }
 
 @media (max-width: 599px) {
@@ -614,17 +628,17 @@ const headers = [
 }
 
 /* FE R4 B: sihirbaz şeridi, kayıt çubuğu, adım içeriği ve altbilgi TEK sütunda (önceden adım kartları 880/1200/tam
-   genişlik arasında değişiyordu). Kayıt çubuğu bu sütunda yapışkandır (ProductFormWizardBar). */
+   genişlik arasında değişiyordu). Kayıt çubuğu bu sütunda yapışkandır (ProductFormWizardBar).
+   Sütun iş alanının tam genişliğine yayılır (önceden 1280px ile ortada kalıyordu). */
 .pdv-flow {
-  max-width: 1280px;
-  margin: var(--ek-space-4) auto 0;
+  margin-top: var(--ek-space-4);
 }
 
 .pdv-category-step,
 .pdv-step,
 .pdv-step-variants {
   display: block;
-  margin-top: var(--ek-space-5);
+  margin-top: var(--ek-space-3);
 }
 
 /* PRC-R1: Rekabet ve kâr bölümü — varyant tablosu ile adım altbilgisi arasında. */

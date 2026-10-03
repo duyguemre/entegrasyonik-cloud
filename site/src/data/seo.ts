@@ -147,6 +147,19 @@ const STATIC_ENTRIES: SeoEntry[] = [
     sources: ['src/pages/ozellikler/stok-rezervasyonu.astro', 'src/data/capabilities.ts'],
   },
   {
+    path: '/mobil-uygulama',
+    title: 'Android uygulaması',
+    description:
+      'Entegrasyonik Android uygulamasını indirin: web uygulamasıyla aynı hesap, kamerayla ürün fotoğrafı ve barkod, adım adım APK kurulumu.',
+    index: true,
+    crumb: 'Mobil uygulama',
+    schema: ['WebPage'],
+    ogEyebrow: 'Mobil uygulama',
+    section: 'product',
+    llmsSummary: 'Android uygulaması (APK): indirme, kurulum adımları ve uygulamada neler olduğu.',
+    sources: ['src/pages/mobil-uygulama.astro', 'src/data/mobile-app.ts'],
+  },
+  {
     path: '/entegrasyonlar',
     title: 'Pazaryeri, e-ticaret ve ERP entegrasyonları',
     description:

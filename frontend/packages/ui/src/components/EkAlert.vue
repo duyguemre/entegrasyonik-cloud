@@ -135,4 +135,10 @@ const TONE_ICON: Record<EkAlertTone, string> = {
     justify-content: flex-end;
   }
 }
+
+/* FE-LOCAL-1053 — uygulamanın tasarım diliyle: sol kalın şerit yok; tonun ince çerçevesi dört kenarda, kutu köşesi. */
+.ek-alert {
+  border-left: 1px solid var(--ek-alert-border);
+  border-radius: var(--ek-radius-tile);
+}
 </style>

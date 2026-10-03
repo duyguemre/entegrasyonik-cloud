@@ -189,7 +189,7 @@ const pricingHref = pageHref('/fiyatlandirma')
     font-weight: var(--ek-font-weight-semibold);
   }
   .pr__perks :global(.icon) {
-    color: var(--ek-color-secondary-darken-1);
+    color: var(--site-action);
   }
 
   /* --- Kartlar --- */
@@ -266,7 +266,7 @@ const pricingHref = pageHref('/fiyatlandirma')
     background: conic-gradient(
       from 0deg,
       transparent 0 62%,
-      color-mix(in srgb, var(--ek-color-secondary) 90%, var(--ek-color-background)) 78%,
+      color-mix(in srgb, var(--site-action) 90%, var(--ek-color-background)) 78%,
       transparent 92%
     );
     pointer-events: none;
@@ -315,9 +315,9 @@ const pricingHref = pageHref('/fiyatlandirma')
     align-items: center;
     gap: var(--ek-space-1);
     padding: var(--ek-space-1) var(--ek-space-3);
-    border: var(--site-border-width) solid color-mix(in srgb, var(--ek-color-secondary) 55%, transparent);
+    border: var(--site-border-width) solid color-mix(in srgb, var(--site-action) 55%, transparent);
     border-radius: var(--ek-radius-full);
-    background: color-mix(in srgb, var(--ek-color-secondary) 18%, transparent);
+    background: color-mix(in srgb, var(--site-action) 18%, transparent);
     color: var(--site-color-on-primary);
     font-size: var(--site-card-eyebrow-size);
     font-weight: var(--site-card-eyebrow-weight);
@@ -448,11 +448,11 @@ const pricingHref = pageHref('/fiyatlandirma')
     height: var(--ek-space-5);
     margin-top: calc(var(--ek-space-1) / 2);
     border-radius: var(--ek-radius-full);
-    background: color-mix(in srgb, var(--ek-color-secondary) 16%, transparent);
-    color: var(--ek-color-secondary-darken-1);
+    background: color-mix(in srgb, var(--site-action) 16%, transparent);
+    color: var(--site-action);
   }
   .plan--rec .plan__tick {
-    background: color-mix(in srgb, var(--ek-color-secondary) 30%, transparent);
+    background: color-mix(in srgb, var(--site-action) 30%, transparent);
     color: var(--site-color-on-primary);
   }
 
@@ -528,7 +528,7 @@ const pricingHref = pageHref('/fiyatlandirma')
     padding: var(--ek-space-4);
     border: var(--site-border-width) solid var(--site-accent-line);
     border-radius: var(--ek-radius-lg);
-    background: color-mix(in srgb, var(--ek-color-secondary) 7%, transparent);
+    background: color-mix(in srgb, var(--site-action) 7%, transparent);
   }
   .plan__agent-title {
     display: flex;
@@ -576,11 +576,11 @@ const pricingHref = pageHref('/fiyatlandirma')
     width: var(--ek-space-1);
     height: var(--ek-space-1);
     border-radius: var(--ek-radius-full);
-    background: var(--ek-color-secondary);
+    background: var(--site-action);
   }
   .plan--rec .plan__agent {
-    border-color: color-mix(in srgb, var(--ek-color-secondary) 45%, transparent);
-    background: color-mix(in srgb, var(--ek-color-secondary) 12%, transparent);
+    border-color: color-mix(in srgb, var(--site-action) 45%, transparent);
+    background: color-mix(in srgb, var(--site-action) 12%, transparent);
   }
   .plan--rec .plan__agent-title {
     color: var(--site-color-on-primary);
@@ -590,7 +590,7 @@ const pricingHref = pageHref('/fiyatlandirma')
   }
   .pr__perks .pr__perk-agent {
     border-color: var(--site-accent-line);
-    background: color-mix(in srgb, var(--ek-color-secondary) 8%, transparent);
+    background: color-mix(in srgb, var(--site-action) 8%, transparent);
   }
   .pr__agent-note {
     display: inline-flex;
@@ -607,5 +607,87 @@ const pricingHref = pageHref('/fiyatlandirma')
   }
   .pr__agent-note strong {
     color: var(--ek-color-content-strong);
+  }
+
+  /* ================= SITE-DL-02 — uygulamanın tasarım dili (frontend/DESIGN_SYSTEM.md §35) =================
+     Düz yüzey + 1px ince çerçeve + kart yarıçapı; gölge, degrade, ışıma, hover yükselmesi yok; tek vurgu eylem
+     mavisi; ikonlar çerçeveli köşeli kutuda; hap rozet yerine köşeli çip. Yukarıdaki kuralları EZER (aynı özgüllük,
+     kaynak sırası). */
+
+  .pr__perks li {
+    border-radius: var(--ek-radius-md);
+    box-shadow: none;
+  }
+  .pr__perks .pr__perk-agent {
+    border-color: var(--site-action-border);
+    background: var(--site-action-subtle);
+    color: var(--site-action-emphasis);
+  }
+  /* Plan kartı: düz yüzey + ince çerçeve; hover'da yalnız çerçeve tonu (yükselme/gölge/degrade kenar yok). */
+  .plan {
+    border-radius: var(--ek-radius-card);
+  }
+  .plan__frame {
+    border-color: var(--ek-color-border-default);
+    background: var(--ek-color-surface);
+    box-shadow: none;
+  }
+  .plan:hover,
+  .plan--rec,
+  .plan--rec:hover {
+    translate: none;
+  }
+  .plan:hover .plan__frame {
+    border-color: var(--site-action-border);
+    background: var(--ek-color-surface);
+    box-shadow: none;
+  }
+  /* Önerilen plan: düz marka laciverti kart (sahne degradesi, dönen hüzme, dış ışıma yok). */
+  .plan--rec .plan__frame,
+  .plan--rec:hover .plan__frame {
+    border-color: var(--ek-color-chrome-border);
+    background: var(--ek-color-chrome);
+    box-shadow: none;
+  }
+  .plan--rec .plan__frame::before,
+  .plan__beam,
+  .plan__glow {
+    display: none;
+  }
+  .plan__badge {
+    padding: var(--ek-space-1) var(--ek-space-2);
+    border-color: var(--site-glass-border);
+    border-radius: var(--ek-radius-md);
+    background: var(--site-glass-bg);
+  }
+  .plan__tick {
+    border: var(--site-border-width) solid var(--site-action-border);
+    border-radius: var(--ek-radius-md);
+    background: var(--site-action-subtle);
+    color: var(--site-action);
+  }
+  .plan--rec .plan__tick {
+    border-color: var(--site-glass-border);
+    background: var(--site-glass-bg);
+    color: var(--site-color-on-primary);
+  }
+  .plan__agent {
+    border-color: var(--site-action-border);
+    border-radius: var(--ek-radius-tile);
+    background: var(--site-action-subtle);
+  }
+  .plan__agent-icon {
+    background: var(--site-action);
+  }
+  .plan--rec .plan__agent {
+    border-color: var(--site-glass-border);
+    background: var(--site-glass-bg);
+  }
+  .plan--rec .plan__agent-icon {
+    background: var(--ek-color-background);
+    color: var(--ek-color-primary);
+  }
+  .plan--rec .plan__agent-list li::before {
+    background: var(--site-accent-on-dark);
   }
 </style>

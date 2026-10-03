@@ -13,7 +13,8 @@
 
     <MessageDetailComponent v-model="detailDialog.show" :message="selectedMessage" @reply="handleReply" />
 
-    <EkListScreen channel-key="integrationCode"
+    <EkListScreen ref="listScreenRef" channel-key="integrationCode"
+      summary-toggle
       section="Satış"
       title="Mesajlar"
       description="Pazaryerlerinden gelen müşteri mesajlarını buradan yönetin."
@@ -50,8 +51,12 @@
       @filter-reset="resetFilters"
       @remove-chip="removeChip"
       @clear-filters="resetFilters"
-      @refresh="getMessages(true)"
+      @refresh="refreshAll"
     >
+      <!-- FE-LOCAL-1046: Liste | Özet — özet görünümü listenin yerine açılır; durum seçimi listeyi süzer ve listeye döner. -->
+      <template #summary="{ close }">
+        <MessageListDashboard ref="dashRef" :active="applied.status" @select="(st) => { onDashSelect(st); close() }" />
+      </template>
       <!-- faz3-fe-help: ilk kullanım — hiç kayıt yokken "Nasıl başlanır?" (filtreli boş sonuçta gösterilmez). -->
       <template #empty-action><HelpStartLink article="ord-messages-sla" /></template>
       <template #filters>
@@ -150,6 +155,7 @@ import { text, emphasis } from '@/components/layout/messageParts';
 import LoadingComponent from '@/components/LoadingComponent.vue';
 import ConfirmationDialogComponent from '@/components/layout/ConfirmationDialogComponent.vue';
 import MessageDetailComponent from '@/components/message/MessageDetailComponent.vue';
+import MessageListDashboard from '@/components/message/MessageListDashboard.vue';
 import MessageWaitChip from '@/components/message/MessageWaitChip.vue';
 import { isAwaitingReply, sortAwaitingFirst } from '@/components/message/messageSla';
 import EkListScreen from '@/components/page/templates/EkListScreen.vue';
@@ -326,6 +332,18 @@ function applyAdvancedFilters() {
   getMessages(true);
 }
 
+// FE-LOCAL-1046: özet görünümü — durum seçimi süzmeyi değiştirir ve sorgular; yenilemede sayılar da tazelenir.
+const listScreenRef = ref<InstanceType<typeof EkListScreen> | null>(null);
+const dashRef = ref<InstanceType<typeof MessageListDashboard> | null>(null);
+function onDashSelect(status: string) {
+  searchForm.data.status = status;
+  getMessages(true);
+}
+function refreshAll() {
+  dashRef.value?.refresh();
+  getMessages(true);
+}
+
 function onPageSizeChange(size: number) {
   pagination.limit = size;
   handlePageChange(1);
@@ -447,6 +465,7 @@ const initialize = async (parameters: any) => {
 const activate = async (parameters: any) => {
   if (parameters?.status) {
     searchForm.data.status = parameters.status;
+    listScreenRef.value?.closeSummary();
     await getMessages(true);
   }
   emits('clear')

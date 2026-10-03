@@ -19,7 +19,8 @@
 
     <TicketDetailComponent v-model="isDetailOpen" :ticket="selectedTicketForDetail" :send-reply="handleSendReply" />
 
-    <EkListScreen
+    <EkListScreen ref="listScreenRef"
+      summary-toggle
       section="Destek"
       title="Destek talepleri"
       description="Destek ekibiyle yazışmalarınızı buradan takip edin ve yeni talep açın."
@@ -57,10 +58,16 @@
       @filter-reset="resetFilters"
       @remove-chip="removeChip"
       @clear-filters="resetFilters"
-      @refresh="getTickets(true)"
+      @refresh="refreshAll"
     >
-      <template #header-actions>
-        <EkButton icon="mdi-plus" @click="isCreateDialogOpen = true">Yeni talep</EkButton>
+      <!-- FE-LOCAL-1047: Liste | Özet — özet listenin yerine açılır; hücre seçimi listeyi süzer ve listeye döner. -->
+      <template #summary="{ close }">
+        <ListCountDashboard ref="dashRef" :groups="DASH_GROUPS" :fetch-count="dashCount" :active="dashActive" unit="talep"
+          empty-text="Henüz destek talebi yok." @select="(g, k) => { onDashSelect(g, k); close() }" />
+      </template>
+      <!-- Standart: birincil "oluştur" filtre şeridinin sağ ucunda (EkListScreen `#create`). -->
+      <template #create>
+        <EkButton tone="primary" icon="mdi-plus" @click="isCreateDialogOpen = true">Yeni talep</EkButton>
       </template>
 
       <template #filters>
@@ -139,6 +146,8 @@ import ConfirmationDialogComponent from '@/components/layout/ConfirmationDialogC
 import TicketDetailComponent from '@/components/ticket/TicketDetailComponent.vue'
 import TicketCreateDialog from '@/components/ticket/TicketCreateDialog.vue'
 import EkListScreen from '@/components/page/templates/EkListScreen.vue'
+import ListCountDashboard, { type ListCountGroup } from '@/components/page/ListCountDashboard.vue'
+import { totalOf } from '@/components/page/useStatusCounts'
 import { isRequestError } from '@entegrasyonik/ui/components/listStandard'
 import { formatDate as formatDay, formatDateTime } from '@entegrasyonik/ui/format'
 
@@ -178,6 +187,79 @@ const {
   }
 })
 const loadError = computed(() => error.value !== null)
+
+// FE-LOCAL-1047: özet görünümü — sayılar liste ucundan (her süzme için `limit: 1`, backend toplamı).
+const listScreenRef = ref<InstanceType<typeof EkListScreen> | null>(null)
+const dashRef = ref<InstanceType<typeof ListCountDashboard> | null>(null)
+const STATUS_ICON: Record<TicketStatusEnum, string> = {
+  [TicketStatusEnum.OPEN]: 'mdi-email-open-outline',
+  [TicketStatusEnum.IN_PROGRESS]: 'mdi-progress-wrench',
+  [TicketStatusEnum.WAITING_CLIENT]: 'mdi-message-alert-outline',
+  [TicketStatusEnum.RESOLVED]: 'mdi-check-circle-outline',
+  [TicketStatusEnum.CLOSED]: 'mdi-archive-outline',
+}
+const STATUS_HINT: Record<TicketStatusEnum, string> = {
+  [TicketStatusEnum.OPEN]: 'Destek ekibinde sırada',
+  [TicketStatusEnum.IN_PROGRESS]: 'Üzerinde çalışılıyor',
+  [TicketStatusEnum.WAITING_CLIENT]: 'Yanıtınız bekleniyor',
+  [TicketStatusEnum.RESOLVED]: 'Çözüm bildirildi',
+  [TicketStatusEnum.CLOSED]: 'Kapanan talepler',
+}
+const PRIORITY_ICON: Record<TicketPriorityEnum, string> = {
+  [TicketPriorityEnum.LOW]: 'mdi-arrow-down',
+  [TicketPriorityEnum.MEDIUM]: 'mdi-minus',
+  [TicketPriorityEnum.HIGH]: 'mdi-arrow-up',
+  [TicketPriorityEnum.URGENT]: 'mdi-alert-outline',
+}
+const TYPE_ICON: Record<TicketTypeEnum, string> = {
+  [TicketTypeEnum.GENERAL]: 'mdi-help-circle-outline',
+  [TicketTypeEnum.TECHNICAL]: 'mdi-wrench-outline',
+  [TicketTypeEnum.BILLING]: 'mdi-receipt-text-outline',
+  [TicketTypeEnum.FEATURE_REQUEST]: 'mdi-lightbulb-outline',
+  [TicketTypeEnum.BUG]: 'mdi-bug-outline',
+  [TicketTypeEnum.OTHER]: 'mdi-dots-horizontal',
+}
+const dashTone = (tone: string) => (tone === 'danger' ? 'error' : tone) as any
+const DASH_GROUPS: ListCountGroup[] = [
+  {
+    id: 'statuses', label: 'Duruma göre talepler',
+    items: Object.values(TicketStatusEnum).map((k) => ({ key: k, label: TICKET_STATUS_LABELS[k], icon: STATUS_ICON[k], tone: dashTone(TICKET_STATUS_TONE[k]?.tone || 'neutral'), hint: STATUS_HINT[k] })),
+    distribution: { title: 'Talep durumları', subtitle: 'Tüm destek taleplerinin durum dağılımı', icon: 'mdi-lifebuoy' },
+  },
+  {
+    id: 'priorities', label: 'Önceliğe göre',
+    items: Object.values(TicketPriorityEnum).map((k) => ({ key: k, label: TICKET_PRIORITY_LABELS[k], icon: PRIORITY_ICON[k], tone: dashTone(TICKET_PRIORITY_TONE[k] || 'neutral') })),
+  },
+  {
+    id: 'types', label: 'Konuya göre',
+    items: Object.values(TicketTypeEnum).map((k) => ({ key: k, label: TICKET_TYPE_LABELS[k], icon: TYPE_ICON[k], tone: 'action' as const })),
+  },
+]
+const dashCount = async (group: string, key: string) =>
+  totalOf(
+    await restApi.post('TicketService/getTickets', {
+      pagination: { page: 1, limit: 1 },
+      sortBy: { key: 'lastMessageAt', order: 'desc' },
+      searchTicketForm: { data: { globalSearch: '', startDate: null, endDate: null, statuses: [], types: [], priorities: [], [group]: [key] }, form: { menu: false } },
+    }),
+  )
+const dashActive = computed(() => {
+  const a = applied.value as Record<string, any>
+  const one = (v: unknown[]) => (v?.length === 1 ? String(v[0]) : null)
+  return { statuses: one(a.statuses), priorities: one(a.priorities), types: one(a.types) }
+})
+const onDashSelect = (group: string, key: string) => {
+  const d = filters.value as Record<string, any>
+  d.statuses = []
+  d.priorities = []
+  d.types = []
+  d[group] = [key]
+  getTickets(true)
+}
+const refreshAll = () => {
+  dashRef.value?.refresh()
+  getTickets(true)
+}
 
 const statusOptions = Object.values(TicketStatusEnum).map(s => ({ id: s, title: TICKET_STATUS_LABELS[s], color: TICKET_STATUS_COLORS[s] }))
 const typeOptions = Object.values(TicketTypeEnum).map(t => ({ id: t, title: TICKET_TYPE_LABELS[t] }))

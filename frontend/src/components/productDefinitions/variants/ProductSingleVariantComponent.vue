@@ -12,64 +12,135 @@
           Ürün Özellikleri
         </EkButton>
       </template>
-      <div class="psvc-columns">
-        <div class="psvc-col">
-          <EkFormSection title="Kod bilgileri" icon="mdi-barcode">
-            <v-text-field clearable :rules="formRules.titleRules" maxlength="160" counter data-pf-field="stockcode"
-              v-model="singleVariant.stockcode" label="Stok Kodu *" hint="Mağazanızdaki benzersiz ürün kodu" persistent-hint />
-            <v-text-field clearable :rules="formRules.titleRules" maxlength="160" counter data-pf-field="barcode"
-              v-model="singleVariant.barcode" label="Barkod *" hint="Pazaryerlerine gönderilen barkod" persistent-hint />
-          </EkFormSection>
-          <EkFormSection title="Stok" icon="mdi-warehouse">
-            <v-text-field clearable :rules="stockRules" maxlength="160" type="tel" inputmode="numeric" counter
-              v-model="singleVariant.stock" label="Stok Adedi *" hint="Satışa açık stok miktarı" persistent-hint />
-            <v-text-field clearable :rules="formRules.subTitleRules" maxlength="160" counter
-              v-model="singleVariant.shelf" label="Raf" hint="Depodaki raf/konum bilgisi (isteğe bağlı)" persistent-hint />
-          </EkFormSection>
-        </div>
-        <div class="psvc-col psvc-col--price">
-          <EkFormSection title="Fiyat" icon="mdi-currency-try">
-            <template v-if="singleVariant?.prices?.isPlatformBasedPrice == false">
-              <div data-pf-field="salePrice">
-                <VCurrencyComponentVue v-model="singleVariant.prices.salePrice" :rules="formRules.mandatoryRule" :compact="true"
-                  :label="`${$t('productDefinitions.product.variants.salePrice')} *`" clearable :isIconExist="false" />
+      <!-- FE-LOCAL-1057: "Detay bilgiler" adımıyla AYNI düzen — başlık bantlı grup kartları; satırda solda ad + açıklama,
+           sağda alan. Alanlar, kurallar ve `data-pf-field` çapaları aynen korunur (erişilebilir ad `aria-label`). -->
+      <div class="psvc-groups">
+        <section class="psvc-group" aria-labelledby="psvc-g-code">
+          <header class="psvc-group__head">
+            <span class="psvc-group__icon" aria-hidden="true"><v-icon icon="mdi-barcode" /></span>
+            <div>
+              <h3 id="psvc-g-code" class="psvc-group__title">Kod ve stok</h3>
+              <p class="psvc-group__desc">Ürünü tanımlayan kodlar ve satışa açık miktar</p>
+            </div>
+          </header>
+          <div class="psvc-rows">
+            <div class="psvc-row">
+              <div class="psvc-row__text">
+                <span class="psvc-row__label">Stok kodu <span class="psvc-req" aria-hidden="true">*</span></span>
+                <p class="psvc-row__desc">Mağazanızdaki benzersiz ürün kodu.</p>
               </div>
-              <VCurrencyComponentVue v-model="singleVariant.prices.marketPrice" :rules="formRules.mandatoryRule" :compact="true"
-                :label="`${$t('productDefinitions.product.variants.marketPrice')} *`" clearable :isIconExist="false" />
+              <div class="psvc-row__control">
+                <v-text-field clearable :rules="formRules.titleRules" maxlength="160" counter data-pf-field="stockcode" variant="outlined"
+                  v-model="singleVariant.stockcode" aria-label="Stok Kodu *" placeholder="Örn. TSHIRT-001" hide-details="auto" class="psvc-input" />
+              </div>
+            </div>
+            <div class="psvc-row">
+              <div class="psvc-row__text">
+                <span class="psvc-row__label">Barkod <span class="psvc-req" aria-hidden="true">*</span></span>
+                <p class="psvc-row__desc">Pazaryerlerine gönderilen barkod.</p>
+              </div>
+              <div class="psvc-row__control">
+                <v-text-field clearable :rules="formRules.titleRules" maxlength="160" counter data-pf-field="barcode" variant="outlined"
+                  v-model="singleVariant.barcode" aria-label="Barkod *" placeholder="Örn. 8690000000000" hide-details="auto" class="psvc-input" />
+              </div>
+            </div>
+            <div class="psvc-row">
+              <div class="psvc-row__text">
+                <span class="psvc-row__label">Stok adedi <span class="psvc-req" aria-hidden="true">*</span></span>
+                <p class="psvc-row__desc">Satışa açık stok miktarı.</p>
+              </div>
+              <div class="psvc-row__control">
+                <v-text-field clearable :rules="stockRules" maxlength="160" type="tel" inputmode="numeric" counter variant="outlined"
+                  v-model="singleVariant.stock" aria-label="Stok Adedi *" suffix="adet" hide-details="auto" class="psvc-input" />
+              </div>
+            </div>
+            <div class="psvc-row">
+              <div class="psvc-row__text">
+                <span class="psvc-row__label">Raf</span>
+                <p class="psvc-row__desc">Depodaki raf/konum bilgisi (isteğe bağlı).</p>
+              </div>
+              <div class="psvc-row__control">
+                <v-text-field clearable :rules="formRules.subTitleRules" maxlength="160" counter variant="outlined"
+                  v-model="singleVariant.shelf" aria-label="Raf" placeholder="Örn. A-01" hide-details="auto" class="psvc-input" />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="psvc-group" aria-labelledby="psvc-g-price">
+          <header class="psvc-group__head">
+            <span class="psvc-group__icon" aria-hidden="true"><v-icon icon="mdi-currency-try" /></span>
+            <div>
+              <h3 id="psvc-g-price" class="psvc-group__title">Fiyat</h3>
+              <p class="psvc-group__desc">Satış fiyatı, kanal fiyatları ve maliyet</p>
+            </div>
+          </header>
+          <div class="psvc-rows">
+            <template v-if="singleVariant?.prices?.isPlatformBasedPrice == false">
+              <div class="psvc-row">
+                <div class="psvc-row__text">
+                  <span class="psvc-row__label">{{ $t('productDefinitions.product.variants.salePrice') }} <span class="psvc-req" aria-hidden="true">*</span></span>
+                  <p class="psvc-row__desc">Müşterinin ödediği fiyat (KDV dahil).</p>
+                </div>
+                <div class="psvc-row__control" data-pf-field="salePrice">
+                  <VCurrencyComponentVue v-model="singleVariant.prices.salePrice" :rules="formRules.mandatoryRule" :compact="true"
+                    :aria-label="`${$t('productDefinitions.product.variants.salePrice')} *`" clearable :isIconExist="false" />
+                </div>
+              </div>
+              <div class="psvc-row">
+                <div class="psvc-row__text">
+                  <span class="psvc-row__label">{{ $t('productDefinitions.product.variants.marketPrice') }} <span class="psvc-req" aria-hidden="true">*</span></span>
+                  <p class="psvc-row__desc">Üstü çizili gösterilen liste fiyatı.</p>
+                </div>
+                <div class="psvc-row__control">
+                  <VCurrencyComponentVue v-model="singleVariant.prices.marketPrice" :rules="formRules.mandatoryRule" :compact="true"
+                    :aria-label="`${$t('productDefinitions.product.variants.marketPrice')} *`" clearable :isIconExist="false" />
+                </div>
+              </div>
             </template>
             <!-- FR2-PFORM 25: kanal başına etkin satış fiyatı (özel / ana) tek bakışta; tıklayınca kanal fiyatları. -->
-            <button v-else type="button" class="psvc-platform-prices ek-span-2" data-pf-field="channelPrices"
-              @click="isVariantPlatformPricesDialog = true; editingVariant = singleVariant">
-              <span class="psvc-cp__head">
-                <span class="psvc-kv__label">Kanal fiyatları</span>
-                <span class="psvc-platform-prices__action"><v-icon icon="mdi-pencil-outline" size="16" aria-hidden="true" /> Düzenle</span>
-              </span>
-              <span class="psvc-cp__list">
-                <span v-for="row in channelPriceRows" :key="row.code" class="psvc-cp__item">
-                  <EkPlatformMark :name="row.title" :code="row.code" />
-                  <strong class="ek-num">{{ formatCurrency(row.sale) }}</strong>
-                  <span class="psvc-cp__src" :class="{ 'is-custom': row.custom }">{{ row.custom ? 'özel' : 'ana fiyat' }}</span>
-                  <v-icon v-if="row.issues.some((i) => i.level === 'error')" icon="mdi-alert-circle-outline" class="psvc-cp__err"
-                    :aria-label="row.issues[0].message" />
+            <div v-else class="psvc-row psvc-row--block">
+              <button type="button" class="psvc-platform-prices" data-pf-field="channelPrices"
+                @click="isVariantPlatformPricesDialog = true; editingVariant = singleVariant">
+                <span class="psvc-cp__head">
+                  <span class="psvc-kv__label">Kanal fiyatları</span>
+                  <span class="psvc-platform-prices__action"><v-icon icon="mdi-pencil-outline" size="16" aria-hidden="true" /> Düzenle</span>
                 </span>
-                <span v-if="!channelPriceRows.length" class="psvc-cp__none">Bağlı kanal yok</span>
-              </span>
-            </button>
-            <v-checkbox class="ek-span-full" :label="$t('productDefinitions.product.platformPrice')" hide-details
-              v-model="singleVariant.prices.isPlatformBasedPrice" @click.stop>
-              <template #label>
-                <span class="psvc-chk">{{ $t('productDefinitions.product.platformPrice') }}
-                  <span class="psvc-chk__hint">Kanallara farklı fiyat verin; girmediğiniz kanal ana fiyatla satılır</span></span>
-              </template>
-            </v-checkbox>
-            <!-- PRC-R0: birim alış maliyeti (KDV hariç). Boş = maliyet yok (0 değil); ürün kaydıyla DEĞİL, ayrı `setVariantCosts` ile kaydedilir. -->
-            <div data-pf-field="costPrice">
-              <VCurrencyComponentVue v-model="singleVariant.costPrice" :compact="true" nullToEmpty
-                :label="$t('pricing.cost.label')" clearable :isIconExist="false" />
-              <p class="psvc-cost-hint">{{ $t('pricing.cost.hint') }}</p>
+                <span class="psvc-cp__list">
+                  <span v-for="row in channelPriceRows" :key="row.code" class="psvc-cp__item">
+                    <EkPlatformMark :name="row.title" :code="row.code" />
+                    <strong class="ek-num">{{ formatCurrency(row.sale) }}</strong>
+                    <span class="psvc-cp__src" :class="{ 'is-custom': row.custom }">{{ row.custom ? 'özel' : 'ana fiyat' }}</span>
+                    <v-icon v-if="row.issues.some((i) => i.level === 'error')" icon="mdi-alert-circle-outline" class="psvc-cp__err"
+                      :aria-label="row.issues[0].message" />
+                  </span>
+                  <span v-if="!channelPriceRows.length" class="psvc-cp__none">Bağlı kanal yok</span>
+                </span>
+              </button>
             </div>
-          </EkFormSection>
-        </div>
+            <div class="psvc-row" :class="{ 'is-on': singleVariant.prices.isPlatformBasedPrice }">
+              <div class="psvc-row__text">
+                <span class="psvc-row__label">{{ $t('productDefinitions.product.platformPrice') }}</span>
+                <p class="psvc-row__desc">Kanallara farklı fiyat verin; girmediğiniz kanal ana fiyatla satılır.</p>
+              </div>
+              <div class="psvc-row__control psvc-row__control--end">
+                <v-checkbox :aria-label="$t('productDefinitions.product.platformPrice')" hide-details density="compact"
+                  v-model="singleVariant.prices.isPlatformBasedPrice" @click.stop />
+              </div>
+            </div>
+            <!-- PRC-R0: birim alış maliyeti (KDV hariç). Boş = maliyet yok (0 değil); ürün kaydıyla DEĞİL, ayrı `setVariantCosts` ile kaydedilir. -->
+            <div class="psvc-row">
+              <div class="psvc-row__text">
+                <span class="psvc-row__label">{{ $t('pricing.cost.label') }}</span>
+                <p class="psvc-row__desc">{{ $t('pricing.cost.hint') }}</p>
+              </div>
+              <div class="psvc-row__control" data-pf-field="costPrice">
+                <VCurrencyComponentVue v-model="singleVariant.costPrice" :compact="true" nullToEmpty
+                  :aria-label="$t('pricing.cost.label')" clearable :isIconExist="false" />
+              </div>
+            </div>
+          </div>
+        </section>
       </div>
     </ProductStepCard>
 
@@ -79,11 +150,9 @@
         width="xl"
         @update:model-value="(v) => { if (!v) { isVariantPlatformPricesDialog = false; isVariantAttributesDialog = false } }">
 
-        <keep-alive>
-          <ProductVariantAttributesComponent v-model="isVariantAttributesDialog" :editingVariant="editingVariant" key="ProductImagesComponent"
-            @close="isVariantAttributesDialog = false" v-if="isVariantAttributesDialog == true"
-            :productInfoForm="productInfoForm" class="psvc-s11" :class="{ 'psvc-dim': !isVariantAttributesDialog }" />
-        </keep-alive>
+        <!-- keep-alive YOK: diyalog taslakla çalışır; her açılışta varyantın güncel değerleriyle yeniden kurulur. -->
+        <ProductVariantAttributesComponent v-if="isVariantAttributesDialog" v-model="isVariantAttributesDialog" :editingVariant="editingVariant"
+          key="ProductVariantAttributesComponent" @close="isVariantAttributesDialog = false" :productInfoForm="productInfoForm" />
 
         <keep-alive>
           <ProductVariantPlatformPricesComponent v-model="isVariantPlatformPricesDialog"
@@ -296,6 +365,151 @@ const channelPriceRows = computed(() => channelRows(
 @media (prefers-reduced-motion: reduce) {
   .psvc-platform-prices {
     transition: none;
+  }
+}
+
+/* ================= FE-LOCAL-1057 — "Detay bilgiler" ile aynı grup/satır düzeni ================= */
+.psvc-groups {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--ek-space-5);
+  align-items: start;
+}
+
+.psvc-group {
+  overflow: hidden;
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-card);
+  background: var(--ek-color-surface);
+}
+
+.psvc-group__head {
+  display: flex;
+  align-items: center;
+  gap: var(--ek-space-3);
+  padding: var(--ek-space-4) var(--ek-space-5);
+  border-bottom: 1px solid var(--ek-color-border-subtle);
+  background: var(--ek-color-surface-muted);
+}
+
+.psvc-group__icon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--ek-color-action-border);
+  border-radius: var(--ek-radius-tile);
+  background: var(--ek-color-surface);
+  color: var(--ek-color-action-emphasis);
+}
+
+.psvc-group__icon .v-icon {
+  font-size: var(--ek-icon-md);
+}
+
+.psvc-group__title {
+  margin: 0;
+  color: var(--ek-color-content-strong);
+  font-size: var(--ek-type-subheading-size);
+  line-height: var(--ek-type-subheading-line);
+  font-weight: var(--ek-font-weight-semibold);
+}
+
+.psvc-group__desc {
+  margin: 0;
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-caption-size);
+  line-height: var(--ek-type-caption-line);
+}
+
+.psvc-rows {
+  display: flex;
+  flex-direction: column;
+}
+
+.psvc-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 15rem);
+  gap: var(--ek-space-2) var(--ek-space-5);
+  align-items: start;
+  padding: var(--ek-space-4) var(--ek-space-5);
+}
+
+.psvc-row + .psvc-row {
+  border-top: 1px solid var(--ek-color-border-subtle);
+}
+
+.psvc-row--block {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.psvc-row.is-on {
+  background: var(--ek-color-action-subtle);
+}
+
+.psvc-row__text {
+  min-width: 0;
+  padding-top: var(--ek-space-2);
+}
+
+.psvc-row__label {
+  display: block;
+  color: var(--ek-color-content-strong);
+  font-size: var(--ek-type-body-size);
+  font-weight: var(--ek-font-weight-semibold);
+}
+
+.psvc-req {
+  color: var(--ek-color-error);
+}
+
+.psvc-row__desc {
+  margin: 2px 0 0;
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-caption-size);
+  line-height: var(--ek-type-caption-line);
+}
+
+.psvc-row__control {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ek-space-1);
+  min-width: 0;
+}
+
+.psvc-row__control--end {
+  align-items: flex-end;
+  padding-top: var(--ek-space-1);
+}
+
+.psvc-input :deep(.v-field) {
+  background: var(--ek-color-surface);
+}
+
+.psvc-input :deep(input::placeholder) {
+  color: var(--ek-color-content-subtle);
+  opacity: 1;
+}
+
+.psvc-platform-prices {
+  border-radius: var(--ek-radius-tile);
+  background: var(--ek-color-surface-muted);
+}
+
+@media (max-width: 1023px) {
+  .psvc-groups {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 599px) {
+  .psvc-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .psvc-row__control--end {
+    align-items: flex-start;
   }
 }
 </style>

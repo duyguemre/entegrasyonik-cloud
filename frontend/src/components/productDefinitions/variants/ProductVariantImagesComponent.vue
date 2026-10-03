@@ -538,4 +538,15 @@ kbd {
     grid-row: span 2;
   }
 }
+
+/* FE-LOCAL-1057 — "Varyant Resimleri": galeriyle aynı dil — karo üzerine gelince gölge yok; sayaç/rozetler köşeli. */
+.pvi-own:hover {
+  border-color: var(--ek-color-action-border);
+  box-shadow: none;
+}
+
+.pvi-count {
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-md);
+}
 </style>

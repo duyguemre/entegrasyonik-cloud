@@ -21,9 +21,8 @@ const { as: Tag = 'div', class: className, ...rest } = Astro.props
     padding: var(--ek-space-6);
     background: var(--ek-color-surface);
     border: var(--site-border-width) solid var(--ek-color-border-default);
-    /* site-wdg W19: bağımsız kart = panel yarıçapı + kart gölgesi (site geneli tek kart dili). */
-    border-radius: var(--site-radius-panel);
-    box-shadow: var(--site-shadow-card);
+    /* SITE-DL-01: düz kart — ince çerçeve + kart yarıçapı; gölge yok. */
+    border-radius: var(--ek-radius-card);
   }
   .card :global(h3) {
     font-size: var(--ek-font-size-xl);

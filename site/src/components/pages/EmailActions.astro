@@ -107,7 +107,7 @@ const addrId = `${id}-address`
     min-height: var(--site-tap-target);
     padding: 0 var(--ek-space-5);
     border: var(--site-border-width) solid transparent;
-    border-radius: var(--ek-radius-lg);
+    border-radius: var(--ek-radius-tile);
     font: inherit;
     font-size: var(--ek-font-size-md);
     font-weight: var(--ek-font-weight-semibold);
@@ -125,12 +125,15 @@ const addrId = `${id}-address`
   .ea--dark .ea__btn:focus-visible {
     outline-color: var(--site-accent-on-dark);
   }
+  /* SITE-DL-03: birincil = marka laciverti (Button ile aynı); ikincil hover = lacivert ton. */
   .ea--light .ea__btn--primary {
-    background: var(--ek-color-primary);
+    border-color: var(--site-action);
+    background: var(--site-action);
     color: var(--site-color-on-primary);
   }
   .ea--light .ea__btn--primary:hover {
-    background: var(--ek-color-primary-darken-1);
+    border-color: var(--site-action-hover);
+    background: var(--site-action-hover);
   }
   .ea--light .ea__btn--ghost {
     border-color: var(--ek-color-border-strong);
@@ -138,15 +141,16 @@ const addrId = `${id}-address`
     color: var(--site-text-heading);
   }
   .ea--light .ea__btn--ghost:hover {
-    border-color: var(--site-accent);
-    color: var(--site-link-accent);
+    border-color: var(--site-action-border);
+    background: var(--site-action-subtle);
+    color: var(--site-action-emphasis);
   }
   .ea--dark .ea__btn--primary {
     background: var(--ek-color-surface);
     color: var(--ek-color-primary);
   }
   .ea--dark .ea__btn--primary:hover {
-    background: color-mix(in srgb, var(--ek-color-surface) 88%, var(--ek-color-secondary));
+    background: var(--site-action-subtle);
   }
   .ea--dark .ea__btn--ghost {
     border-color: var(--site-glass-border);
@@ -154,7 +158,8 @@ const addrId = `${id}-address`
     color: var(--site-text-on-dark-heading);
   }
   .ea--dark .ea__btn--ghost:hover {
-    border-color: color-mix(in srgb, var(--ek-color-secondary) 70%, transparent);
+    border-color: var(--site-color-on-primary-muted);
+    background: color-mix(in srgb, var(--ek-color-background) 12%, transparent);
   }
   .ea__icon {
     display: inline-flex;
@@ -167,8 +172,9 @@ const addrId = `${id}-address`
     display: inline-flex;
   }
   .ea--light .ea__btn[data-state='copied'] {
-    border-color: var(--ek-color-success);
-    color: var(--ek-color-success);
+    border-color: var(--site-action-border);
+    background: var(--site-action-subtle);
+    color: var(--site-action-emphasis);
   }
   .ea--dark .ea__btn[data-state='copied'] {
     border-color: var(--site-accent-on-dark);

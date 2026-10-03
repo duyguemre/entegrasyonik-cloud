@@ -44,7 +44,7 @@ describe('karanlık mod — uygulama kablolaması', () => {
       ['src', 'components', 'logListView', 'DetailedImportLogReport.vue'],
       ['src', 'views', 'secure', 'adminPanel', 'AdminSystemManagementView.vue'],
       ['src', 'components', 'dashboard', 'OrderTrendCard.vue'],
-      ['src', 'components', 'dashboard', 'OrderStatusCard.vue'],
+      // OrderStatusCard artık grafik motoru kullanmıyor (FE-LOCAL-1025: CSS dağılım çubuğu, token renkleri).
     ]) {
       const src = read(...f)
       expect(src, f.join('/')).not.toMatch(/\btheme="entegrasyonik/)

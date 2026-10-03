@@ -16,8 +16,12 @@
 <template>
   <div class="financialListView">
     <div class="ek-fin-head">
-      <EkPageHeader section="Finans ve raporlar" :title="t('finance.title')" :description="t('finance.description')" :tools-id="toolsId" />
-      <EkPageTabs v-model="activeTab" :tabs="tabs" :label="t('finance.tabs.label')" />
+      <!-- FE-LOCAL-1051: yenile düğmesi yok — sayfa adına tıklamak etkin görünümü yeniler; sağda Liste | Özet. -->
+      <EkPageHeader section="Finans ve raporlar" :title="t('finance.title')" :description="t('finance.description')"
+        refreshable :refreshing="refreshing" @refresh="refreshActive">
+        <template #tools><EkViewSwitch v-model="view" /></template>
+      </EkPageHeader>
+      <EkPageTabs v-if="view === 'list'" v-model="activeTab" :tabs="tabs" :label="t('finance.tabs.label')" />
     </div>
 
     <!-- İşlem Detay Diyaloğu -->
@@ -25,159 +29,15 @@
       subtitle="Pazaryeri mutabakat ve hakediş ayrıntıları" icon="mdi-shield-check-outline" color="primary"
       maxWidth="850px" confirmText="Kapat" @confirm="isDetailOpen = false" hide-cancel>
 
-      <div v-if="selectedTransaction" class="ek-fin-detail">
-        <!-- Üst Bilgi: Platform & Ana Bilgiler -->
-        <div class="ek-fin-detail__head d-flex align-center justify-space-between">
-          <div class="d-flex align-center ek-gap-4">
-            <div class="ek-fin-detail__logo">
-              <PlatformImageComponent :integrationCode="selectedTransaction.integrationCode" :width="100"
-                :height="45" />
-            </div>
-            <div class="d-flex flex-column">
-              <span class="ek-fin-label">İŞLEM REFERANSI</span>
-              <span class="ek-fin-detail__ref ek-num">{{ selectedTransaction.externalId }}</span>
-            </div>
-          </div>
-          <v-tooltip :text="selectedTransaction.platformType" location="top">
-            <template v-slot:activator="{ props }">
-              <span v-bind="props" tabindex="0">
-                <EkStatusChip :tone="typeTone(selectedTransaction.transactionType)"
-                  :label="translateTransactionType(selectedTransaction.transactionType)" />
-              </span>
-            </template>
-          </v-tooltip>
-        </div>
-
-        <div class="ek-fin-detail__body">
-          <v-row>
-            <!-- Sol Kolon: İşlem Özeti -->
-            <v-col cols="12" md="7">
-              <div class="ek-fin-panel h-100">
-                <div class="ek-fin-panel__title">
-                  <v-icon size="18" class="mr-2" aria-hidden="true">mdi-text-box-search-outline</v-icon>
-                  <span>İŞLEM ÖZETİ</span>
-                </div>
-
-                <div class="ek-fin-info-grid">
-                  <div class="ek-fin-info-item">
-                    <span class="ek-fin-label">SİPARİŞ NUMARASI</span>
-                    <span class="ek-fin-info-value ek-num">{{ selectedTransaction.orderNumber || 'MANUEL İŞLEM' }}</span>
-                  </div>
-                  <div class="ek-fin-info-item">
-                    <span class="ek-fin-label">İŞLEM TARİHİ</span>
-                    <span class="ek-fin-info-value ek-num">{{ formatDate(selectedTransaction.transactionDate) }}</span>
-                  </div>
-                  <div v-if="selectedTransaction.payoutDate" class="ek-fin-info-item">
-                    <span class="ek-fin-label">VADE (ÖDEME) TARİHİ</span>
-                    <span class="ek-fin-info-value ek-num">
-                      <v-icon size="14" class="mr-1" aria-hidden="true">mdi-calendar-clock-outline</v-icon>{{
-                        formatDate(selectedTransaction.payoutDate) }}
-                    </span>
-                  </div>
-                  <div class="ek-fin-info-item">
-                    <span class="ek-fin-label">KOMİSYON ORANI</span>
-                    <span class="ek-fin-info-value ek-num">{{ selectedTransaction.commissionRate ? '%' +
-                      selectedTransaction.commissionRate : '-' }}</span>
-                  </div>
-                </div>
-
-                <v-divider class="my-4"></v-divider>
-
-                <div>
-                  <span class="ek-fin-label d-block mb-2">AÇIKLAMA / NOTLAR</span>
-                  <div class="ek-fin-note">
-                    "{{ selectedTransaction.description || 'Bu işlem için ek açıklama bulunmuyor.' }}"
-                  </div>
-                </div>
-              </div>
-            </v-col>
-
-            <!-- Sağ Kolon: Finansal Akış -->
-            <v-col cols="12" md="5">
-              <div class="ek-fin-panel ek-fin-flow h-100 d-flex flex-column">
-                <div class="ek-fin-panel__title">
-                  <v-icon size="18" class="mr-2" aria-hidden="true">mdi-finance</v-icon>
-                  <span>FİNANSAL AKIŞ</span>
-                </div>
-
-                <div class="ek-fin-flow__row">
-                  <div class="d-flex flex-column">
-                    <span class="ek-fin-label">BRÜT TUTAR</span>
-                    <span class="ek-fin-flow__amount ek-num">{{ formatCurrency(selectedTransaction.credit) }}</span>
-                  </div>
-                  <v-icon color="success" size="22" aria-hidden="true">mdi-plus-circle-outline</v-icon>
-                </div>
-
-                <div v-if="selectedTransaction.commissionAmount" class="ek-fin-flow__row ek-fin-flow__row--nested">
-                  <div class="d-flex flex-column">
-                    <span class="ek-fin-label">PAZARYERİ KOMİSYONU</span>
-                    <span class="ek-fin-flow__amount ek-fin-negative ek-num">-{{
-                      formatCurrency(selectedTransaction.commissionAmount) }}</span>
-                  </div>
-                  <span class="ek-fin-label">{{ selectedTransaction.commissionRate ? '%' +
-                    selectedTransaction.commissionRate : '' }}</span>
-                </div>
-
-                <div class="ek-fin-flow__row">
-                  <div class="d-flex flex-column">
-                    <span class="ek-fin-label">DİĞER KESİNTİLER / BORÇ</span>
-                    <span class="ek-fin-flow__amount ek-fin-negative ek-num">{{
-                      formatCurrency(selectedTransaction.debt - (selectedTransaction.commissionAmount || 0)) }}</span>
-                  </div>
-                  <v-icon color="error" size="22" aria-hidden="true">mdi-minus-circle-outline</v-icon>
-                </div>
-
-                <v-divider class="my-3"></v-divider>
-
-                <div class="mt-auto">
-                  <div class="d-flex justify-space-between align-center">
-                    <span class="ek-fin-label">NET HAKEDİŞ</span>
-                    <v-tooltip text="KDV ve tüm kesintiler sonrası net tutar" location="top">
-                      <template v-slot:activator="{ props }">
-                        <v-icon v-bind="props" size="16" tabindex="0" aria-label="Net hakediş bilgisi">mdi-information-outline</v-icon>
-                      </template>
-                    </v-tooltip>
-                  </div>
-                  <span class="ek-fin-flow__net ek-num">{{ formatCurrency(selectedTransaction.netAmount) }}</span>
-                </div>
-              </div>
-            </v-col>
-          </v-row>
-
-          <!-- Alt Kısım: Teknik Detaylar / Meta -->
-          <div class="mt-4">
-            <div v-if="getVatFromMeta" class="ek-fin-vat">
-              <div class="d-flex align-center">
-                <v-icon color="error" class="mr-2" aria-hidden="true">mdi-calculator-variant-outline</v-icon>
-                <span class="ek-fin-label">KDV Kesintisi (Meta)</span>
-              </div>
-              <span class="ek-fin-negative ek-num">-{{ formatCurrency(getVatFromMeta) }}</span>
-            </div>
-
-            <v-expansion-panels flat variant="inset">
-              <v-expansion-panel>
-                <v-expansion-panel-title class="ek-fin-label">
-                  <v-icon size="16" class="mr-2" aria-hidden="true">mdi-xml</v-icon> PAZARYERİ HAM VERİSİ (JSON)
-                </v-expansion-panel-title>
-                <v-expansion-panel-text>
-                  <div class="ek-fin-json">
-                    <pre>{{ JSON.stringify(selectedTransaction.meta || {}, null, 2) }}</pre>
-                  </div>
-                </v-expansion-panel-text>
-              </v-expansion-panel>
-            </v-expansion-panels>
-          </div>
-        </div>
-      </div>
+      <!-- FE-LOCAL-1048: gövde ortak dile taşındı (kayıt özeti + büyük rakam hücreleri) — FinancialTransactionDetail. -->
+      <FinancialTransactionDetail v-if="selectedTransaction" :transaction="selectedTransaction"
+        :type-tone="typeTone(selectedTransaction.transactionType)" :type-label="translateTransactionType(selectedTransaction.transactionType)" />
     </ActionDialogComponent>
 
     <div v-show="activeTab === 'transactions'" class="ek-fin-panel-slot ek-fin-transactions">
-    <FinancialSummaryBar class="ek-fin-summary-slot" :summary="summary" :loading="summary.loading"
-      :compact="!$vuetify.display.mdAndUp" :format-currency="formatCurrency" />
-
     <EkListScreen channel-key="integrationCode"
       class="ek-fin-screen"
-      :tools-target="activeTab === 'transactions' ? toolsTarget : false"
+      :refreshable="activeTab === 'transactions'"
       label="Finansal işlemler tablosu"
       noun="işlem"
       row-key="_id"
@@ -218,6 +78,15 @@
         <EkDateRange v-model:start="searchForm.startDate" v-model:end="searchForm.endDate" label="İşlem tarihi" value-format="date" />
       </template>
 
+      <!-- Süzmeyle eşleşen TÜM kayıtların sunucu toplamı — tek satır (ayrıntılı akış Özet görünümünde). -->
+      <template #toolbar-start>
+        <span v-if="summary.transactionCount" class="ek-fin-totals ek-num" role="status">
+          <span><span class="ek-fin-totals__tag">Alacak</span><span class="ek-fin-positive">+{{ formatCurrency(summary.totalCredit) }}</span></span>
+          <span><span class="ek-fin-totals__tag">Kesinti</span><span class="ek-fin-negative">−{{ formatCurrency(summary.totalDebt) }}</span></span>
+          <span><span class="ek-fin-totals__tag">Net</span><strong>{{ formatCurrency(summary.netAmount) }}</strong></span>
+        </span>
+      </template>
+
       <template #cell-externalId="{ row }">
         <span class="ek-fin-id">
           <span class="ek-num">{{ row.externalId }}</span>
@@ -255,7 +124,7 @@
 
     <div v-if="activeTab !== 'transactions'" class="ek-fin-panel-slot" :class="{ 'ek-fin-panel-slot--flow': activeTab === 'summary' }">
       <KeepAlive>
-        <FinancialSummaryTab v-if="activeTab === 'summary'" />
+        <FinancialSummaryTab v-if="activeTab === 'summary'" ref="summaryRef" @open-type="openType" />
         <FinancialCargoInvoicesTab v-else-if="activeTab === 'cargo-invoices'" />
         <FinancialPayoutsTab v-else-if="activeTab === 'payouts'" />
       </KeepAlive>
@@ -267,15 +136,14 @@
 import { EkSelect, EkRowActions, EkButton, EkDateRange, EkChannelDot, EkStatusChip, EkPageTabs, EkTooltip, type EkPageTab } from '@entegrasyonik/ui/components'
 import type { EkGridColumn, EkGridSort, EkActiveFilterChip } from '@entegrasyonik/ui/components'
 import { channelOptionsFrom } from '@entegrasyonik/ui/components/selectOptions'
-import { ref, reactive, computed, watch, useId } from 'vue';
-import { provideListToolsTarget } from '@/components/page/listTools';
+import { ref, reactive, computed, watch } from 'vue';
+import { provideListRefreshHub } from '@/components/page/listTools';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { useIntegrationStore } from '@/stores/integrationStore';
 import useRestApi from '@/composables/restapi';
 
 // Components
-import PlatformImageComponent from '@/components/platforms/PlatformImageComponent.vue';
 import ActionDialogComponent from '@/components/layout/ActionDialogComponent.vue';
 import EkListScreen from '@/components/page/templates/EkListScreen.vue';
 ;
@@ -286,16 +154,16 @@ import EkListScreen from '@/components/page/templates/EkListScreen.vue';
 ;
 import { isRequestError } from '@entegrasyonik/ui/components/listStandard';
 import { formatDate as formatDay, formatDateTime, formatMoney } from '@entegrasyonik/ui/format';
-import FinancialSummaryBar from '@/components/financial/FinancialSummaryBar.vue';
-import FinancialSummaryTab from '@/components/financial/FinancialSummaryTab.vue';
+import FinancialTransactionDetail from '@/components/financial/FinancialTransactionDetail.vue';
+import FinancialSummaryTab, { type FinanceTypeSelection } from '@/components/financial/FinancialSummaryTab.vue';
+import EkViewSwitch, { type EkViewMode } from '@/components/page/EkViewSwitch.vue';
 import FinancialCargoInvoicesTab from '@/components/financial/FinancialCargoInvoicesTab.vue';
 import FinancialPayoutsTab from '@/components/financial/FinancialPayoutsTab.vue';
 import EkPageHeader from '@/components/page/EkPageHeader.vue';
 import { buildScreenPath, resolveScreenByKey } from '@/navigation/screens';
 import type { StatusTone } from '@/design/status-map';
-// P03 (K49): etkin sekmenin arama + yenile'si başlık çubuğunda (sekme gövdesinde araç satırı yok).
-const toolsId = `ek-fin-tools-${useId().replace(/[^\w-]/g, '-')}`
-const toolsTarget = provideListToolsTarget(toolsId)
+// FE-LOCAL-1051: "Yenile" düğmesi yok — sayfa adına tıklamak etkin sekmenin listesini (ya da Özet panosunu) yeniler.
+const refreshHub = provideListRefreshHub()
 
 // Sabitler
 const transactionTypeOptions = ['SALE', 'RETURN', 'PAYOUT', 'DEDUCTION', 'COMMISSION', 'CARGO'];
@@ -446,19 +314,6 @@ const openDetail = (item: any) => {
   isDetailOpen.value = true;
 };
 
-const getVatFromMeta = computed(() => {
-  if (!selectedTransaction.value?.meta) return 0;
-  const meta = selectedTransaction.value.meta;
-  // KDV olabilecek anahtarları tara
-  const vatKeys = ['vatAmount', 'vat', 'kdv', 'KdvAmount', 'VatAmount'];
-  for (const key of vatKeys) {
-    if (meta[key] && !isNaN(parseFloat(meta[key]))) {
-      return parseFloat(meta[key]);
-    }
-  }
-  return 0;
-});
-
 // İşlem türü -> rozet tonu (yerel; status-map.ts A-owned)
 const TYPE_TONE: Record<string, StatusTone> = {
   SALE: 'success',
@@ -501,18 +356,47 @@ const props = defineProps<{ parameters?: any }>();
 const { t } = useI18n();
 const router = useRouter();
 
+let transactionsLoaded = false;
 const FINANCE_TABS = ['transactions', 'summary', 'cargo-invoices', 'payouts'] as const;
 type FinanceTab = (typeof FINANCE_TABS)[number];
 const isFinanceTab = (v: unknown): v is FinanceTab => typeof v === 'string' && (FINANCE_TABS as readonly string[]).includes(v);
 
+// FE-LOCAL-1051: "Özet" sekme değil — sayfa adı satırındaki Liste | Özet anahtarıyla listelerin YERİNE açılır.
+// `activeTab` değerleri (ve `?tab=summary` derin bağlantısı) aynı kalır; sekme şeridinde yalnız liste sekmeleri durur.
 const tabs = computed<EkPageTab[]>(() => [
   { value: 'transactions', label: t('finance.tabs.transactions') },
-  { value: 'summary', label: t('finance.tabs.summary') },
   { value: 'cargo-invoices', label: t('finance.tabs.cargoInvoices') },
   { value: 'payouts', label: t('finance.tabs.payouts') },
 ]);
 
 const activeTab = ref<FinanceTab>(isFinanceTab(props.parameters?.tab) ? props.parameters.tab : 'transactions');
+
+let lastListTab: Exclude<FinanceTab, 'summary'> = activeTab.value === 'summary' ? 'transactions' : activeTab.value;
+const view = computed<EkViewMode>({
+  get: () => (activeTab.value === 'summary' ? 'summary' : 'list'),
+  set: (mode) => {
+    if (mode === 'summary') {
+      if (activeTab.value !== 'summary') lastListTab = activeTab.value;
+      activeTab.value = 'summary';
+    } else if (activeTab.value === 'summary') activeTab.value = lastListTab;
+  },
+});
+
+const summaryRef = ref<InstanceType<typeof FinancialSummaryTab> | null>(null);
+const refreshing = computed(() => (activeTab.value === 'summary' ? !!summaryRef.value?.loading : refreshHub.loading.value));
+const refreshActive = () => (activeTab.value === 'summary' ? summaryRef.value?.load() : refreshHub.run());
+
+/** Özet'te bir işlem türüne tıklanınca: İşlemler listesi aynı dönem + kanal ve o türle açılır. */
+const openType = (sel: FinanceTypeSelection) => {
+  searchForm.externalIdSearch = '';
+  searchForm.transactionTypes = [sel.type];
+  searchForm.integrationCodes = [...sel.integrationCodes];
+  searchForm.startDate = sel.startDate;
+  searchForm.endDate = sel.endDate;
+  transactionsLoaded = true;
+  activeTab.value = 'transactions';
+  getFinancials(true);
+};
 
 // Sekme değişimi URL'ye `replace` ile yazılır (geçmiş girdisi üretmez). Yalnız bu ekranın rotasındayken:
 // kabuğun rota izleyicisi değeri sekmenin `link.parameters`'ına geri yazar (ADR-0012 parametre sahipliği).
@@ -525,7 +409,6 @@ const syncUrl = (tab: FinanceTab) => {
 };
 
 // İşlemler yalnız ilk kez görünür olduğunda yüklenir (derin bağlantı başka sekmeye açtıysa gereksiz istek yok).
-let transactionsLoaded = false;
 watch(activeTab, (tab, previous) => {
   if (tab === 'transactions' && !transactionsLoaded) {
     transactionsLoaded = true;
@@ -581,8 +464,25 @@ defineExpose({ initialize: applyParameters, activate: applyParameters });
   .ek-fin-panel-slot { flex: none; }
 }
 
+/* Tablo üstündeki tek satır toplam (süzmeyle eşleşen tüm kayıtlar). */
+.ek-fin-totals {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--ek-space-1) var(--ek-space-5);
+  font-size: var(--ek-type-label-size);
+}
+.ek-fin-totals > span { display: inline-flex; align-items: baseline; gap: var(--ek-space-2); }
+.ek-fin-totals__tag {
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-micro-size);
+  font-weight: var(--ek-type-micro-weight);
+  letter-spacing: var(--ek-type-micro-tracking);
+  text-transform: uppercase;
+}
+.ek-fin-totals strong { color: var(--ek-color-content-strong); font-weight: var(--ek-font-weight-semibold); }
+
 .ek-muted { color: var(--ek-color-content-muted); }
-.ek-gap-4 { gap: var(--ek-space-4); }
 .ek-fin-positive { color: var(--ek-color-success); }
 .ek-fin-negative { color: var(--ek-color-danger); }
 
@@ -602,118 +502,5 @@ defineExpose({ initialize: applyParameters, activate: applyParameters });
 .ek-fin-net { font-weight: var(--ek-font-weight-semibold); color: var(--ek-color-content-strong); }
 .ek-fin-net--in { color: var(--ek-color-success-emphasis); }
 
-/* Detay diyaloğu */
-.ek-fin-detail__head {
-  gap: var(--ek-space-3);
-  padding: var(--ek-space-4) var(--ek-space-6);
-  background: var(--ek-color-surface-muted);
-  border-bottom: 1px solid var(--ek-color-border-default);
-}
-.ek-fin-detail__logo {
-  padding: var(--ek-space-1) var(--ek-space-2);
-  border: 1px solid var(--ek-color-border-default);
-  border-radius: var(--ek-radius-md);
-  background: var(--ek-color-surface);
-}
-.ek-fin-detail__ref {
-  font-size: var(--ek-font-size-lg);
-  font-weight: var(--ek-font-weight-semibold);
-  color: var(--ek-color-content-strong);
-}
-.ek-fin-detail__body { padding: var(--ek-space-6); }
-
-.ek-fin-label {
-  font-size: var(--ek-font-size-xs);
-  font-weight: var(--ek-font-weight-medium);
-  color: var(--ek-color-content-muted);
-  letter-spacing: 0.02em;
-}
-
-.ek-fin-panel {
-  padding: var(--ek-space-5);
-  background: var(--ek-color-surface);
-  border: 1px solid var(--ek-color-border-default);
-  border-radius: var(--ek-radius-lg);
-}
-.ek-fin-panel__title {
-  display: flex;
-  align-items: center;
-  margin-bottom: var(--ek-space-4);
-  font-size: var(--ek-font-size-sm);
-  font-weight: var(--ek-font-weight-semibold);
-  color: var(--ek-color-content-strong);
-}
-.ek-fin-flow { background: var(--ek-color-surface-muted); }
-.ek-fin-flow__row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: var(--ek-space-4);
-}
-.ek-fin-flow__row--nested {
-  padding-left: var(--ek-space-4);
-  border-left: 2px solid var(--ek-color-border-strong);
-}
-.ek-fin-flow__amount {
-  font-size: var(--ek-font-size-md);
-  font-weight: var(--ek-font-weight-semibold);
-  color: var(--ek-color-content-strong);
-}
-.ek-fin-flow__amount.ek-fin-negative { color: var(--ek-color-danger); }
-.ek-fin-flow__net {
-  display: block;
-  margin-top: var(--ek-space-1);
-  font-size: var(--ek-font-size-2xl);
-  font-weight: var(--ek-font-weight-semibold);
-  color: var(--ek-color-content-strong);
-}
-
-.ek-fin-info-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: var(--ek-space-5);
-}
-.ek-fin-info-item { display: flex; flex-direction: column; gap: var(--ek-space-1); }
-.ek-fin-info-value {
-  font-size: var(--ek-font-size-sm);
-  font-weight: var(--ek-font-weight-medium);
-  color: var(--ek-color-content-default);
-}
-.ek-fin-note {
-  padding: var(--ek-space-3);
-  font-size: var(--ek-font-size-sm);
-  line-height: var(--ek-line-height-normal);
-  color: var(--ek-color-content-default);
-  background: var(--ek-color-surface-muted);
-  border: 1px solid var(--ek-color-border-default);
-  border-radius: var(--ek-radius-md);
-}
-.ek-fin-vat {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: var(--ek-space-4);
-  padding: var(--ek-space-3);
-  background: var(--ek-color-error-subtle);
-  border: 1px solid var(--ek-color-border-default);
-  border-radius: var(--ek-radius-md);
-}
-.ek-fin-json {
-  max-height: 300px;
-  overflow: auto;
-  padding: var(--ek-space-2);
-  background: var(--ek-color-surface-sunken);
-  border-radius: var(--ek-radius-md);
-}
-.ek-fin-json pre {
-  font-family: var(--ek-font-mono);
-  font-size: var(--ek-font-size-xs);
-  color: var(--ek-color-content-default);
-  line-height: var(--ek-line-height-normal);
-}
-
-@media (max-width: 600px) {
-  .ek-fin-info-grid { grid-template-columns: 1fr; }
-  .ek-fin-detail__head { flex-direction: column; align-items: flex-start !important; }
-}
+/* Detay diyaloğunun gövdesi: components/financial/FinancialTransactionDetail.vue (FE-LOCAL-1048). */
 </style>

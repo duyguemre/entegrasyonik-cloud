@@ -183,4 +183,72 @@ const GENERAL: Array<{ label: string; keys: string[][] }> = [
     gap: var(--ek-space-4);
   }
 }
+
+/* ================= BO-LOCAL-01 — kısayollar diyaloğu: uygulamanın tasarım diliyle =================
+   Kart köşesi; başlık bandı sakin zeminde (kısa eylem çizgili başlık), kapatma çerçeveli ikon kutusu; grup başlıkları
+   kısa eylem çizgili mikro etiket; altlık sakin bant. */
+.bo-keys {
+  border-radius: var(--ek-radius-card);
+}
+
+.bo-keys__head {
+  border-bottom-color: var(--ek-color-border-default);
+  background: var(--ek-color-surface-muted);
+}
+
+.bo-keys__title {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ek-space-2);
+}
+
+.bo-keys__title::before {
+  content: '';
+  flex: none;
+  width: 12px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--ek-color-action);
+}
+
+.bo-keys__close {
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-tile);
+  background: var(--ek-color-surface);
+}
+
+.bo-keys__close:hover {
+  border-color: var(--ek-color-action-border);
+  background: var(--ek-color-action-subtle);
+  color: var(--ek-color-action-emphasis);
+}
+
+.bo-keys__group::before {
+  content: '';
+  flex: none;
+  width: 12px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--ek-color-action);
+}
+
+.bo-keys__note::before {
+  content: none;
+}
+
+.bo-keys__group {
+  min-height: 24px;
+}
+
+.bo-keys__row {
+  min-height: 36px;
+}
+
+.bo-keys__row:last-child {
+  border-bottom: 0;
+}
+
+.bo-keys__foot {
+  border-top-color: var(--ek-color-border-default);
+}
 </style>

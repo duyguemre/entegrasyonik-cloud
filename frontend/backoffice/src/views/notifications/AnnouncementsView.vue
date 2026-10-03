@@ -1,9 +1,8 @@
 <template>
   <div class="bo-page">
-    <BoPageHeader :updated-at="loadedAt ?? undefined" :stale="summary.stale.value">
+    <BoPageHeader :updated-at="loadedAt ?? undefined" :stale="summary.stale.value" refreshable :refreshing="list.refreshing.value || list.phase.value === 'loading' || summary.refreshing.value" @refresh="refresh">
       <template #actions>
         <BoAction kind="add" label="Yeni duyuru" data-testid="new-announcement" to="/sistem/duyurular/yeni" />
-        <BoAction kind="refresh" :loading="list.refreshing.value || list.phase.value === 'loading' || summary.refreshing.value" data-page-refresh @click="refresh" />
       </template>
     </BoPageHeader>
 
@@ -18,7 +17,7 @@
       data-testid="live-summary"
     />
 
-    <BoSection id="bo-ann-list" title="Duyurular" description="Yeni oluşturulan önce. Bakım, olay ve yenilik duyuruları müşterilere uygulama içi ve e-posta ile iletilir." icon="mdi-bullhorn-outline">
+    <BoSection id="bo-ann-list" title="Duyurular" description="Yeni oluşturulan önce. Bakım, olay ve yenilik duyuruları müşterilere uygulama içi ve e-posta ile iletilir." icon="mdi-bullhorn-outline" :count="list.items.value.length">
       <BoFilterBar label="Duyuru süzgeçleri" :active="activeFilters" @clear="clearFilters">
         <BoSegmented v-model="status" label="Durum" :options="STATUS_OPTS" />
         <v-select v-model="kind" :items="KIND_OPTS" label="Tür" density="compact" hide-details clearable class="bo-toolbar__field" data-testid="kind-filter" />
@@ -186,5 +185,20 @@ onMounted(() => {
 }
 .bo-ann__title a:hover {
   text-decoration: underline;
+}
+
+/* BO-LOCAL-01 — duyuru listesi: tür ikonu çerçeveli köşeli kutuda (ikon kapsülleriyle aynı aile). */
+.bo-ann__title {
+  align-items: center;
+}
+
+.bo-ann__title .v-icon {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  margin-top: 0;
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-md);
+  background: var(--ek-color-surface-muted);
 }
 </style>

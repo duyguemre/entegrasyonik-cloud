@@ -62,6 +62,8 @@ function isErrorMarker(value: any): value is MockErrorMarker {
 // geri kalanı burada tanımlı "DOLU" (başarı) durumundan gelir.
 export const defaultRoutes: Record<string, MockValue> = {
   checkAuthentication: true,
+  // GL-FE: Google ile giriş varsayılan KAPALI (istemci kimliği yok → düğme görünmez; mevcut ekran testleri değişmez).
+  'SecurityService/authConfig': { googleClientId: null },
   userContext: userContextFixture,
   MenuService: menuFixture,
   'MenuService/retrieveFavorites': [],

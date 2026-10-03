@@ -8,6 +8,8 @@ export function marketingText(html: string): string {
   const body = html
     .replace(/<head[\s\S]*?<\/head>/g, '')
     .replace(/<(script|style|template)[\s\S]*?<\/\1>/g, '')
+    // Kanıtlı "Geliştirme listemizde" bloğu (DevelopmentList): ad/olgu taramaları blok dışını kapsar (ADR-0014 Açık Soru 5).
+    .replace(/<backlog-block\b[\s\S]*?<\/backlog-block>/g, ' ')
     .replace(/<[^>]+>/g, ' ')
   return decode([title, ...metas, body].join('\n')).replace(/\s+/g, ' ')
 }

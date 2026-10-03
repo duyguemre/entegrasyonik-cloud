@@ -28,6 +28,8 @@
     </EkDialogHost>
 
     <EkListScreen
+      ref="listScreenRef"
+      summary-toggle
       section="Katalog"
       title="Ürünler"
       description="Tüm kanallardaki ürünlerinizi buradan yönetin."
@@ -75,6 +77,8 @@
     >
       <!-- faz3-fe-help: ilk kullanım — hiç kayıt yokken "Nasıl başlanır?" (filtreli boş sonuçta gösterilmez). -->
       <template #empty-action><HelpStartLink article="gs-first-product-transfer" /></template>
+      <!-- FE-LOCAL-1043: "Özet" görünümü (listenin yerine) — katalog bölüm panosu. -->
+      <template #summary><ProductListDashboard /></template>
       <!-- MOB-03: telefonda barkod okut → aynı arama (barkod/stok kodu/ad); tek sonuçta ürün açılır. -->
       <template #search-append><BarcodeScanButton target="product" @code="onScannedCode" /></template>
       <!-- PRC-R0: maliyet kapsamı (kâr hesabının girdisi) — sayfa başlığının yanındaki durum yuvasında küçük bilgi hapı. -->
@@ -222,6 +226,7 @@ import ProductChannelStatus from '@/components/productDefinitions/products/Produ
 import { productImageSrcs } from '@/components/productDefinitions/products/productImage'
 import { formatMoney } from '@entegrasyonik/ui/format'
 import EkListScreen from '@/components/page/templates/EkListScreen.vue'
+import ProductListDashboard from '@/components/productDefinitions/ProductListDashboard.vue'
 import BarcodeScanButton from '@/components/barcode/BarcodeScanButton.vue'
 import BuyboxBadge from '@/components/pricing/BuyboxBadge.vue'
 import CostCoverageChip from '@/components/pricing/CostCoverageChip.vue'
@@ -819,7 +824,10 @@ const initialize = async () => {
   /*   console.log("ProductListView Initialized", props.parameters) */
 
 }
+const listScreenRef = ref<InstanceType<typeof EkListScreen> | null>(null)
 const activate = async () => {
+  // Başka bir ekrandan süzmeyle gelindiyse (ör. özet kartındaki sayı) listeye dön.
+  listScreenRef.value?.closeSummary()
   resetAndSetTransferStatus(true)
   /*   console.log("ProductListView1111 Activated", props.parameters) */
 }

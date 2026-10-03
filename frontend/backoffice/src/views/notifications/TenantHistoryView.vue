@@ -1,11 +1,8 @@
 <template>
   <div class="bo-page">
-    <BoPageHeader :updated-at="loadedAt ?? undefined">
+    <BoPageHeader :updated-at="loadedAt ?? undefined" :refreshable="!!(tid)" :refreshing="list.refreshing.value || list.phase.value === 'loading'" @refresh="list.reload({ keep: true })">
       <template #meta>
         <span><v-icon icon="mdi-shield-lock-outline" size="small" aria-hidden="true" /> Her görüntüleme hassas okuma olarak denetime yazılır.</span>
-      </template>
-      <template #actions>
-        <BoAction v-if="tid" kind="refresh" :loading="list.refreshing.value || list.phase.value === 'loading'" data-page-refresh @click="list.reload({ keep: true })" />
       </template>
     </BoPageHeader>
 
@@ -30,7 +27,7 @@
     <BoSection v-if="!tid" label="Bildirim geçmişi">
       <EkEmptyState variant="first-run" title="Bir müşteri seçin" message="Müşteri numarasını girin ya da müşteri detayındaki bağlantıyı kullanın. Yalnız meta veri gösterilir: bildirim metni, alıcı kimliği ve e-posta adresi yoktur." />
     </BoSection>
-    <BoSection v-else id="bo-nh-list" title="Bildirim geçmişi" :description="`Müşteri #${tid} · defter kaydı 30 gün saklanır.`" icon="mdi-history">
+    <BoSection v-else id="bo-nh-list" title="Bildirim geçmişi" :description="`Müşteri #${tid} · defter kaydı 30 gün saklanır.`" icon="mdi-history" :count="list.items.value.length">
       <BoDataTable
         :items="rows"
         :columns="COLUMNS"

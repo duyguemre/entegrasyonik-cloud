@@ -285,9 +285,10 @@ const cta = getGuideCta('channels')
     justify-content: center;
     width: var(--ek-space-8);
     height: var(--ek-space-8);
+    border: var(--site-border-width) solid var(--site-action-border);
     border-radius: var(--ek-radius-md);
-    background: var(--site-accent-soft);
-    color: var(--site-link-accent);
+    background: var(--site-action-subtle);
+    color: var(--site-action);
   }
   .hub-principles__title {
     color: var(--site-text-heading);
@@ -313,31 +314,32 @@ const cta = getGuideCta('channels')
     gap: var(--ek-space-2);
     height: 100%;
     padding: var(--ek-space-6);
-    border-radius: var(--site-radius-panel);
-    background: var(--site-gradient-stage);
-    box-shadow: var(--site-shadow-card);
-    color: var(--site-text-on-dark-body);
+    /* SITE-DL: öne çıkan rehber = açık düz kart (koyu degrade kapak yok); hover yalnız ton + çerçeve. */
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--ek-radius-card);
+    background: var(--ek-color-surface);
+    color: var(--site-text-body);
     text-decoration: none;
     transition:
-      transform var(--ek-duration-base) var(--ek-easing-standard),
-      box-shadow var(--ek-duration-base) var(--ek-easing-standard);
+      background-color var(--ek-duration-base) var(--ek-easing-standard),
+      border-color var(--ek-duration-base) var(--ek-easing-standard);
   }
   .featured__card:hover {
-    transform: translateY(calc(var(--ek-space-1) * -0.5));
-    box-shadow: var(--site-shadow-panel);
+    border-color: var(--site-action-border);
+    background: var(--site-action-subtle);
   }
   .featured__card:focus-visible {
     outline-color: var(--ek-color-primary);
   }
   .featured__cluster {
-    color: var(--site-accent-on-dark);
+    color: var(--site-action-emphasis);
     font-size: var(--ek-font-size-xs);
     font-weight: var(--ek-font-weight-bold);
     letter-spacing: 0.08em;
     text-transform: uppercase;
   }
   .featured__title {
-    color: var(--site-text-on-dark-heading);
+    color: var(--site-text-heading);
     font-size: var(--ek-font-size-xl);
     font-weight: var(--ek-font-weight-bold);
     line-height: var(--ek-line-height-tight);
@@ -353,7 +355,7 @@ const cta = getGuideCta('channels')
     align-items: center;
     gap: var(--ek-space-2);
     margin-top: var(--ek-space-2);
-    color: var(--site-text-on-dark-heading);
+    color: var(--site-action);
     font-size: var(--ek-font-size-sm);
     font-weight: var(--ek-font-weight-semibold);
   }
@@ -366,12 +368,11 @@ const cta = getGuideCta('channels')
   .cluster {
     display: flex;
     flex-direction: column;
-    gap: var(--ek-space-5);
-    padding: var(--ek-space-6);
+    overflow: hidden;
+    /* SITE-DL: düz kart; baş bandı surface-muted + ince çizgi, satırlar tam genişlik. */
     border: var(--site-border-width) solid var(--ek-color-border-default);
-    border-radius: var(--site-radius-panel);
+    border-radius: var(--ek-radius-card);
     background: var(--ek-color-surface);
-    box-shadow: var(--site-shadow-card);
     /* site-wdg W14: üst bar payı html scroll-padding-top’ta; burada yalnız ek boşluk. */
     scroll-margin-top: var(--ek-space-2);
   }
@@ -379,17 +380,21 @@ const cta = getGuideCta('channels')
     display: flex;
     gap: var(--ek-space-4);
     align-items: flex-start;
+    padding: var(--ek-space-5) var(--ek-space-6);
+    border-bottom: var(--site-border-width) solid var(--ek-color-border-default);
+    background: var(--ek-color-surface-muted);
   }
   .cluster__icon {
     display: inline-flex;
     flex: none;
     align-items: center;
     justify-content: center;
-    width: var(--ek-space-12);
-    height: var(--ek-space-12);
-    border-radius: var(--ek-radius-lg);
-    background: linear-gradient(140deg, var(--ek-color-primary), var(--ek-color-primary-darken-1));
-    color: var(--site-color-on-primary);
+    width: var(--ek-space-10);
+    height: var(--ek-space-10);
+    border: var(--site-border-width) solid var(--site-action-border);
+    border-radius: var(--ek-radius-tile);
+    background: var(--ek-color-surface);
+    color: var(--site-action);
   }
   .cluster__head h3 {
     color: var(--site-text-heading);
@@ -411,7 +416,7 @@ const cta = getGuideCta('channels')
     list-style: none;
   }
   .cluster__list li + li {
-    border-top: var(--site-border-width) solid var(--ek-color-border-default);
+    border-top: var(--site-border-width) solid var(--ek-color-border-subtle);
   }
   .cluster__list a {
     position: relative;
@@ -419,13 +424,17 @@ const cta = getGuideCta('channels')
     flex-direction: column;
     gap: var(--ek-space-1);
     min-height: var(--site-tap-target);
-    padding: var(--ek-space-3) var(--ek-space-8) var(--ek-space-3) 0;
+    padding: var(--ek-space-3) var(--ek-space-12) var(--ek-space-3) var(--ek-space-6);
     color: var(--site-text-body);
     text-decoration: none;
+    transition: background-color var(--ek-duration-base) var(--ek-easing-standard);
+  }
+  .cluster__list a:hover {
+    background: var(--site-action-subtle);
   }
   .cluster__list a > :global(.icon) {
     position: absolute;
-    inset-inline-end: 0;
+    inset-inline-end: var(--ek-space-6);
     inset-block-start: 50%;
     transform: translateY(-50%);
     color: var(--site-text-meta);
@@ -484,9 +493,10 @@ const cta = getGuideCta('channels')
     gap: var(--ek-space-4);
     margin: 0;
     padding: var(--ek-space-6);
-    border-radius: var(--site-radius-panel);
-    background: var(--site-gradient-stage);
-    box-shadow: var(--site-shadow-panel);
+    /* SITE-DL: düz koyu panel — degrade/gölge yok. */
+    border: var(--site-border-width) solid var(--ek-color-chrome-border);
+    border-radius: var(--ek-radius-card);
+    background: var(--ek-color-chrome);
   }
   .market__stats dl {
     display: grid;
@@ -544,13 +554,16 @@ const cta = getGuideCta('channels')
     height: 100%;
     padding: var(--ek-space-4);
     border: var(--site-border-width) solid var(--ek-color-border-default);
-    border-radius: var(--ek-radius-lg);
+    border-radius: var(--ek-radius-tile);
     background: var(--ek-color-surface);
     text-decoration: none;
-    transition: border-color var(--ek-duration-base) var(--ek-easing-standard);
+    transition:
+      background-color var(--ek-duration-base) var(--ek-easing-standard),
+      border-color var(--ek-duration-base) var(--ek-easing-standard);
   }
   .terms a:hover {
-    border-color: var(--ek-color-secondary-darken-1);
+    border-color: var(--site-action-border);
+    background: var(--site-action-subtle);
   }
   .terms__name {
     color: var(--site-text-heading);

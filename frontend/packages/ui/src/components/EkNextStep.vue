@@ -110,4 +110,30 @@ const titleId = `ek-next-step-${useId()}`
     flex-basis: 100%;
   }
 }
+
+/* ================= FE-LOCAL-1045 — sıradaki adım: ana sayfadaki "sıradaki iş" paneliyle aynı =================
+   Soldaki şerit yerine tonun DÜZ açık zemini + ince çerçevesi (degrade yok); ikon kutusu düz yüzeyde, üst satır
+   tonun vurgu renginde — yönlendirici ve tek bakışta seçilir. */
+.ek-next-step {
+  --ek-ns-bg: var(--ek-color-action-subtle);
+  --ek-ns-line: var(--ek-color-action-border);
+  --ek-ns-ink: var(--ek-color-action-emphasis);
+  border: 1px solid var(--ek-ns-line);
+  background: var(--ek-ns-bg);
+}
+
+.ek-next-step--success { --ek-ns-bg: var(--ek-color-success-subtle); --ek-ns-line: var(--ek-color-success-border); --ek-ns-ink: var(--ek-color-success-emphasis); }
+.ek-next-step--warning { --ek-ns-bg: var(--ek-color-warning-subtle); --ek-ns-line: var(--ek-color-warning-border); --ek-ns-ink: var(--ek-color-warning-emphasis); }
+.ek-next-step--error { --ek-ns-bg: var(--ek-color-error-subtle); --ek-ns-line: var(--ek-color-error-border); --ek-ns-ink: var(--ek-color-error-emphasis); }
+.ek-next-step--info { --ek-ns-bg: var(--ek-color-info-subtle); --ek-ns-line: var(--ek-color-info-border); --ek-ns-ink: var(--ek-color-info-emphasis); }
+.ek-next-step--neutral { --ek-ns-bg: var(--ek-color-surface-muted); --ek-ns-line: var(--ek-color-border-default); --ek-ns-ink: var(--ek-color-content-default); }
+
+.ek-next-step :deep(.ek-icon-tile) {
+  border-color: var(--ek-ns-line);
+  background: var(--ek-color-surface);
+}
+
+.ek-next-step__eyebrow {
+  color: var(--ek-ns-ink);
+}
 </style>

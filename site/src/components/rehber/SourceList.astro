@@ -46,10 +46,11 @@ const { sources, updated, reviewBy } = Astro.props
   .src-list {
     display: flex;
     flex-direction: column;
+    overflow: hidden;
     margin: 0;
     padding: 0;
     border: var(--site-border-width) solid var(--ek-color-border-default);
-    border-radius: var(--ek-radius-lg);
+    border-radius: var(--ek-radius-card);
     background: var(--ek-color-surface);
     list-style: none;
   }
@@ -60,12 +61,14 @@ const { sources, updated, reviewBy } = Astro.props
     padding: var(--ek-space-4);
   }
   .src + .src {
-    border-top: var(--site-border-width) solid var(--ek-color-border-default);
+    border-top: var(--site-border-width) solid var(--ek-color-border-subtle);
   }
   .src__badge {
     align-self: flex-start;
     padding: 0 var(--ek-space-2);
-    border-radius: var(--ek-radius-full);
+    /* SITE-DL: köşeli rozet + ince çerçeve. */
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--ek-radius-md);
     background: var(--ek-color-surface-muted);
     color: var(--site-text-meta);
     font-size: var(--ek-font-size-xs);
@@ -73,8 +76,9 @@ const { sources, updated, reviewBy } = Astro.props
     line-height: var(--site-font-body-line-height);
   }
   .src[data-trust='official'] .src__badge {
-    background: var(--ek-color-success-subtle);
-    color: var(--ek-color-content-strong);
+    border-color: var(--site-action-border);
+    background: var(--site-action-subtle);
+    color: var(--site-action-emphasis);
   }
   .src__title {
     display: inline;

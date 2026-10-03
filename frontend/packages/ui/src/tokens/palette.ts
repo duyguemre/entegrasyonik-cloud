@@ -56,6 +56,13 @@ export const amberScale = {
   950: '#451A03',
 } as const
 
+/** Uyarı SARISI (grafik dolgu + okunur metin) — `warning` (yanık turuncu) kritik kırmızısına çok yakın kaldığı için. */
+export const yellow = {
+  400: '#FACC15',
+  500: '#EAB308',
+  700: '#A16207',
+} as const
+
 export const sky = {
   100: '#E0F2FE',
   600: '#0284C7',

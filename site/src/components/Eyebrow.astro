@@ -44,8 +44,8 @@ const { as: Tag = 'p', icon, class: className, ...rest } = Astro.props
     flex: none;
     width: var(--site-eyebrow-mark-width);
     height: var(--site-eyebrow-mark-height);
-    border-radius: var(--ek-radius-full);
-    background: var(--site-gradient-accent);
+    /* SITE-DL-01 (D4): 12×2 düz eylem çizgisi — uygulamadaki bölüm etiketiyle aynı. */
+    background: var(--site-eyebrow-mark-color);
   }
   .eyebrow > :global(.icon) {
     flex: none;

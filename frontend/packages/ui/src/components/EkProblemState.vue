@@ -115,30 +115,30 @@ defineExpose({ focusTitle })
 </script>
 
 <style scoped>
+/* DESIGN_SYSTEM §35 E1: sol kalın şerit YOK — ton = düz açık zemin + ince ton çerçevesi; gölge yok (D2). */
 .ek-problem {
   --ek-problem-accent: var(--ek-color-error);
+  --ek-problem-bg: var(--ek-color-error-subtle);
+  --ek-problem-border: var(--ek-color-error-border);
   display: flex;
   align-items: flex-start;
   gap: var(--ek-space-3);
   padding: var(--ek-space-4);
-  border: 1px solid var(--ek-color-border-default);
-  border-left: 3px solid var(--ek-problem-accent);
-  border-radius: var(--ek-radius-control);
-  background: var(--ek-color-surface-sunken);
+  border: 1px solid var(--ek-problem-border);
+  border-radius: var(--ek-radius-card);
+  background: var(--ek-problem-bg);
   color: var(--ek-color-content-default);
   text-align: left;
 }
 
-.ek-problem--warning { --ek-problem-accent: var(--ek-color-warning); }
-.ek-problem--info { --ek-problem-accent: var(--ek-color-info); }
-.ek-problem--neutral { --ek-problem-accent: var(--ek-color-border-strong); }
+.ek-problem--warning { --ek-problem-accent: var(--ek-color-warning); --ek-problem-bg: var(--ek-color-warning-subtle); --ek-problem-border: var(--ek-color-warning-border); }
+.ek-problem--info { --ek-problem-accent: var(--ek-color-info); --ek-problem-bg: var(--ek-color-info-subtle); --ek-problem-border: var(--ek-color-info-border); }
+.ek-problem--neutral { --ek-problem-accent: var(--ek-color-border-strong); --ek-problem-bg: var(--ek-color-surface-muted); --ek-problem-border: var(--ek-color-border-default); }
 
 .ek-problem--page {
   max-width: 560px;
   margin: var(--ek-space-8) auto;
   padding: var(--ek-space-5);
-  background: var(--ek-color-surface);
-  box-shadow: var(--ek-shadow-card);
 }
 
 .ek-problem--compact {

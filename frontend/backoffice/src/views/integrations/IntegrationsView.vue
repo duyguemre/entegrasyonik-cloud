@@ -1,10 +1,6 @@
 <template>
   <div class="bo-page">
-    <BoPageHeader :updated-at="summary.updatedAt.value" :stale="summary.stale.value">
-      <template #actions>
-        <BoAction kind="refresh" :loading="summary.refreshing.value" data-page-refresh @click="refresh" />
-      </template>
-    </BoPageHeader>
+    <BoPageHeader :updated-at="summary.updatedAt.value" :stale="summary.stale.value" refreshable :refreshing="summary.refreshing.value" @refresh="refresh" />
 
     <PageVerdict :verdict="verdict" />
 
@@ -18,7 +14,6 @@
 
 <script setup lang="ts">
 import BoPageHeader from '@bo/components/shell/BoPageHeader.vue'
-import BoAction from '@bo/components/r2/BoAction.vue'
 import PageVerdict from '@bo/components/verdict/PageVerdict.vue'
 import { computed, onMounted, ref } from 'vue'
 import { type EkPageTab } from '@entegrasyonik/ui/components'

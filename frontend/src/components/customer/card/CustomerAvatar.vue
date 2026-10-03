@@ -41,4 +41,16 @@ const letters = computed(() => initials(props.firstName, props.lastName))
 .ek-cust-avatar--sm :deep(.v-icon) { font-size: var(--ek-icon-xs); }
 .ek-cust-avatar--md :deep(.v-icon) { font-size: var(--ek-icon-md); }
 .ek-cust-avatar--lg :deep(.v-icon) { font-size: var(--ek-icon-xl); }
+
+/* FE-LOCAL-1045: avatar — yuvarlak gri yerine eylem renginin açık tonunda kutu (ikon kapsülleriyle aynı aile). */
+.ek-cust-avatar {
+  border-color: var(--ek-color-action-border);
+  border-radius: var(--ek-radius-tile);
+  background: var(--ek-color-action-subtle);
+  color: var(--ek-color-action-emphasis);
+}
+
+.ek-cust-avatar--lg {
+  border-radius: var(--ek-radius-card);
+}
 </style>

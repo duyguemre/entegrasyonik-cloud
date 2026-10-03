@@ -15,7 +15,8 @@
     <InvoiceDetailComponent v-model="detailDialog.show" :invoice="selectedInvoiceForDetail" />
     <CreateInvoiceComponent v-model="createDialog" @saved="getInvoices(true)" />
 
-    <EkListScreen channel-key="integrationCode"
+    <EkListScreen ref="listScreenRef" channel-key="integrationCode"
+      summary-toggle
       section="Satış"
       title="Faturalar"
       description="Sipariş ve manuel faturalarınızı buradan yönetin."
@@ -51,12 +52,18 @@
       @filter-reset="clearFilters"
       @remove-chip="removeChip"
       @clear-filters="clearFilters"
-      @refresh="getInvoices(true)"
+      @refresh="refreshAll"
     >
+      <!-- FE-LOCAL-1046: Liste | Özet — özet görünümü listenin yerine açılır; hücre seçimi listeyi süzer ve listeye döner. -->
+      <template #summary="{ close }">
+        <InvoiceListDashboard ref="dashRef" :active-status="applied.status" :active-type="applied.type"
+          @select="(f) => { onDashSelect(f); close() }" />
+      </template>
       <!-- faz3-fe-help: ilk kullanım — hiç kayıt yokken "Nasıl başlanır?" (filtreli boş sonuçta gösterilmez). -->
       <template #empty-action><HelpStartLink article="fin-invoices-reports" /></template>
-      <template #header-actions>
-        <EkButton icon="mdi-plus" @click="createDialog = true">Yeni fatura ekle</EkButton>
+      <!-- Standart: birincil "oluştur" filtre şeridinin sağ ucunda (EkListScreen `#create`). -->
+      <template #create>
+        <EkButton tone="primary" icon="mdi-plus" @click="createDialog = true">Yeni fatura ekle</EkButton>
       </template>
 
       <template #filters>
@@ -118,6 +125,7 @@ import { INVOICE_STATUS_TONE } from '@/design/status-map';
 import LoadingComponent from '@/components/LoadingComponent.vue';
 import InvoiceDetailComponent from '@/components/invoice/InvoiceDetailComponent.vue';
 import CreateInvoiceComponent from '@/components/invoice/CreateInvoiceComponent.vue';
+import InvoiceListDashboard from '@/components/invoice/InvoiceListDashboard.vue';
 import EkListScreen from '@/components/page/templates/EkListScreen.vue';
 ;
 ;
@@ -262,6 +270,19 @@ const getInvoices = async (resetPage: boolean = false) => {
 
 function onSearchInput(value: string) {
   searchInvoiceForm.value.search = value;
+  getInvoices(true);
+}
+
+// FE-LOCAL-1046: özet görünümü — hücre seçimi durum/tip süzmesini değiştirir ve sorgular; yenilemede sayılar da tazelenir.
+const listScreenRef = ref<InstanceType<typeof EkListScreen> | null>(null);
+const dashRef = ref<InstanceType<typeof InvoiceListDashboard> | null>(null);
+function onDashSelect(filter: { status: string[]; type: string | null }) {
+  searchInvoiceForm.value.filters.status = [...filter.status];
+  searchInvoiceForm.value.filters.type = filter.type;
+  getInvoices(true);
+}
+function refreshAll() {
+  dashRef.value?.refresh();
   getInvoices(true);
 }
 

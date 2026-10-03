@@ -1,5 +1,5 @@
 <template>
-  <BoSection :title="`Koleksiyonlar · ${title}`" description="Bir satırı genişleterek indeksleri görün" icon="mdi-table-multiple" flush data-testid="collections">
+  <BoSection :title="`Koleksiyonlar · ${title}`" description="Bir satırı genişleterek indeksleri görün" icon="mdi-table-multiple" flush data-testid="collections" :count="list.items.value.length">
     <template #actions>
       <EkButton size="sm" tone="ghost" icon="mdi-close" @click="emit('close')">Kapat</EkButton>
     </template>
@@ -160,5 +160,39 @@ const phase = computed(() => (list.phase.value === 'error' && list.error.value?.
     grid-template-columns: 1fr;
     gap: var(--ek-space-1);
   }
+}
+
+/* BO-LOCAL-01 — koleksiyonlar: aç/kapa oku çerçeveli köşeli kutuda (açıkken eylem tonu); indeks listesi sakin bantta,
+   satırlar ince çizgiyle ayrılır. */
+.bo-coll__toggle :deep(.v-icon) {
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-md);
+  background: var(--ek-color-surface);
+  color: var(--ek-color-content-muted);
+}
+
+.bo-coll__toggle:hover :deep(.v-icon),
+.bo-coll__toggle[aria-expanded='true'] :deep(.v-icon) {
+  border-color: var(--ek-color-action-border);
+  background: var(--ek-color-action-subtle);
+  color: var(--ek-color-action-emphasis);
+}
+
+.bo-coll__idx > td {
+  background: var(--ek-color-surface-muted);
+}
+
+.bo-coll__list {
+  gap: 0;
+}
+
+.bo-coll__list li {
+  padding: var(--ek-space-2) 0;
+}
+
+.bo-coll__list li + li {
+  border-top: 1px solid var(--ek-color-border-subtle);
 }
 </style>

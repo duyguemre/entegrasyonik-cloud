@@ -1,192 +1,46 @@
+<!--
+  Ideasoft'a özgü kanal bilgileri (stok tipi, hediye, kargo ücreti) — ayar satırı (InfoRow) dili; kök öğesi yok.
+  Varsayılanlar Ideasoft mağaza ayarlarından (eskiden yanlışlıkla Trendyol ayarları okunuyordu).
+-->
 <template>
-
-  <v-card variant="elevated" elevation="0" class="vinfo-card ma-0 mt-2 pa-0" color="transparent">
-
-
-    <v-card-title class="vinfo-title d-flex">
-
-      <v-row>
-        <v-col cols="12" md="4" sm="6" lg="3" xl="2">
-          <v-select clearable density="compact" v-model="variantPlatformInfo.stockTypeLabel" variant="outlined"
-            :items="staticsStore.ideasoft.stockTypeLabelOptions" class="mr-1 customTextField">
-            <template #label>
-              Ürünün Stok Tipi (Varsayılan <span class="font-weight-medium">{{ computedDefaultStockTypeLabel }}</span>)
-            </template>
-
-          </v-select>
-        </v-col>
-
-        <v-col cols="12" md="4" sm="6" lg="3" xl="2">
-
-          <v-select clearable density="compact" v-model="variantPlatformInfo.hasGift" variant="outlined" :items="[
-            { title: 'Hediyesiz', value: 0 },
-            { title: 'Hediyeli', value: 1 }
-          ]" class="ml-1 customTextField">
-            <template #label>
-              Hediye Durumu (Varsayılan <span class="font-weight-medium">{{ computedDefaultHasGift == 1 ? 'Hediyeli' :
-                'Hediyesiz' }}</span>)
-            </template>
-          </v-select>
-
-        </v-col>
-
-        <v-col cols="12" md="4" sm="6" lg="3" xl="2">
-
-          <VCurrencyComponentVue :null-to-empty="true" @click.stop v-model="variantPlatformInfo.customShippingCost"
-            :compact="true" clearable :isIconExist="false" :required="false" class="vinfo-field ml-1">
-            <template #label>
-              Varsayılan Kargo Ücreti (Varsayılan <span class="font-weight-medium">{{ computedDefaultCustomShippingCost
-                }}</span>)
-            </template>
-          </VCurrencyComponentVue>
-
-
-        </v-col>
-
-      </v-row>
-
-    </v-card-title>
-  </v-card>
+  <InfoRow id="ci-is-stocktype" label="Stok tipi" desc="Stoğun hangi birimle sayıldığı (adet, çift, kg…)." :custom="filled(m.stockTypeLabel)"
+    :default-text="defaultStockType" @reset="m.stockTypeLabel = undefined">
+    <v-select id="ci-is-stocktype" v-model="m.stockTypeLabel" :items="staticsStore.ideasoft.stockTypeLabelOptions" variant="outlined"
+      hide-details clearable :placeholder="defaultStockType" aria-describedby="ci-is-stocktype-state" />
+  </InfoRow>
+  <InfoRow id="ci-is-gift" label="Hediye durumu" desc="Ürünün hediye paketiyle satılıp satılmadığı." :custom="filled(m.hasGift)"
+    :default-text="giftText(defaultHasGift)" @reset="m.hasGift = undefined">
+    <v-select id="ci-is-gift" v-model="m.hasGift" :items="GIFT" variant="outlined" hide-details clearable :placeholder="giftText(defaultHasGift)"
+      aria-describedby="ci-is-gift-state" />
+  </InfoRow>
+  <InfoRow id="ci-is-shipcost" label="Kargo ücreti" desc="Bu varyant için müşteriden alınacak sabit kargo ücreti." :custom="filled(m.customShippingCost)"
+    :default-text="formatMoney(Number(defaultShippingCost) || 0)" @reset="m.customShippingCost = undefined">
+    <VCurrencyComponentVue id="ci-is-shipcost" v-model="m.customShippingCost" :null-to-empty="true" :compact="true" clearable :is-icon-exist="false"
+      :required="false" aria-describedby="ci-is-shipcost-state" />
+  </InfoRow>
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { formatMoney } from '@entegrasyonik/ui/format'
-import { ref, onBeforeMount, onMounted, computed } from 'vue'
-import { useI18n } from 'vue-i18n';
-import { useStaticsStore } from '@/stores/staticsStore';
-import { useIntegrationStore } from '@/stores/integrationStore';
+import { useStaticsStore } from '@/stores/staticsStore'
+import { useIntegrationStore } from '@/stores/integrationStore'
+import VCurrencyComponentVue from '@/components/VCurrencyComponent.vue'
+import InfoRow from './InfoRow.vue'
 
-import useFormRules from '@/composables/formrules';
-import VCurrencyComponentVue from '@/components/VCurrencyComponent.vue';
-
-const show = ref(true)
-const emits = defineEmits(['refreshImages', 'refreshVariants', 'refreshTotalVariantsStockCount', 'close'])
+defineProps<{ productInfoForm: any }>()
+const m: any = defineModel({ default: {} })
 const staticsStore = useStaticsStore()
 const integrationStore = useIntegrationStore()
 
-const formRules = useFormRules()
-
-var choicesStoreChoices: any = undefined
-const loadingComponentRef: any = ref(null)
-const isVariantAttributesDialog = ref(false)
-const isVariantPlatformPricesDialog = ref(false)
-const shipments: any = ref([])
-const { t } = useI18n()
-const variantPlatformInfo: any = defineModel({ default: {} })
-const integrationCode = "trendyol"
-const props = defineProps<{
-  productInfoForm: any
-}>()
-
-const formatCurrency = (number: number) => {
-  return formatMoney(Number(number))
-}
-
-
-const computedClientMarketplace = computed(() => {
-  return integrationStore.getClientIntegration(integrationCode)
+const GIFT = [{ title: 'Hediyesiz', value: 0 }, { title: 'Hediyeli', value: 1 }]
+const giftText = (v: any) => (Number(v) === 1 ? 'Hediyeli' : 'Hediyesiz')
+const settings = computed(() => integrationStore.getClientIntegration('ideasoft')?.settings || {})
+const defaultStockType = computed(() => {
+  const value = settings.value.stockTypeLabel || staticsStore.ideasoft.defaults.stockTypeLabel
+  return staticsStore.ideasoft.stockTypeLabelOptions.find((x: any) => x.value == value)?.title || ''
 })
-
-const computedDefaultShipment = computed(() => {
-  return shipments.value.find((item: any) => item.id == computedClientMarketplace.value?.settings?.shippingId)?.name
-})
-
-const computedDefaultFastDeliveryType = computed(() => {
-  return staticsStore.fastDeliveryTypes.find((item: any) => item.id == computedClientMarketplace.value?.settings?.fastDeliveryType)?.name
-})
-
-const computedDefaultShipingDuration = computed(() => {
-  return props.productInfoForm.shippingDuration ? props.productInfoForm.shippingDuration : computedClientMarketplace.value?.settings?.shippingDuration ? computedClientMarketplace.value?.settings?.shippingDuration : staticsStore.shippingDuration
-})
-
-const computedDefaultDesi = computed(() => {
-  return props.productInfoForm.desi ? props.productInfoForm.desi : computedClientMarketplace.value?.settings?.desi ? computedClientMarketplace.value?.settings?.desi : staticsStore.desi
-})
-
-const computedDefaultWarranty = computed(() => {
-  return props.productInfoForm.warranty ? props.productInfoForm.warranty : computedClientMarketplace.value?.settings?.warranty ? computedClientMarketplace.value?.settings?.warranty : staticsStore.warranty
-})
-
-const computedDefaultStockTypeLabel = computed(() => {
-  const value = computedClientMarketplace.value?.settings?.stockTypeLabel ? computedClientMarketplace.value?.settings?.stockTypeLabel : staticsStore.ideasoft.defaults.stockTypeLabel
-  const item: any = staticsStore.ideasoft.stockTypeLabelOptions.find((item: any) => item.value == value)
-  return item.title
-})
-
-const computedDefaultHasGift = computed(() => {
-  return computedClientMarketplace.value?.settings?.hasGift ? computedClientMarketplace.value?.settings?.hasGift : staticsStore.ideasoft.defaults.hasGift
-})
-
-const computedDefaultCustomShippingCost = computed(() => {
-  return computedClientMarketplace.value?.settings?.customShippingCost ? computedClientMarketplace.value?.settings?.customShippingCost : staticsStore.ideasoft.defaults.customShippingCost
-})
-
-
-const computedMaxPurchaseQuantity = computed(() => {
-  return props.productInfoForm.maxPurchaseQuantity ? props.productInfoForm.maxPurchaseQuantity : computedClientMarketplace.value?.settings?.maxPurchaseQuantity ? computedClientMarketplace.value?.settings?.maxPurchaseQuantity : staticsStore.maxPurchaseQuantity
-})
-
-
-
-onBeforeMount(() => {
-})
-
-onMounted(() => {
-  retrieveShipments()
-})
-
-const sleep = (ms: number) => {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-
-const retrieveShipments = async () => {
-  // DS-v2 A6a: yanıt dizi değilse (hata/boş) liste boş kalır — eskiden .find patlıyor, genel hata bildirimi çıkıyordu.
-  { const r = await integrationStore.retrievePlatformInfos('trendyol'); shipments.value = Array.isArray(r) ? r : [] }
-}
-
-
-
-const findMinimumSalePrice = (platforms: any) => {
-  const res = Object.values(platforms).reduce((min: any, platform: any) =>
-    platform.prices.salePrice && platform.prices.salePrice < min ? platform.prices.salePrice : min, Infinity);
-  if (res == Infinity) return 0
-  return Number(res)
-}
-const findMinimumMarketPrice = (platforms: any) => {
-  const res = Object.values(platforms).reduce((min: any, platform: any) =>
-    platform.prices.marketPrice && platform.prices.marketPrice < min ? platform.prices.marketPrice : min, Infinity);
-  if (res == Infinity) return 0
-  return Number(res)
-}
-const findMaximumSalePrice = (platforms: any) => {
-  return Number(Object.values(platforms).reduce((max: any, platform: any) =>
-    platform.prices.salePrice && platform.prices.salePrice > max ? platform.prices.salePrice : max, 0))
-}
-const findMaximumMarketPrice = (platforms: any) => {
-  return Number(Object.values(platforms).reduce((max: any, platform: any) =>
-    platform.prices.marketPrice && platform.prices.marketPrice > max ? platform.prices.marketPrice : max, 0))
-}
-
-
-
-
+const defaultHasGift = computed(() => settings.value.hasGift ?? staticsStore.ideasoft.defaults.hasGift)
+const defaultShippingCost = computed(() => settings.value.customShippingCost || staticsStore.ideasoft.defaults.customShippingCost)
+const filled = (v: any) => !(v === undefined || v === null || v === '')
 </script>
-
-
-<style scoped>
-.vinfo-card {
-  transition: none !important;
-  box-shadow: none;
-  transform: none !important;
-  right: 0;
-}
-
-.vinfo-title {
-  display: block !important;
-}
-
-.vinfo-field {
-  min-width: 200px;
-}
-</style>

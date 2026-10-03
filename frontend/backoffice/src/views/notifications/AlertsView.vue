@@ -1,9 +1,8 @@
 <template>
   <div class="bo-page">
-    <BoPageHeader :updated-at="loadedAt ?? undefined" :stale="stale" :auto-refresh="30">
+    <BoPageHeader :updated-at="loadedAt ?? undefined" :stale="stale" :auto-refresh="30" refreshable :refreshing="list.refreshing.value || list.phase.value === 'loading' || firingSrc.refreshing.value" @refresh="refresh">
       <template #actions>
         <CopyViewLink />
-        <BoAction kind="refresh" :loading="list.refreshing.value || list.phase.value === 'loading' || firingSrc.refreshing.value" data-page-refresh @click="refresh" />
       </template>
     </BoPageHeader>
 
@@ -19,7 +18,7 @@
 
     <PushCard />
 
-    <BoSection id="bo-al-list" title="Uyarılar" description="Kurallara göre üretilen etkin ve çözülmüş uyarılar." icon="mdi-bell-alert-outline">
+    <BoSection id="bo-al-list" title="Uyarılar" description="Kurallara göre üretilen etkin ve çözülmüş uyarılar." icon="mdi-bell-alert-outline" :count="list.items.value.length">
       <BoFilterBar label="Uyarı süzgeçleri" :active="activeFilters" @clear="clearFilters">
         <BoSegmented v-model="status" label="Uyarı durumu" :options="STATUS_OPTS" />
         <BoSegmented v-model="level" label="Önem" :options="LEVEL_OPTS" />
@@ -111,7 +110,6 @@ import type { AlertLevel, AlertRow, AlertStatus } from '@bo/api/contract'
 import { useCursorList } from '@bo/composables/useCursorList'
 import { useGuardedAction } from '@bo/composables/useGuardedAction'
 import BoPageHeader from '@bo/components/shell/BoPageHeader.vue'
-import BoAction from '@bo/components/r2/BoAction.vue'
 import PageVerdict from '@bo/components/verdict/PageVerdict.vue'
 import CopyViewLink from '@bo/components/CopyViewLink.vue'
 import { useVerdictSources } from '@bo/composables/useVerdictSources'

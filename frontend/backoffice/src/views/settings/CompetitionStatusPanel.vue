@@ -114,4 +114,31 @@ const scopeText = computed(() => {
   color: var(--ek-color-content-muted);
   font-size: var(--ek-type-caption-size);
 }
+
+/* ================= BO-LOCAL-01 — rekabet durumu kutuları =================
+   Düz yüzey + ince çerçeve; etiket mikro büyük harf, değer büyük rakam (özet şeritleriyle aynı aile). */
+.bo-cs__tile {
+  border-color: var(--ek-color-border-default);
+  background: var(--ek-color-surface);
+}
+
+.bo-cs__tile dt {
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-micro-size);
+  line-height: var(--ek-type-micro-line);
+  font-weight: var(--ek-type-micro-weight);
+  letter-spacing: var(--ek-type-micro-tracking);
+  text-transform: uppercase;
+}
+
+.bo-cs__value {
+  font-size: var(--ek-type-metric-size, var(--ek-type-heading-size));
+  line-height: 1.15;
+  font-weight: var(--ek-font-weight-semibold);
+  letter-spacing: -0.02em;
+}
+
+.bo-cs__link {
+  font-weight: var(--ek-font-weight-semibold);
+}
 </style>

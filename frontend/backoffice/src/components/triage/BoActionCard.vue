@@ -127,4 +127,56 @@ defineEmits<{ act: [] }>()
     grid-column: 1 / -1;
   }
 }
+
+/* ================= BO-LOCAL-01 — eylem kartı: uygulamanın tasarım diliyle =================
+   Kutu köşeli düz kart; ikon çerçeveli köşeli kutuda; kritik / uyarı tonunda tonun düz açık zemini + ince ton çerçevesi
+   (ikon kutusu beyaz zeminde). Üst etiket kısa eylem çizgili mikro etiket. */
+.bo-ac {
+  --bo-ac-line: var(--ek-color-border-default);
+  border-color: var(--bo-ac-line);
+  border-radius: var(--ek-radius-tile);
+}
+
+.bo-ac.is-critical {
+  --bo-ac-line: var(--ek-color-error-border);
+  background: var(--ek-color-error-subtle);
+}
+
+.bo-ac.is-warning {
+  --bo-ac-line: var(--ek-color-warning-border);
+  background: var(--ek-color-warning-subtle);
+}
+
+.bo-ac__icon {
+  width: 32px;
+  height: 32px;
+  margin-top: 0;
+  border: 1px solid var(--bo-ac-line);
+  border-radius: var(--ek-radius-md);
+  background: var(--ek-color-surface);
+  font-size: var(--ek-icon-sm);
+}
+
+.bo-ac.is-neutral .bo-ac__icon,
+.bo-ac:not(.is-critical):not(.is-warning) .bo-ac__icon {
+  border-color: var(--ek-color-action-border);
+  background: var(--ek-color-action-subtle);
+  color: var(--ek-color-action-emphasis);
+}
+
+.bo-ac__eyebrow {
+  display: flex;
+  align-items: center;
+  gap: var(--ek-space-2);
+  line-height: var(--ek-type-micro-line);
+}
+
+.bo-ac__eyebrow::before {
+  content: '';
+  flex: none;
+  width: 12px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--ek-color-action);
+}
 </style>

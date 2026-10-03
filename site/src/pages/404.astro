@@ -92,20 +92,15 @@ import HelpBand from '../components/pages/HelpBand.astro'
   .nf__node {
     width: var(--ek-space-6);
     height: var(--ek-space-6);
+    /* SITE-DL-02: düz kare düğüm — teal ışıma/halka yok (koyu zeminde açık mavi vurgu). */
+    border: var(--site-border-width) solid var(--site-glass-border);
     border-radius: var(--ek-radius-md);
-    background: var(--ek-color-secondary);
-    box-shadow: 0 0 0 calc(var(--site-border-width) * 4) color-mix(in srgb, var(--ek-color-secondary) 22%, transparent);
+    background: var(--site-accent-on-dark);
   }
   .nf__link {
     width: var(--ek-space-12);
-    height: var(--site-border-width);
-    background: repeating-linear-gradient(
-      90deg,
-      var(--site-color-on-primary-muted) 0,
-      var(--site-color-on-primary-muted) var(--ek-space-2),
-      transparent var(--ek-space-2),
-      transparent var(--ek-space-3)
-    );
+    height: 0;
+    border-top: var(--site-border-width) dashed var(--site-color-on-primary-muted);
   }
   .nf__code {
     color: var(--site-accent-on-dark);
@@ -133,11 +128,12 @@ import HelpBand from '../components/pages/HelpBand.astro'
     max-width: 32rem;
     margin-top: var(--ek-space-2);
     padding: var(--ek-space-1);
-    border-radius: var(--ek-radius-lg);
+    /* SITE-DL-02: düz alan — gölge yok, ince çerçeve. */
+    border: var(--site-border-width) solid var(--site-glass-border);
+    border-radius: var(--ek-radius-tile);
     background: var(--ek-color-surface);
-    box-shadow: var(--site-shadow-panel);
-    /* site-wdg W01: koyu hero içindeki açık arama adası — odak halkası açık zemin tonuna döner (lacivert, ~14:1). */
-    --site-color-focus-ring: var(--ek-color-primary);
+    /* site-wdg W01: koyu hero içindeki açık arama adası — odak halkası açık zemin tonuna döner. */
+    --site-color-focus-ring: var(--site-action);
   }
   .nf-search__icon {
     position: absolute;
@@ -173,7 +169,7 @@ import HelpBand from '../components/pages/HelpBand.astro'
     padding-inline: var(--ek-space-5);
     border: 0;
     border-radius: var(--ek-radius-md);
-    background: var(--ek-color-primary);
+    background: var(--site-action);
     color: var(--site-color-on-primary);
     font: inherit;
     font-weight: var(--ek-font-weight-semibold);
@@ -181,7 +177,7 @@ import HelpBand from '../components/pages/HelpBand.astro'
     transition: background-color var(--ek-duration-base) var(--ek-easing-standard);
   }
   .nf-search__btn:hover {
-    background: var(--ek-color-primary-darken-1);
+    background: var(--site-action-hover);
   }
   .nf__actions {
     display: flex;

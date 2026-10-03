@@ -216,9 +216,10 @@ describe('1 · alanlar ve doğrulama kuralları/mesajları', () => {
 
     form.hasVariant = true
     await nextTick()
+    // FE-LOCAL-1002b: Temel bilgiler (marka, başlık) Ürün tipinin ÜSTÜNDE → başlık, ana koddan önce gelir.
     expect(describeFields(w)).toEqual([
-      { kind: 'text', label: 'Varyant Grup Kodu *', field: 'maincode', maxlength: '32', type: 'text', counter: true, rules: RULE_STOCKCODE },
       { kind: 'text', label: 'Ürün Başlığı *', field: 'title', maxlength: '160', type: 'text', counter: true, rules: RULE_TITLE },
+      { kind: 'text', label: 'Varyant Grup Kodu *', field: 'maincode', maxlength: '32', type: 'text', counter: true, rules: RULE_STOCKCODE },
     ])
     // v-model bağları: alan yazımı formu doğrudan düzenler
     const title = w.find('[data-pf-field="title"]')
@@ -234,28 +235,42 @@ describe('1 · alanlar ve doğrulama kuralları/mesajları', () => {
     expect((w.find('[data-pf-field="gallery"]').element as HTMLButtonElement).disabled).toBe(true)
   })
 
-  it('Detay Bilgiler: 4 metin + KDV seçimi; tümü isteğe bağlı, en fazla 16 karakter', async () => {
+  it('Detay Bilgiler: 4 sayı alanı + KDV; tümü isteğe bağlı, en fazla 16 karakter, yalnız sayı; varsayılan durumu + varsayılana dön', async () => {
+    // Yeniden tasarım: ayar satırı (etiket solda, `<label for>`), birimli giriş, "Varsayılan kullanılıyor / Özel değer".
     const form = reactive<any>({ maxPurchaseQuantity: 100, shippingDuration: 3, desi: 0, warranty: undefined, taxPercentage: 20 })
     const w = track(mountWith(ProductDetailsComponent, { productInfoForm: form }))
     await flushPromises()
-    expect(describeFields(w)).toEqual([
-      { kind: 'text', label: 'Maksimum Satış Adedi', field: null, maxlength: '20', type: 'tel', counter: true, rules: RULE_0_16 },
-      { kind: 'text', label: 'Kargo Süresi', field: null, maxlength: '20', type: 'tel', counter: true, rules: RULE_0_16 },
-      { kind: 'text', label: 'Desi', field: null, maxlength: '16', type: 'tel', counter: true, rules: RULE_0_16 },
-      { kind: 'text', label: 'Garanti Süresi', field: null, maxlength: '16', type: 'tel', counter: true, rules: RULE_0_16 },
-      { kind: 'select', label: 'KDV', field: null, maxlength: null, type: 'text', counter: false, rules: null },
-    ])
+    const labelOf = (id: string) => w.find(`label[for="${id}"]`).text()
+    const texts = w.findAllComponents({ name: 'VTextField' }).filter((c: any) => !c.element.closest('.v-select'))
+    expect(texts.map((c: any) => labelOf(c.props('id')))).toEqual(['Maksimum Satış Adedi', 'Kargo Süresi', 'Desi', 'Garanti Süresi'])
+    expect(texts.map((c: any) => c.props('suffix'))).toEqual(['adet', 'gün', 'dm³', 'ay'])
+    // varsayılanlar staticsStore'dan (yer tutucu)
+    expect(texts.map((c: any) => c.props('placeholder'))).toEqual(['99', '3', '1', '24'])
+    for (const c of texts) {
+      const input = c.find('input')
+      expect(input.attributes('maxlength')).toBe('16')
+      expect(input.attributes('type')).toBe('tel')
+    }
+    // kurallar: boş geçerli · sayı/ondalık geçerli · harf "Sayı girilmeli" · 17 karakter sınır
+    const rules = texts[0].props('rules') as Array<(v: any) => true | string>
+    const check = (v: any) => rules.map((r) => r(v)).find((x) => x !== true) ?? true
+    expect(check('')).toBe(true)
+    expect(check(undefined)).toBe(true)
+    expect(check('12')).toBe(true)
+    expect(check('1,5')).toBe(true)
+    expect(check('a')).toBe('Sayı girilmeli')
+    expect(check('1'.repeat(17))).toBe('Bu alan 0-16 karakter içermeli')
+    // KDV: liste 1..29 + hızlı oranlar
+    expect(labelOf('pdc-taxPercentage')).toBe('KDV')
     const tax = w.findComponent({ name: 'VSelect' })
     expect((tax.props('items') as any[]).map((i) => i._id)).toEqual(Array.from({ length: 29 }, (_, i) => i + 1))
-    // hint'ler varsayılanları staticsStore'dan okur
-    const hints = w.findAllComponents({ name: 'VTextField' }).filter((c: any) => !c.element.closest('.v-select')).map((c: any) => c.props('hint'))
-    expect(hints).toEqual([
-      'Tek seferde sipariş edilebilecek en fazla miktar · varsayılan 99 adet',
-      'Ürünün kargoya verilme süresi · varsayılan 3 gün',
-      'Ürünün desi miktarı · varsayılan 1 dm³',
-      'Ürünün garanti süresi · varsayılan 24 ay',
-    ])
-    expect(tax.props('hint')).toBe('Varsayılan %20')
+    await w.findAll('.pdc-seg__btn').find((b) => b.text() === '%10')!.trigger('click')
+    expect(form.taxPercentage).toBe(10)
+    // durum + varsayılana dön (garanti boş → varsayılan; desi 0 → özel değer)
+    expect(w.find('#pdc-warranty-state').text()).toContain('Varsayılan kullanılıyor: 24 ay')
+    expect(w.find('#pdc-desi-state').text()).toContain('Özel değer')
+    await w.find('#pdc-desi-state .pdc-reset').trigger('click')
+    expect(form.desi).toBeUndefined()
     // model bağı
     const inputs = w.findAll('input[type="tel"]')
     await inputs[2].setValue('4')
@@ -587,7 +602,8 @@ describe('3 · kaydet / güncelle istek gövdeleri', () => {
     await flushPromises()
     expect(w.findComponent({ name: 'ProductFormWizardBar' }).props('current')).toBe(3)
     expect(w.findComponent({ name: 'ProductDetailsComponent' }).exists()).toBe(true)
-    w.findComponent({ name: 'ProductFormStepFooter' }).vm.$emit('navigate', { step: 2 })
+    // FE-LOCAL-1002b: alt Geri/Devam satırı kaldırıldı; gezinti şeritteki düğmelerden (ProductFormWizardBar `navigate`).
+    w.findComponent({ name: 'ProductFormWizardBar' }).vm.$emit('navigate', { step: 2 })
     await flushPromises()
     expect(w.findComponent({ name: 'ProductSingleVariantComponent' }).exists()).toBe(true)
   })
@@ -658,21 +674,22 @@ describe('4 · varyant ızgarası: rowspan\'lı grup hücreleri (yapı AYNEN kor
     expect(chanRow.find('[data-cell="salePrice"]').exists()).toBe(false)
   })
 
-  it('sanal pencere: görünür pencere bir grubu keserse rowspan pencere sınırında kırpılır; sayaç grubun TOPLAMIdır', async () => {
-    // 3 renk × 4 beden × 2 (ek varyant) = 24 satır; varsayılan pencere 600px / 72px + 10 tampon = 19 satır
+  it('sayfalama: sayfa bir grubu keserse rowspan sayfa sınırında kırpılır; sayaç grubun TOPLAMIdır', async () => {
+    // FE-LOCAL-1002b: sanal kaydırma yerine sayfalama (25/50/100). 3 renk × 4 beden × 3 = 36 satır → 1. sayfa 25 satır.
     const variants: any[] = []
-    for (const c of ['siyah', 'beyaz', 'lacivert']) for (const s of ['s', 'm', 'l', 'xl']) for (const k of [1, 2]) variants.push(vr(`${c}-${s}-${k}`, c, s))
+    for (const c of ['siyah', 'beyaz', 'lacivert']) for (const s of ['s', 'm', 'l', 'xl']) for (const k of [1, 2, 3]) variants.push(vr(`${c}-${s}-${k}`, c, s))
     const w = track(mountWith(VariantGrid, { variants, productInfoForm: { images: [], variants }, baseline: {}, filter: '' }))
     await flushPromises()
     const shape = gridShape(w)
-    expect(shape).toHaveLength(19)
+    expect(shape).toHaveLength(25)
     expect(shape.filter((r) => r.group).map((r) => r.group)).toEqual([
-      { rowspan: '8', text: 'Siyah 8 varyant' },
-      { rowspan: '8', text: 'Beyaz 8 varyant' },
-      { rowspan: '3', text: 'Lacivert 8 varyant' },
+      { rowspan: '12', text: 'Siyah 12 varyant' },
+      { rowspan: '12', text: 'Beyaz 12 varyant' },
+      { rowspan: '1', text: 'Lacivert 12 varyant' },
     ])
-    // alt boşluk satırı kalan satırları temsil eder (aria-hidden)
-    expect(w.find('tbody tr.vg-pad--bottom, tbody tr[aria-hidden="true"]').exists()).toBe(true)
+    // boşluk satırı yok; sayfalama çubuğu toplamı gösterir
+    expect(w.find('tbody tr[aria-hidden="true"]').exists()).toBe(false)
+    expect(w.findComponent({ name: 'EkPagerBar' }).props('total')).toBe(36)
   })
 
   it('arama süzgeci grupları yeniden hesaplar', async () => {

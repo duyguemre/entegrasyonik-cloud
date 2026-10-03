@@ -270,4 +270,60 @@ function onClick(e: MouseEvent) {
   .pth-pop__frame.is-loading { animation: none; }
   .pth-pop__img { transition: none; }
 }
+
+/* ================= FE-LOCAL-1048 — görsel önizleme balonu: ana sayfa diliyle =================
+   Kart köşesi + ince çerçeve; görsel çerçevesi düz kenarlı kutu; altta ince çizgiyle ayrılan sakin bant — ürün adı
+   + kısa eylem çizgili mikro ipucu; görsel sayacı çerçeveli düz rozet. */
+.v-tooltip > .v-overlay__content.pth-preview {
+  padding: 0 !important;
+  overflow: hidden;
+  border-radius: var(--ek-radius-card) !important;
+  background: var(--ek-color-surface) !important;
+}
+
+.pth-pop {
+  gap: 0;
+  width: 296px;
+}
+
+.pth-pop__frame {
+  width: 280px;
+  margin: var(--ek-space-2);
+  border: 1px solid var(--ek-color-border-default);
+  box-shadow: none;
+}
+
+.pth-pop__count {
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-md);
+  background: var(--ek-color-surface);
+  box-shadow: none;
+}
+
+.pth-pop__meta {
+  gap: var(--ek-space-1);
+  padding: var(--ek-space-2) var(--ek-space-3) var(--ek-space-3);
+  border-top: 1px solid var(--ek-color-border-default);
+  background: var(--ek-color-surface-muted);
+}
+
+.pth-pop__hint {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ek-space-2);
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-micro-size);
+  line-height: var(--ek-type-micro-line);
+  font-weight: var(--ek-type-micro-weight);
+  letter-spacing: var(--ek-type-micro-tracking);
+  text-transform: uppercase;
+}
+
+.pth-pop__hint::before {
+  content: '';
+  width: 12px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--ek-color-action);
+}
 </style>

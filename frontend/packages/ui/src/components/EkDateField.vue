@@ -36,17 +36,31 @@
             <v-icon icon="mdi-calendar-outline" size="18" aria-hidden="true" />
           </button>
         </template>
-        <v-date-picker
-          class="ek-date__picker"
-          :model-value="pickerValue"
-          :min="toIso(min) || undefined"
-          :max="toIso(max) || undefined"
-          first-day-of-week="1"
-          show-adjacent-months
-          hide-header
-          color="primary"
-          @update:model-value="onPick"
-        />
+        <!-- FE-LOCAL-1047: takvim — ana sayfa diliyle: mikro etiket + seçili gün başlığı, düz yüzey, çerçeveli gezinme
+             düğmeleri, köşeli gün hücreleri (bugün = eylem çerçevesi, seçili = dolu eylem rengi), altta "Bugün" kısayolu. -->
+        <div class="ek-date__pop">
+          <div class="ek-date__pop-head">
+            <span class="ek-date__pop-label">{{ label || 'Tarih' }}</span>
+            <span class="ek-date__pop-value ek-num">{{ text && !invalid ? text : 'Gün seçin' }}</span>
+          </div>
+          <v-date-picker
+            class="ek-date__picker"
+            :model-value="pickerValue"
+            :min="toIso(min) || undefined"
+            :max="toIso(max) || undefined"
+            first-day-of-week="1"
+            show-adjacent-months
+            hide-header
+            color="primary"
+            @update:model-value="onPick"
+          />
+          <div class="ek-date__pop-foot">
+            <button type="button" class="ek-date__pop-btn" :disabled="!todayAllowed" @click="onPick(new Date())">
+              <v-icon icon="mdi-calendar-today-outline" size="16" aria-hidden="true" /><span>Bugün</span>
+            </button>
+            <button v-if="clearable" type="button" class="ek-date__pop-btn is-quiet" :disabled="!text" @click="clear(); open = false">Temizle</button>
+          </div>
+        </div>
       </v-menu>
     </template>
   </v-text-field>
@@ -165,6 +179,14 @@ const pickerValue = computed(() => {
   return m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : undefined
 })
 
+/** "Bugün" kısayolu min/max aralığının dışındaysa kapalı. */
+const todayAllowed = computed(() => {
+  const today = toIso(new Date())
+  const lo = toIso(props.min)
+  const hi = toIso(props.max)
+  return (!lo || today >= lo) && (!hi || today <= hi)
+})
+
 function onPick(value: unknown) {
   const date = value instanceof Date ? value : undefined
   if (!date) return
@@ -203,9 +225,228 @@ function onPick(value: unknown) {
   box-shadow: 0 0 0 2px var(--ek-color-border-focus);
 }
 
-.ek-date__picker {
-  border: 1px solid var(--ek-color-border-subtle);
-  border-radius: var(--ek-radius-popover);
+.ek-date__pop {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-card);
+  background: var(--ek-color-surface);
   box-shadow: var(--ek-shadow-popover);
+}
+
+.ek-date__pop-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--ek-space-3);
+  padding: var(--ek-space-3) var(--ek-space-4);
+  border-bottom: 1px solid var(--ek-color-border-subtle);
+  background: var(--ek-color-surface-muted);
+}
+
+.ek-date__pop-label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ek-space-2);
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-micro-size);
+  line-height: var(--ek-type-micro-line);
+  font-weight: var(--ek-type-micro-weight);
+  letter-spacing: var(--ek-type-micro-tracking);
+  text-transform: uppercase;
+}
+
+.ek-date__pop-label::before {
+  content: '';
+  width: 12px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--ek-color-action);
+}
+
+.ek-date__pop-value {
+  color: var(--ek-color-content-strong);
+  font-size: var(--ek-type-body-size);
+  font-weight: var(--ek-font-weight-semibold);
+}
+
+.ek-date__pop-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ek-space-2);
+  padding: var(--ek-space-2) var(--ek-space-3);
+  border-top: 1px solid var(--ek-color-border-subtle);
+  background: var(--ek-color-surface-muted);
+}
+
+.ek-date__pop-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ek-space-1);
+  height: 28px;
+  padding: 0 var(--ek-space-3);
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-control);
+  background: var(--ek-color-surface);
+  color: var(--ek-color-content-default);
+  font: inherit;
+  font-size: var(--ek-type-caption-size);
+  font-weight: var(--ek-font-weight-semibold);
+  cursor: pointer;
+  transition: var(--ek-transition-colors);
+}
+
+.ek-date__pop-btn.is-quiet {
+  border-color: transparent;
+  background: transparent;
+  color: var(--ek-color-content-muted);
+}
+
+.ek-date__pop-btn:hover:not(:disabled) {
+  border-color: var(--ek-color-action-border);
+  background: var(--ek-color-action-subtle);
+  color: var(--ek-color-action-emphasis);
+}
+
+.ek-date__pop-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.ek-date__pop-btn:focus-visible {
+  outline: none;
+  box-shadow: var(--ek-focus-ring);
+}
+
+/* Vuetify takvimi: kendi gölgesi/çerçevesi yok (kabuk `ek-date__pop`); iç parçalar tasarım diline çekilir. */
+.ek-date__picker {
+  width: 304px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.ek-date__picker :deep(.v-date-picker-controls) {
+  gap: var(--ek-space-1);
+  padding: var(--ek-space-3) var(--ek-space-3) var(--ek-space-1);
+}
+
+.ek-date__picker :deep(.v-date-picker-controls .v-btn) {
+  border-radius: var(--ek-radius-tile);
+  color: var(--ek-color-content-default);
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+/* Ay / yıl başlığı: yarı kalın, tıklanınca ay-yıl seçimi. */
+.ek-date__picker :deep(.v-date-picker-controls__month-btn),
+.ek-date__picker :deep(.v-date-picker-controls__mode-btn) {
+  color: var(--ek-color-content-strong);
+  font-size: var(--ek-type-body-size);
+  font-weight: var(--ek-font-weight-semibold);
+}
+
+/* Önceki / sonraki ay: çerçeveli ikon kutuları (ikon kapsülleriyle aynı aile). */
+.ek-date__picker :deep(.v-date-picker-controls__month) {
+  gap: var(--ek-space-1);
+}
+
+.ek-date__picker :deep(.v-date-picker-controls__month .v-btn) {
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--ek-color-border-default);
+  background: var(--ek-color-surface);
+}
+
+.ek-date__picker :deep(.v-date-picker-controls__month .v-btn:hover) {
+  border-color: var(--ek-color-action-border);
+  background: var(--ek-color-action-subtle);
+  color: var(--ek-color-action-emphasis);
+}
+
+.ek-date__picker :deep(.v-date-picker-month) {
+  padding: 0 var(--ek-space-3) var(--ek-space-3);
+}
+
+.ek-date__picker :deep(.v-date-picker-month__days) {
+  row-gap: 2px;
+  column-gap: 2px;
+}
+
+/* Gün adları: mikro büyük harf etiket. */
+.ek-date__picker :deep(.v-date-picker-month__weekday) {
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-micro-size);
+  font-weight: var(--ek-type-micro-weight);
+  letter-spacing: var(--ek-type-micro-tracking);
+  text-transform: uppercase;
+}
+
+.ek-date__picker :deep(.v-date-picker-month__day) {
+  width: 38px;
+  height: 36px;
+}
+
+.ek-date__picker :deep(.v-date-picker-month__day .v-btn) {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--ek-radius-tile);
+  color: var(--ek-color-content-default);
+  font-size: var(--ek-type-table-size);
+  font-variant-numeric: tabular-nums;
+  box-shadow: none;
+}
+
+.ek-date__picker :deep(.v-date-picker-month__day .v-btn:hover) {
+  background: var(--ek-color-surface-muted);
+}
+
+.ek-date__picker :deep(.v-date-picker-month__day--adjacent .v-btn) {
+  color: var(--ek-color-content-muted);
+  opacity: 0.6;
+}
+
+/* Bugün: eylem renginde ince çerçeve + açık zemin. */
+.ek-date__picker :deep(.v-date-picker-month__day .v-btn.v-btn--variant-outlined) {
+  border: 1px solid var(--ek-color-action-border);
+  background: var(--ek-color-action-subtle);
+  color: var(--ek-color-action-emphasis);
+  font-weight: var(--ek-font-weight-semibold);
+}
+
+/* Seçili gün: dolu eylem rengi (tek vurgu). */
+.ek-date__picker :deep(.v-date-picker-month__day--selected .v-btn) {
+  border: 0;
+  background: var(--ek-color-action);
+  color: var(--ek-color-action-contrast);
+  font-weight: var(--ek-font-weight-semibold);
+  opacity: 1;
+}
+
+/* Ay / yıl seçim ızgaraları. */
+.ek-date__picker :deep(.v-date-picker-months__content),
+.ek-date__picker :deep(.v-date-picker-years__content) {
+  gap: var(--ek-space-1);
+  padding: var(--ek-space-2) var(--ek-space-3) var(--ek-space-3);
+}
+
+.ek-date__picker :deep(.v-date-picker-months__content .v-btn),
+.ek-date__picker :deep(.v-date-picker-years__content .v-btn) {
+  border-radius: var(--ek-radius-tile);
+  color: var(--ek-color-content-default);
+  font-size: var(--ek-type-table-size);
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.ek-date__picker :deep(.v-date-picker-months__content .v-btn--active),
+.ek-date__picker :deep(.v-date-picker-years__content .v-btn--active) {
+  border: 1px solid var(--ek-color-action-border);
+  background: var(--ek-color-action-subtle);
+  color: var(--ek-color-action-emphasis);
+  font-weight: var(--ek-font-weight-semibold);
 }
 </style>

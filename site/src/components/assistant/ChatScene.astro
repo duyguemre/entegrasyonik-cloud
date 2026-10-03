@@ -129,31 +129,16 @@ import { assistantScenario as s } from '../../data/assistant'
     min-width: 0;
     margin: 0;
   }
-  /* Arka ışıma: pencerenin arkasında yumuşak ikincil renk halesi (dekoratif, statik). */
-  .chat::before {
-    content: '';
-    position: absolute;
-    inset: 8% -6% 14%;
-    z-index: 0;
-    border-radius: 50%;
-    background: radial-gradient(closest-side, color-mix(in srgb, var(--ek-color-secondary) 30%, transparent), transparent);
-    filter: blur(var(--ek-space-10));
-    pointer-events: none;
-  }
+  /* SITE-DL: arka ışıma (hale) kaldırıldı — pencere düz koyu panel. */
   .chat__window {
     position: relative;
     z-index: 1;
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    border: var(--site-border-width) solid var(--site-glass-border);
-    border-radius: var(--site-radius-panel);
-    background:
-      linear-gradient(180deg, color-mix(in srgb, var(--ek-color-background) 9%, transparent), color-mix(in srgb, var(--ek-color-background) 3%, transparent)),
-      color-mix(in srgb, var(--site-stage-deep) 82%, var(--ek-color-primary));
-    box-shadow:
-      var(--site-shadow-panel),
-      inset 0 var(--site-border-width) 0 color-mix(in srgb, var(--ek-color-background) 14%, transparent);
+    border: var(--site-border-width) solid var(--ek-color-chrome-border);
+    border-radius: var(--ek-radius-card);
+    background: var(--ek-color-chrome);
     color: var(--site-text-on-dark-body);
   }
 
@@ -163,7 +148,8 @@ import { assistantScenario as s } from '../../data/assistant'
     align-items: center;
     gap: var(--ek-space-3);
     padding: var(--ek-space-3) var(--ek-space-4);
-    border-bottom: var(--site-border-width) solid var(--site-glass-border);
+    border-bottom: var(--site-border-width) solid var(--ek-color-chrome-border);
+    background: var(--ek-color-chrome-raised);
   }
   .chat__dots {
     display: inline-flex;
@@ -189,8 +175,8 @@ import { assistantScenario as s } from '../../data/assistant'
     justify-content: center;
     width: var(--ek-space-6);
     height: var(--ek-space-6);
-    border-radius: var(--ek-radius-md);
-    background: var(--site-gradient-accent-on-dark);
+    border-radius: var(--ek-radius-sm);
+    background: var(--site-accent-on-dark);
     color: var(--site-stage-deep);
   }
   .chat__status {
@@ -206,8 +192,7 @@ import { assistantScenario as s } from '../../data/assistant'
     width: var(--ek-space-2);
     height: var(--ek-space-2);
     border-radius: 50%;
-    background: var(--ek-color-secondary);
-    box-shadow: 0 0 0 0.1875rem color-mix(in srgb, var(--ek-color-secondary) 25%, transparent);
+    background: var(--site-accent-on-dark);
   }
 
   /* --- Akış --- */
@@ -231,9 +216,10 @@ import { assistantScenario as s } from '../../data/assistant'
     max-width: 85%;
     margin: 0;
     padding: var(--ek-space-2) var(--ek-space-4);
-    border-radius: var(--ek-radius-lg) var(--ek-radius-lg) var(--ek-radius-sm) var(--ek-radius-lg);
-    background: linear-gradient(140deg, var(--ek-color-primary-lighten), var(--ek-color-primary));
-    box-shadow: 0 var(--ek-space-2) var(--ek-space-4) calc(var(--ek-space-2) * -1) color-mix(in srgb, var(--ek-color-primary) 80%, transparent);
+    /* SITE-DL: düz balon — ince çerçeve, köşe radius-tile; degrade/gölge yok. */
+    border: var(--site-border-width) solid var(--ek-color-chrome-soft-border);
+    border-radius: var(--ek-radius-tile);
+    background: var(--ek-color-chrome-soft-raised);
     color: var(--site-text-on-dark-heading);
     font-size: var(--ek-font-size-sm);
     font-weight: var(--ek-font-weight-medium);
@@ -249,7 +235,7 @@ import { assistantScenario as s } from '../../data/assistant'
     align-items: center;
     gap: var(--ek-space-2);
     padding: var(--ek-space-2) var(--ek-space-3);
-    border-radius: var(--ek-radius-lg);
+    border-radius: var(--ek-radius-tile);
     background: var(--site-glass-bg);
     border: var(--site-border-width) solid var(--site-glass-border);
     color: var(--site-text-on-dark-meta);
@@ -276,7 +262,7 @@ import { assistantScenario as s } from '../../data/assistant'
     width: 0.375rem;
     height: 0.375rem;
     border-radius: 50%;
-    background: var(--ek-color-secondary);
+    background: var(--site-accent-on-dark);
   }
 
   /* --- Kartlar --- */
@@ -286,15 +272,13 @@ import { assistantScenario as s } from '../../data/assistant'
     gap: var(--ek-space-2);
     width: min(100%, 26rem);
     padding: var(--ek-space-3) var(--ek-space-4);
-    border: var(--site-border-width) solid var(--site-glass-border);
-    border-radius: var(--ek-radius-lg) var(--ek-radius-lg) var(--ek-radius-lg) var(--ek-radius-sm);
-    background: color-mix(in srgb, var(--ek-color-background) 6%, transparent);
+    border: var(--site-border-width) solid var(--ek-color-chrome-border);
+    border-radius: var(--ek-radius-tile);
+    background: var(--ek-color-chrome-raised);
   }
   .card--approve {
+    /* Onay kartı: yalnız çerçeve tonu uyarı renginde; zemin düz. */
     border-color: color-mix(in srgb, var(--ek-color-warning) 55%, transparent);
-    background:
-      linear-gradient(180deg, color-mix(in srgb, var(--ek-color-warning) 10%, transparent), transparent 70%),
-      color-mix(in srgb, var(--ek-color-background) 6%, transparent);
   }
   .card__head {
     display: flex;
@@ -308,12 +292,14 @@ import { assistantScenario as s } from '../../data/assistant'
     flex: none;
     width: var(--ek-space-6);
     height: var(--ek-space-6);
+    border: var(--site-border-width) solid var(--site-glass-border);
     border-radius: var(--ek-radius-md);
-    background: color-mix(in srgb, var(--ek-color-secondary) 18%, transparent);
+    background: var(--site-glass-bg);
     color: var(--site-accent-on-dark);
   }
   .card__icon--warn {
-    background: color-mix(in srgb, var(--ek-color-warning) 20%, transparent);
+    border-color: color-mix(in srgb, var(--ek-color-warning) 45%, transparent);
+    background: color-mix(in srgb, var(--ek-color-warning) 14%, transparent);
     color: color-mix(in srgb, var(--ek-color-warning) 60%, var(--ek-color-background));
   }
   .card__title {
@@ -359,7 +345,7 @@ import { assistantScenario as s } from '../../data/assistant'
     min-width: var(--ek-space-6);
     justify-content: center;
     padding: 0 var(--ek-space-2);
-    border-radius: var(--ek-radius-full);
+    border-radius: var(--ek-radius-sm);
     background: color-mix(in srgb, var(--ek-color-error) 26%, transparent);
     color: var(--site-text-on-dark-heading);
     font-weight: var(--ek-font-weight-semibold);
@@ -406,15 +392,15 @@ import { assistantScenario as s } from '../../data/assistant'
     font-weight: var(--ek-font-weight-semibold);
   }
   .fake-btn--primary {
-    border-color: transparent;
-    background: var(--ek-color-secondary);
-    color: var(--site-stage-deep);
+    border-color: var(--ek-color-background);
+    background: var(--ek-color-background);
+    color: var(--ek-color-primary);
   }
   /* Onay vurgusu: "kullanıcı düğmeye yöneliyor" — yalnızca oynatmada görünür (statik: gizli). */
   .fake-btn__ring {
     position: absolute;
     inset: calc(var(--ek-space-1) * -1);
-    border-radius: var(--ek-radius-lg);
+    border-radius: var(--ek-radius-tile);
     box-shadow: var(--site-glow-ring);
     opacity: 0;
   }
@@ -434,9 +420,9 @@ import { assistantScenario as s } from '../../data/assistant'
     justify-content: space-between;
     margin: 0 var(--ek-space-4) var(--ek-space-4);
     padding: var(--ek-space-2) var(--ek-space-2) var(--ek-space-2) var(--ek-space-4);
-    border: var(--site-border-width) solid var(--site-glass-border);
-    border-radius: var(--ek-radius-full);
-    background: color-mix(in srgb, var(--ek-color-background) 5%, transparent);
+    border: var(--site-border-width) solid var(--ek-color-chrome-border);
+    border-radius: var(--ek-radius-tile);
+    background: var(--ek-color-chrome-raised);
     color: var(--site-text-on-dark-meta);
     font-size: var(--ek-font-size-sm);
   }
@@ -446,9 +432,9 @@ import { assistantScenario as s } from '../../data/assistant'
     justify-content: center;
     width: var(--ek-space-8);
     height: var(--ek-space-8);
-    border-radius: 50%;
-    background: var(--site-gradient-accent-on-dark);
-    color: var(--site-stage-deep);
+    border-radius: var(--ek-radius-md);
+    background: var(--ek-color-background);
+    color: var(--ek-color-primary);
   }
 
 </style>

@@ -103,6 +103,8 @@ export const COLOR_ROLES: ColorRoleDoc[] = [
   { key: 'warning-border', group: 'status', purpose: 'Uyarı kutusu/çipi kenarı.' },
   { key: 'warning-emphasis', group: 'status', purpose: 'Uyarı subtle zemini üzerindeki metin.' },
   { key: 'warning-contrast', group: 'status', purpose: 'Uyarı dolgusu (sayaç rozeti, tehlike düğmesi) üzerindeki metin/ikon.' },
+  { key: 'warning-fill', group: 'status', purpose: 'Uyarı SARISI grafik dolgu: nokta, oran çubuğu, ikon karesi, hafif zemin tonu (color-mix). Metin için değil.' },
+  { key: 'warning-ink', group: 'status', purpose: 'Uyarı sarısının okunur metin/ikon tonu (yüzeyde AA). Kritik kırmızısından net ayrılan uyarı vurgusu.' },
   { key: 'error', group: 'status', purpose: 'Hata/başarısız ve TEHLİKELİ aksiyon (sil, iptal et) — tehlike düğmesi yalnızca onay adımında dolgu.' },
   { key: 'error-subtle', group: 'status', purpose: 'Hata kutusu, tehlikeli menü öğesi hover zemini.' },
   { key: 'error-border', group: 'status', purpose: 'Hatalı alan/kutu kenarı.' },

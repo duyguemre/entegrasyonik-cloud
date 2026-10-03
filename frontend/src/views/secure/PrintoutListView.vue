@@ -17,28 +17,31 @@
   <div class="printoutListView">
     <EkPageHeader section="Ayarlar" :title="$t('menu.printoutList')"
       description="Kargo etiketi, sipariş fişi, irsaliye taslağı ve toplama listesi şablonlarınızı tasarlayın, gerçek siparişle önizleyip yazdırın."
-      :tips="TIPS" :primary-action="view === 'gallery' ? { label: 'Yeni şablon', icon: 'mdi-plus', onClick: openCreate } : undefined" />
+      :tips="TIPS" :refreshable="view === 'gallery'" @refresh="reload" />
 
     <!-- GALERİ -->
     <template v-if="view === 'gallery'">
       <EkAlert v-if="!persistent" tone="warning" dense title="Tarayıcı depolaması kullanılamıyor"
         text="Şablonlarınız bu oturumda çalışır ama sayfadan çıkınca kaybolur. Gizli pencere kullanıyorsanız normal pencerede açın." />
 
+      <!-- FE-LOCAL-1047: araç satırı — belge türü sekmeleri solda, birincil "oluştur" SAĞ uçta (liste ekranlarındaki
+           filtre şeridiyle aynı yer). Yenileme sayfa adında. -->
       <div class="ek-tpl-gallery__toolbar">
         <EkPageTabs v-model="kindFilter" :tabs="kindTabs" label="Belge türü" />
+        <EkButton tone="primary" icon="mdi-plus" class="ek-tpl-gallery__create" data-testid="template-create" @click="openCreate">Yeni şablon</EkButton>
       </div>
 
       <section class="ek-tpl-gallery__section" aria-labelledby="ek-tpl-mine">
         <header class="ek-tpl-gallery__head">
           <h2 id="ek-tpl-mine">Şablonlarım</h2>
-          <span>{{ mine.length }}</span>
+          <span class="ek-tpl-gallery__count ek-num">{{ mine.length }}</span>
           <p class="ek-tpl-gallery__storage"><v-icon icon="mdi-laptop" size="14" aria-hidden="true" />
             {{ mine.length ? 'Bu tarayıcıda, hesabınıza ve mağazanıza özel saklanır.' : 'Henüz kendi şablonunuz yok — hazır bir şablonun kopyasıyla ya da boş tuvalle başlayın. Şablonlar bu tarayıcıda, hesabınıza özel saklanır.' }}</p>
         </header>
         <ul class="ek-tpl-grid">
           <li>
             <button type="button" class="ek-tpl-create" @click="openCreate">
-              <span class="ek-tpl-create__icon" aria-hidden="true"><v-icon icon="mdi-plus" size="24" /></span>
+              <span class="ek-tpl-create__icon" aria-hidden="true"><v-icon icon="mdi-plus" size="20" /></span>
               <strong>Boş şablon</strong>
               <span>{{ kindFilter === 'all' ? 'Tür ve kâğıt seçerek başlayın' : `${docKindLabel(kindFilter)} · boş tuval` }}</span>
             </button>
@@ -68,7 +71,7 @@
       <section class="ek-tpl-gallery__section" aria-labelledby="ek-tpl-starters">
         <header class="ek-tpl-gallery__head">
           <h2 id="ek-tpl-starters">Hazır şablonlar</h2>
-          <span>{{ starters.length }}</span>
+          <span class="ek-tpl-gallery__count ek-num">{{ starters.length }}</span>
           <p>Değiştirilemez; kopyasını düzenleyerek kendi şablonunuzu oluşturun.</p>
         </header>
         <ul class="ek-tpl-grid">
@@ -158,11 +161,14 @@ const toast = (message: string) => showToast({ tone: 'success', message })
 const storageKey = computed(() => templateStorageKey(getSessionScope.value.userId, getSessionScope.value.tenantId))
 const file = ref<TemplateFile>({ v: 1, templates: [], defaults: {} })
 const persistent = ref(true)
-watch(storageKey, (k) => {
+/** Şablonları depodan yeniden okur (sayfa adına tıklayınca da çalışır — başka sekmede yapılan değişiklik görünür). */
+function reload() {
+  const k = storageKey.value
   const r = readTemplates(k)
   file.value = r.file
   persistent.value = r.persistent || !k
-}, { immediate: true })
+}
+watch(storageKey, reload, { immediate: true })
 function persist() {
   if (!writeTemplates(storageKey.value, file.value) && storageKey.value) persistent.value = false
 }
@@ -438,5 +444,135 @@ function confirmDelete() {
 }
 @media (prefers-reduced-motion: reduce) {
   .ek-tpl-card, .ek-tpl-kind, .ek-tpl-create { transition: none; }
+}
+
+/* ================= FE-LOCAL-1047 — Çıktılar: uygulamanın ortak tasarım dili =================
+   Sayfa adı diğer ekranlarla aynı noktada; araç satırı çizgisiz (sekmeler + sağ uçta "Yeni şablon"); bölüm başlığı =
+   eylem renginde kısa çizgi + büyük harfli mikro etiket + düz sayaç; kartlar düz yüzey + ince çerçeve (gölge yok,
+   üzerine gelince yalnız çerçeve tonu); "Boş şablon" kesik çerçeve + çerçeveli ikon kapsülü. */
+.printoutListView {
+  padding: var(--ek-space-5) var(--ek-space-6) var(--ek-space-6);
+}
+
+.ek-tpl-gallery__toolbar {
+  flex-wrap: nowrap;
+  border-bottom: 0;
+}
+
+.ek-tpl-gallery__create {
+  flex: none;
+}
+
+.ek-tpl-gallery__section + .ek-tpl-gallery__section {
+  margin-top: var(--ek-space-5);
+}
+
+.ek-tpl-gallery__head {
+  align-items: center;
+}
+
+.ek-tpl-gallery__head h2 {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ek-space-2);
+  color: var(--ek-color-sidebar-section);
+  font-size: var(--ek-type-micro-size);
+  line-height: var(--ek-type-micro-line);
+  font-weight: var(--ek-type-micro-weight);
+  letter-spacing: var(--ek-type-micro-tracking);
+  text-transform: uppercase;
+}
+
+.ek-tpl-gallery__head h2::before {
+  content: '';
+  width: 14px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--ek-color-action);
+}
+
+.ek-tpl-gallery__head > .ek-tpl-gallery__count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 18px;
+  padding: 0 var(--ek-space-1);
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-md);
+  background: var(--ek-color-surface);
+  color: var(--ek-color-content-default);
+  font-size: var(--ek-type-micro-size);
+  font-weight: var(--ek-font-weight-semibold);
+}
+
+.ek-tpl-gallery__head p {
+  font-size: var(--ek-type-caption-size);
+}
+
+.ek-tpl-create {
+  border-color: var(--ek-color-border-default);
+  background: transparent;
+}
+
+.ek-tpl-create:hover {
+  border-style: solid;
+}
+
+.ek-tpl-create__icon {
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--ek-color-action-border);
+  border-radius: var(--ek-radius-tile);
+  background: var(--ek-color-action-subtle);
+  color: var(--ek-color-action-emphasis);
+}
+
+.ek-tpl-create:hover .ek-tpl-create__icon {
+  background: var(--ek-color-surface);
+}
+
+.ek-tpl-card {
+  border-color: var(--ek-color-border-default);
+  box-shadow: none;
+}
+
+.ek-tpl-card:hover {
+  border-color: var(--ek-color-action-border);
+  box-shadow: none;
+}
+
+.ek-tpl-card__thumb {
+  background: var(--ek-color-surface-muted);
+}
+
+.ek-tpl-card__thumb :deep(.ek-tpl-frame) {
+  box-shadow: none;
+  outline-color: var(--ek-color-border-default);
+}
+
+.ek-tpl-card__actions {
+  margin-top: var(--ek-space-1);
+  padding-top: var(--ek-space-2);
+  border-top: 1px solid var(--ek-color-border-subtle);
+}
+
+.ek-tpl-kind {
+  border-color: var(--ek-color-border-default);
+  border-radius: var(--ek-radius-tile);
+}
+
+.ek-tpl-kind.is-active {
+  color: var(--ek-color-action-emphasis);
+}
+
+@media (max-width: 599px) {
+  .printoutListView {
+    padding: var(--ek-space-4);
+  }
+
+  .ek-tpl-gallery__toolbar {
+    flex-wrap: wrap;
+  }
 }
 </style>

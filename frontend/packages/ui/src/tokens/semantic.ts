@@ -19,6 +19,7 @@ import {
   red,
   green,
   amberScale,
+  yellow,
   sky,
   brand,
   darkAccent,
@@ -133,6 +134,9 @@ export type WorkspaceColorKey =
   | 'warning-border'
   | 'warning-emphasis'
   | 'warning-contrast'
+  // Uyarı sarısı: grafik dolgu (nokta, çubuk, ikon karesi, zemin tonu) + okunur metin (AA)
+  | 'warning-fill'
+  | 'warning-ink'
   | 'error-border'
   | 'error-emphasis'
   | 'error-contrast'
@@ -196,6 +200,8 @@ export const workspaceColorsLight: Record<WorkspaceColorKey, string> = {
   'warning-border': statusSteps.warning[200],
   'warning-emphasis': statusSteps.warning[800],
   'warning-contrast': ink[0],
+  'warning-fill': yellow[500],
+  'warning-ink': yellow[700],
   'error-border': statusSteps.error[200],
   'error-emphasis': statusSteps.error[800],
   'error-contrast': ink[0],
@@ -253,6 +259,8 @@ export const workspaceColorsDark: Record<WorkspaceColorKey, string> = {
   'warning-border': amberScale[950],
   'warning-emphasis': statusDark.warningText,
   'warning-contrast': ink[950],
+  'warning-fill': yellow[400],
+  'warning-ink': yellow[400],
   'error-border': red[900],
   'error-emphasis': statusDark.dangerText,
   'error-contrast': ink[950],

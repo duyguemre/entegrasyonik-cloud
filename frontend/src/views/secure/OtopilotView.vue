@@ -16,7 +16,9 @@
       :show-close="false"
       :show-expand="!isMobile"
       @collapse="otopilot.collapseToSide()"
-    />
+    >
+      <template #empty><OtopilotWelcome /></template>
+    </ChatPanel>
   </div>
 </template>
 
@@ -24,6 +26,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { ChatPanel } from '@entegrasyonik/chat'
 import { useOtopilotStore } from '@/chat/otopilotStore'
+import OtopilotWelcome from '@/chat/OtopilotWelcome.vue'
 import { useShellBreakpoints } from '@/composables/useShellBreakpoints'
 
 defineProps<{ parameters?: Record<string, unknown> }>()

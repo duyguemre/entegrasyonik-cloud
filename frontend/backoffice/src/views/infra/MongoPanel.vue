@@ -132,4 +132,17 @@ function pick(r: DbRow) {
   color: var(--ek-color-content-muted);
   font-size: var(--ek-type-caption-size);
 }
+
+/* BO-LOCAL-01 — seçili veritabanı: alt çizgi yerine eylem renginin açık tonunda köşeli etiket. */
+.bo-mongo__pick {
+  padding: 2px var(--ek-space-2);
+  border: 1px solid transparent;
+  border-radius: var(--ek-radius-md);
+}
+
+.bo-mongo__pick[aria-pressed='true'] {
+  border-color: var(--ek-color-action-border);
+  background: var(--ek-color-action-subtle);
+  text-decoration: none;
+}
 </style>

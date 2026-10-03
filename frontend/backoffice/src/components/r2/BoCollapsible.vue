@@ -100,4 +100,24 @@ function toggle() {
     transition: none;
   }
 }
+
+/* BO-LOCAL-01 — aç/kapa: ok çerçeveli köşeli küçük kutuda; geçiş uygulamanın tek hız rolüyle. */
+.bo-collapse__chev {
+  width: 20px;
+  height: 20px;
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-md);
+  background: var(--ek-color-surface);
+  transition: transform var(--ek-motion-reveal);
+}
+
+.bo-collapse__toggle {
+  gap: var(--ek-space-2);
+}
+
+.bo-collapse__toggle:hover .bo-collapse__chev {
+  border-color: var(--ek-color-action-border);
+  background: var(--ek-color-action-subtle);
+  color: var(--ek-color-action-emphasis);
+}
 </style>

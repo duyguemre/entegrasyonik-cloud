@@ -1667,4 +1667,852 @@
   html[data-motion='play'] [data-scene='agent-loop'][data-state='play'][data-visible='true'] :is([data-part='loop-trace'], [data-part='loop-node']) {
     animation-play-state: running;
   }
+
+  /* ===== SITE-DL F1: yetenek karoları döngüleri (başlangıç) ===== */
+  /* ---------------------------------------------------------------------------------------- */
+  /* stock-single-winner (SITE-DL F1) — "Aşırı satışa karşı stok rezervasyonu": 12 sn'lik ADIM ADIM döngü. */
+  /*   %5–9   son adet için iki kanaldan AYNI ANDA sipariş gelir                                     */
+  /*   %13–24 iki nokta hatlardan rezervasyon çekirdeğine akar                                       */
+  /*   %25–30 çekirdek: kalan 1 -> 0, kilit ("Rezervasyon") yanar                                    */
+  /*   %31–42 ilk sipariş: "Rezerve edildi"      %41–52 ikinci sipariş: "Aşırı satış olarak işaretlendi" */
+  /*   %56–68 aynı ürünün stoku kanallarda sırayla 1 -> 0 (kanal k: +%3 x k)                         */
+  /*   %68–88 son kare okunur; %88–100 sahne başa döner. Durağan hâl = son kare (Capabilities.astro). */
+  /* ---------------------------------------------------------------------------------------- */
+  @keyframes loop-stock-order {
+    0%,
+    5% {
+      opacity: 0;
+      translate: calc(var(--site-motion-distance) * -3) 0;
+    }
+    9%,
+    93% {
+      opacity: 1;
+      translate: 0 0;
+    }
+    97%,
+    100% {
+      opacity: 0;
+      translate: 0 0;
+    }
+  }
+  @keyframes loop-stock-carry-in {
+    0%,
+    12% {
+      opacity: 0;
+      translate: 0 0;
+    }
+    13% {
+      opacity: 1;
+      translate: 0 0;
+    }
+    18% {
+      opacity: 1;
+      translate: var(--m1);
+    }
+    23% {
+      opacity: 1;
+      translate: var(--m2);
+    }
+    24%,
+    100% {
+      opacity: 0;
+      translate: var(--m2);
+    }
+  }
+  @keyframes loop-stock-flash {
+    0%,
+    24% {
+      opacity: 0;
+    }
+    26% {
+      opacity: 1;
+    }
+    34%,
+    100% {
+      opacity: 0;
+    }
+  }
+  @keyframes loop-stock-old {
+    0%,
+    25% {
+      opacity: 1;
+      translate: 0 0;
+    }
+    28%,
+    96% {
+      opacity: 0;
+      translate: 0 calc(var(--site-motion-distance) * -1.5);
+    }
+    100% {
+      opacity: 1;
+      translate: 0 0;
+    }
+  }
+  @keyframes loop-stock-new {
+    0%,
+    25% {
+      opacity: 0;
+      translate: 0 calc(var(--site-motion-distance) * 1.5);
+    }
+    28%,
+    96% {
+      opacity: 1;
+      translate: 0 0;
+    }
+    100% {
+      opacity: 0;
+      translate: 0 0;
+    }
+  }
+  @keyframes loop-stock-lock {
+    0%,
+    26% {
+      opacity: 0;
+      scale: 0.9;
+    }
+    30%,
+    94% {
+      opacity: 1;
+      scale: 1;
+    }
+    98%,
+    100% {
+      opacity: 0;
+      scale: 1;
+    }
+  }
+  @keyframes loop-stock-carry-ok {
+    0%,
+    30% {
+      opacity: 0;
+      translate: 0 0;
+    }
+    31% {
+      opacity: 1;
+      translate: 0 0;
+    }
+    36% {
+      opacity: 1;
+      translate: var(--m1);
+    }
+    41% {
+      opacity: 1;
+      translate: var(--m2);
+    }
+    42%,
+    100% {
+      opacity: 0;
+      translate: var(--m2);
+    }
+  }
+  @keyframes loop-stock-carry-warn {
+    0%,
+    40% {
+      opacity: 0;
+      translate: 0 0;
+    }
+    41% {
+      opacity: 1;
+      translate: 0 0;
+    }
+    46% {
+      opacity: 1;
+      translate: var(--m1);
+    }
+    51% {
+      opacity: 1;
+      translate: var(--m2);
+    }
+    52%,
+    100% {
+      opacity: 0;
+      translate: var(--m2);
+    }
+  }
+  @keyframes loop-stock-result-ok {
+    0%,
+    38% {
+      opacity: 0;
+      translate: 0 var(--site-motion-distance);
+    }
+    42%,
+    93% {
+      opacity: 1;
+      translate: 0 0;
+    }
+    97%,
+    100% {
+      opacity: 0;
+      translate: 0 0;
+    }
+  }
+  @keyframes loop-stock-result-warn {
+    0%,
+    48% {
+      opacity: 0;
+      translate: 0 var(--site-motion-distance);
+    }
+    52%,
+    93% {
+      opacity: 1;
+      translate: 0 0;
+    }
+    97%,
+    100% {
+      opacity: 0;
+      translate: 0 0;
+    }
+  }
+  @keyframes loop-stock-chan-old {
+    0%,
+    56% {
+      opacity: 1;
+      translate: 0 0;
+    }
+    59%,
+    88% {
+      opacity: 0;
+      translate: 0 calc(var(--site-motion-distance) * -1);
+    }
+    91%,
+    100% {
+      opacity: 1;
+      translate: 0 0;
+    }
+  }
+  @keyframes loop-stock-chan-new {
+    0%,
+    56% {
+      opacity: 0;
+      translate: 0 var(--site-motion-distance);
+    }
+    59%,
+    88% {
+      opacity: 1;
+      translate: 0 0;
+    }
+    91%,
+    100% {
+      opacity: 0;
+      translate: 0 0;
+    }
+  }
+  html[data-motion='play'] [data-scene='stock-single-winner'][data-state='play'] :is([data-part='order-a'], [data-part='order-b'], [data-part='carry-in'], [data-part='carry-ok'], [data-part='carry-warn'], [data-part='flash'], [data-part='left-a'], [data-part='left-b'], [data-part='lock'], [data-part='result-ok'], [data-part='result-oversold'], [data-part='chan-old'], [data-part='chan-new']) {
+    animation-duration: var(--site-motion-loop-scene);
+    animation-timing-function: var(--site-motion-ease-loop);
+    animation-iteration-count: infinite;
+    animation-fill-mode: backwards;
+    animation-play-state: paused;
+  }
+  html[data-motion='play'] [data-scene='stock-single-winner'][data-state='play'][data-visible='true'] :is([data-part='order-a'], [data-part='order-b'], [data-part='carry-in'], [data-part='carry-ok'], [data-part='carry-warn'], [data-part='flash'], [data-part='left-a'], [data-part='left-b'], [data-part='lock'], [data-part='result-ok'], [data-part='result-oversold'], [data-part='chan-old'], [data-part='chan-new']) {
+    animation-play-state: running;
+  }
+  /* Hat noktası yalnız döngüde görünür (taşıyıcının opaklığı yönetir); durağan hâlde gizlidir. */
+  html[data-motion='play'] [data-scene='stock-single-winner'][data-state='play'] .stock__pulse {
+    opacity: 1;
+  }
+  html[data-motion='play'] [data-scene='stock-single-winner'][data-state='play'] :is([data-part='order-a'], [data-part='order-b']) {
+    animation-name: loop-stock-order;
+  }
+  html[data-motion='play'] [data-scene='stock-single-winner'][data-state='play'] [data-part='carry-in'] {
+    animation-name: loop-stock-carry-in;
+  }
+  html[data-motion='play'] [data-scene='stock-single-winner'][data-state='play'] [data-part='carry-ok'] {
+    animation-name: loop-stock-carry-ok;
+  }
+  html[data-motion='play'] [data-scene='stock-single-winner'][data-state='play'] [data-part='carry-warn'] {
+    animation-name: loop-stock-carry-warn;
+  }
+  html[data-motion='play'] [data-scene='stock-single-winner'][data-state='play'] [data-part='flash'] {
+    animation-name: loop-stock-flash;
+  }
+  html[data-motion='play'] [data-scene='stock-single-winner'][data-state='play'] [data-part='left-a'] {
+    animation-name: loop-stock-old;
+  }
+  html[data-motion='play'] [data-scene='stock-single-winner'][data-state='play'] [data-part='left-b'] {
+    animation-name: loop-stock-new;
+  }
+  html[data-motion='play'] [data-scene='stock-single-winner'][data-state='play'] [data-part='lock'] {
+    animation-name: loop-stock-lock;
+  }
+  html[data-motion='play'] [data-scene='stock-single-winner'][data-state='play'] [data-part='result-ok'] {
+    animation-name: loop-stock-result-ok;
+  }
+  html[data-motion='play'] [data-scene='stock-single-winner'][data-state='play'] [data-part='result-oversold'] {
+    animation-name: loop-stock-result-warn;
+  }
+  html[data-motion='play'] [data-scene='stock-single-winner'][data-state='play'] [data-part='chan-old'] {
+    animation-name: loop-stock-chan-old;
+    animation-delay: calc(var(--site-motion-loop-scene) * 0.03 * var(--k, 0));
+  }
+  html[data-motion='play'] [data-scene='stock-single-winner'][data-state='play'] [data-part='chan-new'] {
+    animation-name: loop-stock-chan-new;
+    animation-delay: calc(var(--site-motion-loop-scene) * 0.03 * var(--k, 0));
+  }
+
+  /* ---------------------------------------------------------------------------------------- */
+  /* orders-merge (SITE-DL F1) — "Birleşik sipariş yönetimi": 12 sn'lik döngü.                       */
+  /*   Sipariş i (0..4) kendi kanalından TEK listeye düşer (%5 + 10i): kanal çerçevesi yanar, satır   */
+  /*   yukarıdan iner ve kısa süre vurgulanır, sayaç i -> i+1 olur. Durum rozetleri ilerler:          */
+  /*   1. satır Yeni -> Hazırlanıyor (%34) -> Kargoda (%62); 2. satır Yeni -> Hazırlanıyor (%54).     */
+  /*   %63–93 dolu liste okunur; %93–100 liste boşalır ve döngü başa döner. Durağan hâl = dolu liste. */
+  /* ---------------------------------------------------------------------------------------- */
+  @keyframes loop-ord-row-1 {
+    0%,
+    5% {
+      opacity: 0;
+      translate: 0 calc(var(--site-motion-distance) * -2);
+    }
+    9%,
+    93% {
+      opacity: 1;
+      translate: 0 0;
+    }
+    97%,
+    100% {
+      opacity: 0;
+      translate: 0 0;
+    }
+  }
+  @keyframes loop-ord-new-1 {
+    0%,
+    5% {
+      opacity: 0;
+    }
+    8% {
+      opacity: 1;
+    }
+    17%,
+    100% {
+      opacity: 0;
+    }
+  }
+  @keyframes loop-ord-row-2 {
+    0%,
+    15% {
+      opacity: 0;
+      translate: 0 calc(var(--site-motion-distance) * -2);
+    }
+    19%,
+    93% {
+      opacity: 1;
+      translate: 0 0;
+    }
+    97%,
+    100% {
+      opacity: 0;
+      translate: 0 0;
+    }
+  }
+  @keyframes loop-ord-new-2 {
+    0%,
+    15% {
+      opacity: 0;
+    }
+    18% {
+      opacity: 1;
+    }
+    27%,
+    100% {
+      opacity: 0;
+    }
+  }
+  @keyframes loop-ord-row-3 {
+    0%,
+    25% {
+      opacity: 0;
+      translate: 0 calc(var(--site-motion-distance) * -2);
+    }
+    29%,
+    93% {
+      opacity: 1;
+      translate: 0 0;
+    }
+    97%,
+    100% {
+      opacity: 0;
+      translate: 0 0;
+    }
+  }
+  @keyframes loop-ord-new-3 {
+    0%,
+    25% {
+      opacity: 0;
+    }
+    28% {
+      opacity: 1;
+    }
+    37%,
+    100% {
+      opacity: 0;
+    }
+  }
+  @keyframes loop-ord-row-4 {
+    0%,
+    35% {
+      opacity: 0;
+      translate: 0 calc(var(--site-motion-distance) * -2);
+    }
+    39%,
+    93% {
+      opacity: 1;
+      translate: 0 0;
+    }
+    97%,
+    100% {
+      opacity: 0;
+      translate: 0 0;
+    }
+  }
+  @keyframes loop-ord-new-4 {
+    0%,
+    35% {
+      opacity: 0;
+    }
+    38% {
+      opacity: 1;
+    }
+    47%,
+    100% {
+      opacity: 0;
+    }
+  }
+  @keyframes loop-ord-row-5 {
+    0%,
+    45% {
+      opacity: 0;
+      translate: 0 calc(var(--site-motion-distance) * -2);
+    }
+    49%,
+    93% {
+      opacity: 1;
+      translate: 0 0;
+    }
+    97%,
+    100% {
+      opacity: 0;
+      translate: 0 0;
+    }
+  }
+  @keyframes loop-ord-new-5 {
+    0%,
+    45% {
+      opacity: 0;
+    }
+    48% {
+      opacity: 1;
+    }
+    57%,
+    100% {
+      opacity: 0;
+    }
+  }
+  @keyframes loop-ord-chan-1 {
+    0%,
+    5% {
+      opacity: 0;
+    }
+    7% {
+      opacity: 1;
+    }
+    13%,
+    45% {
+      opacity: 0;
+    }
+    47% {
+      opacity: 1;
+    }
+    53%,
+    100% {
+      opacity: 0;
+    }
+  }
+  @keyframes loop-ord-chan-2 {
+    0%,
+    15% {
+      opacity: 0;
+    }
+    17% {
+      opacity: 1;
+    }
+    23%,
+    100% {
+      opacity: 0;
+    }
+  }
+  @keyframes loop-ord-chan-3 {
+    0%,
+    25% {
+      opacity: 0;
+    }
+    27% {
+      opacity: 1;
+    }
+    33%,
+    100% {
+      opacity: 0;
+    }
+  }
+  @keyframes loop-ord-chan-4 {
+    0%,
+    35% {
+      opacity: 0;
+    }
+    37% {
+      opacity: 1;
+    }
+    43%,
+    100% {
+      opacity: 0;
+    }
+  }
+  @keyframes loop-ord-num-0 {
+    0%,
+    8% {
+      opacity: 1;
+      translate: 0 0;
+    }
+    10%,
+    96% {
+      opacity: 0;
+      translate: 0 calc(var(--site-motion-distance) * -1);
+    }
+    100% {
+      opacity: 1;
+      translate: 0 0;
+    }
+  }
+  @keyframes loop-ord-num-1 {
+    0%,
+    8% {
+      opacity: 0;
+      translate: 0 var(--site-motion-distance);
+    }
+    10%,
+    18% {
+      opacity: 1;
+      translate: 0 0;
+    }
+    20%,
+    100% {
+      opacity: 0;
+      translate: 0 calc(var(--site-motion-distance) * -1);
+    }
+  }
+  @keyframes loop-ord-num-2 {
+    0%,
+    18% {
+      opacity: 0;
+      translate: 0 var(--site-motion-distance);
+    }
+    20%,
+    28% {
+      opacity: 1;
+      translate: 0 0;
+    }
+    30%,
+    100% {
+      opacity: 0;
+      translate: 0 calc(var(--site-motion-distance) * -1);
+    }
+  }
+  @keyframes loop-ord-num-3 {
+    0%,
+    28% {
+      opacity: 0;
+      translate: 0 var(--site-motion-distance);
+    }
+    30%,
+    38% {
+      opacity: 1;
+      translate: 0 0;
+    }
+    40%,
+    100% {
+      opacity: 0;
+      translate: 0 calc(var(--site-motion-distance) * -1);
+    }
+  }
+  @keyframes loop-ord-num-4 {
+    0%,
+    38% {
+      opacity: 0;
+      translate: 0 var(--site-motion-distance);
+    }
+    40%,
+    48% {
+      opacity: 1;
+      translate: 0 0;
+    }
+    50%,
+    100% {
+      opacity: 0;
+      translate: 0 calc(var(--site-motion-distance) * -1);
+    }
+  }
+  @keyframes loop-ord-num-5 {
+    0%,
+    48% {
+      opacity: 0;
+      translate: 0 var(--site-motion-distance);
+    }
+    50%,
+    96% {
+      opacity: 1;
+      translate: 0 0;
+    }
+    100% {
+      opacity: 0;
+      translate: 0 0;
+    }
+  }
+  @keyframes loop-ord-st-1a {
+    0%,
+    33% {
+      opacity: 1;
+    }
+    35%,
+    96% {
+      opacity: 0;
+    }
+    100% {
+      opacity: 1;
+    }
+  }
+  @keyframes loop-ord-st-1b {
+    0%,
+    33% {
+      opacity: 0;
+    }
+    35%,
+    61% {
+      opacity: 1;
+    }
+    63%,
+    100% {
+      opacity: 0;
+    }
+  }
+  @keyframes loop-ord-st-1c {
+    0%,
+    61% {
+      opacity: 0;
+    }
+    63%,
+    96% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+    }
+  }
+  @keyframes loop-ord-st-2a {
+    0%,
+    53% {
+      opacity: 1;
+    }
+    55%,
+    96% {
+      opacity: 0;
+    }
+    100% {
+      opacity: 1;
+    }
+  }
+  @keyframes loop-ord-st-2b {
+    0%,
+    53% {
+      opacity: 0;
+    }
+    55%,
+    96% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+    }
+  }
+  html[data-motion='play'] [data-scene='orders-merge'][data-state='play'] :is([data-part='order-row'], [data-part='ord-num']),
+  html[data-motion='play'] [data-scene='orders-merge'][data-state='play'] [data-part='order-row']::before,
+  html[data-motion='play'] [data-scene='orders-merge'][data-state='play'] [data-part='ord-chan']::after,
+  html[data-motion='play'] [data-scene='orders-merge'][data-state='play'] [data-part='order-row']:nth-child(-n + 2) [data-part='ord-st'] {
+    animation-duration: var(--site-motion-loop-scene);
+    animation-timing-function: var(--site-motion-ease-loop);
+    animation-iteration-count: infinite;
+    animation-fill-mode: backwards;
+    animation-play-state: paused;
+  }
+  html[data-motion='play'] [data-scene='orders-merge'][data-state='play'][data-visible='true'] :is([data-part='order-row'], [data-part='ord-num']),
+  html[data-motion='play'] [data-scene='orders-merge'][data-state='play'][data-visible='true'] [data-part='order-row']::before,
+  html[data-motion='play'] [data-scene='orders-merge'][data-state='play'][data-visible='true'] [data-part='ord-chan']::after,
+  html[data-motion='play'] [data-scene='orders-merge'][data-state='play'][data-visible='true'] [data-part='order-row']:nth-child(-n + 2) [data-part='ord-st'] {
+    animation-play-state: running;
+  }
+  html[data-motion='play'] [data-scene='orders-merge'][data-state='play'] [data-part='order-row']:nth-child(1) {
+    animation-name: loop-ord-row-1;
+  }
+  html[data-motion='play'] [data-scene='orders-merge'][data-state='play'] [data-part='order-row']:nth-child(1)::before {
+    animation-name: loop-ord-new-1;
+  }
+  html[data-motion='play'] [data-scene='orders-merge'][data-state='play'] [data-part='order-row']:nth-child(2) {
+    animation-name: loop-ord-row-2;
+  }
+  html[data-motion='play'] [data-scene='orders-merge'][data-state='play'] [data-part='order-row']:nth-child(2)::before {
+    animation-name: loop-ord-new-2;
+  }
+  html[data-motion='play'] [data-scene='orders-merge'][data-state='play'] [data-part='order-row']:nth-child(3) {
+    animation-name: loop-ord-row-3;
+  }
+  html[data-motion='play'] [data-scene='orders-merge'][data-state='play'] [data-part='order-row']:nth-child(3)::before {
+    animation-name: loop-ord-new-3;
+  }
+  html[data-motion='play'] [data-scene='orders-merge'][data-state='play'] [data-part='order-row']:nth-child(4) {
+    animation-name: loop-ord-row-4;
+  }
+  html[data-motion='play'] [data-scene='orders-merge'][data-state='play'] [data-part='order-row']:nth-child(4)::before {
+    animation-name: loop-ord-new-4;
+  }
+  html[data-motion='play'] [data-scene='orders-merge'][data-state='play'] [data-part='order-row']:nth-child(5) {
+    animation-name: loop-ord-row-5;
+  }
+  html[data-motion='play'] [data-scene='orders-merge'][data-state='play'] [data-part='order-row']:nth-child(5)::before {
+    animation-name: loop-ord-new-5;
+  }
+  html[data-motion='play'] [data-scene='orders-merge'][data-state='play'] [data-part='ord-chan']:nth-child(1)::after {
+    animation-name: loop-ord-chan-1;
+  }
+  html[data-motion='play'] [data-scene='orders-merge'][data-state='play'] [data-part='ord-chan']:nth-child(2)::after {
+    animation-name: loop-ord-chan-2;
+  }
+  html[data-motion='play'] [data-scene='orders-merge'][data-state='play'] [data-part='ord-chan']:nth-child(3)::after {
+    animation-name: loop-ord-chan-3;
+  }
+  html[data-motion='play'] [data-scene='orders-merge'][data-state='play'] [data-part='ord-chan']:nth-child(4)::after {
+    animation-name: loop-ord-chan-4;
+  }
+  html[data-motion='play'] [data-scene='orders-merge'][data-state='play'] [data-part='ord-num']:nth-child(1) {
+    animation-name: loop-ord-num-0;
+  }
+  html[data-motion='play'] [data-scene='orders-merge'][data-state='play'] [data-part='ord-num']:nth-child(2) {
+    animation-name: loop-ord-num-1;
+  }
+  html[data-motion='play'] [data-scene='orders-merge'][data-state='play'] [data-part='ord-num']:nth-child(3) {
+    animation-name: loop-ord-num-2;
+  }
+  html[data-motion='play'] [data-scene='orders-merge'][data-state='play'] [data-part='ord-num']:nth-child(4) {
+    animation-name: loop-ord-num-3;
+  }
+  html[data-motion='play'] [data-scene='orders-merge'][data-state='play'] [data-part='ord-num']:nth-child(5) {
+    animation-name: loop-ord-num-4;
+  }
+  html[data-motion='play'] [data-scene='orders-merge'][data-state='play'] [data-part='ord-num']:nth-child(6) {
+    animation-name: loop-ord-num-5;
+  }
+  html[data-motion='play'] [data-scene='orders-merge'][data-state='play'] [data-part='order-row']:nth-child(1) [data-part='ord-st']:nth-child(1) {
+    animation-name: loop-ord-st-1a;
+  }
+  html[data-motion='play'] [data-scene='orders-merge'][data-state='play'] [data-part='order-row']:nth-child(1) [data-part='ord-st']:nth-child(2) {
+    animation-name: loop-ord-st-1b;
+  }
+  html[data-motion='play'] [data-scene='orders-merge'][data-state='play'] [data-part='order-row']:nth-child(1) [data-part='ord-st']:nth-child(3) {
+    animation-name: loop-ord-st-1c;
+  }
+  html[data-motion='play'] [data-scene='orders-merge'][data-state='play'] [data-part='order-row']:nth-child(2) [data-part='ord-st']:nth-child(1) {
+    animation-name: loop-ord-st-2a;
+  }
+  html[data-motion='play'] [data-scene='orders-merge'][data-state='play'] [data-part='order-row']:nth-child(2) [data-part='ord-st']:nth-child(2) {
+    animation-name: loop-ord-st-2b;
+  }
+
+  /* ---------------------------------------------------------------------------------------- */
+  /* integration-status (SITE-DL F1) — "Her kanal aynı merkezde": 12 sn'de bir sakin eşitleme dalgası. */
+  /*   Hat boyunca bir nokta kanallardan "Tek panel"e iner (%0–26); geçtiği satırın ürün/stok/sipariş  */
+  /*   çubukları sırayla yeniden dolar (satır i: +%4 x i, çubuk k: +%1,2 x k); nokta panele ulaşınca   */
+  /*   panel çerçevesi bir kez belirir. Kalan sürede görsel durağandır. Durağan hâl = dolu çubuklar.   */
+  /* ---------------------------------------------------------------------------------------- */
+  @keyframes loop-istat-seg {
+    0%,
+    1% {
+      opacity: 1;
+      scale: 1 1;
+    }
+    2% {
+      opacity: 0;
+      scale: 1 1;
+    }
+    2.5% {
+      opacity: 0;
+      scale: 0 1;
+    }
+    3% {
+      opacity: 1;
+      scale: 0 1;
+    }
+    8%,
+    100% {
+      opacity: 1;
+      scale: 1 1;
+    }
+  }
+  @keyframes loop-istat-light {
+    0% {
+      opacity: 0;
+      translate: 0 0;
+    }
+    1.5% {
+      opacity: 1;
+      translate: 0 0;
+    }
+    26% {
+      opacity: 1;
+      translate: 0 100%;
+    }
+    28%,
+    100% {
+      opacity: 0;
+      translate: 0 100%;
+    }
+  }
+  @keyframes loop-istat-hub {
+    0%,
+    26% {
+      opacity: 0;
+      scale: 1;
+    }
+    29% {
+      opacity: 1;
+      scale: 1;
+    }
+    38%,
+    100% {
+      opacity: 0;
+      scale: 1.12;
+    }
+  }
+  html[data-motion='play'] [data-scene='integration-status'][data-state='play'] :is([data-part='seg']),
+  html[data-motion='play'] [data-scene='integration-status'][data-state='play'] .istat__rows::after,
+  html[data-motion='play'] [data-scene='integration-status'][data-state='play'] .istat__hub::after {
+    animation-duration: var(--site-motion-loop-scene);
+    animation-timing-function: var(--site-motion-ease-loop);
+    animation-iteration-count: infinite;
+    animation-fill-mode: backwards;
+    animation-play-state: paused;
+  }
+  html[data-motion='play'] [data-scene='integration-status'][data-state='play'][data-visible='true'] :is([data-part='seg']),
+  html[data-motion='play'] [data-scene='integration-status'][data-state='play'][data-visible='true'] .istat__rows::after,
+  html[data-motion='play'] [data-scene='integration-status'][data-state='play'][data-visible='true'] .istat__hub::after {
+    animation-play-state: running;
+  }
+  html[data-motion='play'] [data-scene='integration-status'][data-state='play'] [data-part='seg'] {
+    animation-name: loop-istat-seg;
+    animation-delay: calc(var(--site-motion-loop-scene) * (0.04 * var(--i, 0) + 0.012 * var(--k, 0)));
+  }
+  html[data-motion='play'] [data-scene='integration-status'][data-state='play'] .istat__rows::after {
+    animation-name: loop-istat-light;
+    animation-timing-function: var(--site-motion-ease-linear);
+  }
+  html[data-motion='play'] [data-scene='integration-status'][data-state='play'] .istat__hub::after {
+    animation-name: loop-istat-hub;
+  }
+  /* ===== SITE-DL F1: yetenek karoları döngüleri (bitiş) ===== */
 }

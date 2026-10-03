@@ -1,5 +1,5 @@
 <template>
-  <BoSection id="bo-cat" title="Katalog ve etkin ayar" description="Ayar tanımları ile seçili hedefte bugün geçerli değerler. Değer kaynağı, riski ve uygulanma zamanı görünür. Bu ekranda ayar değiştirilmez." icon="mdi-tune-variant">
+  <BoSection id="bo-cat" title="Katalog ve etkin ayar" description="Ayar tanımları ile seçili hedefte bugün geçerli değerler. Değer kaynağı, riski ve uygulanma zamanı görünür. Bu ekranda ayar değiştirilmez." icon="mdi-tune-variant" :count="visible.length" :total="filtered.length">
     <template #actions>
       <EkRefreshButton quiet-success :loading="res.refreshing.value || res.phase.value === 'loading'" :last-updated="res.loadedAt.value" :error="res.stale.value ? res.error.value?.title : null" @refresh="res.load()" />
     </template>
@@ -219,5 +219,11 @@ function sourceLabel(v: EffectiveValue): string {
   padding: 0;
   list-style: none;
   font-size: var(--ek-type-caption-size);
+}
+
+/* BO-LOCAL-01 — entegrasyon başına varsayılanlar: ince çizgili satırlar. */
+.bo-cat__per > li + li {
+  padding-top: 2px;
+  border-top: 1px solid var(--ek-color-border-subtle);
 }
 </style>

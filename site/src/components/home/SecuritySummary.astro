@@ -265,13 +265,13 @@ const ticks = Array.from({ length: 24 }, (_, i) => ({ a: i * 15, long: i % 6 ===
     overflow: visible;
   }
   .stop-a {
-    stop-color: var(--ek-color-secondary);
+    stop-color: var(--site-accent-on-dark);
   }
   .stop-b {
     stop-color: color-mix(in srgb, var(--ek-color-info) 70%, var(--ek-color-background));
   }
   .stop-glow {
-    stop-color: color-mix(in srgb, var(--ek-color-secondary) 38%, transparent);
+    stop-color: color-mix(in srgb, var(--site-accent-on-dark) 38%, transparent);
   }
   .stop-clear {
     stop-color: transparent;
@@ -292,11 +292,11 @@ const ticks = Array.from({ length: 24 }, (_, i) => ({ a: i * 15, long: i % 6 ===
     stroke-linecap: round;
   }
   .art-ring--mid circle:first-child {
-    stroke: color-mix(in srgb, var(--ek-color-secondary) 45%, transparent);
+    stroke: color-mix(in srgb, var(--site-accent-on-dark) 45%, transparent);
     stroke-dasharray: 60 18 6 18;
   }
   .art-node {
-    fill: var(--ek-color-secondary);
+    fill: var(--site-accent-on-dark);
   }
   .art-node--dim {
     fill: color-mix(in srgb, var(--ek-color-background) 60%, transparent);
@@ -318,12 +318,12 @@ const ticks = Array.from({ length: 24 }, (_, i) => ({ a: i * 15, long: i % 6 ===
     stroke-linecap: round;
   }
   .art-dial line.is-long {
-    stroke: var(--ek-color-secondary);
+    stroke: var(--site-accent-on-dark);
     stroke-width: 2.5;
   }
   .art-core {
-    fill: color-mix(in srgb, var(--ek-color-secondary) 22%, var(--ek-color-content-strong));
-    stroke: color-mix(in srgb, var(--ek-color-secondary) 70%, transparent);
+    fill: color-mix(in srgb, var(--site-accent-on-dark) 22%, var(--ek-color-content-strong));
+    stroke: color-mix(in srgb, var(--site-accent-on-dark) 70%, transparent);
     stroke-width: 1.5;
   }
   .art-lock path,
@@ -365,7 +365,7 @@ const ticks = Array.from({ length: 24 }, (_, i) => ({ a: i * 15, long: i % 6 ===
     width: var(--ek-space-8);
     height: var(--ek-space-8);
     border-radius: var(--ek-radius-md);
-    background: color-mix(in srgb, var(--ek-color-secondary) 24%, transparent);
+    background: color-mix(in srgb, var(--site-accent-on-dark) 24%, transparent);
     color: var(--site-color-on-primary);
   }
   .guard__text {
@@ -390,7 +390,7 @@ const ticks = Array.from({ length: 24 }, (_, i) => ({ a: i * 15, long: i % 6 ===
     width: var(--ek-space-5);
     height: var(--ek-space-5);
     border-radius: var(--ek-radius-full);
-    background: var(--ek-color-secondary);
+    background: var(--site-accent-on-dark);
     color: var(--ek-color-content-strong);
   }
   /* Tarama ışını: yalnızca oynatma durumunda hareket eder (scenes-loops.css); statik hâlde görünmez. */
@@ -400,7 +400,7 @@ const ticks = Array.from({ length: 24 }, (_, i) => ({ a: i * 15, long: i % 6 ===
     inset-inline: 0;
     z-index: 1;
     height: 30%;
-    background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--ek-color-secondary) 14%, transparent) 70%, color-mix(in srgb, var(--ek-color-secondary) 40%, transparent) 72%, transparent 74%);
+    background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--site-accent-on-dark) 14%, transparent) 70%, color-mix(in srgb, var(--site-accent-on-dark) 40%, transparent) 72%, transparent 74%);
     opacity: 0;
     pointer-events: none;
   }
@@ -583,4 +583,109 @@ const ticks = Array.from({ length: 24 }, (_, i) => ({ a: i * 15, long: i % 6 ===
     }
   }
 
+  /* ================= SITE-DL-02 — uygulamanın tasarım dili (frontend/DESIGN_SYSTEM.md §35) =================
+     Düz yüzey + 1px ince çerçeve + kart yarıçapı; gölge, degrade, ışıma, hover yükselmesi yok; tek vurgu eylem
+     mavisi; ikonlar çerçeveli köşeli kutuda; hap rozet yerine köşeli çip. Yukarıdaki kuralları EZER (aynı özgüllük,
+     kaynak sırası). */
+
+  /* Kalkan vitrini: düz marka laciverti kart; ışıma, tarama ışını ve degrade kontur yok. */
+  .guard {
+    border-color: var(--ek-color-chrome-border);
+    border-radius: var(--ek-radius-card);
+    background: var(--ek-color-chrome);
+    box-shadow: none;
+  }
+  .guard__beam {
+    display: none;
+  }
+  .stop-a,
+  .stop-b {
+    stop-color: var(--ek-color-chrome-soft-border);
+  }
+  .stop-glow {
+    stop-color: transparent;
+  }
+  .art-shield {
+    fill: var(--ek-color-chrome-raised);
+  }
+  .art-core {
+    fill: var(--ek-color-chrome-raised);
+    stroke: var(--ek-color-chrome-soft-border);
+  }
+  .guard__step {
+    border-radius: var(--ek-radius-tile);
+    background: var(--site-glass-bg);
+  }
+  .guard__icon {
+    border: var(--site-border-width) solid var(--site-glass-border);
+    border-radius: var(--ek-radius-md);
+    background: transparent;
+  }
+  .guard__ok {
+    border-radius: var(--ek-radius-md);
+    background: var(--ek-color-background);
+    color: var(--ek-color-primary);
+  }
+  .pillar__icon {
+    border: var(--site-border-width) solid var(--site-action-border);
+  }
+  .pillar__eyebrow {
+    color: var(--site-text-meta);
+  }
+  .pledge {
+    border-radius: var(--ek-radius-card);
+    box-shadow: none;
+  }
+  .pledge__icon {
+    border-color: var(--site-action-border);
+    border-radius: var(--ek-radius-tile);
+    background: var(--site-action-subtle);
+  }
+
+  /* SITE-DL-02 (akış) — tarama ışını yerine DÜZ vurgu yürüyüşü: istek dört denetimden sırayla geçer; geçtiği
+     denetim satırı ince açık çerçeveyle belirir (yalnız opacity). Durağan hâl: dört satır onaylı, vurgu yok. */
+  .guard__step {
+    position: relative;
+  }
+  .guard__step::after {
+    content: '';
+    position: absolute;
+    inset: calc(var(--site-border-width) * -1);
+    border: var(--site-border-width) solid var(--site-accent-on-dark);
+    border-radius: inherit;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .guard__step:nth-child(2) {
+    --g: 1;
+  }
+  .guard__step:nth-child(3) {
+    --g: 2;
+  }
+  .guard__step:nth-child(4) {
+    --g: 3;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    @keyframes guard-current {
+      0%,
+      2% {
+        opacity: 0;
+      }
+      6%,
+      20% {
+        opacity: 1;
+      }
+      25%,
+      100% {
+        opacity: 0;
+      }
+    }
+    :global(html[data-motion='play']) .guard[data-state='play'] .guard__step::after {
+      animation: guard-current var(--site-motion-loop-scene) linear infinite backwards paused;
+      animation-delay: calc(var(--site-motion-scene-max) + var(--site-motion-loop-scene) * 0.25 * var(--g, 0));
+    }
+    :global(html[data-motion='play']) .guard[data-state='play'][data-visible='true'] .guard__step::after {
+      animation-play-state: running;
+    }
+  }
 </style>

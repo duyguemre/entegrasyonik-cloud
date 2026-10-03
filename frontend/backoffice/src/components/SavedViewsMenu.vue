@@ -395,4 +395,83 @@ function apply(v: SavedView) {
     white-space: nowrap;
   }
 }
+
+/* ================= BO-LOCAL-01 — kayıtlı görünümler menüsü: uygulamanın tasarım diliyle =================
+   Kart köşesi + ince çerçeve; başlık bandı sakin zeminde — kısa eylem çizgili mikro etiket; öğeler kutu köşeli,
+   üzerine gelince eylem tonu; "kaydet" satırı ince çizgiyle ayrılan sakin altlık. */
+.bo-views {
+  gap: 0;
+  padding: 0;
+  overflow: hidden;
+  border-radius: var(--ek-radius-card);
+}
+
+.bo-views__label {
+  display: flex;
+  align-items: center;
+  gap: var(--ek-space-2);
+  padding: var(--ek-space-3) var(--ek-space-4);
+  border-bottom: 1px solid var(--ek-color-border-default);
+  background: var(--ek-color-surface-muted);
+  line-height: var(--ek-type-micro-line);
+}
+
+.bo-views__label::before {
+  content: '';
+  flex: none;
+  width: 12px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--ek-color-action);
+}
+
+.bo-views__note {
+  padding: var(--ek-space-3) var(--ek-space-4);
+  font-size: var(--ek-type-label-size);
+}
+
+.bo-views__list {
+  padding: var(--ek-space-2);
+}
+
+.bo-views__item,
+.bo-views__del {
+  border-radius: var(--ek-radius-tile);
+  font-size: var(--ek-type-label-size);
+}
+
+.bo-views__item:hover {
+  background: var(--ek-color-action-subtle);
+  color: var(--ek-color-action-emphasis);
+}
+
+.bo-views__del:hover {
+  background: var(--ek-color-error-subtle);
+  color: var(--ek-color-error-emphasis);
+}
+
+.bo-views__item--add {
+  min-height: 44px;
+  margin-top: 0;
+  padding: 0 var(--ek-space-4);
+  border-top: 1px solid var(--ek-color-border-default);
+  border-radius: 0;
+  background: var(--ek-color-surface-muted);
+  color: var(--ek-color-action-emphasis);
+  font-weight: var(--ek-font-weight-semibold);
+}
+
+.bo-views__form {
+  margin-top: 0;
+  padding: var(--ek-space-3) var(--ek-space-4);
+  background: var(--ek-color-surface-muted);
+}
+
+.bo-views__input {
+  border-color: var(--ek-color-border-input);
+}
+
+.bo-views__error {
+  padding: var(--ek-space-2) var(--ek-space-4);
+}
 </style>

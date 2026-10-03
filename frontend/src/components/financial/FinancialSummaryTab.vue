@@ -1,46 +1,46 @@
 <!--
   frontend/src/components/financial/FinancialSummaryTab.vue
 
-  Finans › Özet. Liste standardı çerçevesi (EkListFrame): filtre paneli (kanal + tarih) → aktif filtre
-  çipleri → EkKpiCard satırı (dönem toplamı) → kart: kanal kırılımı (EkDataGrid).
-  Veri: `FinancialService/getFinancialSummary` — dönem toplamı TEK istek; kırılım her bağlı kanal için
-  aynı uca `integrationCodes:[kanal]` ile ayrı istek (sunucu toplamı; istemcide toplama/çıkarma YOK).
-  Yalnız backend'in döndürdüğü alanlar gösterilir (totalCredit, totalDebt, netAmount, transactionCount).
-  `totalCargo` gösterilmez: backend `$cargoAmount` toplar ama FinancialTransactions şemasında bu alan yok.
-  Kayıt yoksa (transactionCount = 0) KPI'lar "0,00 ₺" DEĞİL boş durum; kanal satırında "Kayıt yok" + "—".
+  Finans › Özet (FE-LOCAL-1051: sayfa adı satırındaki Liste | Özet anahtarıyla LİSTELERİN YERİNE açılan bölüm panosu).
+    filtre (kanal + tarih; kapalı başlar, çipler başlıkta)
+    1) Dönem toplamı ........ Toplam alacak · Toplam borç · Net hakediş · İşlem sayısı (ListSummaryStrip)
+    2) Hakediş akışı ........ Brüt alacak − Kesintiler = Net hakediş + kesinti oranı çubuğu (FinancialSummaryBar)
+    3) Kanal kırılımı ....... her bağlı kanal için aynı dönemin sunucu toplamı (EkDataGrid)
+       İşlem türleri ........ tür başına kayıt sayısı; satıra tıklayınca İşlemler listesi o türe süzülü açılır
+  Veri: `FinancialService/getFinancialSummary` — dönem toplamı TEK istek; kırılım her bağlı kanal için aynı uca
+  `integrationCodes:[kanal]` ile ayrı istek (sunucu toplamı; istemcide toplama/çıkarma YOK). Tür sayıları
+  `FinancialService/getTransactionData` ucundan, her tür için `limit: 1` ile backend toplamı okunarak (bkz. `useStatusCounts`).
+  Yalnız backend'in döndürdüğü alanlar gösterilir. Kayıt yoksa (transactionCount = 0) "0,00 ₺" DEĞİL boş durum;
+  kanal satırında "Kayıt yok" + "—".
 -->
 <template>
-  <EkListFrame class="ek-fin-summary-tab" :label="t('finance.summary.breakdownTitle')">
-    <template #filters>
-      <EkFilterPanel
-        :collapsed="collapsed"
-        :active-count="chips.length"
-        :columns="3"
-        :loading="loading"
-        @update:collapsed="(v: boolean) => (collapsed = v)"
-        @submit="load"
-        @reset="reset"
-        :chips="chips"
-        @remove-chip="removeChip"
-        @clear="reset"
-      >
-        <EkSelect kind="channel"
-          v-model="form.integrationCodes"
-          :items="channelOptionsFrom(channelOptions)"
-          :label="t('finance.filters.channels')"
-          multiple
-          clearable
-        />
-        <EkDateRange v-model:start="form.startDate" v-model:end="form.endDate" :label="t('finance.filters.dateRange')" :start-label="t('finance.filters.startDate')" :end-label="t('finance.filters.endDate')" value-format="date" />
-      </EkFilterPanel>
+  <div class="ek-fin-dash ek-fin-summary-tab">
+    <EkFilterPanel
+      class="ek-fin-dash__filter"
+      :collapsed="collapsed"
+      :active-count="chips.length"
+      :columns="3"
+      :loading="loading"
+      :chips="chips"
+      @update:collapsed="(v: boolean) => (collapsed = v)"
+      @submit="load"
+      @reset="reset"
+      @remove-chip="removeChip"
+      @clear="reset"
+    >
+      <EkSelect kind="channel"
+        v-model="form.integrationCodes"
+        :items="channelOptionsFrom(channelOptions)"
+        :label="t('finance.filters.channels')"
+        multiple
+        clearable
+      />
+      <EkDateRange v-model:start="form.startDate" v-model:end="form.endDate" :label="t('finance.filters.dateRange')" :start-label="t('finance.filters.startDate')" :end-label="t('finance.filters.endDate')" value-format="date" />
+    </EkFilterPanel>
 
+    <ListDashSection label="Dönem toplamı">
       <section class="ek-fin-kpis" :aria-label="t('finance.summary.kpiLabel')" :aria-busy="loading || undefined">
-        <EkKpiRow v-if="loading">
-          <div v-for="n in 4" :key="n" class="ek-fin-kpis__bone" aria-hidden="true">
-            <span class="ek-fin-kpis__bone-line"></span>
-            <span class="ek-fin-kpis__bone-line ek-fin-kpis__bone-line--value"></span>
-          </div>
-        </EkKpiRow>
+        <ListSummaryStrip v-if="loading" :cells="kpiCells" :label="t('finance.summary.kpiLabel')" loading />
         <div v-else-if="errorStatus !== undefined" class="ek-fin-kpis__state">
           <EkErrorState size="inline" :message="errorMessage(errorStatus, t('finance.summary.errorSubject'))" @retry="load" />
         </div>
@@ -48,65 +48,77 @@
           <EkEmptyState variant="no-results" :title="t('finance.summary.emptyTitle')" :message="t('finance.summary.emptyText')" />
         </div>
         <template v-else>
-          <EkKpiRow>
-            <EkKpiCard :label="t('finance.summary.totalCredit')" :value="formatMoney(summary.totalCredit)" :secondary-value="t('finance.summary.totalCreditHint')" />
-            <EkKpiCard :label="t('finance.summary.totalDebt')" :value="formatMoney(summary.totalDebt)" :secondary-value="t('finance.summary.totalDebtHint')" />
-            <EkKpiCard :label="t('finance.summary.netAmount')" :value="formatMoney(summary.netAmount)" :secondary-value="t('finance.summary.netAmountHint')" />
-            <EkKpiCard :label="t('finance.summary.transactionCount')" :value="formatNumber(summary.transactionCount)" :secondary-value="t('finance.summary.transactionCountHint')" />
-          </EkKpiRow>
+          <ListSummaryStrip :cells="kpiCells" :label="t('finance.summary.kpiLabel')" />
           <p class="ek-fin-kpis__note">
             <v-icon icon="mdi-information-outline" size="16" aria-hidden="true" />
             <span>{{ t('finance.summary.note') }}</span>
           </p>
         </template>
       </section>
-    </template>
+    </ListDashSection>
 
-    <template #toolbar>
-      <div class="ek-fin-breakdown-head">
-        <h2 class="ek-fin-breakdown-head__title">{{ t('finance.summary.breakdownTitle') }}</h2>
-        <span class="ek-fin-breakdown-head__hint">{{ t('finance.summary.breakdownHint') }}</span>
-      </div>
-    </template>
+    <div class="ek-fin-dash__grid">
+      <ListDashSection v-if="loading || summary?.transactionCount" label="Hakediş akışı">
+        <FinancialSummaryBar :summary="summary ?? EMPTY_SUMMARY" :loading="loading" :compact="compact" :format-currency="formatMoney" hide-cargo />
+      </ListDashSection>
 
-    <div class="ek-fin-breakdown-scroll" tabindex="0" role="region" :aria-label="t('finance.summary.breakdownTitle')">
-    <EkDataGrid
-      :columns="columns"
-      :rows="breakdown"
-      :label="t('finance.summary.breakdownTitle')"
-      row-key="code"
-      label-key="title"
-      :loading="loading"
-      :skeleton-rows="3"
-      :empty-title="t('finance.summary.breakdownEmptyTitle')"
-      :empty-text="t('finance.summary.breakdownEmptyText')"
-      empty-icon="mdi-store-off-outline"
-    >
-      <template #cell-channel="{ row }"><EkChannelDot :code="row.code" :name="row.title" /></template>
-      <template #cell-state="{ row }">
-        <EkStatusChip :tone="stateOf(row).tone" :label="stateOf(row).label" />
-      </template>
-      <template #cell-count="{ row }"><span class="ek-num">{{ row.summary?.transactionCount ? formatNumber(row.summary.transactionCount) : '—' }}</span></template>
-      <template #cell-credit="{ row }"><span class="ek-num">{{ amountOf(row, 'totalCredit') }}</span></template>
-      <template #cell-debt="{ row }"><span class="ek-num">{{ amountOf(row, 'totalDebt') }}</span></template>
-      <template #cell-net="{ row }">
-        <span class="ek-num ek-fin-breakdown-net" :class="{ 'is-negative': row.summary?.transactionCount && row.summary.netAmount < 0 }">{{ amountOf(row, 'netAmount') }}</span>
-      </template>
-    </EkDataGrid>
+      <ListDashSection label="İşlem türleri">
+        <ListDistributionCard title="İşlem türleri" subtitle="Seçili dönem ve kanallardaki kayıt sayısı" icon="mdi-swap-horizontal" unit="işlem"
+          :rows="typeRows" :loading="typeCounts.loading.value" clickable empty-text="Bu dönemde finansal kayıt yok."
+          @select="(type) => emit('open-type', { type, integrationCodes: [...applied.integrationCodes], startDate: applied.startDate, endDate: applied.endDate })" />
+      </ListDashSection>
     </div>
-  </EkListFrame>
+
+    <ListDashSection :label="t('finance.summary.breakdownTitle')">
+        <div class="ek-fin-dash__card">
+          <p class="ek-fin-dash__card-hint">{{ t('finance.summary.breakdownHint') }}</p>
+          <div class="ek-fin-breakdown-scroll" tabindex="0" role="region" :aria-label="t('finance.summary.breakdownTitle')">
+            <EkDataGrid
+              :columns="columns"
+              :rows="breakdown"
+              :label="t('finance.summary.breakdownTitle')"
+              row-key="code"
+              label-key="title"
+              :loading="loading"
+              :skeleton-rows="3"
+              :empty-title="t('finance.summary.breakdownEmptyTitle')"
+              :empty-text="t('finance.summary.breakdownEmptyText')"
+              empty-icon="mdi-store-off-outline"
+            >
+              <template #cell-channel="{ row }"><EkChannelDot :code="row.code" :name="row.title" /></template>
+              <template #cell-state="{ row }">
+                <EkStatusChip :tone="stateOf(row).tone" :label="stateOf(row).label" />
+              </template>
+              <template #cell-count="{ row }"><span class="ek-num">{{ row.summary?.transactionCount ? formatNumber(row.summary.transactionCount) : '—' }}</span></template>
+              <template #cell-credit="{ row }"><span class="ek-num">{{ amountOf(row, 'totalCredit') }}</span></template>
+              <template #cell-debt="{ row }"><span class="ek-num">{{ amountOf(row, 'totalDebt') }}</span></template>
+              <template #cell-net="{ row }">
+                <span class="ek-num ek-fin-breakdown-net" :class="{ 'is-negative': row.summary?.transactionCount && row.summary.netAmount < 0 }">{{ amountOf(row, 'netAmount') }}</span>
+              </template>
+            </EkDataGrid>
+          </div>
+        </div>
+      </ListDashSection>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { EkSelect, EkListFrame, EkFilterPanel, EkDateRange, EkKpiRow, EkKpiCard, EkEmptyState, EkErrorState, EkDataGrid, type EkGridColumn, EkChannelDot, EkStatusChip } from '@entegrasyonik/ui/components'
+import ListDashSection from '@/components/page/ListDashSection.vue'
+import ListSummaryStrip, { type ListSummaryCell } from '@/components/page/ListSummaryStrip.vue'
+import ListDistributionCard, { type ListDistributionRow } from '@/components/page/ListDistributionCard.vue'
+import { totalOf, useStatusCounts } from '@/components/page/useStatusCounts'
+import { EkSelect, EkFilterPanel, EkDateRange, EkEmptyState, EkErrorState, EkDataGrid, type EkGridColumn, EkChannelDot, EkStatusChip, type EkTone } from '@entegrasyonik/ui/components'
 import type { EkActiveFilterChip } from '@entegrasyonik/ui/components'
 import { channelOptionsFrom } from '@entegrasyonik/ui/components/selectOptions'
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useDisplay } from 'vuetify'
+import useRestApi from '@/composables/restapi'
 import { useIntegrationStore } from '@/stores/integrationStore'
 import { formatDate, formatMoney, formatNumber } from '@entegrasyonik/ui/format'
 import { useFinanceApi, type FinancialSummary } from '@/composables/useFinanceApi'
 import type { StatusTone } from '@/design/status-map'
+import FinancialSummaryBar from './FinancialSummaryBar.vue'
 import { channelName, errorMessage } from './financeSupport'
 
 interface BreakdownRow {
@@ -116,18 +128,61 @@ interface BreakdownRow {
   failed: boolean
 }
 
+export interface FinanceTypeSelection {
+  type: string
+  integrationCodes: string[]
+  startDate: Date | null
+  endDate: Date | null
+}
+
+const emit = defineEmits<{ 'open-type': [selection: FinanceTypeSelection] }>()
+
 const { t } = useI18n()
+const { smAndDown: compact } = useDisplay()
 const api = useFinanceApi()
+const restApi = useRestApi()
 const integrationStore = useIntegrationStore()
+
+const EMPTY_SUMMARY: FinancialSummary = { totalCredit: 0, totalDebt: 0, totalCargo: 0, netAmount: 0, transactionCount: 0 }
 
 const form = reactive({ integrationCodes: [] as string[], startDate: null as Date | null, endDate: null as Date | null })
 const applied = ref({ integrationCodes: [] as string[], startDate: null as Date | null, endDate: null as Date | null })
-const collapsed = ref(typeof window !== 'undefined' && window.innerWidth < 768)
+const collapsed = ref(true) // FE-LOCAL-1047: filtreler kapalı başlar
 
 const loading = ref(false)
 const summary = ref<FinancialSummary | null>(null)
+// FE-LOCAL-1046: dönem toplamı hücreleri (yalnız backend alanları; biçimlendirme burada).
+const kpiCells = computed<ListSummaryCell[]>(() => {
+  const v = summary.value
+  const net = v?.netAmount ?? 0
+  return [
+    { key: 'credit', label: t('finance.summary.totalCredit'), hint: t('finance.summary.totalCreditHint'), icon: 'mdi-arrow-down-bold-circle-outline', tone: 'success', value: formatMoney(v?.totalCredit ?? 0), zero: !v?.totalCredit },
+    { key: 'debt', label: t('finance.summary.totalDebt'), hint: t('finance.summary.totalDebtHint'), icon: 'mdi-arrow-up-bold-circle-outline', tone: 'error', value: formatMoney(v?.totalDebt ?? 0), zero: !v?.totalDebt },
+    { key: 'net', label: t('finance.summary.netAmount'), hint: t('finance.summary.netAmountHint'), icon: 'mdi-scale-balance', tone: net < 0 ? 'warning' : 'action', value: formatMoney(net), zero: !net },
+    { key: 'count', label: t('finance.summary.transactionCount'), hint: t('finance.summary.transactionCountHint'), icon: 'mdi-swap-horizontal', tone: 'info', value: formatNumber(v?.transactionCount ?? 0), zero: !v?.transactionCount },
+  ]
+})
 const errorStatus = ref<number | null | undefined>(undefined)
 const breakdown = ref<BreakdownRow[]>([])
+
+// FE-LOCAL-1051: işlem türü dağılımı — liste ucundan, tür başına `limit: 1` ile backend toplamı (aynı dönem + kanal süzmesi).
+const TYPES: Array<{ key: string; label: string; tone: EkTone }> = [
+  { key: 'SALE', label: 'Satış', tone: 'success' },
+  { key: 'RETURN', label: 'İade', tone: 'warning' },
+  { key: 'PAYOUT', label: 'Ödeme', tone: 'info' },
+  { key: 'COMMISSION', label: 'Komisyon', tone: 'action' },
+  { key: 'DEDUCTION', label: 'Kesinti', tone: 'error' },
+  { key: 'CARGO', label: 'Kargo', tone: 'neutral' },
+]
+const typeCounts = useStatusCounts(TYPES.map((x) => x.key), async (type) => {
+  const { integrationCodes, startDate, endDate } = applied.value
+  return totalOf(
+    await restApi.post('FinancialService/getTransactionData', {
+      externalIdSearch: '', integrationCodes, startDate, endDate, transactionTypes: [type], page: 1, limit: 1, sortBy: [],
+    }),
+  )
+})
+const typeRows = computed<ListDistributionRow[]>(() => TYPES.map((x) => ({ key: x.key, label: x.label, tone: x.tone, count: typeCounts.counts.value[x.key] ?? 0 })))
 
 const channelOptions = computed<Array<{ code: string; title: string }>>(() => {
   try {
@@ -178,6 +233,7 @@ async function load() {
 
   loading.value = true
   errorStatus.value = undefined
+  typeCounts.load()
   const [total, ...perChannel] = await Promise.all([
     api.getSummary({ integrationCodes, startDate, endDate }),
     ...channels.map((c) => api.getSummary({ integrationCodes: [c.code], startDate, endDate })),
@@ -210,19 +266,44 @@ function removeChip(key: string) {
 }
 
 onMounted(load)
+defineExpose({ load, loading })
 </script>
 
 <style scoped>
-/* Özet sayfa akışında kayar (kanal kırılımı kısa bir tablodur): kart kendi içinde kaydırılmaz, böylece
- * KPI satırı + kırılım dar yükseklikte de kesilmez ve tablo odaklanamayan bir kaydırma bölgesi olmaz. */
-.ek-fin-summary-tab {
-  height: auto;
+/* Bölüm panosu: sayfa akışında kayar; bölümler kart dışı mikro başlıkla ayrılır (ana sayfa diliyle aynı). */
+.ek-fin-dash {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ek-space-6);
+  padding-bottom: var(--ek-space-6);
 }
 
-.ek-fin-summary-tab :deep(.ek-list-frame__card) {
-  flex: none;
-  height: auto;
-  min-height: 0;
+.ek-fin-dash__filter {
+  margin-bottom: calc(-1 * var(--ek-space-3));
+}
+
+.ek-fin-dash__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  gap: var(--ek-space-6);
+  align-items: start;
+}
+
+.ek-fin-dash__card {
+  overflow: hidden;
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-card);
+  background: var(--ek-color-surface);
+}
+
+.ek-fin-dash__card-hint {
+  margin: 0;
+  padding: var(--ek-space-3) var(--ek-space-4);
+  border-bottom: 1px solid var(--ek-color-border-subtle);
+  background: var(--ek-color-surface-muted);
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-caption-size);
+  line-height: var(--ek-type-caption-line);
 }
 
 .ek-fin-breakdown-scroll {
@@ -252,30 +333,7 @@ onMounted(load)
   min-height: 132px;
   background: var(--ek-color-surface);
   border: 1px dashed var(--ek-color-border-default);
-  border-radius: var(--ek-radius-lg);
-}
-
-.ek-fin-kpis__bone {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ek-space-3);
-  padding: var(--ek-space-5);
-  background: var(--ek-color-surface);
-  border: 1px solid var(--ek-color-border-default);
-  border-radius: var(--ek-radius-lg);
-}
-
-.ek-fin-kpis__bone-line {
-  display: block;
-  width: 45%;
-  height: 12px;
-  background: var(--ek-color-surface-muted);
-  border-radius: var(--ek-radius-sm);
-}
-
-.ek-fin-kpis__bone-line--value {
-  width: 70%;
-  height: 24px;
+  border-radius: var(--ek-radius-card);
 }
 
 .ek-fin-kpis__note {
@@ -288,26 +346,6 @@ onMounted(load)
   line-height: var(--ek-type-caption-line);
 }
 
-.ek-fin-breakdown-head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: var(--ek-space-1) var(--ek-space-3);
-  padding: var(--ek-space-3) var(--ek-space-4);
-}
-
-.ek-fin-breakdown-head__title {
-  margin: 0;
-  color: var(--ek-color-content-strong);
-  font-size: var(--ek-font-size-md);
-  font-weight: var(--ek-font-weight-semibold);
-}
-
-.ek-fin-breakdown-head__hint {
-  color: var(--ek-color-content-muted);
-  font-size: var(--ek-type-caption-size);
-}
-
 .ek-fin-breakdown-net {
   font-weight: var(--ek-font-weight-semibold);
   color: var(--ek-color-content-strong);
@@ -317,24 +355,9 @@ onMounted(load)
   color: var(--ek-color-danger);
 }
 
-/* Dar ekranda KPI'lar 2 kolon ve daha küçük değerle: dört kart ilk ekrana sığar (kırılım altta kalır). */
-@media (max-width: 767px) {
-  .ek-fin-kpis :deep(.ek-kpi-row) {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: var(--ek-space-3);
-  }
-
-  .ek-fin-kpis :deep(.ek-kpi-card) {
-    padding: var(--ek-space-3) var(--ek-space-4);
-  }
-
-  .ek-fin-kpis :deep(.ek-kpi-card__value) {
-    font-size: var(--ek-font-size-lg);
-  }
-
-  .ek-fin-kpis :deep(.ek-kpi-card__secondary) {
-    font-size: var(--ek-type-caption-size);
-    color: var(--ek-color-content-muted);
+@media (max-width: 1023px) {
+  .ek-fin-dash__grid {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 </style>

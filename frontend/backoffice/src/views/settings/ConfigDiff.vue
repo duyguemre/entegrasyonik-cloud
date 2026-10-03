@@ -81,4 +81,19 @@ const DANGER = {
   clip: rect(0 0 0 0);
   white-space: nowrap;
 }
+
+/* BO-LOCAL-01 — fark tablosu: kutu köşeli çerçeve; başlık satırı sakin zeminde mikro etiket. */
+.bo-diff-wrap {
+  border-radius: var(--ek-radius-tile);
+}
+
+.bo-diff thead th {
+  position: sticky;
+  top: 0;
+  background: var(--ek-color-surface-muted);
+  font-size: var(--ek-type-micro-size);
+  font-weight: var(--ek-type-micro-weight);
+  letter-spacing: var(--ek-type-micro-tracking);
+  text-transform: uppercase;
+}
 </style>

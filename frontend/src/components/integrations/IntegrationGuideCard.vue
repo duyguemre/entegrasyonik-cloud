@@ -40,7 +40,7 @@ withDefaults(
 .ek-guide {
   display: flex;
   flex-direction: column;
-  gap: var(--ek-space-4);
+  gap: var(--ek-space-3);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -52,6 +52,12 @@ withDefaults(
   gap: var(--ek-space-3);
 }
 
+/* Adımlar ince çizgiyle ayrılır (kart içi liste dili). */
+.ek-guide__step + .ek-guide__step {
+  padding-top: var(--ek-space-3);
+  border-top: 1px solid var(--ek-color-border-subtle);
+}
+
 .ek-guide__num {
   flex: none;
   display: inline-flex;
@@ -59,7 +65,9 @@ withDefaults(
   justify-content: center;
   width: var(--ek-space-6);
   height: var(--ek-space-6);
-  border-radius: var(--ek-radius-control);
+  /* FE-LOCAL-1048: adım numarası = çerçeveli küçük kutu (ikon kapsülleriyle aynı aile). */
+  border: 1px solid var(--ek-color-action-border);
+  border-radius: var(--ek-radius-md);
   background: var(--ek-color-action-subtle);
   color: var(--ek-color-action-emphasis);
   font-size: var(--ek-type-caption-size);
@@ -87,7 +95,7 @@ withDefaults(
   margin: var(--ek-space-5) 0 0;
   padding: var(--ek-space-3);
   border: 1px solid var(--ek-color-info-border);
-  border-radius: var(--ek-radius-control);
+  border-radius: var(--ek-radius-tile);
   background: var(--ek-color-info-subtle);
   color: var(--ek-color-info-emphasis);
   font-size: var(--ek-type-caption-size);

@@ -4,7 +4,7 @@
  * düz simge düğmesinden marka diline uygun, zarif bir ANAHTARA (switch) yükseltildi.
  * - `<button role="switch" aria-checked>`: açık = animasyonlar oynuyor. Erişilebilir ad görünür etiketten gelir
  *   (`aria-labelledby`, WCAG 2.5.3); durum ekran okuyucuda "açık/kapalı" olarak okunur.
- * - Görsel: sol dalga simgesi + kayan topuzlu ray. Açıkta ray marka rengiyle dolar ve topuz sağa kayar;
+ * - Görsel: yalnız kayan topuzlu ray (dalga simgesi kaldırıldı — kullanıcı kararı 2026-10-02). Açıkta ray marka rengiyle dolar ve topuz sağa kayar;
  *   geçiş YALNIZCA transform/renk (--ek-duration-base). Odak halkası rayın çevresinde (global :focus-visible yerine
  *   bileşene özel, açık/koyu zeminde görünür). Açık/koyu zemin: renkler yerel `--mt-*` değişkenleridir; koyu yüzey
  *   (`[data-surface='dark']`, `.section--stage`) içinde açık tonlara döner.
@@ -28,9 +28,6 @@
   aria-describedby="motion-toggle-hint"
   title="Animasyonları kapat"
 >
-  <svg class="motion-toggle__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-    <path d="M4 8.5c2.7-2.2 5.3-2.2 8 0s5.3 2.2 8 0 M4 15.5c2.7-2.2 5.3-2.2 8 0s5.3 2.2 8 0"></path>
-  </svg>
   <span class="motion-toggle__label" id="motion-toggle-label">Animasyon</span>
   <span class="motion-toggle__track" aria-hidden="true">
     <span class="motion-toggle__thumb"></span>
@@ -48,7 +45,7 @@
     --mt-fg: var(--ek-color-content-strong);
     --mt-track-off: var(--ek-color-surface-sunken);
     --mt-track-edge: var(--ek-color-border-strong);
-    --mt-track-on: var(--ek-color-secondary-darken-1);
+    --mt-track-on: var(--site-action); /* SITE-DL-02: tek vurgu (eylem mavisi) */
     --mt-thumb: var(--ek-color-background);
     --mt-ring: var(--site-color-focus-ring);
     display: inline-flex;
@@ -60,7 +57,7 @@
     margin-inline-start: auto;
     padding: var(--ek-space-1) var(--ek-space-2);
     border: 0;
-    border-radius: var(--ek-radius-full);
+    border-radius: var(--ek-radius-md);
     background: transparent;
     color: var(--mt-fg);
     font-family: inherit;
@@ -76,7 +73,7 @@
     --mt-fg: var(--site-text-on-dark-heading);
     --mt-track-off: color-mix(in srgb, var(--ek-color-background) 12%, transparent);
     --mt-track-edge: color-mix(in srgb, var(--ek-color-background) 45%, transparent);
-    --mt-track-on: var(--ek-color-secondary);
+    --mt-track-on: var(--site-action);
     --mt-ring: var(--site-accent-on-dark);
   }
   .motion-toggle:hover {
@@ -123,9 +120,8 @@
     height: calc(var(--ek-space-6) - var(--ek-space-1) * 1.5);
     border-radius: var(--ek-radius-full);
     background: var(--mt-thumb);
-    box-shadow:
-      0 0 0 var(--site-border-width) color-mix(in srgb, var(--ek-color-content-strong) 18%, transparent),
-      0 var(--site-border-width) var(--ek-space-1) color-mix(in srgb, var(--ek-color-content-strong) 25%, transparent);
+    /* SITE-DL-02: topuzda gölge yok — yalnız ince halka. */
+    box-shadow: 0 0 0 var(--site-border-width) color-mix(in srgb, var(--ek-color-content-strong) 18%, transparent);
     transition: transform var(--ek-duration-base) var(--ek-easing-standard);
   }
   /* Açık: ray marka rengiyle dolar, topuz sağa kayar. */

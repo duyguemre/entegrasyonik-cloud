@@ -6,7 +6,7 @@ import { readFileSync, writeFileSync, existsSync } from 'node:fs'
 import { createHash } from 'node:crypto'
 
 // Utilities
-import { defineConfig, type Plugin } from 'vite'
+import { defineConfig, searchForWorkspaceRoot, type Plugin } from 'vite'
 import { fileURLToPath, URL } from 'node:url'
 
 // MOB-01 — `dist/service-worker.js` içindeki `__EK_SW_VERSION__` yer tutucusu derleme içeriğinin karmasıyla değişir:
@@ -99,11 +99,16 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
+      // Yasal metinlerin tek kanonik kaynağı site (ADR-0014 Karar 5): uygulama içi /legal/:slug aynı veriyi okur.
+      '@site': fileURLToPath(new URL('../site/src', import.meta.url)),
     },
     extensions: ['.js', '.json', '.jsx', '.mjs', '.ts', '.tsx', '.vue'],
   },
   server: {
     port: 3020,
-    host:"0.0.0.0"
+    host:"0.0.0.0",
+    fs: {
+      allow: [searchForWorkspaceRoot(process.cwd()), fileURLToPath(new URL('../site/src', import.meta.url))],
+    },
   },
 })

@@ -4,12 +4,9 @@
 -->
 <template>
   <div class="bo-page">
-    <BoPageHeader :updated-at="res.loadedAt.value ?? undefined" :stale="res.stale.value">
+    <BoPageHeader :updated-at="res.loadedAt.value ?? undefined" :stale="res.stale.value" refreshable :refreshing="res.refreshing.value || res.phase.value === 'loading'" @refresh="res.load()">
       <template #meta>
         <span class="bo-inline-note"><v-icon icon="mdi-shield-lock-outline" aria-hidden="true" />Yalnız platform sınıfı sayılır; cihaz/tarayıcı bilgisi ve IP saklanmaz</span>
-      </template>
-      <template #actions>
-        <BoAction kind="refresh" :loading="res.refreshing.value || res.phase.value === 'loading'" data-page-refresh @click="res.load()" />
       </template>
     </BoPageHeader>
 
@@ -59,7 +56,6 @@ import { api } from '@bo/api'
 import type { PulseResponse } from '@bo/api/contract'
 import { useResource } from '@bo/composables/useResource'
 import BoPageHeader from '@bo/components/shell/BoPageHeader.vue'
-import BoAction from '@bo/components/r2/BoAction.vue'
 import BoSection from '@bo/components/r2/BoSection.vue'
 import BoTileGrid from '@bo/components/r2/BoTileGrid.vue'
 import BoStat from '@bo/components/r2/BoStat.vue'

@@ -43,15 +43,25 @@
   --ek-app-row-h: 44px;
   --ek-app-control-h: 40px;
 
-  /* ---- Giriş paneli degradesi (Karar 4) ----
-   * Sitenin `--site-gradient-stage` formülüyle AYNI yapı. DS-v2: uygulamada
-   * `primary` artık aksiyon rengi (cobalt) olduğu için marka tonu `brand`
-   * (logo laciverti) → `chrome-end` kullanılır; sitedeki görünümle aynı aile. */
-  --ek-app-login-gradient: linear-gradient(
-    160deg,
-    var(--ek-color-brand) 0%,
-    color-mix(in srgb, var(--ek-color-brand) 62%, var(--ek-color-chrome-end)) 100%
-  );
+  /* ---- Giriş paneli zemini (Karar 4) ----
+   * Düz marka laciverti (degrade yok — kullanıcı kararı: yüzeylerde ton düz renkle). DS-v2: `primary`
+   * aksiyon rengi (cobalt) olduğu için zemin `brand` (logo laciverti); panel içi yüzey/çizgiler mürekkepten türetilir. */
+  --ek-app-login-surface: var(--ek-color-brand);
+  /* Giriş sahnesi hareketi (AuthShell / LoginComponent). Tanıtım niteliğindeki uzun, döngülü sahne animasyonları
+   * ürün içi hareket rollerinin (--ek-motion-*) DIŞINDADIR; değerleri yalnızca burada tanımlanır (hareket tek kaynak,
+   * tests/motion-single-source.test.ts). `--ek-app-login-scan` betikteki SCAN_MS ile aynı tutulur. */
+  --ek-app-login-ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --ek-app-login-ease-flow: cubic-bezier(0.45, 0, 0.25, 1);
+  --ek-app-login-rise: 600ms;
+  --ek-app-login-step: 80ms;
+  --ek-app-login-pulse: 3.6s;
+  --ek-app-login-orbit: 40s;
+  --ek-app-login-aura: 3.2s;
+  --ek-app-login-ghost: 2.9s;
+  --ek-app-login-quantum: 16s;
+  --ek-app-login-scan: 2.8s;
+  --ek-app-login-seal: 1100ms;
+  --ek-app-login-seal-delay: 280ms;
   /* Giriş paneli üzerindeki yazı/çizim mürekkebi (FR2-DARK: dark'ta krom metni). */
   --ek-app-login-ink: var(--ek-color-background);
 
@@ -61,13 +71,9 @@
 }
 
 /* FR2-DARK: koyu temada `brand` açık (logo işareti koyu zeminde görünsün diye); giriş paneli ise koyu marka
- * kromunda kalır — degrade krom tonlarından (light değer DEĞİŞMEDİ). */
+ * kromunda kalır (light değer DEĞİŞMEDİ). */
 :root[data-theme='dark'] {
-  --ek-app-login-gradient: linear-gradient(
-    160deg,
-    var(--ek-color-chrome) 0%,
-    color-mix(in srgb, var(--ek-color-chrome) 40%, var(--ek-color-chrome-end)) 100%
-  );
+  --ek-app-login-surface: var(--ek-color-chrome);
   --ek-app-login-ink: var(--ek-color-chrome-text);
   --ek-app-media-plate: color-mix(in srgb, var(--ek-color-content-strong) 94%, var(--ek-color-surface));
   /* K13 + FR2-DARK: marka hex'i değişmez; koyu kanal tonları (Pazarama/Ideasoft/Bizimhesap) koyu zeminde kaybolmasın

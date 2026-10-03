@@ -190,4 +190,33 @@ const afterText = computed(() => {
   color: var(--ek-color-content-default);
   font-size: var(--ek-type-label-size);
 }
+
+/* BO-LOCAL-01 — istisna diyaloğu: alan grubu başlığı kısa eylem çizgili mikro etiket. */
+.bo-od__legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ek-space-2);
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-micro-size);
+  line-height: var(--ek-type-micro-line);
+  font-weight: var(--ek-type-micro-weight);
+  letter-spacing: var(--ek-type-micro-tracking);
+  text-transform: uppercase;
+}
+
+.bo-od__legend::before {
+  content: '';
+  flex: none;
+  width: 12px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--ek-color-action);
+}
+
+.bo-od__legend .bo-muted {
+  font-weight: var(--ek-font-weight-regular);
+  letter-spacing: 0;
+  text-transform: none;
+}
 </style>

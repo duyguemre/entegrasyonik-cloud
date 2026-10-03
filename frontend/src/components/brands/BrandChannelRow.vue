@@ -9,13 +9,14 @@
     <div class="bcr__main">
       <EkChannelBadge :code="channel.code" :name="channel.title" size="sm" />
       <div class="bcr__state">
-        <span v-if="!channel.mappable" class="bcr__none">Marka eşlemesi sunmuyor</span>
+        <EkStatusChip v-if="!channel.mappable" tone="neutral" label="Marka eşlemesi sunmuyor" />
         <template v-else-if="saved">
           <v-icon class="bcr__ok" icon="mdi-check-circle-outline" size="16" aria-hidden="true" />
           <span class="bcr__brand" :title="saved.title"><span class="sr-only">Eşli: </span>{{ saved.title }}</span>
           <EkStatusChip v-if="justSaved" tone="success" label="Kaydedildi" />
         </template>
-        <span v-else class="bcr__none">Eşlenmedi</span>
+        <!-- FE-LOCAL-1048: eşleme durumu ortak durum çipiyle. -->
+        <EkStatusChip v-else tone="warning" icon="mdi-minus-circle-outline" label="Eşlenmedi" />
       </div>
       <EkButton v-if="channel.mappable && !editing" tone="secondary" size="sm"
         :icon="saved ? 'mdi-swap-horizontal' : 'mdi-link-variant'"
@@ -178,5 +179,12 @@ onBeforeUnmount(() => { if (timer) clearTimeout(timer) })
   overflow: hidden;
   clip: rect(0 0 0 0);
   white-space: nowrap;
+}
+
+/* FE-LOCAL-1048: düzenleme kutusu filtre gövdesiyle aynı zemin (sakin yüzey + ince çerçeve). */
+.bcr__edit {
+  border-color: var(--ek-color-border-default);
+  border-radius: var(--ek-radius-tile);
+  background: var(--ek-color-surface-muted);
 }
 </style>

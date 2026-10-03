@@ -39,7 +39,9 @@ test.describe('P1 — Dashboard', () => {
     // Son 7 gün = last7Days toplamı (0+1+…+6 = 21 sipariş, 21×50 = ₺1.050,00 ciro).
     await expect(kpi(page, 'week-count')).toContainText('21')
     await expect(kpi(page, 'week-count')).toContainText('₺1.050,00')
-    await expect(kpi(page, 'pending-shipping')).toContainText(String(f.pending.shippingCount))
+    // Açık sipariş = henüz sonuçlanmamış durumların toplamı (kanal/satıcı onayı + onaylı + kargoda).
+    const sd = f.statusDistribution
+    await expect(kpi(page, 'open-orders')).toContainText(String(sd.UNAPPROVED + sd.AWAITING_APPROVAL + sd.APPROVED + sd.SHIPPED))
     // Değişim yalnızca dün > 0 iken: dün (last7Days[5]) = 5 sipariş → backend countChange %5.
     await expect(kpi(page, 'today-count')).toContainText('%5')
     await expect(kpi(page, 'today-count')).toContainText('Dün (tüm gün): 5 sipariş')
@@ -54,9 +56,8 @@ test.describe('P1 — Dashboard', () => {
     const next = page.locator('.dashboard .dna')
     await expect(next.locator('.dna-hero')).toHaveAttribute('data-next-action', 'oversold')
     await expect(next.locator('.dna-hero')).toContainText('2 sipariş kaleminde aşırı satış')
-    await expect(next.locator('[data-next-action="shipping"]')).toContainText('2 sipariş kargoya verilmeyi bekliyor')
-    await expect(next.locator('[data-next-action="invoice"]')).toContainText('1 siparişin faturası kesilmedi')
-    await expect(next.locator('.dna__foot')).toContainText('İade')
+    await expect(next.locator('[data-next-action="shipping"]')).toContainText('2 siparişi kargoya verin')
+    await expect(next.locator('[data-next-action="invoice"]')).toContainText('1 siparişin faturasını kesin')
 
     const status = card(page, 'Sipariş durumları')
     await expect(status.getByRole('button', { name: /Teslim edildi: 3 sipariş/ })).toBeVisible()
@@ -110,7 +111,6 @@ test.describe('P1 — Dashboard', () => {
     await expect(page.getByText('Henüz sipariş yok')).toBeVisible()
     await expect(page.getByText('Dikkat gerektiren sipariş yok')).toBeVisible()
     await expect(page.getByText('Henüz aktarım işlemi yok')).toBeVisible()
-    await expect(page.locator('.dashboard .dna__foot')).toContainText('Kargo · Fatura · İade · Müşteri sorusu')
     await expect(kpi(page, 'today-count')).not.toContainText('%')
     await expect(page.locator('body')).not.toContainText('NaN')
   })

@@ -344,4 +344,72 @@ function countsText(s: ProductChannelStatus): string {
 .pcs-panel__foot strong {
   color: var(--ek-color-content-strong);
 }
+
+/* ================= FE-LOCAL-1048 — kanal durumu paneli: ana sayfa diliyle =================
+   Kart köşesi + ince çerçeve; başlık bandı sakin zeminde — "KANAL DURUMU" kısa eylem çizgili mikro etiket, altında
+   ürün adı; satırlar ince çizgiyle ayrılır, gönderime hazır satır eylem renginin açık tonunda; neden kutusu çerçeveli. */
+.pcs-menu > .pcs-panel {
+  border-radius: var(--ek-radius-card);
+  background: var(--ek-color-surface);
+}
+
+.pcs-panel__head {
+  gap: var(--ek-space-1);
+  border-bottom-color: var(--ek-color-border-default);
+  background: var(--ek-color-surface-muted);
+}
+
+.pcs-panel__title {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ek-space-2);
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-micro-size);
+  line-height: var(--ek-type-micro-line);
+  font-weight: var(--ek-type-micro-weight);
+  letter-spacing: var(--ek-type-micro-tracking);
+  text-transform: uppercase;
+}
+
+.pcs-panel__title::before {
+  content: '';
+  width: 12px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--ek-color-action);
+}
+
+.pcs-panel__sub {
+  color: var(--ek-color-content-strong);
+  font-size: var(--ek-type-body-size);
+  font-weight: var(--ek-font-weight-semibold);
+}
+
+.pcs-row {
+  padding: var(--ek-space-3) var(--ek-space-3) var(--ek-space-3) var(--ek-space-4);
+}
+
+.pcs-row__reason {
+  border: 1px solid var(--ek-color-error-border);
+  border-radius: var(--ek-radius-tile);
+}
+
+.pcs-switch {
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-tile);
+  background: var(--ek-color-surface);
+}
+
+.pcs-switch[aria-checked='true'] {
+  border-color: var(--ek-color-action-border);
+  color: var(--ek-color-action-emphasis);
+}
+
+.pcs-switch__knob {
+  box-shadow: none;
+}
+
+.pcs-panel__foot {
+  border-top-color: var(--ek-color-border-default);
+}
 </style>

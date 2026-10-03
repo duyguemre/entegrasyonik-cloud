@@ -61,11 +61,18 @@ export function reportUnexpectedError(
   if (!options.silent) {
     try {
       const snackbarStore = useSnackbarStore()
-      snackbarStore.addSnackbar({
-        text: options.userMessage ?? `Bir şeyler ters gitti. Destek kodu: ${supportCode}`,
-        color: options.color ?? 'error',
-        timeout: 6000,
-      })
+      // FE-LOCAL-1050: genel hata bildirimi üç parça — başlık, ne yapılacağı, kopyalanabilir destek kodu.
+      snackbarStore.addSnackbar(
+        options.userMessage
+          ? { text: options.userMessage, color: options.color ?? 'error', timeout: 6000 }
+          : {
+              title: 'Bir şeyler ters gitti',
+              text: 'İşlem tamamlanamadı. Yeniden deneyin; sorun sürerse destek kodunu bize iletin.',
+              code: supportCode,
+              color: options.color ?? 'error',
+              timeout: 6000,
+            },
+      )
     } catch {
       // Pinia/snackbar store henüz hazır değilse (ör. çok erken bootstrap hatası) sessizce geç —
       // hata zaten logger'a yazıldı, kullanıcı bildirimi burada "en iyi çaba" niteliğindedir.

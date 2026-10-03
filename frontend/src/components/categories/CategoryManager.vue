@@ -51,14 +51,18 @@
     <header class="cat-manager__head">
       <EkPageBar section="Katalog" :title="$t('menu.productDefinitions.categoryList')" refreshable :refreshing="refreshing"
         refresh-label="Yenile" @refresh="reload">
-        <template v-if="hasCategories" #status>
-          <EkStatusChip tone="neutral" :label="`${totalCount} kategori`" />
-          <EkStatusChip v-if="missingCount > 0" tone="warning" icon="mdi-minus-circle-outline" :label="`${missingCount} eksik eşleme`" />
-        </template>
+        <!-- FE-LOCAL-1052: sayaç çipleri Özet görünümüne taşındı; sağda Liste | Özet anahtarı. -->
+        <template #actions><EkViewSwitch v-model="view" /></template>
       </EkPageBar>
     </header>
 
-    <div v-if="hasCategories || adding" class="cat-manager__strip">
+    <!-- Özet görünümü: ağaç + detayın YERİNE (sayılar bellekteki ağaç ve eşleme verisinden). -->
+    <div v-if="view === 'summary'" class="cat-manager__dash">
+      <MappingCoverageDashboard :cells="dashCells" :channels="dashChannels" :loading="isLoading"
+        subtitle="Uç kategorilerin kanal kategorileriyle eşleme durumu" @select="onDashSelect" />
+    </div>
+
+    <div v-if="hasCategories || adding" v-show="view === 'list'" class="cat-manager__strip">
       <div class="cat-manager__search">
         <v-text-field v-model="searchText" label="Kategori ara" prepend-inner-icon="mdi-magnify" clearable hide-details
           density="compact" class="cat-manager__search-field" autocomplete="off" @keydown.esc="searchText = ''" />
@@ -75,8 +79,13 @@
       </div>
     </div>
 
-    <div class="cat-manager__panes" :class="{ 'is-single': !hasCategories }">
+    <div v-show="view === 'list'" class="cat-manager__panes" :class="{ 'is-single': !hasCategories }">
       <section class="cat-panel cat-panel--tree" aria-label="Kategori listesi">
+        <!-- FE-LOCAL-1048: panel başlığı (tablo başlığıyla aynı dil) — görsel etiket; bölümün adı `aria-label`da. -->
+        <header v-if="hasCategories && !isLoading && !loadFailed" class="cat-panel__head" aria-hidden="true">
+          <span class="cat-panel__label">Kategori ağacı</span>
+          <span class="cat-panel__hint">Taşımak için sürükleyin</span>
+        </header>
         <!-- yükleniyor -->
         <div v-if="isLoading" class="cat-state" role="status" aria-busy="true">
           <span class="ek-sr-only">Kategoriler yükleniyor</span>
@@ -132,6 +141,10 @@ import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { useMediaQuery } from '@vueuse/core'
 import { EkButton, EkConfirmDialog, EkDialogCard, EkDialogHost, EkErrorState, EkIconTile, EkStatusChip } from '@entegrasyonik/ui/components'
 import EkPageBar from '@/components/page/EkPageBar.vue'
+import EkViewSwitch, { type EkViewMode } from '@/components/page/EkViewSwitch.vue'
+import type { ListSummaryCell } from '@/components/page/ListSummaryStrip.vue'
+import MappingCoverageDashboard, { type MappingChannelCoverage } from '@/components/productDefinitions/definitions/MappingCoverageDashboard.vue'
+import { formatNumber } from '@entegrasyonik/ui/format'
 import CategoryTree from '@/components/categories/CategoryTree.vue'
 import CategoryDetail from '@/components/categories/CategoryDetail.vue'
 import useRestApi from '@/composables/restapi'
@@ -181,6 +194,35 @@ const missingCount = computed(() => {
   for (const c of coverage.value.values()) if (c.leaf && c.missing.length) n++
   return n
 })
+
+// ---- Liste | Özet (FE-LOCAL-1052) -----------------------------------------------------------------------------------------
+const view = ref<EkViewMode>('list')
+const dashCells = computed<ListSummaryCell[]>(() => {
+  let leaves = 0
+  for (const c of coverage.value.values()) if (c.leaf) leaves++
+  const parents = totalCount.value - leaves
+  const known = mappingReady.value && channels.value.length > 0
+  const cell = (key: string, label: string, n: number | null, icon: string, tone: ListSummaryCell['tone'], hint: string, clickable = false): ListSummaryCell => ({
+    key, label, hint, icon, tone, value: n === null ? '—' : formatNumber(n), zero: !n, clickable,
+  })
+  return [
+    cell('total', 'Kategori', totalCount.value, 'mdi-shape-outline', 'action', 'Tanımlı tüm kategoriler'),
+    cell('parents', 'Üst kategori', parents, 'mdi-folder-outline', 'neutral', 'Alt kategorisi olan'),
+    cell('leaves', 'Uç kategori', leaves, 'mdi-tag-outline', 'info', 'Ürün atanabilen, eşlenen'),
+    cell('complete', 'Tam eşli', known ? leaves - missingCount.value : null, 'mdi-check-circle-outline', 'success', 'Tüm kanallarda eşli uç kategori'),
+    cell('missing', 'Eksik eşlemeli', known ? missingCount.value : null, 'mdi-minus-circle-outline', 'warning', 'Listede göstermek için tıklayın', known && missingCount.value > 0),
+  ]
+})
+const dashChannels = computed<MappingChannelCoverage[]>(() => {
+  if (!mappingReady.value) return []
+  const leaves = [...coverage.value.values()].filter((c) => c.leaf)
+  return channels.value.map((ch) => ({ code: ch.code, title: ch.title, total: leaves.length, mapped: leaves.filter((c) => c.mapped.includes(ch.code)).length }))
+})
+function onDashSelect(key: string) {
+  if (key !== 'missing') return
+  segment.value = 'missing'
+  view.value = 'list'
+}
 
 async function loadMappings() {
   await attributeMappingStore.retrieveAttributeMappings()
@@ -438,6 +480,14 @@ onMounted(() => {
 
 .cat-manager__head {
   flex: none;
+}
+
+/* Özet görünümü: ağaç + detayın yerini alır, kendi içinde kayar. */
+.cat-manager__dash {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding-bottom: var(--ek-space-6);
 }
 
 .cat-manager__strip {
@@ -727,6 +777,91 @@ onMounted(() => {
   .cat-manager__search {
     flex-wrap: wrap;
     flex-basis: 100%;
+  }
+}
+
+/* ================= FE-LOCAL-1048 — Kategoriler: uygulamanın ortak tasarım dili =================
+   Sayfa adı diğer sayfalarla AYNI noktada (kabuk yalnız sekmenin kök öğesinin üst boşluğunu 12px yapar; içerik burada
+   olduğu için üst boşluk burada verilir). Segment = Liste | Özet anahtarıyla aynı görünüm. Paneller: düz yüzey, ince
+   çerçeve, tablo başlığı tonunda mikro etiketli başlık. */
+.cat-manager {
+  padding-top: var(--ek-space-3);
+}
+
+.cat-seg {
+  gap: 2px;
+  border-color: var(--ek-color-border-input);
+  border-radius: var(--ek-radius-tile);
+}
+
+.cat-seg__btn {
+  height: calc(var(--ek-control-h-sm) - 6px);
+  border-radius: var(--ek-radius-md);
+  color: var(--ek-color-content-default);
+  font-size: var(--ek-type-label-size);
+  font-weight: var(--ek-font-weight-medium);
+}
+
+.cat-seg__btn:hover {
+  background: var(--ek-color-surface-muted);
+  color: var(--ek-color-content-strong);
+}
+
+.cat-seg__btn.is-on {
+  background: var(--ek-color-action-subtle);
+  color: var(--ek-color-action-emphasis);
+}
+
+.cat-panel__head {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ek-space-3);
+  min-height: 36px;
+  padding: 0 var(--ek-space-4);
+  border-bottom: 1px solid var(--ek-color-border-default);
+  background: var(--ek-color-surface-muted);
+}
+
+.cat-panel__label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ek-space-2);
+  color: var(--ek-color-sidebar-section);
+  font-size: var(--ek-type-micro-size);
+  line-height: var(--ek-type-micro-line);
+  font-weight: var(--ek-type-micro-weight);
+  letter-spacing: var(--ek-type-micro-tracking);
+  text-transform: uppercase;
+}
+
+.cat-panel__label::before {
+  content: '';
+  width: 12px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--ek-color-action);
+}
+
+.cat-panel__hint {
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-caption-size);
+}
+
+.cat-move__item {
+  border-radius: var(--ek-radius-md);
+}
+
+@media (max-width: 767px) {
+  .cat-manager {
+    padding-top: var(--ek-space-3);
+  }
+}
+
+@media (hover: none) {
+  .cat-panel__hint {
+    display: none;
   }
 }
 </style>

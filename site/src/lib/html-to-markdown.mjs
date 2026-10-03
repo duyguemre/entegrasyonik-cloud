@@ -9,6 +9,8 @@ import { parse, ELEMENT_NODE, TEXT_NODE } from 'ultrahtml'
 const SKIP_TAGS = new Set([
   'script', 'style', 'svg', 'noscript', 'template', 'button', 'input', 'select', 'textarea', 'label', 'form',
   'canvas', 'iframe', 'video', 'audio', 'picture', 'img', 'nav', 'dialog', 'head',
+  // "Geliştirme listemizde" kanıtlı bloğu (DevelopmentList): yol haritası adları LLM markdown'ına da girmez.
+  'backlog-block',
 ])
 const BLOCK_TAGS = new Set([
   'p', 'div', 'section', 'article', 'aside', 'header', 'footer', 'main', 'figure', 'figcaption', 'blockquote',

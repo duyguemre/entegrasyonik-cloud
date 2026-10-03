@@ -132,4 +132,18 @@ function itemLabel(img: GalleryImage, i: number) {
   line-height: 18px;
   font-weight: 600;
 }
+
+/* FE-LOCAL-1057 — görsel seçici: seçim işareti köşeli kutu (yuvarlak değil); kapak etiketi köşeli. */
+.ipk__check {
+  border-radius: var(--ek-radius-md);
+}
+
+.ipk__cover {
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-md);
+}
+
+.ipk__item.is-on {
+  box-shadow: inset 0 0 0 1px var(--ek-color-action);
+}
 </style>

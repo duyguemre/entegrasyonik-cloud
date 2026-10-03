@@ -305,7 +305,7 @@ const busy = ref<'' | 'read-all' | 'read-selected' | 'delete-selected'>('')
 const confirmOpen = ref(false)
 const detailOpen = ref(false)
 const detail = ref<NotificationRow | null>(null)
-const filtersCollapsed = ref(!isDesktop.value)
+const filtersCollapsed = ref(true) // FE-LOCAL-1047: filtreler kapalı başlar
 /** SSE ile yeni eklenen satırlar kısa süre vurgulanır (hareket azaltmada yalnız renk). */
 const fresh = ref(new Set<string>())
 

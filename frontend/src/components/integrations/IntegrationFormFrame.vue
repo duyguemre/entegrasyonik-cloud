@@ -105,8 +105,10 @@ function castBack(value: string) {
   box-shadow: var(--ek-shadow-card);
 }
 
+/* FE-LOCAL-1048: sekme bandı kartın başlığı — sakin zemin + ince alt çizgi (liste başlık/alt bantlarıyla aynı). */
 .ek-integration-frame__tabs {
-  padding: 0 var(--ek-space-4);
+  padding: var(--ek-space-2) var(--ek-space-4);
+  border-bottom: 1px solid var(--ek-color-border-subtle);
   background: var(--ek-color-surface-muted);
 }
 

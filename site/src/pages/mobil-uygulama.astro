@@ -1,0 +1,414 @@
+---
+/**
+ * /mobil-uygulama — APK-DL: Android uygulamasının (müşteri uygulaması kabuğu) mağaza dışı indirme sayfası.
+ * Dosya ve sürüm bilgisi `src/data/mobile-app.ts`'ten (derleme anında `public/indir/`); APK yoksa "hazırlanıyor" durumu.
+ * Kabuk web uygulamasının aynısını açar (aynı hesap); iddialar yalnız kabuğun bugün yaptıklarıdır
+ * (docs/MOBILE_ANDROID_BUILD.md): kamera ile ürün fotoğrafı + barkod, uygulama içi bildirimler, dış bağlantılar tarayıcıda.
+ */
+import BaseLayout from '../layouts/BaseLayout.astro'
+import Section from '../components/Section.astro'
+import Icon from '../components/home/Icon.astro'
+import SectionHead from '../components/pages/SectionHead.astro'
+import PageHero from '../components/pages/PageHero.astro'
+import Accordion from '../components/pages/Accordion.astro'
+import CtaBand from '../components/pages/CtaBand.astro'
+import { crumbsFor } from '../data/seo'
+import { appUrls } from '../lib/site-config'
+import { APK_HREF, APK_FILE_NAME, MIN_ANDROID, getMobileAppRelease } from '../data/mobile-app'
+
+const crumbs = crumbsFor('/mobil-uygulama')
+const release = getMobileAppRelease()
+const meta = [release.versionName ? `Sürüm ${release.versionName}` : null, release.sizeLabel, `Android ${MIN_ANDROID} ve üzeri`].filter(Boolean)
+
+const steps: Array<{ title: string; text: string }> = [
+  { title: 'APK dosyasını indirin', text: 'Telefonunuzdan bu sayfayı açın ve "Android uygulamasını indir" düğmesine dokunun.' },
+  { title: 'Yükleme iznini verin', text: 'Dosyayı açtığınızda Android, tarayıcınıza ya da Dosyalar uygulamasına "Bilinmeyen uygulamaları yükle" izni vermenizi ister.' },
+  { title: 'Yükleyin ve giriş yapın', text: '"Yükle"ye dokunun; ardından mevcut Entegrasyonik hesabınızla giriş yapın.' },
+]
+
+type FeatureIcon = 'layers' | 'camera' | 'notice' | 'refresh'
+const features: Array<{ icon: FeatureIcon; title: string; text: string }> = [
+  { icon: 'layers', title: 'Aynı uygulama, aynı hesap', text: 'Web uygulamasındaki ekranların aynısı; ürün, stok, sipariş ve iadeleriniz telefonunuzda.' },
+  { icon: 'camera', title: 'Kamerayla ürün fotoğrafı ve barkod', text: 'Ürün görselini doğrudan telefon kamerasıyla çekin; barkodu okutarak ürün ve sipariş arayın.' },
+  { icon: 'notice', title: 'Uygulama içi bildirimler', text: 'Sipariş, stok ve entegrasyon bildirimlerini uygulamanın bildirim panelinden takip edin.' },
+  { icon: 'refresh', title: 'Kendiliğinden güncel', text: 'Uygulama içeriği web ile birlikte güncellenir; her yenilikte APK\'yı yeniden kurmanız gerekmez.' },
+]
+
+const faq = [
+  {
+    id: 'guvenli-mi',
+    question: 'Mağaza dışından yüklemek güvenli mi?',
+    answer:
+      'APK, Entegrasyonik anahtarıyla imzalıdır ve yalnızca Entegrasyonik uygulama adresine bağlanır; başka bağlantılar telefonunuzun tarayıcısında açılır. Yüklerken Play Protect uyarısı görebilirsiniz; mağaza dışı imzalı uygulamalarda bu olağandır, "Yine de yükle" ile devam edebilirsiniz.',
+  },
+  {
+    id: 'guncelleme',
+    question: 'Uygulamayı nasıl güncel tutarım?',
+    answer:
+      'Ekranlar ve özellikler web uygulamasıyla birlikte kendiliğinden güncellenir. Yeni bir APK sürümü gerektiğinde bu sayfadan indirip aynı şekilde kurmanız yeterlidir; verileriniz ve oturumunuz korunur.',
+  },
+  {
+    id: 'iphone',
+    question: 'iPhone için uygulama var mı?',
+    answer: 'iPhone için şimdilik tarayıcınızdan app.entegrasyonik.com adresini kullanın; aynı hesapla aynı ekranlara ulaşırsınız.',
+  },
+  {
+    id: 'izinler',
+    question: 'Uygulama hangi izinleri ister?',
+    answer: 'Yalnızca internet erişimi ve ürün fotoğrafı ya da barkod için kamera izni. Kamera izni, ilk kullandığınızda sorulur.',
+  },
+]
+---
+
+<BaseLayout>
+  <PageHero
+    title="Entegrasyonik'i telefonunuzdan kullanın"
+    accent="telefonunuzdan"
+    eyebrow="Mobil uygulama"
+    lead="Android uygulamasıyla ürün, stok ve siparişlerinizi her yerden yönetin. Web uygulamasıyla aynı hesap, aynı ekranlar."
+    crumbs={crumbs}
+  >
+    <div class="dl" data-testid="apk-download">
+      {
+        release.available ? (
+          <>
+            <a class="dl__btn" href={APK_HREF} download={APK_FILE_NAME} data-testid="apk-link">
+              <Icon name="android" size="md" />
+              Android uygulamasını indir (APK)
+            </a>
+            <p class="dl__meta">{meta.join(' · ')}</p>
+          </>
+        ) : (
+          <p class="dl__pending" data-testid="apk-pending">
+            <Icon name="clock" size="sm" />
+            Uygulama hazırlanıyor; çok yakında bu sayfadan indirebileceksiniz.
+          </p>
+        )
+      }
+    </div>
+
+    <Fragment slot="visual">
+      <div class="phone" aria-hidden="true">
+        <div class="phone__bar">
+          <span class="phone__mark"><Icon name="android" size="sm" /></span>
+          <span class="phone__title">Entegrasyonik</span>
+        </div>
+        <ul class="phone__list" role="list">
+          <li><span class="phone__dot"></span><span class="phone__line"></span><span class="phone__tag">Yeni</span></li>
+          <li><span class="phone__dot"></span><span class="phone__line"></span><span class="phone__tag">Hazırlanıyor</span></li>
+          <li><span class="phone__dot"></span><span class="phone__line"></span><span class="phone__tag">Kargoda</span></li>
+        </ul>
+        <div class="phone__cam"><Icon name="camera" size="sm" /> Fotoğraf çek</div>
+      </div>
+    </Fragment>
+  </PageHero>
+
+  <Section labelledby="kurulum-title" class="tight-section">
+    <SectionHead id="kurulum-title" eyebrow="Kurulum" title="Üç adımda telefonunuzda" lead="Uygulama mağaza dışından kurulur; bir kerelik izin dışında ek bir ayar gerekmez." />
+    <ol class="steps" role="list">
+      {
+        steps.map((s, i) => (
+          <li class="step">
+            <span class="step__no">{i + 1}</span>
+            <span class="step__body">
+              <span class="step__title">{s.title}</span>
+              <span class="step__text">{s.text}</span>
+            </span>
+          </li>
+        ))
+      }
+    </ol>
+    <p class="note">
+      <Icon name="info" size="sm" />
+      <span>Yükleme sırasında Play Protect uyarısı çıkabilir. Mağaza dışı imzalı uygulamalarda bu olağandır; "Yine de yükle" ile devam edin.</span>
+    </p>
+  </Section>
+
+  <Section labelledby="neler-title" tone="muted" class="tight-section">
+    <SectionHead id="neler-title" eyebrow="Uygulamada neler var" title="Web'deki her şey, cebinizde" />
+    <ul class="features" role="list">
+      {
+        features.map((f) => (
+          <li class="feature">
+            <span class="feature__icon"><Icon name={f.icon} size="md" /></span>
+            <span class="feature__title">{f.title}</span>
+            <span class="feature__text">{f.text}</span>
+          </li>
+        ))
+      }
+    </ul>
+  </Section>
+
+  <Section labelledby="sss-title" class="tight-section" size="narrow">
+    <SectionHead id="sss-title" eyebrow="Sorular" title="Merak edilenler" />
+    <Accordion items={faq} />
+  </Section>
+
+  <CtaBand
+    id="mobil-cta"
+    title="Hesabınız yok mu?"
+    text="Önce hesabınızı oluşturun ve kanallarınızı bağlayın; ardından aynı hesapla telefonunuzdan devam edin."
+    primary={{ label: 'Ücretsiz deneyin', href: appUrls.register() }}
+    secondary={{ label: 'Destek merkezi', href: '/destek' }}
+  />
+</BaseLayout>
+
+<style>
+  /* APK-DL — tasarım dili §35.7: düz yüzey, 1px çerçeve, lacivert vurgu (`--site-action*`), kare ikon kutusu, gölge yok. */
+  :global(.section.tight-section) {
+    padding-block: calc(var(--site-section-y) * 0.72);
+  }
+
+  /* --- Hero: indirme --- */
+  .dl {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--ek-space-3);
+    margin-top: var(--ek-space-2);
+  }
+  .dl__btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ek-space-2);
+    min-height: calc(var(--site-tap-target) + var(--ek-space-2));
+    padding: var(--ek-space-3) var(--ek-space-6);
+    border: var(--site-border-width) solid var(--ek-color-background);
+    border-radius: var(--ek-radius-tile);
+    background: var(--ek-color-background);
+    color: var(--ek-color-primary);
+    font-size: var(--ek-font-size-xl);
+    font-weight: var(--ek-font-weight-semibold);
+    text-decoration: none;
+    transition: background-color var(--ek-duration-base) var(--ek-easing-standard);
+  }
+  .dl__btn:hover {
+    background: var(--site-action-subtle);
+  }
+  .dl__btn:focus-visible {
+    outline: var(--site-focus-ring-width) solid var(--site-accent-on-dark);
+    outline-offset: var(--site-focus-ring-offset);
+  }
+  .dl__meta {
+    color: var(--site-text-on-dark-meta);
+    font-size: var(--ek-font-size-sm);
+  }
+  .dl__pending {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ek-space-2);
+    padding: var(--ek-space-2) var(--ek-space-4);
+    border: var(--site-border-width) solid var(--site-glass-border);
+    border-radius: var(--ek-radius-md);
+    background: var(--site-glass-bg);
+    color: var(--site-text-on-dark-body);
+    font-size: var(--ek-font-size-md);
+  }
+
+  /* --- Hero görseli: sade telefon çerçevesi --- */
+  .phone {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-3);
+    width: min(100%, 18rem);
+    margin-inline: auto;
+    padding: var(--ek-space-4);
+    border: var(--site-border-width) solid var(--site-glass-border);
+    border-radius: var(--ek-radius-card);
+    background: var(--site-glass-bg);
+  }
+  .phone__bar {
+    display: flex;
+    align-items: center;
+    gap: var(--ek-space-2);
+    padding-bottom: var(--ek-space-3);
+    border-bottom: var(--site-border-width) solid var(--site-glass-border);
+  }
+  .phone__mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--ek-space-8);
+    height: var(--ek-space-8);
+    border: var(--site-border-width) solid var(--site-glass-border);
+    border-radius: var(--ek-radius-tile);
+    color: var(--site-text-on-dark-heading);
+  }
+  .phone__title {
+    color: var(--site-text-on-dark-heading);
+    font-size: var(--ek-font-size-md);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+  .phone__list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .phone__list li {
+    display: flex;
+    align-items: center;
+    gap: var(--ek-space-2);
+    padding: var(--ek-space-3);
+    border: var(--site-border-width) solid var(--site-glass-border);
+    border-radius: var(--ek-radius-tile);
+  }
+  .phone__dot {
+    flex: none;
+    width: var(--ek-space-2);
+    height: var(--ek-space-2);
+    border-radius: var(--ek-radius-full);
+    background: var(--site-accent-on-dark);
+  }
+  .phone__line {
+    flex: 1;
+    height: var(--ek-space-1);
+    border-radius: var(--ek-radius-sm);
+    background: var(--site-glass-border);
+  }
+  .phone__tag {
+    padding: 0 var(--ek-space-2);
+    border: var(--site-border-width) solid var(--site-glass-border);
+    border-radius: var(--ek-radius-md);
+    color: var(--site-text-on-dark-body);
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+  .phone__cam {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--ek-space-2);
+    padding: var(--ek-space-2);
+    border-radius: var(--ek-radius-tile);
+    background: var(--ek-color-background);
+    color: var(--ek-color-primary);
+    font-size: var(--ek-font-size-sm);
+    font-weight: var(--ek-font-weight-semibold);
+  }
+
+  /* --- Kurulum adımları --- */
+  .steps {
+    display: grid;
+    gap: var(--ek-space-4);
+    grid-template-columns: 1fr;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .step {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: var(--ek-space-4);
+    padding: var(--ek-space-6);
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--ek-radius-card);
+    background: var(--ek-color-surface);
+  }
+  .step__no {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--ek-space-10);
+    height: var(--ek-space-10);
+    border: var(--site-border-width) solid var(--site-action-border);
+    border-radius: var(--ek-radius-tile);
+    background: var(--site-action-subtle);
+    color: var(--site-action-emphasis);
+    font-weight: var(--ek-font-weight-bold);
+  }
+  .step__body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-1);
+    min-width: 0;
+  }
+  .step__title {
+    color: var(--site-text-heading);
+    font-size: var(--ek-font-size-xl);
+    font-weight: var(--ek-font-weight-bold);
+  }
+  .step__text {
+    color: var(--site-text-body);
+    font-size: var(--ek-font-size-md);
+    line-height: var(--site-font-body-line-height);
+  }
+  .note {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--ek-space-2);
+    max-width: none;
+    margin-top: var(--ek-space-6);
+    padding: var(--ek-space-4);
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--ek-radius-tile);
+    background: var(--ek-color-surface-muted);
+    color: var(--site-text-body);
+    font-size: var(--ek-font-size-md);
+  }
+  .note :global(.icon) {
+    flex: none;
+    margin-top: var(--ek-space-1);
+    color: var(--site-action);
+  }
+
+  /* --- Neler var --- */
+  .features {
+    display: grid;
+    gap: var(--ek-space-4);
+    grid-template-columns: 1fr;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .feature {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-2);
+    padding: var(--ek-space-6);
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--ek-radius-card);
+    background: var(--ek-color-surface);
+  }
+  .feature__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--ek-space-12);
+    height: var(--ek-space-12);
+    margin-bottom: var(--ek-space-2);
+    border: var(--site-border-width) solid var(--site-action-border);
+    border-radius: var(--ek-radius-tile);
+    background: var(--site-action-subtle);
+    color: var(--site-action);
+  }
+  .feature__title {
+    color: var(--site-text-heading);
+    font-size: var(--ek-font-size-xl);
+    font-weight: var(--ek-font-weight-bold);
+  }
+  .feature__text {
+    color: var(--site-text-body);
+    font-size: var(--ek-font-size-md);
+    line-height: var(--site-font-body-line-height);
+  }
+
+  @media (min-width: 48rem) {
+    .steps {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+    .step {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .features {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @media (min-width: 64rem) {
+    .features {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+</style>

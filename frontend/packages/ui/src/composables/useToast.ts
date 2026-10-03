@@ -24,6 +24,8 @@ export interface ToastOptions {
   onAction?: () => void
   /** Özel süre (ms). `error` her zaman kalıcıdır. */
   duration?: number
+  /** FE-LOCAL-1050: destek kodu — iletinin altında kopyalanabilir küçük kod kutusu ("Destek kodu · ABC123"). */
+  code?: string
 }
 
 export interface Toast extends ToastOptions {

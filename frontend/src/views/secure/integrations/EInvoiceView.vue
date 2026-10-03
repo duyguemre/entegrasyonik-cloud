@@ -2,29 +2,40 @@
   <div class="einvoiceView">
     <div class="workarea-scroll screen-scroll-inset">
 
-      <div class="pa-6 pb-0">
+      <div class="ek-integration-head">
         <EkPageHeader section="Entegrasyonlar" title="E-Fatura"
-          description="E-fatura sağlayıcınızı seçin ve ayarlarını buradan yönetin." />
+          description="E-fatura sağlayıcınızı seçin ve ayarlarını buradan yönetin.">
+          <template #tools><EkViewSwitch v-model="view" /></template>
+        </EkPageHeader>
       </div>
 
-      <div class="ek-integration-layout">
+      <div class="ek-integration-page">
+        <!-- FE-LOCAL-1048: Liste | Özet — özet, bağlantı ayarlarının YERİNE açılır (ikisi aynı sayfada durmaz). -->
+        <IntegrationOverview v-if="view === 'summary'" title="E-Fatura" noun="e-fatura sağlayıcısı" :items="einvoiceStore.getEInvoices()" :live-codes="liveCodes" list-label="E-fatura sağlayıcıları" :current="selectedPlatform"
+          @select="(code: string) => { selectPlatform(code); view = 'list' }" />
+      <div v-show="view === 'list'" class="ek-integration-layout">
         <div class="ek-integration-layout__main">
-          <div>
+          <ListDashSection label="E-fatura sağlayıcıları">
             <IntegrationPlatformRail :items="einvoiceStore.getEInvoices()" :model-value="selectedPlatform"
               :live-codes="liveCodes" ariaLabel="E-fatura sağlayıcısı seçimi" @select="selectPlatform" />
-          </div>
+          </ListDashSection>
 
+          <ListDashSection label="Bağlantı ayarları">
           <v-card-text class="pa-0 px-0" role="tabpanel"
             :aria-label="selectedPlatform ? `${selectedPlatform} ayarları` : 'Seçim bekleniyor'">
             <component v-if="selectedPlatform" :is="getActiveComponent()" :properties="getActiveProperties()" />
             <EkEmptyState v-else variant="not-connected" title="Başlamak için seçim yapın"
               message="Yukarıdaki listeden bir e-fatura sağlayıcısı seçerek ayarları yönetmeye başlayabilirsiniz." />
           </v-card-text>
+          </ListDashSection>
         </div>
 
         <aside class="ek-integration-layout__aside">
-          <IntegrationGuideCard :steps="comingSoonGuide" note="" />
+          <ListDashSection label="Rehber">
+            <IntegrationGuideCard :steps="comingSoonGuide" note="" />
+          </ListDashSection>
         </aside>
+      </div>
       </div>
 
     </div>
@@ -38,6 +49,9 @@ import IntegrationGuideCard from '@/components/integrations/IntegrationGuideCard
 import EkPageHeader from '@/components/page/EkPageHeader.vue'
 import { EkEmptyState } from '@entegrasyonik/ui/components'
 import IntegrationPlatformRail from '@/components/integrations/IntegrationPlatformRail.vue'
+import IntegrationOverview from '@/components/integrations/IntegrationOverview.vue'
+import EkViewSwitch, { type EkViewMode } from '@/components/page/EkViewSwitch.vue'
+import ListDashSection from '@/components/page/ListDashSection.vue'
 
 import TrendyolEFaturamComponent from '@/components/integrations/einvoice/TrendyolEFaturamComponent.vue'
 import TurkcellESirketComponent from '@/components/integrations/einvoice/TurkcellESirketComponent.vue'
@@ -52,6 +66,8 @@ const selectedPlatform = ref(einvoiceStore.getEInvoices()?.[0]?.code || '')
 // `docs/INTEGRATIONS_REGISTRY.md` §5.2 — "NET: backend'de e-fatura sağlayıcı entegrasyonu YOK". C1.2: canlı küme
 // `getCatalog` manifestosundan gelir (bugün BOŞ; yedek `FALLBACK_LIVE_CODES.einvoice` da boş — N13).
 const { liveCodes, comingSoonGuide } = useIntegrationScreen('einvoice')
+// FE-LOCAL-1048: Liste | Özet — varsayılan ayarlar; Özet ayar düzeninin yerine açılır.
+const view = ref<EkViewMode>('list')
 
 const componentMap: Record<string, any> = {
   trendyolefaturam: markRaw(TrendyolEFaturamComponent),

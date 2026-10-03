@@ -5,18 +5,27 @@
     <div class="workarea-scroll screen-scroll-inset" tabindex="0" role="region" aria-label="Kargo entegrasyonları">
       <LoadingComponent attach=".shippingView" ref="loadingComponentRef"></LoadingComponent>
 
-      <div class="pa-6 pb-0">
+      <div class="ek-integration-head">
         <EkPageHeader section="Entegrasyonlar" title="Kargo"
-          description="Kargo firmalarınızı bağlayın ve ayarlarını buradan yönetin." />
+          description="Kargo firmalarınızı bağlayın ve ayarlarını buradan yönetin.">
+          <template #tools><EkViewSwitch v-model="view" /></template>
+        </EkPageHeader>
       </div>
 
-      <div class="ek-integration-layout">
+      <div class="ek-integration-page">
+        <!-- FE-LOCAL-1048: Liste | Özet — özet, bağlantı ayarlarının YERİNE açılır (ikisi aynı sayfada durmaz). -->
+        <IntegrationOverview v-if="view === 'summary' && clientShipments?.length" title="Kargo" noun="kargo firması" :items="clientShipments" :live-codes="liveCodes"
+          :active-codes="activeCodes" list-label="Kargo firmaları" :current="editingClientIntegration.code"
+          @select="(code: string) => { setAndRetrieveEditingClientShipment(code); view = 'list' }" />
+      <div v-show="view === 'list'" class="ek-integration-layout">
         <div class="ek-integration-layout__main">
-          <div v-if="clientShipments?.length">
+          <ListDashSection v-if="clientShipments?.length" label="Kargo firmaları">
             <IntegrationPlatformRail :items="clientShipments" :model-value="editingClientIntegration.code"
-              :live-codes="liveCodes" ariaLabel="Kargo firması seçimi"
+              :live-codes="liveCodes" :active-codes="activeCodes" ariaLabel="Kargo firması seçimi"
               @select="setAndRetrieveEditingClientShipment" />
-          </div>
+          </ListDashSection>
+          <ListDashSection label="Bağlantı ayarları">
+          <div class="ek-integration-stack">
           <v-form ref="newVariantFormRef" v-model="isFormValid">
             <v-card-text class="pa-0 px-0" role="tabpanel"
               :aria-label="editingClientIntegration.code ? `${editingClientIntegration.code} ayarları` : 'Seçim bekleniyor'">
@@ -70,11 +79,16 @@
                 message="Yukarıdaki listeden bir kargo firması seçerek ayarları yönetmeye başlayabilirsiniz." />
             </v-card-text>
           </v-form>
+          </div>
+          </ListDashSection>
         </div>
 
         <aside class="ek-integration-layout__aside">
+          <ListDashSection label="Rehber">
           <IntegrationGuideCard :steps="comingSoonGuide" note="" />
+          </ListDashSection>
         </aside>
+      </div>
       </div>
     </div>
   </div>
@@ -99,12 +113,17 @@ import IntegrationGuideCard from '@/components/integrations/IntegrationGuideCard
 import EkPageHeader from '@/components/page/EkPageHeader.vue'
 import { EkEmptyState } from '@entegrasyonik/ui/components'
 import IntegrationPlatformRail from '@/components/integrations/IntegrationPlatformRail.vue'
+import IntegrationOverview from '@/components/integrations/IntegrationOverview.vue'
+import EkViewSwitch, { type EkViewMode } from '@/components/page/EkViewSwitch.vue'
+import ListDashSection from '@/components/page/ListDashSection.vue'
 import IntegrationComingSoonPanel from '@/components/integrations/IntegrationComingSoonPanel.vue'
 import { useIntegrationScreen } from '@/components/integrations/useIntegrationScreen'
 
 // `docs/INTEGRATIONS_REGISTRY.md` §5.1 — "NET: backend'de hiçbir kargo API entegrasyonu YOK". C1.2: canlı küme
 // `getCatalog` manifestosundan gelir (bugün BOŞ; yedek `FALLBACK_LIVE_CODES.shipping` da boş — N13).
-const { liveCodes, comingSoonGuide } = useIntegrationScreen('shipment')
+const { liveCodes, comingSoonGuide, noteSettings, activeCodesOf } = useIntegrationScreen('shipment')
+// FE-LOCAL-1048: Liste | Özet — varsayılan ayarlar; Özet ayar düzeninin yerine açılır.
+const view = ref<EkViewMode>('list')
 
 const integrationStore: any = useIntegrationStore()
 const { t } = useI18n()
@@ -121,6 +140,9 @@ onMounted(() => {
     setAndRetrieveEditingClientShipment(clientShipments.value[0].code)
 })
 
+// FE-LOCAL-1048: özet şeridi + kanal kartlarındaki Etkin / Pasif durumu (kayıtlı ayardan).
+const activeCodes = computed(() => activeCodesOf(clientShipments.value))
+
 const clientShipments = computed(() => integrationStore.getClientShipments())
 
 function displayPlatformName(code: string) {
@@ -133,6 +155,7 @@ const saveClientShipmentSettings = async (clientShipment: any) => {
   loadingComponentRef.value.remove(guid)
   if (response && response._id) {
     editingClientIntegration.value.settings = response.settings
+    noteSettings(clientShipment?.code ?? editingClientIntegration.value.code, response.settings)
   }
 }
 
@@ -142,6 +165,7 @@ const setAndRetrieveEditingClientShipment = async (integrationCode: string) => {
   loadingComponentRef.value.remove(guid)
   if (response && response.settings) {
     editingClientIntegration.value = response
+    noteSettings(response.code ?? integrationCode, response.settings)
   }
 }
 </script>

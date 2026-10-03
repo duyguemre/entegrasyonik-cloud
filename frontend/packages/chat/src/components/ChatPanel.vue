@@ -61,7 +61,8 @@
       </div>
       <ChatThread v-else ref="threadRef">
         <template v-slot:before>
-          <ChatEmptyState v-if="!chat.messages.value.length" />
+          <!-- `#empty` (isteğe bağlı): host kendi karşılama ekranını koyar; verilmezse varsayılan ChatEmptyState. -->
+          <slot v-if="!chat.messages.value.length" name="empty"><ChatEmptyState /></slot>
         </template>
       </ChatThread>
     </div>

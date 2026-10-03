@@ -22,7 +22,8 @@
       </v-select>
     </EkFormDialog>
 
-    <EkListScreen channel-key="integrationCode"
+    <EkListScreen ref="listScreenRef" channel-key="integrationCode"
+      summary-toggle
       section="Satış"
       title="İade talepleri"
       description="Pazaryerlerinden gelen iade/talep süreçlerini buradan yönetin."
@@ -64,10 +65,14 @@
       @remove-chip="removeChip"
       @clear-filters="resetFilters"
       @apply-view="applySavedView"
-      @refresh="getClaims(true)"
+      @refresh="refreshAll"
     >
       <!-- faz3-fe-help: ilk kullanım — hiç kayıt yokken "Nasıl başlanır?" (filtreli boş sonuçta gösterilmez). -->
       <template #empty-action><HelpStartLink article="ord-returns" /></template>
+      <!-- FE-LOCAL-1043: "Özet" görünümü (listenin yerine) — iade bölüm panosu. -->
+      <template #summary="{ close }">
+        <ClaimListDashboard ref="summaryRef" :active="applied.internalStatuses" @select="(st: string[]) => { onSummarySelect(st); close() }" />
+      </template>
       <template #filters>
         <EkSelect kind="channel" v-model="filters.integrationCodes" :items="channelOptionsFrom(integrationStore.getClientPlatforms())" label="Kanal" multiple clearable />
         <EkSelect v-model="filters.internalStatuses" kind="status" :items="statusSelectOptions" label="Talep durumu" multiple clearable recent-key="claims.status" />
@@ -140,6 +145,7 @@ import { ClaimInternalStatusEnum, CLAIM_INTERNAL_STATUS_LABELS } from '@/types/C
 import LoadingComponent from '@/components/LoadingComponent.vue'
 import ClaimDetailComponent from '@/components/claim/ClaimDetailComponent.vue'
 import EkListScreen from '@/components/page/templates/EkListScreen.vue'
+import ClaimListDashboard from '@/components/claim/ClaimListDashboard.vue'
 import type { EkSavedViewsConfig } from '@/components/page/EkSavedViews.vue'
 import { isRequestError } from '@entegrasyonik/ui/components/listStandard'
 
@@ -264,6 +270,18 @@ const loadError = computed(() => error.value !== null)
 /** Aşama 6b (Standart 1): hata desenindeki neden + teknik ayrıntı. */
 const loadProblem = computed<ProblemCopy | null>(() => error.value ? problemFromError(error.value, 'ClaimService/getClaims') : null)
 const getClaims = load
+
+// FE-LOCAL-1042: özet — "İşlem bekleyen" hücresi durum filtresini uygular; yenilemede sayılar da tazelenir.
+const summaryRef = ref<InstanceType<typeof ClaimListDashboard> | null>(null)
+const listScreenRef = ref<InstanceType<typeof EkListScreen> | null>(null)
+const onSummarySelect = (statuses: string[]) => {
+  filters.value.internalStatuses = [...statuses]
+  getClaims(true)
+}
+const refreshAll = () => {
+  summaryRef.value?.refresh()
+  getClaims(true)
+}
 const statusOptions = computed(() => Object.values(ClaimInternalStatusEnum).map((id) => ({ id, title: CLAIM_INTERNAL_STATUS_LABELS[id] })))
 // FR2-ORDERS 32: durum listesi iş akışı gruplarıyla (Karar bekleyen / Sonuçlanan) + sade açıklama alt satırı.
 const statusSelectOptions = computed(() => claimStatusOptions((s) => CLAIM_INTERNAL_STATUS_LABELS[s]))
@@ -321,6 +339,7 @@ const initialize = async (parameters: any) => {
 };
 
 const activate = async (parameters: any) => {
+  if (parameters && Object.keys(parameters).length) listScreenRef.value?.closeSummary()
   if (parameters?.internalStatuses) {
     filters.value.internalStatuses = parameters.internalStatuses;
     await getClaims(true);

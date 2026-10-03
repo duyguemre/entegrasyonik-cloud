@@ -1132,6 +1132,172 @@ function onItem(item: EkSideItem, event?: MouseEvent) {
   background: color-mix(in srgb, var(--ek-color-content-strong) 10%, transparent);
 }
 
+
+/* ================= FE-LOCAL-1036 — ana sayfa (Genel bakış) diliyle menü =================
+   Düz yüzey, ince çizgi, çerçeveli ikon kutuları, tek vurgu rengi; DEGRADE YOK.
+   · Bölüm etiketi: mikro etiket + eylem renginde kısa çizgi (ana sayfadaki bölüm başlıklarıyla aynı).
+   · Öğe: ikon 28px çerçeveli kutuda (sakin yüzey); hover'da satır sakin zemin, kutu belirginleşir.
+   · ETKİN ekran: satır eylem renginin açık tonu + ince çerçeve, kutu DOLU eylem rengi (beyaz ikon), metin vurgu
+     tonunda — "buradasınız" tek bakışta. Yan gösterge çizgisi yok (kutu + satır yeter).
+   · Alt öğe: kılavuz çizgisi üstünde düz 2px gösterge (degrade ve giriş animasyonu kaldırıldı). */
+.ek-side__section + .ek-side__section {
+  margin-top: var(--ek-space-6);
+}
+
+.ek-side__section-label {
+  display: flex;
+  align-items: center;
+  gap: var(--ek-space-2);
+  padding-bottom: var(--ek-space-2);
+  color: var(--ek-color-content-muted);
+  letter-spacing: 0.1em;
+}
+
+.ek-side__section-label:not(:has(.ek-side__section-icon))::before {
+  content: '';
+  flex: none;
+  width: 12px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--ek-color-action);
+}
+
+.ek-side__section-icon {
+  color: var(--ek-color-action);
+}
+
+.ek-side__list {
+  gap: 3px;
+}
+
+.ek-side__item {
+  min-height: 40px;
+  border-radius: var(--ek-radius-tile);
+}
+
+/* İkon kutusu: çerçeveli sakin yüzey (ana sayfadaki ikon kapsülleriyle aynı aile). */
+.ek-side__icon {
+  border: 1px solid var(--ek-color-border-subtle);
+  background: var(--ek-color-surface-muted);
+  color: var(--ek-color-content-default);
+  transition:
+    color var(--ek-motion-feedback),
+    background-color var(--ek-motion-feedback),
+    border-color var(--ek-motion-feedback);
+}
+
+.ek-side__item:hover,
+.ek-side__item.is-hover,
+.ek-side__subitem:hover,
+.ek-side__subitem.is-hover {
+  --ek-side-fill: var(--ek-color-surface-muted);
+}
+
+.ek-side__item:hover .ek-side__icon,
+.ek-side__item.is-hover .ek-side__icon {
+  border-color: var(--ek-color-border-default);
+  background: var(--ek-color-surface);
+  color: var(--ek-color-content-strong);
+}
+
+/* Grup başlığı (klasör): kutu çerçevesiz ve zeminsiz — "ekran değil, grup" ayrımı kutuyla da okunur. */
+.ek-side__item[aria-expanded] .ek-side__icon {
+  border-color: transparent;
+  background: transparent;
+}
+
+.ek-side__item[aria-expanded]:hover .ek-side__icon {
+  border-color: var(--ek-color-border-subtle);
+  background: var(--ek-color-surface);
+}
+
+/* ETKİN ekran. */
+.ek-side__item.is-active,
+.ek-side__subitem.is-active {
+  --ek-side-fill: var(--ek-color-action-subtle);
+  --ek-side-ink: var(--ek-color-action-emphasis);
+}
+
+.ek-side__item.is-active::after {
+  box-shadow: inset 0 0 0 1px var(--ek-color-action-border);
+}
+
+.ek-side__item.is-active .ek-side__icon,
+.ek-side--collapsed .ek-side__item.is-parent-active .ek-side__icon {
+  border-color: var(--ek-color-action);
+  background: var(--ek-color-action);
+  color: var(--ek-color-action-contrast);
+}
+
+.ek-side:not(.ek-side--collapsed) .ek-side__item.is-active::before {
+  display: none;
+}
+
+/* Favoriler satırı: etkin öğe nötr kalır (asıl vurgu ağaçtaki yerinde). */
+.ek-side__section.is-pinned .ek-side__item.is-active {
+  --ek-side-ink: var(--ek-color-content-default);
+}
+
+.ek-side__section.is-pinned .ek-side__item.is-active::after {
+  box-shadow: none;
+}
+
+.ek-side__section.is-pinned .ek-side__item.is-active .ek-side__icon {
+  border-color: var(--ek-color-border-subtle);
+  background: var(--ek-color-surface-muted);
+  color: var(--ek-color-action);
+}
+
+/* Rayda etkin: yalnız dolu kutu (satır zemini/çerçevesi yok). */
+.ek-side--collapsed .ek-side__item.is-active::after,
+.ek-side--collapsed .ek-side__item.is-parent-active::after {
+  box-shadow: none;
+}
+
+/* Alt öğeler: kılavuz çizgisi ince; etkin alt öğede düz 2px gösterge + açık ton zemin. */
+.ek-side__sublist {
+  border-left-color: var(--ek-color-border-default);
+}
+
+.ek-side__subitem {
+  border-radius: var(--ek-radius-control);
+}
+
+.ek-side__subitem.is-active::before {
+  top: 6px;
+  bottom: 6px;
+  width: 2px;
+  border-radius: 2px;
+  background: var(--ek-color-action);
+  animation: none;
+}
+
+.ek-side__subitem.is-active .ek-side__subicon {
+  color: var(--ek-color-action);
+}
+
+/* Grup sayacı + ok: çerçeveli küçük hap. */
+.ek-side__group-meta {
+  border: 1px solid var(--ek-color-border-subtle);
+  background: var(--ek-color-surface);
+}
+
+.ek-side__item[aria-expanded='true'] .ek-side__group-meta {
+  border-color: transparent;
+}
+
+.ek-side__item[aria-expanded]:hover .ek-side__group-meta {
+  border-color: var(--ek-color-border-default);
+  background: var(--ek-color-surface);
+}
+
+/* Boş favoriler ipucu: kesik çizgili sakin kutu (dolgu yok). */
+.ek-side__empty {
+  border: 1px dashed var(--ek-color-border-default);
+  border-radius: var(--ek-radius-tile);
+  background: transparent;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .ek-side__chevron,
   .ek-side__subwrap,

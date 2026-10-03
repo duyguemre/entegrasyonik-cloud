@@ -6,6 +6,15 @@ body {
   font-family: var(--ek-font-sans);
 }
 
+/* Uyarı tonu (kritikten net ayrılsın): global `warning` açık temada yanık turuncu → uyarı SARISI token rolleri
+   (`warning-fill` grafik dolgu, `warning-ink` okunur metin; ui paketi). */
+:root {
+  --bo-warn-fill: var(--ek-color-warning-fill);
+  --bo-warn-ink: var(--ek-color-warning-ink);
+  /* Uyarı zemini: düz, açık sarı (kritik pembemsi zeminden net ayrılır). */
+  --bo-warn-wash: color-mix(in srgb, var(--ek-color-warning-fill) 16%, var(--ek-color-surface));
+}
+
 /* bo-wdg (WCAG 2.4.11): sabit üst bar klavye odağını ve `#bölüm` çapalarını örtmesin. */
 html {
   scroll-padding-top: calc(var(--ek-app-topbar-height, 56px) + var(--ek-space-3));
@@ -187,6 +196,124 @@ html {
   box-shadow: inset 2px 0 0 var(--ek-color-border-focus), inset 0 1px 0 var(--ek-color-border-focus), inset 0 -1px 0 var(--ek-color-border-focus);
 }
 
+/* ---------------------------------------------------------------------------------------------------------------
+   STANDART LİSTE TABLOSU — iki kap (BoTableFrame `.bo-table` ve BoDataTable `EkDataTable`) AYNI görünür:
+   tek yazı ailesi (kimlik/kod dahil — eş aralıklı yok; rakamlar tablo genelinde tabular), aynı başlık bandı (40 px),
+   aynı satır (44 px; yoğun 40 px), aynı ayraç ve vurgu.
+   --------------------------------------------------------------------------------------------------------------- */
+.bo-table,
+[data-bo-datatable] .ek-data-table__table {
+  font-family: var(--ek-font-sans);
+  font-size: var(--ek-type-table-size);
+  line-height: var(--ek-type-table-line);
+  font-variant-numeric: tabular-nums;
+}
+
+.bo-table td :where(*:not(.v-icon):not(.mdi)),
+.bo-table .is-id {
+  font-family: inherit !important;
+}
+
+.bo-table .is-id,
+.bo-table .bo-id,
+[data-bo-datatable] .bo-id {
+  font-size: var(--ek-type-table-size);
+  letter-spacing: 0;
+}
+
+.bo-table thead th,
+[data-bo-datatable] .ek-data-table__th {
+  height: 40px;
+  border-bottom: 1px solid var(--ek-color-border-default);
+  background: var(--ek-color-surface-muted);
+  color: var(--ek-color-content-muted);
+}
+
+.bo-table tbody td,
+.bo-table tbody th,
+[data-bo-datatable] .ek-data-table__td {
+  height: 44px;
+  font-size: var(--ek-type-table-size);
+  color: var(--ek-color-content-default);
+}
+
+.bo-table[data-density='compact'] tbody td,
+.bo-table[data-density='compact'] tbody th,
+[data-bo-datatable].bo-dense .ek-data-table__td {
+  height: 40px;
+}
+
+[data-bo-datatable] .ek-data-table__row {
+  border-bottom-color: var(--ek-color-border-subtle);
+}
+
+/* STANDART LİSTE ÇERÇEVESİ — BoDataTable ve BoTableFrame aynı kap: üst bant → tablo → alt bant, tek çerçeve. */
+.bo-listframe {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-card);
+  background: var(--ek-color-surface);
+}
+
+.bo-listframe > .bo-table-wrap--inner {
+  border: 0;
+  border-radius: 0;
+}
+
+.bo-listframe > [data-bo-pagination] {
+  border-top: 1px solid var(--ek-color-border-subtle);
+}
+
+/* STANDART LİSTE KARTI (BoSection gövdesinde liste): süzgeç bandı ve liste kenardan kenara, liste çerçevesi kalkar;
+   alt bilgi + sayfalama kartın alt şeridinde. Genel katmanda: öğeler sayfanın kapsamında oluşur. */
+.bo-section__body > .bo-listframe,
+.bo-section__body > [data-bo-filter]:has(+ .bo-listframe) {
+  margin-inline: calc(var(--ek-space-5) * -1);
+}
+
+.bo-section__body > .bo-listframe {
+  border-width: 1px 0 0;
+  border-radius: 0;
+}
+
+.bo-section__body > .bo-listframe:last-child {
+  margin-bottom: calc(var(--ek-space-5) * -1);
+  border-bottom-width: 0;
+}
+
+.bo-section__body > [data-bo-filter]:has(+ .bo-listframe) {
+  margin-bottom: calc(var(--ek-space-4) * -1);
+  padding: var(--ek-space-3) var(--ek-space-5);
+  border-top: 1px solid var(--ek-color-border-subtle);
+  background: var(--ek-color-surface-muted);
+}
+
+.bo-section.is-flush .bo-section__body > :is(.bo-listframe, [data-bo-filter]) {
+  margin-inline: 0;
+}
+
+.bo-section.is-flush .bo-section__body > .bo-listframe:last-child {
+  margin-bottom: 0;
+}
+
+@media (max-width: 600px) {
+  .bo-section__body > .bo-listframe,
+  .bo-section__body > [data-bo-filter]:has(+ .bo-listframe) {
+    margin-inline: calc(var(--ek-space-4) * -1);
+  }
+
+  .bo-section__body > .bo-listframe:last-child {
+    margin-bottom: calc(var(--ek-space-4) * -1);
+  }
+
+  .bo-section__body > [data-bo-filter]:has(+ .bo-listframe) {
+    padding: var(--ek-space-3) var(--ek-space-4);
+  }
+}
+
 /* Tablo altı: sayım + kaynak (sol), sayfalama (sağ). */
 .bo-table-foot {
   display: flex;
@@ -318,4 +445,63 @@ html {
    altında kalıyordu (axe color-contrast) → okunur ikincil ton. Müşteri uygulaması etkilenmez. */
 .bo-shell .ek-side .ek-side__section-label {
   color: var(--ek-color-content-muted);
+}
+
+/* ================= BO-LOCAL-01 — backoffice geneli: uygulamanın tasarım diliyle (DESIGN_SYSTEM §35) =================
+   Tablo: başlık satırı ve altlık sakin bantta, zebra yok, seçili/odaklı satır eylem renginin açık tonu. Liste çerçevesi
+   ve satır içi not düz, gölgesiz. Segment (Tümü | …) müşteri uygulamasındaki Liste | Özet anahtarıyla aynı görünüm. */
+.bo-table thead th {
+  background: var(--ek-color-surface-muted);
+  border-bottom: 1px solid var(--ek-color-border-default);
+}
+
+.bo-table tbody tr:hover > * {
+  background: var(--ek-color-surface-muted);
+}
+
+.bo-table tbody tr.is-link:focus-visible > *,
+.bo-table tbody tr[aria-selected='true'] > * {
+  background: var(--ek-color-action-subtle);
+}
+
+.bo-listframe,
+.bo-table-wrap {
+  box-shadow: none;
+}
+
+.bo-listframe {
+  border-color: var(--ek-color-border-default);
+  border-radius: var(--ek-radius-card);
+}
+
+.bo-table-foot {
+  border-top: 1px solid var(--ek-color-border-default);
+  background: var(--ek-color-surface-muted);
+}
+
+.bo-inline-note {
+  border-radius: var(--ek-radius-tile);
+}
+
+.bo-seg {
+  padding: 2px;
+  gap: 2px;
+  border: 1px solid var(--ek-color-border-input);
+  border-radius: var(--ek-radius-tile);
+  background: var(--ek-color-surface);
+  box-shadow: none;
+}
+
+.bo-seg__opt {
+  border-radius: var(--ek-radius-md);
+}
+
+.bo-seg__opt[aria-checked='true'] {
+  background: var(--ek-color-action-subtle);
+  color: var(--ek-color-action-emphasis);
+  box-shadow: none;
+}
+
+.bo-seg__count {
+  border-radius: var(--ek-radius-md);
 }

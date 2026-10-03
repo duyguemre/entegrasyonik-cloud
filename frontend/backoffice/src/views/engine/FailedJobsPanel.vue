@@ -5,7 +5,7 @@
       title="Başarısız işler"
       description="Kuyrukta hata veren işler: her işin türü, durumu, hata nedeni ve zamanı. Özet nedene göre sayar; Ayrıntılı iş iş listeler."
       icon="mdi-alert-circle-outline"
-    >
+     :count="list.items.value.length">
       <template #actions>
         <BoViewSwitch :options="VIEWS" label="Başarısız iş görünümü" />
         <EkRefreshButton quiet-success :loading="list.refreshing.value || list.phase.value === 'loading'" @refresh="reloadAll(true)" />
@@ -576,5 +576,21 @@ onMounted(async () => {
   display: inline-flex;
   align-items: center;
   gap: var(--ek-space-1);
+}
+
+/* BO-LOCAL-01 — seçim çubuğu: kutu köşeli sakin bant; seçim varken eylem renginin açık tonu + ince eylem çerçevesi. */
+.bo-selbar {
+  border-color: var(--ek-color-border-default);
+  border-radius: var(--ek-radius-tile);
+}
+
+.bo-selbar.is-active {
+  border-color: var(--ek-color-action-border);
+  background: var(--ek-color-action-subtle);
+}
+
+.bo-selbar.is-active .bo-selbar__count {
+  color: var(--ek-color-action-emphasis);
+  font-weight: var(--ek-font-weight-semibold);
 }
 </style>

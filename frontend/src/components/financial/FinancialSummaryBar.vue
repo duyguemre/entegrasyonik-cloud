@@ -41,7 +41,7 @@
 
       <dl class="ek-fin-sum__meta">
         <div v-if="deductionShare !== null"><dt>Kesinti oranı</dt><dd class="ek-num">{{ shareText }}</dd></div>
-        <div v-if="!compact"><dt>Kargo</dt><dd class="ek-num">{{ money(summary.totalCargo) }}</dd></div>
+        <div v-if="!compact && !hideCargo"><dt>Kargo</dt><dd class="ek-num">{{ money(summary.totalCargo) }}</dd></div>
         <div><dt>İşlem</dt><dd class="ek-num">{{ summary.transactionCount ?? 0 }} adet</dd></div>
       </dl>
     </template>
@@ -57,6 +57,8 @@ const props = defineProps<{
   loading: boolean
   compact: boolean
   formatCurrency: (v: any) => string
+  /** Özet ucu kargo toplamı sunmuyorsa (getFinancialSummary) kargo satırı gösterilmez — uydurma 0 yok. */
+  hideCargo?: boolean
 }>()
 
 const money = (v: any) => props.formatCurrency(v)
@@ -80,7 +82,6 @@ const shareText = computed(() => (deductionShare.value === null ? '' : formatPer
   background: var(--ek-color-surface);
   border: 1px solid var(--ek-color-border-default);
   border-radius: var(--ek-radius-card);
-  box-shadow: var(--ek-shadow-card);
 }
 
 .ek-fin-sum__loading {

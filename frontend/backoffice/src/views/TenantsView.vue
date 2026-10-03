@@ -1,9 +1,8 @@
 <template>
   <div class="bo-page">
-    <BoPageHeader :updated-at="updatedAt" :stale="stale">
+    <BoPageHeader :updated-at="updatedAt" :stale="stale" refreshable :refreshing="loading" @refresh="load">
       <template #actions>
         <CopyViewLink />
-        <BoAction kind="refresh" :loading="loading" data-page-refresh @click="load" />
       </template>
     </BoPageHeader>
 
@@ -25,7 +24,7 @@
       <BoSegmented v-model="status" :options="segmentOptions" label="Durum" />
     </BoFilterBar>
 
-    <BoSection id="musteri-listesi" title="Müşteriler" description="Mağaza sağlığı, abonelik ve kanallar; satıra tıklayınca müşteri ayrıntısı açılır" :flush="state === 'ready'">
+    <BoSection id="musteri-listesi" title="Müşteriler" description="Mağaza sağlığı, abonelik ve kanallar; satıra tıklayınca müşteri ayrıntısı açılır" :flush="state === 'ready'" :count="visible.length" :total="total">
       <BoPanelState
         v-if="state !== 'ready'"
         :state="state"
@@ -132,7 +131,6 @@ import { EkChannelDot, EkCopyButton, EkRelativeTime, EkStatusChip } from '@enteg
 import { formatDate } from '@entegrasyonik/ui/format'
 import CopyViewLink from '@bo/components/CopyViewLink.vue'
 import BoPageHeader from '@bo/components/shell/BoPageHeader.vue'
-import BoAction from '@bo/components/r2/BoAction.vue'
 import BoFilterBar from '@bo/components/r2/BoFilterBar.vue'
 import BoPagination from '@bo/components/r2/BoPagination.vue'
 import BoSection from '@bo/components/r2/BoSection.vue'
@@ -417,5 +415,23 @@ tr:hover .bo-tenants__name {
   gap: var(--ek-space-1);
   color: var(--ek-color-warning-emphasis);
   font-weight: var(--ek-font-weight-medium);
+}
+
+/* ================= BO-LOCAL-01 — müşteri listesi: uygulamanın tasarım diliyle =================
+   Mağaza numarası köşeli düz rozet (kopyalanır kimlik); dikkat isteyen sayılar uyarı tonunda köşeli rozet;
+   sıralama düğmesi kutu köşeli. */
+.bo-tenants__sort {
+  border-radius: var(--ek-radius-md);
+}
+.bo-tenants__tid {
+  font-family: var(--ek-font-mono);
+}
+.bo-tenants__hot,
+.bo-tenants__stale {
+  padding: 1px var(--ek-space-2);
+  border: 1px solid var(--ek-color-warning-border);
+  border-radius: var(--ek-radius-md);
+  background: var(--ek-color-warning-subtle);
+  font-weight: var(--ek-font-weight-semibold);
 }
 </style>

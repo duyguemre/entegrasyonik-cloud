@@ -89,8 +89,17 @@ cd android
 Tek flavor: `./gradlew assembleAppRelease` ya da `./gradlew assembleBackofficeRelease`. Hızlı deneme: `./gradlew installAppDebug`
 (USB ile bağlı telefona doğrudan kurar).
 
-Simge: şu an Capacitor varsayılan simgesi (iki flavor aynı). Ayrı simge için `android/app/src/<flavor>/res/mipmap-*` altına
-flavor simgeleri konur (ör. `npx @capacitor/assets generate` çıktısı; backoffice için PWA'daki amber kalkan rozeti). Yalnız kaynak dosyası, kod değil.
+Simge (MOB-ICON, 2026-10-02): Entegrasyonik logo işareti (site/uygulama logosuyla aynı geometri). Uyarlanabilir simge =
+lacivert zemin (`values/ic_launcher_background.xml`) + vektör ön plan (`drawable-v24/ic_launcher_foreground.xml`), Android 13+
+temalı simge için `drawable/ic_launcher_monochrome.xml`; eski cihazlar için `mipmap-*/ic_launcher*.png`. Açılış ekranı lacivert
+zemin + işaret (`drawable*/splash.png`, Android 12+ için `styles.xml` `windowSplashScreen*`). İki flavor aynı simgeyi kullanır.
+
+Yerel araçlar (bu makinede): JDK 21 ve Android SDK sistem yerine proje kökündeki git dışı `.tools/` klasöründedir
+(`.tools/jdk21`, `.tools/android-sdk`, `GRADLE_USER_HOME=.tools/gradle-home`); `android/local.properties` `sdk.dir`'i oraya gösterir.
+İmza anahtarı `android/entegrasyonik-release.jks` + `android/keystore.properties` (ikisi de git-ignored) — YEDEKLEYİN.
+
+Siteye yayın: müşteri APK'sı `site/public/indir/entegrasyonik.apk` (git-ignored) + `entegrasyonik.json` (sürüm/boyut);
+sayfa `/mobil-uygulama`. Backoffice APK'sı siteye konmaz.
 
 ## 6. Telefona kurulum (mağazasız)
 

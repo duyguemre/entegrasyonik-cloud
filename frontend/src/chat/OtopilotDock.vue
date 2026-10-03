@@ -9,12 +9,14 @@
   kullanıcı+tenant anahtarıyla yerelde. Tam sayfa sekmesi etkinken panel gizlenir (aynı konuşma iki yerde çizilmez).
 -->
 <template>
+  <!-- FE-LOCAL-1058: panel açılıp kapanırken KAYAR (uygulamanın tek geçiş hızı) — çekmece monte kalır, görünürlük
+       `model-value` ile değişir; sohbet arayüzü ilk açılışta yüklenir. Dışarı tıklama paneli kapatmaz (model olayı yok sayılır). -->
   <v-navigation-drawer
-    v-if="visible"
-    :model-value="true"
+    v-if="mountable"
+    :model-value="visible"
     location="right"
     :width="otopilot.width"
-    :permanent="!overlay"
+    :mobile="false"
     :temporary="overlay"
     :scrim="false"
     :touchless="true"
@@ -37,6 +39,7 @@
       @keydown="onResizeKey"
     />
     <ChatPanel
+      v-if="everShown"
       ref="panelRef"
       :key="panelKey"
       :controller="controller"
@@ -44,7 +47,9 @@
       appearance="refined"
       @close="otopilot.close()"
       @expand="otopilot.openPage()"
-    />
+    >
+      <template #empty><OtopilotWelcome /></template>
+    </ChatPanel>
   </v-navigation-drawer>
 </template>
 
@@ -56,6 +61,7 @@ import { isEditableTarget } from '@entegrasyonik/ui/shortcuts'
 /** Sohbet arayüzü (markdown-it, parçalar) kabuk paketine girmesin: panel ilk açılışta yüklenir. */
 const ChatPanel = defineAsyncComponent(() => import('@entegrasyonik/chat').then((m) => m.ChatPanel))
 import { useOtopilotStore } from './otopilotStore'
+const OtopilotWelcome = defineAsyncComponent(() => import('./OtopilotWelcome.vue'))
 import { OTOPILOT_PUSH_MIN, OTOPILOT_WIDTH } from './placement'
 
 const otopilot = useOtopilotStore()
@@ -65,7 +71,11 @@ const resizing = ref(false)
 
 const mobile = computed(() => viewport.value < 768)
 const overlay = computed(() => viewport.value < OTOPILOT_PUSH_MIN)
+const mountable = computed(() => otopilot.available && !mobile.value)
 const visible = computed(() => otopilot.panelOpen && otopilot.available && !mobile.value && !otopilot.onPage)
+/** Sohbet arayüzü (ağır paket) yalnız panel ilk kez açılınca kurulur; sonra kapalıyken de monte kalır (konuşma korunur). */
+const everShown = ref(false)
+watch(visible, (now) => { if (now) everShown.value = true }, { immediate: true })
 /** Denetleyici yenilenince (tenant/oturum değişimi) panel sıfırdan kurulur. */
 const panelKey = ref(0)
 const controller = computed(() => otopilot.getController())
@@ -129,7 +139,7 @@ onBeforeUnmount(() => {
 <style scoped>
 .ek-otopilot-dock {
   border-left: 1px solid var(--ek-color-border-default);
-  background: var(--ek-color-surface-raised);
+  background: var(--ek-color-surface);
   overflow: visible;
 }
 

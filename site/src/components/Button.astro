@@ -34,7 +34,8 @@ const tagProps = href ? { href } : { type }
     padding: var(--ek-space-2) var(--ek-space-5);
     overflow: hidden;
     border: var(--site-border-width) solid transparent;
-    border-radius: var(--ek-radius-lg);
+    /* SITE-DL-01: düz düğme — gölge/ışıma/parlama yok; hover'da yalnız renk tonu değişir. */
+    border-radius: var(--ek-radius-tile);
     background: transparent;
     font-family: inherit;
     font-size: var(--ek-font-size-lg);
@@ -48,100 +49,41 @@ const tagProps = href ? { href } : { type }
       border-color var(--ek-duration-base) var(--ek-easing-standard),
       color var(--ek-duration-base) var(--ek-easing-standard);
   }
-  /* Vurgulu CTA'larda hover ışıması: tek geçişlik, köşegen bir parlaklık (yalnızca transform + opacity). */
-  .btn--primary::after,
-  .btn--inverse::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    opacity: 0;
-    translate: -60% 0;
-    pointer-events: none;
-    transition:
-      translate var(--ek-duration-slow) var(--ek-easing-standard),
-      opacity var(--ek-duration-slow) var(--ek-easing-standard);
-  }
-  /* Koyu zeminli birincil düğme: açık (beyaza yakın) ışıma. */
-  .btn--primary::after {
-    background: linear-gradient(
-      100deg,
-      transparent 30%,
-      color-mix(in srgb, var(--ek-color-background) 45%, transparent) 50%,
-      transparent 70%
-    );
-  }
-  /* Açık zeminli ("inverse") düğme koyu sahnelerde kullanılır; ışıma marka rengiyle görünür kalır. */
-  .btn--inverse::after {
-    background: linear-gradient(
-      100deg,
-      transparent 30%,
-      color-mix(in srgb, var(--ek-color-secondary) 40%, transparent) 50%,
-      transparent 70%
-    );
-  }
-  .btn--primary:hover::after,
-  .btn--inverse:hover::after {
-    opacity: 1;
-    translate: 60% 0;
-  }
-
   .btn--lg {
     min-height: calc(var(--site-tap-target) + var(--ek-space-2));
     padding: var(--ek-space-3) var(--ek-space-6);
     font-size: var(--ek-font-size-xl);
   }
 
-  .btn--primary,
-  .btn--inverse {
-    position: relative;
-    overflow: hidden;
-  }
-  /* Hover'da çok hafif ışık sweep'i (yalnızca translate; reduced-motion global.css'te otomatik kapanır). */
-  .btn--primary::after,
-  .btn--inverse::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    translate: -120% 0;
-    transition: translate var(--ek-duration-slow) var(--ek-easing-standard);
-    pointer-events: none;
-  }
-  .btn--primary::after {
-    background: linear-gradient(120deg, transparent 30%, color-mix(in srgb, var(--ek-color-background) 30%, transparent) 50%, transparent 70%);
-  }
-  .btn--inverse::after {
-    background: linear-gradient(120deg, transparent 30%, color-mix(in srgb, var(--ek-color-primary) 12%, transparent) 50%, transparent 70%);
-  }
-  .btn--primary:hover::after,
-  .btn--inverse:hover::after {
-    translate: 120% 0;
-  }
-
+  /* Birincil eylem = lacivert tonu (`--site-action`; kullanıcı kararı 2026-10-02: düğme/anahtar/ikonda tam lacivert
+     fazla koyu → bir ton açığı). */
   .btn--primary {
-    background: var(--ek-color-primary);
-    color: var(--site-color-on-primary);
+    background: var(--site-action);
+    border-color: var(--site-action);
+    color: var(--site-action-contrast);
   }
   .btn--primary:hover {
-    background: var(--ek-color-primary-darken-1);
+    background: var(--site-action-hover);
+    border-color: var(--site-action-hover);
   }
 
   .btn--secondary {
-    background: var(--ek-color-background);
+    background: var(--ek-color-surface);
     border-color: var(--ek-color-border-strong);
-    color: var(--ek-color-primary);
+    color: var(--site-text-heading);
   }
   .btn--secondary:hover {
-    background: var(--ek-color-surface-muted);
-    border-color: var(--ek-color-primary);
+    background: var(--site-action-subtle);
+    border-color: var(--site-action-border);
+    color: var(--site-action-emphasis);
   }
 
   .btn--ghost {
     color: var(--ek-color-content-default);
   }
   .btn--ghost:hover {
-    background: var(--ek-color-surface-sunken);
-    color: var(--ek-color-content-strong);
+    background: var(--site-action-subtle);
+    color: var(--site-action-emphasis);
   }
 
   .btn--inverse {
@@ -149,7 +91,7 @@ const tagProps = href ? { href } : { type }
     color: var(--ek-color-primary);
   }
   .btn--inverse:hover {
-    background: var(--ek-color-surface-sunken);
+    background: var(--site-action-subtle);
   }
 
   .btn--inverse-outline {

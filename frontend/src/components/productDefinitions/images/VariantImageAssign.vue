@@ -38,8 +38,14 @@
         </div>
       </div>
 
-      <ul class="via__rows" :aria-label="`${activeGroup?.title ?? 'Seçenek'} değerleri`">
-        <li v-for="row in rows" :key="row.valueId" class="via__row" :class="{ 'is-open': editing === row.valueId, 'is-missing': row.missing === row.variants.length }">
+      <!-- çok değerli seçenekte (ör. 20 renk) toplu düzenleyicideki gibi arama + sayfalama -->
+      <div v-if="manyRows" class="via__tools">
+        <v-text-field v-model="query" class="via__search" density="compact" variant="outlined" hide-details clearable
+          prepend-inner-icon="mdi-magnify" :placeholder="`${activeGroup?.title ?? 'Değer'} ya da stok kodu`" aria-label="Değerlerde ara" />
+      </div>
+
+      <ul v-if="rows.length" class="via__rows" :aria-label="`${activeGroup?.title ?? 'Seçenek'} değerleri`">
+        <li v-for="row in pageRows" :key="row.valueId" class="via__row" :class="{ 'is-open': editing === row.valueId, 'is-missing': row.missing === row.variants.length }">
           <div class="via__row-main">
             <button type="button" class="via__expand" :aria-expanded="expanded.has(row.valueId)" :aria-controls="`via-vars-${row.valueId}`"
               :aria-label="`${row.title} varyantlarını ${expanded.has(row.valueId) ? 'gizle' : 'göster'}`" @click="toggleExpand(row.valueId)">
@@ -90,14 +96,20 @@
           </ul>
         </li>
       </ul>
-      <p v-if="!rows.length" class="via__none">Görseli eksik varyant kalmadı.</p>
+      <EkPagerBar v-if="manyRows && rows.length > PAGE_SIZES[0]" class="via__pager" :page="page" :page-size="pageSize" :total="rows.length"
+        :page-size-options="PAGE_SIZES" :label="`${activeGroup?.title ?? 'Değer'} sayfaları`" @update:page="(p: number) => (page = p)"
+        @update:page-size="(n: number) => { pageSize = n; page = 1 }" />
+      <EkEmptyState v-if="!rows.length && query" variant="no-results" title="Aramaya uyan değer yok"
+        message="Seçenek değeri ya da varyant stok koduyla aradınız. Aramayı temizleyip tekrar deneyin."
+        show-action action-text="Aramayı temizle" action-icon="mdi-close" @action="query = ''" />
+      <p v-else-if="!rows.length" class="via__none">Görseli eksik varyant kalmadı.</p>
     </template>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { EkAlert, EkButton, EkEmptyState } from '@entegrasyonik/ui/components'
+import { EkAlert, EkButton, EkEmptyState, EkPagerBar } from '@entegrasyonik/ui/components'
 import { useToast } from '@entegrasyonik/ui/composables/useToast'
 import { useChoicesStore } from '@/stores/choicesStore'
 import GalleryThumb from './GalleryThumb.vue'
@@ -156,7 +168,24 @@ const rows = computed(() => {
       }
     })
     .filter((r) => !onlyMissing.value || r.missing > 0)
+    .filter((r) => matches(r))
 })
+
+// ---- arama + sayfalama (yalnız çok değerli seçenekte; az değerde liste olduğu gibi)
+const PAGE_SIZES = [10, 25, 50, 100]
+const query = ref<string | null>('')
+const page = ref(1)
+const pageSize = ref(10)
+const manyRows = computed(() => (activeGroup.value?.values.length ?? 0) > PAGE_SIZES[0])
+function matches(r: { title: string; variants: Array<{ label: string; code: string }> }) {
+  const q = (query.value || '').trim().toLocaleLowerCase('tr')
+  if (!q) return true
+  const hay = [r.title, ...r.variants.flatMap((v) => [v.label, v.code])].join(' ').toLocaleLowerCase('tr')
+  return q.split(/\s+/).every((t) => hay.includes(t))
+}
+const pageRows = computed(() => (manyRows.value ? rows.value.slice((page.value - 1) * pageSize.value, page.value * pageSize.value) : rows.value))
+watch([query, onlyMissing, groupId], () => { page.value = 1 })
+watch(() => rows.value.length, (n) => { const max = Math.max(1, Math.ceil(n / pageSize.value)); if (page.value > max) page.value = max })
 
 // ---- grup seçici (radyo grubu, ←/→)
 function setGroup(id: string) {
@@ -241,10 +270,11 @@ defineExpose({ missingCount: computed(() => missing.value.length) })
 
 .via__seg {
   display: inline-flex;
+  flex-wrap: wrap;
   padding: 2px;
   gap: 2px;
   border-radius: var(--ek-radius-control);
-  background: var(--ek-color-surface-sunken);
+  background: var(--ek-color-surface);
   border: 1px solid var(--ek-color-border-default);
 }
 
@@ -257,18 +287,51 @@ defineExpose({ missingCount: computed(() => missing.value.length) })
   border: 0;
   border-radius: calc(var(--ek-radius-control) - 2px);
   background: transparent;
-  color: var(--ek-color-content-muted);
+  color: var(--ek-color-content-default);
   font: inherit;
   font-size: var(--ek-type-label-size);
   font-weight: var(--ek-type-label-weight);
+  white-space: nowrap;
   cursor: pointer;
   transition: var(--ek-transition-colors);
 }
 
+.via__seg-btn:hover:not(.is-on) {
+  background: var(--ek-color-surface-muted);
+}
+
 .via__seg-btn.is-on {
-  background: var(--ek-color-surface);
-  color: var(--ek-color-content-strong);
-  box-shadow: var(--ek-shadow-card);
+  background: var(--ek-color-action-subtle);
+  color: var(--ek-color-action-emphasis);
+  box-shadow: inset 0 0 0 1px var(--ek-color-action-border);
+}
+
+.via__seg-btn.is-on .via__seg-n {
+  color: var(--ek-color-action-emphasis);
+}
+
+.via__tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ek-space-2);
+}
+
+.via__search {
+  flex: 0 1 320px;
+  min-width: 200px;
+}
+
+.via__rows:has(+ .via__pager) {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.via__pager {
+  margin-top: calc(-1 * var(--ek-space-4));
+  border: 1px solid var(--ek-color-border-default);
+  border-top: 0;
+  border-radius: 0 0 var(--ek-radius-card) var(--ek-radius-card);
 }
 
 .via__seg-btn:focus-visible,
@@ -510,5 +573,27 @@ defineExpose({ missingCount: computed(() => missing.value.length) })
     flex-wrap: wrap;
     padding: var(--ek-space-2) 0;
   }
+}
+
+/* ================= FE-LOCAL-1057 — galeri › varyant görselleri: uygulamanın tasarım diliyle =================
+   "Görselleri şuna göre ata" kısa eylem çizgili mikro etiket; durum rozetleri köşeli ve ince çerçeveli. */
+.via__micro {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ek-space-2);
+}
+
+.via__micro::before {
+  content: '';
+  flex: none;
+  width: 12px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--ek-color-action);
+}
+
+.via__status {
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-md);
 }
 </style>

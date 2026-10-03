@@ -77,7 +77,22 @@ defineExpose({ reload: () => overview.load() })
 
 <style scoped>
 .bo-pr__attention { display: flex; flex-direction: column; gap: var(--ek-space-2); margin-bottom: var(--ek-space-4); }
-.bo-pr__form { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--ek-space-2); max-width: 720px; margin-bottom: var(--ek-space-5); }
+/* Ayar satırları tek kartta (Platform ayarlarıyla aynı düzen). */
+.bo-pr__form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  max-width: 880px;
+  margin-bottom: var(--ek-space-5);
+  overflow: hidden;
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-lg);
+  background: var(--ek-color-surface);
+}
 .bo-pr__actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ek-space-3); }
 .bo-pr__note { display: flex; align-items: flex-start; gap: var(--ek-space-2); margin: 0; color: var(--ek-color-content-muted); font-size: var(--ek-type-caption-size); }
+
+/* BO-LOCAL-01 — fiyat kuralları ayar kartı: kart köşeli. */
+.bo-pr__form {
+  border-radius: var(--ek-radius-card);
+}
 </style>

@@ -901,3 +901,88 @@ Paylaşılan paketlere YALNIZ EKLEME yapıldı; varsayılanlar eski görünümü
 
 **Testler:** `e2e/specs/fe-r4a-shell.spec.ts` (karakterizasyon + yeni iddialar + axe açık/koyu), `tests/fe-r4a-notification-drawer.test.ts`,
 `tests/theme/*` (kontrast çiftleri, tema tabanı). **Görseller:** `FE_R4A_REVIEW=1 FE_R4A_OUT=docs/fe-r4-review/a/sonra npx playwright test e2e/specs/fe-r4a-review.spec.ts --project=chromium-desktop`.
+
+---
+
+## 35. Uygulama tasarım dili — yerel tur (FE-LOCAL-1030 … 1048, K66)
+
+> **Bağlayıcı.** Kullanıcının yerelde ekran ekran onayladığı dil; müşteri uygulamasının (`frontend/src`) TÜM yüzeylerinde
+> geçerlidir ve §13–§34'teki eski görsel kurallarla çelişen her noktada **bu bölüm esastır** (özellikle §20/§24/§26 sol
+> menü ve sekmeler, §23 yenile düğmesi, §34 A1–A4 üst bar / bildirim / Otopilot). Yeni ekran ya da değişiklik bu kurallarla yazılır.
+
+### 35.1 Temel kurallar
+
+| # | Kural | Ayrıntı |
+|---|---|---|
+| D1 | **Degrade yok** | Kart, pano, başlık, düğme, işaret — hiçbir yüzeyde gradient kullanılmaz. Ton düz renkle verilir (`*-subtle` zemin + `*-border` çerçeve + `*-emphasis` metin). |
+| D2 | **Düz yüzey + ince çerçeve** | Kart/panel: `surface` zemin, 1px `border-default`, `radius-card` (12px). Kutu içi parçalar `radius-tile` (8px). Gölge yalnız açılır katmanlarda (`shadow-popover`); kartta, alanda, düğmede gölge ve parıltı yok; hover'da gölge yok (çerçeve / zemin tonu değişir). |
+| D3 | **Tek vurgu rengi** | Etkin / seçili / birincil = eylem rengi (`action`). Etkin öğe: `action-subtle` zemin + `action-border` çerçeve + `action-emphasis` metin; etkin ikon kutusu dolu `action`. |
+| D4 | **Bölüm başlığı** | Kart DIŞINDA: eylem renginde 12×2px kısa çizgi + BÜYÜK HARF mikro etiket (`type-micro`). Açılır kart ve pencere başlıklarında da aynı etiket (ör. "— KANAL DURUMU"). Bileşen: `components/page/ListDashSection.vue`. |
+| D5 | **İkon kapsülü** | İkonlar çerçeveli kutuda (`EkIconTile`; tonlu açık zemin + ton çerçevesi). Yuvarlak gri daire yok. |
+| D6 | **Rakam hücreleri** | Özet/KPI: tek şerit, hücreler 1px çizgiyle ayrılır; hücre = ikon kapsülü + mikro etiket + büyük rakam (+ kısa açıklama). Bileşen: `ListSummaryStrip.vue`. Dağılım: toplam + tek yatay oran çubuğu + satırlar (`ListDistributionCard.vue`). |
+| D7 | **Üst bar lacivert** | Üst bar düz lacivert (`chrome-soft`), açık tona çevrilmez; içindeki düğmeler çerçeveli ikon kutuları, Otopilot girişi dolu eylem rengi. |
+| D8 | **Sol menü ve ana sekmeler** | Menü düz yüzeyde; etkin öğe D3 kalıbı. Ana sekmeler hap biçiminde; etkin sekme D3 kalıbı. Sekme değişince hiçbir öğe yer değiştirmez (ikon kutusu ve × her durumda yer tutar). |
+| D9 | **Form alanları** | Alan gölgesi/parıltısı yok; çerçeve `border-input` (WCAG). Etiket gizlenebilir ama `<label for>` olarak kalır. Onay kutusu ve anahtarlar düz. |
+
+### 35.2 Liste ekranları
+
+| # | Kural | Ayrıntı |
+|---|---|---|
+| L1 | **Sayfa adı aynı noktada** | Her ekranda başlık satırı `EkPageBar` (bölüm › ad); genişlik ve üst boşluk tüm sayfalarda aynı. |
+| L2 | **Yenile düğmesi yok** | Sayfa adına tıklamak yeniler (Alt+R). Sekmeli sayfada etkin sekmenin listesi `provideListRefreshHub()` ile başlığa bağlanır (`components/page/listTools.ts`). |
+| L3 | **"Yeni …" düğmesi filtre satırında** | Birincil oluşturma eylemi sayfa başlığında DEĞİL, arama + Filtreler şeridinin SAĞ ucunda (`EkListScreen #create`) ve her zaman `tone="primary"`. |
+| L4 | **Filtreler kapalı başlar** | Filtre paneli her ekranda kapalı açılır; uygulanan filtreler kapalıyken de başlıkta çip olarak görünür. Açık panelin gövdesi `surface-muted` (alanlar beyaz zeminde seçilsin). |
+| L5 | **Liste \| Özet** | Sayfa adı satırında iki konumlu anahtar; "Özet" listenin YERİNE o bölümün panosunu açar (`EkListScreen summary-toggle` + `#summary`). Hücre/satır tıklanınca liste o süzmeyle açılır. Özel istatistik ucu yoksa sayılar liste ucundan `limit: 1` ile alınır (`useStatusCounts`, `ListCountDashboard.vue`); tahmini / uydurma sayı gösterilmez, alınamayan değer "—". |
+| L6 | **Tablo** | Zebra yok; başlık ve sayfalama bandı `surface-muted`; seçili satır `action-subtle`. |
+
+### 35.3 Detay, pencere ve açılır katmanlar
+
+| # | Kural | Ayrıntı |
+|---|---|---|
+| P1 | **Detay sayfası** | Tür etiketi kısa eylem çizgisiyle başlar; bilgiler ince çizgiyle ayrılan hücreler; tutar büyük rakam; "sıradaki adım" tonun düz açık zemininde panel (sol şerit yok). |
+| P2 | **Açılır kart / menü** | `radius-card`, 1px çerçeve, `shadow-popover`; başlık bandı `surface-muted` + mikro etiket; satırlar ince çizgi; etkin öğe D3 (`EkMenuItem.current`). |
+| P3 | **Bildirimler** | Başlık bandı + mikro etiket; satırlar ince çizgiyle ayrılır; okunmamış `action-subtle`, kritik `error-subtle` zemin. |
+| P4 | **Otopilot** | İşaret düz eylem renginde kutu (degrade yok); öneriler çerçeveli satır kartları; yazma alanı düz çerçeve (odakta eylem çerçevesi, parıltı yok). Yalnız `ek-chat--refined` katmanı — backoffice görünümü değişmez. |
+| P5 | **Takvim** | Başlık bandı (mikro etiket + seçili gün), çerçeveli gezinme kutuları, köşeli gün hücreleri (bugün = eylem çerçevesi, seçili = dolu eylem rengi), altta "Bugün". |
+
+### 35.4 Ana sayfa
+
+Bölümler kart dışı başlıkla ayrılır (İşletme performansı · Sipariş durumu · Stok ve kanallar · Katalog ve son işlemler).
+"Bugün sırada": sıradaki iş tonun düz zemininde tek panel + yanında kısa "Sonra" listesi; kompakt. Kanal satırlarında
+2px kanal marka rengi çizgisi (`channelClass`). Uyarı hücreleri tonlu ve tıklanabilir ("Çöz →").
+
+### 35.5 Metin tonu
+
+Giriş/kayıt ve yönlendirici metinlerde samimi, kısa dil (K64). Düğme adı eylemi söyler; açıklama tek satır.
+
+### 35.6 Sonradan eklenen kurallar (FE-LOCAL-1050 … 1059, BO-LOCAL-01)
+
+| # | Kural | Ayrıntı |
+|---|---|---|
+| E1 | **Sol kalın şerit yok** | Uyarı kutusu (`EkAlert`), toast, seçili satır, onay kartı, bölüm kartı ton varyantı — hiçbirinde 3px sol şerit kullanılmaz; ton = düz açık zemin + ince ton çerçevesi. |
+| E2 | **Tek geçiş hızı** | Hareket rolleri (`feedback/reveal/dismiss/overlay/layout`) tek süreye (`base`, 200ms) bağlıdır; yan çekmeceler (sol menü, bildirim paneli, Otopilot paneli) aynı hızla kayar. Bileşen süre seçmez. |
+| E3 | **Diyalog** | `EkDialogCard`: başlık bandı `surface-muted` + çerçeveli ikon kapsülü + çerçeveli kapatma kutusu; tehlikeli diyalogda başlık bandı `error-subtle` (üst şerit yok). Diyalog gövdesi TEK kaydırma alanıdır (içerik kendi içinde kaymaz). |
+| E4 | **Toast** | Ton etiketi (Hata / Uyarı / Bilgi / Tamamlandı) + başlık + ileti; destek kodu kopyalanabilir kutu. Genel hata: başlık "Bir şeyler ters gitti" + ne yapılacağı + destek kodu. |
+| E5 | **Form bölüm başlığı** | `EkFormSection` başlığı kısa eylem çizgili mikro etiket (ikonlu yarı kalın başlık değil). Ayar/alan satırı düzeni: başlık bantlı grup kartı; satırda solda ad + açıklama, sağda alan (ürün formu "Detay bilgiler" kalıbı). |
+| E6 | **Bildirim paneli** | Tam boy: üstte üst bara, altta sayfa sonuna dayanır. Adıyla "Tümünü okundu say", konuya göre süzme çipleri, satırın tamamı tıklanır. |
+| E7 | **Otopilot** | Üst bar düğmesi kutu köşeli, açıkken "basılı" (beyaz zemin). Karşılama: tek cümle vaat + üç adım (İsteyin → Hazırlasın → Onaylayın) + en çok dört hızlı başlangıç önerisi. |
+| E8 | **Sol menü düzeni** | "Ayarlar" tek bölüm (alt grup yok); "Destek talepleri" Yardım bölümünde; "Çıkış" en altta. |
+| E9 | **Backoffice** | Aynı dil backoffice'te de geçerlidir: düz lacivert üst bar, kompakt sayfa başlığı, `BoSection` gölgesiz kart + başlık bandı, `BoStat` gölgesiz, tablo başlık/altlık bandı `surface-muted`. `BO_UI_PATTERNS.md` ile çelişen görsel kuralda bu bölüm esastır (bilgi mimarisi ve operasyon kalıpları aynen geçerli). |
+
+### 35.7 Tanıtım sitesi (SITE-DL-01, K73)
+
+Tanıtım sitesi (`site/`) aynı dili konuşur. Kurallar `site/src/styles/site-tokens.css` sonundaki "UYGULAMANIN TASARIM
+DİLİ" bloğunda token düzeyinde uygulanır; bileşenler token adlarını kullanmaya devam eder.
+
+| No | Kural | Açıklama |
+|---|---|---|
+| D1 | **Degrade yok** | Kart, panel, metin (`background-clip: text`), kenarlık ve çizgi degradeleri düz renge indi. |
+| D2 | **Düz yüzey + ince çerçeve** | Kart/panel gölgesi yok; hover'da gölge, yükselme, eğim, imleç ışığı yok. Hover = `--site-action-subtle` zemin ve/veya `--site-action-border` çerçeve. Köşe `radius-card`. |
+| D3 | **Tek vurgu: marka laciverti** | Sitede vurgu rengi Entegrasyonik LACİVERTİDİR (`--site-action*` ailesi = `--ek-color-primary` türevleri): birincil düğme, bağlantı, ikon, etkin durum, bölüm çizgisi. Uygulamadaki parlak eylem mavisi sitede KULLANILMAZ (kullanıcı kararı: "mavi olan yerleri Entegrasyonik laciverti yap"); bileşenler `--ek-color-action*` yazmaz. Teal vurgu da yok; logo işareti, favicon, kanal/pazaryeri renkleri ve metin seçimi markaya aittir, değişmez. Koyu zeminde dolu öğe (düğme, rozet) açık renktir. Düğme, anahtar ve ikon gibi DOLGU öğelerinde tam lacivert fazla koyu durduğu için `--site-action` lacivertin bir ton açığıdır (`--ek-color-chrome-soft-raised`); hover bir ton koyulaşır; metin vurgusu (`--site-action-emphasis`) tam lacivert kalır. |
+| D4 | **Bölüm etiketi** | `Eyebrow`: 12×2px lacivert çizgi + BÜYÜK HARF mikro etiket. |
+| D5 | **Rozet ve ikon** | Rozet/çip köşeli (`radius-md`) + ince çerçeve; ikonlar çerçeveli kare kutuda; yuvarlak daire ve kalın sol şerit yok. |
+| D6 | **Düğme** | Düz; parlama/ışıma geçişi yok; hover'da yalnız ton değişir. |
+| D7 | **Koyu sahne (tek istisna)** | Hero ve kapanış bandı ZEMİNİ derinlikli kalır (yumuşak ışıma + ince ızgara) ama yalnız mavi ailesinden: lacivert zemin + mavi ışıma; teal ışıma yok. Üstündeki "cam" yüzeyler düz + ince çerçeve; bulanıklık yok. Kart yüzeyi olarak sahne degradesi kullanılmaz. |
+
+**Not:** Bu turda test paketleri koşturulmadı (kullanıcı kararı: önce hızlı görsel iterasyon); e2e metin beklentileri
+ve görsel tabanlar bu dile göre ayrıca güncellenecek.

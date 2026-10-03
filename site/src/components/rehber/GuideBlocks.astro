@@ -135,7 +135,7 @@ const { blocks } = Astro.props
     padding-inline-start: var(--ek-space-1);
   }
   .g-list > li::marker {
-    color: var(--ek-color-secondary-darken-1);
+    color: var(--site-action);
   }
 
   /* --- Numaralı adımlar (CSS sayacı) --- */
@@ -166,10 +166,11 @@ const { blocks } = Astro.props
     justify-content: center;
     width: var(--ek-space-8);
     height: var(--ek-space-8);
-    border-radius: var(--ek-radius-full);
-    background: var(--ek-color-surface);
-    border: var(--site-border-width) solid color-mix(in srgb, var(--ek-color-secondary) 45%, var(--ek-color-border-default));
-    color: var(--site-link-accent);
+    /* SITE-DL: köşeli adım numarası (daire yok). */
+    border-radius: var(--ek-radius-md);
+    background: var(--site-action-subtle);
+    border: var(--site-border-width) solid var(--site-action-border);
+    color: var(--site-action-emphasis);
     font-size: var(--ek-font-size-sm);
     font-weight: var(--ek-font-weight-bold);
     font-variant-numeric: tabular-nums;
@@ -201,7 +202,7 @@ const { blocks } = Astro.props
   /* --- Tablo --- */
   .g-table-wrap {
     border: var(--site-border-width) solid var(--ek-color-border-default);
-    border-radius: var(--ek-radius-lg);
+    border-radius: var(--ek-radius-card);
     background: var(--ek-color-surface);
     overflow: hidden;
   }
@@ -214,6 +215,7 @@ const { blocks } = Astro.props
   .g-table caption {
     padding: var(--ek-space-3) var(--ek-space-4);
     border-bottom: var(--site-border-width) solid var(--ek-color-border-default);
+    background: var(--ek-color-surface-muted);
     color: var(--site-text-meta);
     font-size: var(--ek-font-size-sm);
     font-weight: var(--ek-font-weight-semibold);
@@ -227,6 +229,7 @@ const { blocks } = Astro.props
     overflow-wrap: anywhere;
   }
   .g-table thead th {
+    border-bottom: var(--site-border-width) solid var(--ek-color-border-default);
     background: var(--ek-color-surface-muted);
     color: var(--site-text-meta);
     font-size: var(--ek-font-size-xs);
@@ -244,7 +247,7 @@ const { blocks } = Astro.props
     color: var(--site-text-body);
   }
   .g-table tbody tr + tr > * {
-    border-top: var(--site-border-width) solid var(--ek-color-border-default);
+    border-top: var(--site-border-width) solid var(--ek-color-border-subtle);
   }
 
   /* --- Not kutusu --- */
@@ -253,23 +256,23 @@ const { blocks } = Astro.props
     gap: var(--ek-space-3);
     align-items: flex-start;
     padding: var(--ek-space-4) var(--ek-space-5);
-    border: var(--site-border-width) solid var(--ek-color-border-default);
-    border-inline-start: var(--ek-space-1) solid var(--ek-color-info);
-    border-radius: var(--ek-radius-md);
+    /* SITE-DL: sol şerit yok — düz ton zemini + aynı tonda ince çerçeve. */
+    border: var(--site-border-width) solid var(--ek-color-info-border);
+    border-radius: var(--ek-radius-tile);
     background: var(--ek-color-info-subtle);
     color: var(--ek-color-content-strong);
   }
   .g-callout--caution {
-    border-inline-start-color: var(--ek-color-warning);
+    border-color: var(--ek-color-warning-border);
     background: var(--ek-color-warning-subtle);
   }
   .g-callout__icon {
     display: inline-flex;
     flex: none;
-    color: var(--ek-color-info);
+    color: var(--ek-color-info-emphasis);
   }
   .g-callout--caution .g-callout__icon {
-    color: var(--ek-color-warning);
+    color: var(--ek-color-warning-emphasis);
   }
   .g-callout__title {
     margin: 0 0 var(--ek-space-1);
@@ -289,8 +292,8 @@ const { blocks } = Astro.props
     margin: 0;
     padding: var(--ek-space-5);
     border: var(--site-border-width) solid var(--ek-color-border-default);
-    border-radius: var(--ek-radius-lg);
-    background: var(--site-surface-tint), var(--ek-color-surface);
+    border-radius: var(--ek-radius-card);
+    background: var(--ek-color-surface-muted);
   }
   .g-flow figcaption {
     color: var(--site-text-meta);
@@ -321,7 +324,7 @@ const { blocks } = Astro.props
   .g-flow__list li {
     padding: var(--ek-space-2) var(--ek-space-3);
     border: var(--site-border-width) solid var(--ek-color-border-default);
-    border-radius: var(--ek-radius-full);
+    border-radius: var(--ek-radius-md);
     background: var(--ek-color-surface);
   }
   .g-flow__list li + li {

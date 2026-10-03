@@ -25,3 +25,11 @@
 .ek-brand-tile--lg .v-icon {
   font-size: 20px;
 }
+
+/* FE-LOCAL-1048: kutucuk = çerçeveli kapsül (uygulamanın ikon kapsülleriyle aynı aile; karışım rengi yerine tonlar). */
+.ek-brand-tile {
+  border: 1px solid var(--ek-color-action-border);
+  border-radius: var(--ek-radius-tile);
+  background: var(--ek-color-action-subtle);
+  color: var(--ek-color-action-emphasis);
+}

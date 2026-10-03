@@ -396,6 +396,8 @@ export function uploadErrorText(status?: number): string {
   if (status === 413) return 'Dosya çok büyük'
   if (status === 401 || status === 403) return 'Oturum/yetki sorunu'
   if (status === undefined || status === 0) return 'Bağlantı kurulamadı'
+  // Backend IMAGE_STORAGE_FAILED: dosya depoya (R2) yazılamadı; kayıt oluşturulmadı → tekrar denenebilir.
+  if (status === 502) return 'Görsel depoya yüklenemedi'
   return 'Sunucu görseli kaydedemedi'
 }
 

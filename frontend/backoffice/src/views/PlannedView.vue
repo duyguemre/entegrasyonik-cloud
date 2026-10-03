@@ -162,4 +162,53 @@ const related = computed(() => {
 .bo-soon__tech code {
   font-family: var(--ek-font-mono);
 }
+
+/* ================= BO-LOCAL-01 — planlanan ekran: uygulamanın tasarım diliyle =================
+   Kapsam maddelerinin işareti eylem renginde; bağlantılar tek kartta ince çizgili satırlar (ayrı kutucuklar değil),
+   ikon çerçeveli köşeli kutuda, üzerine gelince eylem renginin açık tonu (gölge yok). */
+.bo-soon__list .v-icon {
+  color: var(--ek-color-action);
+}
+
+.bo-soon__links {
+  gap: 0;
+  overflow: hidden;
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-tile);
+}
+
+.bo-soon__links > li + li {
+  border-top: 1px solid var(--ek-color-border-subtle);
+}
+
+.bo-soon__link {
+  border: 0;
+  border-radius: 0;
+}
+
+.bo-soon__link:hover {
+  background: var(--ek-color-action-subtle);
+}
+
+.bo-soon__link:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--ek-color-border-focus);
+}
+
+.bo-soon__link > .v-icon:first-child {
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--ek-color-action-border);
+  border-radius: var(--ek-radius-tile);
+  background: var(--ek-color-action-subtle);
+  color: var(--ek-color-action-emphasis);
+  font-size: var(--ek-icon-sm);
+}
+
+.bo-soon__link:hover > .v-icon:first-child {
+  background: var(--ek-color-surface);
+}
+
+.bo-soon__link:hover .bo-soon__arrow {
+  color: var(--ek-color-action);
+}
 </style>

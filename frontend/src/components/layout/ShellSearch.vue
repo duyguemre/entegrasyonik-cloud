@@ -73,7 +73,7 @@ import logger from '@/composables/logger'
 import { formatDate, formatMoney, formatNumber } from '@entegrasyonik/ui/format'
 import { useWorkspaceStore } from '@/stores/workspace'
 import { buildScreenPath, resolveScreenByKey, screenKeyForLink } from '@/navigation/screens'
-import { FAVORITES_SECTION_ID, useShellMenu } from './useShellMenu'
+import { useShellMenu } from './useShellMenu'
 import { useHelpNavigation } from '@/help/useHelpNavigation'
 import { CHAT_ICON, CHAT_PRODUCT } from '@entegrasyonik/chat/brand'
 import { useOtopilotStore } from '@/chat/otopilotStore'
@@ -123,8 +123,7 @@ const recentGroup = computed<EkSearchGroup>(() => {
 
 // --- Kaynak 1b: favoriler (boş sorgu; FR3 madde 2) — menünün Favoriler bölümüyle AYNI kayıt ve sıra ---
 const favoriteGroup = computed<EkSearchGroup>(() => {
-  const fav = model.value.sections.find((sec) => sec.id === FAVORITES_SECTION_ID)
-  const items = (fav?.items ?? []).map((item) => {
+  const items = model.value.favorites.map((item) => {
     const entry = model.value.entries.find((e) => e.key === item.key)
     return {
       id: `favorite:${item.key}`,

@@ -137,4 +137,29 @@ onMounted(() => {
     transition: none;
   }
 }
+
+/* BO-LOCAL-01 — katlanır ayrıntı: ok çerçeveli köşeli kutuda; başlık üzerine gelince eylem tonu; geçiş tek hız rolüyle. */
+.bo-ds__toggle {
+  align-items: center;
+}
+
+.bo-ds__chev {
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-md);
+  background: var(--ek-color-surface);
+  font-size: var(--ek-icon-sm);
+  transition: transform var(--ek-motion-reveal);
+}
+
+.bo-ds__toggle:hover .bo-ds__chev {
+  border-color: var(--ek-color-action-border);
+  background: var(--ek-color-action-subtle);
+  color: var(--ek-color-action-emphasis);
+}
+
+.bo-ds__toggle:hover .bo-ds__title {
+  color: var(--ek-color-action-emphasis);
+}
 </style>

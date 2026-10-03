@@ -511,6 +511,13 @@
   transition-timing-function: var(--ek-motion-overlay-easing) !important;
 }
 
+/* FE-LOCAL-1058 (kullanıcı kararı): yan çekmeceler (sol menü, bildirim paneli, Otopilot paneli) Vuetify'ın kendi
+ * süre/eğrisiyle değil uygulamanın TEK geçiş hızıyla (`layout` rolü) açılır/kapanır. */
+.v-navigation-drawer {
+  transition-duration: var(--ek-motion-layout-duration);
+  transition-timing-function: var(--ek-motion-layout-easing);
+}
+
 /* bo-wdg — `prefers-reduced-motion`: Vuetify çekmece kayması ve belirsiz `v-progress-circular` dönüşü süre token'ı
  * kullanmaz (kök token 0'a inse de kendi süresiyle oynar). Çekmece rol token'ıyla (bu kipte 0) anında açılır; dönen
  * yay durağan kalır (yükleme hâlâ görünür, yanında metin vardır). Normal kipte değişiklik yok. */

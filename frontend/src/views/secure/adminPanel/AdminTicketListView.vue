@@ -49,8 +49,8 @@
       @refresh="loadTickets(true)"
       @row-click="openTicket"
     >
-      <template #header-actions>
-        <EkButton icon="mdi-plus" @click="openCreateDialog()">Yeni talep başlat</EkButton>
+      <template #create>
+        <EkButton tone="primary" icon="mdi-plus" @click="openCreateDialog()">Yeni talep başlat</EkButton>
       </template>
 
       <template #filters>

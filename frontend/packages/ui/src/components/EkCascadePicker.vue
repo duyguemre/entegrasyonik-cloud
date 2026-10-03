@@ -108,9 +108,10 @@
                 </div>
                 <ul v-else key="list" class="ek-cascade__list" role="listbox" :aria-label="col.label">
                   <li
-                    v-for="node in col.nodes"
+                    v-for="(node, ni) in col.nodes"
                     :key="node.id"
                     class="ek-cascade__item"
+                    :style="{ '--ek-cascade-i': Math.min(ni, 8) }"
                     :class="{
                       'is-path': path[col.index] === node.id,
                       'is-leaf': !branch(node),
@@ -144,8 +145,14 @@
             <div v-if="leafChosen" :key="`done-${path.join('/')}`" class="ek-cascade__tail-card is-done">
               <span class="ek-cascade__tail-icon"><v-icon icon="mdi-check-circle-outline" aria-hidden="true" /></span>
               <span class="ek-cascade__tail-micro">Seçildi</span>
+              <ol v-if="pathLabels.length > 1" class="ek-cascade__tail-path" aria-label="Seçim yolu">
+                <li v-for="(label, li) in pathLabels.slice(0, -1)" :key="`${li}-${label}`" class="ek-cascade__tail-crumb">
+                  <span>{{ label }}</span>
+                  <v-icon icon="mdi-chevron-right" class="ek-cascade__tail-sep" aria-hidden="true" />
+                </li>
+              </ol>
               <strong class="ek-cascade__tail-title">{{ pathLabels[pathLabels.length - 1] }}</strong>
-              <span v-if="pathLabels.length > 1" class="ek-cascade__tail-path">{{ pathLabels.slice(0, -1).join(' › ') }}</span>
+              <span class="ek-cascade__tail-level">{{ pathLabels.length }}. seviye</span>
             </div>
             <div v-else :key="`hint-${columns.length}`" class="ek-cascade__tail-card">
               <span class="ek-cascade__tail-icon"><v-icon icon="mdi-arrow-left" aria-hidden="true" /></span>
@@ -817,13 +824,13 @@ onBeforeUnmount(() => {
 }
 
 .ek-cascade__tail-card.is-done .ek-cascade__tail-icon {
-  border-color: var(--ek-color-success-border);
-  background: var(--ek-color-success-subtle);
-  color: var(--ek-color-success);
+  border-color: var(--ek-color-action-border);
+  background: var(--ek-color-action-subtle);
+  color: var(--ek-color-action);
 }
 
 .ek-cascade__tail-micro {
-  color: var(--ek-color-success-emphasis);
+  color: var(--ek-color-action-emphasis);
   font-size: var(--ek-type-micro-size);
   font-weight: var(--ek-type-micro-weight);
   letter-spacing: var(--ek-type-micro-tracking);
@@ -835,6 +842,69 @@ onBeforeUnmount(() => {
   font-size: var(--ek-type-heading-size);
   line-height: var(--ek-type-heading-line);
   font-weight: var(--ek-type-heading-weight);
+  overflow-wrap: anywhere;
+}
+
+/* Seçim onay kartı: başarı tonlu yüzey, solda başarı çizgisi; yol kırıntı dizisi olarak. */
+.ek-cascade__tail-card.is-done {
+  position: relative;
+  max-width: 360px;
+  padding: var(--ek-space-4) var(--ek-space-5);
+  border: 1px solid var(--ek-color-action-border);
+  border-radius: var(--ek-radius-card);
+  background: var(--ek-color-surface);
+  box-shadow: inset 3px 0 0 var(--ek-color-action);
+}
+
+.ek-cascade__tail-card.is-done .ek-cascade__tail-icon {
+  animation: ek-cascade-done-pop var(--ek-motion-overlay) both;
+  animation-delay: calc(var(--ek-cascade-open-step, 0) * var(--ek-motion-stagger) + var(--ek-motion-stagger));
+}
+
+@keyframes ek-cascade-done-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+}
+
+.ek-cascade__tail-path {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ek-space-1);
+  margin: var(--ek-space-1) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ek-cascade__tail-crumb {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ek-space-1);
+}
+
+.ek-cascade__tail-crumb > span {
+  padding: 0 var(--ek-space-2);
+  border-radius: var(--ek-radius-full);
+  background: var(--ek-color-surface-muted);
+  color: var(--ek-color-content-default);
+  font-size: var(--ek-type-caption-size);
+  line-height: var(--ek-type-caption-line);
+}
+
+.ek-cascade__tail-sep {
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-icon-xs);
+}
+
+.ek-cascade__tail-level {
+  margin-top: var(--ek-space-2);
+  padding-top: var(--ek-space-2);
+  border-top: 1px solid var(--ek-color-border-subtle);
+  align-self: stretch;
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-caption-size);
 }
 
 @container (max-width: 180px) {
@@ -896,7 +966,9 @@ onBeforeUnmount(() => {
   line-height: var(--ek-type-label-line);
   font-weight: var(--ek-type-label-weight);
   cursor: pointer;
-  transition: var(--ek-transition-colors);
+  transition:
+    var(--ek-transition-colors),
+    transform var(--ek-motion-feedback);
 }
 
 .ek-cascade__item + .ek-cascade__item {
@@ -906,6 +978,65 @@ onBeforeUnmount(() => {
 .ek-cascade__item:hover {
   background: var(--ek-color-surface-sunken);
   color: var(--ek-color-content-strong);
+}
+
+.ek-cascade__item:active {
+  transform: scale(0.99);
+}
+
+/* Yeni seviye açılınca öğeler sırayla süzülür (ilk 9 öğe kademeli; kolon açılış adımından sonra başlar).
+   Öğeler id ile anahtarlı → aynı kolonda seçim değişince yeniden oynamaz. */
+.ek-cascade__list[role='listbox'] > .ek-cascade__item {
+  animation: ek-cascade-item-in var(--ek-motion-reveal) both;
+  animation-delay: calc(
+    var(--ek-cascade-open-step, 0) * var(--ek-motion-stagger) + var(--ek-cascade-i, 0) * var(--ek-motion-stagger) / 2
+  );
+}
+
+@keyframes ek-cascade-item-in {
+  from {
+    opacity: 0;
+    transform: translateX(var(--ek-motion-distance-sm));
+  }
+}
+
+/* Seçili yol: solda aksiyon çizgisi ortadan büyür; klasör oku bir adım ileri kayar. */
+.ek-cascade__item::before {
+  content: '';
+  position: absolute;
+  top: var(--ek-space-2);
+  bottom: var(--ek-space-2);
+  left: 0;
+  width: 3px;
+  border-radius: var(--ek-radius-full);
+  background: var(--ek-color-action);
+  transform: scaleY(0);
+  transition: transform var(--ek-motion-overlay);
+}
+
+.ek-cascade__item.is-path::before {
+  transform: scaleY(1);
+}
+
+.ek-cascade__item-end {
+  transition:
+    transform var(--ek-motion-overlay),
+    var(--ek-transition-colors);
+}
+
+.ek-cascade__item:hover .ek-cascade__item-end,
+.ek-cascade__item.is-path .ek-cascade__item-end {
+  transform: translateX(var(--ek-motion-distance-sm));
+}
+
+.ek-cascade__item-icon {
+  transition:
+    transform var(--ek-motion-overlay),
+    var(--ek-transition-colors);
+}
+
+.ek-cascade__item.is-path .ek-cascade__item-icon {
+  transform: scale(1.08);
 }
 
 .ek-cascade__item:focus-visible {
@@ -961,7 +1092,7 @@ onBeforeUnmount(() => {
   height: 6px;
   margin: 0 5px;
   border-radius: var(--ek-radius-chip);
-  background: var(--ek-color-success);
+  background: var(--ek-color-action);
 }
 
 .ek-cascade__results {
@@ -1225,13 +1356,13 @@ onBeforeUnmount(() => {
   display: inline-flex;
   align-items: center;
   gap: var(--ek-space-1);
-  color: var(--ek-color-success-emphasis);
+  color: var(--ek-color-action-emphasis);
   letter-spacing: normal;
   text-transform: none;
 }
 
 .ek-cascade__col.is-complete .ek-cascade__col-head {
-  background: var(--ek-color-success-subtle);
+  background: var(--ek-color-action-subtle);
 }
 
 /* İskelet: sabit (sonsuz animasyon yok), liste gelince aynı çapraz geçişle yer değiştirir. */
@@ -1396,5 +1527,16 @@ onBeforeUnmount(() => {
   .ek-cascade__col {
     flex-basis: 220px;
   }
+}
+
+/* ================= FE-LOCAL-1054 — kademeli seçici: uygulamanın tasarım diliyle =================
+   Seçili yolda ve onay kartında sol kalın şerit yok: eylem renginin düz açık zemini + ince çerçeve yeter. */
+.ek-cascade__tail-card.is-done {
+  background: var(--ek-color-action-subtle);
+  box-shadow: none;
+}
+
+.ek-cascade__item::before {
+  display: none;
 }
 </style>

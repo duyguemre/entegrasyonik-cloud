@@ -58,8 +58,19 @@ router.beforeEach(async (to) => {
   return true
 })
 
+function isInstalledApp(): boolean {
+  try {
+    return window.matchMedia('(display-mode: standalone)').matches || window.matchMedia('(display-mode: window-controls-overlay)').matches || (navigator as { standalone?: boolean }).standalone === true
+  } catch {
+    return false
+  }
+}
+
 router.afterEach((to, from, failure) => {
-  document.title = `${(to.meta.title as string) ?? 'Yönetim'} · Entegrasyonik Yönetim`
+  // Yüklü uygulama (PWA) penceresinde başlık YALNIZ uygulama adı (kullanıcı kararı: sayfa adı da görünmesin; Chrome başlık
+  // uygulama adıyla başlayınca adı tekrar eklemez). Tarayıcı sekmesinde "Sayfa · Entegrasyonik Yönetim".
+  const page = (to.meta.title as string) ?? 'Yönetim'
+  document.title = isInstalledApp() ? 'Entegrasyonik Yönetim' : `${page} · Entegrasyonik Yönetim`
   // bo-wdg: ekran değişince odak içerik bölgesine (`#bo-main`, tabindex=-1) taşınır — klavye/ekran okuyucu yeni sayfanın
   // başından devam eder, mobilde kapanan çekmecede kalmaz. İlk açılış, yalnız sorgu/çapa değişimi (süzgeç, sekme,
   // `#bölüm`) girişten ilk geçiş ve iptal edilen gezinme hariç; kaydırma `scrollBehavior`'da kalır (`preventScroll`).

@@ -251,9 +251,10 @@ const [titleBefore, titleAfter] = hero.title.split(hero.accent)
     gap: var(--ek-space-2);
     margin: 0;
     padding: var(--ek-space-1) var(--ek-space-3) var(--ek-space-1) var(--ek-space-1);
-    border: var(--site-border-width) solid color-mix(in srgb, var(--ek-color-secondary) 45%, transparent);
-    border-radius: var(--ek-radius-full);
-    background: color-mix(in srgb, var(--ek-color-secondary) 12%, transparent);
+    /* SITE-DL: köşeli çip — düz cam zemin + ince çerçeve (hap/teal yok). */
+    border: var(--site-border-width) solid var(--site-glass-border);
+    border-radius: var(--ek-radius-md);
+    background: var(--site-glass-bg);
     color: var(--site-text-on-dark-heading);
     font-size: var(--ek-font-size-sm);
     font-weight: var(--ek-font-weight-semibold);
@@ -264,8 +265,8 @@ const [titleBefore, titleAfter] = hero.title.split(hero.accent)
     justify-content: center;
     width: var(--ek-space-6);
     height: var(--ek-space-6);
-    border-radius: var(--ek-radius-full);
-    background: var(--site-gradient-accent-on-dark);
+    border-radius: var(--ek-radius-sm);
+    background: var(--site-accent-on-dark);
     color: var(--site-stage-deep);
   }
   .ai-hero__body h1 {
@@ -276,10 +277,8 @@ const [titleBefore, titleAfter] = hero.title.split(hero.accent)
     letter-spacing: var(--site-font-display-tracking);
   }
   .ai-accent {
-    background: var(--site-gradient-accent-on-dark);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
+    /* SITE-DL: degrade metin yok — vurgu düz renk. */
+    color: var(--site-accent-on-dark);
   }
   .ai-hero__lead {
     max-width: 38rem;
@@ -330,19 +329,10 @@ const [titleBefore, titleAfter] = hero.title.split(hero.accent)
     gap: var(--ek-space-3);
     min-width: 0;
     padding: var(--ek-space-6);
+    /* SITE-DL: düz kart — ince çerçeve, gölge/ışıma yok. */
     border: var(--site-border-width) solid var(--ek-color-border-default);
-    border-radius: var(--site-radius-panel);
-    background:
-      radial-gradient(90% 70% at 100% 0%, color-mix(in srgb, var(--ek-color-secondary) 7%, transparent), transparent 70%),
-      var(--ek-color-surface);
-    box-shadow: var(--site-shadow-card);
-    transition:
-      border-color var(--ek-duration-base) var(--ek-easing-standard),
-      box-shadow var(--ek-duration-base) var(--ek-easing-standard);
-  }
-  .pcard:hover {
-    border-color: color-mix(in srgb, var(--ek-color-secondary) 40%, var(--ek-color-border-default));
-    box-shadow: var(--site-shadow-card-hover);
+    border-radius: var(--ek-radius-card);
+    background: var(--ek-color-surface);
   }
   .pcard__top {
     display: flex;
@@ -355,12 +345,13 @@ const [titleBefore, titleAfter] = hero.title.split(hero.accent)
     flex: none;
     align-items: center;
     justify-content: center;
-    width: var(--ek-space-12);
-    height: var(--ek-space-12);
-    border-radius: var(--ek-radius-lg);
-    background: linear-gradient(140deg, var(--ek-color-primary), var(--ek-color-primary-darken-1));
-    box-shadow: 0 var(--ek-space-2) var(--ek-space-4) calc(var(--ek-space-2) * -1) color-mix(in srgb, var(--ek-color-primary) 70%, transparent);
-    color: var(--site-color-on-primary);
+    width: var(--ek-space-10);
+    height: var(--ek-space-10);
+    /* SITE-DL: çerçeveli kare ikon kutusu. */
+    border: var(--site-border-width) solid var(--site-action-border);
+    border-radius: var(--ek-radius-tile);
+    background: var(--site-action-subtle);
+    color: var(--site-action);
   }
   .pcard__title {
     color: var(--site-text-heading);
@@ -375,14 +366,11 @@ const [titleBefore, titleAfter] = hero.title.split(hero.accent)
   }
   .pcard--dark {
     border-color: var(--site-glass-border);
-    background:
-      radial-gradient(90% 70% at 100% 0%, color-mix(in srgb, var(--ek-color-secondary) 12%, transparent), transparent 70%),
-      var(--site-glass-bg);
-    box-shadow: none;
+    background: var(--site-glass-bg);
   }
   .pcard--dark .pcard__icon {
-    background: color-mix(in srgb, var(--ek-color-secondary) 18%, transparent);
-    box-shadow: none;
+    border-color: var(--site-glass-border);
+    background: var(--site-glass-bg);
     color: var(--site-accent-on-dark);
   }
   .pcard--dark .pcard__title {
@@ -435,8 +423,8 @@ const [titleBefore, titleAfter] = hero.title.split(hero.accent)
     gap: var(--ek-space-3);
     padding: var(--ek-space-3) var(--ek-space-4);
     border: var(--site-border-width) solid var(--ek-color-border-default);
-    border-radius: var(--ek-radius-lg) var(--ek-radius-lg) var(--ek-radius-lg) var(--ek-radius-sm);
-    background: var(--ek-color-surface-sunken);
+    border-radius: var(--ek-radius-tile);
+    background: var(--ek-color-surface);
     color: var(--site-text-heading);
     font-size: var(--ek-font-size-md);
     font-weight: var(--ek-font-weight-medium);
@@ -459,8 +447,7 @@ const [titleBefore, titleAfter] = hero.title.split(hero.accent)
     height: var(--ek-space-3);
     border: calc(var(--site-border-width) * 2) solid var(--site-stage-deep);
     border-radius: var(--ek-radius-full);
-    background: var(--ek-color-secondary);
-    box-shadow: 0 0 var(--ek-space-3) color-mix(in srgb, var(--ek-color-secondary) 70%, transparent);
+    background: var(--site-accent-on-dark);
   }
   .acard__io {
     display: flex;
@@ -468,7 +455,7 @@ const [titleBefore, titleAfter] = hero.title.split(hero.accent)
     gap: var(--ek-space-3);
     margin: auto 0 0;
     padding-top: var(--ek-space-4);
-    border-top: var(--site-border-width) dashed var(--site-glass-border);
+    border-top: var(--site-border-width) solid var(--site-glass-border);
   }
   .acard__io div {
     display: flex;
@@ -500,8 +487,8 @@ const [titleBefore, titleAfter] = hero.title.split(hero.accent)
     margin: var(--ek-space-10) 0 0;
     padding: var(--ek-space-4) var(--ek-space-5);
     border: var(--site-border-width) solid var(--ek-color-border-default);
-    border-radius: var(--ek-radius-lg);
-    background: var(--ek-color-surface-sunken);
+    border-radius: var(--ek-radius-tile);
+    background: var(--ek-color-surface-muted);
     color: var(--site-text-body);
     font-size: var(--ek-font-size-md);
     line-height: var(--site-font-body-line-height);
@@ -597,9 +584,8 @@ const [titleBefore, titleAfter] = hero.title.split(hero.accent)
     min-width: 0;
     padding: var(--ek-space-8) var(--ek-space-6);
     border: var(--site-border-width) solid var(--site-glass-border);
-    border-radius: var(--site-radius-panel);
+    border-radius: var(--ek-radius-card);
     background: var(--site-glass-bg);
-    box-shadow: var(--site-shadow-panel);
   }
   /*
    * N7 (S27a): kartta TEK birincil eylem (Demo talep edin); "Adresi kopyala" ve "Hemen başlayın" ikincil METİN
@@ -641,7 +627,7 @@ const [titleBefore, titleAfter] = hero.title.split(hero.accent)
     gap: var(--ek-space-3);
     padding: var(--ek-space-3) var(--ek-space-4);
     border: var(--site-border-width) solid var(--ek-color-border-default);
-    border-radius: var(--ek-radius-lg);
+    border-radius: var(--ek-radius-tile);
     background: var(--ek-color-surface);
     color: var(--site-text-heading);
     font-size: var(--ek-font-size-md);
@@ -653,9 +639,10 @@ const [titleBefore, titleAfter] = hero.title.split(hero.accent)
     justify-content: center;
     width: var(--ek-space-8);
     height: var(--ek-space-8);
-    border-radius: var(--ek-radius-full);
-    background: var(--site-accent-soft);
-    color: var(--site-accent);
+    border: var(--site-border-width) solid var(--site-action-border);
+    border-radius: var(--ek-radius-md);
+    background: var(--site-action-subtle);
+    color: var(--site-action);
   }
   /* Dar ekran: aşamalar arası dikey bağ çizgisi (simge merkezinden). */
   .gateflow__item + .gateflow__item::before {
@@ -668,13 +655,14 @@ const [titleBefore, titleAfter] = hero.title.split(hero.accent)
     background: var(--site-accent-line);
   }
   .gateflow__item--you {
-    border-color: color-mix(in srgb, var(--ek-color-amber) 65%, transparent);
+    /* İnsan adımı: uyarı tonu (düz zemin + ince çerçeve; hale/gölge yok). */
+    border-color: var(--ek-color-warning-border);
     background: var(--ek-color-warning-subtle);
-    box-shadow: 0 0 0 var(--ek-space-1) color-mix(in srgb, var(--ek-color-amber) 14%, transparent);
   }
   .gateflow__item--you .gateflow__icon {
-    background: linear-gradient(140deg, var(--ek-color-primary), var(--ek-color-primary-darken-1));
-    color: var(--site-color-on-primary);
+    border-color: var(--ek-color-warning-border);
+    background: var(--ek-color-surface);
+    color: var(--ek-color-warning-emphasis);
   }
   @media (min-width: 768px) {
     .gateflow {
@@ -734,22 +722,19 @@ const [titleBefore, titleAfter] = hero.title.split(hero.accent)
     min-width: 0;
     padding: var(--ek-space-6);
     border: var(--site-border-width) solid var(--ek-color-border-default);
-    border-radius: var(--site-radius-panel);
-    background:
-      linear-gradient(180deg, var(--site-accent-soft), transparent 45%),
-      var(--ek-color-surface);
-    box-shadow: var(--site-shadow-card);
+    border-radius: var(--ek-radius-card);
+    background: var(--ek-color-surface);
   }
   .guard__icon {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: var(--ek-space-12);
-    height: var(--ek-space-12);
-    border: var(--site-border-width) solid var(--site-accent-line);
-    border-radius: var(--ek-radius-lg);
-    background: var(--ek-color-surface);
-    color: var(--site-accent);
+    width: var(--ek-space-10);
+    height: var(--ek-space-10);
+    border: var(--site-border-width) solid var(--site-action-border);
+    border-radius: var(--ek-radius-tile);
+    background: var(--site-action-subtle);
+    color: var(--site-action);
   }
   .guard__title {
     color: var(--site-text-heading);

@@ -106,9 +106,11 @@
         @clear-filters="clearSearch"
         @refresh="refreshAll"
       >
-        <template #header-actions>
+        <!-- FE-LOCAL-1047 — standart: "oluştur" eylemleri filtre şeridinin SAĞ ucunda (EkListScreen `#create`);
+             yenileme sayfa adında (ayrı düğme yok). -->
+        <template #create>
           <EkButton :tone="myInvitableRoles.length ? 'secondary' : 'primary'" icon="mdi-plus" @click="openAddUser()">Yeni personel</EkButton>
-          <EkButton v-if="myInvitableRoles.length" icon="mdi-account-plus-outline" data-testid="invite-open" @click="inviteOpen = true">
+          <EkButton v-if="myInvitableRoles.length" tone="primary" icon="mdi-account-plus-outline" data-testid="invite-open" @click="inviteOpen = true">
             {{ $t('team.invite.open') }}
           </EkButton>
         </template>
@@ -133,10 +135,13 @@
 
         <template #cell-name="{ row }">
           <span class="ek-auth-person">
-            <span class="ek-auth-person__name">{{ row.name }} {{ row.surname }}
-              <EkBadge v-if="isSelf(row, me)" variant="label" tone="action" :text="$t('team.you')" class="ek-auth-person__you" />
+            <span class="ek-auth-person__avatar" :class="{ 'is-owner': row.owner, 'is-suspended': memberStatus(row) !== 'active' }" aria-hidden="true">{{ personInitials(row) }}</span>
+            <span class="ek-auth-person__text">
+              <span class="ek-auth-person__name">{{ row.name }} {{ row.surname }}
+                <EkBadge v-if="isSelf(row, me)" variant="label" tone="action" :text="$t('team.you')" class="ek-auth-person__you" />
+              </span>
+              <span class="ek-auth-person__meta ek-num">Eklenme: {{ formatDate(row.createdAt) }}</span>
             </span>
-            <span class="ek-auth-person__meta ek-num">Eklenme: {{ formatDate(row.createdAt) }}</span>
           </span>
         </template>
         <template #cell-roleCode="{ row }">
@@ -234,6 +239,11 @@ function roleLabel(item: any): string {
 }
 /** Filtre seçimi: rol adı + açıklaması alt satırda (diğer filtrelerle aynı seçim listesi standardı). */
 const roleSelectOptions = computed(() => (globalRoles.value ?? []).map((r: any) => ({ value: r.code, title: r.name || r.code, subtitle: r.description, icon: 'mdi-account-key-outline' })))
+/** Personel baş harfleri (ikon kapsülü; ad her zaman yanında metin olarak yazılır). */
+function personInitials(item: any): string {
+  const pick = (v: unknown) => String(v ?? '').trim().charAt(0)
+  return (pick(item.name) + pick(item.surname)).toLocaleUpperCase('tr-TR') || pick(item.email).toLocaleUpperCase('tr-TR') || '?'
+}
 function roleTone(item: any): StatusTone {
   if (item.isGlobalAdmin) return 'danger'
   if (item.owner) return 'warning'
@@ -663,9 +673,47 @@ const reset = () => {
   }
 }
 
+/* FE-LOCAL-1047: personel hücresi — baş harfli çerçeveli kapsül (müşteri listesiyle aynı aile) + ad / tarih. */
 .ek-auth-person {
   display: flex;
+  align-items: center;
+  gap: var(--ek-space-3);
+  min-width: 0;
+}
+
+.ek-auth-person__avatar {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--ek-color-action-border);
+  border-radius: var(--ek-radius-tile);
+  background: var(--ek-color-action-subtle);
+  color: var(--ek-color-action-emphasis);
+  font-size: var(--ek-type-micro-size);
+  font-weight: var(--ek-font-weight-semibold);
+  letter-spacing: 0.02em;
+  user-select: none;
+}
+
+.ek-auth-person__avatar.is-owner {
+  border-color: var(--ek-color-warning-border);
+  background: var(--ek-color-warning-subtle);
+  color: var(--ek-color-warning-emphasis);
+}
+
+.ek-auth-person__avatar.is-suspended {
+  border-color: var(--ek-color-border-default);
+  background: var(--ek-color-surface-muted);
+  color: var(--ek-color-content-muted);
+}
+
+.ek-auth-person__text {
+  display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 
 .ek-auth-person__name {

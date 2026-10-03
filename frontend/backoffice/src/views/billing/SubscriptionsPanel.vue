@@ -1,5 +1,5 @@
 <template>
-  <BoSection id="bo-subs" title="Abonelik listesi" description="Her satır bir müşterinin aboneliğidir; en yeni kayıt önce. Satırı açarak plan, olaylar ve yönetim eylemlerine ulaşırsınız." icon="mdi-card-account-details-outline">
+  <BoSection id="bo-subs" title="Abonelik listesi" description="Her satır bir müşterinin aboneliğidir; en yeni kayıt önce. Satırı açarak plan, olaylar ve yönetim eylemlerine ulaşırsınız." icon="mdi-card-account-details-outline" :count="list.items.value.length">
     <template #actions>
       <EkRefreshButton quiet-success :loading="list.refreshing.value || list.phase.value === 'loading'" @refresh="list.reload({ keep: true })" />
     </template>
@@ -148,5 +148,22 @@ onMounted(() => list.reload())
   align-items: center;
   gap: var(--ek-space-2);
   font-size: var(--ek-type-caption-size);
+}
+
+/* BO-LOCAL-01 — abonelik listesi: müşteri adı müşteri listesindekiyle aynı (güçlü metin; satırda eylem rengine
+   döner, altı çizilmez); durum notu sakin. */
+.bo-subs__link {
+  border-radius: var(--ek-radius-sm);
+  color: var(--ek-color-content-strong);
+  font-weight: var(--ek-font-weight-semibold);
+}
+tr:hover .bo-subs__link,
+.bo-subs__link:hover {
+  color: var(--ek-color-action-emphasis);
+  text-decoration: none;
+}
+.bo-subs__link:focus-visible {
+  outline: none;
+  box-shadow: var(--ek-focus-ring);
 }
 </style>

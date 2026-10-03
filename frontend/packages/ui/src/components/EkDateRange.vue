@@ -35,7 +35,7 @@
           <v-icon class="ek-date-range__chevron" icon="mdi-chevron-down" size="16" aria-hidden="true" />
         </button>
       </template>
-      <EkMenuPanel autofocus :groups="groups" :label="`${label}: hazır aralıklar`" @select="onPreset" @close="open = false" />
+      <EkMenuPanel autofocus :groups="groups" :label="`${label}: hazır aralıklar`" title="Hazır aralıklar" :description="label" @select="onPreset" @close="open = false" />
     </v-menu>
   </fieldset>
 </template>
@@ -67,7 +67,7 @@ const open = ref(false)
 const selected = computed(() => matchPreset(normalizeDay(props.start), normalizeDay(props.end)))
 const groups = computed<EkMenuGroup[]>(() => [
   {
-    items: dateRangePresets().map((p) => ({ key: p.key, label: p.label, icon: selected.value === p.key ? 'mdi-check' : 'mdi-calendar-blank-outline' })),
+    items: dateRangePresets().map((p) => ({ key: p.key, label: p.label, icon: selected.value === p.key ? 'mdi-check' : 'mdi-calendar-blank-outline', current: selected.value === p.key })),
   },
   { items: [{ key: '__clear', label: 'Tarihi temizle', icon: 'mdi-close', disabled: !props.start && !props.end }] },
 ])

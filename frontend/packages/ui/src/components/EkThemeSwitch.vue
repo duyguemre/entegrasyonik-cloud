@@ -118,4 +118,50 @@ function onKeydown(e: KeyboardEvent) {
   outline: none;
   box-shadow: var(--ek-focus-ring);
 }
+
+/* FE-LOCAL-1058 — tema seçimi: etiket mikro başlık; seçenekler Liste | Özet anahtarıyla aynı görünüm (etkin = eylem
+   renginin açık tonu, gölge yok). */
+.ek-theme-switch__label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ek-space-2);
+  font-size: var(--ek-type-micro-size);
+  line-height: var(--ek-type-micro-line);
+  font-weight: var(--ek-type-micro-weight);
+  letter-spacing: var(--ek-type-micro-tracking);
+  text-transform: uppercase;
+}
+
+.ek-theme-switch__label::before {
+  content: '';
+  width: 12px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--ek-color-action);
+}
+
+.ek-theme-switch__group {
+  padding: 2px;
+  gap: 2px;
+  border-color: var(--ek-color-border-input);
+  border-radius: var(--ek-radius-tile);
+  background: var(--ek-color-surface);
+}
+
+.ek-theme-switch__opt {
+  min-height: 30px;
+  border: 0;
+  border-radius: var(--ek-radius-md);
+  color: var(--ek-color-content-default);
+}
+
+.ek-theme-switch__opt:hover {
+  background: var(--ek-color-surface-muted);
+}
+
+.ek-theme-switch__opt.is-active {
+  background: var(--ek-color-action-subtle);
+  color: var(--ek-color-action-emphasis);
+  box-shadow: none;
+}
 </style>

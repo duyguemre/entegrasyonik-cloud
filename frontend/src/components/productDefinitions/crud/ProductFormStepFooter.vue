@@ -50,9 +50,8 @@ function go(step: number) {
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
   gap: var(--ek-space-3);
-  margin-top: var(--ek-space-6);
-  padding-top: var(--ek-space-4);
-  border-top: 1px solid var(--ek-color-border-default);
+  /* Ayırıcı çizgi yok; adım içeriğine yakın (FE-LOCAL-1002b). */
+  margin-top: var(--ek-space-3);
 }
 
 .pfs > :first-child {

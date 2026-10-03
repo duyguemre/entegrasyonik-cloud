@@ -82,4 +82,26 @@ function onChanged() {
   margin: 0;
   padding-left: var(--ek-space-5);
 }
+
+/* BO-LOCAL-01 — açıklama listesi: madde imi eylem renginde küçük kare (yuvarlak nokta değil), satırlar sakin. */
+.bo-otps__list {
+  padding-left: 0;
+  list-style: none;
+}
+
+.bo-otps__list > li {
+  position: relative;
+  padding-left: var(--ek-space-5);
+}
+
+.bo-otps__list > li::before {
+  content: '';
+  position: absolute;
+  top: 0.6em;
+  left: var(--ek-space-1);
+  width: 6px;
+  height: 6px;
+  border-radius: 1px;
+  background: var(--ek-color-action);
+}
 </style>

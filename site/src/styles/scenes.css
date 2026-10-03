@@ -171,93 +171,13 @@
   }
 
   /* ---------------------------------------------------------------------------------------- */
-  /* 3) stock-single-winner — iki sipariş AYNI ANDA gelir; biri rezerve edilir, diğeri işaretlenir */
-  /*    "Kalan" sayacı: 1 -> 0 (statik son durum 0; `left-a` yalnızca giriş sırasında görünür)      */
+  /* 3) stock-single-winner ve 4) orders-merge — SITE-DL F1: ayrı giriş sahnesi yok. Görsel, karonun   */
+  /*    girişinde (`.tile__frame[data-reveal]`) yükselir; hikâye 12 sn'lik döngüde oynar              */
+  /*    (scenes-loops.css). Hareket kapalıyken bileşenin durağan son karesi görünür.                   */
   /* ---------------------------------------------------------------------------------------- */
-  [data-scene='stock-single-winner'] :is([data-part='order-a'], [data-part='order-b']) {
-    --i: 0;
-  }
-  [data-scene='stock-single-winner'] [data-part='arrow-a'] {
-    --i: 3;
-  }
-  [data-scene='stock-single-winner'] [data-part='product'] {
-    --i: 4;
-  }
-  [data-scene='stock-single-winner'] [data-part='arrow-b'] {
-    --i: 9;
-  }
-  [data-scene='stock-single-winner'] [data-part='result-ok'] {
-    --i: 10;
-  }
-  [data-scene='stock-single-winner'] [data-part='result-oversold'] {
-    --i: 12;
-  }
-  [data-scene='stock-single-winner'] :is([data-part='left-a'], [data-part='left-b']) {
-    --i: 10;
-  }
-  html[data-motion='play'] [data-scene='stock-single-winner'][data-state='ready'] :is(
-      [data-part='order-a'],
-      [data-part='order-b'],
-      [data-part='arrow-a'],
-      [data-part='product'],
-      [data-part='arrow-b'],
-      [data-part='result-ok'],
-      [data-part='result-oversold'],
-      [data-part='left-b']
-    ) {
-    opacity: 0;
-  }
-  html[data-motion='play'] [data-scene='stock-single-winner'][data-state='play'] :is([data-part='order-a'], [data-part='order-b'], [data-part='result-ok'], [data-part='result-oversold']) {
-    animation: scene-rise var(--site-motion-duration-reveal) var(--site-motion-ease-reveal) backwards;
-    animation-delay: calc(var(--site-motion-stagger) * var(--i));
-  }
-  html[data-motion='play'] [data-scene='stock-single-winner'][data-state='play'] :is([data-part='arrow-a'], [data-part='arrow-b'], [data-part='left-b']) {
-    animation: scene-fade var(--site-motion-duration-reveal-sm) var(--site-motion-ease-reveal) backwards;
-    animation-delay: calc(var(--site-motion-stagger) * var(--i));
-  }
-  html[data-motion='play'] [data-scene='stock-single-winner'][data-state='play'] [data-part='left-a'] {
-    animation: scene-fade-out var(--site-motion-duration-reveal-sm) var(--site-motion-ease-reveal) backwards;
-    animation-delay: calc(var(--site-motion-stagger) * var(--i));
-  }
-  html[data-motion='play'] [data-scene='stock-single-winner'][data-state='play'] [data-part='product'] {
-    animation: scene-zoom var(--site-motion-duration-reveal) var(--site-motion-ease-reveal) backwards;
-    animation-delay: calc(var(--site-motion-stagger) * var(--i));
-  }
-
-  /* -------------------------------------------------------------------------------- */
-  /* 4) orders-merge — kanallardan siparişler iki yönden gelip tek listede birleşir     */
-  /* -------------------------------------------------------------------------------- */
-  [data-scene='orders-merge'] [data-part='order-row'] {
-    --slide-from: calc(var(--site-motion-distance) * -4) 0;
-  }
-  [data-scene='orders-merge'] [data-part='order-row']:nth-child(even) {
-    --slide-from: calc(var(--site-motion-distance) * 4) 0;
-  }
-  [data-scene='orders-merge'] [data-part='order-row']:nth-child(1) {
-    --i: 0;
-  }
-  [data-scene='orders-merge'] [data-part='order-row']:nth-child(2) {
-    --i: 1;
-  }
-  [data-scene='orders-merge'] [data-part='order-row']:nth-child(3) {
-    --i: 2;
-  }
-  [data-scene='orders-merge'] [data-part='order-row']:nth-child(4) {
-    --i: 3;
-  }
-  [data-scene='orders-merge'] [data-part='order-row']:nth-child(n + 5) {
-    --i: 4;
-  }
-  html[data-motion='play'] [data-scene='orders-merge'][data-state='ready'] [data-part='order-row'] {
-    opacity: 0;
-  }
-  html[data-motion='play'] [data-scene='orders-merge'][data-state='play'] [data-part='order-row'] {
-    animation: scene-slide var(--site-motion-duration-reveal) var(--site-motion-ease-reveal) backwards;
-    animation-delay: calc(var(--site-motion-stagger) * var(--i));
-  }
 
   /* ------------------------------------------------------------------------------------------ */
-  /* 5) integration-status — satırlar yükselir, kapsam ölçerleri sırayla dolar                     */
+  /* 5) integration-status — satırlar yükselir; çubukların dolması döngüdedir (scenes-loops.css)   */
   /* ------------------------------------------------------------------------------------------ */
   [data-scene='integration-status'] [data-part='istat-row']:nth-child(1) {
     --i: 0;
@@ -287,16 +207,12 @@
   [data-scene='integration-status'] [data-part='seg']:nth-child(3) {
     --k: 2;
   }
-  html[data-motion='play'] [data-scene='integration-status'][data-state='ready'] :is([data-part='istat-row'], [data-part='seg']) {
+  html[data-motion='play'] [data-scene='integration-status'][data-state='ready'] [data-part='istat-row'] {
     opacity: 0;
   }
   html[data-motion='play'] [data-scene='integration-status'][data-state='play'] [data-part='istat-row'] {
     animation: scene-rise var(--site-motion-duration-reveal) var(--site-motion-ease-reveal) backwards;
     animation-delay: calc(var(--site-motion-stagger) * var(--i));
-  }
-  html[data-motion='play'] [data-scene='integration-status'][data-state='play'] [data-part='seg'] {
-    animation: scene-grow var(--site-motion-duration-reveal-sm) var(--site-motion-ease-reveal) backwards;
-    animation-delay: calc(var(--site-motion-stagger) * (var(--i) + var(--k) + 3));
   }
 
   /* ------------------------------------------------------------------------------------------ */

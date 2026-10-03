@@ -271,4 +271,10 @@ async function submit() {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* FE-LOCAL-1047: adım numarası — yuvarlak yerine küçük çerçeveli kutu (ortak ikon kapsülü ailesi). */
+.ek-transfer__num {
+  border-color: var(--ek-color-border-default);
+  border-radius: var(--ek-radius-md);
+}
 </style>

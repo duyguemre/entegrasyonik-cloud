@@ -52,7 +52,8 @@
       </div>
     </EkFormDialog>
 
-    <EkListScreen channel-key="integrationCode"
+    <EkListScreen ref="listScreenRef" channel-key="integrationCode"
+      summary-toggle
       section="Satış"
       title="Siparişler"
       description="Tüm pazaryeri siparişlerinizi buradan yönetin."
@@ -94,8 +95,12 @@
       @remove-chip="removeChip"
       @clear-filters="resetFilters"
       @apply-view="applySavedView"
-      @refresh="getOrders(true)"
+      @refresh="refreshAll"
     >
+      <!-- FE-LOCAL-1043: "Özet" görünümü (listenin yerine) — sipariş bölüm panosu; durum hücresi listeye dönüp süzer. -->
+      <template #summary="{ close }">
+        <OrderListDashboard ref="statusStripRef" :active="applied.internalStatuses" @select="(st: string[]) => { onStatusStripSelect(st); close() }" />
+      </template>
       <!-- faz3-fe-help: ilk kullanım — hiç kayıt yokken "Nasıl başlanır?" (filtreli boş sonuçta gösterilmez). -->
       <template #empty-action><HelpStartLink article="gs-first-integration" /></template>
       <!-- MOB-03: telefonda barkod okut → aynı genel arama (sipariş no / pazaryeri no / kargo takip no); tek sonuçta detay açılır. -->
@@ -213,6 +218,7 @@ import ManualInvoiceComponent from '@/components/order/ManualInvoiceComponent.vu
 import ManualShipmentComponent from '@/components/order/ManualShipmentComponent.vue'
 import BarcodePrintComponent from '@/components/order/BarcodePrintComponent.vue'
 import EkListScreen from '@/components/page/templates/EkListScreen.vue'
+import OrderListDashboard from '@/components/order/OrderListDashboard.vue'
 import type { EkSavedViewsConfig } from '@/components/page/EkSavedViews.vue'
 import { isRequestError } from '@entegrasyonik/ui/components/listStandard'
 
@@ -325,6 +331,18 @@ const loadError = computed(() => error.value !== null)
 /** Aşama 6b (Standart 1): hata desenindeki neden + teknik ayrıntı. */
 const loadProblem = computed<ProblemCopy | null>(() => error.value ? problemFromError(error.value, 'OrderService/getOrders') : null)
 const getOrders = load
+
+// FE-LOCAL-1040: durum şeridi — hücre seçimi durum filtresini değiştirir ve sorgular; yenilemede sayılar da tazelenir.
+const statusStripRef = ref<InstanceType<typeof OrderListDashboard> | null>(null)
+const listScreenRef = ref<InstanceType<typeof EkListScreen> | null>(null)
+const onStatusStripSelect = (statuses: string[]) => {
+  filters.value.internalStatuses = [...statuses]
+  getOrders(true)
+}
+const refreshAll = () => {
+  statusStripRef.value?.refresh()
+  getOrders(true)
+}
 
 const statusOptions = computed(() => Object.values(OrderInternalStatusEnum).map((id) => ({ id, title: ORDER_INTERNAL_STATUS_LABELS[id] })))
 
@@ -627,6 +645,8 @@ const initialize = async (parameters: any) => {
 };
 
 const activate = async (parameters: any) => {
+  // Başka bir ekrandan süzmeyle gelindiyse (ör. özet kartındaki bağlantı) listeye dön.
+  if (parameters && Object.keys(parameters).length) listScreenRef.value?.closeSummary()
   let flag = false
   if (parameters?.globalSearch) {
     filters.value.globalSearch = parameters.globalSearch;

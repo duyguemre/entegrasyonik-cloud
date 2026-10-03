@@ -36,7 +36,7 @@
           <v-icon :icon="row.expanded ? 'mdi-chevron-down' : 'mdi-chevron-right'" size="16" />
         </button>
         <span v-else class="cat-row__toggle cat-row__toggle--none" aria-hidden="true" />
-        <span class="cat-row__tile" aria-hidden="true"><v-icon :icon="row.hasChildren ? 'mdi-folder-outline' : 'mdi-tag-outline'" size="16" /></span>
+        <span class="cat-row__tile" :class="{ 'is-leaf': !row.hasChildren }" aria-hidden="true"><v-icon :icon="row.hasChildren ? 'mdi-folder-outline' : 'mdi-tag-outline'" size="16" /></span>
         <span class="cat-row__text">
           <span class="cat-row__name">
             <template v-for="(p, i) in highlight(row.node.title)" :key="i"><mark v-if="p.hit" class="cat-mark">{{ p.text }}</mark><template v-else>{{ p.text }}</template></template>
@@ -461,6 +461,73 @@ defineExpose({ focusRow })
     display: none;
   }
 }
+
+/* ================= FE-LOCAL-1048 — ağaç: düz satırlar + ince çizgi =================
+   Satırlar kartın kenarından kenarına düz yüzey, aralarında saç çizgisi; seçili satır eylem renginin açık tonu + ince
+   çerçeve (kalın şerit / gölge yok). Kutucuklar çerçeveli kapsül (üst kategori = eylem tonu, uç kategori = nötr).
+   Eksik eşleme sayacı düz uyarı tonu rozet; aç/kapa oku sakin. */
+.cat-tree {
+  gap: 0;
+  padding: 0;
+}
+
+.cat-row {
+  padding: var(--ek-space-1) var(--ek-space-3) var(--ek-space-1) var(--ek-space-2);
+  border-bottom: 1px solid var(--ek-color-border-subtle);
+  border-radius: 0;
+}
+
+.cat-row.is-selected {
+  background: var(--ek-color-action-subtle);
+  box-shadow: inset 0 0 0 1px var(--ek-color-action-border);
+}
+
+.cat-row.is-selected:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--ek-color-border-focus);
+}
+
+.cat-row__guide {
+  margin-block: calc(-1 * var(--ek-space-1) - 1px);
+}
+
+.cat-row__toggle {
+  border-radius: var(--ek-radius-md);
+}
+
+.cat-row__toggle:hover {
+  background: var(--ek-color-surface);
+}
+
+.cat-row__tile {
+  border: 1px solid var(--ek-color-action-border);
+  border-radius: var(--ek-radius-tile);
+  background: var(--ek-color-action-subtle);
+  color: var(--ek-color-action-emphasis);
+}
+
+.cat-row__tile.is-leaf {
+  border-color: var(--ek-color-border-default);
+  background: var(--ek-color-surface);
+  color: var(--ek-color-content-muted);
+}
+
+.cat-row.is-selected .cat-row__tile.is-leaf {
+  border-color: var(--ek-color-action-border);
+  color: var(--ek-color-action-emphasis);
+}
+
+.cat-absent {
+  border: 1px solid var(--ek-color-warning-border);
+  background: var(--ek-color-warning-subtle);
+  color: var(--ek-color-warning-emphasis);
+}
+
+.cat-absent:hover,
+.cat-absent[aria-expanded='true'] {
+  border-color: var(--ek-color-warning-emphasis);
+  background: var(--ek-color-warning-subtle);
+  color: var(--ek-color-warning-emphasis);
+}
 </style>
 
 <style>
@@ -493,4 +560,20 @@ defineExpose({ focusRow })
   color: var(--ek-color-content-muted); font-size: var(--ek-type-caption-size); line-height: var(--ek-type-caption-line);
 }
 .cat-absent-card__hint .v-icon { flex: none; margin-top: 1px; font-size: var(--ek-icon-sm); color: var(--ek-color-info); }
+
+/* FE-LOCAL-1048: bilgi kartı — mikro etiketli başlık (eylem çizgisi) + saç çizgili düz satırlar. */
+.cat-absent-card { border-radius: var(--ek-radius-card); }
+.cat-absent-card__title {
+  display: inline-flex; align-items: center; gap: var(--ek-space-2);
+  color: var(--ek-color-sidebar-section);
+  font-size: var(--ek-type-micro-size); line-height: var(--ek-type-micro-line); font-weight: var(--ek-type-micro-weight);
+  letter-spacing: var(--ek-type-micro-tracking); text-transform: uppercase;
+}
+.cat-absent-card__title::before { content: ''; width: 12px; height: 2px; border-radius: 1px; background: var(--ek-color-action); }
+.cat-absent-card__list { gap: 0; }
+.cat-absent-card__list > li {
+  padding: 6px 0; border-radius: 0; background: none;
+  border-top: 1px solid var(--ek-color-border-subtle);
+}
+.cat-absent-card__state { color: var(--ek-color-warning-emphasis); font-weight: var(--ek-font-weight-semibold); }
 </style>

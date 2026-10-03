@@ -58,3 +58,54 @@ function onKey(e: KeyboardEvent, i: number) {
   void nextTick(() => root.value?.querySelectorAll<HTMLButtonElement>('.bo-seg__opt')[j]?.focus())
 }
 </script>
+
+<style scoped>
+/* ================= BO-LOCAL-01 — segment seçici: uygulamanın tasarım diliyle =================
+   Müşteri uygulamasındaki Liste | Özet anahtarıyla AYNI görünüm: beyaz yüzey + ince çerçeve, etkin seçenek eylem
+   renginin açık tonu + eylem metni (yükseltilmiş beyaz hap ve gölge yok). Sayaç köşeli küçük rozet. */
+.bo-seg {
+  gap: 2px;
+  padding: 2px;
+  border-color: var(--ek-color-border-input);
+  border-radius: var(--ek-radius-tile);
+  background: var(--ek-color-surface);
+}
+
+.bo-seg__opt {
+  height: 28px;
+  padding: 0 var(--ek-space-3);
+  border-radius: var(--ek-radius-md);
+  color: var(--ek-color-content-default);
+}
+
+.bo-seg__opt .v-icon {
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-icon-sm);
+}
+
+.bo-seg__opt:hover:not(:disabled) {
+  background: var(--ek-color-surface-muted);
+  color: var(--ek-color-content-strong);
+}
+
+.bo-seg__opt[aria-checked='true'],
+.bo-seg__opt[aria-checked='true']:hover {
+  background: var(--ek-color-action-subtle);
+  color: var(--ek-color-action-emphasis);
+  font-weight: var(--ek-font-weight-semibold);
+  box-shadow: none;
+}
+
+.bo-seg__opt[aria-checked='true'] .v-icon,
+.bo-seg__opt[aria-checked='true'] .bo-seg__count {
+  color: var(--ek-color-action-emphasis);
+}
+
+.bo-seg__opt:focus-visible {
+  box-shadow: var(--ek-focus-ring);
+}
+
+.bo-seg__count {
+  font-weight: var(--ek-font-weight-semibold);
+}
+</style>

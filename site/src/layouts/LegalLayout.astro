@@ -264,7 +264,7 @@ const updated = new Date(`${doc.updatedAt}T00:00:00Z`).toLocaleDateString('tr-TR
     min-height: var(--site-tap-target);
     padding-inline: var(--ek-space-4);
     border: var(--site-border-width) solid var(--site-glass-border);
-    border-radius: var(--ek-radius-lg);
+    border-radius: var(--ek-radius-tile);
     background: var(--site-glass-bg);
     color: var(--site-color-on-primary);
     font: inherit;
@@ -327,8 +327,8 @@ const updated = new Date(`${doc.updatedAt}T00:00:00Z`).toLocaleDateString('tr-TR
     align-items: flex-start;
     margin-bottom: var(--ek-space-10);
     padding: var(--ek-space-5) var(--ek-space-6);
-    border: var(--site-border-width) solid color-mix(in srgb, var(--ek-color-warning) 55%, var(--ek-color-border-default));
-    border-radius: var(--site-radius-panel);
+    border: var(--site-border-width) solid var(--ek-color-warning-border);
+    border-radius: var(--ek-radius-card);
     background: var(--ek-color-warning-subtle);
     color: var(--ek-color-content-strong);
     font-size: var(--ek-font-size-md);
@@ -337,7 +337,7 @@ const updated = new Date(`${doc.updatedAt}T00:00:00Z`).toLocaleDateString('tr-TR
   .legal-draft__icon {
     display: inline-flex;
     flex: none;
-    color: var(--ek-color-warning);
+    color: var(--ek-color-warning-emphasis);
   }
   .legal-draft div {
     display: flex;
@@ -356,14 +356,15 @@ const updated = new Date(`${doc.updatedAt}T00:00:00Z`).toLocaleDateString('tr-TR
     gap: var(--ek-space-8);
   }
   .legal-toc {
-    padding: var(--ek-space-5);
+    padding: var(--ek-space-4) var(--ek-space-3) var(--ek-space-3);
+    /* SITE-DL: çerçeveli düz kart (gölge yok). */
     border: var(--site-border-width) solid var(--ek-color-border-default);
-    border-radius: var(--site-radius-panel);
+    border-radius: var(--ek-radius-card);
     background: var(--ek-color-surface);
-    box-shadow: var(--site-shadow-card);
   }
   .legal-toc__title {
     margin-bottom: var(--ek-space-3);
+    padding-inline: var(--ek-space-2);
     color: var(--site-text-meta);
     font-size: var(--ek-font-size-xs);
     font-weight: var(--ek-font-weight-semibold);
@@ -384,6 +385,7 @@ const updated = new Date(`${doc.updatedAt}T00:00:00Z`).toLocaleDateString('tr-TR
     gap: var(--ek-space-3);
     min-height: var(--site-tap-target);
     padding: var(--ek-space-2);
+    border: var(--site-border-width) solid transparent;
     border-radius: var(--ek-radius-md);
     color: var(--site-text-body);
     font-size: var(--ek-font-size-md);
@@ -391,15 +393,18 @@ const updated = new Date(`${doc.updatedAt}T00:00:00Z`).toLocaleDateString('tr-TR
     text-decoration: none;
     transition:
       background-color var(--ek-duration-fast) var(--ek-easing-standard),
+      border-color var(--ek-duration-fast) var(--ek-easing-standard),
       color var(--ek-duration-fast) var(--ek-easing-standard);
   }
   .legal-toc__list a:hover {
-    background: var(--ek-color-surface-muted);
-    color: var(--site-text-heading);
+    background: var(--site-action-subtle);
+    color: var(--site-action-emphasis);
   }
+  /* SITE-DL: seçili = eylem tonu zemin + ince çerçeve + vurgulu metin. */
   .legal-toc__list a[aria-current='true'] {
-    background: color-mix(in srgb, var(--ek-color-secondary) 10%, var(--ek-color-surface));
-    color: var(--site-text-heading);
+    border-color: var(--site-action-border);
+    background: var(--site-action-subtle);
+    color: var(--site-action-emphasis);
     font-weight: var(--ek-font-weight-semibold);
   }
   .legal-toc__num {
@@ -409,6 +414,7 @@ const updated = new Date(`${doc.updatedAt}T00:00:00Z`).toLocaleDateString('tr-TR
     justify-content: center;
     min-width: var(--ek-space-6);
     height: var(--ek-space-6);
+    border: var(--site-border-width) solid var(--ek-color-border-default);
     border-radius: var(--ek-radius-sm);
     background: var(--ek-color-surface-muted);
     color: var(--site-text-meta);
@@ -417,12 +423,14 @@ const updated = new Date(`${doc.updatedAt}T00:00:00Z`).toLocaleDateString('tr-TR
     font-variant-numeric: tabular-nums;
   }
   .legal-toc__num--ph {
+    border-color: var(--ek-color-warning-border);
     background: var(--ek-color-warning-subtle);
-    color: var(--ek-color-warning);
+    color: var(--ek-color-warning-emphasis);
   }
   .legal-toc__list a[aria-current='true'] .legal-toc__num:not(.legal-toc__num--ph) {
-    background: var(--ek-color-secondary-darken-1);
-    color: var(--site-color-on-primary);
+    border-color: var(--site-action);
+    background: var(--site-action);
+    color: var(--site-action-contrast);
   }
   .legal-toc__text {
     padding-top: calc(var(--ek-space-1) * 0.5);
@@ -474,9 +482,11 @@ const updated = new Date(`${doc.updatedAt}T00:00:00Z`).toLocaleDateString('tr-TR
     justify-content: center;
     min-width: var(--ek-space-8);
     height: var(--ek-space-8);
+    /* SITE-DL: çerçeveli kare madde numarası (degrade yok). */
+    border: var(--site-border-width) solid var(--site-action-border);
     border-radius: var(--ek-radius-md);
-    background: linear-gradient(140deg, var(--ek-color-primary), var(--ek-color-primary-darken-1));
-    color: var(--site-color-on-primary);
+    background: var(--site-action-subtle);
+    color: var(--site-action-emphasis);
     font-size: var(--ek-font-size-md);
     font-variant-numeric: tabular-nums;
   }
@@ -514,7 +524,7 @@ const updated = new Date(`${doc.updatedAt}T00:00:00Z`).toLocaleDateString('tr-TR
     padding-inline-start: var(--ek-space-1);
   }
   .legal-list > li::marker {
-    color: var(--ek-color-secondary-darken-1);
+    color: var(--site-action);
   }
   .legal-list--ordered > li {
     list-style: decimal;
@@ -528,9 +538,8 @@ const updated = new Date(`${doc.updatedAt}T00:00:00Z`).toLocaleDateString('tr-TR
     position: relative;
     overflow-x: auto;
     border: var(--site-border-width) solid var(--ek-color-border-default);
-    border-radius: var(--ek-radius-lg);
+    border-radius: var(--ek-radius-card);
     background: var(--ek-color-surface);
-    box-shadow: var(--site-shadow-card);
   }
   .legal-table {
     width: 100%;
@@ -546,7 +555,7 @@ const updated = new Date(`${doc.updatedAt}T00:00:00Z`).toLocaleDateString('tr-TR
     padding: var(--ek-space-3) var(--ek-space-4);
     text-align: start;
     vertical-align: top;
-    border-bottom: var(--site-border-width) solid var(--ek-color-border-default);
+    border-bottom: var(--site-border-width) solid var(--ek-color-border-subtle);
     overflow-wrap: break-word;
   }
   .legal-table th:first-child,
@@ -556,6 +565,7 @@ const updated = new Date(`${doc.updatedAt}T00:00:00Z`).toLocaleDateString('tr-TR
     font-weight: var(--ek-font-weight-medium);
   }
   .legal-table thead th {
+    border-bottom-color: var(--ek-color-border-default);
     background: var(--ek-color-surface-muted);
     color: var(--site-text-meta);
     font-size: var(--ek-font-size-xs);
@@ -571,7 +581,7 @@ const updated = new Date(`${doc.updatedAt}T00:00:00Z`).toLocaleDateString('tr-TR
   .legal :global(mark.ph) {
     padding: 0 var(--ek-space-1);
     background: var(--ek-color-warning-subtle);
-    border: var(--site-border-width) dashed var(--ek-color-border-strong);
+    border: var(--site-border-width) solid var(--ek-color-warning-border);
     border-radius: var(--ek-radius-sm);
     color: var(--ek-color-content-strong);
     font-weight: var(--ek-font-weight-medium);
@@ -583,10 +593,10 @@ const updated = new Date(`${doc.updatedAt}T00:00:00Z`).toLocaleDateString('tr-TR
     gap: var(--ek-space-1);
     max-width: var(--site-measure);
     padding: var(--ek-space-4) var(--ek-space-5);
+    /* SITE-DL: sol şerit yok — düz bilgi tonu + aynı tonda ince çerçeve. */
     background: var(--ek-color-info-subtle);
-    border: var(--site-border-width) solid var(--ek-color-border-default);
-    border-inline-start: var(--ek-space-1) solid var(--ek-color-info);
-    border-radius: var(--ek-radius-md);
+    border: var(--site-border-width) solid var(--ek-color-info-border);
+    border-radius: var(--ek-radius-tile);
     color: var(--ek-color-content-strong);
     font-size: var(--ek-font-size-md);
   }
@@ -600,8 +610,8 @@ const updated = new Date(`${doc.updatedAt}T00:00:00Z`).toLocaleDateString('tr-TR
     flex-direction: column;
     gap: var(--ek-space-4);
     padding: var(--ek-space-6);
-    border: var(--site-border-width) solid color-mix(in srgb, var(--ek-color-warning) 40%, var(--ek-color-border-default));
-    border-radius: var(--site-radius-panel);
+    border: var(--site-border-width) solid var(--ek-color-warning-border);
+    border-radius: var(--ek-radius-card);
     background: var(--ek-color-surface-muted);
     /* site-wdg W14: üst bar payı html scroll-padding-top’ta; burada yalnız ek boşluk. */
     scroll-margin-top: var(--ek-space-2);
@@ -621,7 +631,7 @@ const updated = new Date(`${doc.updatedAt}T00:00:00Z`).toLocaleDateString('tr-TR
     gap: var(--ek-space-2);
     padding: var(--ek-space-4);
     border: var(--site-border-width) solid var(--ek-color-border-default);
-    border-radius: var(--ek-radius-lg);
+    border-radius: var(--ek-radius-tile);
     background: var(--ek-color-surface);
   }
   .legal-fields__item dt {
@@ -654,7 +664,7 @@ const updated = new Date(`${doc.updatedAt}T00:00:00Z`).toLocaleDateString('tr-TR
     padding: 0;
     list-style: none;
   }
-  .legal-related a {
+  .legal-related li a {
     display: flex;
     align-items: center;
     gap: var(--ek-space-3);
@@ -662,24 +672,24 @@ const updated = new Date(`${doc.updatedAt}T00:00:00Z`).toLocaleDateString('tr-TR
     height: 100%;
     padding: var(--ek-space-3) var(--ek-space-4);
     border: var(--site-border-width) solid var(--ek-color-border-default);
-    border-radius: var(--ek-radius-lg);
+    border-radius: var(--ek-radius-tile);
     background: var(--ek-color-surface);
     color: var(--site-text-heading);
     font-size: var(--ek-font-size-md);
     font-weight: var(--ek-font-weight-medium);
     text-decoration: none;
     transition:
-      border-color var(--ek-duration-base) var(--ek-easing-standard),
-      box-shadow var(--ek-duration-base) var(--ek-easing-standard);
+      background-color var(--ek-duration-base) var(--ek-easing-standard),
+      border-color var(--ek-duration-base) var(--ek-easing-standard);
   }
-  .legal-related a:hover {
-    border-color: var(--ek-color-secondary-darken-1);
-    box-shadow: var(--site-shadow-card-hover);
+  .legal-related li a:hover {
+    border-color: var(--site-action-border);
+    background: var(--site-action-subtle);
   }
-  .legal-related a span {
+  .legal-related li a span {
     flex: 1;
   }
-  .legal-related a :global(.icon) {
+  .legal-related li a :global(.icon) {
     flex: none;
     color: var(--site-link-accent);
   }

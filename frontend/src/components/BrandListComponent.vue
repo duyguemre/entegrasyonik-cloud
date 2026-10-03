@@ -11,6 +11,7 @@
 <template>
   <div class="bl" @keydown="onNavKey">
     <EkListScreen
+      summary-toggle
       section="Katalog"
       title="Markalar"
       description="Markalarınızı tanımlayın ve her markayı bağlı kanallardaki karşılığıyla eşleyin."
@@ -41,9 +42,10 @@
       @row-click="(r) => !r.__new && emit('select', r)"
       @refresh="reload()"
     >
-      <template #status>
-        <EkStatusChip v-if="hasBrands" tone="neutral" :label="`${allBrands.length} marka`" />
-        <EkStatusChip v-if="missingCount > 0" tone="warning" icon="mdi-minus-circle-outline" :label="`${missingCount} eksik eşleme`" />
+      <!-- FE-LOCAL-1052: Liste | Özet — sayaç çipleri Özet görünümüne taşındı (sayılar bellekteki marka listesinden). -->
+      <template #summary="{ close }">
+        <MappingCoverageDashboard :cells="dashCells" :channels="dashChannels" :loading="loading"
+          subtitle="Markaların kanal markalarıyla eşleme durumu" @select="(key) => { if (key === 'missing') { setSegment('missing'); close() } }" />
       </template>
 
       <template #search-append>
@@ -115,6 +117,9 @@ import { EkButton, EkRowActions, EkStatusChip } from '@entegrasyonik/ui/componen
 import type { EkGridColumn, EkGridSort } from '@entegrasyonik/ui/components'
 import { sortRows } from '@entegrasyonik/ui/components/listStandard'
 import EkListScreen from '@/components/page/templates/EkListScreen.vue'
+import type { ListSummaryCell } from '@/components/page/ListSummaryStrip.vue'
+import MappingCoverageDashboard, { type MappingChannelCoverage } from '@/components/productDefinitions/definitions/MappingCoverageDashboard.vue'
+import { formatNumber } from '@entegrasyonik/ui/format'
 import ChannelStatusTile from '@/components/productDefinitions/products/ChannelStatusTile.vue'
 import './brands/brands.css'
 import useRestApi from '@/composables/restapi'
@@ -128,7 +133,7 @@ const emit = defineEmits<{ select: [brand: any]; delete: [brand: any] }>()
 const brandsStore = useBrandsStore()
 const snackbarStore = useSnackbarStore()
 const restApi = useRestApi()
-const { mappableChannels, summarize } = useBrandChannels()
+const { mappableChannels, summarize, isMapped } = useBrandChannels()
 const brandsRef = brandsStore.getBrands()
 
 const loading = ref(true)
@@ -142,6 +147,25 @@ const allBrands = computed<any[]>(() => (brandsRef.value ?? []).filter((b: any) 
 const hasBrands = computed(() => allBrands.value.length > 0)
 const hasMissing = (b: any) => { const s = summarize(b); return s.total > 0 && s.missing.length > 0 }
 const missingCount = computed(() => allBrands.value.filter(hasMissing).length)
+
+// FE-LOCAL-1052: özet görünümü — toplamlar ve kanal başına eşleme kapsamı.
+const dashCells = computed<ListSummaryCell[]>(() => {
+  const total = allBrands.value.length
+  const hasChannels = mappableChannels.value.length > 0
+  const none = allBrands.value.filter((b) => { const x = summarize(b); return x.total > 0 && !x.mapped.length }).length
+  const cell = (key: string, label: string, n: number | null, icon: string, tone: ListSummaryCell['tone'], hint: string, clickable = false): ListSummaryCell => ({
+    key, label, hint, icon, tone, value: n === null ? '—' : formatNumber(n), zero: !n, clickable,
+  })
+  return [
+    cell('total', 'Marka', total, 'mdi-tag-multiple-outline', 'action', 'Tanımlı tüm markalar'),
+    cell('complete', 'Tam eşli', hasChannels ? total - missingCount.value : null, 'mdi-check-circle-outline', 'success', 'Tüm kanallarda eşli'),
+    cell('missing', 'Eksik eşlemeli', hasChannels ? missingCount.value : null, 'mdi-minus-circle-outline', 'warning', 'Listede göstermek için tıklayın', hasChannels && missingCount.value > 0),
+    cell('none', 'Hiç eşlenmemiş', hasChannels ? none : null, 'mdi-link-variant-off', 'error', 'Hiçbir kanalda karşılığı yok'),
+  ]
+})
+const dashChannels = computed<MappingChannelCoverage[]>(() =>
+  mappableChannels.value.map((ch) => ({ code: ch.code, title: ch.title, total: allBrands.value.length, mapped: allBrands.value.filter((b) => isMapped(b, ch.code)).length })),
+)
 
 const filtered = computed(() => {
   const q = searchText.value?.trim().toLocaleLowerCase('tr') ?? ''
@@ -414,6 +438,43 @@ defineExpose({ reload, startAdd })
     clip: rect(0 0 0 0);
     white-space: nowrap;
   }
+}
+
+/* ================= FE-LOCAL-1048 — marka listesi: ortak tasarım dili =================
+   Segment = Liste | Özet anahtarıyla aynı görünüm; eksik eşleme sayacı düz uyarı tonu rozet; seçili satır yalnız eylem
+   renginin açık tonu (soldaki kalın şerit kalktı — tablo seçimiyle aynı). */
+.bl-seg {
+  gap: 2px;
+  border-color: var(--ek-color-border-input);
+  border-radius: var(--ek-radius-tile);
+}
+
+.bl-seg__btn {
+  height: calc(var(--ek-control-h-sm) - 6px);
+  border-radius: var(--ek-radius-md);
+  color: var(--ek-color-content-default);
+  font-size: var(--ek-type-label-size);
+  font-weight: var(--ek-font-weight-medium);
+}
+
+.bl-seg__btn:hover {
+  background: var(--ek-color-surface-muted);
+  color: var(--ek-color-content-strong);
+}
+
+.bl-seg__btn.is-on {
+  background: var(--ek-color-action-subtle);
+  color: var(--ek-color-action-emphasis);
+}
+
+.bl-absent {
+  border: 1px solid var(--ek-color-warning-border);
+  background: var(--ek-color-warning-subtle);
+  color: var(--ek-color-warning-emphasis);
+}
+
+:deep(.bl-row-open) > td:first-child {
+  box-shadow: none !important;
 }
 </style>
 

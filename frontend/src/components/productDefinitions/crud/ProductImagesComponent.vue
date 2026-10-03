@@ -20,6 +20,10 @@
 <template>
   <EkDialogCard class="productImagesComponent pig" title="Ürün Resim Galerisi" icon="mdi-image-multiple-outline" width="xl"
     :description="description" confirm-label="Bitti" confirm-icon="mdi-check" hide-cancel @close="finish" @confirm="finish">
+    <template #header-actions>
+      <!-- Kısayollar: varyant tablosu ve toplu düzenleyiciyle aynı ikonlu kart -->
+      <KeyboardHelpMenu :keys="galleryKeys" :mouse="galleryMouse" />
+    </template>
     <div ref="bodyRef" class="pig-body" :class="{ 'is-dragging-files': fileDrag }" @dragenter="onDragEnter" @dragover="onDragOver"
       @dragleave="onDragLeave" @drop="onDrop">
       <EkPageTabs v-if="hasVariants" v-model="tab" dense class="pig-tabs" label="Galeri bölümleri" :tabs="tabs" />
@@ -62,7 +66,9 @@
               <template v-else>Değer seçin (ör. Renk: Kırmızı → o renkteki tüm bedenler)</template>
             </span>
             <EkButton size="sm" tone="ghost" @click="assignOpen = false">Vazgeç</EkButton>
-            <EkButton size="sm" tone="primary" icon="mdi-check" :disabled="!assignTargets.length" @click="assignSelected">Ata</EkButton>
+            <EkButton size="sm" tone="primary" icon="mdi-check" :disabled="!assignTargets.length" @click="assignSelected">
+                {{ assignTargets.length ? `${assignTargets.length} varyanta ata` : 'Ata' }}
+              </EkButton>
           </div>
         </div>
 
@@ -193,7 +199,6 @@
           İlk sıradaki görsel kapaktır.
         </p>
         <p v-if="visible.length" class="pig-guide-line">
-          <v-icon icon="mdi-information-outline" aria-hidden="true" />
           Öneri: kısa kenar en az {{ IMAGE_GUIDE.recommendedPx }} px, kare ya da dikey, sade/beyaz zemin. Pazaryeri görsel kuralları kategoriye göre değişebilir.
         </p>
       </section>
@@ -240,6 +245,7 @@ import { useChoicesStore } from '@/stores/choicesStore'
 import GalleryThumb from '@/components/productDefinitions/images/GalleryThumb.vue'
 import ImageLightbox from '@/components/productDefinitions/images/ImageLightbox.vue'
 import VariantImageAssign from '@/components/productDefinitions/images/VariantImageAssign.vue'
+import KeyboardHelpMenu, { type KeyHelp, type MouseHelp } from '@/components/productDefinitions/KeyboardHelpMenu.vue'
 import { useImageUploads } from '@/components/productDefinitions/images/useImageUploads'
 import { PhotoPrepError, PHOTO_PREP_MESSAGES, preparePhoto } from '@/components/productDefinitions/images/photoPrep'
 import { useDeviceInput } from '@/composables/useDeviceInput'
@@ -314,6 +320,39 @@ function imageName(img: GalleryImage, i: number) {
   // Adsız yüklemede backend yükleme kimliğini ad yapar — kimlik gösterilmez.
   return raw && !/^[0-9a-f-]{16,}$/i.test(raw) ? raw : `Görsel ${i + 1}`
 }
+
+// ---------------------------------------------------------------- kısayollar (ortak kart)
+const galleryKeys: KeyHelp[] = [
+  { keys: ['Ctrl', 'V'], text: 'panodaki görseli galeriye yükle' },
+  { keys: 'Boşluk', text: 'tutamakta: görseli al / bırak' },
+  { keys: ['←', '→', '↑', '↓'], text: 'alınan görseli taşı' },
+  { keys: 'Esc', text: 'taşımadan vazgeç' },
+  { keys: ['←', '→'], text: 'önizlemede önceki / sonraki görsel' },
+]
+const galleryMouse: MouseHelp[] = [
+  { how: 'Görseli sürükle', text: 'sırayı değiştir; ilk kutuya bırakılan kapak olur' },
+  { how: 'Dosya sürükle', text: 'galeriye ekle' },
+  { how: 'Görsele tık', text: 'büyük önizleme' },
+  { how: '⋯ menüsü', text: 'kapak yap, taşı, indir, sil' },
+]
+
+// ---------------------------------------------------------------- sabit yükseklik
+/**
+ * Diyalog ekranda ortalı: sekme değişince, filtrelenince ya da görsel silinince içerik kısalıp diyalog zıplıyordu.
+ * Gövdenin açıkken ulaştığı en büyük yükseklik alt sınır olur (en fazla ekranın izin verdiği kadar) — toplu düzenleyiciyle aynı.
+ */
+const bodyMin = ref(0)
+const bodyMinCss = computed(() => (bodyMin.value ? `min(${bodyMin.value}px, calc(100dvh - 240px))` : '420px'))
+let bodyRo: ResizeObserver | null = null
+onMounted(() => {
+  if (typeof ResizeObserver === 'undefined' || !bodyRef.value) return
+  bodyRo = new ResizeObserver(() => {
+    const h = bodyRef.value?.offsetHeight || 0
+    if (h > bodyMin.value) bodyMin.value = h
+  })
+  bodyRo.observe(bodyRef.value)
+})
+onBeforeUnmount(() => bodyRo?.disconnect())
 
 function announce(msg: string) {
   liveMsg.value = ''
@@ -765,7 +804,7 @@ onBeforeUnmount(() => window.removeEventListener('paste', onPaste))
   display: flex;
   flex-direction: column;
   gap: var(--ek-space-4);
-  min-height: 420px;
+  min-height: v-bind(bodyMinCss);
 }
 
 .pig-tabs {
@@ -1443,17 +1482,12 @@ kbd {
 }
 
 .pig-guide-line {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--ek-space-2);
   margin: 0;
+  padding-top: var(--ek-space-3);
+  border-top: 1px dashed var(--ek-color-border-default);
   font-size: var(--ek-type-caption-size);
   line-height: var(--ek-type-caption-line);
   color: var(--ek-color-content-muted);
-}
-
-.pig-guide-line :deep(.v-icon) {
-  font-size: 16px;
 }
 
 /* ---------------- dosya sürükleme örtüsü */
@@ -1572,5 +1606,58 @@ kbd {
   .pig-wide {
     display: none;
   }
+}
+
+/* ================= FE-LOCAL-1057 — "Ürün Resim Galerisi": uygulamanın tasarım diliyle (DESIGN_SYSTEM §35) =================
+   Yalnız sunum. Karo üzerine gelince gölge YOK (yalnız çerçeve tonu); seçili karo eylem çerçevesi; toplu atama paneli
+   gölgesiz düz kart; rozet ve seçim çipleri köşeli (hap değil); bırakma alanı ikonu çerçeveli köşeli kutu. Sürüklenen
+   kopya ve bırakma örtüsü açılır katmandır → gölgeleri kalır. */
+.pig-assign {
+  box-shadow: none;
+}
+
+.pig-pill,
+.pig-badge,
+.pig-dropveil__box {
+  border-radius: var(--ek-radius-md);
+}
+
+.pig-badge {
+  border-color: var(--ek-color-border-default);
+}
+
+.pig-drop__icon {
+  border-radius: var(--ek-radius-tile);
+  background: var(--ek-color-action-subtle);
+  color: var(--ek-color-action-emphasis);
+}
+
+.pig-tile:hover {
+  border-color: var(--ek-color-action-border);
+  box-shadow: none;
+}
+
+.pig-tile.is-selected {
+  border-color: var(--ek-color-action);
+  box-shadow: inset 0 0 0 1px var(--ek-color-action);
+}
+
+.pig-tile.is-grabbed {
+  box-shadow: 0 0 0 2px var(--ek-color-action);
+}
+
+.pig-micro {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ek-space-2);
+}
+
+.pig-micro::before {
+  content: '';
+  flex: none;
+  width: 12px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--ek-color-action);
 }
 </style>

@@ -7,6 +7,7 @@
 <template>
   <component
     :is="asForm ? 'form' : 'div'"
+    ref="rootRef"
     class="ek-dialog"
     :class="[`ek-dialog--${tone}`, `ek-dialog--${width}`, { 'ek-dialog--inline': inline }]"
     :role="inline ? 'group' : undefined"
@@ -26,7 +27,7 @@
       <slot name="header-actions" />
       <EkButton v-if="!hideClose" tone="ghost" size="sm" icon="mdi-close" icon-only aria-label="Kapat" @click="close" />
     </header>
-    <div v-if="$slots.default" class="ek-dialog__body">
+    <div v-if="$slots.default" ref="bodyRef" class="ek-dialog__body">
       <slot />
     </div>
     <footer v-if="!hideActions" class="ek-dialog__actions">
@@ -50,6 +51,7 @@
 
 <script setup lang="ts">
 import { computed, ref, useId } from 'vue'
+import { useAutoHeight } from '../composables/useAutoHeight'
 import EkButton from './EkButton.vue'
 import EkIconTile, { type EkTone } from './EkIconTile.vue'
 
@@ -88,6 +90,11 @@ const resolvedTitleId = computed(() => props.titleId ?? `ek-dialog-title-${uid}`
 // (axe aria-prohibited-attr — başlık görünür değilken, ör. açılış geçişinde, ihlal olarak raporlanıyordu).
 const resolvedDescId = computed(() => props.descId ?? `ek-dialog-desc-${uid}`)
 const cancelRef = ref<InstanceType<typeof EkButton> | null>(null)
+
+// İçerik değişince (bölüm açılır, adım değişir, liste süzülür) kart yüksekliği yumuşak geçişle değişir — vitrinde değil.
+const rootRef = ref<HTMLElement | null>(null)
+const bodyRef = ref<HTMLElement | null>(null)
+useAutoHeight(rootRef, bodyRef, { enabled: () => !props.inline })
 
 function close() {
   emit('close')
@@ -200,5 +207,62 @@ defineExpose({
 
 .ek-dialog--danger .ek-dialog__header {
   box-shadow: inset 0 3px 0 var(--ek-color-error);
+}
+
+/* ================= FE-LOCAL-1049 — diyalog: uygulamanın tasarım diliyle =================
+   Kart köşesi + ince çerçeve; başlık BANDI sakin zeminde (çerçeveli ikon kapsülü + başlık + açıklama) ve gövdeden ince
+   çizgiyle ayrılır; kapatma çerçeveli ikon kutusu; altlık sakin bant. Tehlikeli diyalogda üst şerit yerine başlık bandı
+   hata tonunun düz açık zemininde (degrade / kalın şerit yok). */
+.ek-dialog {
+  border-color: var(--ek-color-border-default);
+  border-radius: var(--ek-radius-card);
+  background: var(--ek-color-surface);
+}
+
+.ek-dialog__header {
+  align-items: center;
+  padding: var(--ek-space-4) var(--ek-space-4) var(--ek-space-4) var(--ek-space-5);
+  border-bottom: 1px solid var(--ek-color-border-default);
+  background: var(--ek-color-surface-muted);
+}
+
+.ek-dialog__header :deep(.ek-icon-tile) {
+  background: var(--ek-color-surface);
+}
+
+.ek-dialog__titles {
+  padding-top: 0;
+}
+
+.ek-dialog__desc {
+  font-size: var(--ek-type-label-size);
+  line-height: var(--ek-type-label-line);
+}
+
+.ek-dialog__header > :deep(.ek-btn:last-child) {
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-tile);
+  background: var(--ek-color-surface);
+}
+
+.ek-dialog__header > :deep(.ek-btn:last-child:hover) {
+  border-color: var(--ek-color-action-border);
+  background: var(--ek-color-action-subtle);
+  color: var(--ek-color-action-emphasis);
+}
+
+.ek-dialog__body {
+  padding: var(--ek-space-5) var(--ek-space-5) var(--ek-space-5);
+}
+
+.ek-dialog__actions {
+  padding: var(--ek-space-3) var(--ek-space-5);
+  border-top-color: var(--ek-color-border-default);
+}
+
+.ek-dialog--danger .ek-dialog__header {
+  border-bottom-color: var(--ek-color-error-border);
+  background: var(--ek-color-error-subtle);
+  box-shadow: none;
 }
 </style>

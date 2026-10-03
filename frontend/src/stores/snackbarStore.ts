@@ -10,7 +10,13 @@ export const useSnackbarStore = defineStore('snackbarStore', () => {
 
   const addSnackbar = (snackbar: { text?: string; color?: string; timeout?: number; [k: string]: unknown }) => {
     if (!snackbar?.text) return
-    return showToast({ tone: TONE[snackbar.color ?? 'info'] ?? 'info', message: String(snackbar.text), duration: snackbar.timeout })
+    return showToast({
+      tone: TONE[snackbar.color ?? 'info'] ?? 'info',
+      message: String(snackbar.text),
+      duration: snackbar.timeout,
+      title: typeof snackbar.title === 'string' ? snackbar.title : undefined,
+      code: typeof snackbar.code === 'string' ? snackbar.code : undefined,
+    })
   }
 
   const removeSnackbar = (id: number) => dismissToast(id)

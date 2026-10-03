@@ -19,9 +19,13 @@
   <header class="ek-page-header">
     <EkPageBar :section="section" :section-icon="sectionIcon" :trail="trail" :record="record" :title="title" :description="description" :tips="tips" :meta="meta"
       :refreshable="refreshable" :refreshing="refreshing" :last-updated="lastUpdated" @refresh="emit('refresh')">
-      <template v-if="toolsId || primaryAction || secondaryActions?.length || overflowActions?.length" #actions>
+      <!-- Durum yuvası (başlığın sağı): ekranın kısa durum göstergesi (ör. ürün formunun zorunlu bilgi çubuğu). -->
+      <template v-if="$slots.status" #status><slot name="status" /></template>
+      <template v-if="toolsId || $slots.tools || primaryAction || secondaryActions?.length || overflowActions?.length" #actions>
         <!-- P03: sekmeli ekranda etkin sekmenin araç satırı (arama + eylemler + yenile) buraya taşınır (listTools.ts). -->
         <div v-if="toolsId" :id="toolsId" class="ek-page-header__tools" />
+        <!-- FE-LOCAL-1048: sayfanın kendi araçları (ör. Liste | Özet anahtarı — `EkViewSwitch`). -->
+        <slot name="tools" />
         <v-btn
           v-for="action in secondaryActions"
           :key="action.label"

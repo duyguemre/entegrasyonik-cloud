@@ -13,6 +13,13 @@
     class="dash-trend"
     @open="open('orderList')"
   >
+    <!-- Lejant başlık satırında (grafiğe dikey yer kalsın). -->
+    <template v-if="!loading && !error && hasData" #actions>
+      <div class="dash-trend__legend" aria-hidden="true">
+        <span class="dash-trend__key dash-trend__key--count">Sipariş</span>
+        <span class="dash-trend__key dash-trend__key--revenue">Ciro</span>
+      </div>
+    </template>
     <div v-if="loading" class="dash-trend__skeleton" aria-hidden="true">
       <span v-for="n in 7" :key="n" class="dash-trend__bar" :class="`dash-trend__bar--${n}`"></span>
     </div>
@@ -24,10 +31,6 @@
       text="Pazaryerlerinden sipariş geldikçe günlük dağılım burada görünür."
     />
     <template v-else>
-      <div class="dash-trend__legend" aria-hidden="true">
-        <span class="dash-trend__key dash-trend__key--count">Sipariş</span>
-        <span class="dash-trend__key dash-trend__key--revenue">Ciro</span>
-      </div>
       <v-chart
         class="dash-trend__chart"
         :theme="chartTheme"
@@ -112,8 +115,8 @@ const option = computed(() => {
     {
       name: 'Sipariş',
       type: 'bar',
-      barMaxWidth: 28,
-      itemStyle: { color: chartColors.action, borderRadius: [4, 4, 0, 0] },
+      barMaxWidth: 22,
+      itemStyle: { color: chartColors.action, borderRadius: [3, 3, 0, 0] },
       emphasis: { itemStyle: { color: chartColors['action-hover'] } },
       data: days.value.map((d) => d.count ?? 0),
     },
@@ -141,16 +144,18 @@ const option = computed(() => {
   padding-top: var(--ek-space-4);
 }
 
-/* C3: satır komşusu (durum dağılımı) daha uzunsa grafik kalan yüksekliği doldurur (autoresize); en az 248px. */
+/* C3: satır komşusu (durum dağılımı) daha uzunsa grafik kalan yüksekliği doldurur (autoresize); en az 232px. */
 .dash-trend__chart {
-  flex: 1 1 248px;
+  flex: 1 1 232px;
   width: 100%;
-  min-height: 248px;
+  min-height: 232px;
 }
 
 .dash-trend__legend {
   display: flex;
   gap: var(--ek-space-4);
+  margin-right: var(--ek-space-2);
+  white-space: nowrap;
   color: var(--ek-color-content-muted);
   font-size: var(--ek-type-caption-size);
   line-height: var(--ek-type-caption-line);

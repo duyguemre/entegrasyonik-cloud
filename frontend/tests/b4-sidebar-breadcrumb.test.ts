@@ -114,7 +114,7 @@ describe('B4 — breadcrumb çipleri + yardım tetikleyicisi', () => {
   })
 
   it('davranış/API korunur: aria-expanded + aria-controls + "Sayfa hakkında: <başlık>"', () => {
-    expect(bar).toMatch(/:aria-expanded="about\.open\.value"/)
+    expect(bar).toMatch(/:aria-expanded="aboutOpen"/)
     expect(bar).toMatch(/:aria-controls="panelId"/)
     expect(bar).toMatch(/:aria-label="`Sayfa hakkında: \$\{title\}`"/)
   })

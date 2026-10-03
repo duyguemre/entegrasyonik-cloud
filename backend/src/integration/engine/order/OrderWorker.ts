@@ -76,7 +76,8 @@ export class OrderWorker {
                     ? integration.retrieveMessages({ startDate: jobData.messageSync!.startDate })
                     : Promise.resolve([]),
                 financeAttempted
-                    ? integration.retrieveFinancials({ startDate: jobData.financeSync!.startDate, endDate: jobData.financeSync!.endDate! })
+                    // BullMQ iş verisi JSON'dan gelir: tarihler string olur; adaptörler `Date` bekler (N11 `toISOString` hatası).
+                    ? integration.retrieveFinancials({ startDate: new Date(jobData.financeSync!.startDate), endDate: new Date(jobData.financeSync!.endDate!) })
                     : Promise.resolve([])
             ]);
 

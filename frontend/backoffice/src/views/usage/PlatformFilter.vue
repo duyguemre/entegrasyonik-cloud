@@ -60,4 +60,15 @@ function onSub(v: string) {
   font-size: var(--ek-type-label-size);
 }
 .bo-pf__select:focus-visible { outline: none; box-shadow: var(--ek-focus-ring); }
+
+/* BO-LOCAL-01 — alt tür seçimi: yanındaki bölmeli anahtarla aynı yükseklik ve köşe; çerçeve alan çerçevesi (WCAG). */
+.bo-pf__select {
+  border-color: var(--ek-color-border-input);
+  border-radius: var(--ek-radius-tile);
+  cursor: pointer;
+  transition: var(--ek-transition-colors);
+}
+.bo-pf__select:hover {
+  border-color: var(--ek-color-action-border);
+}
 </style>

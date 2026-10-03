@@ -150,10 +150,14 @@ const hint = computed(() => (messages.value.length ? 'Geçersiz değer var; düz
   color: var(--ek-color-content-muted);
   font-size: var(--ek-type-caption-size);
 }
+/* Ayar satırları tek kartta (Platform ayarlarıyla aynı düzen). */
 .bo-cp__fields {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: var(--ek-space-2) var(--ek-space-4);
+  grid-template-columns: minmax(0, 1fr);
+  overflow: hidden;
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-lg);
+  background: var(--ek-color-surface);
 }
 .bo-cp__live:empty {
   /* Kalıcı canlı bölge boşken ızgara boşluğunu ikiletmesin (bölge DOM'da kalır → ilk hata da duyurulur). */
@@ -179,5 +183,19 @@ const hint = computed(() => (messages.value.length ? 'Geçersiz değer var; düz
   display: flex;
   align-items: center;
   gap: var(--ek-space-2);
+}
+
+/* BO-LOCAL-01 — plan tablosu: değişen hücre eylem renginin açık tonu (tek vurgu); ayar kartı kart köşeli;
+   hata listesi kutu köşeli. */
+.bo-cp__cell.is-changed {
+  background: var(--ek-color-action-subtle);
+}
+
+.bo-cp__fields {
+  border-radius: var(--ek-radius-card);
+}
+
+.bo-cp__errors {
+  border-radius: var(--ek-radius-tile);
 }
 </style>

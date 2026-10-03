@@ -3,7 +3,7 @@
     <EkEmptyState v-if="res.phase.value === 'notFound'" variant="no-results" title="Duyuru bulunamadı" message="Duyuru silinmiş ya da bağlantı hatalı olabilir; listeye dönün." />
     <StateBlock v-else-if="!a" :phase="res.phase.value" :error="res.error.value" skeleton="detail" :rows="4" degraded-title="Duyuru şu an okunamıyor" @retry="res.load()" />
     <template v-else>
-      <BoPageHeader :title="a.title.tr" lede="" :extra-crumbs="[{ label: a.title.tr }]" :updated-at="res.loadedAt.value ?? undefined">
+      <BoPageHeader :title="a.title.tr" lede="" :extra-crumbs="[{ label: a.title.tr }]" :updated-at="res.loadedAt.value ?? undefined" refreshable :refreshing="res.refreshing.value" @refresh="reload">
         <template #status>
           <EkStatusChip :tone="ANN_STATUS[a.status].tone" :label="ANN_STATUS[a.status].label" dot data-testid="ann-status" />
           <EkStatusChip :tone="ANN_SEVERITY[a.severity].tone" :label="`${ANN_KIND[a.kind].label} · ${ANN_SEVERITY[a.severity].label}`" :icon="ANN_KIND[a.kind].icon" />
@@ -18,7 +18,6 @@
             {{ startsInFuture ? 'Zamanla' : 'Şimdi yayınla' }}
           </EkButton>
           <BoAction v-if="cancellable" kind="cancel" data-testid="cancel" @click="cancel.open(a.id)" />
-          <BoAction kind="refresh" :loading="res.refreshing.value" data-page-refresh @click="reload" />
         </template>
       </BoPageHeader>
 
@@ -263,5 +262,36 @@ onMounted(reload)
   .bo-annd__preview {
     position: static;
   }
+}
+
+/* BO-LOCAL-01 — duyuru metni: dil başlıkları kısa eylem çizgili mikro etiket; diller arası ince ayraç. */
+.bo-annd__text h3 {
+  display: flex;
+  align-items: center;
+  gap: var(--ek-space-2);
+  line-height: var(--ek-type-micro-line);
+  font-weight: var(--ek-type-micro-weight);
+}
+
+.bo-annd__text h3::before {
+  content: '';
+  flex: none;
+  width: 12px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--ek-color-action);
+}
+
+.bo-annd__text h3:not(:first-child) {
+  margin-top: var(--ek-space-4);
+  padding-top: var(--ek-space-4);
+  border-top: 1px solid var(--ek-color-border-subtle);
+}
+
+.bo-annd__tids {
+  padding: var(--ek-space-2) var(--ek-space-3);
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-tile);
+  background: var(--ek-color-surface-muted);
 }
 </style>

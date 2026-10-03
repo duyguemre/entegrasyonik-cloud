@@ -5,7 +5,7 @@
 
       <!-- Başarı -->
       <section v-if="phase === 'done'" class="bo-invite__state" data-testid="invite-done">
-        <v-icon class="bo-invite__icon is-ok" icon="mdi-check-circle-outline" aria-hidden="true" />
+        <span class="bo-invite__icon is-ok" aria-hidden="true"><v-icon icon="mdi-check-circle-outline" /></span>
         <h1 id="bo-invite-title" class="bo-invite__title" tabindex="-1" ref="titleEl">Hesabınız hazır</h1>
         <p class="bo-invite__lede">Hesabınız hazır — ilk girişte iki adımlı doğrulama kurulacak. Doğrulayıcı uygulamanızı yanınızda bulundurun.</p>
         <EkButton tone="primary" block icon="mdi-login" @click="router.push('/giris')">Girişe git</EkButton>
@@ -13,7 +13,7 @@
 
       <!-- Geçersiz bağlantı -->
       <section v-else-if="phase === 'invalid' || phase === 'missing'" class="bo-invite__state" data-testid="invite-invalid">
-        <v-icon class="bo-invite__icon is-bad" icon="mdi-link-variant-off" aria-hidden="true" />
+        <span class="bo-invite__icon is-bad" aria-hidden="true"><v-icon icon="mdi-link-variant-off" /></span>
         <h1 id="bo-invite-title" class="bo-invite__title" tabindex="-1" ref="titleEl">Bağlantı geçersiz</h1>
         <p class="bo-invite__lede">
           {{ phase === 'invalid' ? 'Davet bağlantısı geçersiz, süresi dolmuş ya da daha önce kullanılmış' : 'Bu sayfa bir davet bağlantısıyla açılmalıdır' }} — yöneticinizden yeni bir davet isteyin.
@@ -239,5 +239,45 @@ async function submit() {
   .bo-invite__card {
     padding: var(--ek-space-5);
   }
+}
+
+/* ================= BO-LOCAL-01 — davet kabul: uygulamanın tasarım diliyle =================
+   Kart gölgesiz düz yüzey; marka satırı ince çizgiyle ayrılan başlık; sonuç ikonu tonlu, çerçeveli köşeli kutuda. */
+.bo-invite__card {
+  box-shadow: none;
+}
+
+.bo-invite__brand {
+  padding-bottom: var(--ek-space-4);
+  border-bottom: 1px solid var(--ek-color-border-subtle);
+}
+
+.bo-invite__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-tile);
+  font-size: var(--ek-icon-lg);
+}
+
+.bo-invite__icon.is-ok {
+  border-color: var(--ek-color-success-border);
+  background: var(--ek-color-success-subtle);
+}
+
+.bo-invite__icon.is-bad {
+  border-color: var(--ek-color-warning-border);
+  background: var(--ek-color-warning-subtle);
+}
+
+.bo-invite__reveal {
+  transition: var(--ek-transition-colors);
+}
+
+.bo-invite__reveal:hover {
+  background: var(--ek-color-surface-muted);
 }
 </style>

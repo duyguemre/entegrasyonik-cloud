@@ -249,4 +249,32 @@ function onSize(event: Event) {
     display: none;
   }
 }
+
+/* ================= FE-LOCAL-1040 — ana sayfa diliyle sayfalama =================
+   Zemin kart yüzeyi (bant yok, üstte ince çizgi); düğmeler kutu yarıçapında; etkin sayfa dolu eylem rengi, gölgesiz. */
+.ek-pager {
+  border-top-color: var(--ek-color-border-subtle);
+  background: var(--ek-color-surface);
+}
+
+.ek-pager__btn,
+.ek-pager__select {
+  border-radius: var(--ek-radius-md);
+}
+
+.ek-pager__btn:hover:not(:disabled):not(.is-current) {
+  border-color: var(--ek-color-action-border);
+  background: var(--ek-color-action-subtle);
+  color: var(--ek-color-action-emphasis);
+}
+
+.ek-pager__btn.is-current {
+  box-shadow: none;
+}
+
+/* FE-LOCAL-1042 (kullanıcı): alt çubuk başlıkla aynı sakin tonlu zemin (tablo gövdesinden ayrışır). */
+.ek-pager {
+  border-top-color: var(--ek-color-border-default);
+  background: var(--ek-color-surface-muted);
+}
 </style>

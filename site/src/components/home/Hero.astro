@@ -328,9 +328,11 @@ const diffRows = channels.slice(0, 3)
     /* S24: zemin `index.astro` → `.stage-top` (hero + fayda rayı tek sahne). */
     background: transparent;
     color: var(--site-text-on-dark-heading);
+    /* SITE-DL (F1): hero'da teal yok — koyu zeminde vurgu tonu açık lacivert-beyaz (dolu öğeler açık renk). */
+    --hero-tint: var(--site-accent-on-dark);
   }
 
-  /* --- Arka plan: ızgara dokusu (radyal solma) + iki yavaş ışıma (tek vurgu ailesi: teal + lacivert) --- */
+  /* --- Arka plan: ızgara dokusu (radyal solma) + iki yavaş ışıma (yalnız mavi ailesi; kullanıcı kararı: derinlik kalır) --- */
   .hero__bg {
     position: absolute;
     inset: 0;
@@ -358,12 +360,12 @@ const diffRows = channels.slice(0, 3)
   .hero__orb--a {
     inset-block-start: -8rem;
     inset-inline-end: -6rem;
-    background: radial-gradient(closest-side, color-mix(in srgb, var(--ek-color-secondary) 24%, transparent), transparent);
+    background: radial-gradient(closest-side, color-mix(in srgb, var(--ek-color-action) 34%, transparent), transparent);
   }
   .hero__orb--b {
     inset-block-end: -10rem;
     inset-inline-start: -8rem;
-    background: radial-gradient(closest-side, color-mix(in srgb, var(--ek-color-primary-darken-1) 38%, transparent), transparent);
+    background: radial-gradient(closest-side, color-mix(in srgb, var(--ek-color-action) 26%, transparent), transparent);
   }
 
   .hero__inner {
@@ -382,26 +384,27 @@ const diffRows = channels.slice(0, 3)
     gap: var(--ek-space-6);
     min-width: 0;
   }
-  /* S22: ajan girişi hapı — cam zemin + marka gradyanından ince kenar; odak/üzerine gelme durumları site genelindeki
-     bağlantı dilinde. Dar ekranda değer cümlesi gizlenir (ad + aşama + bağlantı kalır). */
+  /* S22: ajan girişi kartı — düz cam zemin + ince çerçeve (SITE-DL: degrade yok); odak/üzerine gelme durumları site
+     genelindeki bağlantı dilinde. Dar ekranda değer cümlesi gizlenir (ad + aşama + bağlantı kalır). */
   .hero__agent {
     display: flex;
     flex-direction: column;
     gap: var(--ek-space-1);
     max-width: 36rem;
     padding: var(--ek-space-3) var(--ek-space-4);
-    border: var(--site-border-width) solid color-mix(in srgb, var(--ek-color-secondary) 38%, transparent);
-    border-radius: var(--ek-radius-lg);
-    background:
-      linear-gradient(100deg, color-mix(in srgb, var(--ek-color-secondary) 14%, transparent), transparent 75%),
-      var(--site-glass-bg);
+    border: var(--site-border-width) solid var(--site-glass-border);
+    border-radius: var(--ek-radius-tile);
+    background: var(--site-glass-bg);
     color: var(--site-text-on-dark-body);
     font-size: var(--ek-font-size-sm);
     text-decoration: none;
-    transition: border-color var(--ek-duration-base) var(--ek-easing-standard);
+    transition:
+      border-color var(--ek-duration-base) var(--ek-easing-standard),
+      background-color var(--ek-duration-base) var(--ek-easing-standard);
   }
   .hero__agent:hover {
     border-color: var(--site-accent-on-dark);
+    background: color-mix(in srgb, var(--ek-color-background) 10%, transparent);
   }
   .hero__agent:focus-visible {
     outline: var(--site-focus-ring-width) solid var(--site-color-focus-ring);
@@ -418,8 +421,8 @@ const diffRows = channels.slice(0, 3)
     align-items: center;
     gap: var(--ek-space-2);
     padding: 0 var(--ek-space-2);
-    border-radius: var(--ek-radius-full);
-    background: var(--site-gradient-accent-on-dark);
+    border-radius: var(--ek-radius-sm);
+    background: var(--site-accent-on-dark);
     color: var(--site-stage-deep);
     font-size: var(--ek-font-size-xs);
     font-weight: var(--ek-font-weight-bold);
@@ -468,11 +471,8 @@ const diffRows = channels.slice(0, 3)
     letter-spacing: var(--site-font-display-tracking);
     text-wrap: balance;
   }
+  /* SITE-DL: vurgulu kelime düz renk (degrade metin yok). */
   .hero__accent {
-    background: var(--site-gradient-accent);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
     color: var(--site-accent);
   }
   .hero__lead {
@@ -505,18 +505,6 @@ const diffRows = channels.slice(0, 3)
     flex-direction: column;
     min-width: 0;
   }
-  /* Zemin ışıması: panelin altına düşen yumuşak teal hale (panel havada asılı kalmasın). */
-  .hero__visual::before {
-    content: '';
-    position: absolute;
-    z-index: -1;
-    /* S24: ışıma kendi kutusunun İÇİNDE söner (önceden alt kenarda kesiliyor, hero altında sert çizgi bırakıyordu). */
-    inset: 12% -10% -24%;
-    background:
-      radial-gradient(46% 16% at 50% 78%, color-mix(in srgb, var(--ek-color-secondary) 38%, transparent), transparent 80%),
-      radial-gradient(closest-side, color-mix(in srgb, var(--ek-color-secondary) 16%, transparent), transparent);
-    pointer-events: none;
-  }
   .show {
     /* Sahne zamanlaması: 30 sn döngü, 4 eşit dilim (scenes-loops.css `--show-delay` ile kaydırır). */
     --show-cycle: var(--site-motion-loop-marquee);
@@ -525,67 +513,24 @@ const diffRows = channels.slice(0, 3)
     --show-line-strong: color-mix(in srgb, var(--ek-color-background) 20%, transparent);
     --show-glass: color-mix(in srgb, var(--ek-color-background) 5%, transparent);
     --show-glass-strong: color-mix(in srgb, var(--ek-color-background) 9%, transparent);
-    --show-solid: color-mix(in srgb, var(--ek-color-content-strong) 86%, var(--ek-color-primary));
-    --show-glow: color-mix(in srgb, var(--ek-color-secondary) 60%, transparent);
+    --show-solid: var(--ek-color-chrome-raised);
     --show-warn: color-mix(in srgb, var(--ek-color-amber) 85%, var(--ek-color-background));
     --show-warn-soft: color-mix(in srgb, var(--ek-color-amber) 22%, transparent);
-    --show-edge: color-mix(in srgb, var(--ek-color-secondary) 75%, var(--ek-color-background));
     position: relative;
     display: flex;
     flex-direction: column;
-    /* Degrade kenarlık: iç zemin padding-box, marka gradyanından kenar ışığı border-box (tek öğe, ek katman yok). */
-    border: var(--site-border-width) solid transparent;
-    border-radius: var(--site-radius-panel);
-    background:
-      radial-gradient(80% 45% at 50% 0%, color-mix(in srgb, var(--ek-color-secondary) 14%, transparent), transparent 70%) padding-box,
-      radial-gradient(60% 40% at 100% 100%, color-mix(in srgb, var(--ek-color-primary-darken-1) 40%, transparent), transparent 70%) padding-box,
-      linear-gradient(170deg, color-mix(in srgb, var(--ek-color-primary) 52%, var(--ek-color-content-strong)) 0%, var(--ek-color-content-strong) 100%) padding-box,
-      linear-gradient(
-          160deg,
-          color-mix(in srgb, var(--ek-color-secondary) 85%, transparent) 0%,
-          color-mix(in srgb, var(--ek-color-background) 22%, transparent) 26%,
-          color-mix(in srgb, var(--ek-color-background) 7%, transparent) 60%,
-          color-mix(in srgb, var(--ek-color-primary-lighten) 55%, transparent) 100%
-        )
-        border-box;
-    box-shadow:
-      var(--site-shadow-panel),
-      /* Cam kasa (bezel): panelin çevresinde ince, yarı saydam ikinci çerçeve + onun kılcal kenarı */
-      0 0 0 calc(var(--site-border-width) * 6) color-mix(in srgb, var(--ek-color-background) 4%, transparent),
-      0 0 0 calc(var(--site-border-width) * 7) color-mix(in srgb, var(--ek-color-background) 7%, transparent),
-      0 0 7rem -2rem color-mix(in srgb, var(--ek-color-secondary) 34%, transparent),
-      inset 0 var(--site-border-width) 0 color-mix(in srgb, var(--ek-color-background) 16%, transparent);
+    /* SITE-DL: düz koyu lacivert panel + ince çerçeve; degrade kenar, cam kasa, dış ışıma ve gölge yok. */
+    border: var(--site-border-width) solid var(--site-glass-border);
+    border-radius: var(--ek-radius-card);
+    background: var(--site-stage-deep);
     color: var(--site-text-on-dark-body);
     font-size: var(--ek-font-size-sm);
     line-height: var(--ek-line-height-tight);
     user-select: none;
   }
-  /* Üst kenar ışığı: ortada parlak, uçlara sönen ince çizgi + altında yumuşak ışıma; üzerinde yavaş parıltı. */
+  /* SITE-DL: üst kenar ışığı/parıltısı kaldırıldı (öğeler DOM'da kalır; sahne script'i `frame-sheen` parçasını okur). */
   .show__rim {
-    position: absolute;
-    z-index: 1;
-    top: calc(var(--site-border-width) * -1);
-    left: 10%;
-    right: 10%;
-    overflow: hidden;
-    height: var(--site-border-width);
-    background: linear-gradient(90deg, transparent, var(--show-edge) 35%, var(--ek-color-background) 50%, var(--show-edge) 65%, transparent);
-    pointer-events: none;
-  }
-  .show__rim::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    box-shadow: 0 0 var(--ek-space-5) var(--ek-space-1) var(--show-glow);
-    opacity: 0.8;
-  }
-  .show__sheen {
-    position: absolute;
-    inset: 0;
-    width: 30%;
-    background: linear-gradient(90deg, transparent, var(--ek-color-background), transparent);
-    opacity: 0;
-    translate: -100% 0;
+    display: none;
   }
   /* Pencere çubuğu: nötr pencere noktaları | ortada başlık | sağda sessiz araç çubukları */
   .show__bar {
@@ -595,8 +540,8 @@ const diffRows = channels.slice(0, 3)
     gap: var(--ek-space-3);
     padding: var(--ek-space-3) var(--ek-space-4);
     border-bottom: var(--site-border-width) solid var(--show-line);
-    border-radius: var(--site-radius-panel) var(--site-radius-panel) 0 0;
-    background: linear-gradient(180deg, var(--show-glass-strong), var(--show-glass));
+    border-radius: var(--ek-radius-card) var(--ek-radius-card) 0 0;
+    background: var(--show-glass);
   }
   .show__dots {
     display: inline-flex;
@@ -631,7 +576,7 @@ const diffRows = channels.slice(0, 3)
     gap: var(--ek-space-2);
     padding: var(--ek-space-1) var(--ek-space-3);
     border: var(--site-border-width) solid var(--show-line);
-    border-radius: var(--ek-radius-full);
+    border-radius: var(--ek-radius-md);
     background: var(--show-glass);
     color: var(--site-text-on-dark-heading);
     font-size: var(--ek-font-size-xs);
@@ -644,7 +589,6 @@ const diffRows = channels.slice(0, 3)
     height: var(--ek-space-2);
     border-radius: var(--ek-radius-full);
     background: var(--site-accent-on-dark);
-    box-shadow: 0 0 0 calc(var(--site-border-width) * 3) color-mix(in srgb, var(--ek-color-secondary) 25%, transparent), 0 0 var(--ek-space-3) var(--show-glow);
   }
 
   /* Sahneler aynı ızgara hücresinde üst üste durur (yükseklik = en uzun sahne; yerleşim animasyonla değişmez). */
@@ -716,7 +660,6 @@ const diffRows = channels.slice(0, 3)
     height: var(--ek-space-2);
     border-radius: var(--ek-radius-full);
     background: var(--chan, var(--site-accent));
-    box-shadow: 0 0 var(--ek-space-2) color-mix(in srgb, var(--chan, var(--site-accent)) 70%, transparent);
   }
   .hub__num {
     grid-area: 1 / 1;
@@ -740,7 +683,7 @@ const diffRows = channels.slice(0, 3)
     background: repeating-radial-gradient(
       circle at 50% 50%,
       transparent 0 1.9rem,
-      color-mix(in srgb, var(--ek-color-secondary) 16%, transparent) 1.9rem calc(1.9rem + var(--site-border-width)),
+      color-mix(in srgb, var(--hero-tint) 16%, transparent) 1.9rem calc(1.9rem + var(--site-border-width)),
       transparent calc(1.9rem + var(--site-border-width)) 3.2rem
     );
     -webkit-mask-image: radial-gradient(closest-side, var(--ek-color-content-strong) 30%, transparent);
@@ -755,7 +698,7 @@ const diffRows = channels.slice(0, 3)
     overflow: visible;
   }
   .hub__lines line {
-    stroke: color-mix(in srgb, var(--ek-color-secondary) 32%, transparent);
+    stroke: color-mix(in srgb, var(--hero-tint) 32%, transparent);
     stroke-width: 1;
     vector-effect: non-scaling-stroke;
   }
@@ -822,13 +765,11 @@ const diffRows = channels.slice(0, 3)
     border-radius: var(--ek-radius-full);
     translate: -50% -50%;
     background: var(--chan, var(--site-accent));
-    box-shadow: 0 0 var(--ek-space-3) calc(var(--site-border-width) * 2) color-mix(in srgb, var(--chan, var(--site-accent)) 75%, transparent);
   }
   .hub__mover--out::before {
     width: calc(var(--ek-space-1) * 1.5);
     height: calc(var(--ek-space-1) * 1.5);
     background: var(--site-accent);
-    box-shadow: 0 0 var(--ek-space-3) calc(var(--site-border-width) * 2) var(--show-glow);
   }
   .hub__node {
     position: absolute;
@@ -838,8 +779,9 @@ const diffRows = channels.slice(0, 3)
     height: var(--ek-space-4);
     border-radius: var(--ek-radius-full);
     translate: -50% -50%;
-    background: radial-gradient(circle, var(--chan, var(--site-accent)) 0 45%, color-mix(in srgb, var(--chan, var(--site-accent)) 30%, transparent) 48% 100%);
-    box-shadow: 0 0 var(--ek-space-4) color-mix(in srgb, var(--chan, var(--site-accent)) 55%, transparent);
+    /* SITE-DL: düz kanal noktası + aynı rengin soluk halkası (ışıma/degrade yok). */
+    border: calc(var(--site-border-width) * 4) solid color-mix(in srgb, var(--chan, var(--site-accent)) 30%, transparent);
+    background: var(--chan, var(--site-accent)) padding-box;
   }
   .hub__node:nth-child(2),
   .hub__node:nth-child(5) {
@@ -871,14 +813,9 @@ const diffRows = channels.slice(0, 3)
     gap: var(--ek-space-1);
     width: 46%;
     padding: var(--ek-space-3) var(--ek-space-4);
-    border: var(--site-border-width) solid color-mix(in srgb, var(--ek-color-secondary) 42%, transparent);
-    border-radius: var(--ek-radius-lg);
-    background:
-      radial-gradient(120% 100% at 50% 0%, color-mix(in srgb, var(--ek-color-secondary) 18%, transparent), transparent 70%),
-      var(--show-solid);
-    box-shadow:
-      0 0 3rem -0.5rem color-mix(in srgb, var(--ek-color-secondary) 45%, transparent),
-      inset 0 var(--site-border-width) 0 color-mix(in srgb, var(--ek-color-background) 14%, transparent);
+    border: var(--site-border-width) solid color-mix(in srgb, var(--hero-tint) 42%, transparent);
+    border-radius: var(--ek-radius-tile);
+    background: var(--show-solid);
   }
   .hub__core::after {
     content: '';
@@ -918,7 +855,7 @@ const diffRows = channels.slice(0, 3)
     width: 100%;
     height: 100%;
     border-radius: var(--ek-radius-full);
-    background: var(--site-gradient-accent);
+    background: var(--site-accent);
     transform-origin: 0 50%;
     scale: 0.75 1;
   }
@@ -954,7 +891,7 @@ const diffRows = channels.slice(0, 3)
     min-width: 0;
     padding: var(--ek-space-2) var(--ek-space-3);
     border: var(--site-border-width) solid var(--show-line);
-    border-radius: var(--ek-radius-md);
+    border-radius: var(--ek-radius-tile);
     background: var(--show-glass);
   }
   .show__row:nth-child(2) {
@@ -971,7 +908,7 @@ const diffRows = channels.slice(0, 3)
     z-index: -1;
     border: var(--site-border-width) solid var(--site-accent-line);
     border-radius: inherit;
-    background: color-mix(in srgb, var(--ek-color-secondary) 14%, transparent);
+    background: color-mix(in srgb, var(--hero-tint) 14%, transparent);
     opacity: 0;
   }
   .show__rlabel {
@@ -989,7 +926,7 @@ const diffRows = channels.slice(0, 3)
   .show__pill {
     grid-area: 1 / 1;
     padding: calc(var(--ek-space-1) / 2) var(--ek-space-2);
-    border-radius: var(--ek-radius-full);
+    border-radius: var(--ek-radius-sm);
     font-size: var(--ek-font-size-xs);
     font-weight: var(--ek-font-weight-semibold);
     text-align: center;
@@ -1002,7 +939,7 @@ const diffRows = channels.slice(0, 3)
     opacity: 0;
   }
   .show__pill--ok {
-    background: color-mix(in srgb, var(--ek-color-secondary) 22%, transparent);
+    background: color-mix(in srgb, var(--hero-tint) 22%, transparent);
     color: var(--site-accent);
   }
 
@@ -1022,7 +959,7 @@ const diffRows = channels.slice(0, 3)
     gap: var(--ek-space-3);
     padding: var(--ek-space-4);
     border: var(--site-border-width) solid var(--show-line);
-    border-radius: var(--ek-radius-lg);
+    border-radius: var(--ek-radius-tile);
     background: var(--show-glass);
   }
   .race__order--a {
@@ -1055,7 +992,7 @@ const diffRows = channels.slice(0, 3)
     align-items: center;
     gap: var(--ek-space-1);
     padding: calc(var(--ek-space-1) / 2) var(--ek-space-2);
-    border-radius: var(--ek-radius-full);
+    border-radius: var(--ek-radius-sm);
     font-size: var(--ek-font-size-xs);
     font-weight: var(--ek-font-weight-semibold);
   }
@@ -1066,7 +1003,7 @@ const diffRows = channels.slice(0, 3)
     opacity: 0;
   }
   .race__badge--ok {
-    background: color-mix(in srgb, var(--ek-color-secondary) 22%, transparent);
+    background: color-mix(in srgb, var(--hero-tint) 22%, transparent);
     color: var(--site-accent);
   }
   .race__badge--warn {
@@ -1076,7 +1013,7 @@ const diffRows = channels.slice(0, 3)
   .race__lane {
     position: relative;
     height: var(--site-border-width);
-    background: linear-gradient(90deg, var(--show-line), color-mix(in srgb, var(--ek-color-secondary) 45%, transparent));
+    background: var(--show-line-strong);
   }
   .race__pkt {
     position: absolute;
@@ -1093,7 +1030,6 @@ const diffRows = channels.slice(0, 3)
     border-radius: var(--ek-radius-full);
     translate: -50% -50%;
     background: var(--site-accent);
-    box-shadow: 0 0 var(--ek-space-3) calc(var(--site-border-width) * 2) var(--show-glow);
   }
   .race__product {
     grid-area: 1 / 3 / 3 / 4;
@@ -1104,12 +1040,9 @@ const diffRows = channels.slice(0, 3)
     justify-content: center;
     gap: var(--ek-space-2);
     padding: var(--ek-space-4) var(--ek-space-3);
-    border: var(--site-border-width) solid color-mix(in srgb, var(--ek-color-secondary) 42%, transparent);
-    border-radius: var(--ek-radius-lg);
-    background:
-      radial-gradient(120% 90% at 50% 0%, color-mix(in srgb, var(--ek-color-secondary) 18%, transparent), transparent 70%),
-      var(--show-solid);
-    box-shadow: 0 0 3rem -0.75rem color-mix(in srgb, var(--ek-color-secondary) 40%, transparent);
+    border: var(--site-border-width) solid color-mix(in srgb, var(--hero-tint) 42%, transparent);
+    border-radius: var(--ek-radius-tile);
+    background: var(--show-solid);
     text-align: center;
   }
   .race__thumb,
@@ -1119,8 +1052,9 @@ const diffRows = channels.slice(0, 3)
     justify-content: center;
     width: var(--ek-space-10);
     height: var(--ek-space-10);
-    border-radius: var(--ek-radius-md);
-    background: color-mix(in srgb, var(--ek-color-secondary) 16%, transparent);
+    border: var(--site-border-width) solid color-mix(in srgb, var(--hero-tint) 36%, transparent);
+    border-radius: var(--ek-radius-tile);
+    background: color-mix(in srgb, var(--hero-tint) 16%, transparent);
     color: var(--site-accent);
   }
   .race__plabel {
@@ -1145,8 +1079,8 @@ const diffRows = channels.slice(0, 3)
     align-items: center;
     gap: var(--ek-space-1);
     padding: calc(var(--ek-space-1) / 2) var(--ek-space-2);
-    border-radius: var(--ek-radius-full);
-    background: color-mix(in srgb, var(--ek-color-secondary) 22%, transparent);
+    border-radius: var(--ek-radius-sm);
+    background: color-mix(in srgb, var(--hero-tint) 22%, transparent);
     color: var(--site-accent);
     font-size: var(--ek-font-size-xs);
     font-weight: var(--ek-font-weight-semibold);
@@ -1158,9 +1092,9 @@ const diffRows = channels.slice(0, 3)
     align-items: center;
     gap: var(--ek-space-2);
     padding: var(--ek-space-1) var(--ek-space-3);
-    border: var(--site-border-width) solid var(--site-accent-line);
-    border-radius: var(--ek-radius-full);
-    background: color-mix(in srgb, var(--ek-color-secondary) 12%, transparent);
+    border: var(--site-border-width) solid color-mix(in srgb, var(--hero-tint) 42%, transparent);
+    border-radius: var(--ek-radius-md);
+    background: color-mix(in srgb, var(--hero-tint) 12%, transparent);
     color: var(--site-text-on-dark-heading);
     font-size: var(--ek-font-size-sm);
     font-weight: var(--ek-font-weight-semibold);
@@ -1185,12 +1119,9 @@ const diffRows = channels.slice(0, 3)
     align-items: flex-start;
     gap: var(--ek-space-2);
     padding: var(--ek-space-4);
-    border: var(--site-border-width) solid color-mix(in srgb, var(--ek-color-secondary) 42%, transparent);
-    border-radius: var(--ek-radius-lg);
-    background:
-      radial-gradient(120% 90% at 0% 0%, color-mix(in srgb, var(--ek-color-secondary) 18%, transparent), transparent 70%),
-      var(--show-solid);
-    box-shadow: 0 0 3rem -0.75rem color-mix(in srgb, var(--ek-color-secondary) 40%, transparent);
+    border: var(--site-border-width) solid color-mix(in srgb, var(--hero-tint) 42%, transparent);
+    border-radius: var(--ek-radius-tile);
+    background: var(--show-solid);
   }
   .pub__title {
     color: var(--site-text-on-dark-heading);
@@ -1227,7 +1158,7 @@ const diffRows = channels.slice(0, 3)
     inset-inline-start: 0;
     inset-block: 8%;
     width: var(--site-border-width);
-    background: color-mix(in srgb, var(--ek-color-secondary) 40%, transparent);
+    background: color-mix(in srgb, var(--hero-tint) 40%, transparent);
   }
   .pub__row {
     display: grid;
@@ -1260,13 +1191,13 @@ const diffRows = channels.slice(0, 3)
   .pub__beam {
     position: absolute;
     inset: 0;
-    background: linear-gradient(90deg, transparent, var(--site-accent));
+    background: var(--site-accent);
     opacity: 0;
   }
   .pub__skel {
     height: calc(var(--ek-space-1) * 1.5);
     border-radius: var(--ek-radius-full);
-    background: linear-gradient(90deg, var(--show-line-strong), var(--show-line));
+    background: var(--show-line-strong);
   }
   .pub__check {
     display: inline-flex;
@@ -1274,8 +1205,8 @@ const diffRows = channels.slice(0, 3)
     justify-content: center;
     width: var(--ek-space-5);
     height: var(--ek-space-5);
-    border-radius: var(--ek-radius-full);
-    background: color-mix(in srgb, var(--ek-color-secondary) 22%, transparent);
+    border-radius: var(--ek-radius-sm);
+    background: color-mix(in srgb, var(--hero-tint) 22%, transparent);
     color: var(--site-accent);
   }
 
@@ -1294,9 +1225,9 @@ const diffRows = channels.slice(0, 3)
     align-items: center;
     gap: var(--ek-space-3);
     padding: var(--ek-space-2) var(--ek-space-3);
-    border: var(--site-border-width) solid var(--site-accent-line);
-    border-radius: var(--ek-radius-lg);
-    background: color-mix(in srgb, var(--ek-color-secondary) 10%, transparent);
+    border: var(--site-border-width) solid color-mix(in srgb, var(--hero-tint) 42%, transparent);
+    border-radius: var(--ek-radius-tile);
+    background: color-mix(in srgb, var(--hero-tint) 10%, transparent);
   }
   .ap__glyph {
     display: inline-grid;
@@ -1304,7 +1235,7 @@ const diffRows = channels.slice(0, 3)
     width: var(--ek-space-8);
     height: var(--ek-space-8);
     border-radius: var(--ek-radius-md);
-    background: color-mix(in srgb, var(--ek-color-secondary) 24%, transparent);
+    background: color-mix(in srgb, var(--hero-tint) 24%, transparent);
     color: var(--site-accent);
   }
   .ap__stext {
@@ -1329,9 +1260,8 @@ const diffRows = channels.slice(0, 3)
     gap: var(--ek-space-3);
     padding: var(--ek-space-3) var(--ek-space-4);
     border: var(--site-border-width) solid var(--show-line-strong);
-    border-radius: var(--ek-radius-lg);
+    border-radius: var(--ek-radius-tile);
     background: var(--show-glass-strong);
-    box-shadow: 0 var(--ek-space-3) var(--ek-space-8) calc(var(--ek-space-4) * -1) color-mix(in srgb, var(--ek-color-content-strong) 70%, transparent);
   }
   .ap__ptitle {
     display: flex;
@@ -1345,8 +1275,8 @@ const diffRows = channels.slice(0, 3)
   }
   .ap__plabel {
     padding: calc(var(--ek-space-1) / 2) var(--ek-space-2);
-    border-radius: var(--ek-radius-full);
-    background: color-mix(in srgb, var(--ek-color-secondary) 22%, transparent);
+    border-radius: var(--ek-radius-sm);
+    background: color-mix(in srgb, var(--hero-tint) 22%, transparent);
     color: var(--site-accent);
     font-size: var(--ek-font-size-2xs);
     letter-spacing: 0.06em;
@@ -1394,7 +1324,7 @@ const diffRows = channels.slice(0, 3)
     width: 68%;
   }
   .ap__new {
-    background: linear-gradient(90deg, color-mix(in srgb, var(--ek-color-secondary) 70%, transparent), var(--site-accent));
+    background: var(--hero-tint);
   }
   .ap__arrow {
     display: inline-flex;
@@ -1406,8 +1336,8 @@ const diffRows = channels.slice(0, 3)
     justify-content: center;
     width: var(--ek-space-5);
     height: var(--ek-space-5);
-    border-radius: var(--ek-radius-full);
-    background: color-mix(in srgb, var(--ek-color-secondary) 22%, transparent);
+    border-radius: var(--ek-radius-sm);
+    background: color-mix(in srgb, var(--hero-tint) 22%, transparent);
     color: var(--site-accent);
   }
   .ap__actions {
@@ -1418,7 +1348,7 @@ const diffRows = channels.slice(0, 3)
   .ap__btn {
     display: inline-grid;
     padding: calc(var(--ek-space-1) * 1.5) var(--ek-space-4);
-    border-radius: var(--ek-radius-control);
+    border-radius: var(--ek-radius-md);
     font-size: var(--ek-font-size-xs);
     font-weight: var(--ek-font-weight-semibold);
     white-space: nowrap;
@@ -1430,7 +1360,6 @@ const diffRows = channels.slice(0, 3)
   .ap__btn--primary {
     background: var(--site-accent);
     color: var(--site-stage-deep);
-    box-shadow: 0 0 var(--ek-space-4) color-mix(in srgb, var(--ek-color-secondary) 45%, transparent);
   }
   .ap__blabel {
     grid-area: 1 / 1;
@@ -1469,8 +1398,7 @@ const diffRows = channels.slice(0, 3)
     display: block;
     height: 100%;
     border-radius: inherit;
-    background: var(--site-gradient-accent);
-    box-shadow: 0 0 var(--ek-space-2) var(--show-glow);
+    background: var(--site-accent);
     transform-origin: 0 50%;
     scale: 0 1;
   }
@@ -1494,7 +1422,7 @@ const diffRows = channels.slice(0, 3)
   }
 
   @media (max-width: 29.99rem) {
-    /* Çerçeve sadeleşir: araç çubukları gizli, pencere noktaları küçük, dış halka/ışıma yumuşar. */
+    /* Çerçeve sadeleşir: araç çubukları gizli, pencere noktaları küçük. */
     .show__bar {
       grid-template-columns: auto 1fr;
       padding-inline: var(--ek-space-3);
@@ -1507,12 +1435,6 @@ const diffRows = channels.slice(0, 3)
     }
     .show__dots {
       gap: var(--ek-space-1);
-    }
-    .show {
-      box-shadow:
-        var(--site-shadow-panel),
-        0 0 4rem -1.5rem color-mix(in srgb, var(--ek-color-secondary) 30%, transparent),
-        inset 0 var(--site-border-width) 0 color-mix(in srgb, var(--ek-color-background) 16%, transparent);
     }
     .show__rlabel {
       align-items: flex-start;

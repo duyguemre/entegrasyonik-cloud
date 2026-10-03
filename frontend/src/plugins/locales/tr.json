@@ -2321,7 +2321,7 @@
       "open": "Dökümü aç",
       "noOrderId": "Bu kayıtta ödeme emri numarası yok",
       "dueDate": "Vade: {date}",
-      "lookupLabel": "Ödeme emri no",
+      "lookupLabel": "Ödeme emri no yazıp Enter ile dökümü açın",
       "lookupAction": "Dökümü getir",
       "emptyTitle": "Ödeme emri yok",
       "emptyText": "Pazaryerinden hesabınıza aktarılan ödemeler burada listelenir.",

@@ -150,4 +150,10 @@ onMounted(() => res.load())
   margin: 0;
   font-size: var(--ek-type-caption-size);
 }
+
+/* BO-LOCAL-01 — dipnot: ince çizgiyle ayrılan sakin satır. */
+.bo-rev__note {
+  padding-top: var(--ek-space-3);
+  border-top: 1px solid var(--ek-color-border-subtle);
+}
 </style>

@@ -948,4 +948,75 @@ function toggleSort(key: string) {
     display: block;
   }
 }
+
+/* ================= FE-LOCAL-1040 — ana sayfa diliyle tablo =================
+   Başlık satırı bantsız (kart yüzeyi) + sakin mikro etiket; satır seçimi eylem renginin açık tonu; hover sakin zemin.
+   Sıralı sütun başlığı eylem renginde kalır. Geometri (yükseklik, sütunlar) DEĞİŞMEZ. */
+.ek-grid__th {
+  background: var(--ek-color-surface);
+  color: var(--ek-color-content-muted);
+  font-weight: var(--ek-font-weight-semibold);
+}
+
+.ek-grid__th.ek-grid__pin-end,
+.ek-grid__th.ek-grid__pin-start,
+.ek-grid__th--select {
+  background: var(--ek-color-surface);
+}
+
+.ek-grid__row:not(.ek-grid__row--skeleton):hover > .ek-grid__td,
+.ek-grid__row.is-hover > .ek-grid__td {
+  background: var(--ek-color-surface-muted);
+}
+
+.ek-grid__row.is-selected > .ek-grid__td {
+  background: var(--ek-color-action-subtle);
+}
+
+/* ================= FE-LOCAL-1041 — tablo: ana sayfa dili (tüm liste sayfaları) =================
+   · Zebra yok: satırlar yalnız ince çizgiyle ayrılır (düz yüzey). Hover sakin zemin; seçili satır eylem renginin
+     açık tonu. Başlık bantsız, 44px, sakin mikro etiket; sıralı sütun eylem renginde.
+   · Kimlik hücresi (sipariş no vb.) vurgu tonunda; boş durum ikonu çerçeveli kutuda. */
+.ek-grid__th {
+  height: 44px;
+  border-bottom-color: var(--ek-color-border-default);
+}
+
+.ek-grid__td {
+  border-bottom-color: var(--ek-color-border-subtle);
+}
+
+.ek-grid__row.is-alt > .ek-grid__td,
+.ek-grid__row.is-alt > .ek-grid__pin-end {
+  background: var(--ek-color-surface);
+}
+
+.ek-grid__row.is-hover > .ek-grid__td,
+.ek-grid__row.is-alt:not(.ek-grid__row--skeleton):hover > .ek-grid__td {
+  background: var(--ek-color-surface-muted);
+}
+
+.ek-grid__row.is-selected > .ek-grid__td,
+.ek-grid__row.is-selected.is-alt > .ek-grid__td,
+.ek-grid__row.is-selected:hover > .ek-grid__td {
+  background: var(--ek-color-action-subtle);
+}
+
+.ek-grid__td--id {
+  color: var(--ek-color-action-emphasis);
+}
+
+.ek-grid__expanded-cell {
+  background: var(--ek-color-surface-muted);
+  box-shadow: inset 2px 0 0 var(--ek-color-action);
+}
+
+/* FE-LOCAL-1042 (kullanıcı): başlık satırı bir kademe belirgin — sakin tonlu zemin (kart yüzeyinden ayrışır). */
+.ek-grid__th,
+.ek-grid__th.ek-grid__pin-end,
+.ek-grid__th.ek-grid__pin-start,
+.ek-grid__th--select {
+  background: var(--ek-color-surface-muted);
+  color: var(--ek-color-content-default);
+}
 </style>

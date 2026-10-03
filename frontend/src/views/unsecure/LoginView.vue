@@ -66,4 +66,28 @@ integrationStore.init()
   color: var(--ek-color-primary);
   text-decoration: underline;
 }
+
+/* Masaüstü: form sütununun sağ üst köşesinde, sakin hap biçimli çıkış bağlantısı. */
+@media (min-width: 1024px) {
+  .ek-login-site-link-row {
+    position: absolute;
+    top: var(--ek-space-8);
+    right: var(--ek-space-10);
+    margin: 0;
+  }
+
+  .ek-login-site-link {
+    padding: 0 var(--ek-space-3);
+    border: 1px solid var(--ek-color-border-default);
+    border-radius: 999px;
+    font-size: var(--ek-font-size-xs);
+  }
+
+  .ek-login-site-link:hover,
+  .ek-login-site-link:focus-visible {
+    text-decoration: none;
+    border-color: var(--ek-color-content-subtle);
+    color: var(--ek-color-content-strong);
+  }
+}
 </style>

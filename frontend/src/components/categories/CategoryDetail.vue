@@ -11,7 +11,11 @@
   <section class="cat-detail" :aria-labelledby="titleId">
     <header class="cat-detail__head">
       <EkButton v-if="showBack" class="cat-detail__back" tone="ghost" size="sm" icon="mdi-arrow-left" @click="emit('back')">Kategoriler</EkButton>
-      <p class="cat-detail__path">{{ node.path.length > 1 ? node.path.slice(0, -1).join(' › ') : 'Üst düzey kategori' }}</p>
+      <!-- FE-LOCAL-1048: tür etiketi (kısa eylem çizgisiyle) + üst kategori yolu — kayıt sayfası başlığıyla aynı dil. -->
+      <p class="cat-detail__path">
+        <span class="cat-detail__kind">{{ node.children.length ? 'Üst kategori' : 'Uç kategori' }}</span>
+        <span class="cat-detail__crumb">{{ node.path.length > 1 ? node.path.slice(0, -1).join(' › ') : 'Üst düzey kategori' }}</span>
+      </p>
       <div class="cat-detail__titlerow">
         <span class="cat-detail__tile" aria-hidden="true"><v-icon :icon="node.children.length ? 'mdi-folder-outline' : 'mdi-tag-outline'" size="20" /></span>
         <template v-if="!renaming">
@@ -33,6 +37,14 @@
       </div>
       <p v-if="renameError" class="cat-detail__error" role="alert">{{ renameError }}</p>
     </header>
+
+    <!-- FE-LOCAL-1048: özet hücreleri (ince çizgiyle ayrılan bilgi şeridi). -->
+    <dl class="cat-detail__facts">
+      <div v-for="f in facts" :key="f.label" class="cat-detail__fact" :class="f.tone ? `is-${f.tone}` : undefined">
+        <dt>{{ f.label }}</dt>
+        <dd class="ek-num">{{ f.value }}</dd>
+      </div>
+    </dl>
 
     <div class="cat-detail__body">
       <!-- Yaprak: kanal eşlemeleri -->
@@ -125,6 +137,26 @@ const missingText = (id: string) => {
   const m = props.coverage.get(id)?.missing ?? []
   return `${m.length}/${props.channels.length} kanalda eksik`
 }
+
+// FE-LOCAL-1048: başlığın altındaki özet hücreleri (yalnız eldeki veriden; eşleme durumu hazır değilse "—").
+const facts = computed<Array<{ label: string; value: string; tone?: 'success' | 'warning' }>>(() => {
+  const cov = ownCoverage.value
+  const known = props.mappingReady && props.channels.length > 0 && !!cov
+  if (!props.node.children.length) {
+    const missing = cov?.missing.length ?? 0
+    return [
+      { label: 'Düzey', value: `${props.node.path.length}. düzey` },
+      { label: 'Eşli kanal', value: known ? `${cov!.mapped.length}/${props.channels.length}` : '—', tone: known && !missing ? 'success' : undefined },
+      { label: 'Eksik eşleme', value: known ? (missing ? String(missing) : 'Yok') : '—', tone: known && missing ? 'warning' : undefined },
+    ]
+  }
+  const incomplete = cov?.incompleteLeafCount ?? 0
+  return [
+    { label: 'Alt kategori', value: String(props.node.children.length) },
+    { label: 'Uç kategori', value: String(cov?.leafCount ?? 0) },
+    { label: 'Eksik eşleme', value: known ? (incomplete ? String(incomplete) : 'Yok') : '—', tone: known && incomplete ? 'warning' : undefined },
+  ]
+})
 
 const menuGroups = computed<EkMenuGroup[]>(() => [
   {
@@ -376,6 +408,158 @@ async function submitRename() {
 
   .cat-detail__body {
     padding: var(--ek-space-3) var(--ek-space-4) var(--ek-space-6);
+  }
+}
+
+/* ================= FE-LOCAL-1048 — detay paneli: kayıt sayfası dili =================
+   Tür etiketi kısa eylem çizgisiyle başlar; kutucuk çerçeveli kapsül; başlığın altında ince çizgili bilgi hücreleri;
+   bölüm başlıkları mikro etiket; ad düzenleme alanı parlamasız (yalnız eylem renginde çerçeve). */
+.cat-detail__head {
+  gap: var(--ek-space-2);
+  border-bottom: 0;
+  padding-bottom: var(--ek-space-3);
+}
+
+.cat-detail__path {
+  display: flex;
+  align-items: center;
+  gap: var(--ek-space-2);
+}
+
+.cat-detail__kind {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: var(--ek-space-2);
+  color: var(--ek-color-sidebar-section);
+  font-size: var(--ek-type-micro-size);
+  line-height: var(--ek-type-micro-line);
+  font-weight: var(--ek-type-micro-weight);
+  letter-spacing: var(--ek-type-micro-tracking);
+  text-transform: uppercase;
+}
+
+.cat-detail__kind::before {
+  content: '';
+  width: 12px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--ek-color-action);
+}
+
+.cat-detail__crumb {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cat-detail__crumb::before {
+  content: '·';
+  margin-inline-end: var(--ek-space-2);
+  color: var(--ek-color-content-subtle);
+}
+
+.cat-detail__tile {
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--ek-color-action-border);
+  border-radius: var(--ek-radius-tile);
+  background: var(--ek-color-action-subtle);
+  color: var(--ek-color-action-emphasis);
+}
+
+.cat-detail__input {
+  box-shadow: none;
+}
+
+.cat-detail__facts {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  gap: var(--ek-space-3) 0;
+  margin: 0;
+  padding: var(--ek-space-3) var(--ek-space-5);
+  border-block: 1px solid var(--ek-color-border-subtle);
+  background: var(--ek-color-surface-muted);
+}
+
+.cat-detail__fact {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding: 0 var(--ek-space-5);
+}
+
+.cat-detail__fact:first-child {
+  padding-inline-start: 0;
+}
+
+.cat-detail__fact + .cat-detail__fact {
+  border-inline-start: 1px solid var(--ek-color-border-default);
+}
+
+.cat-detail__fact dt {
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-micro-size);
+  line-height: var(--ek-type-micro-line);
+  font-weight: var(--ek-type-micro-weight);
+  letter-spacing: var(--ek-type-micro-tracking);
+  text-transform: uppercase;
+}
+
+.cat-detail__fact dd {
+  margin: 0;
+  color: var(--ek-color-content-strong);
+  font-size: var(--ek-type-body-size);
+  line-height: var(--ek-type-body-line);
+  font-weight: var(--ek-font-weight-semibold);
+}
+
+.cat-detail__fact.is-success dd { color: var(--ek-color-success-emphasis); }
+.cat-detail__fact.is-warning dd { color: var(--ek-color-warning-emphasis); }
+
+.cat-detail__section {
+  display: flex;
+  align-items: center;
+  gap: var(--ek-space-2);
+  color: var(--ek-color-sidebar-section);
+  font-size: var(--ek-type-micro-size);
+  line-height: var(--ek-type-micro-line);
+  font-weight: var(--ek-type-micro-weight);
+  letter-spacing: var(--ek-type-micro-tracking);
+  text-transform: uppercase;
+}
+
+.cat-detail__section::before {
+  content: '';
+  width: 12px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--ek-color-action);
+}
+
+.cat-detail__rows {
+  border-top: 1px solid var(--ek-color-border-subtle);
+}
+
+.cat-detail__leaf {
+  padding: 0 var(--ek-space-1);
+}
+
+.cat-detail__leaf-miss {
+  color: var(--ek-color-warning-emphasis);
+  font-weight: var(--ek-font-weight-semibold);
+}
+
+@media (max-width: 599px) {
+  .cat-detail__facts {
+    padding: var(--ek-space-3) var(--ek-space-4);
+  }
+
+  .cat-detail__fact {
+    padding: 0 var(--ek-space-3);
   }
 }
 </style>

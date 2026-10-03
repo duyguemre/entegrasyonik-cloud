@@ -93,4 +93,32 @@ withDefaults(
 .ek-form-section__help + .ek-form-section__grid {
   padding-top: 0;
 }
+
+/* ================= FE-LOCAL-1054 — form bölüm başlığı: uygulamanın tasarım diliyle =================
+   İkon + yarı kalın başlık yerine kısa eylem çizgili BÜYÜK HARF mikro etiket (kart dışı bölüm başlıklarıyla aynı). */
+.ek-form-section__legend {
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-micro-size);
+  line-height: var(--ek-type-micro-line);
+  font-weight: var(--ek-type-micro-weight);
+  letter-spacing: var(--ek-type-micro-tracking);
+  text-transform: uppercase;
+}
+
+.ek-form-section__legend::before {
+  content: '';
+  flex: none;
+  width: 12px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--ek-color-action);
+}
+
+.ek-form-section__icon {
+  display: none;
+}
+
+.ek-form-section__help {
+  margin-top: var(--ek-space-1);
+}
 </style>

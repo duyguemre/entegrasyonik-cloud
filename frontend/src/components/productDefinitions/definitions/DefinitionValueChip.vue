@@ -1,10 +1,11 @@
 <!--
   Tanım listelerinin (Seçenek grupları / Etiketler) DEĞER ÇİPİ — tek desen:
-  küçük hap (22px) · ad = düzenleme açıcı (popover, #edit yuvası) · içinde küçük × (silme onayı ister).
-  `color` verilirse (etiket rengi VERİdir) zemin o renktir; metin rengi parlaklığa göre token'dan seçilir.
+  küçük hap (24px) · ad = düzenleme açıcı (popover, #edit yuvası) · içinde küçük × (silme onayı ister).
+  FE-LOCAL-1048: düz çerçeveli çip. `color` verilirse (etiket rengi VERİdir) çip o rengin AÇIK tonunu + ince çerçevesini
+  alır, ikon rengi taşır; metin her zaman okunur içerik renginde (dolu renkli zemin yok).
 -->
 <template>
-  <span class="dv-chip" :class="[tone, { 'is-open': editOpen }]" :style="color ? { backgroundColor: color } : undefined">
+  <span class="dv-chip" :class="[tone, { 'is-open': editOpen, 'has-color': !!color }]" :style="color ? { '--dv': color } : undefined">
     <v-menu v-model="editOpen" :close-on-content-click="false" location="bottom start" @update:model-value="(s: boolean) => s && emit('open')">
       <template #activator="{ props: act }">
         <button v-bind="act" type="button" class="dv-chip__label" aria-haspopup="dialog">
@@ -143,5 +144,41 @@ const tone = computed(() => {
   display: flex;
   justify-content: center;
   gap: var(--ek-space-2);
+}
+
+/* ================= FE-LOCAL-1048 — düz çerçeveli çip ================= */
+.dv-chip {
+  box-sizing: border-box;
+  height: 24px;
+  border: 1px solid var(--ek-color-border-default);
+}
+
+.dv-chip.is-neutral {
+  background: var(--ek-color-surface);
+}
+
+.dv-chip:hover.is-neutral,
+.dv-chip.is-open.is-neutral {
+  border-color: var(--ek-color-border-strong);
+  background: var(--ek-color-surface-muted);
+}
+
+.dv-chip.has-color {
+  border-color: color-mix(in srgb, var(--dv) 42%, var(--ek-color-surface));
+  background: color-mix(in srgb, var(--dv) 10%, var(--ek-color-surface));
+  color: var(--ek-color-content-strong);
+}
+
+.dv-chip.has-color:hover,
+.dv-chip.has-color.is-open {
+  background: color-mix(in srgb, var(--dv) 16%, var(--ek-color-surface));
+}
+
+.dv-chip.has-color .dv-chip__label .v-icon {
+  color: color-mix(in srgb, var(--dv) 72%, var(--ek-color-content-strong));
+}
+
+.dv-pop {
+  border-color: var(--ek-color-border-default);
 }
 </style>

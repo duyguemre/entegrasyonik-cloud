@@ -4,7 +4,9 @@
       section="Katalog"
       :title="$t('definitions.product.create.title')"
       :description="$t('definitions.product.create.description')"
-    />
+    >
+      <template #status><div :id="statusId" class="pdv-status" /></template>
+    </EkPageHeader>
 
     <ProductCompetitivePricesComponent v-model="isCompetitivePricesDialog" ref="productCompetitivePricesComponentRef"
       :productInfoForm="productInfoForm" v-if="isCompetitivePricesDialog" />
@@ -22,7 +24,7 @@
     <v-form @keydown.enter.prevent @submit.prevent ref="productInfoFormRef" v-model="isProductInfoFormValid">
 
       <div class="pdv-flow">
-        <ProductFormWizardBar :form="productInfoForm" :current="stepper" save-label="Kaydet" :saving="isSaving"
+        <ProductFormWizardBar :form="productInfoForm" :current="stepper" :teleport-to="`#${statusId}`" save-label="Kaydet" :saving="isSaving"
           :category-title="categoriesStore.getCategoryTitle(productInfoForm.category)"
           :brand-title="brandsStore.getBrandTitle(productInfoForm.brand)" @navigate="onNavigate" @save="saveProduct" />
 
@@ -66,20 +68,18 @@
           </v-form>
         </div>
 
-        <ProductFormStepFooter :form="productInfoForm" :current="stepper" @navigate="onNavigate" />
       </div>
     </v-form>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onBeforeMount, nextTick, onBeforeUnmount, onMounted, onActivated, onDeactivated } from 'vue'
+import { ref, computed, watch, onBeforeMount, nextTick, onBeforeUnmount, onMounted, onActivated, onDeactivated, useId } from 'vue'
 import { useI18n } from 'vue-i18n';
 import { useDisplay } from 'vuetify'
 
 import EkPageHeader from '@/components/page/EkPageHeader.vue'
 import ProductFormWizardBar from '@/components/productDefinitions/crud/ProductFormWizardBar.vue'
-import ProductFormStepFooter from '@/components/productDefinitions/crud/ProductFormStepFooter.vue'
 import { focusProductField } from '@/composables/productFormFocus'
 import type { StepIndex } from '@/composables/useProductFormProgress'
 import ProductCompetitivePricesComponent from '@/components/productDefinitions/crud/ProductCompetitivePricesComponent.vue'
@@ -105,7 +105,10 @@ import ProductDetailsComponent from '@/components/productDefinitions/variants/Pr
 import ProductInfoFormComponent from '@/components/productDefinitions/crud/ProductInfoFormComponent.vue';
 import { useSnackbarStore } from '@/stores/snackbarStore';
 const snackbarStore = useSnackbarStore();
-import { useCostSave } from '@/composables/useCostSave'
+import { useCostSave } from '@/composables/useCostSave'
+
+/** Sayfa başlığındaki durum yuvası (zorunlu bilgi çubuğu buraya taşınır); sekme başına benzersiz. */
+const statusId = `pf-status-${useId()}`
 const costSave = useCostSave()
 
 
@@ -637,9 +640,20 @@ defineExpose({
 </style>
 
 <style scoped>
+/* Başlıktaki durum yuvası: zorunlu bilgi çubuğu başlığın sağındaki alanı doldurur. */
+.pdv-root :deep(.ek-page-bar__status) {
+  flex: 1 1 auto;
+  overflow: visible;
+}
+
+.pdv-status {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
 /* Sayfa kenar boşluğu — başlık/adım şeridi/içerik iş alanı kenarına yapışmasın. */
 .pdv-root {
-  padding: var(--ek-space-2) var(--ek-space-6) var(--ek-space-8);
+  padding: var(--ek-space-2) var(--ek-space-6) var(--ek-space-4);
 }
 
 @media (max-width: 599px) {
@@ -649,16 +663,16 @@ defineExpose({
 }
 
 /* FE R4 B: sihirbaz şeridi, kayıt çubuğu, adım içeriği ve altbilgi TEK sütunda (önceden adım kartları 880/1200/tam
-   genişlik arasında değişiyordu). Kayıt çubuğu bu sütunda yapışkandır (ProductFormWizardBar). */
+   genişlik arasında değişiyordu). Kayıt çubuğu bu sütunda yapışkandır (ProductFormWizardBar).
+   Sütun iş alanının tam genişliğine yayılır (önceden 1280px ile ortada kalıyordu). */
 .pdv-flow {
-  max-width: 1280px;
-  margin: var(--ek-space-4) auto 0;
+  margin-top: var(--ek-space-4);
 }
 
 .pdv-category-step,
 .pdv-step,
 .pdv-step-variants {
   display: block;
-  margin-top: var(--ek-space-5);
+  margin-top: var(--ek-space-3);
 }
 </style>

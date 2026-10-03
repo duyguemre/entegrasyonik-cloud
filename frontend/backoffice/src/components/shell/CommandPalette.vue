@@ -440,4 +440,77 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
 .bo-cmdk__count {
   margin-left: auto;
 }
+
+/* ================= BO-LOCAL-01 — komut paleti: uygulamanın tasarım diliyle =================
+   Kart köşesi + ince çerçeve; arama bandı sakin zeminde, odakta alt çizgi eylem renginde (iç gölge yok). Grup
+   başlıkları kısa eylem çizgili mikro etiket; öğe ikonları çerçeveli köşeli kutuda; etkin öğe eylem renginin açık tonu
+   + ince çerçeve, ikonu dolu eylem rengi (sol şerit yok). */
+.bo-cmdk {
+  border-radius: var(--ek-radius-card);
+}
+
+.bo-cmdk__search {
+  border-bottom: 1px solid var(--ek-color-border-default);
+  background: var(--ek-color-surface-muted);
+}
+
+.bo-cmdk__search:focus-within {
+  border-bottom-color: var(--ek-color-action);
+  box-shadow: none;
+}
+
+.bo-cmdk__group {
+  display: flex;
+  align-items: center;
+  gap: var(--ek-space-2);
+  margin: var(--ek-space-3) var(--ek-space-2) var(--ek-space-2);
+  line-height: var(--ek-type-micro-line);
+}
+
+.bo-cmdk__group::before {
+  content: '';
+  flex: none;
+  width: 12px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--ek-color-action);
+}
+
+.bo-cmdk__item {
+  min-height: 44px;
+  padding: 0 var(--ek-space-2);
+  border: 1px solid transparent;
+  border-radius: var(--ek-radius-tile);
+  font-size: var(--ek-type-label-size);
+}
+
+.bo-cmdk__item.is-active {
+  border-color: var(--ek-color-action-border);
+  box-shadow: none;
+}
+
+.bo-cmdk__icon {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-md);
+  background: var(--ek-color-surface);
+  font-size: var(--ek-icon-sm);
+}
+
+.bo-cmdk__item.is-active .bo-cmdk__icon {
+  border-color: var(--ek-color-action);
+  background: var(--ek-color-action);
+  color: var(--ek-color-action-contrast);
+}
+
+.bo-cmdk__item.is-active .bo-cmdk__label {
+  color: var(--ek-color-action-emphasis);
+  font-weight: var(--ek-font-weight-semibold);
+}
+
+.bo-cmdk__foot {
+  border-top-color: var(--ek-color-border-default);
+}
 </style>

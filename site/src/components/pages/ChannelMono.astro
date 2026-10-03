@@ -29,9 +29,9 @@ const { code, name, size = 'md', class: className } = Astro.props
     align-items: center;
     justify-content: center;
     border: calc(var(--site-border-width) * 1.5) solid var(--chan-badge-border);
-    border-radius: var(--ek-radius-lg);
+    /* SITE-DL-03: köşeli kutu, gölgesiz (kanal marka renkleri korunur). */
+    border-radius: var(--ek-radius-tile);
     background: var(--chan-badge-bg);
-    box-shadow: var(--site-shadow-card);
     color: var(--chan-badge-fg);
     font-weight: var(--ek-font-weight-bold);
     line-height: 1;

@@ -20,7 +20,8 @@
           <span class="ccr__path" :title="mappedPath || undefined">{{ mappedPath || `Kategori ${mappedId}` }}</span>
           <span class="ek-sr-only">eşli</span>
         </template>
-        <span v-else class="ccr__none">Eşlenmedi</span>
+        <!-- FE-LOCAL-1048: eşleme durumu ortak durum çipiyle (renk ekranda seçilmez). -->
+        <EkStatusChip v-else tone="warning" icon="mdi-minus-circle-outline" label="Eşlenmedi" />
       </div>
       <EkButton v-if="ready" :tone="mappedId ? 'ghost' : 'secondary'" size="sm" :aria-expanded="editing" :aria-describedby="nameId"
         @click="editing ? cancel() : startEdit()">{{ editing ? 'Kapat' : mappedId ? 'Değiştir' : 'Eşle' }}</EkButton>
@@ -60,7 +61,7 @@
             <EkBadge :tone="kind(c).tone">{{ kind(c).label }}</EkBadge>
             <span class="ccr__attr-title" :class="{ 'is-strong': c.slicer || c.varianter }">{{ c.title }}</span>
             <v-icon v-if="c.required" icon="mdi-asterisk" size="12" class="ccr__req" aria-label="Zorunlu" />
-            <span class="ccr__attr-state" :class="{ 'is-ok': isAttrMapped(c) }">{{ isAttrMapped(c) ? 'Eşli' : 'Eşlenmedi' }}</span>
+            <span class="ccr__attr-state"><EkStatusChip :tone="isAttrMapped(c) ? 'success' : 'neutral'" :label="isAttrMapped(c) ? 'Eşli' : 'Eşlenmedi'" /></span>
             <EkButton tone="ghost" size="sm" :aria-label="`${c.title} özelliğini ${isAttrMapped(c) ? 'düzenle' : 'eşle'}`"
               @click="openAttr(c)">{{ isAttrMapped(c) ? 'Düzenle' : 'Eşle' }}</EkButton>
           </li>
@@ -81,7 +82,7 @@
 
 <script setup lang="ts">
 import { computed, ref, useId, watch } from 'vue'
-import { EkBadge, EkButton, EkChannelBadge, EkDialogHost } from '@entegrasyonik/ui/components'
+import { EkBadge, EkButton, EkChannelBadge, EkDialogHost, EkStatusChip } from '@entegrasyonik/ui/components'
 import ChannelCategoryPicker from '@/components/categories/ChannelCategoryPicker.vue'
 import ChoicesMappingComponent from '@/components/ChoicesMappingComponent.vue'
 import IntegrationErrorPanel from '@/components/integrations/IntegrationErrorPanel.vue'

@@ -8,7 +8,7 @@ interface Props {
   id: string
   eyebrow?: string
   title: string
-  /** Başlık içinde gradyan vurguyla işaretlenecek birebir alt dize (varsa ve title içinde geçiyorsa uygulanır). */
+  /** Başlık içinde vurgu rengiyle işaretlenecek birebir alt dize (varsa ve title içinde geçiyorsa uygulanır). */
   accent?: string
   lead?: string
   tone?: 'light' | 'dark'
@@ -53,15 +53,12 @@ const parts = accent && title.includes(accent) ? title.split(accent) : null
     align-items: center;
     text-align: center;
   }
+  /* SITE-DL: vurgulu kelime düz renk (degrade metin yok) — açık zeminde eylem mavisi, koyu zeminde açık eşleniği. */
   .sh__accent {
-    background: var(--site-gradient-accent);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-    color: var(--ek-color-secondary-darken-1);
+    color: var(--site-action);
   }
   .sh--dark .sh__accent {
-    color: var(--ek-color-secondary);
+    color: var(--site-accent-on-dark);
   }
   .sh__title {
     font-size: var(--site-font-display-md);

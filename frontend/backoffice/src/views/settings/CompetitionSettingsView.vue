@@ -1,10 +1,6 @@
 <template>
   <div class="bo-page">
-    <BoPageHeader :updated-at="cfg.loadedAt ?? undefined">
-      <template #actions>
-        <BoAction kind="refresh" :loading="cfg.refreshing || cs.comp.refreshing || cfg.phase === 'loading'" data-page-refresh @click="state.load()" />
-      </template>
-    </BoPageHeader>
+    <BoPageHeader :updated-at="cfg.loadedAt ?? undefined" refreshable :refreshing="cfg.refreshing || cs.comp.refreshing || cfg.phase === 'loading'" @refresh="state.load()" />
 
     <StateBlock :phase="cfg.phase" :error="cfg.error" skeleton="form" :rows="6" error-title="Rekabet ayarları yüklenemedi" degraded-title="Ayar servisi şu an kullanılamıyor" @retry="state.load()">
       <EkAlert v-if="cfg.stale" tone="warning" dense title="Gösterilen veri eski olabilir" text="Son yenileme başarısız oldu; yenilemeyi yeniden deneyin." />
@@ -55,7 +51,6 @@
 
 <script setup lang="ts">
 import BoPageHeader from '@bo/components/shell/BoPageHeader.vue'
-import BoAction from '@bo/components/r2/BoAction.vue'
 import BoSection from '@bo/components/r2/BoSection.vue'
 import BoTabs from '@bo/components/r2/BoTabs.vue'
 import { onMounted, reactive, watch } from 'vue'

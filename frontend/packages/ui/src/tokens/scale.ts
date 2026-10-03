@@ -199,16 +199,18 @@ export const easing = {
  * Statik bekçi: `frontend/tests/motion-single-source.test.ts` (literal süre/eğri yasak).
  */
 export const motionRole = {
+  // FE-LOCAL-1058 (kullanıcı kararı): uygulamanın HER yerinde geçiş hızı AYNI — tüm roller tek süreye (`base`, 200ms)
+  // bağlıdır. Roller (etkileşim türü) korunur; yalnız süre tekleşti (eğri türe göre: giriş `enter`, aç/kapa `standard`).
   /** Hover/basma/odak geri bildirimi — renk, zemin, kenarlık, gölge, opaklık. */
-  feedback: { duration: 'fast', easing: 'enter', use: 'Hover, odak, seçili durum renk geçişleri' },
+  feedback: { duration: 'base', easing: 'enter', use: 'Hover, odak, seçili durum renk geçişleri' },
   /** Aç/kapa — yükseklik + opaklık: filtre paneli, sayfa hakkında, menü grubu, kategori seviyesi, akordeon, ok dönüşü. */
   reveal: { duration: 'base', easing: 'standard', use: 'Genişleyen/daralan içerik, kademeli seviye açılışı' },
-  /** Kaybolan geçici öğe — çıkış her zaman girişten kısa. */
-  dismiss: { duration: 'fast', easing: 'standard', use: 'Kapanan menü/diyalog/kolon, silinen satır' },
+  /** Kaybolan geçici öğe (kapanan menü/diyalog/kolon, silinen satır). */
+  dismiss: { duration: 'base', easing: 'standard', use: 'Kapanan menü/diyalog/kolon, silinen satır' },
   /** Yükselen katman girişi — menü, açılır liste, diyalog, bildirim, sekme içeriği (opaklık + kısa kayma). */
   overlay: { duration: 'base', easing: 'enter', use: 'Popover, menü, diyalog, toast, sekme geçişi' },
-  /** Kabuk/yerleşim — sol menü daralma/genişleme, büyük alan kayması. */
-  layout: { duration: 'slow', easing: 'enter', use: 'Sol menü ray ↔ tam, kabuk bölgeleri' },
+  /** Kabuk/yerleşim — sol menü, bildirim paneli, Otopilot paneli, büyük alan kayması. */
+  layout: { duration: 'base', easing: 'enter', use: 'Sol menü ray ↔ tam, yan paneller, kabuk bölgeleri' },
 } as const satisfies Record<string, { duration: keyof typeof duration; easing: keyof typeof easing; use: string }>
 
 /**

@@ -69,4 +69,13 @@ function pairs(p: Record<string, unknown> | null): Array<[string, string]> {
   font-size: var(--ek-type-caption-size);
   overflow-wrap: anywhere;
 }
+
+/* BO-LOCAL-01 — olay yükü: çerçeveli sakin kod kutusu (köşeli). */
+.bo-ev__kv {
+  margin: var(--ek-space-1) 0;
+  padding: var(--ek-space-1) var(--ek-space-2);
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-md);
+  background: var(--ek-color-surface-muted);
+}
 </style>

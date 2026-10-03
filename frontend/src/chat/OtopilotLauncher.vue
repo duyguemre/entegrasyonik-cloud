@@ -16,7 +16,7 @@
         :aria-pressed="otopilot.panelOpen || otopilot.onPage ? 'true' : 'false'"
         @click="otopilot.toggle('button')"
       >
-        <v-icon :icon="CHAT_ICON" aria-hidden="true" />
+        <span class="ek-otopilot-launcher__mark" aria-hidden="true"><v-icon :icon="CHAT_ICON" /></span>
         <span v-if="!compact" class="ek-otopilot-launcher__text">{{ CHAT_PRODUCT.name }}</span>
       </button>
     </template>
@@ -78,5 +78,57 @@ const label = computed(() => `${hint.value} (${keys.join('+')})`)
     min-width: var(--ek-control-h-touch);
     min-height: var(--ek-control-h-touch);
   }
+}
+
+/* ================= FE-LOCAL-1056 — üst bar Otopilot düğmesi =================
+   Hap değil: üst bardaki ikon kutularıyla AYNI yükseklik ve köşe (kutu köşeli). İşaret kendi küçük beyaz kutusunda,
+   yanında ad ve panelin açılıp kapanacağını söyleyen küçük ok. Açıkken düğme "basılı" görünür: beyaz zemin, eylem
+   renginde metin (panel açık mı tek bakışta belli). */
+.ek-otopilot-launcher {
+  gap: var(--ek-space-2);
+  padding: 0 var(--ek-space-2) 0 var(--ek-space-1);
+  border-radius: var(--ek-radius-tile);
+  font-weight: var(--ek-font-weight-semibold);
+}
+
+.ek-otopilot-launcher__mark {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--ek-radius-md);
+  background: var(--ek-color-action-contrast);
+  color: var(--ek-color-action);
+  font-size: var(--ek-icon-sm);
+}
+
+.ek-otopilot-launcher__state {
+  display: inline-flex;
+  font-size: var(--ek-icon-sm);
+  opacity: 0.8;
+}
+
+.ek-otopilot-launcher.is-compact {
+  padding: 0;
+}
+
+/* 2026-10-03: işaret ayrı beyaz kutuda değil, düz ikon (barın düz ikon diliyle uyumlu); yön oku kaldırıldı. */
+.ek-otopilot-launcher {
+  gap: var(--ek-space-2);
+  padding: 0 var(--ek-space-3) 0 var(--ek-space-2);
+}
+
+.ek-otopilot-launcher__mark {
+  width: auto;
+  height: auto;
+  background: transparent;
+  color: inherit;
+  font-size: var(--ek-icon-md);
+}
+
+.ek-otopilot-launcher.is-compact {
+  padding: 0;
 }
 </style>

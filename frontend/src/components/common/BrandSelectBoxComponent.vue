@@ -16,16 +16,27 @@
       </template>
 
 
+      <template #prepend-inner>
+        <span v-if="selectedBrand && selectedBrand._id !== -1" class="bsb-mono bsb-mono--sm" :class="`bsb-mono--${tone(selectedBrand.title)}`" aria-hidden="true">{{ initials(selectedBrand.title) }}</span>
+      </template>
+
       <template v-slot:item="{ item, props: itemProps }: any">
-        <v-list-item v-bind="itemProps" role="option" class="custom-brand-item" title="">
-          <div class="d-flex align-center w-100 position-relative">
-            <div class="leaf-indicator"></div>
-            <v-icon size="16" class="mr-2" color="content-muted">
-              mdi-tag-outline
-            </v-icon>
-            <div class="brand-title-wrapper d-flex align-center flex-grow-1 overflow-hidden">
-              <span class="brand-text text-truncate">{{ item.title }}</span>
-            </div>
+        <v-list-item v-bind="itemProps" role="option" class="bsb-item" :class="{ 'is-selected': item.raw._id === brandId }" title="">
+          <div class="bsb-row">
+            <span v-if="item.raw._id === -1" class="bsb-mono bsb-mono--all" aria-hidden="true"><v-icon icon="mdi-format-list-bulleted" size="16" /></span>
+            <span v-else class="bsb-mono" :class="`bsb-mono--${tone(item.title)}`" aria-hidden="true">{{ initials(item.title) }}</span>
+            <span class="bsb-text">
+              <span class="bsb-title">
+                <template v-for="(part, pi) in highlight(item.title)" :key="pi"><mark v-if="part.hit" class="bsb-hit">{{ part.text }}</mark><template v-else>{{ part.text }}</template></template>
+              </span>
+              <span v-if="item.raw._id !== -1" class="bsb-meta">
+                <span v-if="item.raw.isMain" class="bsb-tag">Ana marka</span>
+                <span v-if="channelInfo(item.raw)" class="bsb-channels" :class="`is-${channelInfo(item.raw)!.tone}`">
+                  <v-icon :icon="channelInfo(item.raw)!.icon" size="14" aria-hidden="true" />{{ channelInfo(item.raw)!.text }}
+                </span>
+              </span>
+            </span>
+            <v-icon v-if="item.raw._id === brandId" class="bsb-check" icon="mdi-check" size="18" aria-hidden="true" />
           </div>
         </v-list-item>
       </template>
@@ -52,6 +63,7 @@ import LoadingComponent from '@/components/LoadingComponent.vue'
 import QuickCreateRow from './QuickCreateRow.vue'
 import QuickCreateDialog from './QuickCreateDialog.vue'
 import { findDuplicate, normalizeTitle, trIncludes } from './quickCreate'
+import { useBrandChannels } from '@/composables/brandChannels'
 
 const props = defineProps<{
   noInit?: boolean
@@ -91,8 +103,49 @@ const computedBrands = computed(() => {
   })
 })
 
+// ---- liste satırı: monogram, eşleşme vurgusu, kanal eşleme özeti ----
+const { summarize } = useBrandChannels()
+
+/** Baş harfler: iki kelimeyse ilk harfleri, tek kelimeyse ilk iki harf (Türkçe büyük harf). */
+function initials(title: string = '') {
+  const words = String(title).trim().split(/\s+/).filter(Boolean)
+  const raw = words.length > 1 ? words[0][0] + words[1][0] : (words[0] ?? '?').slice(0, 2)
+  return raw.toLocaleUpperCase('tr')
+}
+
+const TONES = ['action', 'info', 'success', 'warning'] as const
+/** Ada göre sabit ton (aynı marka her yerde aynı renkte). */
+function tone(title: string = '') {
+  let h = 0
+  for (const ch of String(title)) h = (h * 31 + ch.charCodeAt(0)) >>> 0
+  return TONES[h % TONES.length]
+}
+
+/** Arama metniyle eşleşen kısmı işaretler (Türkçe harf duyarsız). */
+function highlight(title: string = '') {
+  const q = brandSearchText.value?.trim()
+  if (!q || q === selectedTitle.value) return [{ text: title, hit: false }]
+  const i = title.toLocaleLowerCase('tr').indexOf(q.toLocaleLowerCase('tr'))
+  if (i < 0) return [{ text: title, hit: false }]
+  return [
+    { text: title.slice(0, i), hit: false },
+    { text: title.slice(i, i + q.length), hit: true },
+    { text: title.slice(i + q.length), hit: false },
+  ].filter((p) => p.text)
+}
+
+/** Kanal eşleme durumu: kaç bağlı kanalda pazaryeri markasıyla eşli. Kanal yoksa gösterilmez. */
+function channelInfo(brand: any) {
+  const s = summarize(brand)
+  if (!s.total) return undefined
+  if (s.mapped.length === s.total) return { tone: 'ok', icon: 'mdi-check-circle-outline', text: s.total === 1 ? `${s.mapped[0].title} ile eşli` : 'Tüm kanallarda eşli' }
+  if (!s.mapped.length) return { tone: 'none', icon: 'mdi-link-variant-off', text: 'Kanal eşlemesi yok' }
+  return { tone: 'part', icon: 'mdi-link-variant', text: `${s.mapped.length}/${s.total} kanalda eşli` }
+}
+
 // ---- yeni marka (QuickCreateDialog) ----
-const selectedTitle = computed(() => computedBrands.value.find((b: any) => b._id === brandId.value)?.title)
+const selectedBrand = computed<any>(() => computedBrands.value.find((b: any) => b._id === brandId.value))
+const selectedTitle = computed(() => selectedBrand.value?.title)
 /** Arama kutusunda seçili markanın adı duruyorsa öneri yapılmaz; yalnız kullanıcının yazdığı metin önerilir. */
 const createQuery = computed(() => {
   const q = normalizeTitle(brandSearchText.value)
@@ -158,23 +211,111 @@ onMounted(() => {
   position: relative;
 }
 
-.custom-brand-item {
-  min-height: var(--ek-control-h-lg) !important;
-  border-bottom: 1px solid var(--ek-color-border-subtle);
+/* Marka satırı: monogram · ad (+ eşleşme vurgusu) · ana marka / kanal eşleme özeti · seçili onayı. */
+.bsb-item {
+  min-height: 52px !important;
+  margin: 2px var(--ek-space-2);
+  border-radius: var(--ek-radius-control);
 }
 
-.leaf-indicator {
-  position: absolute;
-  left: calc(var(--ek-space-4) * -1);
-  width: 3px;
-  height: 60%;
-  border-radius: 0 var(--ek-radius-sm) var(--ek-radius-sm) 0;
-  background-color: var(--ek-color-action);
+.bsb-item.is-selected {
+  background: var(--ek-color-action-subtle);
 }
 
-.brand-text {
-  color: var(--ek-color-content-default);
-  font-size: var(--ek-type-body-size);
-  font-weight: var(--ek-type-label-weight);
+.bsb-row {
+  display: flex;
+  align-items: center;
+  gap: var(--ek-space-3);
+  width: 100%;
+  min-width: 0;
+}
+
+.bsb-mono {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--ek-radius-tile);
+  font-size: var(--ek-type-caption-size);
+  font-weight: var(--ek-font-weight-semibold);
+  letter-spacing: 0.02em;
+}
+
+.bsb-mono--sm {
+  width: 24px;
+  height: 24px;
+  margin-right: var(--ek-space-1);
+  font-size: var(--ek-type-micro-size);
+}
+
+.bsb-mono--action { background: var(--ek-color-action-subtle); color: var(--ek-color-action-emphasis); }
+.bsb-mono--info { background: var(--ek-color-info-subtle); color: var(--ek-color-info-emphasis); }
+.bsb-mono--success { background: var(--ek-color-success-subtle); color: var(--ek-color-success-emphasis); }
+.bsb-mono--warning { background: var(--ek-color-warning-subtle); color: var(--ek-color-warning-emphasis); }
+.bsb-mono--all { background: var(--ek-color-surface-muted); color: var(--ek-color-content-muted); }
+
+.bsb-text {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.bsb-title {
+  overflow: hidden;
+  color: var(--ek-color-content-strong);
+  font-size: var(--ek-type-label-size);
+  line-height: var(--ek-type-label-line);
+  font-weight: var(--ek-font-weight-medium);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bsb-hit {
+  padding: 0 1px;
+  border-radius: 2px;
+  background: var(--ek-color-warning-subtle);
+  color: inherit;
+  font-weight: var(--ek-font-weight-semibold);
+}
+
+.bsb-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--ek-space-2);
+  min-width: 0;
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-caption-size);
+  line-height: var(--ek-type-caption-line);
+}
+
+.bsb-meta:empty {
+  display: none;
+}
+
+.bsb-tag {
+  padding: 0 var(--ek-space-2);
+  border-radius: var(--ek-radius-full);
+  background: var(--ek-color-action-subtle);
+  color: var(--ek-color-action-emphasis);
+  font-weight: var(--ek-font-weight-medium);
+}
+
+.bsb-channels {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.bsb-channels.is-ok { color: var(--ek-color-success-emphasis); }
+.bsb-channels.is-part { color: var(--ek-color-warning-emphasis); }
+
+.bsb-check {
+  flex: none;
+  color: var(--ek-color-action);
 }
 </style>

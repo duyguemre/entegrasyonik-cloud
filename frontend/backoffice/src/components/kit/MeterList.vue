@@ -107,4 +107,11 @@ const pct = (v: number) => (v <= 0 ? 0 : Math.max(2, Math.min(100, (v / top.valu
     grid-row: 2;
   }
 }
+
+/* BO-LOCAL-01 — gösterge noktası: köşeli küçük kare (dağılım kartlarındaki renk örnekleriyle aynı). */
+.bo-meter__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+}
 </style>

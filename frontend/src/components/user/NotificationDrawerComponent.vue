@@ -30,6 +30,7 @@
     <div class="ek-nd">
       <header class="ek-nd__header">
         <div class="ek-nd__heading">
+          <span class="ek-nd__eyebrow" aria-hidden="true">Bildirim merkezi</span>
           <div class="ek-nd__title-row">
             <h2 id="ek-nd-title" class="ek-nd__title">Bildirimler</h2>
             <span v-if="unread" class="ek-nd__count ek-num" :aria-label="`${unread} okunmamış`">{{ unread > 99 ? '99+' : unread }}</span>
@@ -45,9 +46,9 @@
           </p>
         </div>
         <div class="ek-nd__header-actions">
-          <EkTooltip text="Tümünü okundu işaretle">
-            <EkButton tone="ghost" size="sm" icon="mdi-check-all" icon-only aria-label="Tümünü okundu işaretle"
-              :disabled="!unread" @click="notificationStore.markAsRead()" />
+          <!-- FE-LOCAL-1055: tercihler ⋯ menüsüne gizlenmez — tek tıkla erişilir. -->
+          <EkTooltip v-if="prefsLink" text="Bildirim tercihleri">
+            <EkButton tone="ghost" size="sm" icon="mdi-tune-variant" icon-only aria-label="Bildirim tercihleri" data-nd-prefs @click="openTab(prefsLink)" />
           </EkTooltip>
           <EkContextMenu :groups="menuGroups" label="Bildirim işlemleri" @select="onMenu">
             <template #activator="{ props }">
@@ -61,6 +62,19 @@
 
       <div class="ek-nd__tabs">
         <EkPageTabs v-model="tab" :tabs="tabs" label="Bildirim görünümü" dense />
+        <!-- FE-LOCAL-1055: birincil toplu eylem adıyla, sekmelerin yanında (yalnız ikon değil). -->
+        <button type="button" class="ek-nd__read-all" :disabled="!unread" aria-label="Tümünü okundu işaretle" @click="notificationStore.markAsRead()">
+          <v-icon icon="mdi-check-all" aria-hidden="true" /><span>Tümünü okundu say</span>
+        </button>
+      </div>
+
+      <!-- FE-LOCAL-1055: konuya göre hızlı süzme — yalnız listedeki bildirimlerin konuları, sayılarıyla. -->
+      <div v-if="categoryChips.length > 1" class="ek-nd__cats" role="group" aria-label="Konuya göre süz">
+        <button type="button" class="ek-nd__cat" :class="{ 'is-on': !category }" :aria-pressed="!category" @click="category = null">Hepsi</button>
+        <button v-for="c in categoryChips" :key="c.key" type="button" class="ek-nd__cat" :class="{ 'is-on': category === c.key }"
+          :aria-pressed="category === c.key" @click="category = category === c.key ? null : c.key">
+          <v-icon :icon="c.icon" aria-hidden="true" /><span>{{ c.label }}</span><span class="ek-nd__cat-count ek-num">{{ c.count }}</span>
+        </button>
       </div>
 
       <div class="ek-nd__body" tabindex="-1">
@@ -88,8 +102,10 @@
             <span class="ek-nd__group-count ek-num" aria-hidden="true">{{ group.items.length }}</span>
           </h3>
           <ul class="ek-nd__list" role="list">
+            <!-- FE-LOCAL-1055: satırın tamamı tıklanır — ilgili ekran varsa açar, yoksa okundu sayar (düğmeler klavye yolu). -->
             <li v-for="item in group.items" :key="item._id" class="ek-nd-item ek-notification-card"
-              :class="{ 'is-unread': !item.isRead, 'is-critical': view(item).critical, 'ek-notification-card--unread': !item.isRead }">
+              :class="{ 'is-unread': !item.isRead, 'is-critical': view(item).critical, 'ek-notification-card--unread': !item.isRead, 'is-clickable': isActionable(item) }"
+              @click="onRowClick(item)">
               <EkIconTile class="ek-nd-item__tile" :icon="view(item).icon" :tone="view(item).tone" size="md" />
               <div class="ek-nd-item__main">
                 <div class="ek-nd-item__head">
@@ -127,13 +143,13 @@
                     <span v-if="metaText(item)" class="ek-nd-item__meta-text">{{ metaText(item) }}</span>
                   </span>
                   <EkButton v-if="internalActionPath(item.actionUrl)" size="sm" tone="ghost" trailing-icon="mdi-arrow-right"
-                    class="ek-nd-item__go-btn" :aria-label="`Detayları gör: ${view(item).title}`" @click="openAction(item)">
+                    class="ek-nd-item__go-btn" :aria-label="`Detayları gör: ${view(item).title}`" @click.stop="openAction(item)">
                     Detayları gör
                   </EkButton>
                 </div>
               </div>
               <!-- Satır eylemleri: işaretçili cihazda zamanın yerine, üzerine gelince/odakta (liste sakin); dokunmatikte hep görünür. -->
-              <div class="ek-nd-item__actions">
+              <div class="ek-nd-item__actions" @click.stop>
                   <EkTooltip v-if="!item.isRead" text="Okundu işaretle">
                     <EkButton tone="ghost" size="sm" icon="mdi-check" icon-only :aria-label="`Okundu işaretle: ${view(item).title}`"
                       @click="notificationStore.markAsRead(item._id)" />
@@ -148,7 +164,8 @@
       </div>
 
       <footer v-if="centerLink" class="ek-nd__footer ek-notification-drawer__footer">
-        <EkButton block tone="secondary" trailing-icon="mdi-arrow-right" @click="openCenter">Tümünü gör</EkButton>
+        <span class="ek-nd__footer-note ek-num">{{ footerNote }}</span>
+        <EkButton tone="secondary" trailing-icon="mdi-arrow-right" @click="openCenter">Tümünü gör</EkButton>
       </footer>
     </div>
 
@@ -215,7 +232,11 @@ const tabs = computed(() => [
 const initialLoading = computed(() => notificationStore.loading && !items.value.length && !notificationStore.listError)
 /** Liste hiç alınamadı (eski liste varsa o gösterilir). */
 const listFailed = computed(() => notificationStore.listError && !items.value.length)
-const visible = computed(() => (tab.value === 'unread' ? items.value.filter((n) => !n.isRead) : items.value))
+// FE-LOCAL-1055: konu süzgeci (istemci tarafı, çekmecedeki kayıtlar üzerinde).
+const category = ref<string | null>(null)
+const visible = computed(() =>
+  items.value.filter((n) => (tab.value !== 'unread' || !n.isRead) && (!category.value || view(n).category === category.value)),
+)
 const groups = computed(() => groupByDay(visible.value))
 
 const liveState = computed(() => {
@@ -294,9 +315,38 @@ function openAction(item: NotificationItem) {
   router.push(path).catch(() => {})
 }
 
+/** Listedeki konular (kategori), sayılarıyla — en çok bildirim alan önce. */
+const categoryChips = computed(() => {
+  const map = new Map<string, { key: string; label: string; icon: string; count: number }>()
+  for (const n of items.value) {
+    if (tab.value === 'unread' && n.isRead) continue
+    const v = view(n)
+    if (!v.category || !v.categoryLabel) continue
+    const hit = map.get(v.category)
+    if (hit) hit.count++
+    else map.set(v.category, { key: v.category, label: v.categoryLabel, icon: v.icon, count: 1 })
+  }
+  return [...map.values()].sort((a, b) => b.count - a.count)
+})
+// Süzülen konu listeden düşerse (ör. hepsi silindi) süzgeç kendiliğinden kalkar.
+watch(categoryChips, (chips) => {
+  if (category.value && !chips.some((c) => c.key === category.value)) category.value = null
+})
+
+const isActionable = (item: NotificationItem) => !!internalActionPath(item.actionUrl) || !item.isRead
+function onRowClick(item: NotificationItem) {
+  if (internalActionPath(item.actionUrl)) openAction(item)
+  else if (!item.isRead) notificationStore.markAsRead(item._id)
+}
+
+const footerNote = computed(() => {
+  const shown = visible.value.length
+  if (!items.value.length) return ''
+  return shown === items.value.length ? `Son ${formatNumber(shown)} bildirim` : `${formatNumber(shown)} / ${formatNumber(items.value.length)} gösteriliyor`
+})
+
 const confirmClear = ref(false)
 const menuGroups = computed<EkMenuGroup[]>(() => [
-  ...(prefsLink.value ? [{ items: [{ key: 'prefs', label: 'Bildirim tercihleri', icon: 'mdi-tune-variant' }] }] : []),
   { items: [{ key: 'clear', label: 'Tümünü sil', icon: 'mdi-trash-can-outline', danger: true, disabled: !items.value.length }] },
 ])
 function onMenu(item: EkMenuItem) {
@@ -782,5 +832,297 @@ const formatTime = (dateStr?: string) => (dateStr ? formatRelative(dateStr) : ''
   padding: var(--ek-space-3) var(--ek-space-4);
   border-top: 1px solid var(--ek-color-border-subtle);
   background: var(--ek-color-surface-muted);
+}
+
+/* ================= FE-LOCAL-1047 — bildirimler penceresi: ana sayfa diliyle =================
+   Düz yüzey + ince çerçeve (kart köşesi, hafif açılır gölge); başlık bandı sakin zeminde, üstünde kısa eylem çizgili
+   mikro etiket; başlık eylemleri çerçeveli ikon kutuları; gün grupları mikro etiket + düz sayaç; satırlar ince çizgiyle
+   ayrılır (yuvarlak kutu yok), okunmamış satır eylem renginin açık tonunda, kritik satır hata tonunda; altlık sakin. */
+.ek-nd {
+  border-color: var(--ek-color-border-default);
+  border-radius: var(--ek-radius-card);
+  background: var(--ek-color-surface);
+  box-shadow: var(--ek-shadow-popover);
+}
+
+.ek-nd__header {
+  padding: var(--ek-space-4) var(--ek-space-3) var(--ek-space-3) var(--ek-space-4);
+  background: var(--ek-color-surface-muted);
+}
+
+.ek-nd__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ek-space-2);
+  margin-bottom: var(--ek-space-1);
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-micro-size);
+  line-height: var(--ek-type-micro-line);
+  font-weight: var(--ek-type-micro-weight);
+  letter-spacing: var(--ek-type-micro-tracking);
+  text-transform: uppercase;
+}
+
+.ek-nd__eyebrow::before {
+  content: '';
+  width: 12px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--ek-color-action);
+}
+
+.ek-nd__title {
+  font-size: var(--ek-type-heading-size);
+  line-height: var(--ek-type-heading-line);
+}
+
+.ek-nd__count {
+  border-radius: var(--ek-radius-md);
+}
+
+.ek-nd__live.is-live .ek-nd__live-dot {
+  box-shadow: none;
+}
+
+.ek-nd__header-actions {
+  gap: var(--ek-space-1);
+}
+
+.ek-nd__header-actions :deep(.ek-btn) {
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-tile);
+  background: var(--ek-color-surface);
+}
+
+.ek-nd__header-actions :deep(.ek-btn:hover:not(:disabled)) {
+  border-color: var(--ek-color-action-border);
+  background: var(--ek-color-action-subtle);
+  color: var(--ek-color-action-emphasis);
+}
+
+.ek-nd__divider {
+  display: none;
+}
+
+.ek-nd__tabs {
+  padding: 0 var(--ek-space-4) var(--ek-space-3);
+  border-bottom: 1px solid var(--ek-color-border-default);
+  background: var(--ek-color-surface-muted);
+}
+
+.ek-nd__body {
+  padding: 0;
+}
+
+.ek-nd__group-title {
+  padding: var(--ek-space-3) var(--ek-space-4) var(--ek-space-2);
+  background: var(--ek-color-surface);
+}
+
+.ek-nd__group-title > span:first-child {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ek-space-2);
+}
+
+.ek-nd__group-title > span:first-child::before {
+  content: '';
+  width: 12px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--ek-color-action);
+}
+
+.ek-nd__group-count {
+  min-width: 20px;
+  padding: 0 var(--ek-space-1);
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-md);
+  background: var(--ek-color-surface-muted);
+  text-align: center;
+}
+
+.ek-nd__list {
+  gap: 0;
+  padding: 0;
+}
+
+.ek-nd-item {
+  padding: var(--ek-space-3) var(--ek-space-4);
+  border-top: 1px solid var(--ek-color-border-subtle);
+  border-radius: 0;
+}
+
+.ek-nd-item.is-unread {
+  background: var(--ek-color-action-subtle);
+}
+
+.ek-nd-item.is-critical {
+  background: var(--ek-color-error-subtle);
+  box-shadow: none;
+}
+
+.ek-nd-item:hover,
+.ek-nd-item:focus-within {
+  background: var(--ek-color-surface-muted);
+}
+
+.ek-nd-item.is-unread :deep(.ek-icon-tile),
+.ek-nd-item.is-critical :deep(.ek-icon-tile) {
+  background: var(--ek-color-surface);
+}
+
+.ek-nd-item__summary-list {
+  border-color: var(--ek-color-border-default);
+}
+
+.ek-nd__footer {
+  border-top-color: var(--ek-color-border-default);
+}
+
+/* ================= FE-LOCAL-1055 — bildirim penceresi: tam boy panel + kullanım iyileştirmeleri =================
+   Pencere yüzen kart DEĞİL: üstte üst bara, altta sayfanın sonuna dayanır (boşluk ve köşe yok); solda ince çizgi.
+   Sekmelerin yanında adıyla "Tümünü okundu say"; altında konuya göre hızlı süzme çipleri; satırın tamamı tıklanır;
+   gün başlıkları kaydırırken üstte sabit; altlıkta kaç bildirimin gösterildiği + "Tümünü gör". */
+.ek-nd {
+  height: 100%;
+  margin: 0;
+  border: 0;
+  border-left: 1px solid var(--ek-color-border-default);
+  border-radius: 0;
+  box-shadow: var(--ek-shadow-popover);
+}
+
+.ek-nd__tabs {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ek-space-3);
+}
+
+.ek-nd__read-all {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: var(--ek-space-1);
+  height: 30px;
+  padding: 0 var(--ek-space-3);
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-tile);
+  background: var(--ek-color-surface);
+  color: var(--ek-color-content-default);
+  font: inherit;
+  font-size: var(--ek-type-caption-size);
+  font-weight: var(--ek-font-weight-semibold);
+  cursor: pointer;
+  transition: var(--ek-transition-colors);
+}
+
+.ek-nd__read-all .v-icon {
+  font-size: var(--ek-icon-sm);
+}
+
+.ek-nd__read-all:hover:not(:disabled) {
+  border-color: var(--ek-color-action-border);
+  background: var(--ek-color-action-subtle);
+  color: var(--ek-color-action-emphasis);
+}
+
+.ek-nd__read-all:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.ek-nd__read-all:focus-visible,
+.ek-nd__cat:focus-visible {
+  outline: none;
+  box-shadow: var(--ek-focus-ring);
+}
+
+/* Konu çipleri: tek satır, taşarsa yatay kayar. */
+.ek-nd__cats {
+  display: flex;
+  flex: none;
+  gap: var(--ek-space-2);
+  padding: var(--ek-space-2) var(--ek-space-4);
+  overflow-x: auto;
+  border-bottom: 1px solid var(--ek-color-border-subtle);
+  background: var(--ek-color-surface);
+  scrollbar-width: none;
+}
+
+.ek-nd__cats::-webkit-scrollbar {
+  display: none;
+}
+
+.ek-nd__cat {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: var(--ek-space-1);
+  height: 26px;
+  padding: 0 var(--ek-space-2);
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-md);
+  background: var(--ek-color-surface);
+  color: var(--ek-color-content-default);
+  font: inherit;
+  font-size: var(--ek-type-caption-size);
+  cursor: pointer;
+  transition: var(--ek-transition-colors);
+}
+
+.ek-nd__cat .v-icon {
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-icon-xs);
+}
+
+.ek-nd__cat-count {
+  color: var(--ek-color-content-muted);
+  font-weight: var(--ek-font-weight-semibold);
+}
+
+.ek-nd__cat:hover {
+  background: var(--ek-color-surface-muted);
+}
+
+.ek-nd__cat.is-on {
+  border-color: var(--ek-color-action-border);
+  background: var(--ek-color-action-subtle);
+  color: var(--ek-color-action-emphasis);
+  font-weight: var(--ek-font-weight-semibold);
+}
+
+.ek-nd__cat.is-on .v-icon,
+.ek-nd__cat.is-on .ek-nd__cat-count {
+  color: var(--ek-color-action-emphasis);
+}
+
+/* Gün başlığı kaydırırken üstte sabit. */
+.ek-nd__group-title {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  border-bottom: 1px solid var(--ek-color-border-subtle);
+}
+
+.ek-nd__group .ek-nd__list > .ek-nd-item:first-child {
+  border-top: 0;
+}
+
+.ek-nd-item.is-clickable {
+  cursor: pointer;
+}
+
+.ek-nd__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ek-space-3);
+}
+
+.ek-nd__footer-note {
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-caption-size);
 }
 </style>

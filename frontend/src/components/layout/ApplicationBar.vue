@@ -44,6 +44,7 @@
         <div class="ek-shell-account__head">
           <StoreLogoAvatar :size="36" :store-name="storeName" :logo="userApi.getStoreLogo()" />
           <div class="ek-shell-account__who">
+            <span class="ek-shell-account__eyebrow" aria-hidden="true">Hesap</span>
             <span class="ek-shell-account__name">{{ identityName }}</span>
             <span class="ek-shell-account__meta">{{ userApi.getUsername.value }}</span>
           </div>
@@ -76,6 +77,8 @@ import { useHelpNavigation } from '@/help/useHelpNavigation'
 import { usePageAbout } from '@/composables/usePageAbout'
 import { usePublicConfigStore } from '@/stores/publicConfig'
 import { supportContactGroups, supportContactHref } from './supportContact'
+import { isNativeShell } from '@entegrasyonik/ui/native'
+import { SITE_MOBILE_APP_PATH, siteUrl } from '@/config/siteLinks'
 
 withDefaults(defineProps<{ visible?: boolean; menuExpanded?: boolean }>(), { visible: true, menuExpanded: undefined })
 const emit = defineEmits<{ 'toggle-menu': []; 'open-shortcuts': []; 'search-dismiss': []; 'search-blur': [] }>()
@@ -128,6 +131,7 @@ const helpGroups = computed<EkMenuGroup[]>(() => [
 
 // Dar ekranda (< 768) üst barın yardım düğmesi gizlidir; destek iletişimi hesap menüsünde, çıkıştan önce görünür.
 const themePreference = appTheme.preference
+const inNativeShell = isNativeShell()
 
 const accountGroups = computed<EkMenuGroup[]>(() => [
   {
@@ -136,6 +140,8 @@ const accountGroups = computed<EkMenuGroup[]>(() => [
       // menüsünde ekran yoksa (yetki) giriş gösterilmez — önce ölü "Ayarlar" girişi boş sekme/beyaz ekran açıyordu.
       ...(settingsLink.value ? [{ key: 'settings', label: 'Uygulama ayarları', description: 'Mağaza, fatura, lojistik ve iletişim', icon: 'mdi-cog-outline' }] : []),
       { key: 'shortcuts', label: 'Klavye kısayolları', icon: 'mdi-keyboard-outline', shortcut: shortcutKeys('shortcutHelp') },
+      // APK-DL: Android uygulaması indirme sayfası (sitede). Android kabuğunun içinde zaten uygulamadasınız → gizli.
+      ...(inNativeShell ? [] : [{ key: 'mobileApp', label: 'Mobil uygulama', description: 'Android uygulamasını indirin', icon: 'mdi-android' }]),
     ],
   },
   // Dar ekranda üst bardaki (?) düğmesi gizlidir → yardım girişleri hesap menüsünde de bulunur.
@@ -172,12 +178,23 @@ function openSupportContact(key: string) {
   if (href) window.location.href = href
 }
 
+// Site sayfası yeni sekmede; düz bağlantı tıklaması → Electron kabuğu bunu sistem tarayıcısında açar (electron/policy.js
+// 'external'; `window.open` özellik dizesi açılır pencere sayılabilirdi).
+function openSitePage(path: string) {
+  const a = document.createElement('a')
+  a.href = siteUrl(path)
+  a.target = '_blank'
+  a.rel = 'noopener'
+  a.click()
+}
+
 function onAccountSelect(item: EkMenuItem) {
   accountOpen.value = false
   if (item.key === 'settings') openSettings()
   else if (item.key === 'shortcuts') emit('open-shortcuts')
   else if (item.key === 'helpCenter') helpNav.openHelp()
   else if (item.key === 'tour') window.dispatchEvent(new CustomEvent('ek:help-tour'))
+  else if (item.key === 'mobileApp') openSitePage(SITE_MOBILE_APP_PATH)
   else if (item.key === 'logout') logout()
   else openSupportContact(item.key)
 }
@@ -268,5 +285,55 @@ defineExpose({ focusSearch: () => searchRef.value?.focus() })
   border: 0;
   border-radius: 0;
   box-shadow: none;
+}
+
+/* ================= FE-LOCAL-1058 — hesap menüsü: uygulamanın tasarım diliyle =================
+   Kart köşesi + ince çerçeve; başlık bandı sakin zeminde — kısa eylem çizgili mikro etiket + mağaza adı + kullanıcı;
+   tema seçimi kendi ince çizgili bölümünde; menü öğeleri ortak panel (çerçeveli ikon kutuları). */
+.ek-shell-account {
+  min-width: 300px;
+  border-color: var(--ek-color-border-default);
+  border-radius: var(--ek-radius-card);
+  background: var(--ek-color-surface);
+}
+
+.ek-shell-account__head {
+  padding: var(--ek-space-4);
+  border-bottom-color: var(--ek-color-border-default);
+}
+
+.ek-shell-account__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ek-space-2);
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-micro-size);
+  line-height: var(--ek-type-micro-line);
+  font-weight: var(--ek-type-micro-weight);
+  letter-spacing: var(--ek-type-micro-tracking);
+  text-transform: uppercase;
+}
+
+.ek-shell-account__eyebrow::before {
+  content: '';
+  width: 12px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--ek-color-action);
+}
+
+.ek-shell-account__name {
+  font-size: var(--ek-type-body-size);
+  line-height: var(--ek-type-body-line);
+  font-weight: var(--ek-font-weight-semibold);
+}
+
+.ek-shell-account__theme {
+  border-bottom-color: var(--ek-color-border-default);
+}
+
+/* Mağaza işareti: yuvarlak değil, kutu köşeli (üst bardaki avatar ve ikon kapsülleriyle aynı aile). */
+.ek-shell-account__head > :first-child {
+  border-radius: var(--ek-radius-tile);
 }
 </style>

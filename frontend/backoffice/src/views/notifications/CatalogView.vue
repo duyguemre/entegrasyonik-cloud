@@ -1,9 +1,8 @@
 <template>
   <div class="bo-page">
-    <BoPageHeader :updated-at="cat.loadedAt.value ?? undefined" :stale="cat.stale.value">
+    <BoPageHeader :updated-at="cat.loadedAt.value ?? undefined" :stale="cat.stale.value" refreshable :refreshing="cat.refreshing.value" @refresh="cat.load()">
       <template #actions>
         <BoAction kind="send" label="Test e-postası gönder" data-testid="test-email" @click="testMail.open('self')" />
-        <BoAction kind="refresh" :loading="cat.refreshing.value" data-page-refresh @click="cat.load()" />
       </template>
     </BoPageHeader>
 
@@ -342,5 +341,57 @@ onMounted(() => cat.load())
   .bo-ncat__out {
     transition: none;
   }
+}
+
+/* ================= BO-LOCAL-01 — olay kataloğu: uygulamanın tasarım diliyle =================
+   Seçili satır: sol şerit YOK — eylem renginin düz açık zemini. Etiketler köşeli; örnek parametre kutusu kutu köşeli,
+   başlığı kısa eylem çizgili mikro etiket; bildirim örneği düz yüzeyde ince çerçeveli kart. */
+.bo-table tbody tr.is-selected,
+.bo-table tbody tr.is-selected > * {
+  background: var(--ek-color-action-subtle);
+  box-shadow: none;
+}
+
+.bo-ncat__tag {
+  border-radius: var(--ek-radius-md);
+  background: var(--ek-color-surface-muted);
+}
+
+.bo-ncat__params {
+  border-color: var(--ek-color-border-default);
+  border-radius: var(--ek-radius-tile);
+}
+
+.bo-ncat__params legend {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ek-space-2);
+  padding: 0 var(--ek-space-2);
+}
+
+.bo-ncat__params legend::before {
+  content: '';
+  flex: none;
+  width: 12px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--ek-color-action);
+}
+
+.bo-ncat__notif {
+  border-color: var(--ek-color-border-default);
+  border-radius: var(--ek-radius-tile);
+  background: var(--ek-color-surface);
+}
+
+.bo-ncat__notif h3 {
+  color: var(--ek-color-content-strong);
+  font-size: var(--ek-type-body-size);
+}
+
+.bo-ncat__notif p {
+  color: var(--ek-color-content-default);
+  font-size: var(--ek-type-label-size);
+  line-height: var(--ek-type-body-line);
 }
 </style>

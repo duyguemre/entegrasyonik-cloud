@@ -42,6 +42,7 @@ const supportAnswer = getPublicFaq().find((f) => f.id === 'destek')?.answer
 
   <PageHero
     title="Kurulumdan ilk siparişe, yanınızdayız"
+    accent="yanınızdayız"
     eyebrow="Destek merkezi"
     lead="Sık sorulan sorular ve kanal bağlantı rehberleri konularına göre ayrılmış hâlde; aradığınız cevaba kısa yoldan ulaşın."
     crumbs={crumbs}
@@ -155,8 +156,9 @@ const supportAnswer = getPublicFaq().find((f) => f.id === 'destek')?.answer
 
               <div class="support-card__foot">
                 {c.links.map((l) => (
-                  <a class="support-card__more" href={l.href}>
-                    {l.label} <span aria-hidden="true">→</span>
+                  <a class="link support-card__more" href={l.href}>
+                    {l.label}
+                    <Icon name="arrow" size="sm" />
                   </a>
                 ))}
               </div>
@@ -210,6 +212,8 @@ const supportAnswer = getPublicFaq().find((f) => f.id === 'destek')?.answer
 </script>
 
 <style>
+  /* SITE-DL (F4): düz yüzey + 1px çerçeve; gölge/yükselme/sol şerit yok; ikonlar çerçeveli kare kutuda;
+     kategori kartları baş/alt bantlı (surface-muted + ince çizgi). */
   :global(.section.tight-section) {
     padding-block: calc(var(--site-section-y) * 0.72);
   }
@@ -235,14 +239,14 @@ const supportAnswer = getPublicFaq().find((f) => f.id === 'destek')?.answer
     min-height: var(--site-tap-target);
     padding: var(--ek-space-3) var(--ek-space-4);
     border: var(--site-border-width) solid var(--site-glass-border);
-    border-radius: var(--ek-radius-lg);
-    background: color-mix(in srgb, var(--ek-color-background) 6%, transparent);
+    border-radius: var(--ek-radius-tile);
+    background: var(--site-glass-bg);
     color: var(--site-color-on-primary);
     font-weight: var(--ek-font-weight-medium);
     text-decoration: none;
     transition:
-      border-color var(--ek-duration-base) var(--ek-easing-standard),
-      background-color var(--ek-duration-base) var(--ek-easing-standard);
+    border-color var(--ek-duration-base) var(--ek-easing-standard),
+    background-color var(--ek-duration-base) var(--ek-easing-standard);
   }
   .quick__link:hover {
     border-color: var(--site-color-on-primary-muted);
@@ -257,9 +261,11 @@ const supportAnswer = getPublicFaq().find((f) => f.id === 'destek')?.answer
     justify-content: center;
     width: var(--ek-space-8);
     height: var(--ek-space-8);
-    border-radius: var(--ek-radius-md);
-    background: color-mix(in srgb, var(--ek-color-secondary) 22%, transparent);
-    color: var(--ek-color-secondary);
+
+    border: var(--site-border-width) solid var(--site-glass-border);
+    border-radius: var(--ek-radius-tile);
+    background: var(--site-glass-bg);
+    color: var(--site-accent-on-dark);
   }
   .quick__arrow {
     margin-inline-start: auto;
@@ -284,22 +290,17 @@ const supportAnswer = getPublicFaq().find((f) => f.id === 'destek')?.answer
     height: 100%;
     padding: var(--ek-space-5);
     border: var(--site-border-width) solid var(--ek-color-border-default);
-    border-radius: var(--site-radius-panel);
-    background:
-      radial-gradient(90% 70% at 0% 0%, color-mix(in srgb, var(--ek-color-secondary) 6%, transparent), transparent 70%),
-      var(--ek-color-surface);
-    box-shadow: var(--site-shadow-card);
+    border-radius: var(--ek-radius-card);
+    background: var(--ek-color-surface);
     color: inherit;
     text-decoration: none;
     transition:
-      border-color var(--ek-duration-base) var(--ek-easing-standard),
-      box-shadow var(--ek-duration-base) var(--ek-easing-standard),
-      transform var(--ek-duration-base) var(--ek-easing-standard);
+    border-color var(--ek-duration-base) var(--ek-easing-standard),
+    background-color var(--ek-duration-base) var(--ek-easing-standard);
   }
   .topic:hover {
-    border-color: color-mix(in srgb, var(--ek-color-secondary) 45%, var(--ek-color-border-default));
-    box-shadow: var(--site-shadow-card-hover);
-    transform: translateY(calc(var(--ek-space-1) * -0.5));
+    border-color: var(--site-action-border);
+    background: var(--site-action-subtle);
   }
   .topic:focus-visible,
   .chan:focus-visible {
@@ -313,9 +314,14 @@ const supportAnswer = getPublicFaq().find((f) => f.id === 'destek')?.answer
     width: var(--ek-space-10);
     height: var(--ek-space-10);
     margin-bottom: var(--ek-space-2);
-    border-radius: var(--ek-radius-lg);
-    background: linear-gradient(140deg, var(--ek-color-primary), var(--ek-color-primary-darken-1));
-    color: var(--site-color-on-primary);
+
+    border: var(--site-border-width) solid var(--site-action-border);
+    border-radius: var(--ek-radius-tile);
+    background: var(--site-action-subtle);
+    color: var(--site-action);
+  }
+  .topic:hover .topic__icon {
+    background: var(--ek-color-surface);
   }
   .topic__label {
     color: var(--site-text-heading);
@@ -353,27 +359,21 @@ const supportAnswer = getPublicFaq().find((f) => f.id === 'destek')?.answer
     overflow: hidden;
     padding: var(--ek-space-4) var(--ek-space-5);
     border: var(--site-border-width) solid var(--ek-color-border-default);
-    border-radius: var(--ek-radius-xl);
-    background:
-      radial-gradient(70% 120% at 0% 50%, color-mix(in srgb, var(--chan) 8%, transparent), transparent 70%),
-      var(--ek-color-surface);
-    box-shadow: var(--site-shadow-card);
+    border-radius: var(--ek-radius-card);
+    background: var(--ek-color-surface);
     color: inherit;
     text-decoration: none;
     transition:
-      border-color var(--ek-duration-base) var(--ek-easing-standard),
-      box-shadow var(--ek-duration-base) var(--ek-easing-standard);
+    border-color var(--ek-duration-base) var(--ek-easing-standard),
+    background-color var(--ek-duration-base) var(--ek-easing-standard);
   }
   .chan:hover {
-    border-color: color-mix(in srgb, var(--chan) 45%, var(--ek-color-border-default));
-    box-shadow: var(--site-shadow-card-hover);
+    border-color: var(--site-action-border);
+    background: var(--site-action-subtle);
   }
+  /* Sol renk şeridi kaldırıldı (tasarım dili: kalın sol şerit yok); kanal kimliğini monogram taşır. */
   .chan__strip {
-    position: absolute;
-    inset-block: 0;
-    inset-inline-start: 0;
-    width: calc(var(--site-border-width) * 3);
-    background: var(--chan);
+    display: none;
   }
   .chan__text {
     display: flex;
@@ -391,7 +391,7 @@ const supportAnswer = getPublicFaq().find((f) => f.id === 'destek')?.answer
   }
   .chan__arrow {
     display: inline-flex;
-    color: var(--site-link-accent);
+    color: var(--site-action);
   }
   .channels {
     display: grid;
@@ -408,9 +408,8 @@ const supportAnswer = getPublicFaq().find((f) => f.id === 'destek')?.answer
     gap: var(--ek-space-3);
     padding: var(--ek-space-6);
     border: var(--site-border-width) solid var(--ek-color-border-default);
-    border-radius: var(--site-radius-panel);
+    border-radius: var(--ek-radius-card);
     background: var(--ek-color-surface);
-    box-shadow: var(--site-shadow-card);
   }
   .channel__icon {
     display: inline-flex;
@@ -418,10 +417,11 @@ const supportAnswer = getPublicFaq().find((f) => f.id === 'destek')?.answer
     justify-content: center;
     width: var(--ek-space-10);
     height: var(--ek-space-10);
-    border-radius: var(--ek-radius-lg);
-    background: var(--site-accent-soft);
-    box-shadow: inset 0 0 0 var(--site-border-width) color-mix(in srgb, var(--ek-color-secondary) 28%, transparent);
-    color: var(--site-link-accent);
+
+    border: var(--site-border-width) solid var(--site-action-border);
+    border-radius: var(--ek-radius-tile);
+    background: var(--site-action-subtle);
+    color: var(--site-action);
   }
   .channel h3 {
     color: var(--site-text-heading);
@@ -462,7 +462,7 @@ const supportAnswer = getPublicFaq().find((f) => f.id === 'destek')?.answer
   .band__actions {
     padding: var(--ek-space-6);
     border: var(--site-border-width) solid var(--site-glass-border);
-    border-radius: var(--site-radius-panel);
+    border-radius: var(--ek-radius-card);
     background: var(--site-glass-bg);
   }
   @media (min-width: 640px) {
@@ -496,40 +496,34 @@ const supportAnswer = getPublicFaq().find((f) => f.id === 'destek')?.answer
   .support-card {
     display: flex;
     flex-direction: column;
-    gap: var(--ek-space-5);
     width: 100%;
-    padding: var(--ek-space-6);
+    overflow: hidden;
     border: var(--site-border-width) solid var(--ek-color-border-default);
-    border-radius: var(--site-radius-panel);
+    border-radius: var(--ek-radius-card);
     background: var(--ek-color-surface);
-    box-shadow: var(--site-shadow-card);
     /* site-wdg W14: üst bar payı html scroll-padding-top’ta; burada yalnız ek boşluk. */
     scroll-margin-top: var(--ek-space-2);
-    transition:
-      border-color var(--ek-duration-base) var(--ek-easing-standard),
-      box-shadow var(--ek-duration-base) var(--ek-easing-standard);
   }
-  .support-card:hover,
-  .support-card:focus-within {
-    border-color: var(--ek-color-border-strong);
-    box-shadow: var(--site-shadow-card-hover);
-  }
+  /* Baş bandı: sakin zemin + ince çizgi. */
   .support-card__head {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     gap: var(--ek-space-4);
+    padding: var(--ek-space-4) var(--ek-space-5);
+    border-bottom: var(--site-border-width) solid var(--ek-color-border-default);
+    background: var(--ek-color-surface-muted);
   }
   .support-card__icon {
     display: inline-flex;
     flex: none;
     align-items: center;
     justify-content: center;
-    width: var(--ek-space-12);
-    height: var(--ek-space-12);
-    border-radius: var(--ek-radius-lg);
-    background: var(--ek-color-primary);
-    color: var(--site-color-on-primary);
-    box-shadow: var(--site-shadow-card);
+    width: var(--ek-space-10);
+    height: var(--ek-space-10);
+    border: var(--site-border-width) solid var(--site-action-border);
+    border-radius: var(--ek-radius-tile);
+    background: var(--ek-color-surface);
+    color: var(--site-action);
   }
   .support-card h3 {
     font-size: var(--site-card-title-size);
@@ -544,8 +538,10 @@ const supportAnswer = getPublicFaq().find((f) => f.id === 'destek')?.answer
 
   .support-card__body {
     display: flex;
+    flex: 1;
     flex-direction: column;
     gap: var(--ek-space-5);
+    padding: var(--ek-space-2) var(--ek-space-5);
   }
 
   .questions {
@@ -569,23 +565,27 @@ const supportAnswer = getPublicFaq().find((f) => f.id === 'destek')?.answer
     text-decoration: none;
   }
   .questions__link:hover span:first-child {
-    color: var(--ek-color-primary);
+    color: var(--site-action);
+  }
+  .questions__link:hover .questions__chev {
+    color: var(--site-action);
   }
   .questions__chev {
     flex: none;
     color: var(--ek-color-content-muted);
     transform: rotate(-90deg);
   }
+  /* Alt bant: sakin zemin + ince çizgi. */
   .support-card__foot {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--ek-space-4);
+    gap: var(--ek-space-2) var(--ek-space-5);
     margin-top: auto;
-    padding-top: var(--ek-space-4);
+    padding: var(--ek-space-3) var(--ek-space-5);
     border-top: var(--site-border-width) solid var(--ek-color-border-default);
+    background: var(--ek-color-surface-muted);
   }
   .support-card__more {
-    color: var(--site-color-link);
     font-size: var(--ek-font-size-md);
     font-weight: var(--ek-font-weight-semibold);
   }
@@ -594,7 +594,9 @@ const supportAnswer = getPublicFaq().find((f) => f.id === 'destek')?.answer
     color: var(--site-color-link-hover);
   }
 
-  /* --- Hâlâ yardım --- */
+  .support-card__foot:empty {
+    display: none;
+  }
 
   @media (min-width: 768px) {
     .support-grid {
@@ -609,6 +611,9 @@ const supportAnswer = getPublicFaq().find((f) => f.id === 'destek')?.answer
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
       column-gap: var(--ek-space-8);
+    }
+    .support-cell--wide .questions li:nth-child(2) {
+      border-top: 0;
     }
   }
 </style>

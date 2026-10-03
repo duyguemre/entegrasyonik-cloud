@@ -84,12 +84,14 @@ describe('kabuk (madde 3, 9)', () => {
 
 describe('sayfa hakkında (madde 16)', () => {
   const bar = read('src/components/page/EkPageBar.vue')
-  it('rehber kartı: başlık + kapat, numaralı ipuçları, modern bağlantılar; Esc kapatır', () => {
+  it('rehber kartı: başlık + kapat, numaralı ipuçları, modern bağlantılar; ışık düğmesinden YÜZEN kart (Esc / dışarı tık kapatır)', () => {
     expect(bar).toMatch(/class="ek-about__title">\{\{ title \}\} hakkında</)
     expect(bar).toMatch(/aria-label="Sayfa hakkında bilgiyi kapat"/)
     expect(bar).toMatch(/<ol class="ek-page-bar__tips">/)
     expect(bar).toMatch(/class="ek-link ek-page-bar__read" data-page-help-read/)
-    expect(bar).toMatch(/@keydown\.esc\.stop="closeAbout"/)
+    // Sayfa içi panel yerine bağlam menüsü gibi yüzen kart (v-menu: Esc ve dışarı tıklama yerleşik kapatır).
+    expect(bar).toMatch(/<v-menu v-model="aboutOpen"/)
+    expect(bar).not.toMatch(/<EkCollapse :id="panelId"/)
     expect(bar).not.toMatch(/text-decoration: underline/)
   })
 })

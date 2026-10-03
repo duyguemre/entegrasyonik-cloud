@@ -7,7 +7,7 @@
       title="Zamanlanmış görevler"
       :description="`Son durum görev başına; geçmişte yalnız anlamlı turlar (başarısız, kısmi, nedenli atlama, iş yapan) ve saatte en az bir tur tutulur · ${retention} gün saklanır.`"
       icon="mdi-calendar-clock-outline"
-    >
+     :count="list.items.value.length">
       <template #actions>
         <BoViewSwitch query="goster" :options="VIEWS" label="Zamanlanmış görev görünümü" />
         <EkRefreshButton quiet-success :loading="list.refreshing.value || list.phase.value === 'loading'" @refresh="list.reload({ keep: true })" />
@@ -196,5 +196,17 @@ onMounted(() => list.reload())
   display: inline-flex;
   flex-wrap: wrap;
   gap: var(--ek-space-3);
+}
+
+/* BO-LOCAL-01 — ardışık hata sayısı: düz hata tonunda köşeli sayaç (yalnız renkli metin değil). */
+.bo-runs__bad {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  padding: 0 var(--ek-space-1);
+  border: 1px solid var(--ek-color-error-border);
+  border-radius: var(--ek-radius-md);
+  background: var(--ek-color-error-subtle);
 }
 </style>

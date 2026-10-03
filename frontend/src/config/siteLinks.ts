@@ -10,7 +10,7 @@
  * SAF TS: `resolveSiteBase` testte doğrudan çağrılır.
  */
 
-export const DEFAULT_SITE_URL = 'http://localhost:4321'
+export const DEFAULT_SITE_URL = 'http://localhost:4501' // yerel site dev portu (site: npx astro dev --port 4501)
 
 export function resolveSiteBase(raw: string | undefined | null): string {
   const value = (raw ?? '').trim()
@@ -35,6 +35,9 @@ export const SITE_LEGAL_PATHS = {
 } as const
 
 export type SiteLegalKey = keyof typeof SITE_LEGAL_PATHS
+
+/** APK-DL: sitedeki Android uygulaması indirme sayfası (`site/src/pages/mobil-uygulama.astro`). */
+export const SITE_MOBILE_APP_PATH = '/mobil-uygulama'
 
 export function siteUrl(path: string, base: string = siteBaseUrl): string {
   return `${base}${path}`

@@ -103,4 +103,11 @@ const emit = defineEmits<{ clear: [] }>()
   color: var(--ek-color-content-muted);
   font-size: var(--ek-type-caption-size);
 }
+
+/* ================= FE-LOCAL-1041 — toplu işlem çubuğu =================
+   Seçim varken: eylem renginin açık tonu + altta ince eylem çizgisi (soldaki kalın şerit kalktı). */
+.ek-bulk.is-on {
+  background: var(--ek-color-action-subtle);
+  box-shadow: inset 0 -1px 0 var(--ek-color-action-border);
+}
 </style>

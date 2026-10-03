@@ -1,10 +1,6 @@
 <template>
   <div class="bo-page">
-    <BoPageHeader :updated-at="summary.updatedAt.value" :stale="summary.stale.value">
-      <template #actions>
-        <BoAction kind="refresh" :loading="summary.refreshing.value" data-page-refresh @click="refresh" />
-      </template>
-    </BoPageHeader>
+    <BoPageHeader :updated-at="summary.updatedAt.value" :stale="summary.stale.value" refreshable :refreshing="summary.refreshing.value" @refresh="refresh" />
 
     <PageVerdict :verdict="verdict" />
 
@@ -33,7 +29,7 @@
       <button type="button" class="bo-audit__req-clear" aria-label="İstek kimliği süzgecini kaldır" @click="reqId = ''">Kaldır</button>
     </p>
 
-    <BoSection title="Denetim kayıtları" description="Kim, neyi, ne zaman değiştirdi. Kayıtlar değiştirilemez ve 365 gün saklanır." icon="mdi-shield-search" flush>
+    <BoSection title="Denetim kayıtları" description="Kim, neyi, ne zaman değiştirdi. Kayıtlar değiştirilemez ve 365 gün saklanır." icon="mdi-shield-search" flush :count="items?.length ?? 0">
       <div v-if="state !== 'ready'" class="bo-audit__panel">
         <BoPanelState
           :state="state"
@@ -524,5 +520,83 @@ const changes = (a: AuditRecord) => auditChanges(a.meta)
 .bo-audit__facts dd {
   margin: 0;
   color: var(--ek-color-content-strong);
+}
+
+/* ================= BO-LOCAL-01 — denetim: uygulamanın tasarım diliyle (DESIGN_SYSTEM §35) =================
+   Aç/kapa düğmesi çerçeveli köşeli kutu (açık satırda eylem tonunda). Gerekçe: ince çerçeveli sakin kutu.
+   Önce/sonra tablosu: kutu köşeli, başlık bandı sakin zeminde mikro etiket; değerler ince ton çerçeveli köşeli etiket.
+   Ayrıntı bilgileri: ince çizgiyle ayrılan hücreler, adları mikro etiket (kayıt özetleriyle aynı aile). */
+.bo-audit__req-filter {
+  border-radius: var(--ek-radius-tile);
+}
+
+.bo-audit__toggle {
+  border: 1px solid var(--ek-color-border-default);
+  background: var(--ek-color-surface);
+}
+
+.bo-audit__toggle:hover,
+.bo-audit__row.is-open .bo-audit__toggle {
+  border-color: var(--ek-color-action-border);
+  background: var(--ek-color-action-subtle);
+  color: var(--ek-color-action-emphasis);
+}
+
+.bo-audit__reason {
+  padding: var(--ek-space-3) var(--ek-space-4);
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-tile);
+  background: var(--ek-color-surface);
+}
+
+.bo-diff {
+  overflow: hidden;
+  border-radius: var(--ek-radius-tile);
+}
+
+.bo-diff thead th {
+  background: var(--ek-color-surface-muted);
+  font-size: var(--ek-type-micro-size);
+  font-weight: var(--ek-type-micro-weight);
+  letter-spacing: var(--ek-type-micro-tracking);
+  text-transform: uppercase;
+}
+
+.bo-diff__before {
+  border: 1px solid var(--ek-color-error-border);
+  border-radius: var(--ek-radius-md);
+}
+
+.bo-diff__after {
+  border: 1px solid var(--ek-color-success-border);
+  border-radius: var(--ek-radius-md);
+}
+
+.bo-audit__facts {
+  gap: var(--ek-space-3) 0;
+  margin-left: calc(-1 * var(--ek-space-5));
+  overflow: hidden;
+  font-size: var(--ek-type-label-size);
+}
+
+.bo-audit__facts > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-left: -1px;
+  padding: 0 var(--ek-space-5);
+  border-left: 1px solid var(--ek-color-border-default);
+}
+
+.bo-audit__facts dt {
+  font-size: var(--ek-type-micro-size);
+  line-height: var(--ek-type-micro-line);
+  font-weight: var(--ek-type-micro-weight);
+  letter-spacing: var(--ek-type-micro-tracking);
+  text-transform: uppercase;
+}
+
+.bo-audit__facts dd {
+  font-weight: var(--ek-font-weight-semibold);
 }
 </style>

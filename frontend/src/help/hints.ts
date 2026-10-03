@@ -136,7 +136,7 @@ export const HELP_HINTS = {
 
   // Kanıt: components/productDefinitions/variants/ProductVariantAttributesComponent.vue ("Zorunlu Özellikleri (*)",
   //        "Kategorisi Eşleştirmesi Yapılmalı." / "Seçenek Eşleştirmesi Yapılmalı." uyarıları)
-  // Yer: components/productDefinitions/variants/ProductVariantAttributesComponent.vue → CardComponent title="Zorunlu Özellikleri (*)" başlığının yanı
+  // Yer: components/productDefinitions/variants/ProductVariantAttributesComponent.vue → özellik süzgeçlerinin (Tümü / Zorunlu / Eksik zorunlu…) yanı
   //      (aynısı ProductBatchVariantAttributesComponent.vue içinde)
   'attributes.required': {
     title: 'Zorunlu pazaryeri özellikleri',

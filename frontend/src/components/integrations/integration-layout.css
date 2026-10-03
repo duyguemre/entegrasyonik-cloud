@@ -1,22 +1,43 @@
 /*
  * DS-v2 Aşama 2 — entegrasyon ekranları (pazaryeri/e-ticaret/kargo/e-fatura/ERP)
  * ortak yerleşimi. Ana kolon (platform rayı + ayar formu) + sağda rehber kolonu;
- * 1280px altında tek kolon (rehber formun ALTINA iner). Önceden ayar kartı sol
- * kenara yapışıktı (padding'siz kolon) — tüm içerik aynı 24px sayfa boşluğunda.
+ * 1280px altında tek kolon (rehber formun ALTINA iner).
  * Görünümlerde `<style scoped src="…">` ile yüklenir.
+ *
+ * FE-LOCAL-1048 — ana sayfa / bölüm panolarıyla aynı dil: sayfa adı diğer sayfalarla AYNI noktada (liste ekranlarının
+ * iç boşluğu), altında tam genişlik özet şeridi, sonra bölümler (kart dışı mikro başlık + içerik).
  */
+.ek-integration-head {
+  /* Liste ekranlarındaki sayfa adıyla aynı dikey konum (ölçüldü: 12px üst boşluk — ana sayfayla aynı). */
+  padding: var(--ek-space-3) var(--ek-space-6) 0;
+}
+
+.ek-integration-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ek-space-6);
+  padding: var(--ek-space-3) var(--ek-space-6) var(--ek-space-6);
+}
+
 .ek-integration-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
   gap: var(--ek-space-6);
   align-items: start;
-  padding: var(--ek-space-5) var(--ek-space-6) var(--ek-space-6);
 }
 
 .ek-integration-layout__main {
   display: flex;
   flex-direction: column;
-  gap: var(--ek-space-5);
+  gap: var(--ek-space-6);
+  min-width: 0;
+}
+
+/* Bir bölümün içindeki ardışık kartlar (kapsam + ayar formu). */
+.ek-integration-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ek-space-4);
   min-width: 0;
 }
 
@@ -31,8 +52,17 @@
 }
 
 @media (max-width: 599px) {
-  .ek-integration-layout {
-    padding: var(--ek-space-4);
+  .ek-integration-head {
+    padding: var(--ek-space-4) var(--ek-space-4) 0;
+  }
+
+  .ek-integration-page {
+    gap: var(--ek-space-4);
+    padding: var(--ek-space-3) var(--ek-space-4) var(--ek-space-4);
+  }
+
+  .ek-integration-layout,
+  .ek-integration-layout__main {
     gap: var(--ek-space-4);
   }
 }

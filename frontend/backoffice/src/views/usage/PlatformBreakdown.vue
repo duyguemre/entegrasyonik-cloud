@@ -79,4 +79,54 @@ const subRows = computed<MeterRow[]>(() =>
 .bo-pb__more summary:focus-visible { outline: none; box-shadow: var(--ek-focus-ring); border-radius: var(--ek-radius-md); }
 .bo-pb__more[open] summary { margin-bottom: var(--ek-space-2); }
 .bo-pb__note { margin: 0; font-size: var(--ek-type-caption-size); }
+
+/* BO-LOCAL-01 — "Alt türler" açılır satırı: ince çerçeveli, sakin zeminli düz satır (tarayıcı üçgeni yerine ok);
+   açıkken içerik aynı kutuda, ince çizgiyle ayrılır. Dipnot ince çizgiyle ayrılan sakin satır. */
+.bo-pb__more {
+  overflow: hidden;
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-tile);
+  background: var(--ek-color-surface);
+}
+.bo-pb__more summary {
+  display: flex;
+  align-items: center;
+  gap: var(--ek-space-2);
+  min-height: 36px;
+  padding: 0 var(--ek-space-3);
+  background: var(--ek-color-surface-muted);
+  list-style: none;
+  transition: var(--ek-transition-colors);
+}
+.bo-pb__more summary::-webkit-details-marker {
+  display: none;
+}
+.bo-pb__more summary::before {
+  content: '';
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-right: 2px solid var(--ek-color-content-muted);
+  border-bottom: 2px solid var(--ek-color-content-muted);
+  transform: rotate(-45deg);
+  transition: transform var(--ek-motion-reveal);
+}
+.bo-pb__more[open] summary::before {
+  transform: rotate(45deg);
+}
+.bo-pb__more summary:hover {
+  background: var(--ek-color-action-subtle);
+  color: var(--ek-color-action-emphasis);
+}
+.bo-pb__more[open] summary {
+  margin-bottom: 0;
+  border-bottom: 1px solid var(--ek-color-border-subtle);
+}
+.bo-pb__more > :not(summary) {
+  padding: var(--ek-space-3);
+}
+.bo-pb__note {
+  padding-top: var(--ek-space-3);
+  border-top: 1px solid var(--ek-color-border-subtle);
+}
 </style>

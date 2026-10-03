@@ -488,7 +488,7 @@ export const ARTICLES_TR: HelpArticle[] = [
 
   // Kanıt: frontend/src/components/productDefinitions/variants/grid/VariantBulkEditor.vue (taslak, "Seçime uygula", değer ata/± yüzde/± tutar/temizle, aşağı doldur, Excel'den yapıştır, geri al/yinele, önizleme, "Uygula" forma yazar),
   //        frontend/src/components/productDefinitions/variants/grid/variantSheet.ts, frontend/src/components/productDefinitions/variants/grid/useVariantSheet.ts,
-  //        frontend/src/components/productDefinitions/variants/ProductVariantsComponent.vue ("Toplu düzenle", "Toplu Fiyat Düzenleme", "Toplu Özellik Düzenleme"),
+  //        frontend/src/components/productDefinitions/variants/ProductVariantsComponent.vue ("Toplu düzenle", "Toplu özellik düzenle"),
   //        frontend/src/components/productDefinitions/products/BatchActions/useBatchActions.ts (katalog düzeyinde toplu işlemler)
   {
     id: 'cat-bulk-editor',
@@ -503,7 +503,7 @@ export const ARTICLES_TR: HelpArticle[] = [
         type: 'steps',
         items: [
           'Ürün formunda varyant listesine gelin. İsterseniz yalnız düzenleyeceğiniz varyantları seçin.',
-          '**Varyant işlemleri** menüsünden **Toplu düzenle**’yi seçin. Yalnız kanal fiyatlarıyla çalışmak için **Toplu Fiyat Düzenleme**’yi kullanın.',
+          '**Varyant işlemleri** menüsünden **Toplu düzenle**’yi seçin. Kanal fiyatları için tablonun üstünden **Kanal fiyatları** görünümüne geçin.',
           'Hücre, satır veya kolon seçin (tıklayarak, Shift ile genişleterek ya da sürükleyerek; köşe hücresi tümünü seçer).',
           'İşlemi seçin: **değer ata**, **± yüzde**, **± tutar** (stokta ± adet) veya **temizle**. Değeri girip **Seçime uygula**’ya basın.',
           'Değişiklik özetini ve önce → sonra önizlemesini kontrol edin, ardından **Uygula** ile değişiklikleri forma aktarın.',
@@ -568,7 +568,7 @@ export const ARTICLES_TR: HelpArticle[] = [
   },
 
   // Kanıt: frontend/src/components/productDefinitions/variants/ProductVariantAttributesComponent.vue ("Zorunlu Özellikleri (*)", kanal sekmeleri ChannelTabList, "Zorunlu" etiketi),
-  //        frontend/src/components/productDefinitions/variants/ProductBatchVariantAttributesComponent.vue, frontend/src/components/productDefinitions/variants/ProductVariantsComponent.vue ("Toplu Özellik Düzenleme"),
+  //        frontend/src/components/productDefinitions/variants/ProductBatchVariantAttributesComponent.vue, frontend/src/components/productDefinitions/variants/ProductVariantsComponent.vue ("Toplu özellik düzenle"),
   //        frontend/src/composables/useIntegrationError.ts (özellik listesi alınamadığında gösterilen hata), frontend/src/components/logListView/DetailedImportLogReportMissingAttribute.vue
   {
     id: 'cat-required-attributes',
@@ -589,7 +589,7 @@ export const ARTICLES_TR: HelpArticle[] = [
           'Diğer özellikler isteğe bağlıdır; doldurmanız ürün sayfasının kalitesini artırır.',
         ],
       },
-      { type: 'p', text: 'Birden fazla varyanta aynı özellik değerlerini vermek için **Varyant işlemleri > Toplu Özellik Düzenleme**’yi kullanın.' },
+      { type: 'p', text: 'Birden fazla varyanta aynı özellik değerlerini vermek için **Varyant işlemleri > Toplu özellik düzenle**’yi kullanın. Kanalı seçin, **Eksik zorunlu** süzgeciyle boş zorunlu özellikleri bulun, değerleri girip önizlemeden sonra **Uygula** ile yazın; seçili varyant varsa yalnız onlara uygulanır.' },
       { type: 'note', tone: 'warning', text: 'Özellik listesi yüklenemezse pencerede ne olduğunu, olası nedeni ve ne yapmanız gerektiğini anlatan bir hata paneli görünür. Anlamları için **Entegrasyon hata mesajları** makalesine bakın.' },
     ],
     goTo: [{ screen: 'productDefinitions/ProductListView', label: 'Ürünler ekranını aç' }],

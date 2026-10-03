@@ -46,33 +46,34 @@ const shot = (page: Page, name: string) =>
   expect(page).toHaveScreenshot(name, { fullPage: false, mask: [page.locator('.v-snackbar__wrapper')] })
 
 test.describe('P3 (B5-2) — Varyant diyalogları (ProductVariantsComponent alt bileşenleri)', () => {
-  test('varyant özellikleri: kalem butonu "Varyant Bilgileri" kartını ("Varyanta Ata") açar', async ({ page }, testInfo) => {
+  test('varyant bilgileri: kalem butonu kanal seçici + kanal bilgileri + özellik tablosu olan diyaloğu açar', async ({ page }, testInfo) => {
     const root = await openVariantStep(page)
     await root.getByRole('row').filter({ hasText: 'SK-E2E-SIYAH' }).getByRole('button', { name: 'Varyantı düzenle' }).click()
 
-    const card = page.locator('.v-overlay--active').filter({ hasText: 'Platform Bazında Bilgiler' }).first()
+    const card = page.locator('.v-overlay--active').filter({ hasText: 'Varyant bilgileri' }).first()
     await expect(card).toBeVisible()
-    await expect(card.getByRole('button', { name: 'Varyanta Ata' })).toBeVisible()
+    await expect(card.getByRole('radiogroup', { name: 'Özellikleri düzenlenen kanal' })).toBeVisible()
+    await expect(card.getByRole('button', { name: /Değişiklikleri gözden geçir/ })).toBeVisible()
     await shot(page, 'variant-attributes.png')
     await axeReport(page, testInfo, 'ProductVariantAttributesComponent', '.v-overlay--active:not(.v-snackbar)')
   })
 
-  test('toplu özellik düzenleme: "Toplu Varyant Bilgileri" kartı açılır', async ({ page }, testInfo) => {
+  test('toplu özellik düzenle: kanal seçici + kanal bilgileri + özellik tablosu açılır', async ({ page }, testInfo) => {
     const root = await openVariantStep(page)
-    await openOpsMenuItem(page, root, 'Toplu Özellik Düzenleme')
+    await openOpsMenuItem(page, root, 'Toplu özellik düzenle')
 
-    const card = page.locator('.v-overlay--active').filter({ hasText: 'Toplu Varyant Bilgileri' }).first()
+    const card = page.locator('.v-overlay--active').filter({ hasText: 'Toplu özellik düzenle' }).first()
     await expect(card).toBeVisible()
-    await expect(card.getByText('Platform Bazında Bilgiler')).toBeVisible()
+    await expect(card.getByRole('radiogroup', { name: 'Özellikleri düzenlenen kanal' })).toBeVisible()
+    await expect(card.getByRole('button', { name: /kanal bilgileri/ })).toBeVisible()
     await shot(page, 'variant-batch-attributes.png')
     await axeReport(page, testInfo, 'ProductBatchVariantAttributesComponent', '.v-overlay--active:not(.v-snackbar)')
   })
 
-  test('toplu fiyat düzenleme: "Toplu düzenle" tablosu satış/piyasa fiyatı kolonlarıyla açılır', async ({ page }, testInfo) => {
-    // Eski "Toplu Fiyat Düzenleme" kartı (satış/piyasa alanları + platform bazında fiyat anahtarı) kaldırıldı;
-    // menü öğesi artık VariantBulkEditor'ı (Excel benzeri toplu düzenleme tablosu) kanal fiyatı ön ayarıyla açar.
+  test('toplu düzenle: tablo satış/piyasa fiyatı kolonlarıyla açılır (ayrı "Toplu Fiyat Düzenleme" kaldırıldı)', async ({ page }, testInfo) => {
+    // "Toplu Fiyat Düzenleme" aynı ekranı açtığı için menüden kaldırıldı; kanal fiyatları tablodaki "Kanal fiyatları" görünümünde.
     const root = await openVariantStep(page)
-    await openOpsMenuItem(page, root, 'Toplu Fiyat Düzenleme')
+    await openOpsMenuItem(page, root, 'Toplu düzenle')
 
     const card = page.locator('.v-overlay--active').filter({ has: page.getByRole('grid', { name: 'Toplu düzenleme tablosu' }) }).first()
     await expect(card).toBeVisible()

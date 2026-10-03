@@ -32,9 +32,9 @@ Dal `cloud/site-wdg`, taban `origin/main` (3c839f8). Yalnız `site/` değişti. 
 |---|---|---|
 | `styles/site-tokens.css` | `--site-accent` = teal %88 + lacivert %12 (aynı ton, AA) | W03 |
 | `styles/global.css` | koyu yüzey eşlemesine `--site-color-focus-ring` (açık teal) | W01 |
-| `styles/global.css` | `h1–h4 { text-wrap: balance }`, `p { text-wrap: pretty }` | W13 |
+| `styles/global.css` | `h1–h4 { text-wrap: balance }` (gövde `p`'ye site geneli `pretty` bilerek eklenmedi: yerleşim maliyeti) | W13 |
 | `styles/global.css` | `html { color-scheme: light }` | W15 |
-| `styles/global.css` | "Hareket" anahtarı kapalıyken hover hareketlerini sıfırlayan tek kural (kart yükselmesi, ikon dönmesi, düğme parıltısı) | W17 |
+| `styles/global.css` | "Hareket" anahtarı kapalıyken hover hareketlerini sıfırlayan tek kural (kart yükselmesi, ikon dönmesi, düğme parıltısı). İki listeye bölündü: küçültücü `transform` ile `translate/rotate/scale`'i tek kısayola birleştirip bireyselleri sıfırlamadan bırakıyordu (tarayıcıda ölçüldü: kapalıyken `rotate/scale/translate` = `none`) | W17 |
 | `layouts/BaseLayout.astro` | `theme-color` = sayfa zemini (beyaz) | W15 |
 | `scripts/menu.ts` | mobil çekmece açıkken `main`, footer ve atlama bağlantısı `inert` | W07 |
 | `components/Card.astro`, `pages/Accordion.astro`, `pages/CoverageMatrix.astro`, `rehber/GuideArticle.astro` | bağımsız kart = `--site-radius-panel` + `--site-shadow-card` | W19 |
@@ -81,21 +81,20 @@ Dal `cloud/site-wdg`, taban `origin/main` (3c839f8). Yalnız `site/` değişti. 
 
 | Koşu | Sonuç |
 |---|---|
-| `vitest run` | 23 dosyadan 22'si geçti; **835 geçti, 2 başarısız, 1 atlandı**. Taban da aynı: başarısız iki test `claims.test.ts` içinde ve bulut kopyasında olmayan kök dosyaları (`INTEGRATIONS_REGISTRY.md`, `plans.seed.js`) arıyor; bu dal yeni hata eklemedi. |
+| `vitest run` | 23 dosyadan 22'si geçti; **836 geçti, 2 başarısız**. Taban da aynı: başarısız iki test `claims.test.ts` içinde ve bulut kopyasında olmayan kök dosyaları (`INTEGRATIONS_REGISTRY.md`, `plans.seed.js`) arıyor; bu dal yeni hata eklemedi. |
 | `npm run build` | Geçti: 49 sayfa. |
-| Playwright 1. tam koşu (`--update-snapshots=missing`, 3 viewport) | 402 geçti, 46 atlandı, 47 "başarısız". 47'sinin tamamı eksik `*-linux.png` tabanının ilk yazımı ("A snapshot doesn't exist… writing actual"); işlevsel hata yok. |
-| Playwright 2. tam koşu | **448 geçti, 46 atlandı, 1 başarısız:** `nav.spec.ts:176` (masaüstü hover niyeti, zamanlamaya duyarlı). Ayrıca bkz. aşağıdaki not. |
+| Playwright son tam koşu (`--update-snapshots=missing`, 3 viewport) | **449 geçti, 46 atlandı, 0 başarısız.** |
 | axe (WCAG 2.1 AA) | Spec içinde 14/14 geçti. Ek betikle 18 rota × 1440/390 tarandı: **0 ihlal** (önce de 0). |
-| Odak halkası kontrast taraması (ek betik) | 16 rota: 3:1 altında halka **0** (önce koyu yüzeylerde ~1,1:1). |
+| Odak halkası kontrast taraması (ek betik, 16 rota) | 3:1 altında halka **0**. Önce koyu yüzeylerde ~1,1:1'di. MotionToggle'ın halkası iç izde olduğu için betik onu "YOK" diye yanlış raporluyor. |
 | Yatay taşma (390, 1440; 15 rota) | Yok. |
 
-`nav.spec.ts:176` notu: test, iki `mouse.move` arasının 120 ms'lik hover gecikmesinden kısa sürmesine dayanıyor.
-Paralel tam koşuda bu dalda iki kez düştü. Ayrı koşularda dal 14/15, taban (`origin/main` worktree) 10/10 geçti.
-Diff masaüstü menü betiğine ve hover zamanlayıcısına dokunmuyor: `menu.ts` değişikliği yalnız mobil çekmece bloğunda,
-`Header.astro` değişiklikleri yalnız renk/zemin/gölge. Kod yolu değişmediği için regresyon beklenmiyor, ama testin yük altındaki
-kırılganlığı yerel Windows koşusunda doğrulanmalı. Son tam koşunun sonucu aşağıda.
-
-<!-- SON-KOSU -->
+Ara koşularda ilk tam koşu, eksik `*-linux.png` tabanlarının ilk yazımı yüzünden 47 "başarısız" verdi; işlevsel hata yoktu.
+`nav.spec.ts:176` (masaüstü hover niyeti) bazı tam koşularda düştü. Test, iki `mouse.move` arasının 120 ms'lik hover
+gecikmesinden kısa sürmesine dayanıyor. Yük altında (8 işçi × 24 tekrar) taban ve dal art arda ölçüldü: taban **33/72**,
+dal **31/72** başarısız. Fark yok; test tabanda da aynı oranda makine yüküne duyarlı. Önceki ölçümlerde dal kötü görünüyordu,
+ama bu ölçümler farklı zamanlarda alınmıştı; aradaki fark yük sapmasıydı. İnceleme sırasında gerçek bir hata da bulundu ve
+düzeltildi: yukarıdaki küçültücü birleşmesi (W17). Testin kendisi metin/davranış kapsamı dışında olduğu için değiştirilmedi.
+Öneri: yerelde zamanlama payı artırılsın (ayrı iş).
 
 ### Yerelde yenilenecek win32 tabanları
 

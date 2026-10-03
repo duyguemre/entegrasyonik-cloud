@@ -323,7 +323,7 @@ const PUBLISH_NODES = ['a', 'b', 'c', 'd'] as const
     position: relative;
     display: block;
     height: var(--ek-space-3);
-    border-radius: var(--ek-radius-full);
+    border-radius: var(--ek-radius-sm);
     background: color-mix(in srgb, var(--ek-color-background) 14%, transparent);
     overflow: hidden;
   }
@@ -345,7 +345,7 @@ const PUBLISH_NODES = ['a', 'b', 'c', 'd'] as const
     transform: scaleX(0.35);
   }
   .ledger__fill--available {
-    background: var(--ek-color-secondary);
+    background: var(--site-accent-on-dark);
     transform: scaleX(0.65);
   }
   .ledger__caption {
@@ -367,9 +367,8 @@ const PUBLISH_NODES = ['a', 'b', 'c', 'd'] as const
     list-style: none;
     overflow: hidden;
     border: var(--site-border-width) solid var(--ek-color-border-default);
-    border-radius: var(--site-radius-panel);
+    border-radius: var(--ek-radius-card);
     background: var(--ek-color-surface);
-    box-shadow: var(--site-shadow-card-hover);
     counter-reset: rail;
   }
   .story-rail li {
@@ -389,7 +388,7 @@ const PUBLISH_NODES = ['a', 'b', 'c', 'd'] as const
     transition: background-color var(--ek-duration-base) var(--ek-easing-standard);
   }
   .story-rail__link:hover {
-    background: var(--ek-color-surface-muted);
+    background: var(--site-action-subtle);
   }
   .story-rail__link:focus-visible {
     outline-offset: calc(var(--site-focus-ring-width) * -1);
@@ -401,19 +400,23 @@ const PUBLISH_NODES = ['a', 'b', 'c', 'd'] as const
     justify-content: center;
     width: var(--ek-space-10);
     height: var(--ek-space-10);
-    border-radius: var(--ek-radius-lg);
+    border-radius: var(--ek-radius-tile);
+    border: var(--site-border-width) solid var(--ek-color-border-default);
   }
   .story-rail__link[data-tone='warn'] .story-rail__icon {
     background: var(--ek-color-warning-subtle);
-    color: var(--ek-color-warning);
+    color: var(--ek-color-warning-emphasis);
+    border-color: var(--ek-color-warning-border);
   }
   .story-rail__link[data-tone='brand'] .story-rail__icon {
-    background: linear-gradient(140deg, var(--ek-color-primary), var(--ek-color-primary-darken-1));
-    color: var(--site-color-on-primary);
+    background: var(--site-action-subtle);
+    color: var(--site-action);
+    border-color: var(--site-action-border);
   }
   .story-rail__link[data-tone='ok'] .story-rail__icon {
-    background: var(--ek-color-success-subtle);
-    color: var(--ek-color-success);
+    background: var(--site-action-subtle);
+    color: var(--site-action);
+    border-color: var(--site-action-border);
   }
   .story-rail__body {
     display: flex;
@@ -422,7 +425,7 @@ const PUBLISH_NODES = ['a', 'b', 'c', 'd'] as const
     min-width: 0;
   }
   .story-rail__eyebrow {
-    color: var(--site-link-accent);
+    color: var(--site-text-meta);
     font-size: var(--ek-font-size-xs);
     font-weight: var(--ek-font-weight-semibold);
     letter-spacing: 0.08em;
@@ -430,7 +433,7 @@ const PUBLISH_NODES = ['a', 'b', 'c', 'd'] as const
   }
   .story-rail__eyebrow::before {
     content: counter(rail, decimal-leading-zero) ' · ';
-    color: var(--site-text-meta);
+    color: var(--site-action);
   }
   .story-rail__title {
     color: var(--site-text-heading);
@@ -458,13 +461,12 @@ const PUBLISH_NODES = ['a', 'b', 'c', 'd'] as const
     gap: var(--ek-space-3);
     padding: var(--ek-space-6);
     border: var(--site-border-width) solid var(--ek-color-border-default);
-    border-radius: var(--site-radius-panel);
+    border-radius: var(--ek-radius-card);
     background: var(--ek-color-surface);
-    box-shadow: var(--site-shadow-card);
   }
   .problem:last-child {
-    border-color: color-mix(in srgb, var(--ek-color-warning) 45%, var(--ek-color-border-default));
-    background: linear-gradient(180deg, var(--ek-color-warning-subtle), var(--ek-color-surface) 70%);
+    /* SITE-DL-03: sonuç kartı yalnız uyarı tonlu çerçeveyle ayrışır (degrade zemin yok). */
+    border-color: var(--ek-color-warning-border);
   }
   .problem__icon {
     display: inline-flex;
@@ -472,13 +474,15 @@ const PUBLISH_NODES = ['a', 'b', 'c', 'd'] as const
     justify-content: center;
     width: var(--ek-space-10);
     height: var(--ek-space-10);
-    border-radius: var(--ek-radius-lg);
+    border-radius: var(--ek-radius-tile);
     background: var(--ek-color-surface-muted);
     color: var(--ek-color-content-strong);
+    border: var(--site-border-width) solid var(--ek-color-border-default);
   }
   .problem:last-child .problem__icon {
     background: var(--ek-color-warning-subtle);
-    color: var(--ek-color-warning);
+    color: var(--ek-color-warning-emphasis);
+    border-color: var(--ek-color-warning-border);
   }
   .problem__title {
     font-size: var(--site-card-title-size);
@@ -522,7 +526,7 @@ const PUBLISH_NODES = ['a', 'b', 'c', 'd'] as const
     width: var(--ek-space-12);
     height: var(--ek-space-12);
     border: var(--site-border-width) solid var(--site-glass-border);
-    border-radius: var(--ek-radius-lg);
+    border-radius: var(--ek-radius-tile);
     background: var(--site-glass-bg);
     color: var(--site-accent-on-dark);
     font-size: var(--ek-font-size-md);
@@ -536,7 +540,7 @@ const PUBLISH_NODES = ['a', 'b', 'c', 'd'] as const
     top: calc(var(--ek-space-12) + var(--ek-space-2));
     bottom: calc(var(--ek-space-6) * -1 + var(--ek-space-2));
     width: var(--site-border-width);
-    background: linear-gradient(180deg, var(--site-glass-border), transparent);
+    background: var(--site-glass-border);
   }
   .flow-step__title {
     font-size: var(--ek-font-size-xl);
@@ -549,17 +553,15 @@ const PUBLISH_NODES = ['a', 'b', 'c', 'd'] as const
   }
 
   .flow-card {
+    /* SITE-DL-03: düz "cam" panel — ince çerçeve; gölge/bulanıklık yok. */
     --flow-wire-h: var(--ek-space-8);
     display: flex;
     flex-direction: column;
     align-items: stretch;
     padding: var(--ek-space-6);
     border: var(--site-border-width) solid var(--site-glass-border);
-    border-radius: var(--site-radius-panel);
+    border-radius: var(--ek-radius-card);
     background: var(--site-glass-bg);
-    box-shadow: var(--site-shadow-panel);
-    -webkit-backdrop-filter: blur(var(--site-glass-blur));
-    backdrop-filter: blur(var(--site-glass-blur));
     color: var(--site-color-on-primary);
     font-size: var(--ek-font-size-sm);
   }
@@ -575,8 +577,8 @@ const PUBLISH_NODES = ['a', 'b', 'c', 'd'] as const
     gap: var(--ek-space-2);
     padding: var(--ek-space-3);
     border: var(--site-border-width) solid var(--site-glass-border);
-    border-radius: var(--ek-radius-lg);
-    background: color-mix(in srgb, var(--ek-color-background) 8%, transparent);
+    border-radius: var(--ek-radius-tile);
+    background: var(--site-glass-bg);
     font-weight: var(--ek-font-weight-medium);
   }
   .flow-order__dot {
@@ -586,7 +588,7 @@ const PUBLISH_NODES = ['a', 'b', 'c', 'd'] as const
     border-radius: var(--ek-radius-full);
   }
   .flow-order__dot--a {
-    background: var(--ek-color-secondary);
+    background: var(--ek-color-warning);
   }
   .flow-order__dot--b {
     background: var(--site-accent-on-dark);
@@ -602,7 +604,7 @@ const PUBLISH_NODES = ['a', 'b', 'c', 'd'] as const
     justify-self: center;
     width: var(--site-border-width);
     height: 100%;
-    background: linear-gradient(180deg, var(--site-glass-border), color-mix(in srgb, var(--ek-color-background) 30%, transparent));
+    background: var(--site-glass-border);
     overflow: visible;
   }
   .flow-signal {
@@ -613,8 +615,7 @@ const PUBLISH_NODES = ['a', 'b', 'c', 'd'] as const
     height: var(--ek-space-2);
     margin-inline-start: calc(var(--ek-space-2) / -2);
     border-radius: var(--ek-radius-full);
-    background: var(--ek-color-secondary);
-    box-shadow: var(--site-glow-secondary);
+    background: var(--ek-color-warning);
     opacity: 0;
   }
   .flow-signal--b {
@@ -626,10 +627,9 @@ const PUBLISH_NODES = ['a', 'b', 'c', 'd'] as const
     flex-direction: column;
     gap: var(--ek-space-3);
     padding: var(--ek-space-4);
-    border: var(--site-border-width) solid color-mix(in srgb, var(--ek-color-secondary) 55%, transparent);
-    border-radius: var(--ek-radius-xl);
-    background: color-mix(in srgb, var(--ek-color-secondary) 12%, transparent);
-    box-shadow: var(--site-glow-ring);
+    border: var(--site-border-width) solid var(--ek-color-chrome-soft-border);
+    border-radius: var(--ek-radius-tile);
+    background: color-mix(in srgb, var(--ek-color-background) 10%, transparent);
   }
   .flow-hub__head {
     display: flex;
@@ -639,7 +639,7 @@ const PUBLISH_NODES = ['a', 'b', 'c', 'd'] as const
     font-weight: var(--ek-font-weight-semibold);
   }
   .flow-hub__head :global(svg) {
-    color: var(--ek-color-secondary);
+    color: var(--site-accent-on-dark);
   }
   .flow-units {
     display: grid;
@@ -657,8 +657,8 @@ const PUBLISH_NODES = ['a', 'b', 'c', 'd'] as const
     border: var(--site-border-width) dashed var(--site-glass-border);
   }
   .flow-unit--last {
-    border: var(--site-border-width) solid var(--ek-color-secondary);
-    background: color-mix(in srgb, var(--ek-color-secondary) 35%, transparent);
+    border: var(--site-border-width) solid var(--site-accent-on-dark);
+    background: color-mix(in srgb, var(--ek-color-background) 18%, transparent);
     color: var(--site-color-on-primary);
   }
   .flow-hub__note {
@@ -675,7 +675,7 @@ const PUBLISH_NODES = ['a', 'b', 'c', 'd'] as const
     align-items: flex-start;
     gap: var(--ek-space-2);
     padding: var(--ek-space-3);
-    border-radius: var(--ek-radius-lg);
+    border-radius: var(--ek-radius-tile);
     border: var(--site-border-width) solid;
   }
   .flow-result :global(svg) {
@@ -697,11 +697,11 @@ const PUBLISH_NODES = ['a', 'b', 'c', 'd'] as const
     font-size: var(--ek-font-size-xs);
   }
   .flow-result--ok {
-    border-color: color-mix(in srgb, var(--ek-color-success) 60%, transparent);
-    background: color-mix(in srgb, var(--ek-color-success) 16%, transparent);
+    border-color: var(--ek-color-chrome-soft-border);
+    background: color-mix(in srgb, var(--ek-color-background) 10%, transparent);
   }
   .flow-result--ok :global(svg) {
-    color: var(--ek-color-success);
+    color: var(--site-accent-on-dark);
   }
   .flow-result--warn {
     border-color: color-mix(in srgb, var(--ek-color-warning) 60%, transparent);
@@ -727,7 +727,7 @@ const PUBLISH_NODES = ['a', 'b', 'c', 'd'] as const
     font-weight: var(--ek-font-weight-medium);
   }
   .flow-publish__label :global(svg) {
-    color: var(--ek-color-secondary);
+    color: var(--site-accent-on-dark);
   }
   .flow-publish__track {
     position: relative;
@@ -748,7 +748,7 @@ const PUBLISH_NODES = ['a', 'b', 'c', 'd'] as const
     inset-block: 0;
     inset-inline-start: 0;
     width: 30%;
-    background: linear-gradient(90deg, transparent, var(--ek-color-secondary), transparent);
+    background: var(--site-accent-on-dark);
     opacity: 0;
   }
   .flow-publish__nodes {
@@ -760,9 +760,9 @@ const PUBLISH_NODES = ['a', 'b', 'c', 'd'] as const
   .flow-node {
     width: var(--ek-space-3);
     height: var(--ek-space-3);
-    border: var(--site-border-width) solid var(--ek-color-secondary);
+    border: var(--site-border-width) solid var(--site-accent-on-dark);
     border-radius: var(--ek-radius-full);
-    background: var(--site-stage-deep);
+    background: var(--ek-color-chrome);
   }
 
   /* Sahne hareketi — yalnızca oynatma durumunda; statik son hâl yukarıdaki kurallardır. */
@@ -876,9 +876,8 @@ const PUBLISH_NODES = ['a', 'b', 'c', 'd'] as const
     gap: var(--ek-space-4);
     padding: var(--ek-space-6);
     border: var(--site-border-width) solid var(--ek-color-border-default);
-    border-radius: var(--site-radius-panel);
+    border-radius: var(--ek-radius-card);
     background: var(--ek-color-surface);
-    box-shadow: var(--site-shadow-card);
   }
   .benefit__icon {
     display: inline-flex;
@@ -887,9 +886,10 @@ const PUBLISH_NODES = ['a', 'b', 'c', 'd'] as const
     justify-content: center;
     width: var(--ek-space-10);
     height: var(--ek-space-10);
-    border-radius: var(--ek-radius-lg);
-    background: var(--ek-color-success-subtle);
-    color: var(--ek-color-success);
+    border-radius: var(--ek-radius-tile);
+    background: var(--site-action-subtle);
+    color: var(--site-action);
+    border: var(--site-border-width) solid var(--site-action-border);
   }
   .benefit__title {
     margin-bottom: var(--ek-space-2);
@@ -907,7 +907,7 @@ const PUBLISH_NODES = ['a', 'b', 'c', 'd'] as const
     margin-top: var(--ek-space-8);
     padding: var(--ek-space-6);
     border: var(--site-border-width) solid var(--ek-color-border-default);
-    border-radius: var(--site-radius-panel);
+    border-radius: var(--ek-radius-card);
     background: var(--ek-color-surface);
   }
   .facts__title {
@@ -938,9 +938,11 @@ const PUBLISH_NODES = ['a', 'b', 'c', 'd'] as const
     justify-content: center;
     width: var(--ek-space-6);
     height: var(--ek-space-6);
-    border-radius: var(--ek-radius-full);
-    background: var(--ek-color-secondary-darken-1);
-    color: var(--site-color-on-primary);
+    border-radius: var(--ek-radius-md);
+    background: var(--site-action-subtle);
+    color: var(--site-action);
+    box-sizing: border-box;
+    border: var(--site-border-width) solid var(--site-action-border);
   }
   .facts__caveat {
     display: flex;
@@ -948,7 +950,7 @@ const PUBLISH_NODES = ['a', 'b', 'c', 'd'] as const
     align-items: flex-start;
     align-self: start;
     padding: var(--ek-space-3) var(--ek-space-4);
-    border: var(--site-border-width) solid color-mix(in srgb, var(--ek-color-warning) 45%, transparent);
+    border: var(--site-border-width) solid var(--ek-color-warning-border);
     border-radius: var(--ek-radius-md);
     line-height: var(--site-font-body-line-height);
     background: var(--ek-color-warning-subtle);
@@ -975,14 +977,16 @@ const PUBLISH_NODES = ['a', 'b', 'c', 'd'] as const
       position: absolute;
       z-index: 1;
       inset-block-start: 50%;
+      border-block-start: calc(var(--site-border-width) * 2) solid var(--site-action);
+      border-inline-end: calc(var(--site-border-width) * 2) solid var(--site-action);
     }
     .problem + .problem::before {
       inset-inline-start: calc(var(--ek-space-5) * -0.5 - var(--ek-space-3));
       width: var(--ek-space-6);
       height: var(--ek-space-6);
-      border-radius: var(--ek-radius-full);
+      border-radius: var(--ek-radius-md);
       background: var(--ek-color-surface);
-      box-shadow: 0 0 0 var(--site-border-width) var(--ek-color-border-default), var(--site-shadow-card);
+      box-shadow: 0 0 0 var(--site-border-width) var(--ek-color-border-default);
       transform: translateY(-50%);
     }
     .problem + .problem::after {

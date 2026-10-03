@@ -71,34 +71,20 @@ import { agentConsole as c } from '../../data/assistant'
   .console__window {
     position: relative;
     overflow: hidden;
+    /* SITE-DL: düz koyu panel — ince çerçeve; ışıma/gölge yok. */
     border: var(--site-border-width) solid var(--site-glass-border);
-    border-radius: var(--site-radius-panel);
-    background:
-      radial-gradient(120% 70% at 100% 0%, color-mix(in srgb, var(--ek-color-secondary) 16%, transparent), transparent 60%),
-      color-mix(in srgb, var(--site-stage-deep) 72%, transparent);
-    box-shadow:
-      0 0 0 var(--ek-space-1) color-mix(in srgb, var(--ek-color-background) 4%, transparent),
-      var(--site-shadow-panel);
+    border-radius: var(--ek-radius-card);
+    background: var(--site-stage-deep);
   }
   /* Üst kenar ışığı (S21 operasyon merkezi çerçevesiyle aynı dil). */
   .console__rim {
-    position: absolute;
-    inset-block-start: 0;
-    inset-inline: 12%;
-    height: var(--site-border-width);
-    background: linear-gradient(90deg, transparent, var(--site-accent-on-dark), transparent);
-    opacity: 0.8;
+    /* SITE-DL: üst kenar ışığı kaldırıldı (degrade çizgi yok). */
+    display: none;
   }
   /* Dikey tarama ışığı: statik hâlde görünmez; yalnızca hareket açıkken döngüde süzülür. */
   .console__scan {
-    position: absolute;
-    inset-inline: 0;
-    inset-block-start: 0;
-    z-index: 0;
-    height: var(--ek-space-16);
-    background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--ek-color-secondary) 10%, transparent), transparent);
-    opacity: 0;
-    pointer-events: none;
+    /* SITE-DL: tarama ışığı (degrade bant) kaldırıldı; öğe DOM'da kalır (sahne betiği arar). */
+    display: none;
   }
   .console__bar {
     position: relative;
@@ -133,14 +119,14 @@ import { agentConsole as c } from '../../data/assistant'
     justify-content: center;
     width: var(--ek-space-6);
     height: var(--ek-space-6);
-    border-radius: var(--ek-radius-md);
-    background: var(--site-gradient-accent-on-dark);
+    border-radius: var(--ek-radius-sm);
+    background: var(--site-accent-on-dark);
     color: var(--site-stage-deep);
   }
   .console__mode {
     padding: 0 var(--ek-space-2);
     border: var(--site-border-width) solid var(--site-glass-border);
-    border-radius: var(--ek-radius-full);
+    border-radius: var(--ek-radius-md);
     color: var(--site-text-on-dark-meta);
     font-size: var(--ek-font-size-xs);
     white-space: nowrap;
@@ -161,7 +147,7 @@ import { agentConsole as c } from '../../data/assistant'
     gap: var(--ek-space-3);
     padding: var(--ek-space-3);
     border: var(--site-border-width) solid var(--site-glass-border);
-    border-radius: var(--ek-radius-lg);
+    border-radius: var(--ek-radius-tile);
     background: var(--site-glass-bg);
   }
   .agent__icon {
@@ -170,8 +156,9 @@ import { agentConsole as c } from '../../data/assistant'
     justify-content: center;
     width: var(--ek-space-8);
     height: var(--ek-space-8);
+    border: var(--site-border-width) solid var(--site-glass-border);
     border-radius: var(--ek-radius-md);
-    background: color-mix(in srgb, var(--ek-color-secondary) 16%, transparent);
+    background: var(--site-glass-bg);
     color: var(--site-accent-on-dark);
   }
   .agent__body {
@@ -194,15 +181,15 @@ import { agentConsole as c } from '../../data/assistant'
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-  /* Durum rozeti: renk durumdan (izleme = teal, öneri = bilgi, onay bekliyor = amber, rapor = başarı). */
+  /* Durum rozeti (köşeli): renk durumdan (izleme = mavi vurgu, öneri = bilgi, onay bekliyor = amber, rapor = başarı). */
   .agent__state {
-    --state: var(--ek-color-secondary);
+    --state: var(--site-accent-on-dark);
     display: inline-flex;
     align-items: center;
     gap: var(--ek-space-2);
     padding: var(--ek-space-1) var(--ek-space-2);
     border: var(--site-border-width) solid color-mix(in srgb, var(--state) 45%, transparent);
-    border-radius: var(--ek-radius-full);
+    border-radius: var(--ek-radius-md);
     background: color-mix(in srgb, var(--state) 12%, transparent);
     color: var(--site-text-on-dark-heading);
     font-size: var(--ek-font-size-xs);
@@ -226,7 +213,6 @@ import { agentConsole as c } from '../../data/assistant'
     height: var(--ek-space-2);
     border-radius: var(--ek-radius-full);
     background: var(--state);
-    box-shadow: 0 0 0 calc(var(--ek-space-1) * 0.75) color-mix(in srgb, var(--state) 25%, transparent);
   }
   .agent:nth-child(2) .agent__live {
     --k: 1;
@@ -246,8 +232,8 @@ import { agentConsole as c } from '../../data/assistant'
     gap: var(--ek-space-3);
     margin: 0 var(--ek-space-4) var(--ek-space-4);
     padding: var(--ek-space-3) var(--ek-space-4);
-    border: var(--site-border-width) dashed color-mix(in srgb, var(--ek-color-amber) 55%, transparent);
-    border-radius: var(--ek-radius-lg);
+    border: var(--site-border-width) solid color-mix(in srgb, var(--ek-color-amber) 55%, transparent);
+    border-radius: var(--ek-radius-tile);
     background: color-mix(in srgb, var(--ek-color-amber) 8%, transparent);
   }
   .gate__lock {
@@ -256,8 +242,9 @@ import { agentConsole as c } from '../../data/assistant'
     justify-content: center;
     width: var(--ek-space-8);
     height: var(--ek-space-8);
-    border-radius: var(--ek-radius-full);
-    background: color-mix(in srgb, var(--ek-color-amber) 20%, transparent);
+    border: var(--site-border-width) solid color-mix(in srgb, var(--ek-color-amber) 45%, transparent);
+    border-radius: var(--ek-radius-md);
+    background: color-mix(in srgb, var(--ek-color-amber) 14%, transparent);
     color: var(--ek-color-amber-light);
   }
   .gate__body {
@@ -280,9 +267,11 @@ import { agentConsole as c } from '../../data/assistant'
   }
   .gate__btn {
     padding: var(--ek-space-1) var(--ek-space-3);
+    /* Koyu panelde dolu düğme açık olur (lacivert dolgu koyu zeminde kaybolur). */
+    border: var(--site-border-width) solid var(--ek-color-background);
     border-radius: var(--ek-radius-md);
-    background: var(--site-gradient-accent-on-dark);
-    color: var(--site-stage-deep);
+    background: var(--ek-color-background);
+    color: var(--ek-color-primary);
     font-size: var(--ek-font-size-xs);
     font-weight: var(--ek-font-weight-bold);
   }

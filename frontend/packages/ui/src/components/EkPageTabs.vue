@@ -188,4 +188,30 @@ const emit = defineEmits<{ 'update:modelValue': [value: string | number] }>()
   background: var(--ek-color-action);
   color: var(--ek-color-action-contrast);
 }
+
+/* ================= FE-LOCAL-1045 — sayfa içi sekmeler: ana sekmelerle aynı dil =================
+   Tepsi kart yüzeyinde; etkin sekme eylem renginin açık tonu + ince çerçeve + vurgu metni (gölge yok). */
+.ek-page-tabs {
+  border-radius: var(--ek-radius-tile);
+  background: var(--ek-color-surface) !important;
+}
+
+.ek-page-tabs__tab {
+  border-radius: var(--ek-radius-md) !important;
+}
+
+.ek-page-tabs__tab:hover:not(.v-tab--selected) {
+  background: var(--ek-color-surface-muted);
+}
+
+.ek-page-tabs__tab.v-tab--selected {
+  border-color: var(--ek-color-action-border) !important;
+  background: var(--ek-color-action-subtle);
+  box-shadow: none;
+  color: var(--ek-color-action-emphasis) !important;
+}
+
+.ek-page-tabs__tab.v-tab--selected:focus-visible {
+  box-shadow: var(--ek-focus-ring);
+}
 </style>

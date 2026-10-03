@@ -140,4 +140,60 @@ const tone = computed<StatusTone>(() => (props.calm ? 'neutral' : HEALTH_BADGE[p
     min-width: 0;
   }
 }
+
+/* ================= BO-LOCAL-01 — triyaj bölümü: uygulamanın tasarım diliyle =================
+   Gölgesiz düz kart; soru satırı sakin zeminli BAŞLIK BANDI (alt çizgiyle gövdeden ayrılır); sıra numarası yuvarlak
+   değil çerçeveli köşeli kutu. */
+.bo-ts {
+  gap: 0;
+  padding: 0;
+  overflow: hidden;
+  box-shadow: none;
+}
+
+.bo-ts__head {
+  padding: var(--ek-space-3) var(--ek-space-5);
+  border-bottom: 1px solid var(--ek-color-border-default);
+  background: var(--ek-color-surface-muted);
+}
+
+.bo-ts__index {
+  width: 24px;
+  height: 24px;
+  border-color: var(--ek-color-action-border);
+  border-radius: var(--ek-radius-md);
+  background: var(--ek-color-surface);
+  color: var(--ek-color-action-emphasis);
+}
+
+.bo-ts__more:hover {
+  text-decoration: none;
+}
+
+.bo-ts__lede {
+  padding: var(--ek-space-3) var(--ek-space-5) 0;
+}
+
+.bo-ts__body {
+  padding: var(--ek-space-4) var(--ek-space-5);
+}
+
+@media (max-width: 600px) {
+  .bo-ts {
+    padding: 0;
+  }
+
+  .bo-ts__head,
+  .bo-ts__body {
+    padding-inline: var(--ek-space-4);
+  }
+
+  .bo-ts__lede {
+    padding-inline: var(--ek-space-4);
+  }
+
+  .bo-ts__q {
+    flex: 1 1 calc(100% - 24px - var(--ek-space-3));
+  }
+}
 </style>

@@ -8,9 +8,13 @@
  * alt sayfalarda (/ozellikler, /entegrasyonlar) eksiksiz yazılıdır.
  * Beş "UI parçası" (hepsi HTML/CSS; aria-hidden — anlam çevredeki metindedir; giriş hareketi scenes.css):
  *   - `stock-single-winner`: son adet için eşzamanlı iki sipariş -> hatlar koyu "rezervasyon çekirdeğinde" birleşir
- *     (halka + kalan sayacı 1 -> 0) -> biri rezerve, diğeri aşırı satış olarak işaretlenir (S15-C: ışıklı döngü)
- *   - `orders-merge`: farklı kanallardan sipariş ve iade talepleri iki yönden gelip tek listede birleşir
+ *     (kalan sayacı 1 -> 0, kilit) -> biri rezerve, diğeri aşırı satış olarak işaretlenir -> stok TÜM kanallarda 0 olur
+ *   - `orders-merge`: kanallardan gelen siparişler sırayla TEK listeye düşer; sayaç artar, durum rozeti ilerler
+ *     (Yeni -> Hazırlanıyor -> Kargoda)
  *   - `integration-status`: bağlı kanallar (tür etiketiyle) tek merkezde; ürün/stok/sipariş akış çubukları
+ *   SITE-DL (F1, kullanıcı isteği 2026-10-02): üç görsel de karonun içinde GÖLGESİZ, düz bir iç alanda yaşar (kart
+ *   üstüne gölgeli ikinci pencere yok) ve sakin bir DÖNGÜ oynatır (12 sn; scenes-loops.css). Hareket kapalıyken
+ *   her biri hikâyesinin son karesinde durur.
  *   - `secret-encryption`: girilen anahtar -> kilit -> şifreli kasada -> ekranda maskeli (ELEV: teknik önek/algoritma adı görselde yok, K44)
  *   - `tenant-isolation`: her müşteri hesabı kendi veritabanına bağlanır
  * Görseller örnek arayüzdür (aria-hidden; S15-C: ayrı "Örnek görünüm" etiketi yok); uydurma müşteri/ölçüm YOK.
@@ -20,7 +24,7 @@
  * listesi" gibi okunuyordu. Artık tek bölüm, tek başlık: üstte üç vitrin karosu (rezervasyon, birleşik sipariş, tek
  * merkez), altında aynı bölümün içinde kompakt "Günlük işleriniz de aynı ekranda" listesi (ikon + başlık + tek satır;
  * kart/illüstrasyon yok). Şifreli anahtar ve izole veri karoları (`secret-encryption`, `tenant-isolation`) Güvenlik
- * bölümüne taşındı (orada tek kez anlatılır). Bento karolarının sürekli döngüleri kaldırıldı: yalnızca tek seferlik giriş.
+ * bölümüne taşındı (orada tek kez anlatılır).
  */
 import Section from '../Section.astro'
 import SectionHeading from './SectionHeading.astro'
@@ -55,9 +59,12 @@ const ICONS: Record<string, 'stock' | 'layers' | 'orders' | 'returns' | 'chat' |
 const integrations = getPublicIntegrations()
 const marketplaceCodes = getPublicIntegrations('marketplace').map((i) => i.code)
 const [codeA = '', codeB = ''] = marketplaceCodes
-// Örnek liste: kanal renkleri sırayla tekrar eder (ad yok); durum sözcükleri yalnızca arayüz örneğidir.
-const STATUSES = ['Yeni', 'Hazırlanıyor', 'İade talebi', 'Kargoda', 'Yeni']
-const rows = STATUSES.map((status, i) => ({ status, code: marketplaceCodes[i % marketplaceCodes.length] ?? '' }))
+// Örnek liste: kanal renkleri sırayla tekrar eder (ad yok); durum sözcükleri yalnızca arayüz örneğidir. Her satırın
+// durum akışı (son öğe = durağan son kare): döngüde rozet sırayla ilerler (scenes-loops.css `orders-merge`).
+const ORDER_FLOWS = [['Yeni', 'Hazırlanıyor', 'Kargoda'], ['Yeni', 'Hazırlanıyor'], ['İade talebi'], ['Yeni'], ['Yeni']]
+const rows = ORDER_FLOWS.map((steps, i) => ({ steps, code: marketplaceCodes[i % marketplaceCodes.length] ?? '' }))
+// Sipariş kaynağı kanallar: isimsiz renkli nokta (satır i, `i mod kanal sayısı`. kanaldan düşer; döngü dört kanala göre).
+const orderChannels = marketplaceCodes.slice(0, 4)
 const isAlert = (s: string) => s === 'İade talebi'
 // "Bağlı kanallar" karosu: çubuk yalnızca kanalın kayıtta o veri türü için yeteneği varsa dolu (dürüstlük:
 // örn. ERP bağlantısı stok yazmaz → stok çubuğu soluk). Seviye farkı ana sayfada gösterilmez (alt sayfada).
@@ -108,30 +115,21 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
                 <path d="M25 0 V35 C25 65 50 65 50 100"></path>
                 <path d="M75 0 V35 C75 65 50 65 50 100"></path>
               </svg>
-              <span class="stock__carrier stock__carrier--a" data-code={codeA}><i class="stock__pulse"></i></span>
-              <span class="stock__carrier stock__carrier--b" data-code={codeB}><i class="stock__pulse"></i></span>
+              <span class="stock__carrier stock__carrier--a" data-part="carry-in" data-code={codeA}><i class="stock__pulse"></i></span>
+              <span class="stock__carrier stock__carrier--b" data-part="carry-in" data-code={codeB}><i class="stock__pulse"></i></span>
             </div>
             <div class="stock__engine" data-part="product">
-              <span class="stock__flash"></span>
+              <span class="stock__flash" data-part="flash"></span>
               <span class="stock__engine-head">
                 <span class="stock__thumb"><Icon name="stock" size="sm" /></span>
                 <span class="stock__engine-label">Son adet</span>
               </span>
-              <span class="stock__gauge">
-                <span class="stock__wave"></span>
-                <svg class="stock__ring" viewBox="0 0 64 64" aria-hidden="true" focusable="false">
-                  <circle class="stock__ring-track" cx="32" cy="32" r="28"></circle>
-                  <circle class="stock__ring-arc stock__ring-arc--held" cx="32" cy="32" r="28"></circle>
-                  <circle class="stock__ring-arc stock__ring-arc--free" cx="32" cy="32" r="28"></circle>
-                </svg>
-                <span class="stock__left-num">
-                  <b class="stock__left-a" data-part="left-a">1</b>
-                  <b class="stock__one">1</b>
-                  <b class="stock__left-b" data-part="left-b"><span class="stock__zero">0</span></b>
-                </span>
+              <span class="stock__left-num">
+                <b class="stock__left-a" data-part="left-a">1</b>
+                <b class="stock__left-b" data-part="left-b"><span class="stock__zero">0</span></b>
               </span>
               <span class="stock__left">Kalan</span>
-              <span class="stock__lock"><Icon name="lock" size="sm" />Rezervasyon</span>
+              <span class="stock__lock" data-part="lock"><Icon name="lock" size="sm" />Rezervasyon</span>
             </div>
             <div class="stock__rail stock__rail--out" data-part="arrow-b">
               <svg class="stock__wires stock__wires--h" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true" focusable="false">
@@ -142,8 +140,8 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
                 <path class="stock__wire--ok" d="M50 0 C50 35 25 35 25 65 V100"></path>
                 <path class="stock__wire--warn" d="M50 0 C50 35 75 35 75 65 V100"></path>
               </svg>
-              <span class="stock__carrier stock__carrier--ok"><i class="stock__pulse"></i></span>
-              <span class="stock__carrier stock__carrier--warn"><i class="stock__pulse"></i></span>
+              <span class="stock__carrier stock__carrier--ok" data-part="carry-ok"><i class="stock__pulse"></i></span>
+              <span class="stock__carrier stock__carrier--warn" data-part="carry-warn"><i class="stock__pulse"></i></span>
             </div>
             <div class="stock__results">
               <div class="stock__result stock__result--ok" data-part="result-ok">
@@ -162,6 +160,23 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
               </div>
             </div>
           </div>
+          {/* Rezervasyonun sonucu: aynı ürünün stoku bağlı kanallarda da güncellenir (1 -> 0; durağan hâl 0). */}
+          <div class="stock__sync">
+            <span class="stock__sync-label">Tüm kanallarda stok</span>
+            <ul class="stock__chans">
+              {
+                marketplaceCodes.map((code) => (
+                  <li class="stock__chan" data-code={code}>
+                    <span class="stock__dot" />
+                    <span class="stock__chan-num">
+                      <b class="stock__chan-old" data-part="chan-old">1</b>
+                      <b data-part="chan-new">0</b>
+                    </span>
+                  </li>
+                ))
+              }
+            </ul>
+          </div>
         </div>
       </div>
     </article>
@@ -174,38 +189,50 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
         <p class="tile__text">{homeOf(orders).line}</p>
       </div>
       <div class="tile__frame" data-reveal>
-        <div class="win" data-scene="orders-merge" aria-hidden="true">
-          <div class="win__bar">
-            <span class="win__dots"><i></i><i></i><i></i></span>
-            <span class="win__title">Siparişler ve iadeler</span>
-            <span class="win__search"><Icon name="search" size="sm" /><i></i></span>
+        <div class="ord" data-scene="orders-merge" aria-hidden="true">
+          <div class="ord__head">
+            <span class="ord__title">Siparişler ve iadeler</span>
+            <span class="ord__count">
+              <span class="ord__nums">
+                {rows.map((_, i) => <b class="ord__num" data-part="ord-num">{i}</b>)}
+                <b class="ord__num ord__num--final" data-part="ord-num">{rows.length}</b>
+              </span>
+              kayıt tek listede
+            </span>
           </div>
-          <ul class="win__filters">
-            <li class="win__filter win__filter--active">Tümü</li>
-            <li class="win__filter">Yeni</li>
-            <li class="win__filter">İade</li>
-          </ul>
-          <div class="win__body">
-          <span class="win__toast" data-code={codeB}>
-            <span class="win__chan"></span>
-            <strong>Yeni sipariş</strong>
-            <i class="win__skel win__skel--b"></i>
-          </span>
-          <ul class="win__rows">
+          <ul class="ord__chans">
             {
-              rows.map((r) => (
-                <li class="win__row" data-part="order-row" data-code={r.code}>
-                  <span class="win__chan"></span>
-                  <span class="win__cells">
-                    <span class="win__skel win__skel--a"></span>
-                    <span class="win__skel win__skel--b"></span>
-                  </span>
-                  <span class:list={['win__pill', isAlert(r.status) && 'win__pill--alert']}>{r.status}</span>
+              orderChannels.map((code) => (
+                <li class="ord__chan" data-part="ord-chan" data-code={code}>
+                  <span class="ord__dot" />
+                  <i class="ord__chan-name" />
                 </li>
               ))
             }
           </ul>
-          </div>
+          <ul class="ord__rows">
+            {
+              rows.map((r) => (
+                <li class="ord__row" data-part="order-row" data-code={r.code}>
+                  <span class="ord__dot" />
+                  <span class="ord__cells">
+                    <i class="ord__skel ord__skel--a" />
+                    <i class="ord__skel ord__skel--b" />
+                  </span>
+                  <span class="ord__st">
+                    {r.steps.map((label, j) => (
+                      <span
+                        class:list={['ord__pill', isAlert(label) && 'ord__pill--alert', j === r.steps.length - 1 && 'ord__pill--final']}
+                        data-part="ord-st"
+                      >
+                        {label}
+                      </span>
+                    ))}
+                  </span>
+                </li>
+              ))
+            }
+          </ul>
         </div>
       </div>
     </article>
@@ -274,30 +301,16 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
 
   /* --- Bento ızgarası --- */
   .bento {
-    /* Yerel yardımcılar: süzülen iç kart gölgesi ve vitrin "kuyusu" zemini (yalnızca token türevleri). */
-    --float-shadow:
-      0 var(--site-border-width) calc(var(--site-border-width) * 2) color-mix(in srgb, var(--ek-color-content-strong) 6%, transparent),
-      0 var(--ek-space-2) var(--ek-space-5) calc(var(--ek-space-2) * -1) color-mix(in srgb, var(--ek-color-primary-darken-1) 22%, transparent);
-    --window-shadow:
-      0 0 0 var(--site-border-width) color-mix(in srgb, var(--ek-color-content-strong) 4%, transparent),
-      0 var(--ek-space-3) var(--ek-space-6) calc(var(--ek-space-3) * -1) color-mix(in srgb, var(--ek-color-content-strong) 12%, transparent),
-      0 var(--ek-space-8) var(--ek-space-12) calc(var(--ek-space-6) * -1) color-mix(in srgb, var(--ek-color-primary-darken-1) 26%, transparent);
-    --well-bg:
-      radial-gradient(80% 70% at 50% 0%, color-mix(in srgb, var(--ek-color-secondary) 10%, transparent), transparent 70%),
-      var(--site-texture-dots),
-      linear-gradient(180deg, var(--ek-color-surface-sunken), color-mix(in srgb, var(--ek-color-surface-sunken) 60%, var(--ek-color-surface)));
-    --well-size: auto, var(--site-texture-dots-size), auto;
+    /* SITE-DL (F1): gölge/degrade yardımcıları kalktı; vitrin "kuyusu" düz sakin zemin. Koyu çekirdekte okunur açık mavi. */
+    --well-bg: var(--ek-color-surface-muted);
+    --cap-tint: var(--site-accent-on-dark);
     display: grid;
     gap: var(--ek-space-5);
     margin-top: var(--ek-space-8);
     grid-template-columns: minmax(0, 1fr);
   }
-  /*
-   * S13-C — premium karo yüzeyi (kullanıcı: "beyaz arka planlı kartlara çok daha fazla çalış"): üç katman
-   * (1) köşeden sızan çok hafif vurgu ışıması + yukarıdan aşağı yüzey degradesi, (2) ince degrade kenar
-   * (padding-box/border-box; üstte aydınlık, altta vurguya dönen), (3) üst iç kenarda tek piksellik ışık + derin,
-   * yumuşak, çok katmanlı gölge. Sağ üstte solan nokta dokusu (::after) yüzeye derinlik verir; içerik altında kalır.
-   */
+  /* SITE-DL (F1): düz karo — beyaz yüzey + ince çerçeve + kart yarıçapı; degrade, doku, gölge ve eğim yok.
+     Hover yalnız çerçeve tonunu değiştirir. */
   .tile {
     position: relative;
     isolation: isolate;
@@ -306,52 +319,13 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
     gap: var(--ek-space-8);
     min-width: 0;
     padding: var(--ek-space-6);
-    border: var(--site-border-width) solid transparent;
-    border-radius: calc(var(--site-radius-panel) + var(--ek-space-1));
-    background:
-      radial-gradient(70% 55% at 0% 0%, color-mix(in srgb, var(--ek-color-secondary) 7%, transparent), transparent 70%) padding-box,
-      linear-gradient(180deg, var(--ek-color-surface) 0%, var(--ek-color-surface-muted) 100%) padding-box,
-      linear-gradient(
-          165deg,
-          color-mix(in srgb, var(--ek-color-border-default) 70%, var(--ek-color-surface)) 0%,
-          var(--ek-color-border-default) 45%,
-          color-mix(in srgb, var(--ek-color-secondary) 30%, var(--ek-color-border-default)) 100%
-        )
-        border-box;
-    box-shadow:
-      inset 0 var(--site-border-width) 0 var(--ek-color-surface),
-      0 var(--site-border-width) calc(var(--site-border-width) * 2) color-mix(in srgb, var(--ek-color-content-strong) 5%, transparent),
-      0 var(--ek-space-3) var(--ek-space-6) calc(var(--ek-space-3) * -1) color-mix(in srgb, var(--ek-color-content-strong) 9%, transparent),
-      0 var(--ek-space-10) var(--ek-space-16) calc(var(--ek-space-8) * -1) color-mix(in srgb, var(--ek-color-primary-darken-1) 20%, transparent);
-    /* `transform` (eğim) buraya da eklenir (bkz. PricingSummary.astro aynı not: kısayol birleşmez). */
-    transition:
-      box-shadow var(--ek-duration-base) var(--ek-easing-standard),
-      background var(--ek-duration-base) var(--ek-easing-standard),
-      transform var(--tilt-transition-duration, var(--ek-duration-fast)) var(--ek-easing-standard);
-  }
-  .tile::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    border-radius: inherit;
-    background-image: var(--site-texture-dots);
-    background-size: var(--site-texture-dots-size);
-    -webkit-mask-image: radial-gradient(60% 55% at 100% 0%, var(--ek-color-content-strong), transparent 75%);
-    mask-image: radial-gradient(60% 55% at 100% 0%, var(--ek-color-content-strong), transparent 75%);
-    opacity: 0.55;
-    pointer-events: none;
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--ek-radius-card);
+    background: var(--ek-color-surface);
+    transition: border-color var(--ek-duration-base) var(--ek-easing-standard);
   }
   .tile:hover {
-    background:
-      radial-gradient(70% 55% at 0% 0%, color-mix(in srgb, var(--ek-color-secondary) 10%, transparent), transparent 70%) padding-box,
-      linear-gradient(180deg, var(--ek-color-surface) 0%, var(--ek-color-surface-muted) 100%) padding-box,
-      var(--site-gradient-border) border-box;
-    box-shadow:
-      inset 0 var(--site-border-width) 0 var(--ek-color-surface),
-      0 var(--site-border-width) calc(var(--site-border-width) * 2) color-mix(in srgb, var(--ek-color-content-strong) 6%, transparent),
-      0 var(--ek-space-4) var(--ek-space-8) calc(var(--ek-space-4) * -1) color-mix(in srgb, var(--ek-color-content-strong) 12%, transparent),
-      0 var(--ek-space-12) calc(var(--ek-space-16) * 1.5) calc(var(--ek-space-10) * -1) color-mix(in srgb, var(--ek-color-secondary-darken-1) 30%, transparent);
+    border-color: var(--site-action-border);
   }
   .tile__copy {
     display: flex;
@@ -360,40 +334,19 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
     gap: var(--ek-space-3);
     max-width: 34rem;
   }
-  /*
-   * İkon rozeti (bento karoları): derin marka degradesi, üst iç kenar ışığı, vurgu tonunda iç halka
-   * ve yumuşak renkli ışıma. Hover'da rozet hafifçe yükselir, içindeki çizgi ikon küçük bir açıyla döner.
-   */
+  /* İkon kutusu: çerçeveli kare (uygulamadaki ikon kutusuyla aynı) — degrade, ışıma ve hover hareketi yok. */
   .tile__icon {
-    position: relative;
     display: inline-flex;
     flex: none;
     align-items: center;
     justify-content: center;
-    width: var(--ek-space-12);
-    height: var(--ek-space-12);
+    width: var(--ek-space-10);
+    height: var(--ek-space-10);
     margin-bottom: var(--ek-space-2);
-    border-radius: calc(var(--ek-radius-xl) + var(--site-border-width) * 2);
-    background:
-      radial-gradient(120% 90% at 30% 0%, color-mix(in srgb, var(--ek-color-secondary) 55%, transparent), transparent 60%),
-      linear-gradient(150deg, var(--ek-color-primary) 0%, var(--ek-color-primary-darken-1) 100%);
-    color: var(--site-color-on-primary);
-    box-shadow:
-      inset 0 var(--site-border-width) 0 color-mix(in srgb, var(--ek-color-background) 35%, transparent),
-      inset 0 0 0 var(--site-border-width) color-mix(in srgb, var(--ek-color-secondary) 35%, transparent),
-      0 var(--ek-space-2) var(--ek-space-4) calc(var(--ek-space-1) * -1) color-mix(in srgb, var(--ek-color-primary-darken-1) 45%, transparent),
-      0 var(--ek-space-3) var(--ek-space-8) calc(var(--ek-space-3) * -1) color-mix(in srgb, var(--ek-color-secondary) 55%, transparent);
-    transition: translate var(--ek-duration-base) var(--ek-easing-standard);
-  }
-  .tile__icon :global(svg) {
-    transition: rotate var(--ek-duration-base) var(--ek-easing-standard), scale var(--ek-duration-base) var(--ek-easing-standard);
-  }
-  .tile:hover .tile__icon {
-    translate: 0 calc(var(--ek-space-1) * -0.5);
-  }
-  .tile:hover .tile__icon :global(svg) {
-    rotate: -8deg;
-    scale: 1.1;
+    border: var(--site-border-width) solid var(--site-action-border);
+    border-radius: var(--ek-radius-tile);
+    background: var(--site-action-subtle);
+    color: var(--site-action);
   }
   .tile__title {
     color: var(--ek-color-content-strong);
@@ -410,23 +363,14 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
     line-height: var(--ek-line-height-normal);
     text-wrap: pretty;
   }
-  /* Mini arayüz bir "ürün vitrini" gibi karonun üzerinde süzülür; hover'da hafifçe yükselir (yalnızca translate). */
   .tile__frame {
     min-width: 0;
     margin-top: auto;
   }
-  .tile__frame > * {
-    transition:
-      translate var(--ek-duration-slow) var(--ek-easing-standard),
-      box-shadow var(--ek-duration-base) var(--ek-easing-standard);
-  }
-  .tile:hover .tile__frame > * {
-    translate: 0 calc(var(--ek-space-1) * -1);
-  }
 
   /* Ortak isimsiz kanal noktası (renk: [data-code] -> --chan, global.css). */
   .stock__dot,
-  .win__chan,
+  .ord__dot,
   .istat__dot {
     position: relative;
     display: inline-block;
@@ -434,24 +378,32 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
     width: var(--ek-space-2);
     height: var(--ek-space-2);
     border-radius: var(--ek-radius-full);
-    background: var(--chan, var(--ek-color-secondary));
-    box-shadow: 0 0 0 calc(var(--site-border-width) * 3) color-mix(in srgb, var(--chan, var(--ek-color-secondary)) 18%, transparent);
+    background: var(--chan, var(--site-action));
   }
 
   /*
-   * --- A: stok rezervasyonu görseli (S15-C) ---
-   * Anlatı soldan sağa: eşzamanlı iki sipariş -> hatlar tek "rezervasyon çekirdeğinde" birleşir (koyu, ışıklı kart:
-   * son adedin halkası + kalan sayacı) -> iki çıkış: biri rezerve (başarı rengi), diğeri aşırı satış olarak
-   * işaretlenir (uyarı rengi). Masaüstünde yatay hatlar (SVG, en-boy serbest), <640px'te aynı hatlar dikey.
-   * Statik hâl (hareket kapalı / reduced / JS'siz) = hikâyenin sonu: kalan 0, halka "rezerve" renginde, iki sonuç.
+   * Görsel "iç alanı" (SITE-DL F1): üç görsel de karonun içinde düz, sakin zeminli, ince çerçeveli tek bir alanda
+   * yaşar — kart üstüne gölgeli ikinci pencere YOK. İçteki parçalar beyaz yüzey + ince çizgi.
+   */
+  .stock,
+  .ord,
+  .istat {
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--ek-radius-tile);
+    background: var(--well-bg);
+  }
+
+  /*
+   * --- A: stok rezervasyonu görseli ---
+   * Anlatı soldan sağa, adım adım (döngü: scenes-loops.css `stock-single-winner`, 12 sn):
+   *   1) son adet için iki kanaldan AYNI ANDA sipariş gelir  2) hatlar merkezdeki rezervasyon çekirdeğine akar
+   *   3) kalan 1 -> 0, kilit yanar  4) ilk sipariş "Rezerve edildi", ikincisi "Aşırı satış olarak işaretlendi"
+   *   5) aynı ürünün stoku TÜM kanallarda 0'a çekilir.
+   * Masaüstünde yatay hatlar (SVG, en-boy serbest), <768px'te aynı hatlar dikey.
+   * Durağan hâl (hareket kapalı / reduced / JS'siz) = hikâyenin sonu: kalan 0, iki sonuç, kanallarda 0.
    */
   .stock {
     padding: var(--ek-space-5);
-    border: var(--site-border-width) solid var(--ek-color-border-default);
-    border-radius: var(--ek-radius-xl);
-    background: var(--well-bg);
-    background-size: var(--well-size);
-    box-shadow: inset 0 var(--site-border-width) var(--ek-space-2) color-mix(in srgb, var(--ek-color-content-strong) 5%, transparent);
   }
   .stock__head {
     display: flex;
@@ -466,10 +418,10 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
     align-items: center;
     gap: var(--ek-space-1);
     padding: calc(var(--ek-space-1) * 0.5) var(--ek-space-2);
-    border: var(--site-border-width) solid color-mix(in srgb, var(--ek-color-secondary) 40%, var(--ek-color-border-default));
-    border-radius: var(--ek-radius-full);
+    border: var(--site-border-width) solid var(--site-action-border);
+    border-radius: var(--ek-radius-md);
     background: var(--ek-color-surface);
-    color: var(--ek-color-secondary-darken-1);
+    color: var(--site-action-emphasis);
     font-size: var(--ek-font-size-xs);
     font-weight: var(--ek-font-weight-bold);
     letter-spacing: 0.04em;
@@ -495,21 +447,8 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
   .stock__result {
     position: relative;
     border: var(--site-border-width) solid var(--ek-color-border-default);
-    border-radius: var(--ek-radius-lg);
+    border-radius: var(--ek-radius-md);
     background: var(--ek-color-surface);
-    box-shadow: var(--float-shadow);
-  }
-  /* Vurgu halkası (döngüde siparişin geldiği / sonucun yazıldığı an yanar; statik: görünmez). */
-  .stock__order::after,
-  .stock__result::after {
-    content: '';
-    position: absolute;
-    inset: calc(var(--site-border-width) * -1);
-    border: calc(var(--site-border-width) * 2) solid var(--glow-c, var(--chan, var(--ek-color-secondary)));
-    border-radius: inherit;
-    box-shadow: 0 0 var(--ek-space-5) calc(var(--ek-space-1) * -1) var(--glow-c, var(--chan, var(--ek-color-secondary)));
-    opacity: 0;
-    pointer-events: none;
   }
   .stock__order {
     display: grid;
@@ -537,7 +476,7 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
     width: 70%;
   }
 
-  /* Hatlar: SVG yalnızca çizgi; üzerindeki ışık noktası (`carrier` hattı kaplar, `translate` yüzdesi = hat boyutu). */
+  /* Hatlar: SVG yalnızca çizgi; üzerindeki nokta (`carrier` hattı kaplar, `translate` yüzdesi = hat boyutu). */
   .stock__rail {
     position: relative;
     min-height: var(--ek-space-12);
@@ -549,7 +488,7 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
     height: 100%;
     overflow: visible;
     fill: none;
-    stroke: color-mix(in srgb, var(--ek-color-secondary) 50%, var(--ek-color-border-strong));
+    stroke: var(--ek-color-border-strong);
     stroke-width: 1.5;
     stroke-linecap: round;
   }
@@ -557,10 +496,10 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
     vector-effect: non-scaling-stroke;
   }
   .stock__wires .stock__wire--ok {
-    stroke: color-mix(in srgb, var(--ek-color-success) 70%, var(--ek-color-border-strong));
+    stroke: var(--site-action-border);
   }
   .stock__wires .stock__wire--warn {
-    stroke: color-mix(in srgb, var(--ek-color-warning) 75%, var(--ek-color-border-strong));
+    stroke: var(--ek-color-warning-border);
   }
   .stock__wires--h {
     display: none;
@@ -586,13 +525,14 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
   .stock__carrier--ok {
     --m1: -25% 65%;
     --m2: -25% 100%;
-    --chan: var(--ek-color-success);
+    --chan: var(--site-action);
   }
   .stock__carrier--warn {
     --m1: 25% 65%;
     --m2: 25% 100%;
     --chan: var(--ek-color-warning);
   }
+  /* Hat üzerinde ilerleyen düz nokta (ışıma yok); durağan hâlde görünmez. */
   .stock__pulse {
     --size: calc(var(--ek-space-2) * 1.25);
     position: absolute;
@@ -601,49 +541,35 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
     width: var(--size);
     height: var(--size);
     margin: calc(var(--size) / -2) 0 0 calc(var(--size) / -2);
-    border: calc(var(--site-border-width) * 2) solid var(--ek-color-surface);
+    border: calc(var(--site-border-width) * 2) solid var(--well-bg);
     border-radius: var(--ek-radius-full);
-    background: var(--chan, var(--ek-color-secondary));
-    box-shadow:
-      0 0 0 var(--ek-space-1) color-mix(in srgb, var(--chan, var(--ek-color-secondary)) 22%, transparent),
-      0 0 var(--ek-space-4) var(--ek-space-1) color-mix(in srgb, var(--chan, var(--ek-color-secondary)) 45%, transparent);
+    background: var(--chan, var(--site-action));
     opacity: 0;
   }
 
-  /* Rezervasyon çekirdeği: koyu, ışıklı kart (sitenin sahne dili). */
+  /* Rezervasyon çekirdeği: düz koyu lacivert kart + ince çerçeve (ışıma/gölge/halka yok). */
   .stock__engine {
     position: relative;
     isolation: isolate;
     overflow: hidden;
     display: grid;
-    grid-template-columns: auto auto;
-    justify-content: center;
-    align-items: center;
-    gap: var(--ek-space-2) var(--ek-space-5);
-    padding: var(--ek-space-4) var(--ek-space-5);
-    border: var(--site-border-width) solid color-mix(in srgb, var(--ek-color-secondary) 45%, transparent);
-    border-radius: var(--ek-radius-xl);
-    background: var(--site-stage-mesh);
-    box-shadow:
-      inset 0 var(--site-border-width) 0 color-mix(in srgb, var(--ek-color-background) 16%, transparent),
-      0 0 0 var(--ek-space-1) color-mix(in srgb, var(--ek-color-secondary) 12%, transparent),
-      0 var(--ek-space-5) var(--ek-space-10) calc(var(--ek-space-4) * -1) color-mix(in srgb, var(--ek-color-secondary) 45%, transparent),
-      var(--window-shadow);
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: center;
+    align-content: center;
+    gap: var(--ek-space-2);
+    padding: var(--ek-space-4) var(--ek-space-3);
+    border: var(--site-border-width) solid var(--ek-color-chrome-border);
+    border-radius: var(--ek-radius-md);
+    background: var(--ek-color-chrome);
     color: var(--site-color-on-primary);
+    text-align: center;
   }
-  .stock__engine::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    background: radial-gradient(circle at 50% 38%, color-mix(in srgb, var(--ek-color-secondary) 26%, transparent), transparent 62%);
-    pointer-events: none;
-  }
+  /* Rezervasyon anı: çekirdek bir kez hafifçe aydınlanır (yalnız opacity; durağan: görünmez). */
   .stock__flash {
     position: absolute;
     inset: 0;
     z-index: -1;
-    background: radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--ek-color-secondary) 55%, transparent), transparent 65%);
+    background: var(--ek-color-chrome-soft);
     opacity: 0;
     pointer-events: none;
   }
@@ -659,9 +585,9 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
     width: var(--ek-space-6);
     height: var(--ek-space-6);
     border: var(--site-border-width) solid var(--site-glass-border);
-    border-radius: var(--ek-radius-md);
+    border-radius: var(--ek-radius-sm);
     background: var(--site-glass-bg);
-    color: var(--ek-color-secondary);
+    color: var(--cap-tint);
   }
   .stock__engine-label,
   .stock__left {
@@ -671,52 +597,14 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
     letter-spacing: 0.06em;
     text-transform: uppercase;
   }
-  .stock__gauge {
-    position: relative;
-    grid-row: 1 / span 3;
-    display: grid;
-    place-items: center;
-    width: calc(var(--ek-space-16) + var(--ek-space-4));
-    aspect-ratio: 1;
-  }
-  .stock__ring {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    fill: none;
-  }
-  .stock__ring-track {
-    stroke: var(--site-glass-border);
-    stroke-width: 4;
-  }
-  .stock__ring-arc {
-    stroke-width: 4;
-    stroke-linecap: round;
-  }
-  .stock__ring-arc--held {
-    stroke: var(--ek-color-success);
-    filter: drop-shadow(0 0 var(--ek-space-1) color-mix(in srgb, var(--ek-color-success) 70%, transparent));
-  }
-  .stock__ring-arc--free {
-    stroke: var(--ek-color-secondary);
-    filter: drop-shadow(0 0 var(--ek-space-1) color-mix(in srgb, var(--ek-color-secondary) 80%, transparent));
-    opacity: 0;
-  }
-  .stock__wave {
-    position: absolute;
-    inset: 0;
-    border: calc(var(--site-border-width) * 2) solid var(--ek-color-secondary);
-    border-radius: var(--ek-radius-full);
-    opacity: 0;
-  }
   .stock__left-num {
     position: relative;
     display: inline-grid;
+    overflow: hidden;
     color: var(--site-color-on-primary);
-    font-size: var(--ek-font-size-3xl);
+    font-size: var(--ek-font-size-4xl);
     font-weight: var(--site-font-display-weight);
-    line-height: 1;
+    line-height: 1.1;
     font-variant-numeric: tabular-nums;
   }
   .stock__left-num > * {
@@ -730,16 +618,15 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
   .stock__one {
     opacity: 0;
   }
+  /* Koyu yüzeyde dolu rozet AÇIK renk olur (lacivert dolgu koyu zeminde görünmez). */
   .stock__lock {
     display: inline-flex;
     align-items: center;
-    justify-self: start;
     gap: var(--ek-space-1);
     padding: calc(var(--ek-space-1) * 0.5) var(--ek-space-2);
-    border: var(--site-border-width) solid color-mix(in srgb, var(--ek-color-success) 55%, transparent);
-    border-radius: var(--ek-radius-full);
-    background: color-mix(in srgb, var(--ek-color-success) 18%, transparent);
-    color: var(--site-color-on-primary);
+    border-radius: var(--ek-radius-sm);
+    background: var(--ek-color-background);
+    color: var(--ek-color-primary);
     font-size: var(--ek-font-size-xs);
     font-weight: var(--ek-font-weight-semibold);
   }
@@ -752,15 +639,16 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
     padding: var(--ek-space-3);
     font-size: var(--ek-font-size-sm);
   }
+  /* Olumlu sonuç site vurgusuyla (lacivert; sitede yeşil yok), aşırı satış uyarı tonuyla. */
   .stock__result--ok {
-    --glow-c: var(--ek-color-success);
-    border-color: color-mix(in srgb, var(--ek-color-success) 70%, var(--ek-color-border-default));
-    background: linear-gradient(180deg, var(--ek-color-success-subtle), color-mix(in srgb, var(--ek-color-success-subtle) 40%, var(--ek-color-surface)));
+    --glow-c: var(--site-action);
+    border-color: var(--site-action-border);
+    background: var(--site-action-subtle);
   }
   .stock__result--warn {
     --glow-c: var(--ek-color-warning);
-    border-color: color-mix(in srgb, var(--ek-color-warning) 75%, var(--ek-color-border-default));
-    background: linear-gradient(180deg, var(--ek-color-warning-subtle), color-mix(in srgb, var(--ek-color-warning-subtle) 40%, var(--ek-color-surface)));
+    border-color: var(--ek-color-warning-border);
+    background: var(--ek-color-warning-subtle);
   }
   .stock__badge {
     display: inline-flex;
@@ -769,10 +657,13 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
     justify-content: center;
     width: var(--ek-space-6);
     height: var(--ek-space-6);
-    border-radius: var(--ek-radius-full);
+    border-radius: var(--ek-radius-sm);
     background: var(--glow-c);
     color: var(--site-color-on-primary);
-    box-shadow: 0 0 0 var(--ek-space-1) color-mix(in srgb, var(--glow-c) 18%, transparent);
+  }
+  /* `.stock__result span` (gövde metni) rozetin ikon rengini ezmesin → özgüllük artırıldı. */
+  .stock__result .stock__badge {
+    color: var(--site-color-on-primary);
   }
   .stock__result--warn .stock__badge {
     color: var(--ek-color-content-strong);
@@ -791,121 +682,165 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
     color: var(--ek-color-content-default);
   }
 
-  /* --- B: sipariş/iade penceresi --- */
-  .win,
-  .istat {
-    overflow: hidden;
-    border: var(--site-border-width) solid var(--ek-color-border-default);
-    border-radius: var(--ek-radius-xl);
-    background: var(--ek-color-surface);
-    box-shadow: var(--window-shadow);
-  }
-  .tile:hover .tile__frame > :is(.win, .istat) {
-    box-shadow:
-      var(--window-shadow),
-      0 var(--ek-space-10) var(--ek-space-16) calc(var(--ek-space-8) * -1) color-mix(in srgb, var(--ek-color-secondary) 28%, transparent);
-  }
-  .win__bar {
+  /* Sonuç şeridi: aynı ürünün stoku bağlı kanallarda da 0 (isimsiz kanal noktası + adet). */
+  .stock__sync {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    gap: var(--ek-space-3);
-    padding: var(--ek-space-2) var(--ek-space-3);
-    border-bottom: var(--site-border-width) solid var(--ek-color-border-default);
-    background: linear-gradient(180deg, var(--ek-color-surface), var(--ek-color-surface-muted));
+    gap: var(--ek-space-2) var(--ek-space-4);
+    margin-top: var(--ek-space-4);
+    padding-top: var(--ek-space-4);
+    border-top: var(--site-border-width) solid var(--ek-color-border-default);
   }
-  .win__dots {
+  .stock__sync-label {
+    color: var(--ek-color-content-muted);
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--ek-font-weight-semibold);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .stock__chans {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ek-space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .stock__chan {
     display: inline-flex;
-    gap: var(--ek-space-1);
+    align-items: center;
+    gap: var(--ek-space-2);
+    padding: calc(var(--ek-space-1) * 0.5) var(--ek-space-3);
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--ek-radius-md);
+    background: var(--ek-color-surface);
+    color: var(--ek-color-content-strong);
+    font-size: var(--ek-font-size-sm);
+    font-weight: var(--ek-font-weight-bold);
+    font-variant-numeric: tabular-nums;
   }
-  .win__dots i {
-    width: var(--ek-space-2);
-    height: var(--ek-space-2);
-    border-radius: var(--ek-radius-full);
-    background: var(--ek-color-border-strong);
+  .stock__chan:nth-child(2) {
+    --k: 1;
   }
-  .win__title {
-    flex: 1;
+  .stock__chan:nth-child(3) {
+    --k: 2;
+  }
+  .stock__chan:nth-child(n + 4) {
+    --k: 3;
+  }
+  .stock__chan-num {
+    display: inline-grid;
     overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
+  }
+  .stock__chan-num b {
+    grid-area: 1 / 1;
+    text-align: center;
+  }
+  .stock__chan-old {
+    opacity: 0;
+  }
+
+  /*
+   * --- B: siparişler tek listede ---
+   * Pencere çerçevesi/gölge yok: üstte kaynak kanallar (isimsiz renkli nokta), altta TEK liste. Döngüde (12 sn;
+   * scenes-loops.css `orders-merge`) siparişler sırayla kendi kanalından listeye düşer, sayaç artar, durum rozeti
+   * ilerler (Yeni -> Hazırlanıyor -> Kargoda). Durağan hâl = dolu liste, son durumlar, sayaç = satır sayısı.
+   */
+  .ord {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ek-space-3);
+    padding: var(--ek-space-5);
+  }
+  .ord__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--ek-space-2) var(--ek-space-3);
+  }
+  .ord__title {
     color: var(--ek-color-content-strong);
     font-size: var(--ek-font-size-sm);
     font-weight: var(--ek-font-weight-semibold);
   }
-  /* Arama alanı iskeleti (pencereyi gerçek bir listeye benzetir; metin/sayı yok). */
-  .win__search {
+  .ord__count {
     display: inline-flex;
     align-items: center;
-    gap: var(--ek-space-2);
-    width: 30%;
-    min-width: var(--ek-space-16);
-    padding: calc(var(--ek-space-1) * 0.75) var(--ek-space-2);
-    border: var(--site-border-width) solid var(--ek-color-border-default);
-    border-radius: var(--ek-radius-full);
+    gap: var(--ek-space-1);
+    padding: calc(var(--ek-space-1) * 0.5) var(--ek-space-2);
+    border: var(--site-border-width) solid var(--site-action-border);
+    border-radius: var(--ek-radius-md);
     background: var(--ek-color-surface);
-    color: var(--ek-color-content-muted);
+    color: var(--site-action-emphasis);
+    font-size: var(--ek-font-size-xs);
+    font-weight: var(--ek-font-weight-semibold);
   }
-  .win__search i {
+  .ord__nums {
+    display: inline-grid;
+    overflow: hidden;
+    font-weight: var(--ek-font-weight-bold);
+    font-variant-numeric: tabular-nums;
+  }
+  .ord__num {
+    grid-area: 1 / 1;
+    text-align: center;
+    opacity: 0;
+  }
+  .ord__num--final {
+    opacity: 1;
+  }
+  .ord__chans {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--ek-space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .ord__chan {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: var(--ek-space-2);
+    min-width: 0;
+    padding: var(--ek-space-2) var(--ek-space-3);
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--ek-radius-md);
+    background: var(--ek-color-surface);
+  }
+  /* Kanaldan sipariş çıktığı an: kanal renginde ince çerçeve belirir ve söner (durağan: görünmez). */
+  .ord__chan::after {
+    content: '';
+    position: absolute;
+    inset: calc(var(--site-border-width) * -1);
+    border: calc(var(--site-border-width) * 2) solid var(--chan, var(--site-action));
+    border-radius: inherit;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .ord__chan-name {
     display: block;
     flex: 1;
     height: var(--ek-space-1);
     border-radius: var(--ek-radius-full);
-    background: var(--ek-color-surface-sunken);
+    background: color-mix(in srgb, var(--ek-color-content-muted) 22%, var(--ek-color-surface-sunken));
   }
-  .win__body {
-    position: relative;
-  }
-  /* Gelen sipariş bildirimi: döngüde listenin üstüne süzülür, birleşir ve söner (statik: görünmez). */
-  .win__toast {
-    position: absolute;
-    inset-block-start: calc((var(--ek-space-10) + var(--ek-space-1)) * -1);
-    inset-inline-end: var(--ek-space-3);
-    z-index: 2;
-    display: inline-flex;
-    align-items: center;
-    gap: var(--ek-space-2);
-    width: 46%;
-    padding: var(--ek-space-2) var(--ek-space-3);
-    border: var(--site-border-width) solid color-mix(in srgb, var(--chan, var(--ek-color-secondary)) 45%, var(--ek-color-border-default));
-    border-radius: var(--ek-radius-lg);
-    background: var(--ek-color-surface);
-    box-shadow:
-      0 var(--ek-space-2) var(--ek-space-6) calc(var(--ek-space-2) * -1) color-mix(in srgb, var(--ek-color-content-strong) 28%, transparent),
-      0 0 0 var(--ek-space-1) color-mix(in srgb, var(--chan, var(--ek-color-secondary)) 12%, transparent);
-    color: var(--ek-color-content-strong);
-    font-size: var(--ek-font-size-xs);
-    opacity: 0;
-    pointer-events: none;
-  }
-  .win__toast strong {
-    flex: none;
-    font-weight: var(--ek-font-weight-semibold);
-  }
-  .win__toast .win__skel {
-    flex: 1;
-  }
-  .win__filters {
+  .ord__rows {
+    overflow: hidden;
     display: flex;
-    flex-wrap: wrap;
-    gap: var(--ek-space-2);
-    padding: var(--ek-space-3);
+    flex-direction: column;
+    margin: 0;
+    padding: 0;
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--ek-radius-md);
+    background: var(--ek-color-surface);
+    list-style: none;
   }
-  .win__filter {
-    padding: var(--ek-space-1) var(--ek-space-3);
-    border-radius: var(--ek-radius-full);
-    background: var(--ek-color-surface-sunken);
-    color: var(--ek-color-content-default);
-    font-size: var(--ek-font-size-xs);
-    font-weight: var(--ek-font-weight-semibold);
-  }
-  .win__filter--active {
-    background: var(--ek-color-primary);
-    color: var(--site-color-on-primary);
-  }
-  .win__rows {
+  .ord__row {
     position: relative;
-  }
-  .win__row {
+    isolation: isolate;
     display: grid;
     grid-template-columns: auto minmax(0, 1fr) auto;
     align-items: center;
@@ -913,39 +848,65 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
     padding: var(--ek-space-3);
     border-top: var(--site-border-width) solid var(--ek-color-border-default);
   }
-  .win__cells {
+  .ord__row:first-child {
+    border-top: 0;
+  }
+  /* Yeni düşen satırın kısa vurgusu (yalnız opacity; durağan: görünmez). */
+  .ord__row::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: var(--site-action-subtle);
+    opacity: 0;
+  }
+  .ord__cells {
     display: flex;
     flex-direction: column;
     gap: var(--ek-space-1);
   }
-  .win__skel {
+  .ord__skel {
     display: block;
     height: var(--ek-space-1);
     border-radius: var(--ek-radius-full);
     background: var(--ek-color-surface-sunken);
   }
-  .win__skel--a {
+  .ord__skel--a {
     width: 72%;
     background: color-mix(in srgb, var(--ek-color-content-muted) 22%, var(--ek-color-surface-sunken));
   }
-  .win__skel--b {
+  .ord__skel--b {
     width: 44%;
   }
-  .win__pill {
-    padding: var(--ek-space-1) var(--ek-space-3);
-    border-radius: var(--ek-radius-full);
-    background: var(--ek-color-info-subtle);
-    color: var(--ek-color-content-strong);
+  /* Durum rozetleri aynı hücrede üst üste; durağan hâlde yalnız SON durum görünür. */
+  .ord__st {
+    display: inline-grid;
+    justify-items: end;
+  }
+  .ord__pill {
+    grid-area: 1 / 1;
+    padding: calc(var(--ek-space-1) * 0.5) var(--ek-space-2);
+    border: var(--site-border-width) solid var(--site-action-border);
+    border-radius: var(--ek-radius-md);
+    background: var(--site-action-subtle);
+    color: var(--site-action-emphasis);
     font-size: var(--ek-font-size-xs);
     font-weight: var(--ek-font-weight-semibold);
     white-space: nowrap;
+    opacity: 0;
   }
-  .win__pill--alert {
+  .ord__pill--final {
+    opacity: 1;
+  }
+  .ord__pill--alert {
+    border-color: var(--ek-color-warning-border);
     background: var(--ek-color-warning-subtle);
+    color: var(--ek-color-warning-emphasis);
   }
 
   /* --- C: kanallar tek merkezde --- */
   .istat {
+    overflow: hidden;
     padding: var(--ek-space-4) var(--ek-space-5);
   }
   .istat__caption {
@@ -987,7 +948,7 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
     inset-inline-start: calc(var(--ek-space-1) - var(--site-border-width));
     width: calc(var(--site-border-width) * 2);
     border-radius: var(--ek-radius-full);
-    background: linear-gradient(180deg, color-mix(in srgb, var(--ek-color-secondary) 20%, var(--ek-color-border-default)), var(--ek-color-secondary));
+    background: var(--site-action-border);
   }
   /* Hat boyunca aşağı akan ışık (statik: görünmez). Sözde öğe hattın boyundadır; translate yüzdesi = hat boyu. */
   .istat__rows::after {
@@ -996,7 +957,8 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
     inset-block: 0 calc(var(--ek-space-4) * -1);
     inset-inline-start: calc(var(--ek-space-1) - var(--ek-space-2) * 0.625);
     width: calc(var(--ek-space-2) * 1.25);
-    background: radial-gradient(circle at 50% var(--ek-space-2), var(--ek-color-secondary) 0 calc(var(--ek-space-1) * 0.8), color-mix(in srgb, var(--ek-color-secondary) 30%, transparent) calc(var(--ek-space-1) * 1.2), transparent var(--ek-space-3)) no-repeat;
+    /* Düz nokta (keskin kenarlı; ışıma yok) — yalnız konum animasyonu için boyalı. */
+    background: radial-gradient(circle at 50% var(--ek-space-2), var(--site-action) 0 var(--ek-space-1), transparent var(--ek-space-1)) no-repeat;
     opacity: 0;
     pointer-events: none;
   }
@@ -1008,11 +970,8 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
     margin-top: var(--ek-space-4);
     margin-inline-start: calc(var(--ek-space-3) * -1);
     padding: var(--ek-space-1) var(--ek-space-3) var(--ek-space-1) var(--ek-space-1);
-    border-radius: var(--ek-radius-full);
-    background: var(--site-stage-mesh);
-    box-shadow:
-      0 0 0 var(--ek-space-1) color-mix(in srgb, var(--ek-color-secondary) 14%, transparent),
-      0 var(--ek-space-2) var(--ek-space-5) calc(var(--ek-space-2) * -1) color-mix(in srgb, var(--ek-color-primary-darken-1) 50%, transparent);
+    border-radius: var(--ek-radius-md);
+    background: var(--ek-color-chrome);
     color: var(--site-color-on-primary);
     font-size: var(--ek-font-size-xs);
     font-weight: var(--ek-font-weight-semibold);
@@ -1024,17 +983,17 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
     justify-content: center;
     width: var(--ek-space-6);
     height: var(--ek-space-6);
-    border-radius: var(--ek-radius-full);
-    background: var(--ek-color-secondary);
-    color: var(--ek-color-content-strong);
+    border: var(--site-border-width) solid var(--ek-color-chrome-border);
+    border-radius: var(--ek-radius-sm);
+    background: var(--ek-color-chrome-raised);
+    color: var(--site-color-on-primary);
   }
   .istat__hub::after {
     content: '';
     position: absolute;
     inset: calc(var(--site-border-width) * -2);
-    border: calc(var(--site-border-width) * 2) solid var(--ek-color-secondary);
+    border: calc(var(--site-border-width) * 2) solid var(--site-action);
     border-radius: inherit;
-    box-shadow: 0 0 var(--ek-space-4) var(--ek-color-secondary);
     opacity: 0;
     pointer-events: none;
   }
@@ -1064,19 +1023,19 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
     display: block;
     height: var(--ek-space-1);
     border-radius: var(--ek-radius-full);
-    background: var(--ek-color-surface-sunken);
+    background: var(--ek-color-border-default);
     transform-origin: 0 50%;
   }
   .istat__seg.is-on {
-    background: var(--site-gradient-accent);
+    background: var(--site-action);
   }
 
 
 
   /*
-   * N9 (S27a, hareket ekonomisi — BRAND §4 "görünür ekranda en fazla bir döngü"): bento karolarının sürekli döngüleri
-   * KALDIRILDI. Karolar yalnızca tek seferlik giriş sahnesi oynar (scenes.css: stock-single-winner, orders-merge,
-   * integration-status) ve statik son karede durur; sürekli döngü yalnız hero vitrini ve sıfır aşırı satış hikâyesinde.
+   * Hareket (SITE-DL F1, kullanıcı isteği 2026-10-02 — N9'un "karolarda döngü yok" kararının yerini alır): üç karo
+   * görseli de 12 sn'lik sakin bir döngü oynatır (scenes-loops.css: stock-single-winner, orders-merge,
+   * integration-status); döngü yalnız görsel ekrandayken çalışır, hareket kapalıyken durağan son kare kalır.
    */
 
   /* Karo iki sütuna bölündüğü ara genişlikte (1024–1279) sonuç kartlarında rozet metnin üstünde (dar sütun). */
@@ -1129,18 +1088,6 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
       --m1: 50% 25%;
       --m2: 100% 25%;
     }
-    .stock__engine {
-      grid-template-columns: minmax(0, 1fr);
-      justify-items: center;
-      align-content: center;
-      padding: var(--ek-space-4) var(--ek-space-3);
-    }
-    .stock__gauge {
-      grid-row: auto;
-    }
-    .stock__lock {
-      justify-self: center;
-    }
     .stock__result {
       flex-direction: row;
       justify-content: flex-start;
@@ -1179,17 +1126,15 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
     .tile {
       padding: var(--ek-space-5);
     }
-    /* Dar ekranda bildirim filtre çiplerini örtmesin: ilk satırın iskelet alanının üzerinde, kısa hâliyle. */
-    .win__toast {
-      inset-block-start: var(--ek-space-2);
-      inset-inline: var(--ek-space-8) auto;
-      width: auto;
-    }
-    .win__toast .win__skel {
-      display: none;
-    }
-    .stock {
+    .stock,
+    .ord {
       padding: var(--ek-space-4);
+    }
+    .ord__chans {
+      gap: var(--ek-space-1);
+    }
+    .ord__chan {
+      padding-inline: var(--ek-space-2);
     }
     .istat__cols i,
     .istat__seg {
@@ -1205,8 +1150,8 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
     margin-top: var(--ek-space-8);
     padding: var(--ek-space-6) var(--ek-space-5);
     border: var(--site-border-width) solid var(--ek-color-border-default);
-    border-radius: var(--site-radius-panel);
-    background: linear-gradient(180deg, var(--ek-color-surface-muted), var(--ek-color-background));
+    border-radius: var(--ek-radius-card);
+    background: var(--ek-color-surface);
   }
   .daily__title {
     margin: 0 0 var(--ek-space-5);
@@ -1235,9 +1180,10 @@ const FLOW_KEYS: CapabilityKey[] = ['products', 'stockPrice', 'orders']
     place-items: center;
     width: var(--ek-icon-tile-sm);
     height: var(--ek-icon-tile-sm);
+    border: var(--site-border-width) solid var(--site-action-border);
     border-radius: var(--ek-radius-tile);
-    background: var(--site-accent-soft);
-    color: var(--site-accent);
+    background: var(--site-action-subtle);
+    color: var(--site-action);
   }
   .daily__body {
     display: flex;

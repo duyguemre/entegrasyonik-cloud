@@ -284,4 +284,37 @@ const colorOf = (s: ChartSeries, i: number) => seriesColor(s, i, mode.value)
 .bo-chart__table .is-num {
   text-align: right;
 }
+
+/* BO-LOCAL-01 — grafik: boş/hata kutusu ve tablo görünümü kutu köşeli + ince çerçeve; "tablo olarak göster" geçişi
+   çerçeveli küçük düğme (çıplak bağlantı yerine). */
+.bo-chart__skel,
+.bo-chart__msg,
+.bo-chart__table {
+  border-radius: var(--ek-radius-tile);
+}
+
+.bo-chart__table {
+  border-color: var(--ek-color-border-default);
+}
+
+.bo-chart__toggle {
+  height: 26px;
+  padding: 0 var(--ek-space-2);
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-md);
+  background: var(--ek-color-surface);
+  color: var(--ek-color-content-default);
+  transition: var(--ek-transition-colors);
+}
+
+.bo-chart__toggle:hover {
+  border-color: var(--ek-color-action-border);
+  background: var(--ek-color-action-subtle);
+  color: var(--ek-color-action-emphasis);
+  text-decoration: none;
+}
+
+.bo-chart__swatch {
+  border-radius: 3px;
+}
 </style>

@@ -50,7 +50,7 @@ export async function installTwoUserMocks(page: Page, state: { session: Session 
 export async function loginViaForm(page: Page, email: string, landing: RegExp = /\/dashboard$/) {
   await page.getByLabel('E-posta').fill(email)
   await page.getByLabel('Parola', { exact: true }).fill('e2e-pass-1234')
-  await page.getByRole('button', { name: 'Giriş' }).click()
+  await page.getByRole('button', { name: 'Devam et' }).click()
   await expect(page).toHaveURL(landing, { timeout: 10_000 })
 }
 

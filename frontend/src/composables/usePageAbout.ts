@@ -1,38 +1,31 @@
 /**
  * frontend/src/composables/usePageAbout.ts
  *
- * DS-v2 Aşama 5 — "Sayfa hakkında" panelinin açık/kapalı tercihi. TEK tercih, tüm sayfalar (bir sayfada açılınca
- * diğerlerinde de açık gelir); varsayılan KAPALI. Kişisel kolaylık → yerel depo (`ek.ui.v1.pageAbout`); erişilemezse
- * (gizli mod, engelli depo) yalnız bellekte tutulur, sayfa yine çalışır.
+ * "Sayfa rehberi" AÇMA İSTEĞİ (ör. uygulama çubuğundaki "Bu sayfa hakkında"). Rehber artık sayfa içinde kalıcı bir
+ * panel değil, ışık düğmesinin altında yüzen bir kart (EkPageBar): istek yalnız GÖRÜNEN sayfa çubuğunu açar ve
+ * tüketilir. Kalıcı tercih YOK — eskiden "açık" tercihi hatırlanıyordu; yüzen kartta her sayfa açılışında kartın
+ * kendiliğinden açılmasına yol açardı. Eski depo anahtarı bir kez temizlenir.
  */
 import { ref } from 'vue'
 
-const KEY = 'ek.ui.v1.pageAbout'
-
-function read(): boolean {
-  try {
-    return typeof localStorage !== 'undefined' && localStorage.getItem(KEY) === '1'
-  } catch {
-    return false
-  }
+const LEGACY_KEY = 'ek.ui.v1.pageAbout'
+try {
+  if (typeof localStorage !== 'undefined') localStorage.removeItem(LEGACY_KEY)
+} catch {
+  // depo yoksa yapılacak bir şey yok
 }
 
-// Modül düzeyi: tüm sekmelerdeki EkPageBar örnekleri aynı değeri paylaşır.
-const open = ref(read())
+// Modül düzeyi: tüm sekmelerdeki EkPageBar örnekleri aynı isteği görür; görünen çubuk tüketir.
+const open = ref(false)
 
 export function usePageAbout() {
   function setOpen(value: boolean) {
     open.value = value
-    try {
-      localStorage.setItem(KEY, value ? '1' : '0')
-    } catch {
-      // depo yoksa tercih yalnız bu oturumda kalır
-    }
   }
   return { open, setOpen, toggle: () => setOpen(!open.value) }
 }
 
-/** Test yardımcısı: modül durumunu depodan yeniden okur. */
+/** Test yardımcısı: isteği sıfırlar. */
 export function __resetPageAboutForTest() {
-  open.value = read()
+  open.value = false
 }

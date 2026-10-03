@@ -15,6 +15,7 @@
 
     <div class="ek-help-center__search" :class="{ 'is-hero': mode === 'home' }" role="search">
       <div v-if="mode === 'home'" class="ek-help-center__hero-text">
+        <span class="ek-help-center__hero-eyebrow" aria-hidden="true">Yardım merkezi</span>
         <h2 class="ek-help-center__hero-title">Size nasıl yardımcı olabiliriz?</h2>
         <p class="ek-help-center__hero-sub">Makalelerde arayın ya da aşağıdan bir konu seçin.</p>
       </div>
@@ -72,58 +73,30 @@
     </section>
 
     <!-- ANA SAYFA -->
+    <!-- FE-LOCAL-1059: toplu yerleşim — solda konular (eşit boy kartlar) + sık sorulanlar, sağda başlangıç adımları + destek.
+         Kart içindeki makale bağlantıları kalktı (dağınık görünüyordu); konuya tıklayınca makaleler listelenir. -->
     <div v-else-if="mode === 'home'" class="ek-help-center__home">
-      <section class="ek-help-center__start" aria-labelledby="help-start-title">
-        <div class="ek-help-center__section-head">
-          <h2 id="help-start-title" class="ek-help-center__h2">Başlarken</h2>
-          <p class="ek-help-center__muted">Üç adımda kullanıma hazır olun.</p>
-        </div>
-        <ol class="ek-help-center__start-list">
-          <li v-for="(a, i) in startArticles" :key="a.id">
-            <button type="button" class="ek-help-center__start-card" @click="goArticle(a.id)">
-              <span class="ek-help-center__start-no ek-num" aria-hidden="true">{{ i + 1 }}</span>
-              <span class="ek-help-center__start-title">{{ a.title }}</span>
-              <span class="ek-help-center__muted">{{ a.summary }}</span>
-              <span class="ek-help-center__start-go" aria-hidden="true">Oku <v-icon icon="mdi-arrow-right" /></span>
-            </button>
-          </li>
-        </ol>
-      </section>
+      <div class="ek-help-center__col-main">
+        <section aria-labelledby="help-topics-title">
+          <div class="ek-help-center__section-head">
+            <h2 id="help-topics-title" class="ek-help-center__h2">Konular</h2>
+            <p class="ek-help-center__muted">Bir konu seçin; makaleleri listelenir.</p>
+          </div>
+          <ul class="ek-help-center__grid">
+            <li v-for="c in topicCards" :key="c.id" class="ek-help-center__cat" :data-category="c.id">
+              <button type="button" class="ek-help-center__cat-head" @click="goCategory(c.id)">
+                <EkIconTile :icon="c.icon" tone="action" size="md" />
+                <span class="ek-help-center__cat-text">
+                  <span class="ek-help-center__cat-title">{{ c.title }}</span>
+                  <span class="ek-help-center__muted">{{ c.description }}</span>
+                </span>
+                <span class="ek-help-center__cat-count ek-num">{{ c.articles.length }} makale</span>
+                <v-icon class="ek-help-center__cat-go" icon="mdi-chevron-right" aria-hidden="true" />
+              </button>
+            </li>
+          </ul>
+        </section>
 
-      <section aria-labelledby="help-topics-title">
-        <div class="ek-help-center__section-head">
-          <h2 id="help-topics-title" class="ek-help-center__h2">Konular</h2>
-        </div>
-        <ul class="ek-help-center__grid">
-          <li v-for="c in topicCards" :key="c.id" class="ek-help-center__cat" :data-category="c.id">
-            <button type="button" class="ek-help-center__cat-head" @click="goCategory(c.id)">
-              <EkIconTile :icon="c.icon" tone="action" size="md" />
-              <span class="ek-help-center__cat-text">
-                <span class="ek-help-center__cat-title">{{ c.title }}</span>
-                <span class="ek-help-center__muted">{{ c.description }}</span>
-              </span>
-              <span class="ek-help-center__cat-count ek-num">{{ c.articles.length }} makale</span>
-            </button>
-            <!-- FR2-HELP madde 17: makale bağlantıları sessiz liste satırı (belge glifi + başlık + hover'da ok), mavi
-                 alt çizgili bağlantı değil; 3'ten fazla makalede kart altında "Tümünü gör". -->
-            <ul class="ek-help-center__cat-links">
-              <li v-for="a in c.articles.slice(0, 3)" :key="a.id">
-                <button type="button" class="ek-help-center__cat-link" @click="goArticle(a.id)">
-                  <v-icon class="ek-help-center__cat-link-doc" icon="mdi-file-document-outline" aria-hidden="true" />
-                  <span class="ek-help-center__cat-link-text">{{ a.title }}</span>
-                  <v-icon class="ek-help-center__cat-link-go" icon="mdi-chevron-right" aria-hidden="true" />
-                </button>
-              </li>
-            </ul>
-            <button v-if="c.articles.length > 3" type="button" class="ek-link ek-link--sm ek-help-center__cat-all" @click="goCategory(c.id)">
-              Tümünü gör ({{ c.articles.length }})
-              <v-icon class="ek-link__arrow" icon="mdi-arrow-right" aria-hidden="true" />
-            </button>
-          </li>
-        </ul>
-      </section>
-
-      <div class="ek-help-center__bottom">
         <section v-if="faqItems.length" class="ek-help-center__faq" aria-labelledby="help-faq-title">
           <div class="ek-help-center__section-head">
             <h2 id="help-faq-title" class="ek-help-center__h2">Sık sorulan sorular</h2>
@@ -134,8 +107,28 @@
           </div>
           <HelpArticleBody :blocks="[{ type: 'faq', items: faqItems }]" />
         </section>
-        <HelpSupportCta stacked @ticket="ticketOpen = true" />
       </div>
+
+      <aside class="ek-help-center__col-side">
+        <section class="ek-help-center__start" aria-labelledby="help-start-title">
+          <div class="ek-help-center__section-head">
+            <h2 id="help-start-title" class="ek-help-center__h2">Başlarken</h2>
+          </div>
+          <ol class="ek-help-center__start-list">
+            <li v-for="(a, i) in startArticles" :key="a.id">
+              <button type="button" class="ek-help-center__start-card" @click="goArticle(a.id)">
+                <span class="ek-help-center__start-no ek-num" aria-hidden="true">{{ i + 1 }}</span>
+                <span class="ek-help-center__start-text">
+                  <span class="ek-help-center__start-title">{{ a.title }}</span>
+                  <span class="ek-help-center__muted">{{ a.summary }}</span>
+                </span>
+                <v-icon class="ek-help-center__start-go" icon="mdi-chevron-right" aria-hidden="true" />
+              </button>
+            </li>
+          </ol>
+        </section>
+        <HelpSupportCta stacked @ticket="ticketOpen = true" />
+      </aside>
     </div>
 
     <!-- KATEGORİ / MAKALE: sol konu ağacı + içerik -->
@@ -1242,6 +1235,391 @@ defineExpose({ initialize, activate: initialize })
   .ek-help-center__search.is-hero {
     align-items: stretch;
     text-align: left;
+  }
+}
+
+/* ================= FE-LOCAL-1053 — yardım merkezi: uygulamanın tasarım diliyle =================
+   Karşılama: degrade yok — sakin düz zemin + ince çerçeve, üstte kısa eylem çizgili mikro etiket, arama alanı gölgesiz.
+   Bölüm başlıkları mikro etiket (kısa eylem çizgisi). Adım numaraları ve sayaçlar çerçeveli köşeli kutu. Kartlar düz
+   yüzey + ince çerçeve, üzerine gelince yalnız çerçeve tonu (gölge yok); konu kartının başlığı sakin bantta. Konu ağacı
+   ve makale: etkin öğe eylem renginin açık tonu + ince çerçeve; geri bildirim ve ilgili makaleler düz kartlar. */
+.ek-help-center__search.is-hero {
+  align-items: flex-start;
+  padding: var(--ek-space-6);
+  border-color: var(--ek-color-border-default);
+  border-radius: var(--ek-radius-card);
+  background: var(--ek-color-surface-muted);
+  text-align: left;
+}
+
+.ek-help-center__hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ek-space-2);
+  margin-bottom: var(--ek-space-1);
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-micro-size);
+  line-height: var(--ek-type-micro-line);
+  font-weight: var(--ek-type-micro-weight);
+  letter-spacing: var(--ek-type-micro-tracking);
+  text-transform: uppercase;
+}
+
+.ek-help-center__hero-eyebrow::before {
+  content: '';
+  flex: none;
+  width: 12px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--ek-color-action);
+}
+
+.ek-help-center__hero-title {
+  font-size: var(--ek-type-title-size, var(--ek-type-heading-size));
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.ek-help-center__search.is-hero .ek-help-center__field {
+  max-width: 720px;
+}
+
+.ek-help-center__search.is-hero .ek-help-center__field :deep(.v-field) {
+  background: var(--ek-color-surface);
+  box-shadow: none;
+}
+
+.ek-help-center__popular {
+  justify-content: flex-start;
+  max-width: none;
+}
+
+.ek-help-center__popular-label {
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-micro-size);
+  line-height: var(--ek-type-micro-line);
+  font-weight: var(--ek-type-micro-weight);
+  letter-spacing: var(--ek-type-micro-tracking);
+  text-transform: uppercase;
+}
+
+.ek-help-center__chip {
+  border-radius: var(--ek-radius-md);
+  background: var(--ek-color-surface);
+}
+
+/* Bölüm başlıkları: kart dışında mikro etiket. */
+.ek-help-center__section-head {
+  align-items: center;
+}
+
+.ek-help-center__h2,
+.ek-help-center__h3 {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ek-space-2);
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-micro-size);
+  line-height: var(--ek-type-micro-line);
+  font-weight: var(--ek-type-micro-weight);
+  letter-spacing: var(--ek-type-micro-tracking);
+  text-transform: uppercase;
+}
+
+.ek-help-center__h2::before,
+.ek-help-center__h3::before {
+  content: '';
+  flex: none;
+  width: 12px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--ek-color-action);
+}
+
+.ek-help-center__home {
+  gap: var(--ek-space-6);
+}
+
+/* Başlarken adımları. */
+.ek-help-center__start-card {
+  border-color: var(--ek-color-border-default);
+}
+
+.ek-help-center__start-no {
+  border: 1px solid var(--ek-color-action-border);
+  border-radius: var(--ek-radius-md);
+  background: var(--ek-color-action-subtle);
+  color: var(--ek-color-action-emphasis);
+}
+
+/* Konu kartları: başlık sakin bantta, sayaç çerçeveli küçük rozet; hover'da gölge yok. */
+.ek-help-center__cat {
+  overflow: hidden;
+  border-color: var(--ek-color-border-default);
+  box-shadow: none;
+}
+
+.ek-help-center__cat:hover {
+  border-color: var(--ek-color-action-border);
+  box-shadow: none;
+}
+
+.ek-help-center__cat-head {
+  border-bottom: 1px solid var(--ek-color-border-default);
+  background: var(--ek-color-surface-muted);
+}
+
+.ek-help-center__cat-head :deep(.ek-icon-tile) {
+  background: var(--ek-color-surface);
+}
+
+.ek-help-center__cat-count {
+  align-self: flex-start;
+  justify-self: start;
+  width: fit-content;
+  padding: 1px var(--ek-space-2);
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-md);
+  background: var(--ek-color-surface);
+  color: var(--ek-color-content-default);
+  font-size: var(--ek-type-caption-size);
+  font-weight: var(--ek-font-weight-semibold);
+  white-space: nowrap;
+}
+
+.ek-help-center__start-card:hover,
+.ek-help-center__related-card:hover,
+.ek-help-center__category-item:hover,
+.ek-help-center__result:hover {
+  border-color: var(--ek-color-action-border);
+  box-shadow: none;
+}
+
+/* Arama sonuçları + kategori listesi: düz çerçeveli satır kartları. */
+.ek-help-center__result,
+.ek-help-center__category-item,
+.ek-help-center__related-card {
+  border-color: var(--ek-color-border-default);
+  border-radius: var(--ek-radius-card);
+}
+
+/* Konu ağacı: kart köşeli panel; etkin konu ve makale eylem tonunda + ince çerçeve. */
+.ek-help-center__nav {
+  border-color: var(--ek-color-border-default);
+  border-radius: var(--ek-radius-card);
+}
+
+.ek-help-center__nav-cat,
+.ek-help-center__nav-article {
+  border: 1px solid transparent;
+  border-radius: var(--ek-radius-tile);
+}
+
+.ek-help-center__nav-cat.is-current {
+  border-color: var(--ek-color-action-border);
+  background: var(--ek-color-action-subtle);
+  color: var(--ek-color-action-emphasis);
+}
+
+.ek-help-center__nav-article.is-current {
+  border-color: var(--ek-color-action-border);
+}
+
+.ek-help-center__nav-articles {
+  border-left-color: var(--ek-color-border-default);
+}
+
+/* Makale başlığı ve geri bildirim. */
+.ek-help-center__article-title {
+  letter-spacing: -0.02em;
+}
+
+.ek-help-center__feedback {
+  border-color: var(--ek-color-border-default);
+  border-radius: var(--ek-radius-card);
+  background: var(--ek-color-surface-muted);
+}
+
+.ek-help-center__feedback-title {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ek-space-2);
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-micro-size);
+  line-height: var(--ek-type-micro-line);
+  font-weight: var(--ek-type-micro-weight);
+  letter-spacing: var(--ek-type-micro-tracking);
+  text-transform: uppercase;
+}
+
+.ek-help-center__feedback-title::before {
+  content: '';
+  flex: none;
+  width: 12px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--ek-color-action);
+}
+
+.ek-help-center__feedback :deep(.ek-btn.is-voted) {
+  border-color: var(--ek-color-action-border);
+  background: var(--ek-color-action-subtle);
+  color: var(--ek-color-action-emphasis);
+}
+
+/* ================= FE-LOCAL-1059 — yardım merkezi: toplu yerleşim =================
+   İçerik okunur genişlikte ortalanır. Ana sayfa iki sütun: solda konular (iki kolon, EŞİT boy, yalnız başlık satırı —
+   kart içi makale listesi yok) ve sık sorulanlar; sağda dar sütunda başlangıç adımları (tek kartta satırlar) ve destek. */
+.ek-help-center.is-home .ek-help-center__search,
+.ek-help-center__home {
+  width: 100%;
+  max-width: 1180px;
+  margin-inline: auto;
+}
+
+.ek-help-center__home {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
+  gap: var(--ek-space-6);
+  align-items: start;
+}
+
+.ek-help-center__col-main,
+.ek-help-center__col-side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ek-space-6);
+  min-width: 0;
+}
+
+.ek-help-center__section-head {
+  margin-bottom: var(--ek-space-2);
+}
+
+/* Konular: iki kolon, eşit boy; kartın tamamı tek düğme. */
+.ek-help-center__grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ek-space-3);
+}
+
+.ek-help-center__cat {
+  display: flex;
+}
+
+.ek-help-center__cat-head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas: 'icon text go' 'icon count go';
+  align-items: center;
+  gap: var(--ek-space-1) var(--ek-space-3);
+  width: 100%;
+  height: 100%;
+  padding: var(--ek-space-4);
+  border-bottom: 0;
+  background: var(--ek-color-surface);
+  text-align: left;
+}
+
+.ek-help-center__cat-head > :first-child {
+  grid-area: icon;
+  align-self: start;
+}
+
+.ek-help-center__cat-head :deep(.ek-icon-tile) {
+  background: var(--ek-color-action-subtle);
+}
+
+.ek-help-center__cat-text {
+  grid-area: text;
+}
+
+.ek-help-center__cat-count {
+  grid-area: count;
+  margin-top: var(--ek-space-1);
+}
+
+.ek-help-center__cat-go {
+  grid-area: go;
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-icon-md);
+}
+
+.ek-help-center__cat-head:hover {
+  background: var(--ek-color-action-subtle);
+}
+
+.ek-help-center__cat-head:hover .ek-help-center__cat-go {
+  color: var(--ek-color-action);
+}
+
+.ek-help-center__cat-head:hover :deep(.ek-icon-tile) {
+  background: var(--ek-color-surface);
+}
+
+/* Başlarken: tek kartta ince çizgili satırlar. */
+.ek-help-center__start-list {
+  display: flex;
+  flex-direction: column;
+  grid-template-columns: none;
+  gap: 0;
+  overflow: hidden;
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-card);
+  background: var(--ek-color-surface);
+}
+
+.ek-help-center__start-list > li + li {
+  border-top: 1px solid var(--ek-color-border-subtle);
+}
+
+.ek-help-center__start-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--ek-space-3);
+  padding: var(--ek-space-3) var(--ek-space-4);
+  border: 0;
+  border-radius: 0;
+}
+
+.ek-help-center__start-card:hover {
+  background: var(--ek-color-action-subtle);
+}
+
+.ek-help-center__start-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.ek-help-center__start-text .ek-help-center__muted {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+
+.ek-help-center__start-go {
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-icon-md);
+}
+
+.ek-help-center__start-card:hover .ek-help-center__start-go {
+  color: var(--ek-color-action);
+}
+
+@media (max-width: 1023px) {
+  .ek-help-center__home {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 599px) {
+  .ek-help-center__grid {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 </style>

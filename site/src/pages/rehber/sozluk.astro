@@ -132,8 +132,8 @@ const cta = getGuideCta('stock')
     top: var(--site-header-visible);
     z-index: 5;
     border-bottom: var(--site-border-width) solid var(--ek-color-border-default);
-    background: color-mix(in srgb, var(--ek-color-background) 92%, transparent);
-    backdrop-filter: blur(var(--site-glass-blur));
+    /* SITE-DL: düz şerit (bulanıklık yok). */
+    background: var(--ek-color-surface);
   }
   .gloss-index ul {
     max-width: calc(var(--site-measure) + var(--ek-space-16));
@@ -150,15 +150,19 @@ const cta = getGuideCta('stock')
     justify-content: center;
     min-width: var(--site-tap-target);
     min-height: var(--site-tap-target);
+    border: var(--site-border-width) solid transparent;
     border-radius: var(--ek-radius-md);
     color: var(--site-text-heading);
     font-weight: var(--ek-font-weight-semibold);
     text-decoration: none;
-    transition: background-color var(--ek-duration-fast) var(--ek-easing-standard);
+    transition:
+      background-color var(--ek-duration-fast) var(--ek-easing-standard),
+      border-color var(--ek-duration-fast) var(--ek-easing-standard);
   }
   .gloss-index a:hover {
-    background: var(--ek-color-surface-muted);
-    color: var(--site-color-link);
+    border-color: var(--site-action-border);
+    background: var(--site-action-subtle);
+    color: var(--site-action-emphasis);
   }
 
   /* --- Terimler --- */
@@ -181,18 +185,21 @@ const cta = getGuideCta('stock')
     justify-content: center;
     width: var(--ek-space-12);
     height: var(--ek-space-12);
-    border-radius: var(--ek-radius-lg);
-    background: linear-gradient(140deg, var(--ek-color-primary), var(--ek-color-primary-darken-1));
-    color: var(--site-color-on-primary);
+    /* SITE-DL: çerçeveli kare harf kutusu (degrade yok). */
+    border: var(--site-border-width) solid var(--site-action-border);
+    border-radius: var(--ek-radius-tile);
+    background: var(--site-action-subtle);
+    color: var(--site-action-emphasis);
     font-size: var(--ek-font-size-xl);
     font-weight: var(--ek-font-weight-bold);
   }
   .gloss-list {
     display: flex;
     flex-direction: column;
+    overflow: hidden;
     margin: 0;
     border: var(--site-border-width) solid var(--ek-color-border-default);
-    border-radius: var(--site-radius-panel);
+    border-radius: var(--ek-radius-card);
     background: var(--ek-color-surface);
   }
   .gloss-term {
@@ -205,9 +212,8 @@ const cta = getGuideCta('stock')
     border-top: var(--site-border-width) solid var(--ek-color-border-default);
   }
   .gloss-term:target {
-    border-radius: var(--site-radius-panel);
-    background: color-mix(in srgb, var(--ek-color-secondary) 8%, var(--ek-color-surface));
-    box-shadow: inset var(--ek-space-1) 0 0 var(--ek-color-secondary-darken-1);
+    /* SITE-DL: hedeflenen terim = düz eylem tonu (sol şerit yok). */
+    background: var(--site-action-subtle);
   }
   .gloss-term dt {
     display: flex;
@@ -223,7 +229,8 @@ const cta = getGuideCta('stock')
   }
   .gloss-term__alt {
     padding: 0 var(--ek-space-2);
-    border-radius: var(--ek-radius-full);
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--ek-radius-md);
     background: var(--ek-color-surface-muted);
     color: var(--site-text-meta);
     font-size: var(--ek-font-size-xs);
@@ -256,7 +263,7 @@ const cta = getGuideCta('stock')
     align-items: flex-start;
     padding: var(--ek-space-4) var(--ek-space-5);
     border: var(--site-border-width) solid var(--ek-color-border-default);
-    border-radius: var(--ek-radius-lg);
+    border-radius: var(--ek-radius-tile);
     background: var(--ek-color-surface-muted);
     color: var(--site-text-body);
     font-size: var(--ek-font-size-sm);

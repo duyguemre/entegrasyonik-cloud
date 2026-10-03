@@ -15,6 +15,7 @@
     <LoadingComponent :attach="dialogAttach" ref="loadingComponentRef"></LoadingComponent>
 
     <EkListScreen channel-key="integrationCode"
+      summary-toggle
       label="Gönderim işlemleri tablosu"
       noun="kayıt"
       row-key="_id"
@@ -51,8 +52,13 @@
       @filter-reset="resetSearchExportLogForm()"
       @remove-chip="removeChip"
       @clear-filters="resetSearchExportLogForm()"
-      @refresh="handlePageChange()"
+      @refresh="refreshAll"
     >
+      <!-- FE-LOCAL-1047: Liste | Özet — özet listenin yerine açılır; hücre seçimi listeyi süzer ve listeye döner. -->
+      <template #summary="{ close }">
+        <ListCountDashboard ref="dashRef" :groups="DASH_GROUPS" :fetch-count="dashCount" :active="dashActive" unit="işlem"
+          empty-text="Henüz gönderim işlemi yok." @select="(g, k) => { onDashSelect(g, k); close() }" />
+      </template>
       <template #filters>
         <EkDateRange v-model:start="searchExportLogForm.data.startDate" v-model:end="searchExportLogForm.data.endDate" label="İşlem tarihi" value-format="date" />
         <EkSelect kind="channel" v-model="searchExportLogForm.data.integrationCode" :items="channelOptionsFrom(integrationStore.getClientPlatforms())"
@@ -131,6 +137,7 @@ import BrandSelectBoxComponent from '@/components/common/BrandSelectBoxComponent
 import ActionDialogComponent from '@/components/layout/ActionDialogComponent.vue'
 import ConfirmationDialogComponent from '@/components/layout/ConfirmationDialogComponent.vue'
 import EkListScreen from '@/components/page/templates/EkListScreen.vue'
+import ListCountDashboard, { type ListCountGroup } from '@/components/page/ListCountDashboard.vue'
 import ProductThumb from '@/components/productDefinitions/products/ProductThumb.vue'
 import { isRequestError } from '@entegrasyonik/ui/components/listStandard'
 import { formatDate, formatDateTime, formatMoney, formatNumber } from '@entegrasyonik/ui/format'
@@ -364,6 +371,52 @@ function removeChip(key: string) {
   else if (key === 'selectedChoices') d.selectedChoices = {}
   else d[key] = undefined
   pagination.page = 1
+  handlePageChange()
+}
+
+// FE-LOCAL-1047: özet görünümü — sayılar gelişmiş arama ucundan (her süzme için `limit: 1`, backend toplamı).
+const dashRef = ref<InstanceType<typeof ListCountDashboard> | null>(null)
+const STATUS_ICON: Record<string, string> = {
+  QUEUED: 'mdi-tray-full', PREPARING: 'mdi-cog-sync-outline', PENDING: 'mdi-send-outline', SENT: 'mdi-progress-check',
+  WAITING: 'mdi-clock-outline', COMPLETED: 'mdi-check-circle-outline', FAILED: 'mdi-alert-circle-outline',
+}
+const MODE_ICON: Record<string, string> = {
+  TRANSFER: 'mdi-rocket-launch-outline', UPDATE_PRICE: 'mdi-tag-outline', UPDATE_STOCK: 'mdi-package-variant-closed',
+  UPDATE: 'mdi-pencil-outline', UPDATE_VARIANT: 'mdi-shape-outline', UPDATE_DELIVERY: 'mdi-truck-outline',
+}
+const dashTone = (tone: string) => (tone === 'danger' ? 'error' : tone) as any
+const DASH_GROUPS: ListCountGroup[] = [
+  {
+    id: 'statuses', label: 'Duruma göre gönderimler',
+    items: statusOptions.value.map((o) => ({ key: o.id, label: o.title, icon: STATUS_ICON[o.id] ?? 'mdi-circle-outline', tone: dashTone(statusTone(o.id)) })),
+    distribution: { title: 'Gönderim durumları', subtitle: 'Tüm gönderim işlemlerinin durum dağılımı', icon: 'mdi-rocket-launch-outline' },
+  },
+  {
+    id: 'mode', label: 'İşlem tipine göre',
+    items: Object.values(PLATFORM_PROCESS).filter((m) => m !== PLATFORM_PROCESS.IMPORT).map((m) => ({ key: m, label: PLATFORM_PROCESS_LABELS[m], icon: MODE_ICON[m] ?? 'mdi-swap-horizontal', tone: 'action' as const })),
+  },
+]
+const dashCount = async (group: string, key: string) => {
+  const res = await restApi.post('IntegrationService/advancedSearchExportJobs', {
+    page: 1, limit: 1, selectedChoices: {}, integrationCode: [], statuses: group === 'statuses' ? [key] : [], mode: group === 'mode' ? key : undefined,
+  })
+  if (isRequestError(res) || !res?.success) return null
+  const n = Number(res.pagination?.totalNumberOfRecords)
+  return Number.isFinite(n) ? n : null
+}
+const dashActive = computed(() => {
+  const { advanced, data: d } = applied.value
+  if (!advanced) return {}
+  return { statuses: d.statuses?.length === 1 ? String(d.statuses[0]) : null, mode: d.mode ? String(d.mode) : null }
+})
+const onDashSelect = (group: string, key: string) => {
+  const d: any = searchExportLogForm.value.data
+  d.statuses = group === 'statuses' ? [key] : []
+  d.mode = group === 'mode' ? key : undefined
+  advancedSearchJobs(true)
+}
+const refreshAll = () => {
+  dashRef.value?.refresh()
   handlePageChange()
 }
 

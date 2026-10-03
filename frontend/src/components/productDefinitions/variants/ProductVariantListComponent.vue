@@ -1050,4 +1050,77 @@ button.pvl-absent:focus-visible { outline: none; box-shadow: var(--ek-focus-ring
   color: var(--ek-color-content-muted); font-size: var(--ek-type-caption-size); line-height: var(--ek-type-caption-line);
 }
 .pvl-absent-card__hint .v-icon { flex: none; margin-top: 1px; font-size: 14px; color: var(--ek-color-info, var(--ek-color-action)); }
+
+/* ================= FE-LOCAL-1048 — "gönderilmeyen kanallar" kartı: ana sayfa diliyle =================
+   Kanal durumu paneliyle aynı kalıp: başlık bandı (mikro etiket + stok kodu), ince çizgili satırlar, sakin altlık. */
+.pvl-absent-card {
+  gap: 0;
+  min-width: 260px;
+  max-width: 320px;
+  padding: 0;
+  overflow: hidden;
+  border-radius: var(--ek-radius-card);
+  box-shadow: var(--ek-shadow-popover);
+}
+
+.pvl-absent-card__head {
+  gap: var(--ek-space-1);
+  padding: var(--ek-space-3) var(--ek-space-4);
+  border-bottom: 1px solid var(--ek-color-border-default);
+  background: var(--ek-color-surface-muted);
+}
+
+.pvl-absent-card__title {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ek-space-2);
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-micro-size);
+  line-height: var(--ek-type-micro-line);
+  font-weight: var(--ek-type-micro-weight);
+  letter-spacing: var(--ek-type-micro-tracking);
+  text-transform: uppercase;
+}
+
+.pvl-absent-card__title::before {
+  content: '';
+  width: 12px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--ek-color-action);
+}
+
+.pvl-absent-card__sub {
+  color: var(--ek-color-content-strong);
+  font-size: var(--ek-type-body-size);
+  font-weight: var(--ek-font-weight-semibold);
+}
+
+.pvl-absent-card__list {
+  gap: 0;
+}
+
+.pvl-absent-card__list > li {
+  padding: var(--ek-space-2) var(--ek-space-4);
+  border-radius: 0;
+  background: transparent;
+}
+
+.pvl-absent-card__list > li + li {
+  border-top: 1px solid var(--ek-color-border-subtle);
+}
+
+.pvl-absent-card__state {
+  padding: 1px var(--ek-space-2);
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-md);
+  background: var(--ek-color-surface-muted);
+  font-weight: var(--ek-font-weight-semibold);
+}
+
+.pvl-absent-card__hint {
+  padding: var(--ek-space-3) var(--ek-space-4);
+  border-top: 1px solid var(--ek-color-border-default);
+  background: var(--ek-color-surface-muted);
+}
 </style>

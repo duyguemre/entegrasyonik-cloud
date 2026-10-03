@@ -2,3 +2,5 @@
 .astro/
 # Lighthouse betiğinin rapor/profil çıktısı (npm run lighthouse; commit edilmez)
 .lighthouse/
+# APK-DL: Android APK derleme çıktısı (frontend/mobile/android-shell) buraya kopyalanır; ikili dosya commit edilmez.
+public/indir/*.apk

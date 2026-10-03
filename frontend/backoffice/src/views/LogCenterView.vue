@@ -1,12 +1,11 @@
 <template>
   <div class="bo-page">
-    <BoPageHeader :updated-at="summary.updatedAt.value" :stale="summary.stale.value">
+    <BoPageHeader :updated-at="summary.updatedAt.value" :stale="summary.stale.value" refreshable :refreshing="loading || summary.refreshing.value" @refresh="refresh">
       <template #meta>
         <span class="bo-inline-note"><v-icon icon="mdi-flask-outline" aria-hidden="true" />Örnek veriyle taslak — uçlar (L6–L8) henüz yok</span>
       </template>
       <template #actions>
         <CopyViewLink />
-        <BoAction kind="refresh" :loading="loading || summary.refreshing.value" data-page-refresh @click="refresh" />
       </template>
     </BoPageHeader>
 
@@ -124,7 +123,7 @@
     </BoSection>
 
     <!-- Olay akışı -->
-    <BoSection v-else id="panel-stream" title="Olay akışı" :description="streamNote" icon="mdi-format-list-bulleted" flush role="tabpanel">
+    <BoSection v-else id="panel-stream" title="Olay akışı" :description="streamNote" icon="mdi-format-list-bulleted" flush role="tabpanel" :count="stream?.items.length">
       <template #actions>
         <v-tooltip text="Canlı akış 3 sn aralıklı sorguyla gelecek (uç henüz yok)" location="bottom">
           <template #activator="{ props: tip }">
@@ -228,7 +227,6 @@ import BarTrend from '@bo/components/BarTrend.vue'
 import Sparkline from '@bo/components/Sparkline.vue'
 import TraceDialog from '@bo/components/TraceDialog.vue'
 import BoPageHeader from '@bo/components/shell/BoPageHeader.vue'
-import BoAction from '@bo/components/r2/BoAction.vue'
 import BoCollapsible from '@bo/components/r2/BoCollapsible.vue'
 import BoFilterBar from '@bo/components/r2/BoFilterBar.vue'
 import BoPagination from '@bo/components/r2/BoPagination.vue'
@@ -946,5 +944,127 @@ onMounted(async () => {
   flex: 1 1 12rem;
   min-width: 0;
   overflow-wrap: anywhere;
+}
+
+/* ================= BO-LOCAL-01 — log kontrol merkezi: uygulamanın tasarım diliyle (DESIGN_SYSTEM §35) =================
+   Kategori kutusu: kutu köşeli düz karo; ad mikro etiket, ikon çerçeveli köşeli kutuda (hata varsa hata tonunda);
+   seçili = eylem renginin açık tonu + ince eylem çerçevesi (halka/gölge yok). Seviye ikonu çerçeveli ton kapsülü.
+   Olay akışında satır başındaki kalın sol şerit kalktı (seviye zaten çipte; hata satırında saat tonla okunur).
+   Çekmece: üst etiket kısa eylem çizgili mikro etiket; örnek ileti ince çerçeveli sakin kutu; müşteri etiketleri köşeli. */
+.bo-cat {
+  border-radius: var(--ek-radius-tile);
+}
+
+.bo-cat:hover {
+  border-color: var(--ek-color-action-border);
+}
+
+.bo-cat.is-on {
+  border-color: var(--ek-color-action-border);
+  background: var(--ek-color-action-subtle);
+  box-shadow: none;
+}
+
+.bo-cat__head {
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-micro-size);
+  line-height: var(--ek-type-micro-line);
+  font-weight: var(--ek-type-micro-weight);
+  letter-spacing: var(--ek-type-micro-tracking);
+  text-transform: uppercase;
+}
+
+.bo-cat__head :deep(.v-icon) {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-md);
+  background: var(--ek-color-surface);
+  color: var(--ek-color-content-default);
+}
+
+.bo-cat.has-error .bo-cat__head :deep(.v-icon) {
+  border-color: var(--ek-color-error-border);
+  background: var(--ek-color-error-subtle);
+  color: var(--ek-color-error-emphasis);
+}
+
+.bo-cat.is-on .bo-cat__head {
+  color: var(--ek-color-action-emphasis);
+}
+
+.bo-cat.is-on .bo-cat__head :deep(.v-icon) {
+  border-color: var(--ek-color-action);
+  background: var(--ek-color-action);
+  color: var(--ek-color-action-contrast);
+}
+
+.bo-issue-row.is-selected > * {
+  background: var(--ek-color-action-subtle);
+}
+
+.bo-issue__lvl {
+  border: 1px solid var(--ek-color-border-default);
+}
+
+.bo-issue__lvl.lvl-error,
+.bo-issue__lvl.lvl-fatal {
+  border-color: var(--ek-color-error-border);
+}
+
+.bo-issue__lvl.lvl-warn {
+  border-color: var(--ek-color-warning-border);
+}
+
+:deep(.bo-table tbody tr.lvl-error > :first-child),
+:deep(.bo-table tbody tr.lvl-fatal > :first-child) {
+  box-shadow: none;
+  color: var(--ek-color-error-emphasis);
+}
+
+:deep(.bo-table tbody tr.lvl-warn > :first-child) {
+  box-shadow: none;
+  color: var(--ek-color-warning-emphasis);
+}
+
+.bo-logs__scope-chip {
+  border-radius: var(--ek-radius-md);
+}
+
+.bo-drawer__kicker {
+  display: flex;
+  align-items: center;
+  gap: var(--ek-space-2);
+  line-height: var(--ek-type-micro-line);
+}
+
+.bo-drawer__kicker::before {
+  content: '';
+  flex: none;
+  width: 12px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--ek-color-action);
+}
+
+.bo-drawer__evidence {
+  border-top-color: var(--ek-color-border-default);
+}
+
+.bo-drawer__sample {
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-tile);
+  background: var(--ek-color-surface-muted);
+}
+
+.bo-drawer__tenant {
+  border-radius: var(--ek-radius-md);
+  background: var(--ek-color-surface);
+  font-weight: var(--ek-font-weight-semibold);
+}
+
+.bo-drawer__tenant:hover {
+  border-color: var(--ek-color-action-border);
 }
 </style>

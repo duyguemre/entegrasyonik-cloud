@@ -7,7 +7,8 @@
       icon="mdi-trash-can-outline" color="error" confirmText="Sil" cancelText="İptal" @confirm="removeChoice()"
       @cancel="confirmationDelete.isDialogOpen = false" />
 
-    <EkListScreen
+    <EkListScreen ref="listScreenRef"
+      summary-toggle
       section="Katalog"
       :title="$t('menu.productDefinitions.choiceList')"
       label="Varyant grupları tablosu"
@@ -36,35 +37,45 @@
       @update:page-size="(n) => { pagination.limit = n; pagination.page = 1 }"
       @refresh="retrieveChoices()"
     >
-      <!-- Araç şeridi (sağ): hazır şablon + satır içi yeni grup — arama solda (EkListScreen standart şeridi). -->
+      <!-- FE-LOCAL-1052: Liste | Özet — özet listenin yerine açılır; gruba tıklayınca liste o gruba süzülür. -->
+      <template #summary="{ close }">
+        <DefinitionGroupsDashboard :cells="dashCells" :groups="dashGroups" group-noun="Seçenek grubu" value-noun="seçenek"
+          icon="mdi-shape-outline" :loading="loading" empty-text="Henüz seçenek grubu yok."
+          @select="(title) => { searchText = title; close() }" />
+      </template>
+
+      <!-- Araç şeridi (sağ): hazır şablon (ikincil) + "Yeni grup" (sayfanın TEK birincil eylemi; ad küçük kartta sorulur). -->
       <template #create>
-        <v-menu offset="5">
+        <v-menu v-model="templateMenu" location="bottom end" :offset="6">
           <template v-slot:activator="{ props }">
-            <EkButton v-bind="props" tone="ghost" icon="mdi-folder-multiple-plus-outline" trailing-icon="mdi-chevron-down">Şablondan ekle</EkButton>
+            <EkButton v-bind="props" tone="secondary" icon="mdi-folder-multiple-plus-outline" trailing-icon="mdi-chevron-down">Şablondan ekle</EkButton>
           </template>
-          <v-list density="compact" nav width="240">
-            <v-list-item prepend-icon="mdi-palette-outline" title="Renk Şablonu"
-              @click="addPreparedChoice('color')"></v-list-item>
-            <v-list-item prepend-icon="mdi-format-size" title="Beden (XXS-5XL) Şablonu"
-              @click="addPreparedChoice('size')"></v-list-item>
-            <v-list-item prepend-icon="mdi-numeric" title="Numara Şablonu"
-              @click="addPreparedChoice('number')"></v-list-item>
-          </v-list>
+          <EkMenuPanel autofocus :groups="TEMPLATE_GROUPS" label="Hazır şablonlar" title="Hazır şablonlar" description="Seçilen şablon değerleriyle birlikte eklenir"
+            @select="(item) => { templateMenu = false; addPreparedChoice(item.key) }" @close="templateMenu = false" />
         </v-menu>
-        <v-form v-model="newChoiceForm" @submit.prevent="addChoice" class="def-new-form">
-          <v-text-field v-model="newChoiceTitle" variant="outlined" density="compact" hide-details :rules="newChoiceRules"
-            class="def-new-input" :placeholder="$t('productDefinitions.choice.name')"
-            :aria-label="$t('productDefinitions.choice.name')" />
-          <EkButton tone="primary" icon="mdi-plus" class="def-new" :disabled="!newChoiceForm || !newChoiceTitle"
-            @click="addChoice">Grup ekle</EkButton>
-        </v-form>
+        <v-menu v-model="newMenu" :close-on-content-click="false" location="bottom end" :offset="6">
+          <template v-slot:activator="{ props }">
+            <EkButton v-bind="props" tone="primary" icon="mdi-plus" class="def-new">Yeni grup</EkButton>
+          </template>
+          <v-card class="def-pop" width="300">
+            <div class="def-pop__caption">Yeni seçenek grubu</div>
+            <v-form v-model="newChoiceForm" class="def-new-form" @submit.prevent="submitNew">
+              <v-text-field v-model="newChoiceTitle" variant="outlined" density="compact" hide-details autofocus :rules="newChoiceRules"
+                class="def-new-input" :label="$t('productDefinitions.choice.name')" placeholder="Örn. Renk, Beden" />
+            </v-form>
+            <div class="def-pop__row">
+              <EkButton tone="secondary" size="sm" @click="newMenu = false">Vazgeç</EkButton>
+              <EkButton tone="primary" size="sm" icon="mdi-plus" :disabled="!newChoiceForm || !newChoiceTitle" @click="submitNew">Grup ekle</EkButton>
+            </div>
+          </v-card>
+        </v-menu>
       </template>
 
 
       <template #cell-title="{ row: item }">
         <div class="def-title-row">
         <!-- Grup kutucuğu (Etiketler ekranıyla aynı dil): site mavisi tonlu seçenek ikonu. -->
-        <span class="def-group-tile" style="--grp: var(--ek-color-action)" aria-hidden="true"><v-icon icon="mdi-shape-outline" /></span>
+        <EkIconTile icon="mdi-shape-outline" tone="action" size="sm" class="def-tile" />
         <div class="def-title-cell">
           <v-menu v-model="item.showEditMenu" :close-on-content-click="false" location="bottom start">
             <template v-slot:activator="{ props }">
@@ -76,7 +87,8 @@
               </button>
             </template>
             <v-card class="def-pop" width="280">
-              <v-text-field v-model="item.tempTitle" label="Grup Adını Düzenle" variant="outlined" density="compact"
+              <div class="def-pop__caption">Grup adı</div>
+              <v-text-field v-model="item.tempTitle" label="Grup adını düzenle" variant="outlined" density="compact"
                 hide-details autofocus class="mb-3" @keyup.enter="saveRename(item)" />
               <div class="def-pop__row">
                 <EkButton tone="secondary" size="sm" @click="item.showEditMenu = false">İptal</EkButton>
@@ -87,11 +99,11 @@
           <div class="def-flags">
             <button type="button" class="def-flag" :class="{ 'is-on': item.isSlicer }" :aria-pressed="!!item.isSlicer"
               @click="toggleFlag(item, 'isSlicer')">
-              <v-icon size="14" aria-hidden="true">mdi-filter-variant</v-icon>GRUP (SLICER)
+              <v-icon size="14" aria-hidden="true">{{ item.isSlicer ? 'mdi-check' : 'mdi-filter-variant' }}</v-icon>Filtrede kullan
             </button>
             <button type="button" class="def-flag" :class="{ 'is-on': item.isVarianter }" :aria-pressed="!!item.isVarianter"
               @click="toggleFlag(item, 'isVarianter')">
-              <v-icon size="14" aria-hidden="true">mdi-layers-triple-outline</v-icon>VARYANT
+              <v-icon size="14" aria-hidden="true">{{ item.isVarianter ? 'mdi-check' : 'mdi-layers-triple-outline' }}</v-icon>Varyant oluşturur
             </button>
           </div>
         </div>
@@ -129,8 +141,8 @@
 </template>
 
 <script setup lang="ts">
-import { EkRowActions, EkButton } from '@entegrasyonik/ui/components'
-import type { EkGridColumn, EkGridSort } from '@entegrasyonik/ui/components'
+import { EkRowActions, EkButton, EkIconTile, EkMenuPanel } from '@entegrasyonik/ui/components'
+import type { EkGridColumn, EkGridSort, EkMenuGroup } from '@entegrasyonik/ui/components'
 import { ref, computed, onBeforeMount, reactive, watch } from 'vue'
 import { useI18n } from 'vue-i18n';
 import { useChoicesStore } from '@/stores/choicesStore';
@@ -142,6 +154,9 @@ import ConfirmationDialogComponent from '@/components/layout/ConfirmationDialogC
 import EkListScreen from '@/components/page/templates/EkListScreen.vue';
 import DefinitionValueChip from '@/components/productDefinitions/definitions/DefinitionValueChip.vue';
 import DefinitionValueAdd from '@/components/productDefinitions/definitions/DefinitionValueAdd.vue';
+import DefinitionGroupsDashboard from '@/components/productDefinitions/definitions/DefinitionGroupsDashboard.vue';
+import type { ListSummaryCell } from '@/components/page/ListSummaryStrip.vue';
+import { formatNumber } from '@entegrasyonik/ui/format';
 import { isRequestError, sortRows } from '@entegrasyonik/ui/components/listStandard';
 import './definitionLists.css'
 
@@ -170,6 +185,41 @@ const pagination = reactive({
 })
 
 const newChoiceRules = [...formRules.mandatoryRule, ...formRules.length_2_160]
+
+// FE-LOCAL-1052: araç şeridi menüleri + özet görünümü (sayılar bellekteki listeden; ek istek yok).
+const listScreenRef = ref<InstanceType<typeof EkListScreen> | null>(null)
+const templateMenu = ref(false)
+const newMenu = ref(false)
+const TEMPLATE_GROUPS: EkMenuGroup[] = [
+  {
+    items: [
+      { key: 'color', label: 'Renk şablonu', icon: 'mdi-palette-outline' },
+      { key: 'size', label: 'Beden şablonu', description: 'XXS – 5XL', icon: 'mdi-format-size' },
+      { key: 'number', label: 'Numara şablonu', icon: 'mdi-numeric' },
+    ],
+  },
+]
+const submitNew = async () => {
+  if (!newChoiceForm.value || !newChoiceTitle.value) return
+  newMenu.value = false
+  await addChoice()
+}
+const dashCells = computed<ListSummaryCell[]>(() => {
+  const all = choicesStoreChoices.value
+  const values = all.reduce((a, c) => a + (c.values?.length ?? 0), 0)
+  const slicer = all.filter((c) => c.isSlicer).length
+  const variant = all.filter((c) => c.isVarianter).length
+  const empty = all.filter((c) => !(c.values?.length)).length
+  const cell = (key: string, label: string, n: number, icon: string, tone: ListSummaryCell['tone'], hint: string): ListSummaryCell => ({ key, label, hint, icon, tone, value: formatNumber(n), zero: !n })
+  return [
+    cell('groups', 'Seçenek grubu', all.length, 'mdi-shape-outline', 'action', 'Tanımlı grup'),
+    cell('values', 'Seçenek', values, 'mdi-format-list-bulleted', 'info', 'Tüm gruplardaki değer'),
+    cell('variant', 'Varyant oluşturan', variant, 'mdi-layers-triple-outline', 'success', 'Ürün varyantı üretir'),
+    cell('slicer', 'Filtrede kullanılan', slicer, 'mdi-filter-variant', 'neutral', 'Listelerde süzme ölçütü'),
+    cell('empty', 'Boş grup', empty, 'mdi-alert-outline', 'warning', 'Henüz seçeneği yok'),
+  ]
+})
+const dashGroups = computed(() => choicesStoreChoices.value.map((c) => ({ key: String(c.title), label: String(c.title), count: c.values?.length ?? 0 })))
 
 onBeforeMount(() => retrieveChoices())
 watch(searchText, () => { pagination.page = 1 })

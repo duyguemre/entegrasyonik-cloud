@@ -1,9 +1,8 @@
 <template>
   <div class="bo-page">
-    <BoPageHeader :updated-at="stats.loadedAt.value ?? undefined" :stale="stats.stale.value">
+    <BoPageHeader :updated-at="stats.loadedAt.value ?? undefined" :stale="stats.stale.value" refreshable :refreshing="stats.refreshing.value || list.refreshing.value" @refresh="refresh">
       <template #actions>
         <CopyViewLink />
-        <BoAction kind="refresh" :loading="stats.refreshing.value || list.refreshing.value" data-page-refresh @click="refresh" />
       </template>
     </BoPageHeader>
 
@@ -39,7 +38,7 @@
       </div>
     </BoSection>
 
-    <BoSection id="bo-dlv-list" title="Teslimler" description="En yeni önce. Satırda alıcı adresi ve ileti metni yoktur; hata yalnız sınıf koduyla gösterilir." icon="mdi-format-list-bulleted">
+    <BoSection id="bo-dlv-list" title="Teslimler" description="En yeni önce. Satırda alıcı adresi ve ileti metni yoktur; hata yalnız sınıf koduyla gösterilir." icon="mdi-format-list-bulleted" :count="list.items.value.length">
       <BoFilterBar label="Teslim süzgeçleri" :active="activeFilters" @clear="clearFilters">
         <BoSegmented v-model="status" label="Teslim durumu" :options="STATUS_OPTS" />
         <v-text-field v-model="codeInput" label="Bildirim kodu" placeholder="ör. ORDER_SYNC_FAILED…" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" density="compact" hide-details clearable class="bo-toolbar__field" data-testid="code-filter" @keydown.enter="code = codeInput?.trim().toUpperCase() || ''" @click:clear="code = ''" @blur="code = codeInput?.trim().toUpperCase() || ''" />

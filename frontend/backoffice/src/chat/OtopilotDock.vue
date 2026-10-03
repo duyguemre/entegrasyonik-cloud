@@ -33,7 +33,7 @@
       @pointerdown="startResize"
       @keydown="onResizeKey"
     />
-    <ChatPanel ref="panelRef" :key="panelKey" :controller="otopilot.controllerRef.value" mode="side" wide @close="otopilot.close()" @expand="otopilot.openPage()" />
+    <ChatPanel ref="panelRef" :key="panelKey" :controller="otopilot.controllerRef.value" mode="side" appearance="refined" wide @close="otopilot.close()" @expand="otopilot.openPage()" />
   </v-navigation-drawer>
 </template>
 
@@ -146,5 +146,15 @@ onBeforeUnmount(stopResize)
 .bo-otopilot-dock.is-resizing {
   transition: none;
   user-select: none;
+}
+
+/* BO-LOCAL-01 — yan panel: üstüne binen hâlde de düz; ayrım ince sol çizgi + açılır katman gölgesi (ağır gölge yok).
+   Ayırıcı çizgisi token hızıyla belirir. Pencere içi müşteri uygulamasıyla aynı katman (`appearance="refined"`). */
+.bo-otopilot-dock.is-overlay {
+  box-shadow: var(--ek-shadow-popover);
+}
+
+.bo-otopilot-dock__resize::after {
+  transition: background-color var(--ek-motion-feedback);
 }
 </style>

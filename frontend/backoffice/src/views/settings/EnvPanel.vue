@@ -105,4 +105,9 @@ onMounted(() => env.load())
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* BO-LOCAL-01 — ortam satırları: değer yarı kalın; kilit notu ikonla aynı sakin tonda. */
+.bo-env__value {
+  font-weight: var(--ek-font-weight-semibold);
+}
 </style>

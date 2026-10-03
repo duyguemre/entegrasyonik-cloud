@@ -105,4 +105,19 @@ const uid = useId()
     padding: var(--ek-space-4);
   }
 }
+
+/* FE-LOCAL-1054 — adım kartı: düz yüzey (gölge yok); başlık bandı sakin zeminde, ikon kapsülü beyaz zeminde. */
+.pstep {
+  overflow: hidden;
+  box-shadow: none;
+}
+
+.pstep__head {
+  border-bottom-color: var(--ek-color-border-default);
+  background: var(--ek-color-surface-muted);
+}
+
+.pstep__head :deep(.ek-icon-tile) {
+  background: var(--ek-color-surface);
+}
 </style>

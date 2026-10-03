@@ -81,4 +81,9 @@ defineProps<{ label: string }>()
     min-height: 360px;
   }
 }
+
+/* FE-LOCAL-1041: araç satırı ile tablo başlığı arasında tek ince çizgi (başlık bantsız olduğu için çift çizgi olmasın). */
+.ek-list-frame__toolbar {
+  border-bottom-color: var(--ek-color-border-subtle);
+}
 </style>

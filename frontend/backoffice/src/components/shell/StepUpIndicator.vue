@@ -159,4 +159,30 @@ async function verifyNow() {
     inset: -6px -4px;
   }
 }
+
+/* ================= BO-LOCAL-01 — hassas işlem göstergesi: uygulamanın tasarım diliyle =================
+   Üst bardaki hap, diğer üst bar kutularıyla aynı köşede (kutu köşeli). Açılır kart: kart köşesi + ince çerçeve,
+   başlığı kısa eylem çizgili. */
+.bo-stepup {
+  border-radius: var(--ek-radius-tile);
+}
+
+.bo-stepup-menu {
+  border-radius: var(--ek-radius-card);
+}
+
+.bo-stepup-menu__title {
+  display: flex;
+  align-items: center;
+  gap: var(--ek-space-2);
+}
+
+.bo-stepup-menu__title::before {
+  content: '';
+  flex: none;
+  width: 12px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--ek-color-action);
+}
 </style>

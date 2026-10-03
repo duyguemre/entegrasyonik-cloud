@@ -358,4 +358,29 @@ watch(() => props.images.length, (n) => {
     border-top: 1px solid var(--ek-color-border-subtle);
   }
 }
+
+/* FE-LOCAL-1057 — büyük görünüm: gezinme düğmeleri çerçeveli köşeli kutu (gölge yok); rozet/çipler köşeli. */
+.ilb__nav {
+  border-radius: var(--ek-radius-tile);
+  box-shadow: none;
+}
+
+.ilb__nav:hover:not(:disabled) {
+  border-color: var(--ek-color-action-border);
+  background: var(--ek-color-action-subtle);
+  color: var(--ek-color-action-emphasis);
+}
+
+.ilb__cover,
+.ilb__chips li {
+  border-radius: var(--ek-radius-md);
+}
+
+.ilb__cover {
+  border: 1px solid var(--ek-color-action-border);
+}
+
+.ilb__strip-item.is-current {
+  box-shadow: inset 0 0 0 1px var(--ek-color-action);
+}
 </style>

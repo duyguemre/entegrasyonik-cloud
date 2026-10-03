@@ -562,4 +562,69 @@ function onHeadClick(e: MouseEvent) {
   background: var(--ek-color-surface);
   box-shadow: var(--ek-shadow-card);
 }
+
+/* ================= FE-LOCAL-1040 — ana sayfa diliyle filtre paneli =================
+   Gövde kart yüzeyinde (gri bant yok); eylem çubuğu sakin zeminli şerit (ana sayfadaki alt şeritlerle aynı). */
+.ek-filter__body {
+  background: var(--ek-color-surface);
+}
+
+.ek-filter__actions {
+  background: var(--ek-color-surface-muted);
+}
+
+/* ================= FE-LOCAL-1041 — filtreler: ana sayfa / sol menü dili (tüm liste sayfaları) =================
+   · "Filtreler" düğmesi: kutu yarıçapı; panel AÇIKKEN ya da etkin filtre VARKEN eylem renginin açık tonu + ince
+     çerçeve + vurgu metni (sol menüdeki etkin öğeyle aynı). Dinlenirken sakin yüzey.
+   · Filtre kartı: kart yüzeyi + ince çerçeve, ferah iç boşluk; alanlar arasında düzenli aralık.
+   · Eylem çubuğu: sakin zeminli alt şerit (ince üst çizgi). */
+.ek-filter__toggle {
+  border-radius: var(--ek-radius-tile);
+  background: var(--ek-color-surface);
+  transition: var(--ek-transition-colors);
+}
+
+.ek-filter__toggle:hover {
+  background: var(--ek-color-surface-muted);
+}
+
+.ek-filter:not(.is-collapsed) .ek-filter__toggle,
+.ek-filter.has-active .ek-filter__toggle {
+  border-color: var(--ek-color-action-border);
+  background: var(--ek-color-action-subtle);
+  color: var(--ek-color-action-emphasis);
+}
+
+.ek-filter:not(.is-collapsed) .ek-filter__toggle:hover,
+.ek-filter.has-active .ek-filter__toggle:hover {
+  border-color: var(--ek-color-action);
+}
+
+.ek-filter:not(.is-collapsed) .ek-filter__glyph,
+.ek-filter:not(.is-collapsed) .ek-filter__toggle .ek-filter__chevron {
+  color: var(--ek-color-action);
+}
+
+.ek-filter__form {
+  border-color: var(--ek-color-border-default);
+}
+
+.ek-filter__body {
+  padding: var(--ek-space-5);
+}
+
+.ek-filter__actions {
+  padding: var(--ek-space-3) var(--ek-space-5);
+  border-top: 1px solid var(--ek-color-border-subtle);
+}
+
+/* FE-LOCAL-1042 (kullanıcı): form alanlarının olduğu gövde TONLU zeminde — beyaz alanlar zeminden ayrışır;
+   eylem çubuğu kart yüzeyinde, ince üst çizgiyle ayrılır. */
+.ek-filter__body {
+  background: var(--ek-color-surface-muted);
+}
+
+.ek-filter__actions {
+  background: var(--ek-color-surface);
+}
 </style>

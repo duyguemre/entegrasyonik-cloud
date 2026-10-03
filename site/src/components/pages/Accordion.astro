@@ -42,10 +42,9 @@ const { items } = Astro.props
     display: flex;
     flex-direction: column;
     border: var(--site-border-width) solid var(--ek-color-border-default);
-    /* site-wdg W19: bağımsız kart = panel yarıçapı + kart gölgesi (site geneli tek kart dili). */
-    border-radius: var(--site-radius-panel);
+    /* SITE-DL-03: tek çerçeveli düz kart; satırlar ince çizgiyle ayrılır. */
+    border-radius: var(--ek-radius-card);
     background: var(--ek-color-surface);
-    box-shadow: var(--site-shadow-card);
     overflow: hidden;
   }
   .acc__item {
@@ -56,16 +55,9 @@ const { items } = Astro.props
   .acc__item:not([hidden]) ~ .acc__item:not([hidden]) {
     border-top: var(--site-border-width) solid var(--ek-color-border-default);
   }
-  .acc__item[open] {
-    background: color-mix(in srgb, var(--ek-color-secondary) 5%, var(--ek-color-surface));
-  }
-  .acc__item[open]::before {
-    content: '';
-    position: absolute;
-    inset-block: 0;
-    inset-inline-start: 0;
-    width: calc(var(--site-border-width) * 3);
-    background: var(--ek-color-secondary-darken-1);
+  /* SITE-DL-03: açık satırda sol şerit/renkli zemin yok — açık durum ikon kutusu ve soru rengiyle anlatılır. */
+  .acc__item[open] > .acc__summary {
+    color: var(--site-action-emphasis);
   }
   .acc__summary {
     display: flex;
@@ -86,26 +78,36 @@ const { items } = Astro.props
     display: none;
   }
   .acc__summary:hover {
-    background: var(--ek-color-surface-muted);
+    background: var(--site-action-subtle);
   }
   .acc__summary:focus-visible {
     outline-offset: calc(var(--site-focus-ring-width) * -1);
   }
   .acc__icon {
+    box-sizing: border-box;
     flex: none;
-    width: var(--ek-space-6);
-    height: var(--ek-space-6);
+    width: var(--ek-space-8);
+    height: var(--ek-space-8);
+    padding: var(--ek-space-1);
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--ek-radius-tile);
+    background: var(--ek-color-surface);
     fill: none;
     stroke: currentColor;
     stroke-width: 2;
     stroke-linecap: round;
     stroke-linejoin: round;
     color: var(--ek-color-content-muted);
-    transition: transform var(--ek-duration-base) var(--ek-easing-standard);
+    transition:
+      transform var(--ek-duration-base) var(--ek-easing-standard),
+      background-color var(--ek-duration-base) var(--ek-easing-standard),
+      border-color var(--ek-duration-base) var(--ek-easing-standard);
   }
   .acc__item[open] .acc__icon {
-    color: var(--site-link-accent);
     transform: rotate(180deg);
+    border-color: var(--site-action-border);
+    background: var(--site-action-subtle);
+    color: var(--site-action);
   }
   .acc__body {
     padding: 0 var(--ek-space-6) var(--ek-space-6);
@@ -113,7 +115,7 @@ const { items } = Astro.props
   .acc__body p {
     max-width: var(--site-measure);
     color: var(--site-text-body);
-    font-size: var(--ek-font-size-md);
+    font-size: var(--ek-font-size-lg);
     line-height: var(--site-font-body-line-height);
   }
 </style>

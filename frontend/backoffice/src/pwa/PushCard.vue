@@ -117,4 +117,20 @@ onMounted(refresh)
   display: grid;
   gap: var(--ek-space-2);
 }
+
+/* BO-LOCAL-01 — kayıtlı cihazlar: tek çerçevede ince çizgili satırlar (kutu köşesi), ayrı satır boşlukları yerine. */
+.bo-push__devices {
+  gap: 0;
+  overflow: hidden;
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-tile);
+}
+
+.bo-push__devices > li {
+  padding: var(--ek-space-2) var(--ek-space-3);
+}
+
+.bo-push__devices > li + li {
+  border-top: 1px solid var(--ek-color-border-subtle);
+}
 </style>

@@ -8,7 +8,26 @@
  * yerel varsayılana) düşer — **davranış hiçbir mevcut ortamda değişmez**, yalnızca isteğe bağlı
  * olarak ayrıştırılabilir hale gelir.
  */
-const DEFAULT_API_BASE_URL = 'http://127.0.0.1:5001/api/'
+const FALLBACK_API_BASE_URL = 'http://127.0.0.1:5001/api/'
+
+/**
+ * Yerel geliştirmede API ana makinesi sayfanınkiyle AYNI olmalı: oturum çerezi (SameSite=lax, host-only) yalnız aynı siteye
+ * gider. Sayfa `localhost:3020`, API `127.0.0.1:5001` olunca tarayıcı ikisini farklı site sayar, çerez gönderilmez ve
+ * giriş başarılı olduğu halde ekran "Bilgiler hatalı" der. Google ile giriş yerelde yalnız `localhost` kaynağına izin
+ * verdiği için uygulama artık `localhost`'tan açılıyor → varsayılan API adresi sayfanın ana makinesini izler.
+ * (`VITE_API_BASE_URL` verilmişse o kullanılır; Electron `file://` vb. durumlarda eski varsayılan.)
+ */
+function defaultApiBaseUrl(): string {
+  try {
+    const { protocol, hostname } = window.location
+    if (hostname === 'localhost' || hostname === '127.0.0.1') return `${protocol}//${hostname}:5001/api/`
+  } catch {
+    /* window yok (test/SSR) */
+  }
+  return FALLBACK_API_BASE_URL
+}
+
+const DEFAULT_API_BASE_URL = defaultApiBaseUrl()
 
 export const apiBaseUrl: string = import.meta.env.VITE_API_BASE_URL || DEFAULT_API_BASE_URL
 

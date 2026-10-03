@@ -23,6 +23,7 @@
           ref="panelRef"
           :controller="otopilot.controllerRef.value"
           mode="page"
+          appearance="refined"
           wide
           confirm-reset
           :autofocus="finePointer"
@@ -321,5 +322,81 @@ onMounted(() => void otopilot.controller().ensureLoaded())
   .bo-otopilot-page__prompt {
     transition: none;
   }
+}
+
+/* ================= BO-LOCAL-01 — Otopilot sayfası: uygulamanın tasarım diliyle =================
+   Sohbet penceresi müşteri uygulamasıyla aynı katmanı kullanır (`appearance="refined"`: düz işaret, çerçeveli başlık
+   düğmeleri, düz yazma alanı). Çerçeve gölgesiz düz kart; soru grupları kısa eylem çizgili mikro etiket; sorular tek
+   kartta ince çizgili satırlar (ayrı kutucuklar değil); "nasıl çalışır" ikonları çerçeveli köşeli kutu. */
+.bo-otopilot-page__panel {
+  box-shadow: none;
+}
+
+.bo-otopilot-page__link {
+  color: var(--ek-color-action-emphasis);
+  font-weight: var(--ek-font-weight-semibold);
+  text-decoration: none;
+}
+
+.bo-otopilot-page__link:hover {
+  text-decoration: underline;
+}
+
+.bo-otopilot-page__setup {
+  align-items: stretch;
+  margin-top: var(--ek-space-6);
+  padding: var(--ek-space-5);
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-card);
+  background: var(--ek-color-surface-muted);
+}
+
+.bo-otopilot-page__setup > :deep(*:last-child) {
+  align-self: flex-start;
+}
+
+.bo-otopilot-page__group-title .v-icon {
+  display: none;
+}
+
+.bo-otopilot-page__group-title::before {
+  content: '';
+  flex: none;
+  width: 12px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--ek-color-action);
+}
+
+.bo-otopilot-page__prompts {
+  gap: 0;
+  overflow: hidden;
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-tile);
+}
+
+.bo-otopilot-page__prompts > li + li {
+  border-top: 1px solid var(--ek-color-border-subtle);
+}
+
+.bo-otopilot-page__prompt {
+  border: 0;
+  border-radius: 0;
+}
+
+.bo-otopilot-page__prompt:hover:not(:disabled) {
+  background: var(--ek-color-action-subtle);
+}
+
+.bo-otopilot-page__prompt:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--ek-color-border-focus);
+}
+
+.bo-otopilot-page__fact-icon {
+  border: 1px solid var(--ek-color-action-border);
+  border-radius: var(--ek-radius-md);
+  background: var(--ek-color-action-subtle);
+  color: var(--ek-color-action-emphasis);
 }
 </style>

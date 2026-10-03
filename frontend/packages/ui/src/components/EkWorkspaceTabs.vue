@@ -87,7 +87,7 @@
           <v-icon class="ek-tabs__more-chevron" icon="mdi-chevron-down" aria-hidden="true" />
         </button>
       </template>
-      <EkMenuPanel autofocus :groups="moreGroups" :label="`Açık sekmeler (${tabs.length})`" @select="onMoreSelect" @close="moreOpen = false" />
+      <EkMenuPanel autofocus :groups="moreGroups" :label="`Açık sekmeler (${tabs.length})`" title="Açık sekmeler" :description="`${tabs.length} sekme açık`" @select="onMoreSelect" @close="moreOpen = false" />
     </v-menu>
     <div v-if="$slots.trailing" class="ek-tabs__trailing"><slot name="trailing" /></div>
     <span :id="closeHintId" class="ek-sr-only">Kapatmak için Delete tuşuna basın</span>
@@ -160,8 +160,9 @@ const menuItem = (t: EkWorkspaceTab): EkMenuItem => {
   return {
     key: t.id,
     label: t.title,
-    icon: active ? 'mdi-check' : t.icon ? outlineIcon(t.icon) : undefined,
-    description: active ? 'Etkin sekme' : undefined,
+    icon: t.icon ? outlineIcon(t.icon) : 'mdi-tab',
+    description: active ? 'Etkin sekme' : t.dirty ? 'Kaydedilmemiş değişiklik var' : undefined,
+    current: active,
     shortcut: props.shortcutForIndex?.(index),
   }
 }
@@ -828,5 +829,129 @@ defineExpose({ focusActive: () => focusTab(props.modelValue) })
   .ek-tab:not(.is-active) .ek-tab__close {
     display: none;
   }
+}
+
+/* ================= FE-LOCAL-1037 — ana sayfa / sol menü diliyle sekmeler =================
+   Klasör sekmesi + degradeler kalktı: DÜZ şerit (kart yüzeyi), sekmeler şeritte yüzen yuvarlatılmış haplar.
+   · Pasif: zeminsiz, sakin metin; hover'da düz sakin zemin (ayrı katman, yalnız opaklık — geometri değişmez).
+   · ETKİN: sol menüdeki etkin satırla AYNI dil — eylem renginin açık tonu + ince çerçeve, ikon dolu eylem
+     renginde küçük kutuda (beyaz ikon), metin vurgu tonunda. Üst gösterge çizgisi, içbükey köşeler ve gölge yok.
+   Şerit yüksekliği (--ek-app-tabstrip-height) ve sekme genişlik kuralları DEĞİŞMEDİ. */
+.ek-tabs {
+  align-items: center;
+  gap: var(--ek-space-2);
+  --ek-color-tabstrip-bg: var(--ek-color-surface);
+  --ek-color-tab-hover: var(--ek-color-surface-muted);
+  background: var(--ek-color-surface);
+  box-shadow: inset 0 -1px 0 var(--ek-color-border-default);
+}
+
+.ek-tabs__list {
+  align-items: center;
+  gap: var(--ek-space-1);
+  padding-left: var(--ek-space-2);
+}
+
+.ek-tab {
+  height: 30px;
+  border: 1px solid transparent;
+  border-radius: var(--ek-radius-tile);
+}
+
+/* Haplar arasında ayraç çizgisi yok (boşluk yeter). */
+.ek-tab + .ek-tab::before {
+  display: none;
+}
+
+/* Hover katmanı: düz sakin zemin (degrade ve üst saç çizgisi kalktı). */
+.ek-tab__wash {
+  inset: -1px;
+  background: var(--ek-color-surface-muted);
+}
+
+.ek-tab__wash::after {
+  display: none;
+}
+
+.ek-tab.is-active {
+  height: 30px;
+  border-color: var(--ek-color-action-border);
+  background: var(--ek-color-action-subtle);
+  color: var(--ek-color-action-emphasis);
+  box-shadow: none;
+}
+
+/* Etkin sekmenin üst gösterge çizgisi ve içbükey köşeleri kaldırıldı. */
+.ek-tab.is-active::after,
+.ek-tab.is-active .ek-tab__flare {
+  display: none;
+}
+
+/* Etkin ikon: dolu eylem renginde küçük kutu (sol menüdeki etkin öğeyle aynı). */
+.ek-tab.is-active .ek-tab__icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  background: var(--ek-color-action);
+  color: var(--ek-color-action-contrast);
+  font-size: 13px;
+}
+
+.ek-tab.is-active .ek-tab__close {
+  color: var(--ek-color-action-emphasis);
+}
+
+.ek-tab.is-active .ek-tab__close:hover {
+  background: var(--ek-color-surface);
+}
+
+@supports selector(:has(*)) {
+  .ek-tab.is-active:has(.ek-tab__button:focus-visible) {
+    box-shadow: inset 0 0 0 2px var(--ek-color-border-focus);
+  }
+}
+
+/* "Tüm sekmeler" düğmesi: şerit ortasında, gölgesiz çerçeveli hap. */
+.ek-tabs__more {
+  align-self: center;
+  height: 28px;
+  margin: 0 0 0 var(--ek-space-1);
+  border-radius: var(--ek-radius-tile);
+  box-shadow: none;
+}
+
+/* ================= FE-LOCAL-1047 — sekme değişince titreme yok =================
+   Etkin ↔ pasif geçişinde hiçbir öğe yer değiştirmez: ikon kutusu HER durumda 20×20 (pasifte zeminsiz), kapatma (×)
+   HER durumda akışta yer tutar (pasifte yalnız görünmez — üzerine gelince belirir). Önceden etkin sekmede ikon kutusu
+   büyüyor ve × sonradan yer açıyordu → başlık sağa sola oynuyordu. */
+.ek-tab__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.ek-tab:not(.is-active) .ek-tab__icon {
+  font-size: var(--ek-type-tab-icon);
+}
+
+.ek-tab:not(.is-active) .ek-tab__button {
+  padding-right: var(--ek-space-1);
+}
+
+.ek-tab:not(.is-active) .ek-tab__close {
+  position: relative;
+  top: auto;
+  right: auto;
+  margin: 0 var(--ek-space-2) 0 0;
+  transform: none;
+  background: transparent;
+}
+
+.ek-tab:not(.is-active) .ek-tab__close:hover {
+  background: var(--ek-color-surface);
 }
 </style>

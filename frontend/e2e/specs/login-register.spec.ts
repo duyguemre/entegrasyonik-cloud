@@ -12,12 +12,12 @@ test.describe('P1 — Kayıt sekmesi (characterization)', () => {
   test('smoke: KAYIT sekmesi alanları ve gönder düğmesi render olur', async ({ page }) => {
     await installApiMocks(page, NO_SESSION)
     await page.goto('/login')
-    await page.getByRole('tab', { name: 'Kayıt' }).click()
+    await page.getByRole('tab', { name: 'Yeni hesap' }).click()
 
     await expect(page.getByLabel('İsim')).toBeVisible()
     await expect(page.getByLabel('Soyisim')).toBeVisible()
     await expect(page.getByLabel('Parola (Tekrar)')).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Kayıt Ol' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Hesabımı oluştur' })).toBeVisible()
   })
 
   test('etkileşim: form doldurulup gönderilince SecurityService/register çağrılır (registerValues gövdesi)', async ({ page }) => {
@@ -30,14 +30,14 @@ test.describe('P1 — Kayıt sekmesi (characterization)', () => {
       },
     })
     await page.goto('/login')
-    await page.getByRole('tab', { name: 'Kayıt' }).click()
+    await page.getByRole('tab', { name: 'Yeni hesap' }).click()
     await page.getByLabel('İsim').fill('Deneme')
     await page.getByLabel('Soyisim').fill('Kullanici')
     await page.getByLabel('E-posta').last().fill('yeni@example.invalid')
     await page.getByLabel('Parola', { exact: true }).last().fill('e2e-pass-1234')
     await page.getByLabel('Parola (Tekrar)').fill('e2e-pass-1234')
     await page.getByRole('checkbox', { name: /okudum, kabul ediyorum/ }).check()
-    await page.getByRole('button', { name: 'Kayıt Ol' }).click()
+    await page.getByRole('button', { name: 'Hesabımı oluştur' }).click()
 
     await expect.poll(() => body?.registerValues?.email).toBe('yeni@example.invalid')
     expect(body.registerValues).toMatchObject({ name: 'Deneme', surname: 'Kullanici', password: 'e2e-pass-1234', password2: 'e2e-pass-1234' })
@@ -46,13 +46,13 @@ test.describe('P1 — Kayıt sekmesi (characterization)', () => {
   test('hata-yutma (gizli davranış, DEĞİŞMEDİ): kayıt 400 dönerse ekranda hata gösterilmez, ham hata sızmaz', async ({ page }) => {
     await installApiMocks(page, { ...NO_SESSION, 'SecurityService/register': mockError(400, { message: 'Bu e-posta zaten kayıtlı' }) })
     await page.goto('/login')
-    await page.getByRole('tab', { name: 'Kayıt' }).click()
+    await page.getByRole('tab', { name: 'Yeni hesap' }).click()
     await page.getByLabel('İsim').fill('Deneme')
     await page.getByRole('checkbox', { name: /okudum, kabul ediyorum/ }).check()
-    await page.getByRole('button', { name: 'Kayıt Ol' }).click()
+    await page.getByRole('button', { name: 'Hesabımı oluştur' }).click()
 
     await page.waitForTimeout(500)
-    await expect(page.getByRole('tab', { name: 'Kayıt' })).toHaveAttribute('aria-selected', 'true')
+    await expect(page.getByRole('tab', { name: 'Yeni hesap' })).toHaveAttribute('aria-selected', 'true')
     await expect(page.locator('body')).not.toContainText('400')
     await expect(page.locator('body')).not.toContainText('Request failed')
   })
@@ -60,7 +60,7 @@ test.describe('P1 — Kayıt sekmesi (characterization)', () => {
   test('ekran görüntüsü tabanı (kayıt sekmesi)', async ({ page }) => {
     await installApiMocks(page, NO_SESSION)
     await page.goto('/login')
-    await page.getByRole('tab', { name: 'Kayıt' }).click()
+    await page.getByRole('tab', { name: 'Yeni hesap' }).click()
     await expect(page.getByLabel('Parola (Tekrar)')).toBeVisible()
     await page.evaluate(() => document.fonts.ready)
     await page.waitForTimeout(400)

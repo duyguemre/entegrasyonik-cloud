@@ -93,7 +93,7 @@ test.describe('karanlık mod', () => {
     await recordFirstPaintTheme(page)
     await installApiMocks(page, { checkAuthentication: false, userContext: mockError(401, {}) })
     await page.goto('/login')
-    await expect(page.getByRole('button', { name: 'Giriş', exact: true })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Devam et', exact: true })).toBeVisible()
     expect(await page.evaluate(() => (window as unknown as { __ekFirstTheme?: string }).__ekFirstTheme)).toBe('dark')
     expect(await vuetifyIsDark(page)).toBe(true)
   })
@@ -120,7 +120,7 @@ test.describe('karanlık mod', () => {
       await page.addInitScript((t) => localStorage.setItem('ek-theme', t), theme)
       await installApiMocks(page, { checkAuthentication: false, userContext: mockError(401, {}) })
       await page.goto('/login')
-      await expect(page.getByRole('button', { name: 'Giriş', exact: true })).toBeVisible()
+      await expect(page.getByRole('button', { name: 'Devam et', exact: true })).toBeVisible()
       await expectNoAxeViolations(page)
     })
   }

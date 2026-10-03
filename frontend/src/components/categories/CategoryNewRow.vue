@@ -120,4 +120,22 @@ onMounted(() => inputRef.value?.focus())
 .cnr__error {
   color: var(--ek-color-error-emphasis);
 }
+
+/* FE-LOCAL-1048: yeni satır — ağaç satırlarıyla aynı düz dil (ince çerçeve, çerçeveli kutucuk, parlamasız alan). */
+.cnr {
+  border-bottom: 1px solid var(--ek-color-border-subtle);
+  border-radius: 0;
+  box-shadow: inset 0 0 0 1px var(--ek-color-action-border);
+}
+
+.cnr__tile {
+  border: 1px solid var(--ek-color-action-border);
+  border-radius: var(--ek-radius-tile);
+  background: var(--ek-color-surface);
+  color: var(--ek-color-action-emphasis);
+}
+
+.cnr__input {
+  box-shadow: none;
+}
 </style>

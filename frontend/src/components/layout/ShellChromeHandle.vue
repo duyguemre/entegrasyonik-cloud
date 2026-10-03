@@ -92,8 +92,8 @@ const focusLabel = computed(() => (props.focusMode ? 'Odak modundan çık' : 'Ta
   height: var(--ek-handle-open);
   padding: 0 1px;
   border-radius: 0 0 var(--ek-radius-control) var(--ek-radius-control);
-  background: var(--ek-gradient-chrome);
-  box-shadow: var(--ek-shadow-chrome);
+  /* FE-LOCAL-1038: üst barla aynı DÜZ lacivert (degrade/gölge yok). */
+  background: var(--ek-color-chrome-soft);
   color: var(--ek-color-chrome-text);
   pointer-events: auto;
   /* Dinlenirken yalnız alttaki 12px görünür (üstü kabın dışında kalır → kırpılır). */

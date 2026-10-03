@@ -18,12 +18,19 @@
         <h3 id="cpe-base-title" class="cpe-h">Ana fiyat</h3>
         <p class="cpe-sub">Özel fiyat girmediğiniz kanallar bu fiyatla gönderilir.</p>
       </div>
+      <!-- D6 rakam şeridi: hücreler 1px çizgiyle ayrılır; alan etiketi görsel değil mikro etiket (D9) -->
       <div class="cpe-base__fields" data-cpe="base">
-        <VCurrencyComponentVue v-model="basePriceForm.salePrice" :compact="true" :isIconExist="false"
-          :label="$t('productDefinitions.product.variants.salePrice')" clearable />
-        <VCurrencyComponentVue v-model="basePriceForm.marketPrice" :compact="true" :isIconExist="false"
-          :label="$t('productDefinitions.product.variants.marketPrice')" clearable />
-        <span class="cpe-disc" :class="{ 'is-none': baseDiscount === null }">
+        <label class="cpe-fcell">
+          <span class="cpe-micro">{{ $t('productDefinitions.product.variants.salePrice') }}</span>
+          <VCurrencyComponentVue v-model="basePriceForm.salePrice" :compact="true" :isIconExist="false" class="cpe-in" clearable
+            :aria-label="`Ana ${$t('productDefinitions.product.variants.salePrice')}`" />
+        </label>
+        <label class="cpe-fcell">
+          <span class="cpe-micro">{{ $t('productDefinitions.product.variants.marketPrice') }}</span>
+          <VCurrencyComponentVue v-model="basePriceForm.marketPrice" :compact="true" :isIconExist="false" class="cpe-in" clearable
+            :aria-label="`Ana ${$t('productDefinitions.product.variants.marketPrice')}`" />
+        </label>
+        <span class="cpe-fcell cpe-disc" :class="{ 'is-none': baseDiscount === null }">
           <span class="cpe-micro">İndirim</span>
           <strong class="ek-num">{{ baseDiscount === null ? '—' : pct(baseDiscount) }}</strong>
         </span>
@@ -47,15 +54,16 @@
       <!-- 3) toplu değişiklik -->
       <div v-if="bulkOpen" id="cpe-bulk" class="cpe-bulk" role="group" aria-label="Tüm kanallara toplu değişiklik">
         <div class="cpe-bulk__fields">
-          <v-btn-toggle v-model="bulk.field" mandatory variant="outlined" divided class="cpe-seg" aria-label="Değişecek fiyat">
-            <v-btn value="salePrice" size="small">Satış</v-btn>
-            <v-btn value="marketPrice" size="small">Piyasa</v-btn>
-          </v-btn-toggle>
-          <v-select v-model="bulk.op" :items="BULK_OPS" item-title="title" item-value="value" label="İşlem"
-            hide-details class="cpe-bulk__op" />
-          <v-text-field v-model.number="bulk.value" type="number" min="0" step="0.01" :label="opUnit === '%' ? 'Oran' : 'Tutar'"
-            :prefix="opUnit === '₺' ? '₺' : undefined" :suffix="opUnit === '%' ? '%' : undefined" hide-details
-            class="cpe-bulk__val" data-cpe="bulk-value" @keydown.enter.prevent="applyBulkNow" />
+          <!-- kutusuz yazı sekmeleri + 2px çizgi (kutu segment toggle değil) -->
+          <div class="cpe-seg" role="radiogroup" aria-label="Değişecek fiyat">
+            <button v-for="f in BULK_FIELDS" :key="f.value" type="button" role="radio" class="cpe-seg__btn" :class="{ 'is-on': bulk.field === f.value }"
+              :aria-checked="bulk.field === f.value" @click="bulk.field = f.value">{{ f.title }}</button>
+          </div>
+          <v-select v-model="bulk.op" :items="BULK_OPS" item-title="title" item-value="value" aria-label="İşlem" placeholder="İşlem"
+            hide-details density="compact" class="cpe-bulk__op cpe-in" />
+          <v-text-field v-model.number="bulk.value" type="number" min="0" step="0.01" :placeholder="opUnit === '%' ? 'Oran' : 'Tutar'"
+            :aria-label="opUnit === '%' ? 'Oran' : 'Tutar'" :prefix="opUnit === '₺' ? '₺' : undefined" :suffix="opUnit === '%' ? '%' : undefined"
+            hide-details density="compact" class="cpe-bulk__val cpe-in" data-cpe="bulk-value" @keydown.enter.prevent="applyBulkNow" />
           <EkButton tone="primary" size="sm" icon="mdi-check" :disabled="!bulkValid" data-cpe="bulk-apply" @click="applyBulkNow">Uygula</EkButton>
           <EkHelpHint hint="price.rules" class="cpe-help" />
         </div>
@@ -165,6 +173,7 @@ const pct = (v: number) => formatPercent(v / 100)
 
 // ---- toplu değişiklik ----
 const bulkOpen = ref(false)
+const BULK_FIELDS: { value: BulkField; title: string }[] = [{ value: 'salePrice', title: 'Satış' }, { value: 'marketPrice', title: 'Piyasa' }]
 const bulk = reactive<{ field: BulkField; op: BulkOp; value: number | null }>({ field: 'salePrice', op: 'pctUp', value: null })
 const opUnit = computed(() => BULK_OPS.find((o) => o.value === bulk.op)?.unit ?? '₺')
 const bulkValid = computed(() => rows.value.length > 0 && bulk.value !== null && Number.isFinite(Number(bulk.value)) && Number(bulk.value) > 0)
@@ -195,11 +204,27 @@ defineExpose({ init })
   min-width: 0;
 }
 
+/* D4: bölüm başlığı = eylem renginde 12×2px çizgi + BÜYÜK HARF mikro etiket */
 .cpe-h {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ek-space-2);
   margin: 0;
-  color: var(--ek-color-content-strong);
-  font-size: var(--ek-type-label-size);
-  font-weight: 600;
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-micro-size);
+  font-weight: var(--ek-type-micro-weight);
+  letter-spacing: var(--ek-type-micro-tracking);
+  line-height: var(--ek-type-micro-line);
+  text-transform: uppercase;
+}
+
+.cpe-h::before {
+  content: '';
+  flex: none;
+  width: 12px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--ek-color-action);
 }
 
 .cpe-sub {
@@ -231,18 +256,42 @@ defineExpose({ init })
 
 .cpe-base__fields {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 72px;
-  gap: var(--ek-space-3);
-  align-items: center;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(96px, 0.5fr);
+  overflow: hidden;
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-tile);
+  background: var(--ek-color-surface);
+}
+
+.cpe-fcell {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--ek-space-1);
+  min-width: 0;
+  padding: var(--ek-space-2) var(--ek-space-3);
+}
+
+.cpe-fcell + .cpe-fcell {
+  border-left: 1px solid var(--ek-color-border-subtle);
 }
 
 .cpe-disc {
-  display: flex;
-  flex-direction: column;
   align-items: flex-end;
-  gap: 2px;
   color: var(--ek-color-success-emphasis);
 }
+
+.cpe-disc strong {
+  font-size: var(--ek-type-subheading-size);
+  line-height: var(--ek-type-subheading-line);
+}
+
+/* Şerit hücresinde alanın kendi çerçevesi yok (çift çerçeve olmasın): hücre = mikro etiket + büyük rakam; odak hücre zemininde. */
+.cpe-fcell .cpe-in :deep(.v-field__outline) { display: none; }
+.cpe-fcell .cpe-in :deep(.v-field) { background: transparent; }
+.cpe-fcell .cpe-in :deep(.v-field__input) { min-height: 32px; padding: 0; font-size: var(--ek-type-subheading-size); font-weight: 600; color: var(--ek-color-content-strong); }
+.cpe-fcell .cpe-in :deep(input) { text-align: left; }
+.cpe-fcell:focus-within { background: var(--ek-color-action-subtle); }
 
 .cpe-disc.is-none {
   color: var(--ek-color-content-muted);
@@ -313,13 +362,15 @@ defineExpose({ init })
 
 .cpe-src {
   padding: 0 var(--ek-space-2);
-  border-radius: var(--ek-radius-full);
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-md);
   font-size: var(--ek-type-micro-size);
   font-weight: 600;
   line-height: 18px;
 }
 
 .cpe-src.is-custom {
+  border-color: var(--ek-color-action-border);
   background: var(--ek-color-action-subtle);
   color: var(--ek-color-action-emphasis);
 }
@@ -426,14 +477,15 @@ defineExpose({ init })
 }
 
 /* 3) toplu değişiklik */
+/* L4 açık filtre paneli kalıbı: gövde surface-muted, alanlar beyaz zeminde */
 .cpe-bulk {
   display: flex;
   flex-direction: column;
   gap: var(--ek-space-2);
   padding: var(--ek-space-3) var(--ek-space-4);
-  border: 1px solid var(--ek-color-action-border);
+  border: 1px solid var(--ek-color-border-default);
   border-radius: var(--ek-radius-card);
-  background: var(--ek-color-action-subtle);
+  background: var(--ek-color-surface-muted);
 }
 
 .cpe-bulk__fields {
@@ -444,9 +496,38 @@ defineExpose({ init })
 }
 
 .cpe-seg {
-  height: var(--ek-control-h-field);
-  background: var(--ek-color-surface);
+  display: inline-flex;
+  gap: var(--ek-space-1);
 }
+
+.cpe-seg__btn {
+  position: relative;
+  min-height: var(--ek-control-h-sm);
+  padding: 0 var(--ek-space-2);
+  border-radius: var(--ek-radius-md);
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-label-size);
+  font-weight: var(--ek-type-label-weight);
+  white-space: nowrap;
+  transition: var(--ek-transition-colors);
+}
+
+.cpe-seg__btn::after {
+  content: '';
+  position: absolute;
+  right: var(--ek-space-2);
+  bottom: 0;
+  left: var(--ek-space-2);
+  height: 2px;
+  border-radius: 1px;
+  background: transparent;
+  transition: background-color var(--ek-motion-feedback);
+}
+
+.cpe-seg__btn:hover { color: var(--ek-color-content-default); }
+.cpe-seg__btn.is-on { color: var(--ek-color-content-strong); font-weight: 600; }
+.cpe-seg__btn.is-on::after { background: var(--ek-color-action); }
+.cpe-seg__btn:focus-visible { outline: none; box-shadow: var(--ek-focus-ring); }
 
 .cpe-bulk__op {
   flex: 0 1 200px;
@@ -479,7 +560,10 @@ defineExpose({ init })
   .cpe-disc {
     grid-column: 1 / -1;
     flex-direction: row;
+    align-items: center;
     justify-content: space-between;
+    border-left: 0;
+    border-top: 1px solid var(--ek-color-border-subtle);
   }
 
   .cpe-tr--head {

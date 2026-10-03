@@ -124,7 +124,7 @@ test.describe('P3 (B5-2) — Ürün varyantları (ProductVariantsComponent)', ()
     // DS-v2 A2: EkContextMenu (role=menu) — eski .v-list seçicisi bilinçli güncellendi.
     const menu = page.locator('.v-overlay--active [role="menu"]').filter({ hasText: 'Varyant İşlemleri' })
     await expect(menu).toBeVisible()
-    for (const label of ['Ara', 'Toplu düzenle', 'Toplu Fiyat Düzenleme', 'Toplu Özellik Düzenleme', 'Toplu Seçenek Eşleştir', 'Stok kodlarını oluştur', 'Barkodları oluştur', 'Toplu Silme']) {
+    for (const label of ['Ara', 'Toplu düzenle', 'Toplu özellik düzenle', 'Toplu Seçenek Eşleştir', 'Stok kodlarını oluştur', 'Barkodları oluştur', 'Toplu Silme']) {
       await expect(menu.getByText(label, { exact: true })).toBeVisible()
     }
   })

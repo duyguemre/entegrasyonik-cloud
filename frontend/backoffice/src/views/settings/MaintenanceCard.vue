@@ -70,11 +70,15 @@ const isOn = computed(() => props.cfg.data?.values['maintenance.enabled']?.value
   align-items: center;
   gap: var(--ek-space-3);
 }
+/* Ayar satırları tek kartta (Platform ayarlarıyla aynı düzen). */
 .bo-maint__form {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--ek-space-2);
-  max-width: 720px;
+  max-width: 880px;
+  overflow: hidden;
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-lg);
+  background: var(--ek-color-surface);
 }
 .bo-maint__impact {
   display: flex;
@@ -121,5 +125,57 @@ const isOn = computed(() => props.cfg.data?.values['maintenance.enabled']?.value
   flex-wrap: wrap;
   align-items: center;
   gap: var(--ek-space-3);
+}
+
+/* ================= BO-LOCAL-01 — bakım modu =================
+   Ayar kartı ve etki özeti kart köşeli; "Etki özeti" kısa eylem çizgili mikro etiket; engellenen / serbest
+   başlıkları ince çizgiyle ayrılan iki hücre. */
+.bo-maint__form,
+.bo-maint__impact {
+  border-radius: var(--ek-radius-card);
+}
+
+.bo-maint__impact-title {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ek-space-2);
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-micro-size);
+  line-height: var(--ek-type-micro-line);
+  font-weight: var(--ek-type-micro-weight);
+  letter-spacing: var(--ek-type-micro-tracking);
+  text-transform: uppercase;
+}
+
+.bo-maint__impact-title::before {
+  content: '';
+  flex: none;
+  width: 12px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--ek-color-action);
+}
+
+.bo-maint__lists {
+  gap: 0;
+  overflow: hidden;
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-tile);
+  background: var(--ek-color-surface);
+}
+
+.bo-maint__lists > div {
+  padding: var(--ek-space-3) var(--ek-space-4);
+}
+
+.bo-maint__lists > div + div {
+  border-left: 1px solid var(--ek-color-border-subtle);
+}
+
+@media (max-width: 640px) {
+  .bo-maint__lists > div + div {
+    border-top: 1px solid var(--ek-color-border-subtle);
+    border-left: 0;
+  }
 }
 </style>

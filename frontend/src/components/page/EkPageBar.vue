@@ -5,15 +5,16 @@
   bloğu kalktı; hiyerarşi: üst bar → sekme şeridi → BU SATIR → filtre → içerik.
 
     [Bölüm ›] H1 Sayfa adı (i) · meta ......................................... [#actions]
-    ╰─ (i) → yumuşak açılan "Sayfa hakkında" paneli: Amaç (açıklama) · İpuçları · Kısayollar
+    ╰─ (ışık) → ikonun altında YÜZEN "Sayfa rehberi" kartı (bağlam menüsü gibi): Amaç · İpuçları · Kısayollar
 
   - Sayfada TEK H1 burasıdır (breadcrumb'ın son halkası = sayfa adı; bölüm tıklanabilir DEĞİL — Karar 2.3).
-  - Panel varsayılan KAPALI; tercih tüm sayfalarda ortak ve hatırlanır (`usePageAbout`). Geçiş `EkCollapse`.
+  - Kart sayfanın içinde açılmaz (içeriği aşağı itmez); Esc / dışarı tıklama kapatır. Uygulama çubuğundaki "Bu sayfa
+    hakkında" isteği (`usePageAbout`) yalnız GÖRÜNEN sekmedeki kartı açar.
   - `meta`: açıklama değil DURUM metni (ör. "Son güncelleme 14:02") — başlık satırında küçük, her zaman görünür.
   - Kısayollar kabuk kaydından (`navigation/shortcuts.ts`); "Tüm kısayollar" `ek:shortcut-help` olayıyla diyaloğu açar.
 -->
 <template>
-  <div ref="rootRef" class="ek-page-bar" :class="{ 'is-open': about.open.value, 'is-narrow': narrow, 'is-stacked': stacked }">
+  <div ref="rootRef" class="ek-page-bar" :class="{ 'is-open': aboutOpen, 'is-narrow': narrow, 'is-stacked': stacked }">
     <div class="ek-page-bar__row">
       <div class="ek-page-bar__titles">
         <!-- A7: tek breadcrumb deseni — kök (modül ikonu + bölüm) / ara ekranlar / SON = sayfa başlığı (H1). -->
@@ -77,21 +78,70 @@
                   </button>
                 </EkTooltip>
               </span>
-              <!-- B4: zarif yardım tetikleyicisi — küçük yuvarlak nötr düğme, ince çizgili soru işareti; ipucu +
-                   odak halkası. Davranış/API aynı (aria-expanded/controls, "Sayfa hakkında" paneli). -->
-              <EkTooltip :text="about.open.value ? 'Sayfa rehberini gizle' : 'Sayfa rehberi'" :open-delay="300" location="end">
-                <button
-                  type="button"
-                  class="ek-page-bar__info"
-                  :class="{ 'is-on': about.open.value }"
-                  :aria-expanded="about.open.value"
-                  :aria-controls="panelId"
-                  :aria-label="`Sayfa hakkında: ${title}`"
-                  @click="about.toggle()"
-                >
-                  <v-icon icon="mdi-lightbulb-on-outline" size="15" aria-hidden="true" />
-                </button>
-              </EkTooltip>
+              <!-- Sayfa rehberi: ışık düğmesi kartı bağlam menüsü gibi ikonun altında açar (sayfa içinde panel değil). -->
+              <v-menu v-model="aboutOpen" location="bottom start" offset="8" :close-on-content-click="false" :attach="menuAttach"
+                content-class="ek-page-about-menu" transition="scale-transition">
+                <template #activator="{ props: menuProps }">
+                  <EkTooltip :text="aboutOpen ? 'Sayfa rehberini kapat' : 'Sayfa rehberi'" :open-delay="300" location="end">
+                    <button
+                      v-bind="menuProps"
+                      type="button"
+                      class="ek-page-bar__info"
+                      :class="{ 'is-on': aboutOpen }"
+                      :aria-expanded="aboutOpen"
+                      :aria-controls="panelId"
+                      aria-haspopup="dialog"
+                      :aria-label="`Sayfa hakkında: ${title}`"
+                    >
+                      <v-icon icon="mdi-lightbulb-on-outline" size="15" aria-hidden="true" />
+                    </button>
+                  </EkTooltip>
+                </template>
+                <div :id="panelId" class="ek-page-bar__about" role="dialog" :aria-label="`${title} sayfası hakkında`">
+                  <header class="ek-about__head">
+                    <span class="ek-about__glyph" aria-hidden="true"><v-icon icon="mdi-lightbulb-on-outline" /></span>
+                    <div class="ek-about__heading">
+                      <p class="ek-about__eyebrow">Sayfa rehberi</p>
+                      <h2 class="ek-about__title">{{ title }} hakkında</h2>
+                    </div>
+                    <button type="button" class="ek-about__close" aria-label="Sayfa hakkında bilgiyi kapat" @click="closeAbout">
+                      <v-icon icon="mdi-close" aria-hidden="true" />
+                    </button>
+                  </header>
+                  <div class="ek-about__grid">
+                    <section class="ek-page-bar__block ek-page-bar__block--purpose">
+                      <h3 class="ek-page-bar__label"><v-icon icon="mdi-text-box-outline" aria-hidden="true" />Bu sayfa</h3>
+                      <p class="ek-page-bar__text">{{ purpose || `${title} ekranı.` }}</p>
+                      <button v-if="help?.article" type="button" class="ek-link ek-page-bar__read" data-page-help-read @click="closeAbout(); nav.openHelp(help.article)">
+                        Yardım merkezinde oku
+                        <v-icon class="ek-link__arrow" icon="mdi-arrow-right" aria-hidden="true" />
+                      </button>
+                    </section>
+                    <section v-if="tipList?.length" class="ek-page-bar__block ek-page-bar__block--tips">
+                      <h3 class="ek-page-bar__label"><v-icon icon="mdi-star-four-points-outline" aria-hidden="true" />İpuçları</h3>
+                      <ol class="ek-page-bar__tips">
+                        <li v-for="(tip, i) in tipList" :key="tip">
+                          <span class="ek-page-bar__tip-n ek-num" aria-hidden="true">{{ i + 1 }}</span>
+                          <span>{{ tip }}</span>
+                        </li>
+                      </ol>
+                    </section>
+                    <section class="ek-page-bar__block ek-page-bar__block--keys">
+                      <h3 class="ek-page-bar__label"><v-icon icon="mdi-keyboard-outline" aria-hidden="true" />Kısayollar</h3>
+                      <dl class="ek-page-bar__keys">
+                        <div v-for="k in keys" :key="k.id" class="ek-page-bar__key">
+                          <dt>{{ k.label }}</dt>
+                          <dd><EkKbd :keys="[...k.keys]" /></dd>
+                        </div>
+                      </dl>
+                      <button type="button" class="ek-link ek-link--sm ek-page-bar__all" @click="closeAbout(); openShortcutHelp()">
+                        Tüm kısayollar
+                        <v-icon class="ek-link__arrow" icon="mdi-arrow-right" aria-hidden="true" />
+                      </button>
+                    </section>
+                  </div>
+                </div>
+              </v-menu>
             </li>
           </ol>
         </nav>
@@ -103,62 +153,13 @@
       <div v-if="$slots.actions" class="ek-page-bar__actions"><slot name="actions" /></div>
     </div>
 
-    <EkCollapse :id="panelId" :open="about.open.value" role="region" :aria-label="`${title} sayfası hakkında`">
-      <!-- FR2-HELP madde 16 (fe-r2a): rehber kartı — başlık (ikon + "<Sayfa> hakkında" + kapat), üç sütun: amaç (okunur
-           gövde metni + "Yardım merkezinde oku →"), numaralı ipuçları, kısayollar (tuş satırları). Nötr yüzey + ince
-           aksiyon tonlu üst şerit; içerikle yarışmaz. Esc ya da × kapatır (tercih ortak, `usePageAbout`). -->
-      <div class="ek-page-bar__about" @keydown.esc.stop="closeAbout">
-        <header class="ek-about__head">
-          <span class="ek-about__glyph" aria-hidden="true"><v-icon icon="mdi-lightbulb-on-outline" /></span>
-          <div class="ek-about__heading">
-            <p class="ek-about__eyebrow">Sayfa rehberi</p>
-            <h2 class="ek-about__title">{{ title }} hakkında</h2>
-          </div>
-          <button type="button" class="ek-about__close" aria-label="Sayfa hakkında bilgiyi kapat" @click="closeAbout">
-            <v-icon icon="mdi-close" aria-hidden="true" />
-          </button>
-        </header>
-        <div class="ek-about__grid">
-          <section class="ek-page-bar__block ek-page-bar__block--purpose">
-            <h3 class="ek-page-bar__label"><v-icon icon="mdi-text-box-outline" aria-hidden="true" />Bu sayfa</h3>
-            <p class="ek-page-bar__text">{{ purpose || `${title} ekranı.` }}</p>
-            <button v-if="help?.article" type="button" class="ek-link ek-page-bar__read" data-page-help-read @click="nav.openHelp(help.article)">
-              Yardım merkezinde oku
-              <v-icon class="ek-link__arrow" icon="mdi-arrow-right" aria-hidden="true" />
-            </button>
-          </section>
-          <section v-if="tipList?.length" class="ek-page-bar__block ek-page-bar__block--tips">
-            <h3 class="ek-page-bar__label"><v-icon icon="mdi-star-four-points-outline" aria-hidden="true" />İpuçları</h3>
-            <ol class="ek-page-bar__tips">
-              <li v-for="(tip, i) in tipList" :key="tip">
-                <span class="ek-page-bar__tip-n ek-num" aria-hidden="true">{{ i + 1 }}</span>
-                <span>{{ tip }}</span>
-              </li>
-            </ol>
-          </section>
-          <section class="ek-page-bar__block ek-page-bar__block--keys">
-            <h3 class="ek-page-bar__label"><v-icon icon="mdi-keyboard-outline" aria-hidden="true" />Kısayollar</h3>
-            <dl class="ek-page-bar__keys">
-              <div v-for="k in keys" :key="k.id" class="ek-page-bar__key">
-                <dt>{{ k.label }}</dt>
-                <dd><EkKbd :keys="[...k.keys]" /></dd>
-              </div>
-            </dl>
-            <button type="button" class="ek-link ek-link--sm ek-page-bar__all" @click="openShortcutHelp">
-              Tüm kısayollar
-              <v-icon class="ek-link__arrow" icon="mdi-arrow-right" aria-hidden="true" />
-            </button>
-          </section>
-        </div>
-      </div>
-    </EkCollapse>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, ref, useId, watch } from 'vue'
 import { useResizeObserver } from '@vueuse/core'
-import { EkCollapse, EkContextMenu, EkKbd, EkTooltip } from '@entegrasyonik/ui/components'
+import { EkContextMenu, EkKbd, EkTooltip } from '@entegrasyonik/ui/components'
 import type { EkMenuGroup, EkMenuItem } from '@entegrasyonik/ui/components'
 import { buildTrail, type EkCrumb, type EkRecordRef } from '@entegrasyonik/ui/components/pageTrail'
 import { icons } from '@entegrasyonik/ui/icons'
@@ -225,10 +226,22 @@ const keys = computed(() => {
 
 const about = usePageAbout()
 const panelId = `ek-page-about-${useId()}`
+/** Kart açık mı — bu sayfa çubuğuna özgü (gizli sekmelerdeki çubuklar etkilenmez). */
+const aboutOpen = ref(false)
+// Sekmeye iliştir: kart yalnız bu çalışma alanı sekmesinde çizilir, sekme değişince onunla gizlenir.
+const menuAttach = computed(() => scope?.hostSelector || false)
 
 function closeAbout() {
-  about.setOpen(false)
+  aboutOpen.value = false
 }
+// Uygulama çubuğu "Bu sayfa hakkında" isteği: yalnız görünen çubuk açar, istek tüketilir.
+watch(() => about.open.value, (requested) => {
+  if (!requested) return
+  if (rootRef.value && rootRef.value.offsetParent !== null) {
+    aboutOpen.value = true
+    about.setOpen(false)
+  }
+})
 
 function openShortcutHelp() {
   window.dispatchEvent(new CustomEvent('ek:shortcut-help'))
@@ -896,8 +909,9 @@ async function copyRecord() {
 /* FR2-HELP madde 16: rehber kartı. Nötr yüzey (kart dili), üstte 3px aksiyon şeridi yerine ince aksiyon tonlu
    başlık bandı; gövde üç sütun. Metin okunur boyda (body), ipuçları numaralı; tuş satırları noktalı kılavuzla. */
 .ek-page-bar__about {
-  margin-top: var(--ek-space-3);
-  overflow: hidden;
+  width: min(48rem, calc(100vw - var(--ek-space-8)));
+  max-height: min(36rem, calc(100dvh - var(--ek-space-16)));
+  overflow: auto;
   border: 1px solid var(--ek-color-border-default);
   border-radius: var(--ek-radius-card);
   background: var(--ek-color-surface);
@@ -1145,9 +1159,10 @@ async function copyRecord() {
    Kalın tonlu başlık bandı ve sert sütun çizgileri kalktı: tek sakin kart, sol üstte çok hafif site mavisi ışıması,
    kompakt başlık (açık mavi kutucukta ampul), sütunlar boşlukla ayrılır; kısayollar kendi yumuşak kutusunda. */
 .ek-page-bar__about {
-  border-color: var(--ek-color-border-subtle);
+  border-color: var(--ek-color-border-default);
   background: var(--ek-color-surface);
-  box-shadow: 0 1px 2px rgb(15 23 42 / 0.04), 0 8px 24px -12px rgb(15 23 42 / 0.10);
+  /* yüzen kart: menü/açılır panel gölgesi */
+  box-shadow: var(--ek-shadow-popover);
 }
 
 .ek-about__head {
@@ -1380,5 +1395,182 @@ async function copyRecord() {
 .ek-about__head {
   padding-bottom: var(--ek-space-3);
   border-bottom: 1px solid color-mix(in srgb, var(--ek-color-action) 12%, var(--ek-color-border-subtle));
+}
+
+/* ================= FE-LOCAL-1048 — sayfa rehberi: ana sayfa diliyle =================
+   Düz yüzey + ince çerçeve + kart köşesi (mavi ışıma, üst şerit ve özel gölge kalktı). Başlık bandı sakin zeminde:
+   çerçeveli ikon kapsülü + kısa eylem çizgili mikro etiket + başlık. Sütunlar ince çizgiyle ayrılır; bölüm etiketleri
+   kısa eylem çizgili mikro etiket; ipucu numaraları çerçeveli köşeli kutu (bağlayan çizgi yok); kısayollar ince çizgili
+   satırlar; "Yardım merkezinde oku" çerçeveli düz düğme. */
+.ek-page-bar__about {
+  overflow: hidden;
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-card);
+  background: var(--ek-color-surface);
+  box-shadow: var(--ek-shadow-popover);
+}
+
+.ek-page-bar__about::before {
+  display: none;
+}
+
+.ek-about__head {
+  align-items: center;
+  padding: var(--ek-space-3) var(--ek-space-3) var(--ek-space-3) var(--ek-space-4);
+  border-bottom: 1px solid var(--ek-color-border-default);
+  background: var(--ek-color-surface-muted);
+}
+
+.ek-about__glyph {
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--ek-color-action-border);
+  border-radius: var(--ek-radius-tile);
+  background: var(--ek-color-action-subtle);
+  color: var(--ek-color-action-emphasis);
+}
+
+.ek-about__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ek-space-2);
+  font-size: var(--ek-type-micro-size);
+  line-height: var(--ek-type-micro-line);
+  font-weight: var(--ek-type-micro-weight);
+  letter-spacing: var(--ek-type-micro-tracking);
+  text-transform: uppercase;
+}
+
+.ek-about__eyebrow::before {
+  content: '';
+  width: 12px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--ek-color-action);
+}
+
+.ek-about__title {
+  font-size: var(--ek-type-body-size);
+  line-height: var(--ek-type-body-line);
+}
+
+.ek-about__close {
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-tile);
+  background: var(--ek-color-surface);
+}
+
+.ek-about__close:hover {
+  border-color: var(--ek-color-action-border);
+  background: var(--ek-color-action-subtle);
+  color: var(--ek-color-action-emphasis);
+}
+
+.ek-about__grid {
+  gap: 0;
+  padding: 0;
+}
+
+.ek-page-bar__block {
+  padding: var(--ek-space-4);
+}
+
+.ek-page-bar__block + .ek-page-bar__block {
+  border-left: 1px solid var(--ek-color-border-subtle);
+}
+
+/* Bölüm etiketi: ikon yerine kısa eylem çizgisi (bölüm başlıklarıyla aynı). */
+.ek-page-bar__label {
+  gap: var(--ek-space-2);
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-micro-size);
+  line-height: var(--ek-type-micro-line);
+  font-weight: var(--ek-type-micro-weight);
+  letter-spacing: var(--ek-type-micro-tracking);
+  text-transform: uppercase;
+}
+
+.ek-page-bar__label .v-icon {
+  display: none;
+}
+
+.ek-page-bar__label::before {
+  content: '';
+  width: 12px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--ek-color-action);
+}
+
+.ek-page-bar__read {
+  height: 30px;
+  padding: 0 var(--ek-space-3);
+  border: 1px solid var(--ek-color-action-border);
+  border-radius: var(--ek-radius-control);
+  background: var(--ek-color-action-subtle);
+  color: var(--ek-color-action-emphasis);
+}
+
+.ek-page-bar__read:hover {
+  border-color: var(--ek-color-action);
+  background: var(--ek-color-action-subtle);
+}
+
+.ek-page-bar__tips {
+  gap: var(--ek-space-1);
+}
+
+.ek-page-bar__tips > li {
+  border-radius: var(--ek-radius-tile);
+}
+
+.ek-page-bar__tips > li:hover {
+  background: var(--ek-color-surface-muted);
+}
+
+.ek-page-bar__tips > li:not(:last-child)::before {
+  display: none;
+}
+
+.ek-page-bar__tip-n {
+  width: 22px;
+  height: 22px;
+  border: 1px solid var(--ek-color-action-border);
+  border-radius: var(--ek-radius-md);
+  background: var(--ek-color-action-subtle);
+  box-shadow: none;
+  color: var(--ek-color-action-emphasis);
+}
+
+/* Kısayollar: sakin zeminli sütun; satırlar ince çizgiyle ayrılır (kart içinde kart yok). */
+.ek-page-bar__block--keys {
+  align-self: stretch;
+  gap: var(--ek-space-2);
+  padding: var(--ek-space-4);
+  border-radius: 0;
+  background: var(--ek-color-surface-muted);
+  box-shadow: none;
+}
+
+.ek-page-bar__keys {
+  gap: 0;
+}
+
+.ek-page-bar__key {
+  padding: var(--ek-space-2) 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.ek-page-bar__key + .ek-page-bar__key {
+  border-top: 1px solid var(--ek-color-border-subtle);
+}
+
+@media (max-width: 1023px) {
+  .ek-page-bar__block + .ek-page-bar__block {
+    border-left: 0;
+    border-top: 1px solid var(--ek-color-border-subtle);
+  }
 }
 </style>

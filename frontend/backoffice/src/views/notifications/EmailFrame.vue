@@ -57,4 +57,23 @@ const doc = computed(() => (/<html[^>]*>/i.test(props.html) ? props.html.replace
   font-size: var(--ek-type-caption-size);
   white-space: pre-wrap;
 }
+
+/* BO-LOCAL-01 — e-posta önizlemesi: çerçeve ve düz metin kutusu kutu köşeli, ince çerçeveli; konu satırı mikro etiketli. */
+.bo-mail__subject .bo-muted {
+  margin-right: var(--ek-space-1);
+  font-size: var(--ek-type-micro-size);
+  font-weight: var(--ek-type-micro-weight);
+  letter-spacing: var(--ek-type-micro-tracking);
+  text-transform: uppercase;
+}
+
+.bo-mail__frame {
+  border-radius: var(--ek-radius-tile);
+  background: var(--ek-color-surface);
+}
+
+.bo-mail__text pre {
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-tile);
+}
 </style>

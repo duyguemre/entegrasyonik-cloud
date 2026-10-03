@@ -34,7 +34,8 @@
         :key="item.key"
         type="button"
         class="ek-menu__item"
-        :class="{ 'ek-menu__item--danger': item.danger, 'is-hover': forceHoverKey === item.key }"
+        :class="{ 'ek-menu__item--danger': item.danger, 'is-hover': forceHoverKey === item.key, 'is-current': item.current }"
+        :aria-current="item.current ? 'true' : undefined"
         role="menuitem"
         :tabindex="item.key === focusKey ? 0 : -1"
         :aria-disabled="item.disabled || undefined"
@@ -66,6 +67,8 @@ export interface EkMenuItem {
   shortcut?: string | string[]
   danger?: boolean
   disabled?: boolean
+  /** FE-LOCAL-1047: listedeki ETKİN öğe (ör. açık sekme, seçili hazır aralık) — eylem tonuyla vurgulanır. */
+  current?: boolean
 }
 
 export interface EkMenuGroup {
@@ -272,5 +275,117 @@ defineExpose({ focusFirst: () => focusItem(enabled.value[0]?.key) })
 
 .ek-menu__item[aria-disabled] .ek-menu__icon {
   color: var(--ek-color-content-subtle);
+}
+
+/* ================= FE-LOCAL-1039 — ana sayfa / sol menü diliyle açılır menü =================
+   Kart yüzeyi + ince çerçeve; öğe ikonu çerçeveli küçük kutuda (menüdeki ikon kutularıyla aynı aile); üzerine
+   gelince / odakta eylem renginin açık tonu, ikon kutusu eylem renginde çerçevelenir. Tehlikeli öğe aynı kalıpta
+   kırmızı tonda. */
+.ek-menu {
+  padding: var(--ek-space-2);
+  border-color: var(--ek-color-border-default);
+  border-radius: var(--ek-radius-card);
+  background: var(--ek-color-surface);
+}
+
+.ek-menu__head {
+  margin: calc(var(--ek-space-2) * -1) calc(var(--ek-space-2) * -1) var(--ek-space-2);
+  border-radius: var(--ek-radius-card) var(--ek-radius-card) 0 0;
+}
+
+.ek-menu__group-label {
+  display: flex;
+  align-items: center;
+  gap: var(--ek-space-2);
+}
+
+.ek-menu__group-label::before {
+  content: '';
+  flex: none;
+  width: 12px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--ek-color-action);
+}
+
+.ek-menu__item {
+  gap: var(--ek-space-3);
+  padding: var(--ek-space-1) var(--ek-space-3) var(--ek-space-1) var(--ek-space-2);
+  border-radius: var(--ek-radius-tile);
+}
+
+.ek-menu__icon {
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--ek-color-border-subtle);
+  border-radius: var(--ek-radius-md);
+  background: var(--ek-color-surface-muted);
+  color: var(--ek-color-content-default);
+  transition: var(--ek-transition-colors);
+}
+
+.ek-menu__item:hover:not([aria-disabled]),
+.ek-menu__item.is-hover,
+.ek-menu__item:focus-visible {
+  background: var(--ek-color-action-subtle);
+  color: var(--ek-color-action-emphasis);
+}
+
+.ek-menu__item:hover:not([aria-disabled]) .ek-menu__icon,
+.ek-menu__item.is-hover .ek-menu__icon,
+.ek-menu__item:focus-visible .ek-menu__icon {
+  border-color: var(--ek-color-action-border);
+  background: var(--ek-color-surface);
+  color: var(--ek-color-action);
+}
+
+.ek-menu__item:focus-visible {
+  box-shadow: inset 0 0 0 1px var(--ek-color-action-border);
+}
+
+.ek-menu__item--danger .ek-menu__icon {
+  border-color: var(--ek-color-error-border);
+  background: var(--ek-color-error-subtle);
+  color: var(--ek-color-error-emphasis);
+}
+
+.ek-menu__item--danger:hover:not([aria-disabled]),
+.ek-menu__item--danger.is-hover,
+.ek-menu__item--danger:focus-visible {
+  background: var(--ek-color-error-subtle);
+  color: var(--ek-color-error-emphasis);
+}
+
+.ek-menu__item--danger:hover:not([aria-disabled]) .ek-menu__icon,
+.ek-menu__item--danger.is-hover .ek-menu__icon,
+.ek-menu__item--danger:focus-visible .ek-menu__icon {
+  border-color: var(--ek-color-error-border);
+  background: var(--ek-color-surface);
+  color: var(--ek-color-error-emphasis);
+}
+
+.ek-menu__item[aria-disabled] .ek-menu__icon {
+  background: transparent;
+}
+
+/* ================= FE-LOCAL-1047 — etkin öğe (açık sekme / seçili aralık) =================
+   Eylem renginin açık tonu + ince çerçeve; ikon kutusu dolu eylem rengi (sol menü ve sekmelerdeki etkin öğeyle aynı). */
+.ek-menu__item.is-current {
+  border-color: var(--ek-color-action-border);
+  background: var(--ek-color-action-subtle);
+  color: var(--ek-color-action-emphasis);
+}
+
+.ek-menu__item.is-current .ek-menu__label {
+  color: var(--ek-color-action-emphasis);
+  font-weight: var(--ek-font-weight-semibold);
+}
+
+.ek-menu__item.is-current .ek-menu__icon {
+  border-color: var(--ek-color-action);
+  background: var(--ek-color-action);
+  color: var(--ek-color-action-contrast);
 }
 </style>

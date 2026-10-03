@@ -7,6 +7,9 @@
       title="İşlem kayıtları"
       description="Pazaryerlerine gönderilen ve pazaryerlerinden çekilen ürün işlemlerini buradan izleyin."
       :tools-id="toolsId"
+      :refreshable="refreshHub.available.value"
+      :refreshing="refreshHub.loading.value"
+      @refresh="refreshHub.run"
     />
 
     <EkPageTabs v-model="activeTab" :tabs="tabs" />
@@ -20,7 +23,7 @@
 
 <script setup lang="ts">
 import { ref, useId } from 'vue';
-import { provideListToolsTarget } from '@/components/page/listTools';
+import { provideListRefreshHub, provideListToolsTarget } from '@/components/page/listTools';
 import EkPageHeader from '@/components/page/EkPageHeader.vue';
 import { EkPageTabs } from '@entegrasyonik/ui/components';
 import ImportLogList from '@/components/logListView/ImportLogList.vue';
@@ -29,6 +32,8 @@ import ExportLogList from '@/components/logListView/ExportLogList.vue';
 // P03 (K49): etkin sekmenin arama + yenile'si başlık çubuğunda.
 const toolsId = `ek-log-tools-${useId().replace(/[^\w-]/g, '-')}`
 provideListToolsTarget(toolsId)
+// FE-LOCAL-1047: "Yenile" düğmesi yok — sayfa adına tıklamak etkin sekmenin listesini yeniler.
+const refreshHub = provideListRefreshHub()
 
 // Varsayılan sekme: ürün gönderim işlemleri
 const activeTab = ref('export');

@@ -14,6 +14,7 @@
       :aria-label="`${title} görselleri, ${index + 1} / ${images.length}`" @keydown="onKey">
       <header class="pgd__head">
         <div class="pgd__titles">
+          <span class="pgd__eyebrow" aria-hidden="true">Ürün görselleri</span>
           <h2 class="pgd__title">{{ title }}</h2>
           <span class="pgd__sub ek-num">{{ subtitle ? `${subtitle} · ` : '' }}Görsel {{ index + 1 }} / {{ images.length }}</span>
         </div>
@@ -209,5 +210,67 @@ function onKey(e: KeyboardEvent) {
 
 @media (prefers-reduced-motion: reduce) {
   .pgd__img, .pgd__nav, .pgd__thumb { transition: none; }
+}
+
+/* ================= FE-LOCAL-1048 — ürün galerisi: ana sayfa diliyle =================
+   Kart köşesi; başlık bandı sakin zeminde — kısa eylem çizgili mikro etiket + ürün adı; gezinme düğmeleri çerçeveli
+   köşeli kutular (gölge yok); etkin küçük resim eylem çerçevesi + açık zemin. */
+.pgd {
+  border-radius: var(--ek-radius-card);
+  background: var(--ek-color-surface);
+}
+
+.pgd__head {
+  border-bottom-color: var(--ek-color-border-default);
+  background: var(--ek-color-surface-muted);
+}
+
+.pgd__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ek-space-2);
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-micro-size);
+  line-height: var(--ek-type-micro-line);
+  font-weight: var(--ek-type-micro-weight);
+  letter-spacing: var(--ek-type-micro-tracking);
+  text-transform: uppercase;
+}
+
+.pgd__eyebrow::before {
+  content: '';
+  width: 12px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--ek-color-action);
+}
+
+.pgd__title {
+  font-size: var(--ek-type-heading-size);
+  line-height: var(--ek-type-heading-line);
+}
+
+.pgd__nav {
+  border-radius: var(--ek-radius-tile);
+  background: var(--ek-color-surface);
+  box-shadow: none;
+}
+
+.pgd__nav:hover:not(:disabled) {
+  border-color: var(--ek-color-action-border);
+  background: var(--ek-color-action-subtle);
+  color: var(--ek-color-action-emphasis);
+}
+
+.pgd__strip {
+  border-top-color: var(--ek-color-border-default);
+}
+
+.pgd__thumb:hover { border-color: var(--ek-color-action-border); }
+
+.pgd__thumb.is-current {
+  border-color: var(--ek-color-action);
+  background: var(--ek-color-action-subtle);
+  box-shadow: none;
 }
 </style>

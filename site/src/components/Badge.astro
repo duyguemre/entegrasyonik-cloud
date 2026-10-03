@@ -11,25 +11,29 @@ const { tone = 'neutral', class: className } = Astro.props
 <span class:list={['badge', `badge--${tone}`, className]}><slot /></span>
 
 <style>
+  /* SITE-DL-01: köşeli rozet — hap değil; düz ton zemini + ince çerçeve (uygulamadaki rozetlerle aynı). */
   .badge {
     display: inline-flex;
     align-self: flex-start;
     align-items: center;
-    padding: var(--ek-space-1) var(--ek-space-3);
-    border-radius: var(--ek-radius-full);
+    padding: var(--ek-space-1) var(--ek-space-2);
+    border: var(--site-border-width) solid var(--ek-color-border-default);
+    border-radius: var(--ek-radius-md);
     font-size: var(--ek-font-size-sm);
     font-weight: var(--ek-font-weight-semibold);
     line-height: var(--ek-line-height-tight);
     color: var(--ek-color-content-strong);
-    background: var(--ek-color-surface-sunken);
+    background: var(--ek-color-surface-muted);
   }
-  .badge--info {
-    background: var(--ek-color-info-subtle);
-  }
+  .badge--info,
   .badge--success {
-    background: var(--ek-color-success-subtle);
+    border-color: var(--site-action-border);
+    background: var(--site-action-subtle);
+    color: var(--site-action-emphasis);
   }
   .badge--warning {
+    border-color: var(--ek-color-warning-border);
     background: var(--ek-color-warning-subtle);
+    color: var(--ek-color-warning-emphasis);
   }
 </style>

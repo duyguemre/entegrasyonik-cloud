@@ -146,4 +146,35 @@ const pick = (t: AnnouncementText) => (locale.value === 'en' && t.en) || t.tr
     transition: none;
   }
 }
+
+/* ================= BO-LOCAL-01 — duyuru önizlemesi =================
+   Bant ve bildirim örnekleri kutu köşeli; bildirim örneği müşteri uygulamasındaki bildirim satırı gibi: çerçeveli
+   ikon kutusu + başlık + ileti, düz yüzeyde ince çerçeve. */
+.bo-annp__app {
+  border-radius: var(--ek-radius-tile);
+}
+
+.bo-annp__notif {
+  align-items: flex-start;
+  padding: var(--ek-space-3);
+  border-color: var(--ek-color-border-default);
+  border-radius: var(--ek-radius-tile);
+  background: var(--ek-color-surface);
+}
+
+.bo-annp__notif .v-icon {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--ek-color-action-border);
+  border-radius: var(--ek-radius-md);
+  background: var(--ek-color-action-subtle);
+  color: var(--ek-color-action-emphasis);
+  font-size: var(--ek-icon-sm);
+}
+
+.bo-annp__notif-msg {
+  font-size: var(--ek-type-label-size);
+  line-height: var(--ek-type-body-line);
+}
 </style>

@@ -558,4 +558,35 @@ const channelRows = channelGuideRows()
     transition: none;
   }
 }
+
+/* ================= FE-LOCAL-1053 — makale gövdesi: uygulamanın tasarım diliyle =================
+   Adım numaraları çerçeveli köşeli kutu; kanal rehberinde sol kalın şerit yerine üstte 2px kanal marka çizgisi (ana
+   sayfadaki kanal satırlarıyla aynı); haplar köşeli; kartlar ince çerçeveli düz yüzey. */
+.ek-help-body__step-no {
+  border: 1px solid var(--ek-color-action-border);
+  border-radius: var(--ek-radius-md);
+  background: var(--ek-color-action-subtle);
+  color: var(--ek-color-action-emphasis);
+}
+
+.ek-help-body__error,
+.ek-help-body__channel {
+  border-color: var(--ek-color-border-default);
+  border-radius: var(--ek-radius-card);
+}
+
+.ek-help-body__channel {
+  border-left: 1px solid var(--ek-color-border-default);
+  border-top: 2px solid var(--ek-ch-solid, var(--ek-color-border-default));
+}
+
+.ek-help-body__pill,
+.ek-help-body__creds li {
+  border-radius: var(--ek-radius-md);
+}
+
+.ek-help-body__faq {
+  border-color: var(--ek-color-border-default);
+  border-radius: var(--ek-radius-card);
+}
 </style>

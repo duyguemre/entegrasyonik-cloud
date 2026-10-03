@@ -20,10 +20,11 @@
     <div class="dash-scroll">
       <div class="dash-page">
         <EkPageHeader
+          section="Genel"
           title="Genel bakış"
           :meta="headerDescription"
           description="İşletmenizin sipariş, ciro, stok ve entegrasyon durumunun özeti. Kartlardaki oklarla ilgili listeye geçersiniz."
-          :tips="['Kartlardaki sayılar son yüklemeye aittir; Yenile ile tüm kartlar yeniden okunur.', 'Bekleyen aksiyonlar kartı, işlem bekleyen kayıtların listesini doğrudan açar.']"
+          :tips="['Kartlardaki sayılar son yüklemeye aittir; Yenile ile tüm kartlar yeniden okunur.', 'Bugün sırada kutusu, işlem bekleyen kayıtların listesini doğrudan açar.']"
           refreshable
           :refreshing="anyLoading"
           :last-updated="insights.loadedAt.value"
@@ -31,14 +32,20 @@
         />
 
         <!-- FR3-16: aksiyon önce — "ilk ne yapmalıyım" en üstte; sonra bugünün performansı, durum ve katalog bölümleri. -->
-        <DashboardNextActions
-          :insights="insights.data.value"
-          :stock="stock.data.value"
-          :health="health.data.value"
-          :loading="insights.state.value === 'loading'"
-          :error="insights.state.value === 'error'"
-          @retry="refreshAll"
-        />
+        <!-- Kullanıcı kararı (2026-10-03): üst satır ikiye bölünür — solda "Bugün sırada", sağda Favoriler (sol menüdeki
+             favorilerle aynı kaynak). Eşit yükseklik; dar alanda alt alta. -->
+        <div class="dash-today">
+          <DashboardNextActions
+            class="dash-today__next"
+            :insights="insights.data.value"
+            :stock="stock.data.value"
+            :health="health.data.value"
+            :loading="insights.state.value === 'loading'"
+            :error="insights.state.value === 'error'"
+            @retry="refreshAll"
+          />
+          <DashboardFavorites class="dash-today__fav" />
+        </div>
 
         <section class="dash-section" aria-labelledby="dash-performance">
           <h2 id="dash-performance" class="dash-section__label">İŞLETME PERFORMANSI</h2>
@@ -65,12 +72,17 @@
         </section>
 
         <section class="dash-section" aria-labelledby="dash-catalog">
-          <h2 id="dash-catalog" class="dash-section__label">STOK, KANALLAR VE KATALOG</h2>
+          <h2 id="dash-catalog" class="dash-section__label">STOK VE KANALLAR</h2>
           <div v-if="visible(stock)" class="dash-row">
             <StockAttentionCard class="dash-o-stock" v-bind="view(stock)" @retry="stock.load" />
             <IntegrationHealthCard v-if="healthVisible" class="dash-o-health" v-bind="view(health)" @retry="health.load" />
             <CatalogSummaryCard v-else class="dash-o-catalog" v-bind="view(catalog)" @retry="catalog.load" />
           </div>
+        </section>
+
+        <!-- Katalog + son işlemler: kendi kart dışı başlığıyla ayrı bölüm. -->
+        <section class="dash-section" aria-labelledby="dash-activity">
+          <h2 id="dash-activity" class="dash-section__label">KATALOG VE SON İŞLEMLER</h2>
           <div class="dash-row dash-row--even">
             <IntegrationHealthCard v-if="!visible(stock) && healthVisible" class="dash-o-health" v-bind="view(health)" @retry="health.load" />
             <CatalogSummaryCard v-if="!visible(stock) || healthVisible" class="dash-o-catalog" v-bind="view(catalog)" @retry="catalog.load" />
@@ -92,6 +104,7 @@ import DashboardKpiRow from '@/components/dashboard/DashboardKpiRow.vue'
 import OrderTrendCard from '@/components/dashboard/OrderTrendCard.vue'
 import OrderStatusCard from '@/components/dashboard/OrderStatusCard.vue'
 import DashboardNextActions from '@/components/dashboard/DashboardNextActions.vue'
+import DashboardFavorites from '@/components/dashboard/DashboardFavorites.vue'
 import StockAttentionCard from '@/components/dashboard/StockAttentionCard.vue'
 import IntegrationHealthCard from '@/components/dashboard/IntegrationHealthCard.vue'
 import CatalogSummaryCard, { type ProductStatistics } from '@/components/dashboard/CatalogSummaryCard.vue'
@@ -170,29 +183,44 @@ onMounted(refreshAll)
   container: ek-dash / inline-size;
 }
 
+/* FE-LOCAL-1025: bölümler arası ferah boşluk; bölüm içinde kartlar sıkı durur (ritim: 32 / 12 / 20). */
 .dash-page {
   display: flex;
   flex-direction: column;
-  gap: var(--ek-space-5);
-  max-width: 1600px;
-  margin: 0 auto;
-  padding: var(--ek-space-6);
+  gap: var(--ek-space-8);
+  /* Diğer sayfalarla aynı çerçeve: tam genişlik, üstte 12px — sayfa adı her ekranda aynı noktada durur. */
+  padding: var(--ek-space-3) var(--ek-space-6) var(--ek-space-6);
 }
 
 .dash-section {
   display: flex;
   flex-direction: column;
   gap: var(--ek-space-3);
-  margin-top: var(--ek-space-2);
+}
+
+/* Sayfa başlığı ile ilk kutu arasında bölüm boşluğu değil, normal boşluk. */
+.dash-page > :first-child {
+  margin-bottom: calc(var(--ek-space-3) - var(--ek-space-8));
 }
 
 .dash-section__label {
+  display: flex;
+  align-items: center;
+  gap: var(--ek-space-2);
   margin: 0;
   color: var(--ek-color-sidebar-section);
   font-size: var(--ek-type-micro-size);
   line-height: var(--ek-type-micro-line);
   font-weight: var(--ek-type-micro-weight);
   letter-spacing: var(--ek-type-micro-tracking);
+}
+
+.dash-section__label::before {
+  content: '';
+  width: 14px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--ek-color-action);
 }
 
 .dash-kpi-error {
@@ -202,6 +230,26 @@ onMounted(refreshAll)
 }
 
 /* C3: ana kart 2/3, yan kart 1/3; `stretch` → aynı satırdaki kartların alt kenarı hizalı. */
+/* Üst satır: Bugün sırada | Favoriler (eşit yükseklik). İş alanı daralınca alt alta. */
+.dash-today {
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+  gap: var(--ek-space-4);
+  align-items: stretch;
+}
+
+@container ek-dash (max-width: 1024px) {
+  .dash-today {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 1024px) {
+  .dash-today {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 .dash-row {
   display: grid;
   grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
@@ -236,8 +284,12 @@ onMounted(refreshAll)
 
 @media (max-width: 599px) {
   .dash-page {
-    gap: var(--ek-space-4);
-    padding: var(--ek-space-4);
+    gap: var(--ek-space-6);
+    padding: var(--ek-space-3) var(--ek-space-4) var(--ek-space-4);
+  }
+
+  .dash-page > :first-child {
+    margin-bottom: calc(var(--ek-space-3) - var(--ek-space-6));
   }
 
   .dash-row {

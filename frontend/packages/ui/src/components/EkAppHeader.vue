@@ -278,35 +278,60 @@ const initials = computed(() =>
   font-size: var(--ek-icon-md);
 }
 
-/* ---------- FE-R4 A1/A2 — `tone="soft"` (yalnız ek kurallar) ---------- */
+/* ---------- `tone="soft"` — FE-LOCAL-1038: ana sayfa / sol menü / sekme diliyle üst bar ----------
+   Kimlik LACİVERTİ korunur (kullanıcı kararı) ama DÜZ renk: degrade ve gölge yok, altta ince çizgi. Kontroller
+   sol menüdeki ikon kutularıyla aynı aile (ince çerçeveli kutu); avatar ve Otopilot girişi dolu eylem renginde.
+   Bu ağaçta `chrome*` rolleri `chrome-soft*` rollerine bağlanır → yuvadaki öğeler (arama, Otopilot, kısayol
+   tuşları) aynı tonu kendiliğinden alır. Varsayılan `tone="brand"` görünümü DEĞİŞMEZ. */
 .ek-header--soft {
-  --ek-gradient-chrome: var(--ek-gradient-chrome-soft);
+  --ek-gradient-chrome: none;
   --ek-color-chrome: var(--ek-color-chrome-soft);
-  --ek-color-chrome-end: var(--ek-color-chrome-soft-end);
+  --ek-color-chrome-end: var(--ek-color-chrome-soft);
   --ek-color-chrome-raised: var(--ek-color-chrome-soft-raised);
   --ek-color-chrome-border: var(--ek-color-chrome-soft-border);
   --ek-color-chrome-text-muted: var(--ek-color-chrome-soft-text-muted);
+  background: var(--ek-color-chrome-soft);
+  box-shadow: inset 0 -1px 0 var(--ek-color-chrome-soft-border);
 }
 
-/* A2: profil — zemin ve çerçeve yok; avatar yuvarlak, kabuğun kontrol tonunda; ad/mağaza iki satır. */
+/* İkon düğmeleri (bildirim, yardım): DÜZ ikon — çerçeve/zemin yok (kullanıcı kararı 2026-10-03: çerçeveli kutular üst barı
+   kalabalıklaştırıyordu). Üzerine gelince yalnız hafif zemin tonu. */
+.ek-header--soft .ek-header__icon-btn {
+  border: 0;
+  border-radius: var(--ek-radius-tile);
+  background: transparent;
+  color: var(--ek-color-chrome-text);
+}
+
+.ek-header--soft .ek-header__icon-btn:hover {
+  background: var(--ek-color-chrome-raised);
+}
+
+/* Arama: odakta beyaz yüzey + eylem renginde çerçeve (ışıma/gölge yok). */
+.ek-header--soft :deep(.ek-search.is-focused .ek-search__field),
+.ek-header--soft :deep(.ek-search.is-open .ek-search__field) {
+  border-color: var(--ek-color-action);
+  box-shadow: none;
+}
+
+/* Profil: dinlenirken zemin/çerçeve yok; avatar dolu eylem renginde kutu (etkin menü ikonuyla aynı). */
 .ek-header--soft .ek-header__user {
   padding: 0 var(--ek-space-2) 0 var(--ek-space-1);
   border-color: transparent;
-  border-radius: var(--ek-radius-chip);
+  border-radius: var(--ek-radius-tile);
   background: transparent;
 }
 
 .ek-header--soft .ek-header__user:hover {
-  border-color: transparent;
+  border-color: var(--ek-color-chrome-border);
   background: var(--ek-color-chrome-raised);
 }
 
 .ek-header--soft .ek-header__avatar {
-  border-radius: 50%;
-  background: var(--ek-color-chrome-raised);
-  /* Kabuk kontrol zemininde birincil kabuk metni (AA iki temada — roles.ts chrome-text × chrome-soft-raised). */
-  color: var(--ek-color-chrome-text);
-  box-shadow: inset 0 0 0 1px var(--ek-color-chrome-border);
+  border-radius: var(--ek-radius-md);
+  background: var(--ek-color-action);
+  color: var(--ek-color-action-contrast);
+  box-shadow: none;
 }
 
 @media (max-width: 767px) {
@@ -328,5 +353,22 @@ const initials = computed(() =>
     border-color: transparent;
     background: transparent;
   }
+}
+
+/* Otopilot girişi (2026-10-03 yeniden): çerçevesiz, sakin "yumuşak çip" — barın üstünde bir ton açık zemin, solda
+   Otopilot işareti, beyaz ad. Üzerine gelince bir ton daha açık. Panel AÇIKKEN "basılı": beyaz zemin + lacivert metin. */
+.ek-header--soft :deep(.ek-otopilot-launcher) {
+  border: 0;
+  background: var(--ek-color-chrome-raised);
+  color: var(--ek-color-chrome-text);
+}
+
+.ek-header--soft :deep(.ek-otopilot-launcher:hover) {
+  background: var(--ek-color-chrome-soft-raised);
+}
+
+.ek-header--soft :deep(.ek-otopilot-launcher.is-active) {
+  background: var(--ek-color-chrome-text);
+  color: var(--ek-color-chrome);
 }
 </style>

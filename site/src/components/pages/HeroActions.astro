@@ -39,7 +39,7 @@ const { actions } = Astro.props
     min-height: var(--site-tap-target);
     padding-inline: var(--ek-space-5);
     border: var(--site-border-width) solid transparent;
-    border-radius: var(--ek-radius-lg);
+    border-radius: var(--ek-radius-tile);
     background: var(--ek-color-surface);
     color: var(--ek-color-primary);
     font-weight: var(--ek-font-weight-semibold);
@@ -49,7 +49,7 @@ const { actions } = Astro.props
       border-color var(--ek-duration-base) var(--ek-easing-standard);
   }
   .hero-action:hover {
-    background: color-mix(in srgb, var(--ek-color-surface) 88%, var(--ek-color-secondary));
+    background: var(--site-action-subtle);
   }
   .hero-action--ghost {
     border-color: var(--site-glass-border);

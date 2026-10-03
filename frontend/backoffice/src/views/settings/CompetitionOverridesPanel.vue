@@ -1,6 +1,6 @@
 <!-- Tenant istisnaları: plan değerini alan alan geçersiz kılan müşteriler. Düzenleme OverrideDialog (gerekçeli, denetime yazılır). -->
 <template>
-  <BoSection id="bo-cs-ovr" flush title="Müşteri istisnaları" :description="description" data-testid="competition-overrides">
+  <BoSection id="bo-cs-ovr" flush title="Müşteri istisnaları" :description="description" data-testid="competition-overrides" :count="overrides.length">
     <template #actions>
       <BoAction kind="add" label="İstisna ekle" :disabled="cs.comp.phase !== 'ready'" data-testid="override-add" @click="cs.openEditor()" />
     </template>
@@ -148,5 +148,15 @@ const resultTitle = computed(() => {
 }
 .bo-co__act {
   text-align: right;
+}
+
+/* BO-LOCAL-01 — istisna sonucu (önce/sonra) tablosu: başlık satırı mikro etiket. */
+.bo-co__diff thead th {
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-micro-size);
+  line-height: var(--ek-type-micro-line);
+  font-weight: var(--ek-type-micro-weight);
+  letter-spacing: var(--ek-type-micro-tracking);
+  text-transform: uppercase;
 }
 </style>

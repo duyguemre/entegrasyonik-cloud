@@ -73,4 +73,14 @@ function summary(diff: ConfigDiffEntry[] | null): string {
 .bo-flushed :deep(.bo-section__body) {
   padding-top: var(--ek-space-4);
 }
+
+/* BO-LOCAL-01 — geri alma kilidi notu: düz uyarı zemini + ince ton çerçevesi (sol şerit yok). */
+.bo-hist__lock {
+  margin: var(--ek-space-3) var(--ek-space-4) 0;
+  padding: var(--ek-space-2) var(--ek-space-3);
+  border: 1px solid var(--ek-color-warning-border);
+  border-radius: var(--ek-radius-tile);
+  background: var(--ek-color-warning-subtle);
+  color: var(--ek-color-warning-emphasis);
+}
 </style>

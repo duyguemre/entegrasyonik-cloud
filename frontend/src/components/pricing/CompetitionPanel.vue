@@ -229,4 +229,26 @@ defineExpose({ load })
 .cp__chanlist li { display: inline-flex; align-items: center; gap: var(--ek-space-2); }
 @media (max-width: 1023px) { .cp__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 480px) { .cp { padding: var(--ek-space-3); } }
+
+/* FE-LOCAL-1054 — rekabet ve kâr: düz kart (gölge yok); başlık bandı sakin zeminde, kart kenarına kadar. */
+.cp {
+  overflow: hidden;
+  padding: 0;
+  box-shadow: none;
+}
+
+.cp__head {
+  padding: var(--ek-space-4) var(--ek-space-6);
+  border-bottom: 1px solid var(--ek-color-border-default);
+  background: var(--ek-color-surface-muted);
+}
+
+.cp__body {
+  padding: var(--ek-space-4) var(--ek-space-6) var(--ek-space-6);
+}
+
+/* Yükleniyor / hata / boş durumları da kart kenarından nefes alır. */
+.cp > :not(.cp__head):not(.cp__body) {
+  margin: var(--ek-space-4) var(--ek-space-6) var(--ek-space-6);
+}
 </style>

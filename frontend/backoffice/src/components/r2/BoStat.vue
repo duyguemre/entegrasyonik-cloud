@@ -22,6 +22,7 @@
     <span class="bo-stat__label">
       <span class="bo-stat__label-text">{{ label }}</span>
       <v-icon v-if="info" class="bo-stat__info" icon="mdi-information-outline" aria-hidden="true" />
+      <v-icon v-if="to" class="bo-stat__go" icon="mdi-arrow-top-right" aria-hidden="true" />
     </span>
     <span class="bo-stat__value-row">
       <span v-if="loading" class="bo-stat__skel" aria-hidden="true"></span>
@@ -76,13 +77,18 @@ const sparkTone = computed(() => (props.tone === 'critical' ? 'error' : props.to
 </script>
 
 <style scoped>
+/* Metrik hücresi — genel bakışın metrik şeridiyle AYNI dil. Tek başına kart; BoTileGrid içinde yalnız BoStat'lar varsa
+   ızgara tek karta birleşir (backoffice.css "STAT ŞERİDİ"). Renk yalnız durum taşır: düz hafif zemin + değer rengi. */
 .bo-stat {
+  --st-ink: var(--ek-color-content-strong);
+  --st-warn-fill: var(--bo-warn-fill);
+  --st-warn-ink: var(--bo-warn-ink);
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: var(--ek-space-1);
+  gap: 6px;
   min-width: 0;
-  padding: var(--ek-space-4);
+  padding: var(--ek-space-5) var(--ek-space-5) var(--ek-space-4);
   border: 1px solid var(--ek-color-border-default);
   border-radius: var(--ek-radius-card);
   background: var(--ek-color-surface);
@@ -92,45 +98,35 @@ const sparkTone = computed(() => (props.tone === 'critical' ? 'error' : props.to
   transition: var(--ek-transition-colors);
 }
 
-.bo-stat::before {
-  content: '';
-  position: absolute;
-  inset: var(--ek-space-3) auto var(--ek-space-3) 0;
-  width: 3px;
-  border-radius: 0 var(--ek-radius-sm) var(--ek-radius-sm) 0;
-  background: transparent;
+
+.bo-stat.is-warning {
+  --st-ink: var(--st-warn-ink);
+  background: var(--bo-warn-wash);
 }
 
-.bo-stat.is-critical::before {
-  background: var(--ek-color-error);
+.bo-stat.is-critical {
+  --st-ink: var(--ek-color-error-emphasis);
+  background: color-mix(in srgb, var(--ek-color-error) 5%, var(--ek-color-surface));
 }
 
-.bo-stat.is-warning::before {
-  background: var(--ek-color-warning);
-}
-
-.bo-stat.is-success::before {
-  background: var(--ek-color-success);
-}
-
-.bo-stat.is-info::before {
-  background: var(--ek-color-info);
+.bo-stat.is-success {
+  --st-ink: var(--ek-color-content-strong);
 }
 
 .bo-stat.is-link:hover {
-  border-color: var(--ek-color-border-strong);
   background: var(--ek-color-surface-muted);
 }
 
 .bo-stat.is-link:focus-visible {
   outline: none;
-  box-shadow: var(--ek-focus-ring);
+  box-shadow: inset var(--ek-focus-ring);
 }
 
 .bo-stat__label {
   display: flex;
   align-items: center;
   gap: var(--ek-space-1);
+  min-width: 0;
   overflow: hidden;
   white-space: nowrap;
   color: var(--ek-color-content-muted);
@@ -153,6 +149,20 @@ const sparkTone = computed(() => (props.tone === 'critical' ? 'error' : props.to
   font-size: var(--ek-icon-xs);
 }
 
+.bo-stat__go {
+  flex: none;
+  margin-left: auto;
+  color: var(--ek-color-content-subtle);
+  font-size: var(--ek-icon-sm);
+  opacity: 0;
+  transition: opacity var(--ek-motion-feedback);
+}
+
+.bo-stat.is-link:hover .bo-stat__go,
+.bo-stat.is-link:focus-visible .bo-stat__go {
+  opacity: 1;
+}
+
 .bo-stat__value-row {
   display: flex;
   flex-wrap: wrap;
@@ -161,36 +171,32 @@ const sparkTone = computed(() => (props.tone === 'critical' ? 'error' : props.to
 }
 
 .bo-stat__value {
-  color: var(--ek-color-content-strong);
-  font-size: var(--ek-type-metric-size);
-  line-height: var(--ek-type-metric-line);
-  font-weight: var(--ek-type-metric-weight);
-  letter-spacing: var(--ek-type-metric-tracking);
-}
-
-.bo-stat.is-critical .bo-stat__value {
-  color: var(--ek-color-error-emphasis);
-}
-
-.bo-stat.is-warning .bo-stat__value {
-  color: var(--ek-color-warning-emphasis);
+  color: var(--st-ink);
+  font-size: var(--ek-type-display-size);
+  line-height: 1.1;
+  font-weight: var(--ek-type-display-weight);
+  letter-spacing: var(--ek-type-display-tracking);
 }
 
 .bo-stat__skel {
   display: inline-block;
-  width: 72px;
-  height: var(--ek-type-metric-line);
+  width: 96px;
+  height: 34px;
   border-radius: var(--ek-radius-sm);
-  background: var(--ek-color-surface-muted);
+  background: var(--ek-color-surface-sunken);
 }
 
 .bo-stat__delta {
   display: inline-flex;
   align-items: center;
   gap: 2px;
-  color: var(--ek-color-content-muted);
+  height: 20px;
+  padding: 0 6px;
+  border-radius: var(--ek-radius-sm);
+  background: var(--ek-color-surface-muted);
+  color: var(--ek-color-content-default);
   font-size: var(--ek-type-caption-size);
-  line-height: var(--ek-type-caption-line);
+  font-weight: var(--ek-font-weight-semibold);
 }
 
 .bo-stat__delta .v-icon {
@@ -210,7 +216,45 @@ const sparkTone = computed(() => (props.tone === 'critical' ? 'error' : props.to
 
 @media (max-width: 600px) {
   .bo-stat {
-    padding: var(--ek-space-3);
+    padding: var(--ek-space-4);
   }
+
+  .bo-stat__value {
+    font-size: var(--ek-type-metric-size);
+  }
+}
+
+/* ================= BO-LOCAL-01 — metrik hücresi: uygulamanın tasarım diliyle =================
+   Gölge yok. Durum tonu düz açık zemin + tonun ince çerçevesi (uydurma karışım yok). Etiket kısa eylem çizgili mikro
+   etiket; değişim rozeti köşeli, çerçeveli. */
+.bo-stat {
+  padding: var(--ek-space-4);
+  box-shadow: none;
+}
+
+.bo-stat.is-warning {
+  border-color: var(--ek-color-warning-border);
+  background: var(--ek-color-warning-subtle);
+  --st-ink: var(--ek-color-warning-emphasis);
+}
+
+.bo-stat.is-critical {
+  border-color: var(--ek-color-error-border);
+  background: var(--ek-color-error-subtle);
+}
+
+.bo-stat.is-link:hover {
+  border-color: var(--ek-color-action-border);
+  background: var(--ek-color-action-subtle);
+}
+
+.bo-stat__delta {
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-md);
+  background: var(--ek-color-surface);
+}
+
+.bo-stat__value {
+  letter-spacing: -0.025em;
 }
 </style>

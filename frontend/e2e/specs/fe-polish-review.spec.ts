@@ -159,7 +159,7 @@ test.describe('fe-polish denetim', () => {
         await page.addInitScript((t) => localStorage.setItem('ek-theme', t), theme)
         await installApiMocks(page, { checkAuthentication: false, userContext: mockError(401, {}) })
         await page.goto('/login')
-        await expect(page.getByRole('button', { name: 'Giriş', exact: true })).toBeVisible()
+        await expect(page.getByRole('button', { name: 'Devam et', exact: true })).toBeVisible()
         await page.evaluate(() => document.fonts.ready)
         await page.waitForTimeout(800)
         mkdirSync(`${OUT}/axe`, { recursive: true })

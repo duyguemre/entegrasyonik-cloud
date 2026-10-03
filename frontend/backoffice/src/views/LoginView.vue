@@ -1,14 +1,35 @@
 <template>
   <div class="bo-login">
+    <!-- BO-LOGIN: müşteri uygulaması girişinin (AuthShell + LoginComponent) diliyle — solda lacivert marka paneli,
+         sağda kartsız form sütunu. Akış/veri/testid'ler önceki sürümle AYNI; yalnız görünüm yeniden kuruldu. -->
     <aside class="bo-login__stage" aria-hidden="true">
       <div class="bo-login__stage-inner">
-        <EkBrandLogo tone="inverse" :size="34" />
-        <p class="bo-login__kicker">Yönetim</p>
-        <h2 class="bo-login__claim">Platformun tamamı, tek güvenli masada.</h2>
-        <ul class="bo-login__points">
-          <li><v-icon icon="mdi-shield-key-outline" />Yalnız platform yöneticileri · iki adımlı doğrulama zorunlu</li>
-          <li><v-icon icon="mdi-clipboard-text-clock-outline" />Her yönetim işlemi denetim kaydına yazılır</li>
-          <li><v-icon icon="mdi-timer-sand" />Oturum 30 dk hareketsizlikte kapanır</li>
+        <div class="bo-login__brandrow">
+          <EkBrandLogo tone="inverse" :size="28" />
+          <span class="bo-login__badge"><v-icon icon="mdi-shield-crown-outline" />Yönetim</span>
+        </div>
+
+        <div class="bo-login__pitch">
+          <p class="bo-login__kicker">Entegrasyonik yönetim</p>
+          <p class="bo-login__claim">Platformun tamamı,<span class="bo-login__claim-soft">tek ekranda.</span></p>
+          <p class="bo-login__claim-lede">Mağazalar, abonelikler, entegrasyon sağlığı ve denetim kaydı — yalnız platform yöneticileri için.</p>
+          <!-- Müşteri uygulaması girişindeki Otopilot satırıyla aynı görünüm (AuthShell `__autopilot`); metin yönetim tarafına göre. -->
+          <p class="bo-login__autopilot">
+            <span class="bo-login__autopilot-icon"><v-icon size="16" aria-hidden="true">{{ CHAT_ICON }}</v-icon></span>
+            <span>
+              <strong>{{ CHAT_PRODUCT.name }} ile güçlendirildi.</strong>
+              Platformu sizin için izler, sapmaları öne çıkarır, kararı size bırakır.
+            </span>
+          </p>
+
+          <!-- Canlı sahne: yönetimin izlediği şeyler (mağaza durumu, entegrasyon sağlığı, denetim kaydı) kalkana akar. -->
+          <BoLoginScene class="bo-login__scene" />
+        </div>
+
+        <ul class="bo-login__points bo-login-rise" style="--i: 6">
+          <li><span class="bo-login__point-icon"><v-icon icon="mdi-shield-key-outline" /></span>Yalnız platform yöneticileri · iki adımlı doğrulama zorunlu</li>
+          <li><span class="bo-login__point-icon"><v-icon icon="mdi-clipboard-text-clock-outline" /></span>Her yönetim işlemi denetim kaydına yazılır</li>
+          <li><span class="bo-login__point-icon"><v-icon icon="mdi-timer-sand" /></span>Oturum 30 dk hareketsizlikte kapanır</li>
         </ul>
       </div>
     </aside>
@@ -17,108 +38,109 @@
       <p class="bo-login__env" :class="`is-${env.key}`" data-testid="login-env">
         <v-icon :icon="env.icon" aria-hidden="true" /><span>{{ env.label }}</span><span class="bo-login__env-hint">{{ env.hint }}</span>
       </p>
+
       <div class="bo-login__card">
-        <div class="bo-login__mobile-brand"><EkBrandLogo :size="28" /><span>Yönetim</span></div>
+        <div class="bo-login__mobile-brand">
+          <EkBrandLogo :size="26" />
+          <span class="bo-login__badge bo-login__badge--light"><v-icon icon="mdi-shield-crown-outline" />Yönetim</span>
+        </div>
 
-        <ol class="bo-login__steps" aria-label="Giriş adımları">
-          <li v-for="(s, i) in stepList" :key="s" :class="{ 'is-done': i < stepIndex, 'is-current': i === stepIndex }" :aria-current="i === stepIndex ? 'step' : undefined">
-            <span class="bo-login__step-dot">{{ i < stepIndex ? '✓' : i + 1 }}</span>{{ s }}
-          </li>
-        </ol>
+        <p class="bo-login__eyebrow bo-login-rise" style="--i: 0">{{ eyebrow }}</p>
 
-        <EkAlert v-if="noticeText" :tone="notice === 'loggedOut' ? 'info' : 'warning'" :text="noticeText" dense class="mb-4" />
+        <EkAlert v-if="noticeText" :tone="notice === 'loggedOut' ? 'info' : 'warning'" :text="noticeText" dense class="bo-login__notice" />
 
+        <!-- Adım geçişi (parola → doğrulama kodu → kurulum → kurtarma): müşteri uygulaması girişindeki sekme geçişiyle aynı —
+             eski adım kısa sürede söner, yenisi hafifçe yükselerek belirir (out-in). -->
+        <Transition name="bo-auth-swap" mode="out-in" appear>
         <!-- 1) E-posta + parola -->
-        <form v-if="status === 'signedOut' || status === 'booting'" class="bo-login__form" novalidate @submit.prevent="submitCredentials">
+        <form v-if="status === 'signedOut' || status === 'booting'" key="creds" class="bo-login__form" novalidate @submit.prevent="submitCredentials">
           <header>
             <h1 class="bo-login__title">Yönetim girişi</h1>
-            <p class="bo-login__lede">admin.entegrasyonik.com · müşteri hesabınızla değil, yönetici hesabınızla girin.</p>
+            <p class="bo-login__lede">Müşteri hesabınızla değil, yönetici hesabınızla girin.</p>
           </header>
-          <v-text-field
+          <ol class="bo-login__steps" aria-label="Giriş adımları">
+            <li v-for="(s, i) in stepList" :key="s" :class="{ 'is-done': i < stepIndex, 'is-current': i === stepIndex }" :aria-current="i === stepIndex ? 'step' : undefined">
+              <span class="bo-login__step-dot">{{ i < stepIndex ? '✓' : i + 1 }}</span>{{ s }}
+            </li>
+          </ol>
+          <BoAuthField
+            id="bo-login-email"
             ref="emailEl"
             v-model="email"
             label="E-posta"
             type="email"
             autocomplete="username"
-            spellcheck="false"
-            autocapitalize="off"
-            autocorrect="off"
+            placeholder="E-posta adresiniz"
+            icon="mdi-email-outline"
             :disabled="busy"
-            :error-messages="fieldError('email')"
-            :aria-invalid="fieldError('email') ? 'true' : undefined"
+            :error="fieldError('email')"
             autofocus
           />
-          <v-text-field
+          <BoAuthField
+            id="bo-login-password"
             ref="passwordEl"
             v-model="password"
             label="Parola"
-            :type="showPassword ? 'text' : 'password'"
+            type="password"
             autocomplete="current-password"
+            placeholder="Parolanız"
+            icon="mdi-lock-outline"
             :disabled="busy"
-            :error-messages="fieldError('password')"
-            :aria-invalid="fieldError('password') ? 'true' : undefined"
-            :hint="capsLock ? 'Büyük harf kilidi (Caps Lock) açık' : undefined"
-            :persistent-hint="capsLock"
-            @keydown="detectCaps"
-            @keyup="detectCaps"
-          >
-            <template #append-inner>
-              <button type="button" class="bo-login__reveal" :aria-pressed="showPassword" :aria-label="showPassword ? 'Parolayı gizle' : 'Parolayı göster'" @click="showPassword = !showPassword">
-                <v-icon :icon="showPassword ? 'mdi-eye-off-outline' : 'mdi-eye-outline'" aria-hidden="true" />
-              </button>
-            </template>
-          </v-text-field>
-          <p v-if="error" class="bo-login__error" role="alert">{{ error }}</p>
-          <EkButton tone="primary" type="submit" block :loading="busy" :disabled="!email || !password">Devam et</EkButton>
+            :error="fieldError('password')"
+          />
+          <EkAlert v-if="error" tone="error" dense live :text="error" />
+          <EkButton tone="primary" type="submit" block class="bo-login__submit" :loading="busy" :disabled="!email || !password">Devam et</EkButton>
           <MockHint v-if="MockHint && USE_MOCK" class="bo-login__hint" />
         </form>
 
         <!-- 2a) TOTP doğrulama -->
-        <form v-else-if="status === 'verify'" class="bo-login__form" novalidate @submit.prevent="submitVerify">
+        <form v-else-if="status === 'verify'" key="verify" class="bo-login__form" novalidate @submit.prevent="submitVerify">
           <header>
             <h1 class="bo-login__title">İki adımlı doğrulama</h1>
             <p class="bo-login__lede">
               {{ useRecovery ? 'Kurtarma kodlarınızdan birini girin. Her kod yalnız bir kez kullanılabilir.' : 'Doğrulayıcı uygulamanızdaki 6 haneli kodu girin.' }}
             </p>
           </header>
-          <v-text-field
-            v-if="!useRecovery"
-            ref="codeEl"
-            v-model="code"
-            label="Doğrulama kodu"
-            inputmode="numeric"
-            autocomplete="one-time-code"
-            spellcheck="false"
-            autocapitalize="off"
-            autocorrect="off"
-            maxlength="6"
-            class="bo-login__code"
-            :disabled="busy"
-            :error-messages="fieldError('code')"
-            :aria-invalid="fieldError('code') ? 'true' : undefined"
-            autofocus
-          />
-          <div v-if="!useRecovery" class="bo-totp-timer" aria-hidden="true">
-            <span class="bo-totp-timer__track"><span class="bo-totp-timer__bar" :style="{ transform: `scaleX(${totpLeft / 30})` }"></span></span>
-            <span class="bo-totp-timer__text">Kod <span class="ek-num">{{ totpLeft }}</span> sn sonra yenilenir</span>
-          </div>
-          <v-text-field
+          <ol class="bo-login__steps" aria-label="Giriş adımları">
+            <li v-for="(s, i) in stepList" :key="s" :class="{ 'is-done': i < stepIndex, 'is-current': i === stepIndex }" :aria-current="i === stepIndex ? 'step' : undefined">
+              <span class="bo-login__step-dot">{{ i < stepIndex ? '✓' : i + 1 }}</span>{{ s }}
+            </li>
+          </ol>
+          <template v-if="!useRecovery">
+            <BoAuthField
+              id="bo-login-code"
+              ref="codeEl"
+              v-model="code"
+              label="Doğrulama kodu"
+              inputmode="numeric"
+              autocomplete="one-time-code"
+              :maxlength="6"
+              placeholder="6 haneli kod"
+              icon="mdi-shield-key-outline"
+              mono
+              :disabled="busy"
+              :error="fieldError('code')"
+              autofocus
+            />
+            <div class="bo-totp-timer" aria-hidden="true">
+              <span class="bo-totp-timer__track"><span class="bo-totp-timer__bar" :style="{ transform: `scaleX(${totpLeft / 30})` }"></span></span>
+              <span class="bo-totp-timer__text">Kod <span class="ek-num">{{ totpLeft }}</span> sn sonra yenilenir</span>
+            </div>
+          </template>
+          <BoAuthField
             v-else
+            id="bo-login-recovery"
             ref="recoveryEl"
             v-model="recoveryCode"
             label="Kurtarma kodu"
             placeholder="xxxx-xxxx"
-            autocomplete="off"
-            spellcheck="false"
-            autocapitalize="off"
-            autocorrect="off"
+            icon="mdi-lifebuoy"
             :disabled="busy"
-            :error-messages="fieldError('recovery')"
-            :aria-invalid="fieldError('recovery') ? 'true' : undefined"
+            :error="fieldError('recovery')"
             autofocus
           />
-          <p v-if="error" class="bo-login__error" role="alert">{{ error }}</p>
-          <EkButton tone="primary" type="submit" block :loading="busy" :disabled="useRecovery ? recoveryCode.length < 8 : !/^\d{6}$/.test(code)">Doğrula</EkButton>
+          <EkAlert v-if="error" tone="error" dense live :text="error" />
+          <EkButton tone="primary" type="submit" block class="bo-login__submit" :loading="busy" :disabled="useRecovery ? recoveryCode.length < 8 : !/^\d{6}$/.test(code)">Doğrula</EkButton>
           <div class="bo-login__links">
             <button type="button" class="bo-login__link" @click="toggleRecovery">{{ useRecovery ? 'Doğrulayıcı kodu kullan' : 'Kurtarma kodu kullan' }}</button>
             <button type="button" class="bo-login__link" @click="restart">Başa dön</button>
@@ -126,11 +148,16 @@
         </form>
 
         <!-- 2b) İlk giriş: TOTP kurulumu -->
-        <form v-else-if="status === 'enroll'" class="bo-login__form" novalidate @submit.prevent="submitEnroll">
+        <form v-else-if="status === 'enroll'" key="enroll" class="bo-login__form" novalidate @submit.prevent="submitEnroll">
           <header>
             <h1 class="bo-login__title">İki adımlı doğrulamayı kurun</h1>
             <p class="bo-login__lede">İlk girişiniz. Devam etmeden önce bir doğrulayıcı uygulama (Google Authenticator, 1Password, Authy…) bağlayın.</p>
           </header>
+          <ol class="bo-login__steps" aria-label="Giriş adımları">
+            <li v-for="(s, i) in stepList" :key="s" :class="{ 'is-done': i < stepIndex, 'is-current': i === stepIndex }" :aria-current="i === stepIndex ? 'step' : undefined">
+              <span class="bo-login__step-dot">{{ i < stepIndex ? '✓' : i + 1 }}</span>{{ s }}
+            </li>
+          </ol>
           <div v-if="otpauthUri" class="bo-enroll">
             <QrCode :value="otpauthUri" label="Doğrulayıcı uygulama için QR kodu" />
             <div class="bo-enroll__manual">
@@ -140,27 +167,27 @@
             </div>
           </div>
           <EkSkeleton v-else type="form" :rows="2" />
-          <v-text-field
+          <BoAuthField
+            id="bo-login-enroll-code"
             ref="codeEl"
             v-model="code"
             label="Uygulamadaki 6 haneli kod"
             inputmode="numeric"
             autocomplete="one-time-code"
-            spellcheck="false"
-            autocapitalize="off"
-            autocorrect="off"
-            maxlength="6"
+            :maxlength="6"
+            placeholder="Uygulamadaki 6 haneli kod"
+            icon="mdi-shield-key-outline"
+            mono
             :disabled="busy || !otpauthUri"
-            :error-messages="fieldError('code')"
-            :aria-invalid="fieldError('code') ? 'true' : undefined"
+            :error="fieldError('code')"
           />
-          <p v-if="error" class="bo-login__error" role="alert">{{ error }}</p>
-          <EkButton tone="primary" type="submit" block :loading="busy" :disabled="!/^\d{6}$/.test(code)">Kurulumu tamamla</EkButton>
+          <EkAlert v-if="error" tone="error" dense live :text="error" />
+          <EkButton tone="primary" type="submit" block class="bo-login__submit" :loading="busy" :disabled="!/^\d{6}$/.test(code)">Kurulumu tamamla</EkButton>
           <div class="bo-login__links"><button type="button" class="bo-login__link" @click="restart">Başa dön</button></div>
         </form>
 
         <!-- 3) Kurtarma kodları (yalnız bir kez) -->
-        <section v-else-if="status === 'recovery'" class="bo-login__form" aria-labelledby="bo-recovery-title">
+        <section v-else-if="status === 'recovery'" key="recovery" class="bo-login__form" aria-labelledby="bo-recovery-title">
           <header>
             <h1 id="bo-recovery-title" class="bo-login__title">Kurtarma kodlarınızı saklayın</h1>
             <p class="bo-login__lede">Telefonunuza erişemezseniz bu kodlarla girersiniz. Her kod bir kez geçerlidir ve <strong>bir daha gösterilmez</strong>.</p>
@@ -173,17 +200,32 @@
             <EkButton size="sm" tone="secondary" icon="mdi-download" @click="download">İndir (.txt)</EkButton>
           </div>
           <v-checkbox v-model="savedCodes" label="Kodları güvenli bir yere kaydettim" hide-details />
-          <EkButton tone="primary" block :disabled="!savedCodes" @click="session.acknowledgeRecovery()">Yönetim paneline geç</EkButton>
+          <EkButton tone="primary" block class="bo-login__submit" :disabled="!savedCodes" @click="session.acknowledgeRecovery()">Yönetim paneline geç</EkButton>
         </section>
+        </Transition>
+
+        <!-- Alt şerit: yönetim uygulamasının Android APK'sı (backoffice'in kendi statik dosyası; herkese açık sitede YOK). -->
+        <footer class="bo-login__footer bo-login-rise" style="--i: 3">
+          <a v-if="!inNativeShell" :href="MOBILE_APK_HREF" download class="bo-login__app" data-testid="bo-login-mobile-app">
+            <span class="bo-login__app-icon" aria-hidden="true"><v-icon size="16">mdi-android</v-icon></span>
+            <span class="bo-login__app-text"><strong>Android uygulaması</strong> · Telefonunuzdan izleyin</span>
+            <span class="bo-login__app-cta">İndir<v-icon size="14" aria-hidden="true">mdi-arrow-right</v-icon></span>
+          </a>
+          <p class="bo-login__copyright">© 2026 Entegrasyonik · Yönetim</p>
+        </footer>
       </div>
     </main>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, defineAsyncComponent, nextTick, onBeforeUnmount, ref, watch } from 'vue'
+import { computed, defineAsyncComponent, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { EkAlert, EkBrandLogo, EkButton, EkSkeleton } from '@entegrasyonik/ui/components'
+import { isNativeShell } from '@entegrasyonik/ui/native'
 import QrCode from '@bo/components/QrCode.vue'
+import BoAuthField from '@bo/components/auth/BoAuthField.vue'
+import BoLoginScene from '@bo/components/auth/BoLoginScene.vue'
+import { CHAT_ICON, CHAT_PRODUCT } from '@entegrasyonik/chat/brand'
 // Örnek hesap ipucu yalnız dev paketinde (üretim derlemesinde import.meta.env.DEV=false → kod atılır).
 const MockHint = import.meta.env.DEV ? defineAsyncComponent(() => import('@bo/components/MockHint.vue')) : null
 import { USE_MOCK } from '@bo/api'
@@ -194,19 +236,28 @@ import { notify } from '@bo/utils/toast'
 import { currentEnv as env } from '@bo/utils/env'
 import { formatDateTime } from '@bo/utils/format'
 
+// Android kabuğunun içinde zaten uygulamadasınız → indirme satırı gizli.
+const inNativeShell = isNativeShell()
+/** Yönetim uygulamasının APK'sı (herkese açık siteye KONMAZ; backoffice'in kendi statik dosyası). */
+const MOBILE_APK_HREF = '/indir/entegrasyonik-yonetim.apk'
+
 const status = computed(() => session.state.status)
 const notice = computed(() => session.state.notice)
 const noticeText = computed(() => (notice.value ? NOTICE_TEXT[notice.value] : ''))
 
+/** Sağ sütun üst etiketi: adıma göre. */
+const eyebrow = computed(
+  () => ({ signedOut: 'Yönetim girişi', booting: 'Yönetim girişi', verify: 'Güvenlik adımı', enroll: 'İlk giriş', recovery: 'Son adım', signedIn: 'Yönetim girişi' })[status.value],
+)
+
 const email = ref('')
 const password = ref('')
-const showPassword = ref(false)
 const code = ref('')
 const recoveryCode = ref('')
 const useRecovery = ref(false)
 const busy = ref(false)
-// Form düzeyi hata (alana bağlanamayan: ağ, kilit, sunucu) → role=alert. Alana ait hata `fieldErr`'de; alanın
-// altında `:error-messages` + `aria-invalid` olarak çizilir ve odak o alana taşınır.
+// Form düzeyi hata (alana bağlanamayan: ağ, kilit, sunucu) → uyarı kutusu (role=alert). Alana ait hata `fieldErr`'de;
+// alanın altında + `aria-invalid` olarak çizilir ve odak o alana taşınır.
 const error = ref('')
 type Field = 'email' | 'password' | 'code' | 'recovery'
 const fieldErr = ref<{ field: Field; text: string } | null>(null)
@@ -219,16 +270,16 @@ const recoveryEl = ref<Focusable>(null)
 const FIELD_EL: Record<Field, typeof emailEl> = { email: emailEl, password: passwordEl, code: codeEl, recovery: recoveryEl }
 const otpauthUri = ref('')
 const savedCodes = ref(false)
-const capsLock = ref(false)
-
-function detectCaps(e: KeyboardEvent) {
-  capsLock.value = typeof e.getModifierState === 'function' && e.getModifierState('CapsLock')
-}
 
 // TOTP 30 sn penceresi: kalan süre göstergesi (kod süresi dolmak üzereyse kullanıcı bir sonrakini bekler).
 const totpLeft = ref(30 - (Math.floor(Date.now() / 1000) % 30))
 const totpTimer = setInterval(() => (totpLeft.value = 30 - (Math.floor(Date.now() / 1000) % 30)), 1000)
 onBeforeUnmount(() => clearInterval(totpTimer))
+
+// Vuetify `html { overflow-y: scroll }` boş bir kaydırma çubuğu izi bırakıyor; giriş ekranı tek ekrana sığdığı için
+// bu sayfada çubuk yalnız gerçekten gerekirse çıkar (sınıf sayfadan çıkınca kaldırılır).
+onMounted(() => document.documentElement.classList.add('bo-login-page'))
+onBeforeUnmount(() => document.documentElement.classList.remove('bo-login-page'))
 
 const stepList = computed(() => (status.value === 'enroll' || status.value === 'recovery' ? ['Parola', 'Doğrulayıcı kurulumu', 'Kurtarma kodları'] : ['Parola', 'Doğrulama kodu']))
 const stepIndex = computed(() => ({ signedOut: 0, booting: 0, verify: 1, enroll: 1, recovery: 2, signedIn: 2 })[status.value])
@@ -341,24 +392,236 @@ function download() {
 </script>
 
 <style scoped>
+/* ================= BO-LOGIN — yönetim girişi, müşteri uygulaması girişinin diliyle (DESIGN_SYSTEM §35, E9) =================
+   Sol: düz lacivert marka paneli (degrade/ışıma yok) — logo + "Yönetim" rozeti, kısa çizgili mikro etiket, iri başlık,
+   sade şema, alt güvence kartı. Sağ: kartsız, ortalanmış 400px form sütunu; ikonlu 52px alanlar, gölge yok.
+   Kısa ekranlar (≤ 820px yükseklik) için aralıklar sıkılaşır: hata uyarısı görünürken bile kaydırma olmaz. */
 .bo-login {
   display: grid;
-  grid-template-columns: minmax(360px, 5fr) 7fr;
+  grid-template-columns: minmax(420px, 5fr) 7fr;
+  height: 100vh;
   min-height: 100vh;
-  background: var(--ek-color-app-bg);
+  background: var(--ek-color-surface-muted);
 }
 
+/* ---------- Sol marka paneli ---------- */
 .bo-login__stage {
   display: flex;
-  align-items: flex-end;
-  padding: var(--ek-space-8);
-  /* Kabuk (chrome) tonları: iki temada da koyu zemin + açık metin. `--ek-app-login-gradient` `brand`'den türer ve
-     dark'ta açık bir tona döner (beyaz metin kontrastı düşer) — uygulamanın dark-1a işine not düşüldü. */
-  background:
-    radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--ek-color-chrome-text) 9%, transparent) 1px, transparent 0) 0 0 / 22px 22px,
-    radial-gradient(70% 55% at 85% 12%, color-mix(in srgb, var(--ek-color-secondary) 22%, transparent), transparent 70%),
-    linear-gradient(160deg, var(--ek-color-chrome) 0%, var(--ek-color-chrome-end) 100%);
+  overflow: hidden;
+  /* Müşteri uygulaması girişiyle (AuthShell) aynı iç boşluk: logo ve içerik aynı kenar mesafesinde. */
+  padding: var(--ek-space-10) clamp(var(--ek-space-8), 4.5vw, var(--ek-space-16));
+  background: var(--ek-color-chrome);
   color: var(--ek-color-chrome-text);
+}
+
+.bo-login__stage-inner {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--ek-space-6);
+  max-width: 560px;
+  /* Müşteri uygulaması girişindeki gibi sola yaslı (kullanıcı kararı). */
+}
+
+.bo-login__brandrow {
+  display: flex;
+  align-items: center;
+  gap: var(--ek-space-3);
+}
+
+.bo-login__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px var(--ek-space-2);
+  border: 1px solid var(--ek-color-chrome-border);
+  border-radius: var(--ek-radius-md);
+  color: var(--ek-color-chrome-text);
+  font-size: var(--ek-type-caption-size);
+  font-weight: var(--ek-font-weight-semibold);
+}
+
+.bo-login__badge :deep(.v-icon) {
+  /* Sol panel yalnız lacivert + beyaz (kullanıcı kararı): rozet kalkanı beyaz. */
+  color: var(--ek-color-chrome-text);
+  font-size: var(--ek-icon-sm);
+}
+
+.bo-login__pitch {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--ek-space-3);
+}
+
+/* Sol panel yazıları müşteri uygulaması girişiyle (AuthShell) BİREBİR aynı: üst etiket, iki tonlu başlık, açıklama. */
+.bo-login__kicker {
+  display: flex;
+  align-items: center;
+  gap: var(--ek-space-3);
+  margin: 0;
+  color: color-mix(in srgb, var(--ek-app-login-ink, var(--ek-color-chrome-text)) 66%, transparent);
+  font-size: var(--ek-font-size-xs);
+  font-weight: var(--ek-font-weight-semibold);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.bo-login__kicker::before {
+  content: '';
+  width: 28px;
+  height: 1px;
+  background: currentColor;
+}
+
+.bo-login__claim {
+  margin: 0;
+  color: var(--ek-app-login-ink, var(--ek-color-chrome-text));
+  font-size: clamp(2rem, 2.9vw, 2.875rem);
+  font-weight: var(--ek-font-weight-semibold);
+  line-height: 1.08;
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+}
+
+.bo-login__claim-soft {
+  display: block;
+  color: color-mix(in srgb, var(--ek-app-login-ink, var(--ek-color-chrome-text)) 52%, transparent);
+}
+
+.bo-login__claim-lede {
+  max-width: 42ch;
+  margin: 0;
+  color: color-mix(in srgb, var(--ek-app-login-ink, var(--ek-color-chrome-text)) 74%, transparent);
+  font-size: var(--ek-font-size-md, 1rem);
+  line-height: 1.65;
+}
+
+.bo-login__autopilot {
+  --bo-auth-autopilot: color-mix(in srgb, var(--ek-color-secondary) 85%, var(--ek-app-login-ink, var(--ek-color-chrome-text)));
+  display: flex;
+  align-items: center;
+  gap: var(--ek-space-3);
+  max-width: 46ch;
+  margin: var(--ek-space-1) 0 0;
+  font-size: var(--ek-font-size-sm);
+  line-height: 1.5;
+  color: color-mix(in srgb, var(--ek-app-login-ink, var(--ek-color-chrome-text)) 72%, transparent);
+}
+
+.bo-login__autopilot strong {
+  font-weight: var(--ek-font-weight-semibold);
+  color: var(--ek-app-login-ink, var(--ek-color-chrome-text));
+}
+
+.bo-login__autopilot-icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--ek-radius-md);
+  background: var(--bo-auth-autopilot);
+  color: var(--ek-app-login-surface, var(--ek-color-chrome));
+}
+
+/* Açılış: bölümler sırayla belirerek yükselir (uygulama girişiyle aynı süre/eğri). Sol panelde başlık bloğunun
+   çocukları da sırayla gelir. */
+.bo-login-rise,
+.bo-login__pitch > * {
+  animation: bo-login-rise var(--ek-app-login-rise, 600ms) var(--ek-app-login-ease-out, cubic-bezier(0.2, 0.7, 0.2, 1)) both;
+  animation-delay: calc((var(--i, 0) + 1) * var(--ek-app-login-step, 80ms));
+}
+.bo-login__pitch > :nth-child(1) { --i: 0; }
+.bo-login__pitch > :nth-child(2) { --i: 1; }
+.bo-login__pitch > :nth-child(3) { --i: 2; }
+.bo-login__pitch > :nth-child(4) { --i: 3; }
+.bo-login__pitch > :nth-child(5) { --i: 4; }
+@keyframes bo-login-rise {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bo-login-rise,
+  .bo-login__pitch > * {
+    animation: none;
+  }
+}
+
+/* Adım geçişi (uygulama girişi `ek-auth-swap` ile aynı) */
+.bo-auth-swap-enter-active {
+  transition: opacity var(--ek-duration-base, 200ms) var(--ek-easing-decelerate, ease-out),
+    transform var(--ek-duration-base, 200ms) var(--ek-easing-decelerate, ease-out);
+}
+.bo-auth-swap-leave-active {
+  transition: opacity 120ms var(--ek-easing-accelerate, ease-in);
+}
+.bo-auth-swap-enter-from {
+  opacity: 0;
+  transform: translateY(6px);
+}
+.bo-auth-swap-leave-to {
+  opacity: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .bo-auth-swap-enter-active,
+  .bo-auth-swap-leave-active {
+    transition: none;
+  }
+}
+
+/* Canlı sahne */
+.bo-login__scene {
+  /* Denetim kaydı kutusu kalktı; sahne başlık bloğundan biraz daha aşağıda (kullanıcı kararı). */
+  margin-top: var(--ek-space-12);
+}
+
+/* Güvence kartı */
+.bo-login__points {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ek-space-2);
+  margin: 0;
+  padding: var(--ek-space-4);
+  border: 1px solid var(--ek-color-chrome-border);
+  border-radius: var(--ek-radius-card);
+  background: var(--ek-color-chrome-raised);
+  list-style: none;
+  color: var(--ek-color-chrome-text-muted);
+  font-size: var(--ek-type-label-size);
+}
+
+.bo-login__points li {
+  display: flex;
+  align-items: center;
+  gap: var(--ek-space-3);
+}
+
+.bo-login__point-icon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--ek-color-chrome-border);
+  border-radius: var(--ek-radius-md);
+  color: var(--ek-color-chrome-text);
+}
+
+.bo-login__point-icon :deep(.v-icon) {
+  font-size: 16px;
+}
+
+/* ---------- Sağ form sütunu ---------- */
+.bo-login__panel {
+  position: relative;
+  display: flex;
+  overflow-y: auto;
+  align-items: center;
+  justify-content: center;
+  padding: var(--ek-space-12) var(--ek-space-6) var(--ek-space-6);
+  background: var(--ek-color-surface-muted);
 }
 
 .bo-login__env {
@@ -371,7 +634,7 @@ function download() {
   margin: 0;
   padding: var(--ek-space-1) var(--ek-space-3);
   border: 1px solid var(--ek-color-border-default);
-  border-radius: var(--ek-radius-full);
+  border-radius: var(--ek-radius-md);
   background: var(--ek-color-surface);
   color: var(--ek-color-content-default);
   font-size: var(--ek-type-caption-size);
@@ -388,20 +651,137 @@ function download() {
 }
 
 .bo-login__env.is-staging {
-  border-color: var(--ek-color-warning);
-  background: var(--ek-color-warning);
-  color: var(--ek-color-warning-contrast);
+  border-color: var(--ek-color-warning-border);
+  background: var(--ek-color-warning-subtle);
+  color: var(--ek-color-warning-emphasis);
 }
 
 .bo-login__env.is-production {
-  border-color: var(--ek-color-error);
-  background: var(--ek-color-error);
-  color: var(--ek-color-error-contrast);
+  border-color: var(--ek-color-error-border);
+  background: var(--ek-color-error-subtle);
+  color: var(--ek-color-error-emphasis);
 }
 
 .bo-login__env.is-staging .bo-login__env-hint,
 .bo-login__env.is-production .bo-login__env-hint {
   color: inherit;
+}
+
+.bo-login__card {
+  width: 100%;
+  max-width: 460px;
+  margin: auto 0;
+}
+
+.bo-login__mobile-brand {
+  display: none;
+}
+
+.bo-login__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ek-space-2);
+  margin: 0 0 var(--ek-space-3);
+  color: var(--ek-color-action-emphasis);
+  font-size: var(--ek-type-micro-size);
+  font-weight: var(--ek-type-micro-weight);
+  letter-spacing: var(--ek-type-micro-tracking);
+  text-transform: uppercase;
+}
+
+.bo-login__eyebrow::before {
+  content: '';
+  width: 12px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--ek-color-action);
+}
+
+.bo-login__notice {
+  margin-bottom: var(--ek-space-4);
+}
+
+.bo-login__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ek-space-4);
+}
+
+.bo-login__title {
+  margin: 0;
+  color: var(--ek-color-content-strong);
+  font-size: clamp(1.625rem, 2vw, 2rem);
+  font-weight: var(--ek-font-weight-semibold);
+  line-height: 1.15;
+  letter-spacing: -0.025em;
+}
+
+.bo-login__lede {
+  margin: var(--ek-space-2) 0 0;
+  color: var(--ek-color-content-default);
+  font-size: 0.9375rem;
+  line-height: 1.55;
+}
+
+/* Adımlar: yazı sekmesi gibi ince çizgili şerit; etkin adım eylem tonu, köşeli numara kutusu. */
+.bo-login__steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ek-space-2);
+  margin: 0;
+  padding: 0 0 var(--ek-space-3);
+  border-bottom: 1px solid var(--ek-color-border-subtle);
+  list-style: none;
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-caption-size);
+  font-weight: var(--ek-font-weight-medium);
+}
+
+.bo-login__steps li {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ek-space-2);
+  padding: 2px var(--ek-space-2) 2px 2px;
+  border: 1px solid transparent;
+  border-radius: var(--ek-radius-tile);
+}
+
+.bo-login__steps li.is-current {
+  border-color: var(--ek-color-action-border);
+  background: var(--ek-color-action-subtle);
+  color: var(--ek-color-action-emphasis);
+}
+
+.bo-login__step-dot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-md);
+  background: var(--ek-color-surface);
+  font-size: var(--ek-type-micro-size);
+  font-weight: var(--ek-font-weight-semibold);
+}
+
+.bo-login__steps li.is-current .bo-login__step-dot {
+  border-color: var(--ek-color-action);
+  background: var(--ek-color-action);
+  color: var(--ek-color-action-contrast);
+}
+
+.bo-login__steps li.is-done .bo-login__step-dot {
+  border-color: var(--ek-color-success-border);
+  background: var(--ek-color-success-subtle);
+  color: var(--ek-color-success-emphasis);
+}
+
+.bo-login__submit {
+  min-height: 52px;
+  margin-top: var(--ek-space-1);
+  border-radius: var(--ek-radius-card) !important;
+  font-size: 0.9375rem;
 }
 
 .bo-totp-timer {
@@ -417,8 +797,8 @@ function download() {
   position: relative;
   overflow: hidden;
   width: 64px;
-  height: 3px;
-  border-radius: var(--ek-radius-full);
+  height: 4px;
+  border-radius: 2px;
   background: var(--ek-color-border-subtle);
 }
 
@@ -428,175 +808,6 @@ function download() {
   border-radius: inherit;
   background: var(--ek-color-action);
   transform-origin: left center;
-}
-
-.bo-login__stage-inner {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ek-space-4);
-  max-width: 440px;
-}
-
-.bo-login__kicker {
-  margin: var(--ek-space-6) 0 0;
-  color: var(--ek-color-chrome-text-muted);
-  font-size: var(--ek-type-micro-size);
-  font-weight: var(--ek-type-micro-weight);
-  letter-spacing: var(--ek-type-micro-tracking);
-  text-transform: uppercase;
-}
-
-.bo-login__claim {
-  margin: 0;
-  font-size: var(--ek-type-title-size);
-  line-height: var(--ek-type-title-line);
-  font-weight: var(--ek-type-title-weight);
-  letter-spacing: var(--ek-type-title-tracking);
-}
-
-.bo-login__points {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ek-space-3);
-  margin: var(--ek-space-4) 0 0;
-  padding: var(--ek-space-4) 0 0;
-  border-top: 1px solid var(--ek-color-chrome-border);
-  list-style: none;
-  color: var(--ek-color-chrome-text-muted);
-  font-size: var(--ek-type-label-size);
-}
-
-.bo-login__points li {
-  display: flex;
-  align-items: center;
-  gap: var(--ek-space-3);
-}
-
-.bo-login__points :deep(.v-icon) {
-  color: var(--ek-color-chrome-text);
-  font-size: var(--ek-icon-lg);
-}
-
-.bo-login__panel {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--ek-space-8) var(--ek-space-6);
-}
-
-.bo-login__card {
-  width: 100%;
-  max-width: 440px;
-  padding: var(--ek-space-8);
-  border: 1px solid var(--ek-color-border-default);
-  border-radius: var(--ek-radius-card);
-  background: var(--ek-color-surface);
-  box-shadow: var(--ek-shadow-raised);
-}
-
-.bo-login__mobile-brand {
-  display: none;
-}
-
-.bo-login__steps {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--ek-space-2) var(--ek-space-4);
-  margin: 0 0 var(--ek-space-6);
-  padding: 0;
-  list-style: none;
-  color: var(--ek-color-content-muted);
-  font-size: var(--ek-type-caption-size);
-  font-weight: var(--ek-font-weight-medium);
-}
-
-.bo-login__steps li {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--ek-space-2);
-}
-
-.bo-login__step-dot {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  border: 1px solid var(--ek-color-border-strong);
-  border-radius: var(--ek-radius-full);
-  font-size: var(--ek-type-micro-size);
-}
-
-.bo-login__steps li.is-current {
-  color: var(--ek-color-content-strong);
-}
-
-.bo-login__steps li.is-current .bo-login__step-dot {
-  border-color: var(--ek-color-action);
-  background: var(--ek-color-action);
-  color: var(--ek-color-action-contrast);
-}
-
-.bo-login__steps li.is-done .bo-login__step-dot {
-  border-color: var(--ek-color-success-border);
-  background: var(--ek-color-success-subtle);
-  color: var(--ek-color-success-emphasis);
-}
-
-.bo-login__form {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ek-space-3);
-}
-
-.bo-login__title {
-  margin: 0;
-  color: var(--ek-color-content-strong);
-  font-size: var(--ek-type-title-size);
-  line-height: var(--ek-type-title-line);
-  font-weight: var(--ek-type-title-weight);
-  letter-spacing: var(--ek-type-title-tracking);
-}
-
-.bo-login__lede {
-  margin: var(--ek-space-1) 0 var(--ek-space-3);
-  color: var(--ek-color-content-muted);
-  font-size: var(--ek-type-body-size);
-  line-height: var(--ek-type-body-line);
-}
-
-.bo-login__code :deep(input) {
-  font-family: var(--ek-font-mono);
-  font-size: var(--ek-type-heading-size);
-  letter-spacing: 0.4em;
-}
-
-.bo-login__reveal {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border: 0;
-  border-radius: var(--ek-radius-md);
-  background: transparent;
-  color: var(--ek-color-content-muted);
-  cursor: pointer;
-}
-
-.bo-login__reveal:hover {
-  color: var(--ek-color-content-strong);
-}
-
-.bo-login__reveal:focus-visible {
-  outline: 2px solid var(--ek-color-border-focus);
-}
-
-.bo-login__error {
-  margin: 0;
-  color: var(--ek-color-error-emphasis);
-  font-size: var(--ek-type-label-size);
 }
 
 .bo-login__links {
@@ -617,7 +828,7 @@ function download() {
 }
 
 .bo-login__link:hover {
-  text-decoration: underline;
+  color: var(--ek-color-action);
 }
 
 .bo-login__link:focus-visible {
@@ -627,9 +838,10 @@ function download() {
 }
 
 .bo-login__hint {
-  margin-top: var(--ek-space-3);
+  margin-top: var(--ek-space-1);
 }
 
+/* Kurulum ve kurtarma kodları */
 .bo-codes code,
 .bo-enroll__secret {
   font-family: var(--ek-font-mono);
@@ -641,9 +853,9 @@ function download() {
   align-items: center;
   gap: var(--ek-space-5);
   padding: var(--ek-space-4);
-  border: 1px solid var(--ek-color-border-subtle);
-  border-radius: var(--ek-radius-lg);
-  background: var(--ek-color-surface-muted);
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-tile);
+  background: var(--ek-color-surface);
 }
 
 .bo-enroll__manual {
@@ -674,9 +886,9 @@ function download() {
   gap: var(--ek-space-2) var(--ek-space-5);
   margin: 0;
   padding: var(--ek-space-4) var(--ek-space-4) var(--ek-space-4) var(--ek-space-8);
-  border: 1px dashed var(--ek-color-border-strong);
-  border-radius: var(--ek-radius-lg);
-  background: var(--ek-color-surface-muted);
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-tile);
+  background: var(--ek-color-surface);
   color: var(--ek-color-content-muted);
   font-size: var(--ek-type-label-size);
 }
@@ -692,17 +904,142 @@ function download() {
   gap: var(--ek-space-2);
 }
 
+/* Alt şerit: Android satırı (kompakt, tek satır) + telif; ince çizgiyle formdan ayrılır. */
+.bo-login__footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ek-space-2);
+  margin-top: var(--ek-space-6);
+  padding-top: var(--ek-space-4);
+  border-top: 1px solid var(--ek-color-border-subtle);
+}
+
+.bo-login__app {
+  display: flex;
+  align-items: center;
+  gap: var(--ek-space-2);
+  max-width: 100%;
+  padding: var(--ek-space-1) var(--ek-space-2);
+  border-radius: var(--ek-radius-md);
+  color: var(--ek-color-content-default);
+  font-size: var(--ek-type-caption-size);
+  text-decoration: none;
+  transition: background-color var(--ek-motion-feedback), color var(--ek-motion-feedback);
+}
+
+.bo-login__app:hover {
+  background: var(--ek-color-action-subtle);
+  color: var(--ek-color-content-strong);
+}
+
+.bo-login__app:focus-visible {
+  outline: 2px solid var(--ek-color-border-focus);
+  outline-offset: 2px;
+}
+
+.bo-login__app-icon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-md);
+  background: var(--ek-color-surface);
+  color: var(--ek-color-action);
+}
+
+.bo-login__app-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bo-login__app-text strong {
+  color: var(--ek-color-content-strong);
+  font-weight: var(--ek-font-weight-semibold);
+}
+
+.bo-login__app-cta {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 2px;
+  color: var(--ek-color-action-emphasis);
+  font-weight: var(--ek-font-weight-semibold);
+}
+
+.bo-login__copyright {
+  margin: 0;
+  color: var(--ek-color-content-muted);
+  font-size: var(--ek-type-caption-size);
+}
+
 @media (pointer: coarse) {
-  .bo-login__link,
-  .bo-login__reveal {
+  .bo-login__link {
     min-width: 44px;
     min-height: 44px;
+  }
+}
+
+/* Kısa ekranlar: aralıklar sıkılaşır (1366×768, 1280×720 — hata uyarısı görünürken bile kaydırma yok). */
+@media (max-height: 880px) {
+  .bo-login__claim {
+    font-size: clamp(1.75rem, 2.5vw, 2.5rem);
+  }
+
+  .bo-login__stage {
+    padding-block: var(--ek-space-6);
+  }
+
+  .bo-login__stage-inner {
+    gap: var(--ek-space-4);
+  }
+
+  .bo-login__scene {
+    margin-top: var(--ek-space-8);
+  }
+
+  .bo-login__panel {
+    padding-top: var(--ek-space-10);
+    padding-bottom: var(--ek-space-4);
+  }
+
+  .bo-login__form {
+    gap: var(--ek-space-3);
+  }
+
+  .bo-login__title {
+    font-size: 1.625rem;
+  }
+
+  .bo-login__lede {
+    margin-top: var(--ek-space-1);
+    font-size: var(--ek-type-label-size);
+  }
+
+  .bo-login__footer {
+    margin-top: var(--ek-space-4);
+    padding-top: var(--ek-space-3);
+  }
+}
+
+@media (max-height: 740px) {
+  .bo-login__scene {
+    display: none;
+  }
+
+  .bo-login__eyebrow {
+    margin-bottom: var(--ek-space-2);
   }
 }
 
 @media (max-width: 959px) {
   .bo-login {
     grid-template-columns: 1fr;
+    height: auto;
   }
 
   .bo-login__stage {
@@ -714,6 +1051,7 @@ function download() {
     align-items: stretch;
     justify-content: flex-start;
     gap: var(--ek-space-4);
+    min-height: 100vh;
     padding: var(--ek-space-4);
   }
 
@@ -727,7 +1065,8 @@ function download() {
   }
 
   .bo-login__card {
-    padding: var(--ek-space-6) var(--ek-space-5);
+    max-width: 440px;
+    margin: 0 auto;
   }
 
   .bo-login__mobile-brand {
@@ -735,9 +1074,21 @@ function download() {
     align-items: center;
     gap: var(--ek-space-2);
     margin-bottom: var(--ek-space-5);
-    color: var(--ek-color-content-strong);
-    font-size: var(--ek-type-label-size);
-    font-weight: var(--ek-font-weight-semibold);
   }
+
+  .bo-login__badge--light {
+    border-color: var(--ek-color-border-default);
+    color: var(--ek-color-content-strong);
+  }
+
+  .bo-login__badge--light :deep(.v-icon) {
+    color: var(--ek-color-content-strong);
+  }
+}
+</style>
+
+<style>
+html.bo-login-page {
+  overflow-y: auto;
 }
 </style>

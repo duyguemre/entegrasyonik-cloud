@@ -276,4 +276,41 @@ async function print() {
 @media (prefers-reduced-motion: reduce) {
   .ek-tpl-option { transition: none; }
 }
+
+/* ================= FE-LOCAL-1047 — önizleme: ortak tasarım dili =================
+   Dış kart düz yüzey + ince çerçeve; üst çubuk sakin zemin; seçenek kutuları kutu yarıçapında. */
+.ek-tpl-preview {
+  border-color: var(--ek-color-border-default);
+  box-shadow: none;
+}
+
+.ek-tpl-preview__bar {
+  background: var(--ek-color-surface-muted);
+  border-bottom-color: var(--ek-color-border-default);
+}
+
+.ek-tpl-preview__h {
+  display: flex;
+  align-items: center;
+  gap: var(--ek-space-2);
+  color: var(--ek-color-sidebar-section);
+  font-size: var(--ek-type-micro-size);
+  line-height: var(--ek-type-micro-line);
+  font-weight: var(--ek-type-micro-weight);
+  letter-spacing: var(--ek-type-micro-tracking);
+  text-transform: uppercase;
+}
+
+.ek-tpl-preview__h::before {
+  content: '';
+  width: 14px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--ek-color-action);
+}
+
+.ek-tpl-option {
+  border-color: var(--ek-color-border-default);
+  border-radius: var(--ek-radius-tile);
+}
 </style>

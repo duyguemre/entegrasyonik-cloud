@@ -44,11 +44,21 @@
             />
             <slot v-if="!searchInFilter" name="search-append" />
             <span v-if="$slots['header-actions']" class="ek-list-screen__extra"><slot name="header-actions" /></span>
+            <!-- FE-LOCAL-1043: Liste | Özet anahtarı — "Özet" listenin YERİNE bölüm panosunu açar (sayfanın tamamı). -->
+            <div v-if="summaryToggle && $slots.summary" class="ek-list-screen__view" role="group" aria-label="Görünüm">
+              <button type="button" class="ek-list-screen__view-btn" :class="{ 'is-on': !summaryOpen }" :aria-pressed="!summaryOpen" data-view="list" @click="setSummary(false)">
+                <v-icon icon="mdi-format-list-bulleted" aria-hidden="true" /><span>Liste</span>
+              </button>
+              <button type="button" class="ek-list-screen__view-btn" :class="{ 'is-on': summaryOpen }" :aria-pressed="summaryOpen" data-view="summary" data-summary-toggle @click="setSummary(true)">
+                <v-icon icon="mdi-chart-box-outline" aria-hidden="true" /><span>Özet</span>
+              </button>
+            </div>
           </div>
         </template>
       </EkPageBar>
     </header>
-    <header v-else v-show="!hostedTarget" class="ek-list-screen__head is-headless">
+    <!-- FE-LOCAL-1051: başlıksız listede araç satırı yalnız içeriği varsa çizilir (boş satır tabloyu aşağı itmesin). -->
+    <header v-else-if="headlessHasTools" v-show="!hostedTarget" class="ek-list-screen__head is-headless">
       <!-- P03 (K49): sekmeli ekranda etkin sekmenin arama + ek eylemler + yenile'si sayfa başlık çubuğuna taşınır
            (EkPageHeader `tools-id`); sekme kendi gövdesinde araç satırı taşımaz. -->
       <Teleport defer :to="hostedTarget || 'body'" :disabled="!hostedTarget">
@@ -68,15 +78,27 @@
         />
         <slot v-if="!searchInFilter" name="search-append" />
         <span v-if="$slots['header-actions']" class="ek-list-screen__extra"><slot name="header-actions" /></span>
-        <span v-if="refreshable" class="ek-list-screen__refresh"><EkRefreshButton :loading="loading" :label="refreshLabel" @refresh="emit('refresh')" /></span>
+        <!-- FE-LOCAL-1047: sekmeli ekranda da Liste | Özet (etkin sekmenin özeti listenin yerine açılır). -->
+        <div v-if="summaryToggle && $slots.summary" class="ek-list-screen__view" role="group" aria-label="Görünüm">
+          <button type="button" class="ek-list-screen__view-btn" :class="{ 'is-on': !summaryOpen }" :aria-pressed="!summaryOpen" data-view="list" @click="setSummary(false)">
+            <v-icon icon="mdi-format-list-bulleted" aria-hidden="true" /><span>Liste</span>
+          </button>
+          <button type="button" class="ek-list-screen__view-btn" :class="{ 'is-on': summaryOpen }" :aria-pressed="summaryOpen" data-view="summary" data-summary-toggle @click="setSummary(true)">
+            <v-icon icon="mdi-chart-box-outline" aria-hidden="true" /><span>Özet</span>
+          </button>
+        </div>
+        <!-- Yenile düğmesi yalnız sayfa başlığı yenilemeyi üstlenmiyorsa (yenileme merkezi yoksa) çizilir. -->
+        <span v-if="refreshable && !refreshHub" class="ek-list-screen__refresh"><EkRefreshButton :loading="loading" :label="refreshLabel" @refresh="emit('refresh')" /></span>
       </div>
       </Teleport>
     </header>
 
     <!-- Aşama 3: başlık ile liste arasında özet (KPI satırı vb.) — başlığın ÜSTÜNE konmasın (hiyerarşi). -->
-    <div v-if="$slots.summary" class="ek-list-screen__summary"><slot name="summary" /></div>
+    <div v-if="$slots.summary && !summaryToggle" class="ek-list-screen__summary"><slot name="summary" :close="closeSummary" /></div>
+    <!-- FE-LOCAL-1043: özet görünümü — listenin yerine, sayfanın tamamında (içerik yalnız açıkken çizilir; liste durumu korunur). -->
+    <div v-if="summaryMode" class="ek-list-screen__dash"><slot name="summary" :close="closeSummary" /></div>
 
-    <div v-if="$slots.create && !$slots.filters" class="ek-list-screen__strip">
+    <div v-if="$slots.create && !$slots.filters" v-show="!summaryMode" class="ek-list-screen__strip">
       <div v-if="searchInStrip" class="ek-list-screen__strip-search">
         <v-text-field
           :model-value="search"
@@ -95,7 +117,7 @@
       <div class="ek-list-screen__strip-create"><slot name="create" /></div>
     </div>
 
-    <EkListFrame :label="label" class="ek-list-screen__frame">
+    <EkListFrame v-show="!summaryMode" :label="label" class="ek-list-screen__frame">
       <template v-if="$slots.filters || chips.length" #filters>
         <EkFilterPanel
           v-if="$slots.filters"
@@ -202,8 +224,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, inject, onActivated, onDeactivated, ref, useSlots } from 'vue'
-import { LIST_TOOLS_TARGET } from '../listTools'
+import { computed, inject, onActivated, onBeforeUnmount, onDeactivated, ref, useSlots, watchEffect } from 'vue'
+import { LIST_REFRESH_HUB, LIST_TOOLS_TARGET } from '../listTools'
 import { EkListFrame, EkFilterPanel, EkActiveFilters, type EkActiveFilterChip, EkBulkBar, EkDataGrid, type EkGridColumn, type EkGridSort, EkPagerBar, EkButton, EkRefreshButton } from '@entegrasyonik/ui/components'
 import EkSavedViews, { type EkSavedViewsConfig } from '../EkSavedViews.vue'
 import EkPageBar from '../EkPageBar.vue'
@@ -275,6 +297,14 @@ const props = withDefaults(
      * sağladığı yuva (`provideListToolsTarget`) kullanılır; `false` → yerinde kalır (ör. `v-show` ile gizlenen sekme).
      */
     toolsTarget?: string | false
+    /**
+     * FE-LOCAL-1043: `#summary` yuvası sayfa adı satırındaki Liste | Özet anahtarıyla LİSTENİN YERİNE açılır (bölüm
+     * panosu; varsayılan Liste). İçerik yalnız açıkken çizilir (verisi o zaman istenir); liste durumu korunur.
+     * Yuva `close` alır (özetten listeye dönmek için). Verilmezse özet başlığın altında her zaman görünür (eski davranış).
+     */
+    summaryToggle?: boolean
+    /** Geri uyum (kullanılmıyor): eski aç/kapa tercihi anahtarı. */
+    summaryKey?: string
   }>(),
   {
     noun: 'kayıt',
@@ -304,8 +334,19 @@ const props = withDefaults(
     title: '',
     section: undefined,
     toolsTarget: undefined,
+    summaryToggle: false,
+    summaryKey: undefined,
   },
 )
+
+// FE-LOCAL-1043: Liste | Özet — özet listenin yerine açılır; her açılışta Liste ile başlar.
+const summaryOpen = ref(false)
+const summaryMode = computed(() => props.summaryToggle && summaryOpen.value && !!slots.summary)
+function setSummary(open: boolean) {
+  summaryOpen.value = open
+}
+const closeSummary = () => setSummary(false)
+defineExpose({ closeSummary, openSummary: () => setSummary(true) })
 
 const emit = defineEmits<{
   'update:search': [value: string]
@@ -337,6 +378,22 @@ const hostedTarget = computed(() => {
   return props.toolsTarget || injectedToolsTarget || ''
 })
 
+// FE-LOCAL-1047: sekmeli ekranda yenileme sayfa adından — etkin (başlıksız) liste kendini merkeze kaydeder.
+const refreshHub = inject(LIST_REFRESH_HUB, null)
+const refreshHandler = () => emit('refresh')
+watchEffect(() => {
+  if (!refreshHub || props.title) return
+  if (keepAliveActive.value && props.refreshable) {
+    refreshHub.handler.value = refreshHandler
+    refreshHub.loading.value = props.loading
+  } else if (refreshHub.handler.value === refreshHandler) {
+    refreshHub.handler.value = null
+  }
+})
+onBeforeUnmount(() => {
+  if (refreshHub && refreshHub.handler.value === refreshHandler) refreshHub.handler.value = null
+})
+
 const slots = useSlots()
 const cellSlots = computed(() => Object.keys(slots).filter((n) => n.startsWith('cell-')))
 // Arama + filtre tek şerit: filtre paneli varsa arama panel başlığının soluna taşınır (sayfa başlığında çizilmez).
@@ -345,6 +402,14 @@ const cellSlots = computed(() => Object.keys(slots).filter((n) => n.startsWith('
 const searchInStrip = computed(() => props.searchPlaceholder !== undefined && !slots.filters && !!slots.create)
 const searchInFilter = computed(() => (props.searchPlaceholder !== undefined && !!slots.filters) || searchInStrip.value)
 const isFiltered = computed(() => props.chips.length > 0)
+/** Başlıksız (sekme) listede araç satırında gösterilecek bir şey var mı. */
+const headlessHasTools = computed(
+  () =>
+    (props.searchPlaceholder !== undefined && !searchInFilter.value) ||
+    !!slots['header-actions'] ||
+    (props.summaryToggle && !!slots.summary) ||
+    (props.refreshable && !refreshHub),
+)
 
 /** Listenin GERÇEKTEN sunduğu yeteneklerden kısa kullanım ipuçları (uydurma özellik anlatılmaz). */
 const autoTips = computed(() => {
@@ -361,8 +426,9 @@ const autoTips = computed(() => {
 provideRefreshState(() => ({ error: props.error }))
 
 // Panel açık/kapalı durumu: v-model verilmişse dışarıdan, yoksa bu örnekte (sekmeye yerel) tutulur.
-// Dar ekranda (<768px) panel kapalı başlar: tablo ilk ekranda görünür kalsın.
-const localCollapsed = ref(typeof window !== 'undefined' && window.innerWidth < 768)
+// FE-LOCAL-1047 (kullanıcı kararı): filtre paneli her ekranda KAPALI başlar — tablo ilk ekranda görünür kalsın;
+// uygulanan filtreler kapalıyken de başlıkta çip olarak görünür.
+const localCollapsed = ref(true)
 const collapsedState = computed(() => props.filterCollapsed ?? localCollapsed.value)
 function setCollapsed(v: boolean) {
   localCollapsed.value = v
@@ -513,5 +579,66 @@ function setCollapsed(v: boolean) {
     flex: 1 1 100%;
     margin-left: 0;
   }
+}
+
+/* FE-LOCAL-1043: Liste | Özet anahtarı — iki parçalı kutu; etkin parça eylem renginin açık tonu ("Filtreler" ile aynı dil). */
+.ek-list-screen__view {
+  display: inline-flex;
+  flex: none;
+  padding: 2px;
+  gap: 2px;
+  border: 1px solid var(--ek-color-border-input);
+  border-radius: var(--ek-radius-tile);
+  background: var(--ek-color-surface);
+}
+
+.ek-list-screen__view-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: calc(var(--ek-control-h-sm) - 6px);
+  padding: 0 var(--ek-space-2);
+  border: 0;
+  border-radius: var(--ek-radius-md);
+  background: transparent;
+  color: var(--ek-color-content-default);
+  font-family: inherit;
+  font-size: var(--ek-type-label-size);
+  font-weight: var(--ek-font-weight-medium);
+  cursor: pointer;
+  transition: var(--ek-transition-colors);
+}
+
+.ek-list-screen__view-btn .v-icon {
+  font-size: var(--ek-icon-sm);
+  color: var(--ek-color-content-muted);
+}
+
+.ek-list-screen__view-btn:hover {
+  background: var(--ek-color-surface-muted);
+  color: var(--ek-color-content-strong);
+}
+
+.ek-list-screen__view-btn.is-on {
+  background: var(--ek-color-action-subtle);
+  color: var(--ek-color-action-emphasis);
+}
+
+.ek-list-screen__view-btn.is-on .v-icon {
+  color: var(--ek-color-action);
+}
+
+.ek-list-screen__view-btn:focus-visible {
+  outline: none;
+  box-shadow: var(--ek-focus-ring);
+}
+
+/* Özet görünümü: listenin yerini alır, kendi içinde kayar. */
+.ek-list-screen__dash {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--ek-space-1) var(--ek-space-1) var(--ek-space-6);
+  margin: 0 calc(-1 * var(--ek-space-1));
 }
 </style>

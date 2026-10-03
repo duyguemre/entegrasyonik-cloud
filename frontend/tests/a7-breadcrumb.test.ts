@@ -107,7 +107,8 @@ describe('A7 — EkPageBar sözleşmesi', () => {
   it('A6b yenile düğmesi ve A5 "Sayfa hakkında" paneli satırda korunur', () => {
     expect(template).toMatch(/<EkRefreshButton\b/)
     expect(template).toMatch(/:aria-controls="panelId"/)
-    expect(template).toMatch(/<EkCollapse :id="panelId"/)
+    // "Sayfa hakkında": sayfa içi panel değil, ışık düğmesinin açtığı yüzen kart (v-menu) — kimlik bağı korunur.
+    expect(template).toMatch(/<div :id="panelId" class="ek-page-bar__about" role="dialog"/)
   })
 })
 

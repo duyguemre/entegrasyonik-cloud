@@ -21,7 +21,9 @@ export interface NextAction {
   icon: string
   /** Sayılı kısa başlık: "2 sipariş kargoya verilmeyi bekliyor". */
   title: string
-  /** Neden / ne yapmalı — tek cümle. */
+  /** Yönlendirici kısa görev (emir kipi, sayıyla): "2 siparişi kargoya verin". Listede bu gösterilir. */
+  task: string
+  /** Ne yapmalı — tek kısa cümle. */
   text: string
   count: number
   actionLabel: string
@@ -57,7 +59,8 @@ export function buildNextActions(input: NextActionsInput): { actions: NextAction
     actions.push({
       key: 'oversold', level: 'critical', tone: 'danger', icon: 'mdi-alert-octagon-outline', count: oversold,
       title: `${nf(oversold)} sipariş kaleminde aşırı satış`,
-      text: 'Stokta karşılığı olmayan satış var. Stoğu güncelleyin ya da siparişi iptal etmeden önce tedariki kontrol edin.',
+      task: `${nf(oversold)} kalemdeki aşırı satışı giderin`,
+      text: 'Stoğu güncelleyin ya da tedariki kontrol edin.',
       actionLabel: 'Stok sağlığını aç', screen: 'StockHealthView',
     })
   }
@@ -67,7 +70,8 @@ export function buildNextActions(input: NextActionsInput): { actions: NextAction
     actions.push({
       key: `down-${i.integrationCode}`, level: 'critical', tone: 'danger', icon: 'mdi-lan-disconnect', count: 1,
       title: `${channelName(i.integrationCode)} bağlantısına erişilemiyor`,
-      text: 'Son 24 saatte bu kanalla yapılan işlemler başarısız oldu. Bağlantı bilgilerini ve hata ayrıntısını kontrol edin.',
+      task: `${channelName(i.integrationCode)} bağlantısını onarın`,
+      text: 'Bağlantı bilgilerini ve hata ayrıntısını kontrol edin.',
       actionLabel: 'Entegrasyon sağlığını aç', screen: 'integrations/IntegrationHealthView',
     })
   }
@@ -76,10 +80,10 @@ export function buildNextActions(input: NextActionsInput): { actions: NextAction
   const p = insights?.pending
   if (p) {
     const today: Array<[string, number, Omit<NextAction, 'key' | 'level' | 'count'>, string]> = [
-      ['shipping', p.shippingCount, { tone: 'warning', icon: 'mdi-truck-fast-outline', title: `${nf(p.shippingCount)} sipariş kargoya verilmeyi bekliyor`, text: 'Onaylanmış siparişlerin kargo barkodunu alıp paketleri teslime hazırlayın.', actionLabel: 'Siparişleri aç', screen: 'orderList', params: { internalStatuses: ['APPROVED'] } }, 'Kargo'],
-      ['invoice', p.invoiceCount, { tone: 'info', icon: 'mdi-receipt-text-outline', title: `${nf(p.invoiceCount)} siparişin faturası kesilmedi`, text: 'Onaylanmış ama faturası oluşturulmamış siparişler var.', actionLabel: 'Siparişleri aç', screen: 'orderList', params: { internalStatuses: ['APPROVED'] } }, 'Fatura'],
-      ['claim', p.claimCount, { tone: 'warning', icon: 'mdi-undo-variant', title: `${nf(p.claimCount)} iade talebi işlem bekliyor`, text: 'Size ulaşan ürünleri inceleyip iadeyi onaylayın ya da gerekçesiyle reddedin.', actionLabel: 'İadeleri aç', screen: 'claimList', params: { internalStatuses: ['WAITING', 'DELIVERED', 'SHIPPED'] } }, 'İade'],
-      ['message', p.messageCount, { tone: 'action', icon: 'mdi-message-question-outline', title: `${nf(p.messageCount)} müşteri sorusu yanıt bekliyor`, text: 'Yanıt süresi mağaza puanınızı etkiler; soruları sırayla yanıtlayın.', actionLabel: 'Soruları aç', screen: 'messageList', params: { status: 'WAITING_SELLER' } }, 'Müşteri sorusu'],
+      ['shipping', p.shippingCount, { tone: 'warning', icon: 'mdi-truck-fast-outline', title: `${nf(p.shippingCount)} sipariş kargoya verilmeyi bekliyor`, task: `${nf(p.shippingCount)} siparişi kargoya verin`, text: 'Kargo barkodunu alıp paketleri hazırlayın.', actionLabel: 'Siparişleri aç', screen: 'orderList', params: { internalStatuses: ['APPROVED'] } }, 'Kargo'],
+      ['invoice', p.invoiceCount, { tone: 'info', icon: 'mdi-receipt-text-outline', title: `${nf(p.invoiceCount)} siparişin faturası kesilmedi`, task: `${nf(p.invoiceCount)} siparişin faturasını kesin`, text: 'Onaylı siparişlerin faturasını oluşturun.', actionLabel: 'Siparişleri aç', screen: 'orderList', params: { internalStatuses: ['APPROVED'] } }, 'Fatura'],
+      ['claim', p.claimCount, { tone: 'warning', icon: 'mdi-undo-variant', title: `${nf(p.claimCount)} iade talebi işlem bekliyor`, task: `${nf(p.claimCount)} iade talebini sonuçlandırın`, text: 'Ürünü inceleyip iadeyi onaylayın ya da reddedin.', actionLabel: 'İadeleri aç', screen: 'claimList', params: { internalStatuses: ['WAITING', 'DELIVERED', 'SHIPPED'] } }, 'İade'],
+      ['message', p.messageCount, { tone: 'action', icon: 'mdi-message-question-outline', title: `${nf(p.messageCount)} müşteri sorusu yanıt bekliyor`, task: `${nf(p.messageCount)} müşteri sorusunu yanıtlayın`, text: 'Yanıt süresi mağaza puanınızı etkiler.', actionLabel: 'Soruları aç', screen: 'messageList', params: { status: 'WAITING_SELLER' } }, 'Müşteri sorusu'],
     ]
     for (const [key, count, rest, label] of today) {
       if (count > 0) actions.push({ key, level: 'today', count, ...rest })
@@ -92,7 +96,8 @@ export function buildNextActions(input: NextActionsInput): { actions: NextAction
     actions.push({
       key: `degraded-${i.integrationCode}`, level: 'hygiene', tone: 'warning', icon: 'mdi-lan-pending', count: i.last24h?.error ?? 0,
       title: `${channelName(i.integrationCode)} bağlantısı sorunlu`,
-      text: `Son 24 saatte ${nf(i.last24h?.error ?? 0)} işlem başarısız oldu; bağlantı çalışıyor ama aksıyor.`,
+      task: `${channelName(i.integrationCode)} bağlantısını kontrol edin`,
+      text: `Son 24 saatte ${nf(i.last24h?.error ?? 0)} işlem başarısız oldu.`,
       actionLabel: 'Entegrasyon sağlığını aç', screen: 'integrations/IntegrationHealthView',
     })
   }
@@ -101,7 +106,8 @@ export function buildNextActions(input: NextActionsInput): { actions: NextAction
     actions.push({
       key: 'unmapped', level: 'hygiene', tone: 'warning', icon: 'mdi-link-variant-off', count: unmapped,
       title: `${nf(unmapped)} sipariş kalemi ürünle eşleşmedi`,
-      text: 'Bu kalemlerin stoğu düşülemiyor. Stok kodu veya barkodu kataloğunuzla eşleştirin.',
+      task: `${nf(unmapped)} sipariş kalemini ürünle eşleştirin`,
+      text: 'Stok kodu veya barkodu kataloğunuzla eşleştirin.',
       actionLabel: 'Stok sağlığını aç', screen: 'StockHealthView',
     })
   }
@@ -110,7 +116,8 @@ export function buildNextActions(input: NextActionsInput): { actions: NextAction
     actions.push({
       key: 'publish', level: 'hygiene', tone: 'info', icon: 'mdi-upload-outline', count: publishPending,
       title: `${nf(publishPending)} varyantın stoğu kanallara iletilmeyi bekliyor`,
-      text: 'Stok değişikliği henüz kanallara yansımadı; yayın sırası ilerledikçe sayı düşer.',
+      task: `${nf(publishPending)} varyantın stok yayınını izleyin`,
+      text: 'Yayın sırası ilerledikçe sayı düşer.',
       actionLabel: 'Stok sağlığını aç', screen: 'StockHealthView',
     })
   }
@@ -118,7 +125,8 @@ export function buildNextActions(input: NextActionsInput): { actions: NextAction
     actions.push({
       key: `setup-${i.integrationCode}`, level: 'hygiene', tone: 'neutral', icon: 'mdi-cog-outline', count: 1,
       title: `${channelName(i.integrationCode)} kurulumunu tamamlayın`,
-      text: 'Kanal etkin ama bağlantı bilgileri eksik; tamamlanana kadar ürün ve sipariş aktarılmaz.',
+      task: `${channelName(i.integrationCode)} kurulumunu tamamlayın`,
+      text: 'Bağlantı bilgilerini girin; o zamana kadar aktarım yapılmaz.',
       actionLabel: 'Entegrasyonları aç', screen: 'marketplace',
     })
   }

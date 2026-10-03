@@ -425,4 +425,80 @@ function showMore() {
   flex-direction: column;
   gap: var(--ek-space-1);
 }
+
+/* ================= BO-LOCAL-01 — dikkat listesi: uygulamanın tasarım diliyle =================
+   Önem ikonu çerçeveli köşeli kutuda (tonun açık zemini + ince ton çerçevesi); "yolunda" ve "henüz bağlı değil"
+   ikonları da aynı kutuda; müşteri bağlantıları köşeli çerçeveli rozet; uyarı kutusu kutu köşeli. */
+.bo-al__item {
+  --bo-al-line: var(--ek-color-info-border);
+  --bo-al-bg: var(--ek-color-info-subtle);
+  grid-template-columns: 28px minmax(0, 1fr);
+}
+
+.bo-al__item.is-critical {
+  --bo-al-line: var(--ek-color-error-border);
+  --bo-al-bg: var(--ek-color-error-subtle);
+}
+
+.bo-al__item.is-warning {
+  --bo-al-line: var(--ek-color-warning-border);
+  --bo-al-bg: var(--ek-color-warning-subtle);
+}
+
+.bo-al__sev {
+  align-items: center;
+  width: 28px;
+  height: 28px;
+  padding-top: 0;
+  border: 1px solid var(--bo-al-line);
+  border-radius: var(--ek-radius-md);
+  background: var(--bo-al-bg);
+  font-size: var(--ek-icon-sm);
+}
+
+.bo-al__ok > .v-icon,
+.bo-al__unsupported > .v-icon {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-md);
+  background: var(--ek-color-surface-muted);
+  font-size: var(--ek-icon-sm);
+}
+
+.bo-al__ok > .v-icon {
+  border-color: var(--ek-color-success-border);
+  background: var(--ek-color-success-subtle);
+  color: var(--ek-color-success-emphasis);
+}
+
+.bo-al__tenant {
+  align-items: center;
+  height: 24px;
+  padding: 0 var(--ek-space-2);
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-md);
+  background: var(--ek-color-surface);
+  transition: var(--ek-transition-colors);
+}
+
+.bo-al__tenant:hover {
+  border-color: var(--ek-color-action-border);
+  background: var(--ek-color-action-subtle);
+}
+
+.bo-al__tenant:hover .bo-al__tenant-name {
+  text-decoration: none;
+}
+
+.bo-al__secondary:hover,
+.bo-al__more:hover {
+  text-decoration: none;
+  color: var(--ek-color-content-strong);
+}
+
+.bo-al__degraded {
+  border-radius: var(--ek-radius-tile);
+}
 </style>

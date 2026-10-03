@@ -247,3 +247,27 @@
   border-color: var(--ek-color-action-hover);
   background: var(--ek-color-action-hover);
 }
+
+/* ================= BO-LOCAL-01 — ortak yardımcılar: uygulamanın tasarım diliyle (DESIGN_SYSTEM §35) =================
+   Panel düz yüzey + ince çerçeve (gölge yok), çubuğu sakin bantta; kod/kimlik etiketleri köşeli. */
+.bo-panel {
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-card);
+  background: var(--ek-color-surface);
+  box-shadow: none;
+}
+
+.bo-panel__bar {
+  border-bottom: 1px solid var(--ek-color-border-default);
+  background: var(--ek-color-surface-muted);
+}
+
+.bo-code,
+.bo-code-tag,
+.bo-id {
+  border-radius: var(--ek-radius-md);
+}
+
+.bo-act-link {
+  border-radius: var(--ek-radius-tile);
+}

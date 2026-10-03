@@ -118,4 +118,17 @@ function onClear() {
     margin-left: 0;
   }
 }
+
+/* BO-LOCAL-01 — etkin süzgeç sayacı: eylem tonunda köşeli rozet (uygulanan filtre tek bakışta belli). */
+.bo-filter__count {
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  padding: 0 var(--ek-space-2);
+  border: 1px solid var(--ek-color-action-border);
+  border-radius: var(--ek-radius-md);
+  background: var(--ek-color-action-subtle);
+  color: var(--ek-color-action-emphasis);
+  font-weight: var(--ek-font-weight-semibold);
+}
 </style>

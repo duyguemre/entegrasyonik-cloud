@@ -110,7 +110,7 @@ const gains = [
     width: var(--ek-space-2);
     height: var(--ek-space-2);
     border-radius: var(--ek-radius-full);
-    background: var(--ek-color-secondary);
+    background: var(--site-accent-on-dark);
     box-shadow: var(--site-glow-ring);
   }
   .cta__accent {
@@ -129,7 +129,7 @@ const gains = [
     aspect-ratio: 1 / 1;
     translate: -50% -50%;
     border-radius: var(--ek-radius-full);
-    background: conic-gradient(from 0deg, transparent 0 70%, color-mix(in srgb, var(--ek-color-secondary) 45%, transparent) 88%, transparent 100%);
+    background: conic-gradient(from 0deg, transparent 0 70%, color-mix(in srgb, var(--site-accent-on-dark) 45%, transparent) 88%, transparent 100%);
     -webkit-mask-image: radial-gradient(closest-side, transparent calc(100% - var(--ek-space-1)), var(--ek-color-background) calc(100% - var(--ek-space-1)));
     mask-image: radial-gradient(closest-side, transparent calc(100% - var(--ek-space-1)), var(--ek-color-background) calc(100% - var(--ek-space-1)));
     pointer-events: none;
@@ -182,7 +182,7 @@ const gains = [
     font-weight: var(--ek-font-weight-medium);
   }
   .cta__chips :global(.icon) {
-    color: var(--ek-color-secondary);
+    color: var(--site-accent-on-dark);
   }
 
   @media (prefers-reduced-motion: no-preference) {
@@ -197,5 +197,43 @@ const gains = [
     :global(html[data-motion='play']) [data-scene='cta-reveal'][data-state='play'][data-visible='true'] .cta__orbit {
       animation-play-state: running;
     }
+  }
+
+  /* ================= SITE-DL-02 — uygulamanın tasarım dili (frontend/DESIGN_SYSTEM.md §35) =================
+     Düz yüzey + 1px ince çerçeve + kart yarıçapı; gölge, degrade, ışıma, hover yükselmesi yok; tek vurgu eylem
+     mavisi; ikonlar çerçeveli köşeli kutuda; hap rozet yerine köşeli çip. Yukarıdaki kuralları EZER (aynı özgüllük,
+     kaynak sırası). */
+
+  /* Kapanış: sahne zemini (mavi tonlu) kalır; dönen ışık ve nefes alan halkalar yok. */
+  .cta__orbit,
+  .cta__rings {
+    display: none;
+  }
+  /* Bölüm etiketi: 12×2 çizgi + BÜYÜK HARF mikro etiket (hap çerçeve yerine). */
+  .cta__eyebrow {
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: var(--site-eyebrow-color);
+    font-size: var(--site-eyebrow-size);
+    font-weight: var(--site-eyebrow-weight);
+    letter-spacing: var(--site-eyebrow-tracking);
+  }
+  .cta__dot {
+    width: var(--site-eyebrow-mark-width);
+    height: var(--site-eyebrow-mark-height);
+    border-radius: 0;
+    background: var(--site-eyebrow-mark-color);
+    box-shadow: none;
+  }
+  .cta__accent {
+    background: none;
+    -webkit-background-clip: border-box;
+    background-clip: border-box;
+    color: var(--site-accent-on-dark);
+  }
+  .cta__chips li {
+    border-radius: var(--ek-radius-md);
   }
 </style>

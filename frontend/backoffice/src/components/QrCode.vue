@@ -40,4 +40,10 @@ const path = computed(() => {
 :global(.ek-dark) .bo-qr__modules {
   fill: var(--ek-color-background);
 }
+
+/* BO-LOCAL-01 — QR plakası: kutu köşeli + ince çerçeve. */
+.bo-qr {
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-tile);
+}
 </style>

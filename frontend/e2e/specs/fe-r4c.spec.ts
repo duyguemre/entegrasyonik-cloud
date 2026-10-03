@@ -120,12 +120,6 @@ test.describe('FE R4 C2/C3 — dashboard', () => {
     await expect(next.locator('.dna-hero')).toBeVisible()
     const tally = next.getByRole('list', { name: 'Önceliğe göre bekleyen işler' })
     await expect(tally).toBeVisible()
-    // Akış: getOrderDashboardInsights.pending (fixture: kargo 2, fatura 1, iade 0, soru 0).
-    const flow = next.locator('.dna-flow')
-    await expect(flow).toContainText('Kargo2')
-    await expect(flow).toContainText('Fatura1')
-    await expect(flow).toContainText('İade0')
-    await expect(flow).toContainText('Soru0')
     await expect(next.locator('.dna-hero')).toContainText(/Sıradaki iş · 1 \/ \d+/i)
   })
 

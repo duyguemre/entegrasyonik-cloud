@@ -251,7 +251,7 @@ const PRESETS = [7, 30, 90] as const
 
 const state = ref<'loading' | 'ready' | 'error' | 'forbidden'>('loading')
 /** Dar ekranda (<768px) filtre paneli kapalı başlar: liste ilk ekranda görünür; aktif filtreler çip olarak kalır. */
-const filtersCollapsed = ref(typeof window !== 'undefined' && !!window.matchMedia?.('(max-width: 767px)').matches)
+const filtersCollapsed = ref(true) // FE-LOCAL-1047: filtreler kapalı başlar
 const draft = reactive<AuditFilters>(emptyFilters())
 const applied = reactive<AuditFilters>(emptyFilters())
 const draftErrors = ref<FilterErrors>({})

@@ -213,4 +213,48 @@ withDefaults(
   .ek-summary__amount-value { grid-area: value; }
   .ek-summary__amount-hint { grid-area: hint; }
 }
+
+/* ================= FE-LOCAL-1045 — özet kartı: ana sayfa dili =================
+   Soldaki kalın kanal şeridi kalktı (kanal kimliği işarette ve etikette); bilgiler ince çizgiyle ayrılan hücreler,
+   tutar büyük rakam — KPI şeridiyle aynı aile. */
+.ek-summary {
+  border-left: 1px solid var(--ek-color-border-default);
+}
+
+.ek-summary__facts {
+  gap: var(--ek-space-3) 0;
+}
+
+.ek-summary__fact {
+  padding: 0 var(--ek-space-5);
+}
+
+.ek-summary__fact:first-child {
+  padding-left: 0;
+}
+
+.ek-summary__fact + .ek-summary__fact {
+  border-left: 1px solid var(--ek-color-border-subtle);
+}
+
+.ek-summary__fact dd {
+  font-weight: var(--ek-font-weight-semibold);
+}
+
+.ek-summary__amount-value {
+  font-size: var(--ek-type-display-size);
+  line-height: 1.15;
+  letter-spacing: -0.025em;
+}
+
+@media (max-width: 599px) {
+  .ek-summary__fact,
+  .ek-summary__fact:first-child {
+    padding: 0;
+  }
+
+  .ek-summary__fact + .ek-summary__fact {
+    border-left: 0;
+  }
+}
 </style>

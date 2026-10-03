@@ -91,4 +91,10 @@ watch(
   border-radius: var(--ek-radius-popover);
   box-shadow: var(--ek-shadow-popover);
 }
+
+/* BO-LOCAL-01 — kurulum istemi: açılır katman; köşe içindeki bilgi kutusuyla (EkAlert) aynı — kutu köşesi. Çerçeve bilgi
+   kutusunun kendi ince ton çerçevesidir; gölge yalnız açılır katman gölgesi. */
+.bo-pwa-install {
+  border-radius: var(--ek-radius-tile);
+}
 </style>

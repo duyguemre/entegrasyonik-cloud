@@ -129,6 +129,10 @@
   --site-accent-on-dark: var(--ek-color-secondary);
   /* S15: bağımsız `.link` rengi — açık/renkli yüzeylerde de AA (≥4.5:1) kalsın diye vurgudan bir ton koyu */
   --site-link-accent: color-mix(in srgb, var(--ek-color-secondary-darken-1) 82%, var(--ek-color-content-strong));
+  /* Orta vurgu tonu: hem açık hem koyu zeminde çizgi/nokta/çubuk gibi metin taşımayan vurgular (2026-10-02). */
+  --site-accent-mid: var(--ek-color-secondary);
+  /* Koyu zeminde açık marka mavisi (iç sayfa paleti, global.css :root:has(.page-hero)). */
+  --site-brand-light: color-mix(in srgb, var(--ek-color-primary-darken-1) 42%, var(--ek-color-background));
   --site-accent-soft: color-mix(in srgb, var(--ek-color-secondary) 12%, transparent);
   --site-accent-line: color-mix(in srgb, var(--ek-color-secondary) 55%, transparent);
   --site-text-on-dark-heading: var(--site-color-on-primary);
@@ -172,6 +176,10 @@
     0 0.75rem 1.5rem -0.75rem color-mix(in srgb, var(--ek-color-content-strong) 14%, transparent);
   --site-shadow-card-hover: 0 0.0625rem 0.125rem color-mix(in srgb, var(--ek-color-content-strong) 8%, transparent),
     0 1.5rem 2.5rem -1rem color-mix(in srgb, var(--ek-color-primary-darken-1) 30%, transparent);
+  /* Yumuşak yükselme (2026-10-02, kullanıcı: "hover çok sert"): kart gölgesinden yalnızca bir adım derin, renk
+     tonu yok. İç sayfa kartları hover'da bunu kullanır; geçiş --ek-duration-slow. */
+  --site-shadow-card-raise: 0 0.0625rem 0.125rem color-mix(in srgb, var(--ek-color-content-strong) 6%, transparent),
+    0 1rem 2rem -1rem color-mix(in srgb, var(--ek-color-content-strong) 18%, transparent);
   --site-glow-ring: 0 0 0 0.25rem color-mix(in srgb, var(--ek-color-secondary) 24%, transparent);
 
   /* Birleşik yerleşim ölçüleri */
@@ -276,6 +284,98 @@
   --channel-badge-shade: 78%; /* kenarlık: marka %78 + mürekkep */
   --channel-badge-ink: 58%; /* harf: marka %58 + mürekkep */
   --channel-badge-mix-ink: var(--ek-color-content-strong);
+}
+
+/*
+ * ================= SITE-DL-01 — UYGULAMANIN TASARIM DİLİ (frontend/DESIGN_SYSTEM.md §35, kullanıcı kararı K73) =================
+ * Site, uygulama ve backoffice ile AYNI dili konuşur. Bu blok yukarıdaki pazarlama tokenlarını KAYNAĞINDA düzleştirir
+ * (bileşenler token adlarını kullanmaya devam eder):
+ *   D1 degrade yok ......... kart/panel/metin/kenarlık degradeleri (`--site-gradient-accent|border|hairline`) DÜZ renge iner. Değerler tek renkli
+ *                            `linear-gradient(c, c)` olarak yazılır: token hem `background` hem `background-image`
+ *                            bağlamında geçerli kalır, görünüm düzdür.
+ *   D2 düz yüzey + çerçeve . kart/panel gölgesi yok (1px ince çerçeve); hover'da gölge yok; köşe `radius-card`.
+ *   D3 tek vurgu ........... MARKA LACİVERTİ (`--site-action*`; uygulamadaki eylem mavisinin sitedeki karşılığı) — düğme,
+ *                            vurgu, bağlantı, ikon, etkin durum. Parlak mavi ve teal vurgu yok (logo işareti, favicon, kanal
+ *                            renkleri ve metin seçimi markaya aittir — değişmez).
+ *   D4 bölüm etiketi ....... 12×2px kısa eylem çizgisi + BÜYÜK HARF mikro etiket (uygulamadaki bölüm başlıklarıyla aynı).
+ *   D7 koyu sahne .......... TEK istisna: hero/kapanış bandı zemini derinlikli kalır ama yalnız MAVİ ailesinden
+ *                            (lacivert zemin + eylem mavisi ışıma + ince ızgara); üstündeki "cam" yüzeyler düz ve çerçeveli.
+ * Eğim (tilt) ve imleç ışığı kapalı. Yalnız `--ek-*` türevleri; ham renk yok.
+ */
+:root {
+  /* D3 — tek vurgu: MARKA LACİVERTİ (kullanıcı kararı 2026-10-02: "mavi olan yerleri Entegrasyonik laciverti yap").
+     Uygulamadaki eylem mavisinin sitedeki karşılığı `--site-action*` ailesidir; bileşenler `--ek-color-action*` YAZMAZ.
+     Bu aile koyu yüzeyde yeniden eşlenmez (dolgu/çerçeve için); metin vurgusu için `--site-accent` kullanılır
+     (koyu yüzeyde global.css onu açık tona çevirir). */
+  /* Dolgu/ikon tonu (düğme, anahtar, ikon, çizgi): lacivertin bir ton AÇIĞI — tam marka laciverti bu öğelerde fazla koyu
+     duruyordu (kullanıcı kararı). Metin vurgusu (`-emphasis`) tam lacivert kalır; hover bir ton koyulaşır. */
+  --site-action: var(--ek-color-chrome-soft-raised);
+  --site-action-hover: var(--ek-color-chrome-soft);
+  --site-action-emphasis: var(--ek-color-primary);
+  --site-action-contrast: var(--site-color-on-primary);
+  --site-action-subtle: color-mix(in srgb, var(--ek-color-primary) 6%, var(--ek-color-background));
+  --site-action-border: color-mix(in srgb, var(--ek-color-primary) 26%, var(--ek-color-background));
+  --site-accent: var(--site-action);
+  --site-accent-on-dark: var(--ek-color-chrome-soft-text-muted);
+  --site-accent-mid: var(--site-action);
+  --site-accent-soft: var(--site-action-subtle);
+  --site-accent-line: var(--site-action-border);
+  --site-brand-light: var(--ek-color-chrome-soft-text-muted);
+  --site-link-accent: var(--site-action);
+  --site-color-link: var(--site-action);
+  --site-color-link-hover: var(--ek-color-chrome-soft);
+  --site-link-hover-bg: var(--site-action-subtle);
+  --site-link-hover-bg-on-dark: var(--ek-color-chrome-raised);
+  --site-color-focus-ring: var(--site-action);
+  --site-card-eyebrow-color: var(--site-action);
+
+  /* D4 — bölüm etiketi (eyebrow): mikro, büyük harf, sakin metin; işaret 12×2 eylem çizgisi */
+  --site-eyebrow-size: 0.75rem;
+  --site-eyebrow-weight: var(--ek-font-weight-semibold);
+  --site-eyebrow-tracking: 0.08em;
+  --site-eyebrow-color: var(--site-text-meta);
+  --site-eyebrow-mark-width: 0.75rem;
+  --site-eyebrow-mark-height: calc(var(--site-border-width) * 2);
+  --site-eyebrow-mark-color: var(--site-action);
+
+  /* D7 — koyu sahne (hero, kapanış bandı): kullanıcı kararı 2026-10-02 — "hero arka planı eskisi daha iyiydi, mavi
+     tonunda olsun". Sahne zemini derinlikli kalır (yumuşak ışımalar + ince ızgara), ama YALNIZ mavi ailesinden:
+     marka laciverti zemin + eylem mavisi ışımalar; teal ışıma yok. Kart/panel yüzeyleri bundan etkilenmez (düz). */
+  --site-stage-deep: color-mix(in srgb, var(--ek-color-chrome) 78%, var(--ek-color-content-strong));
+  --site-stage-base: var(--ek-color-chrome-soft);
+  --site-stage-mesh:
+    radial-gradient(60% 50% at 82% 4%, color-mix(in srgb, var(--ek-color-action) 58%, transparent), transparent 72%),
+    radial-gradient(48% 46% at 6% 96%, color-mix(in srgb, var(--ek-color-action) 34%, transparent), transparent 72%),
+    radial-gradient(36% 36% at 44% 46%, color-mix(in srgb, var(--ek-color-chrome-soft-border) 22%, transparent), transparent 74%),
+    linear-gradient(180deg, var(--site-stage-deep) 0%, var(--site-stage-base) 100%);
+  --site-gradient-stage: linear-gradient(160deg, var(--site-stage-deep) 0%, var(--site-stage-base) 100%);
+  --site-glow-secondary: radial-gradient(
+    closest-side,
+    color-mix(in srgb, var(--ek-color-action) 36%, transparent),
+    transparent
+  );
+  --site-texture-dots: linear-gradient(transparent, transparent);
+  --site-glass-bg: color-mix(in srgb, var(--ek-color-background) 6%, transparent);
+  --site-glass-border: color-mix(in srgb, var(--ek-color-background) 16%, transparent);
+  --site-glass-blur: 0rem;
+
+  /* D1 — degrade yok */
+  --site-gradient-accent: linear-gradient(var(--site-action), var(--site-action));
+  --site-gradient-accent-on-dark: linear-gradient(var(--ek-color-chrome-soft-text-muted), var(--ek-color-chrome-soft-text-muted));
+  --site-gradient-border: linear-gradient(var(--ek-color-border-default), var(--ek-color-border-default));
+  --site-gradient-hairline: linear-gradient(var(--ek-color-border-default), var(--ek-color-border-default));
+  --site-surface-tint: linear-gradient(var(--ek-color-surface-muted), var(--ek-color-surface-muted));
+
+  /* D2 — gölge yok: panel ve kart yalnız ince çerçeve; hover'da gölge büyümez */
+  --site-shadow-panel: 0 0 0 var(--site-border-width) var(--ek-color-chrome-border);
+  --site-shadow-card: 0 0 0 0 transparent;
+  --site-shadow-card-hover: 0 0 0 0 transparent;
+  --site-shadow-card-raise: 0 0 0 0 transparent;
+  --site-glow-ring: 0 0 0 var(--site-border-width) var(--site-action-border);
+  --site-radius-panel: var(--ek-radius-card);
+
+  /* Eğim ve imleç ışığı kapalı */
+  --site-tilt-max: 0deg;
 }
 
 /*

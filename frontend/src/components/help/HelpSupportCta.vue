@@ -85,4 +85,13 @@ function openShortcuts() {
   flex-wrap: wrap;
   gap: var(--ek-space-2);
 }
+
+/* FE-LOCAL-1053: destek çağrısı — ince çerçeveli sakin kart; ikon kapsülü beyaz zeminde. */
+.ek-help-cta {
+  border-color: var(--ek-color-border-default);
+}
+
+.ek-help-cta :deep(.ek-icon-tile) {
+  background: var(--ek-color-surface);
+}
 </style>

@@ -131,9 +131,8 @@ const year = new Date().getFullYear()
     isolation: isolate;
     overflow: hidden;
     padding-block: var(--ek-space-16) var(--ek-space-8);
-    background:
-      radial-gradient(50% 60% at 12% 0%, color-mix(in srgb, var(--ek-color-primary-darken-1) 26%, transparent), transparent 70%),
-      var(--site-stage-deep);
+    /* SITE-DL-02: altlık DÜZ lacivert (degrade/ışıma/ızgara yok); üst kenarda ince çizgi. */
+    background: var(--site-stage-deep);
     color: var(--site-color-on-primary-muted);
     font-size: var(--ek-font-size-lg);
   }
@@ -143,18 +142,7 @@ const year = new Date().getFullYear()
     inset-block-start: 0;
     inset-inline: 0;
     height: var(--site-border-width);
-    background: var(--site-gradient-hairline);
-  }
-  .site-footer::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    background-image: var(--site-texture-grid);
-    background-size: var(--site-texture-grid-size);
-    -webkit-mask-image: linear-gradient(180deg, var(--ek-color-content-strong), transparent 70%);
-    mask-image: linear-gradient(180deg, var(--ek-color-content-strong), transparent 70%);
-    pointer-events: none;
+    background: var(--site-glass-border);
   }
   /* --- üst bant: marka + varlık tanımı (tanım kalan genişliğin tamamına yayılır) --- */
   .footer-top {
@@ -203,7 +191,7 @@ const year = new Date().getFullYear()
     min-height: var(--site-tap-target);
     padding-inline: var(--ek-space-4);
     border: var(--site-border-width) solid var(--site-glass-border);
-    border-radius: var(--ek-radius-lg);
+    border-radius: var(--ek-radius-tile);
     color: var(--site-color-on-primary);
     font-size: var(--ek-font-size-md);
     font-weight: var(--ek-font-weight-semibold);
@@ -222,7 +210,7 @@ const year = new Date().getFullYear()
     color: var(--ek-color-primary);
   }
   .footer-btn--primary:hover {
-    background: var(--ek-color-surface-sunken);
+    background: var(--site-action-subtle);
     border-color: transparent;
   }
   .footer-btn:focus-visible {
@@ -247,13 +235,25 @@ const year = new Date().getFullYear()
     grid-template-columns: repeat(2, minmax(0, 1fr));
     padding-block: var(--ek-space-10);
   }
+  /* Sütun başlığı = bölüm etiketi (12×2 çizgi + BÜYÜK HARF mikro etiket; koyu zeminde açık ton). */
   .footer-heading {
+    display: flex;
+    align-items: center;
+    gap: var(--site-eyebrow-gap);
     margin-bottom: var(--ek-space-3);
-    color: var(--site-color-on-primary);
-    font-size: var(--ek-font-size-md);
-    font-weight: var(--ek-font-weight-semibold);
-    letter-spacing: 0.06em;
+    color: var(--site-accent-on-dark);
+    font-size: var(--site-eyebrow-size);
+    font-weight: var(--site-eyebrow-weight);
+    letter-spacing: var(--site-eyebrow-tracking);
+    line-height: var(--ek-line-height-tight);
     text-transform: uppercase;
+  }
+  .footer-heading::before {
+    content: '';
+    flex: none;
+    width: var(--site-eyebrow-mark-width);
+    height: var(--site-eyebrow-mark-height);
+    background: var(--site-accent-on-dark);
   }
   .footer-list {
     display: flex;

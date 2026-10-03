@@ -22,6 +22,8 @@
       :error="errorStatus !== undefined"
       :error-title="t('finance.payouts.errorTitle')"
       :error-text="errorHint(errorStatus ?? null)"
+      :search="lookupId"
+      :search-placeholder="t('finance.payouts.lookupLabel')"
       :chips="chips"
       :filter-columns="3"
       :sort="sort"
@@ -34,6 +36,8 @@
       empty-icon="mdi-bank-transfer"
       :filtered-empty-title="unsupported ? t('finance.payouts.unsupportedTitle') : t('finance.payouts.filteredEmptyTitle')"
       :filtered-empty-text="unsupported ? t('finance.payouts.unsupportedText', { channel: applied.integrationCodes.map(channelName).join(', ') }) : t('finance.payouts.filteredEmptyText')"
+      @update:search="(v: string) => (lookupId = v)"
+      @search-submit="openById"
       @update:sort="onSort"
       @update:page="(p: number) => { page = p; load() }"
       @update:page-size="(s: number) => { pageSize = s; load(true) }"
@@ -44,30 +48,6 @@
       @refresh="load()"
       @row-click="(r: Record<string, any>) => open(r as FinancialTransactionRow)"
     >
-      <template #header-actions>
-        <form class="ek-fin-payouts__lookup" @submit.prevent="openById">
-          <v-text-field
-            v-model="lookupId"
-            :label="t('finance.payouts.lookupLabel')"
-            prepend-inner-icon="mdi-pound"
-            hide-details
-            density="compact"
-            clearable
-            class="ek-fin-payouts__lookup-field"
-          />
-          <EkButton
-            type="submit"
-            tone="secondary"
-            icon="mdi-file-document-outline"
-            :icon-only="compact"
-            :aria-label="t('finance.payouts.lookupAction')"
-            :disabled="!lookupId || !lookupId.trim()"
-          >
-            {{ t('finance.payouts.lookupAction') }}
-          </EkButton>
-        </form>
-      </template>
-
       <template #filters>
         <EkSelect kind="channel"
           v-model="form.integrationCodes"

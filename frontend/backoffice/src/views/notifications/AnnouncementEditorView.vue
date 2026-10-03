@@ -482,4 +482,15 @@ onMounted(async () => {
     position: static;
   }
 }
+
+/* BO-LOCAL-01 — duyuru düzenleyici: "İngilizce metin" aç/kapa bağlantısı etiket boyunda, yarı kalın (başlık gibi
+   büyümesin); hata satırı ikonla aynı hizada sakin. */
+.bo-anne__toggle {
+  font-size: var(--ek-type-label-size);
+  font-weight: var(--ek-font-weight-semibold);
+}
+
+.bo-anne__toggle :deep(.v-icon) {
+  font-size: var(--ek-icon-sm);
+}
 </style>

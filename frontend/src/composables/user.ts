@@ -35,9 +35,8 @@ export default function useUser() {
   const integrationStore: any = useIntegrationStore()
 
   const restApi = useRestApi()
-  const login = async (username: string, password: string) => {
-    const resp: any = await restApi.post('SecurityService/login', { username, password })
-
+  // Parola ve Google girişi aynı yanıtı döner; ikisi de bu tek işleyişten geçer (mağaza seçimi dahil).
+  const applyLoginResponse = async (resp: any) => {
     if (resp?.requireStoreSelection) {
       stores.value = resp.clients
       userContext.value = resp.user
@@ -48,6 +47,23 @@ export default function useUser() {
       userContext.value = resp
       await fetchUserContext()
     }
+    return resp
+  }
+
+  const login = async (username: string, password: string) => {
+    const resp: any = await restApi.post('SecurityService/login', { username, password })
+    return applyLoginResponse(resp)
+  }
+
+  /**
+   * GL-FE — Google ile giriş. `status: 'ok'` → parola girişiyle BİREBİR aynı işleyiş; `signup_required` ve hata
+   * yanıtları olduğu gibi çağırana döner (kayıt ekranına geçiş / hata gösterimi ekranın işidir).
+   * GL-FE2: yük `{ code }` (yetkilendirme kodu popup'ı — giriş ekranının kullandığı yol) ya da `{ credential }` (ID token).
+   */
+  const googleSignIn = async (payload: { code?: string; credential?: string }) => {
+    const body = payload.code ? { code: payload.code } : { credential: payload.credential }
+    const resp: any = await restApi.post('SecurityService/googleSignIn', body, false)
+    if (resp?.status === 'ok') return applyLoginResponse(resp)
     return resp
   }
 
@@ -65,8 +81,10 @@ export default function useUser() {
     return false
   }
 
-  const register = async (registerValues: any) => {
-    const resp: any = await restApi.post('SecurityService/register', { registerValues })
+  // GL-FE: Google ile kayıtta `googleSignupToken` (sunucunun imzaladığı kısa ömürlü belirteç) gövdeye eklenir;
+  // e-posta belirteçten gelir, parola istenmez. Belirteç yalnız bellekte taşınır (URL/depolama yok).
+  const register = async (registerValues: any, googleSignupToken?: string) => {
+    const resp: any = await restApi.post('SecurityService/register', googleSignupToken ? { registerValues, googleSignupToken } : { registerValues })
     // ADR-0014 S4b: başarı bilgisi çağırana döner (kayıt sonrası yönlendirme için). Hata-yutma davranışı DEĞİŞMEDİ:
     // başarısızlıkta hiçbir şey fırlatılmaz/gösterilmez, yalnızca `false` döner.
     if (resp && resp._id) {
@@ -299,6 +317,7 @@ export default function useUser() {
     fetchUserContext,
     register,
     login,
+    googleSignIn,
     logout,
     requestPasswordReset,
     confirmPasswordReset,

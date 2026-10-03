@@ -1,15 +1,14 @@
 <template>
   <div class="bo-page">
-    <BoPageHeader :updated-at="res.loadedAt.value ?? undefined" :stale="res.stale.value">
+    <BoPageHeader :updated-at="res.loadedAt.value ?? undefined" :stale="res.stale.value" refreshable :refreshing="res.refreshing.value || res.phase.value === 'loading'" @refresh="res.load()">
       <template #actions>
         <BoAction kind="add" label="Davet et" data-testid="invite" @click="openInvite" />
-        <BoAction kind="refresh" :loading="res.refreshing.value || res.phase.value === 'loading'" data-page-refresh @click="res.load()" />
       </template>
     </BoPageHeader>
 
     <PageVerdict :verdict="verdict" />
 
-    <BoSection id="bo-admins" flush class="bo-flushed" title="Platform yöneticileri" :description="`${items.length} hesap · giriş, iki adımlı doğrulama ve davet durumu`">
+    <BoSection id="bo-admins" flush class="bo-flushed" title="Platform yöneticileri" :description="`${items.length} hesap · giriş, iki adımlı doğrulama ve davet durumu`" :count="rows.length" :total="filter === 'all' ? null : items.length">
       <template #default>
         <BoFilterBar label="Yönetici süzgeci" :active="filter === 'all' ? 0 : 1" class="bo-admin__filter" @clear="filter = 'all'">
           <BoSegmented v-model="filter" :options="FILTER_OPTIONS" label="Yönetici süzgeci" />
@@ -278,5 +277,11 @@ onMounted(() => res.load())
   display: inline-flex;
   flex-wrap: wrap;
   gap: var(--ek-space-1);
+}
+
+/* BO-LOCAL-01 — süzme satırı: sakin bant (tablo başlığıyla aynı zemin), ince çizgiyle ayrılır. */
+.bo-admin__filter {
+  border-bottom-color: var(--ek-color-border-default);
+  background: var(--ek-color-surface-muted);
 }
 </style>

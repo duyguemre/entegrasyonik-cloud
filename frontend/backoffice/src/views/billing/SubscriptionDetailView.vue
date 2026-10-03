@@ -3,7 +3,7 @@
     <EkEmptyState v-if="res.phase.value === 'notFound'" variant="no-results" title="Abonelik bulunamadı" :message="`#${tid} numaralı müşterinin aboneliği yok ya da kaldırılmış.`" />
     <StateBlock v-else-if="!sub" :phase="res.phase.value" :error="res.error.value" skeleton="detail" :rows="4" degraded-title="Abonelik şu an okunamıyor" @retry="res.load()" />
     <template v-else>
-      <BoPageHeader :title="title" lede="" :extra-crumbs="[{ label: title }]" :updated-at="res.loadedAt.value ?? undefined" :stale="res.stale.value">
+      <BoPageHeader :title="title" lede="" :extra-crumbs="[{ label: title }]" :updated-at="res.loadedAt.value ?? undefined" :stale="res.stale.value" refreshable :refreshing="res.refreshing.value" @refresh="res.load()">
         <template #status>
           <EkStatusChip :tone="SUB_STATUS[sub.status].tone" :label="SUB_STATUS[sub.status].label" dot />
           <EkStatusChip v-if="sub.billingExempt" tone="neutral" label="Faturalamadan muaf" />
@@ -11,9 +11,6 @@
         </template>
         <template #meta>
           <BoAction kind="detail" size="sm" :to="`/musteriler/${tid}`" data-testid="tenant-link">Müşteriye git · #{{ tid }}</BoAction>
-        </template>
-        <template #actions>
-          <BoAction kind="refresh" :loading="res.refreshing.value" data-page-refresh @click="res.load()" />
         </template>
       </BoPageHeader>
 
@@ -425,5 +422,53 @@ onMounted(() => res.load())
 .bo-sd__src {
   margin: 0;
   font-size: var(--ek-type-caption-size);
+}
+
+/* ================= BO-LOCAL-01 — abonelik ayrıntısı: uygulamanın tasarım diliyle =================
+   Özellikler / ilgili ayar satırları ince çizgiyle ayrılır; bağlantı eylem renginde (tarayıcı varsayılanı değil).
+   Yönetim eylemleri: her eylem çerçeveli düz kutuda (eşit boy), geri alınamaz eylem hata tonunun düz açık zemininde.
+   Önizleme satırı eylem renginin açık tonunda kutu. */
+.bo-sd__features {
+  padding-top: var(--ek-space-3);
+  border-top: 1px solid var(--ek-color-border-subtle);
+}
+.bo-sd__features a {
+  border-radius: var(--ek-radius-sm);
+  color: var(--ek-color-action-emphasis);
+  font-weight: var(--ek-font-weight-semibold);
+  text-decoration: none;
+}
+.bo-sd__features a:hover {
+  text-decoration: underline;
+}
+.bo-sd__features a:focus-visible {
+  outline: none;
+  box-shadow: var(--ek-focus-ring);
+}
+.bo-sd__tid {
+  color: var(--ek-color-action-emphasis);
+}
+.bo-sd__actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+  gap: var(--ek-space-3);
+}
+.bo-sd__actions li {
+  max-width: none;
+  padding: var(--ek-space-4);
+  border: 1px solid var(--ek-color-border-default);
+  border-radius: var(--ek-radius-tile);
+  background: var(--ek-color-surface);
+}
+.bo-sd__actions li.bo-sd__danger {
+  border-color: var(--ek-color-error-border);
+  background: var(--ek-color-error-subtle);
+}
+.bo-sd__preview {
+  padding: var(--ek-space-2) var(--ek-space-3);
+  border: 1px solid var(--ek-color-action-border);
+  border-radius: var(--ek-radius-tile);
+  background: var(--ek-color-action-subtle);
+  color: var(--ek-color-action-emphasis);
 }
 </style>

@@ -25,6 +25,13 @@ export const FLATTEN_SINGLE_CODES: ReadonlySet<string> = new Set(['TicketListVie
 export const SETTINGS_GROUP_CODES: readonly string[] = ['SettingListView', 'PrintoutListView', 'AuthorizationListView']
 export const SETTINGS_GROUP_ID = 'settings'
 
+/**
+ * FE-LOCAL-1048 (kullanıcı kararı): menü verisindeki "Ayarlar" ÜST ÖĞESİ (alt öğeleri olan grup) ayrı bir alt grup olarak
+ * gösterilmez — alt öğelerinin tamamı "Ayarlar" BÖLÜMÜNÜN üst seviyesine taşınır (bölüm altında ikinci bir "Ayarlar" olmasın).
+ */
+const isSettingsHolder = (link: { code?: string; title?: string; children?: unknown[] } | null | undefined): boolean =>
+  !!link && Array.isArray(link.children) && link.children.length > 0 && (link.code === SETTINGS_GROUP_ID || link.title === SETTINGS_GROUP_ID)
+
 /** Düzleştirilen yaprağın ikonu yoksa grubun ikonu (bağlantı nesnesi DEĞİŞTİRİLMEZ). */
 const inheritedIcons = new WeakMap<object, string>()
 export function inheritedIcon(link: object | null | undefined): string | undefined {
@@ -76,8 +83,10 @@ type MenuGroup<T> = { group?: string; links?: T[] } & Record<string, unknown>
  * grubunda toplar. Mevcut bir `settings` grubu varsa ona eklenir; yoksa ilk alınan ekranın grubunun hemen ARDINA
  * yeni grup yerleşir. Boşalan grup/üst öğe düşer. Girdi DEĞİŞTİRİLMEZ; bağlantı nesneleri aynı kalır.
  */
-export function regroupMenu<T extends { code?: string; children?: T[] }>(groups: Array<MenuGroup<T>>): Array<MenuGroup<T>> {
+export function regroupMenu<T extends { code?: string; title?: string; children?: T[] }>(groups: Array<MenuGroup<T>>): Array<MenuGroup<T>> {
   const moved = new Map<string, T>()
+  /** "Ayarlar" üst öğesinin (sabit sıralı üçlü dışındaki) alt öğeleri — bölümün sonuna, geldikleri sırayla. */
+  const extra: T[] = []
   let anchor = -1
   const out: Array<MenuGroup<T>> = []
   groups.forEach((group) => {
@@ -88,6 +97,16 @@ export function regroupMenu<T extends { code?: string; children?: T[] }>(groups:
       const code = String(link.code ?? '')
       if (SETTINGS_GROUP_CODES.includes(code) && group.group !== SETTINGS_GROUP_ID) {
         if (!moved.has(code)) moved.set(code, link)
+        continue
+      }
+      if (isSettingsHolder(link) && group.group !== SETTINGS_GROUP_ID) {
+        for (const c of link.children ?? []) {
+          if (!c) continue
+          const cc = String(c.code ?? '')
+          if (SETTINGS_GROUP_CODES.includes(cc)) {
+            if (!moved.has(cc)) moved.set(cc, c)
+          } else if (!extra.includes(c)) extra.push(c)
+        }
         continue
       }
       if (Array.isArray(link.children) && link.children.length) {
@@ -107,13 +126,26 @@ export function regroupMenu<T extends { code?: string; children?: T[] }>(groups:
     const original = group.links ?? []
     if (links.length || !original.length) out.push(links.length === original.length ? group : { ...group, links })
     // Yeni "Ayarlar" grubu, ekranın ilk alındığı grubun yerine/ardına gelir.
-    if (before === 0 && moved.size > 0) anchor = out.length
+    if (anchor < 0 && moved.size + extra.length > 0 && before === 0) anchor = out.length
   })
-  if (!moved.size) return groups
-  const ordered = SETTINGS_GROUP_CODES.map((c) => moved.get(c)).filter(Boolean) as T[]
   const existing = out.findIndex((g) => g.group === SETTINGS_GROUP_ID)
+  const hasHolder = existing >= 0 && (out[existing].links ?? []).some((l) => isSettingsHolder(l))
+  if (!moved.size && !extra.length && !hasHolder) return groups
+  const ordered = [...(SETTINGS_GROUP_CODES.map((c) => moved.get(c)).filter(Boolean) as T[]), ...extra]
   if (existing >= 0) {
-    out[existing] = { ...out[existing], links: [...ordered, ...(out[existing].links ?? [])] }
+    // Mevcut "Ayarlar" bölümü: içindeki "Ayarlar" üst öğesi de düzleşir; aynı ekran iki kez gelmişse tek kalır.
+    const own = (out[existing].links ?? []).flatMap((l) => (isSettingsHolder(l) ? (l.children ?? []).filter(Boolean) : [l]))
+    const seen = new Set<string>()
+    const links = [...ordered, ...own].filter((l) => {
+      const code = String(l.code ?? '')
+      if (!code) return true
+      if (seen.has(code)) return false
+      seen.add(code)
+      return true
+    })
+    // Sabit üçlü her zaman başta ve kendi sırasında.
+    const head = SETTINGS_GROUP_CODES.map((c) => links.find((l) => l.code === c)).filter(Boolean) as T[]
+    out[existing] = { ...out[existing], links: [...head, ...links.filter((l) => !head.includes(l))] }
     return out
   }
   out.splice(anchor < 0 ? out.length : anchor, 0, { group: SETTINGS_GROUP_ID, links: ordered })

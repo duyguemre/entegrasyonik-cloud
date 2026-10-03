@@ -262,6 +262,9 @@ export interface PulseRow {
   series: number[] | null
   /** Eşik aşıldı (getAttention eşikleriyle aynı) → yalnız değer rengi. */
   over: boolean
+  /** Oran satırları: ham oran (0–1) ve eşik (0–1) — eşik çubuğu için. */
+  ratio?: number
+  threshold?: number
   state: 'ok' | 'na' | 'degraded'
 }
 
@@ -333,13 +336,13 @@ export function fromPulse(r: GetPulseResponse): PulseModel {
     const rate = req ? err / req : null
     rows.push(
       h.computable && rate !== null
-        ? { key: 'http5xx', label: 'Sunucu hata oranı (5xx)', value: pct1(rate), note: `${nf.format(err)} hata · eşik %5`, series: h.hourly.map((p) => p.rate ?? 0), over: rate >= 0.05, state: 'ok' }
+        ? { key: 'http5xx', label: 'Sunucu hata oranı (5xx)', value: pct1(rate), note: `${nf.format(err)} hata · eşik %5`, series: h.hourly.map((p) => p.rate ?? 0), over: rate >= 0.05, ratio: rate, threshold: 0.05, state: 'ok' }
         : { key: 'http5xx', label: 'Sunucu hata oranı (5xx)', value: '—', note: NA_NOTE, series: null, over: false, state: 'na' },
     )
     const i = r.errorRate.integration
     rows.push(
       i.computable && i.last24h !== null
-        ? { key: 'intErr', label: 'Kanal hata oranı', value: pct1(i.last24h), note: `7 gün ${i.last7d === null ? '—' : pct1(i.last7d)} · eşik %20`, series: null, over: i.last24h >= 0.2, state: 'ok' }
+        ? { key: 'intErr', label: 'Kanal hata oranı', value: pct1(i.last24h), note: `7 gün ${i.last7d === null ? '—' : pct1(i.last7d)} · eşik %20`, series: null, over: i.last24h >= 0.2, ratio: i.last24h, threshold: 0.2, state: 'ok' }
         : { key: 'intErr', label: 'Kanal hata oranı', value: '—', note: NA_NOTE, series: null, over: false, state: 'na' },
     )
   } else {
