@@ -340,6 +340,39 @@ export default class AttributeMappingService extends BaseApi implements IService
 
 
     /**
+     * [eslesme-fiyat WP2, PLAN §3.1 "kalıtım yok, kopyala var"] Kaynak yerel kategorinin BU entegrasyondaki eşlemelerini (kategori + özellik +
+     * değer) hedef yerel kategoriye kopyalar. Varsayılan `$setOnInsert` (hedefte olan EZİLMEZ); `overwrite: true` ile `$set`.
+     * Kaynak = hedef ya da kaynakta kategori eşlemesi yoksa 400. Yanıt: kopyalanan/atlanan sayıları.
+     */
+    @InvalidatesTenantCache('PlatformMappingProvider')
+    async copyMappingsFromCategory(): Promise<any> {
+        const { sourceLocalCategoryId, targetLocalCategoryId, integrationCode, overwrite } = this.request;
+        const source = oid(sourceLocalCategoryId, 'sourceLocalCategoryId');
+        const target = oid(targetLocalCategoryId, 'targetLocalCategoryId');
+        if (source.equals(target)) throw new ApplicationError('Kaynak ve hedef kategori aynı olamaz.', 400);
+        if (isBlank(integrationCode)) throw new ApplicationError('integrationCode gerekli', 400);
+        const rows: any[] = await this.mappings.list({ localCategoryId: source, integrationCode: String(integrationCode) });
+        if (!rows.some((r) => r.isCategoryMapping === true)) throw new ApplicationError('Kaynak kategorinin bu kanalda kategori eşlemesi yok.', 400);
+
+        const now = new Date();
+        const ops = rows.map((r) => {
+            const { _id, localCategoryId: _l, updatedAt: _u, updatedBy: _b, source: _s, stale: _st, ...rest } = r;
+            const doc = { ...rest, updatedAt: now, updatedBy: this.updatedBy(), source: 'copy', copiedFrom: String(source), stale: null };
+            return {
+                updateOne: {
+                    filter: { localCategoryId: target, integrationCode: String(integrationCode), platformAttributeId: r.platformAttributeId ?? null },
+                    update: overwrite === true ? { $set: doc } : { $setOnInsert: doc },
+                    upsert: true,
+                },
+            };
+        });
+        const res: any = ops.length ? await this.mappings.bulkWrite(ops) : {};
+        const copied = Number(res?.upsertedCount ?? 0) + (overwrite === true ? Number(res?.modifiedCount ?? 0) : 0);
+        this.audit('mapping.copy', { integrationCode: String(integrationCode), sourceLocalCategoryId: String(source), targetLocalCategoryId: String(target), copied, overwrite: overwrite === true });
+        return { result: true, total: rows.length, copied, skipped: rows.length - copied };
+    }
+
+    /**
      * Bir yerel kategoriye ait tüm eşleşmeleri siler (Kategori eşleşmesi dahil).
      * Geçerli entegrasyon kodu yoksa (FE kategori silme akışı `-1` yollayabilir) hiçbir şey silmez (eski davranış: eşleşen kayıt yok).
      */

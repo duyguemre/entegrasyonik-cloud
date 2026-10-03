@@ -169,6 +169,7 @@ export const OPERATION_POLICY_SNAPSHOT: SnapshotPolicy = {
     AttributeMappingService: {
         get: M, autoMatchAllCategories: M, getCategoryMapping: M, saveCategoryMapping: M,
         getAttributeMapping: M, saveAttributeMapping: M, saveAttributeValueMapping: M, deleteFullMapping: M,
+        copyMappingsFromCategory: M, // [eslesme-fiyat WP2] üst kategoriden kopyala (catalog:write)
     },
     ImageService: { assignImages: M, createUploadUrl: M, confirmUpload: M }, // ADR-0027: doğrudan yükleme (bilet+onay) genel RPC; eski görsel işlemleri ImageApi sözde-servisi üzerinden (aşağıda)
 

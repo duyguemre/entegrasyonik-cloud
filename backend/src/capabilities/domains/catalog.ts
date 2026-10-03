@@ -292,7 +292,7 @@ export const CATALOG_CAPABILITIES = [
     }),
     c({
         id: 'mappings.attribute.save', domain: 'catalog', summary: { tr: 'Özellik ve özellik-değeri eşlemesini kaydet', en: 'Save attribute and attribute-value mapping' },
-        effect: 'write', minTier: 'member', permission: 'catalog:write', bindings: [{ rpc: 'AttributeMappingService/saveAttributeMapping' }, { rpc: 'AttributeMappingService/saveAttributeValueMapping' }],
+        effect: 'write', minTier: 'member', permission: 'catalog:write', bindings: [{ rpc: 'AttributeMappingService/saveAttributeMapping' }, { rpc: 'AttributeMappingService/saveAttributeValueMapping' }, { rpc: 'AttributeMappingService/copyMappingsFromCategory' }],
         ui: onScreens([CHOICES, 'saveMapping']), mcp: deferred('later', LATER_WRITE), agent: NO_AGENT,
     }),
     c({

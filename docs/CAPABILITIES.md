@@ -3,11 +3,11 @@
 **ÜRETİLMİŞ BELGE — ELLE DÜZENLENMEZ.** Kaynak: `backend/src/capabilities/**` (zod-şemalı TypeScript kaydı).
 Yeniden üretmek için: `cd backend && npm run capabilities:docs`. Bu belge `docs/OPERATION_POLICY.md`'nin yerine geçer (ADR-0019 §2).
 
-Üretim zamanı: 2026-10-03T21:46:14.700Z · Kaynak commit bilgisi bu betiğin dışında (git) tutulur.
+Üretim zamanı: 2026-10-03T22:01:16.824Z · Kaynak commit bilgisi bu betiğin dışında (git) tutulur.
 
 ## Özet
 
-- Toplam yetenek: **302** (toplam RPC bağı: 343)
+- Toplam yetenek: **302** (toplam RPC bağı: 344)
 - `effect`: write=126, read=145, destructive=28, propose=3
 - `minTier`: platformAdmin=105, member=153, owner=4, admin=40
 - MCP: `exposed`=13, `notExposed`=289 (bunun `deferred`=103)
@@ -144,7 +144,7 @@ metodu yok (bugün de 403/çalışmıyor; `operation-policy.test.ts` `FE_CALLS_W
 | `images.sort` | write | member | ImageApi/sortImages | notExposed:binary_file | definitions/ProductDefinitionView#sortImages, definitions/ProductUpdateView#sortImages | allowed:false |  |
 | `images.upload` | write | member | ImageApi/upload, ImageService/createUploadUrl, ImageService/confirmUpload | notExposed:binary_file | definitions/ProductDefinitionView#uploadImage, definitions/ProductUpdateView#uploadImage | allowed:false |  |
 | `mappings.attribute.get` | read | member | AttributeMappingService/getAttributeMapping | notExposed:deferred→later | productDefinitions/ChoiceListView | allowed:false |  |
-| `mappings.attribute.save` | write | member | AttributeMappingService/saveAttributeMapping, AttributeMappingService/saveAttributeValueMapping | notExposed:deferred→later | productDefinitions/ChoiceListView#saveMapping | allowed:false |  |
+| `mappings.attribute.save` | write | member | AttributeMappingService/saveAttributeMapping, AttributeMappingService/saveAttributeValueMapping, AttributeMappingService/copyMappingsFromCategory | notExposed:deferred→later | productDefinitions/ChoiceListView#saveMapping | allowed:false |  |
 | `mappings.category.auto_match` | write | member | AttributeMappingService/autoMatchAllCategories | notExposed:deferred→later | productDefinitions/CategoryListView#autoMatch | allowed:false |  |
 | `mappings.category.get` | read | member | AttributeMappingService/getCategoryMapping | notExposed:deferred→later | productDefinitions/CategoryListView | allowed:false |  |
 | `mappings.category.save` | write | member | AttributeMappingService/saveCategoryMapping | notExposed:deferred→later | productDefinitions/CategoryListView#saveMapping | allowed:false |  |

@@ -117,6 +117,10 @@ export const CATALOG_RPC_INPUT: Partial<Record<RpcRef, z.ZodType<any>>> = {
         platformValueId: platformId.nullish(), platformValueName: text(300).nullish(),
         isVarianter: flag, isSlicer: flag, isRequired: flag, isAllowCustom: flag, isMultiple: flag, isCategoryMapping: flag,
     }),
+    // [eslesme-fiyat WP2] "üst kategoriden kopyala": kaynak kategorinin (kategori + özellik + değer) eşlemeleri hedefe; varsayılan mevcutları EZMEZ.
+    'AttributeMappingService/copyMappingsFromCategory': strictBody({
+        sourceLocalCategoryId: objectIdStr, targetLocalCategoryId: objectIdStr, integrationCode, overwrite: z.boolean().optional(),
+    }),
     // `integrationCode`: FE kategori silme akışında -1 (seçili entegrasyon yok) yollayabilir -> servis no-op (eski davranış).
     'AttributeMappingService/deleteFullMapping': strictBody({ localCategoryId: objectIdStr, integrationCode: z.union([integrationCode, z.number()]).optional() }),
 

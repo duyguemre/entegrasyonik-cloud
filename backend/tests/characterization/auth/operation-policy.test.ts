@@ -132,6 +132,7 @@ const BACKEND_ONLY_NOT_YET_IN_FE = [
   // [COM-04] tenant komisyon override (docs/API_TENANT_SURFACE.md §10): backend hazır, FE "Komisyon oranları" tablosu bulut FE görevi.
   'FinancialService/listCommissionOverrides', 'FinancialService/setCommissionOverride', 'FinancialService/deleteCommissionOverride',
   'IntegrationService/preflightExport', 'IntegrationService/explainChannelProduct', // [eslesme-fiyat WP1] FE paneli WP2/WP8
+  'AttributeMappingService/copyMappingsFromCategory', // [eslesme-fiyat WP2] FE düğmesi aynı WP'nin FE adımında bağlanır
   'IntegrationService/testConnection', // [INT-01] baglantiyi test et (API_TENANT_SURFACE 11): FE dugmesi bulut FE gorevi
   // [ADR-0020 Aşama B] entegrasyon/motor ayar yönetimi: backend hazır, FE ekranları ADR-0020 Aşama C kapsamında.
   'IntegrationConfigService/list', 'IntegrationConfigService/get', 'IntegrationConfigService/getEffectiveConfig', 'IntegrationConfigService/history',

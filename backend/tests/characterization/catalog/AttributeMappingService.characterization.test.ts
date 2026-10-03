@@ -327,3 +327,32 @@ describe('ChoiceService / CategoryService silme: yetim referans temizligi [WP11]
         expect(r).toMatchObject({ acknowledged: true, deletedCount: 1, deletedMappings: 2 });
     });
 });
+
+describe('AttributeMappingService.copyMappingsFromCategory [eslesme-fiyat WP2]', () => {
+    const src = new ObjectId(); const dst = new ObjectId();
+    const rows = [
+        { _id: new ObjectId(), localCategoryId: src, integrationCode: 'trendyol', platformAttributeId: null, platformCategoryId: '411', isCategoryMapping: true, updatedAt: new Date(0) },
+        { _id: new ObjectId(), localCategoryId: src, integrationCode: 'trendyol', platformAttributeId: '338', platformCategoryId: '411', localChoiceId: new ObjectId(), values: [{ localValueId: new ObjectId(), platformValueId: '1', platformValueName: 'M' }], stale: { reason: 'VALUES_GONE' } },
+    ];
+    beforeEach(() => {
+        jest.spyOn(AuditLogger, 'log').mockResolvedValue(undefined as any);
+        amModel.find = jest.fn(() => ({ collation() { return this; }, skip() { return this; }, limit() { return this; }, lean: async () => rows }));
+        amModel.bulkWrite = jest.fn(async () => ({ upsertedCount: 2, modifiedCount: 0 }));
+    });
+    it('kaynak eşlemeleri hedefe $setOnInsert ile (ezmeden) kopyalanır; _id/stale taşınmaz; source=copy', async () => {
+        const r = await svc({ sourceLocalCategoryId: String(src), targetLocalCategoryId: String(dst), integrationCode: 'trendyol' }).copyMappingsFromCategory();
+        expect(r).toEqual({ result: true, total: 2, copied: 2, skipped: 0 });
+        const ops = amModel.bulkWrite.mock.calls[0][0];
+        expect(ops[0].updateOne.filter).toEqual({ localCategoryId: dst, integrationCode: 'trendyol', platformAttributeId: null });
+        expect(ops[1].updateOne.update.$setOnInsert).toMatchObject({ platformAttributeId: '338', source: 'copy', copiedFrom: String(src), stale: null });
+        expect(ops[1].updateOne.update.$setOnInsert._id).toBeUndefined();
+        expect(AuditLogger.log).toHaveBeenCalledWith(expect.objectContaining({ event: 'mapping.copy' }));
+    });
+    it('overwrite=true $set kullanır; kaynak=hedef ya da kaynakta kategori eşlemesi yoksa 400', async () => {
+        await svc({ sourceLocalCategoryId: String(src), targetLocalCategoryId: String(dst), integrationCode: 'trendyol', overwrite: true }).copyMappingsFromCategory();
+        expect(amModel.bulkWrite.mock.calls[0][0][0].updateOne.update.$set).toBeDefined();
+        await expect(svc({ sourceLocalCategoryId: String(src), targetLocalCategoryId: String(src), integrationCode: 'trendyol' }).copyMappingsFromCategory()).rejects.toMatchObject({ statusCode: 400 });
+        amModel.find = jest.fn(() => ({ collation() { return this; }, lean: async () => [rows[1]] }));
+        await expect(svc({ sourceLocalCategoryId: String(src), targetLocalCategoryId: String(dst), integrationCode: 'trendyol' }).copyMappingsFromCategory()).rejects.toMatchObject({ statusCode: 400 });
+    });
+});

@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "sha256": "3fd17eb0c246990263e6a1b5144fa9cbe7c0abdd352fbdb261b7e8d54e7e6df7",
-  "generatedAt": "2026-10-03T21:46:14.719Z",
+  "sha256": "fd483774d782d135d2fab20a88787793319793406a5542b7d907052cde38bf3f",
+  "generatedAt": "2026-10-03T22:01:16.838Z",
   "stage": "A",
   "totalCapabilities": 302,
-  "totalBindings": 343,
+  "totalBindings": 344,
   "capabilities": [
     {
       "id": "account.email_verification.resend",
@@ -1845,7 +1845,8 @@
       "scope": "tenant",
       "rpc": [
         "AttributeMappingService/saveAttributeMapping",
-        "AttributeMappingService/saveAttributeValueMapping"
+        "AttributeMappingService/saveAttributeValueMapping",
+        "AttributeMappingService/copyMappingsFromCategory"
       ],
       "mcp": {
         "exposed": false,

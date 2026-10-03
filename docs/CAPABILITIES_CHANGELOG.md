@@ -89,3 +89,7 @@ buraya tarihli bir blok ekler (ADR-0019 §4.1). Kademe değişiklikleri HER ZAMA
 
 - Eklenen: `products.channel_explain.get`, `products.channel_preflight.run`
 
+## 2026-10-03 — sha256 fd483774d782…
+
+
+
