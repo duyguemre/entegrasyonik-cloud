@@ -90,15 +90,13 @@ describe('Pazarama ProductMapper.toPlatformBatch — karakterizasyon', () => {
         expect(item.images).toEqual([{ imageurl: 'https://img.example.com/1.jpg' }, { imageurl: 'https://img.example.com/2.jpg' }]);
     });
 
-    // Not: kaynakta UPDATE_PRICE ve UPDATE_STOCK AYNI dalı paylaşır — ikisi de fiyat VE stok alanlarını BİRLİKTE
-    // üretir (isim/kategori hariç). Yalnızca fiyat değişse de stockCount, yalnızca stok değişse de salePrice/
-    // listPrice gövdeye dahil edilir.
-    it('UPDATE_PRICE/UPDATE_STOCK: İKİSİ DE aynı alan setini üretir (fiyat+stok+kod; isim/kategori YOK)', () => {
+    // [BİLİNÇLİ DÜZELTME - eslesme-fiyat WP4 C-3/D-PZ-3] Eskiden UPDATE_PRICE ve UPDATE_STOCK AYNI fiyat+stok gövdesini üretip
+    // fiyat ucuna gidiyordu (stok-yalnız güncelleme fiyatı da yazıyordu). Artık ayrı: fiyat {code,listPrice,salePrice}, stok {code,stockCount}.
+    it('UPDATE_PRICE ve UPDATE_STOCK ayrı gövdeler üretir (isim/kategori YOK)', () => {
         const itemPrice = m.toPlatformBatch(staged(makeVariant()), PLATFORM_PROCESS.UPDATE_PRICE, [], [], mapping);
-        expect(Object.keys(itemPrice).sort()).toEqual(['barcode', 'code', 'listPrice', 'salePrice', 'stockCount']);
+        expect(Object.keys(itemPrice).sort()).toEqual(['code', 'listPrice', 'salePrice']);
         const itemStock = m.toPlatformBatch(staged(makeVariant()), PLATFORM_PROCESS.UPDATE_STOCK, [], [], mapping);
-        expect(Object.keys(itemStock).sort()).toEqual(['barcode', 'code', 'listPrice', 'salePrice', 'stockCount']);
-        expect(itemPrice).toEqual(itemStock);
+        expect(Object.keys(itemStock).sort()).toEqual(['code', 'stockCount']);
     });
 
     it('diğer modlarda (örn. UPDATE_VARIANT) yalnızca { barcode } döner (else-if kapsamadığı için)', () => {

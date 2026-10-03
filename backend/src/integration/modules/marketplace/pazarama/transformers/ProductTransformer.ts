@@ -68,11 +68,18 @@ export class ProductMapper {
             item.attributes = this.prepareAttributes(variant, catAttrs, mapping);
             item.desi = 1;
             item.currencyType = "TRY";
-        } else if (mode === PLATFORM_PROCESS.UPDATE_PRICE || mode === PLATFORM_PROCESS.UPDATE_STOCK) {
-            item.salePrice = salePrice;
-            item.listPrice = marketPrice;
-            item.stockCount = Number(variant.stock);
+        } else if (mode === PLATFORM_PROCESS.UPDATE_PRICE) {
+            // [eslesme-fiyat WP4, 02-ekler/pazarama C-3 / D-PZ-3] fiyat ve stok gövdeleri AYRI (eskiden ikisi de fiyat+stok
+            // taşıyıp fiyat ucuna gidiyordu: stok-yalnız güncelleme fiyatı da yazıyordu). Fiyat: `{code, listPrice, salePrice}`.
+            delete item.barcode;
             item.code = String(variant.barcode);
+            item.listPrice = marketPrice;
+            item.salePrice = salePrice;
+        } else if (mode === PLATFORM_PROCESS.UPDATE_STOCK) {
+            // [D-PZ-3] Stok: `product/updateStock {items:[{code, stockCount}]}` (5 bağımsız kaynak).
+            delete item.barcode;
+            item.code = String(variant.barcode);
+            item.stockCount = Number(variant.stock);
         }
 
         return item;

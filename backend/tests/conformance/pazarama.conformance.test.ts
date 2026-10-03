@@ -68,8 +68,9 @@ const spec: ConformanceSpec = {
         call: (a) => a.platform.updateProductStock([{ payload: variant(), stockcode: 'SKU-1', productId: 'P-1', stock: 5 } as any]),
         respond: (_req, mode) => {
             if (mode === 'write') return { status: 200, body: { data: 'JOB-CONF-1', success: true } };
-            if (mode === 'batch-done') return { status: 200, body: { data: { data: [{ code: 'SKU-1', barcode: 'BC-1', price: { status: 0 }, operationStatusText: 'Başarılı' }] } } };
-            return { status: 200, body: { data: { data: [] } } };
+            // [eslesme-fiyat WP4, C-4/D-PZ-4] fiyat/stok sonucu `product/getProductBatchResult` ({status 1/2/3, batchResult[]}).
+            if (mode === 'batch-done') return { status: 200, body: { data: { status: 2, batchResult: [{ code: 'SKU-1', barcode: 'BC-1', isSuccess: true }] } } };
+            return { status: 200, body: { data: { status: 1, batchResult: [] } } };
         },
         shapeOk: (r) => r?.result === true && typeof r.trackingId === 'string' && Array.isArray(r.variantList) && r.variantList.length > 0,
     },

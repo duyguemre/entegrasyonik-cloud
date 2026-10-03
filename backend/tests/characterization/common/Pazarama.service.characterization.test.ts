@@ -200,7 +200,8 @@ describe('Pazarama Service - token gövdesi ve eşzamanlılık (bilinçli düzel
         const form = new URLSearchParams(tokenReqs[0].body);
         expect(form.get('client_id')).toBe('k&1');
         expect(form.get('client_secret')).toBe('a&b=c d+%');
-        expect([...form.keys()].sort()).toEqual(['client_id', 'client_secret', 'grant_type']);
+        // [BİLİNÇLİ DÜZELTME - eslesme-fiyat WP4 C-1/D-PZ-1] `scope` eklendi (eskiden gönderilmiyordu).
+        expect([...form.keys()].sort()).toEqual(['client_id', 'client_secret', 'grant_type', 'scope']);
     });
 
     // DÜZELTME (INT-05): OAuthTokenCache single-flight. ESKİ: 5 token isteği.

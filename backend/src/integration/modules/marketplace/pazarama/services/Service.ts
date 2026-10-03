@@ -21,6 +21,8 @@ import { integrationCode } from '../constants';
 // ortak tabanda jenerik hook yok, adaptör seviyesinde kalır).
 const KEY = ADAPTER_KEYS.find(k => k.code === 'pazarama')!;
 const DEFAULT_TOKEN_URL = 'https://isortagimgiris.pazarama.com/connect/token';
+/** [D-PZ-1] OAuth kapsamı (bağımsız istemcilerin tamamı bunu gönderir; resmî sayfa erişilemedi). */
+export const PAZARAMA_TOKEN_SCOPE = 'merchantgatewayapi.fullaccess';
 
 export default class Service extends AdapterHttpService {
     protected readonly mockHostPattern = /https:\/\/(isortagim|isortagimapi)\.pazarama\.com(\/api|\/apigateway)?/g;
@@ -53,20 +55,27 @@ export default class Service extends AdapterHttpService {
         try {
             const response = await this.http.post(
                 this.tokenUrl(),
-                new URLSearchParams({ grant_type: 'client_credentials', client_id: String(APIKEY ?? ''), client_secret: String(APISECRET ?? '') }),
+                // [eslesme-fiyat WP4, 02-ekler/pazarama C-1 / D-PZ-1] `scope` zorunlu (11 bağımsız istemci); ayardan değiştirilebilir.
+                new URLSearchParams({
+                    grant_type: 'client_credentials', client_id: String(APIKEY ?? ''), client_secret: String(APISECRET ?? ''),
+                    scope: String(this.params.integrationSettings?.settings?.tokenScope || PAZARAMA_TOKEN_SCOPE),
+                }),
                 {
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                     idempotent: true,
                     operation: 'getAccessToken',
                 },
             );
-            const token = response.data?.access_token;
+            // [D-PZ-1] Yanıt iki şekilde belgelenmiş (çelişkili): OAuth standart `{access_token, expires_in}` ya da sarmalı
+            // `{success, data:{accessToken, expiresIn}}` → ikisi de okunur.
+            const body = response.data ?? {};
+            const token = body.access_token ?? body.data?.accessToken ?? body.data?.access_token;
             if (!token) {
                 throw new IntegrationError('AUTH', 'Pazarama token yanıtı access_token içermiyor.', {
                     integrationCode, operation: 'getAccessToken', clientId: this.clientId, platformCode: 'TOKEN_RESPONSE_INVALID',
                 });
             }
-            const expiresIn = Number(response.data?.expires_in);
+            const expiresIn = Number(body.expires_in ?? body.data?.expiresIn ?? body.data?.expires_in);
             return { token, expiresInSec: Number.isFinite(expiresIn) ? expiresIn : 0 };
         } catch (error: any) {
             throw fromHttpError(error, {

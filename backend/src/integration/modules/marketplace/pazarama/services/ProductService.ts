@@ -206,13 +206,16 @@ export class ProductService {
             const isUpdate = payload.mode === PLATFORM_PROCESS.UPDATE_PRICE || payload.mode === PLATFORM_PROCESS.UPDATE_STOCK;
             const batchId = payload.trackingId;
 
-            const body = isUpdate
+            // [eslesme-fiyat WP4, C-4 / D-PZ-4] `listing-state/.../lake-projections` hiçbir Pazarama kaynağında yok → yalnız tenant
+            // açıkça `urls.checkUpdateBatchUrl` verdiyse kullanılır; varsayılan fiyat/stok sonucu da `product/getProductBatchResult`.
+            const legacyUpdate = isUpdate && !!this.params.integrationSettings?.urls?.checkUpdateBatchUrl;
+            const body = legacyUpdate
                 ? await this.connector.fetchUpdateBatchResults(batchId)
                 : await this.connector.fetchBatchResults(batchId);
 
             if (!body) return undefined;
 
-            if (isUpdate) {
+            if (legacyUpdate) {
                 // Parse Lake Projections format (body.data.data)
                 const items = body.data?.data || [];
                 return items.map((item: any) => {
@@ -225,16 +228,22 @@ export class ProductService {
                     };
                 });
             } else {
-                // Parse Product Batch format (body.data)
-                const data = body.data;
-                const results: IInternalResult[] = (data.batchResult || []).map((r: any) => ({
-                    matchValue: r.productCode || r.code,
-                    barcode: r.barcode || r.productCode || r.code,
-                    status: 'COMPLETED',
-                    messages: ['Başarılı']
-                }));
+                // [C-9 / D-PZ-7] `{status (1 devam / 2 tamam / 3 hata), batchResult:[{code, isSuccess, message}], failedCount}`:
+                // devam ediyorsa sonuç yok (undefined); `isSuccess:false` öğe FAILED + `message` (eskiden her öğe COMPLETED sayılıyordu).
+                const data = body.data ?? body;
+                if (Number(data?.status) === 1) return undefined;
+                const results: IInternalResult[] = (data?.batchResult || []).map((r: any) => {
+                    const failed = r.isSuccess === false || String(r.status ?? '').toUpperCase() === 'FAILED';
+                    return {
+                        matchValue: r.productCode || r.code,
+                        barcode: r.barcode || r.productCode || r.code,
+                        status: failed ? 'FAILED' : 'COMPLETED',
+                        messages: [failed ? (r.message || r.errorReason || 'Hata oluştu') : 'Başarılı']
+                    };
+                });
 
-                if (data.failedProducts && Array.isArray(data.failedProducts)) {
+                // `failedProducts` hiçbir kaynakta yok (kanıtsız) ama okunması zararsız: korunur.
+                if (data?.failedProducts && Array.isArray(data.failedProducts)) {
                     data.failedProducts.forEach((f: any) => {
                         results.push({
                             matchValue: f.productCode || f.barcode,
@@ -243,6 +252,9 @@ export class ProductService {
                             messages: [f.errorReason || 'Hata oluştu']
                         });
                     });
+                }
+                if (results.length === 0 && Number(data?.status) === 3) {
+                    throw new Error(`Pazarama batch ${batchId} hata durumunda (status=3) ve öğe sonucu yok.`);
                 }
                 return results;
             }
@@ -350,7 +362,8 @@ export class ProductService {
         const targets: any = {
             [PLATFORM_PROCESS.TRANSFER]: s.urls.transferUrl || 'product/create',
             [PLATFORM_PROCESS.UPDATE_PRICE]: s.urls.updatePriceUrl || 'product/updatePrice-v2',
-            [PLATFORM_PROCESS.UPDATE_STOCK]: s.urls.updateStockUrl || 'product/updatePrice-v2',
+            // [eslesme-fiyat WP4, C-3 / D-PZ-3] stok kendi ucuna (eskiden `updatePrice-v2` — fiyat ucu).
+            [PLATFORM_PROCESS.UPDATE_STOCK]: s.urls.updateStockUrl || 'product/updateStock',
             [PLATFORM_PROCESS.UPDATE]: s.urls.updateContentUrl || s.urls.transferUrl || 'product/create'
         };
         return targets[mode];
