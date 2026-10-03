@@ -197,7 +197,7 @@ describe('Pazarama iade listesi', () => {
     });
 });
 
-describe('Pazarama streamProducts - bugünkü davranış', () => {
+describe('Pazarama streamProducts - bugünkü davranış (WP4 C-5: Page/Size PascalCase)', () => {
     const list = (n: number, from = 0) => Array.from({ length: n }, (_, i) => ({ code: `SKU-${from + i}`, barcode: `BC-${from + i}` }));
 
     it('kısa sayfa (< 100) son sayfadır: 1 liste isteği + kayıt başına detay POST; sonuç COMPLETED', async () => {
@@ -210,12 +210,12 @@ describe('Pazarama streamProducts - bugünkü davranış', () => {
         expect(chunks[0].map((d: any) => d.code)).toEqual(['SKU-0', 'SKU-1', 'SKU-2']);
         const gets = seen.filter(s => s.method === 'GET');
         expect(gets).toHaveLength(1);
-        expect(gets[0].url).toBe('/product/products?page=1&size=100');
+        expect(gets[0].url).toBe('/product/products?Page=1&Size=100');
     });
 
     it('dolu sayfa (100) sonrası sonraki sayfa istenir; boş/kısa sayfada durur', async () => {
         route = (s) => {
-            if (s.method === 'GET') return { body: { data: s.url!.includes('page=1') ? list(100) : list(2, 100) } };
+            if (s.method === 'GET') return { body: { data: s.url!.includes('Page=1') ? list(100) : list(2, 100) } };
             return { body: { code: s.body.Code } };
         };
         srv = await startLocalServer(handler);
@@ -223,7 +223,7 @@ describe('Pazarama streamProducts - bugünkü davranış', () => {
         const r = await new Pazarama(params(srv.baseUrl)).streamProducts(async (c) => { chunks.push(c); });
         expect(r).toEqual({ totalElements: 102, totalProcessed: 102, totalPages: 2, status: 'COMPLETED' });
         expect(chunks.map(c => c.length)).toEqual([100, 2]);
-        expect(seen.filter(s => s.method === 'GET').map(s => s.url)).toEqual(['/product/products?page=1&size=100', '/product/products?page=2&size=100']);
+        expect(seen.filter(s => s.method === 'GET').map(s => s.url)).toEqual(['/product/products?Page=1&Size=100', '/product/products?Page=2&Size=100']);
     });
 
     it('detay çekilemeyen kayıt liste verisiyle devam eder (kayıt düşmez)', async () => {

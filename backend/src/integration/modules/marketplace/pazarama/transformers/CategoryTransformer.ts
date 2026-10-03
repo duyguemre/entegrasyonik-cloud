@@ -81,7 +81,8 @@ export class CategoryMapper {
                     _id: String(attr.AttributeId || attr.attributeId || attr.Id || attr.id),
                     title: title,
                     allowCustom: !!(attr.AllowCustom || attr.allowCustom),
-                    required: !!(attr.Required || attr.required),
+                    // [eslesme-fiyat WP4, C-7 / D-PZ-6] DTO alanı `isRequired`/`IsRequired` (eskiden yalnız Required → zorunlu denetim hiç tetiklenmiyordu)
+                    required: !!(attr.IsRequired || attr.isRequired || attr.Required || attr.required),
                     varianter: !!(attr.IsVariantable || attr.isVariantable || attr.IsVariant || attr.isVariant || attr.Varianter || attr.varianter),
                     slicer: !!(attr.IsSlicer || attr.isSlicer || attr.Slicer || attr.slicer),
                     values: values,

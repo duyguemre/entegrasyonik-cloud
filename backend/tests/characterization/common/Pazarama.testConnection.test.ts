@@ -12,6 +12,6 @@ runTestConnectionSuite({
         res.end(JSON.stringify({ access_token: 'tok-pz-tc', expires_in: 3600 }));
         return true;
     },
-    expect: { path: '/product/products', queryIncludes: ['page=1', 'size=1'] },
+    expect: { path: '/product/products', queryIncludes: ['Page=1', 'Size=1'] }, // [WP4 C-5] PascalCase
     secrets: ['PZKEY-tc-1', 'PZSECRET-tc-2', 'tok-pz-tc'],
 });

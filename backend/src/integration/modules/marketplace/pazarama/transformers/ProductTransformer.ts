@@ -3,7 +3,7 @@ import { integrationCode } from '../constants';
 import { randomUUID } from 'crypto';
 import { IInternalResult } from '@interfaces/index';
 import { IntegrationError } from '@integration/modules/common/IntegrationError';
-import { normalizeAttrValue, missingRequiredAttributes, labelAttribute } from '@integration/catalog/attributePayload';
+import { normalizeAttrValue, missingRequiredAttributes, labelAttribute, indexCategoryAttributes, findValueById, findValueByText } from '@integration/catalog/attributePayload';
 
 export class ProductMapper {
     public validate(variant: IVariant, mode: PLATFORM_PROCESS) {
@@ -206,15 +206,27 @@ export class ProductMapper {
         const vAttrs: Record<string, any> = variant.platforms?.[integrationCode]?.attributes || {};
         const out: any[] = [];
         const sent = new Set<string>();
+        const { byId } = indexCategoryAttributes(catAttrs);
         for (const [attrId, attrData] of Object.entries(vAttrs)) {
             const norm = normalizeAttrValue(attrData);
             if (!norm) continue;
-            const isObj = attrData !== null && typeof attrData === 'object';
+            // [eslesme-fiyat WP4, 02-ekler/pazarama C-6 / D-PZ-6] TEK alan: kimlik (listeden) `attributeValueId`, serbest metin
+            // (allowCustom) `customAttributeValue` — karşılıklı dışlayıcı (eskiden ikisi birlikte gidiyordu; kabul edildiğine kanıt yok).
+            const catAttr = byId.get(String(attrId));
+            const hasList = !!catAttr?.values?.length;
             const item: any = { attributeId: attrId };
-            // Nesne biçiminde kimlik/metin ayrı taşınır; ilkel (eski) biçimde tek değer hem kimlik hem metin adayıdır.
-            if (norm.valueId !== undefined && isObj) item.attributeValueId = norm.valueId;
-            if (norm.text !== undefined && isObj) item.customAttributeValue = norm.text;
-            if (!isObj) { item.attributeValueId = norm.valueId; item.customAttributeValue = norm.text; }
+            if (norm.valueId !== undefined && (!hasList || findValueById(catAttr, norm.valueId))) {
+                item.attributeValueId = norm.valueId;
+            } else if (norm.text !== undefined && (catAttr?.allowCustom || !catAttr)) {
+                const byText = hasList ? findValueByText(catAttr, norm.text) : undefined;
+                if (byText) item.attributeValueId = String(byText.id); else item.customAttributeValue = norm.text;
+            } else if (norm.text !== undefined && hasList && findValueByText(catAttr, norm.text)) {
+                item.attributeValueId = String(findValueByText(catAttr, norm.text)!.id);
+            } else {
+                throw new IntegrationError('VALIDATION',
+                    `Pazarama ürün doğrulaması başarısız (barkod ${String(variant.barcode ?? '?').slice(0, 40)}): ${labelAttribute(String(attrId), catAttr?.title)} değeri '${String(norm.text ?? norm.valueId).slice(0, 40)}' Pazarama değer listesinde yok — özelliği yeniden seçin.`,
+                    { integrationCode, operation: 'prepareAttributes', clientId: mapping?.clientId ?? 'unknown' });
+            }
             out.push(item);
             sent.add(String(attrId));
         }

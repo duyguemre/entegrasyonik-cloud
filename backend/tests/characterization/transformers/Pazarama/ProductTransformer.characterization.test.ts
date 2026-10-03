@@ -122,7 +122,8 @@ describe('Pazarama ProductMapper.toPlatformBatch — karakterizasyon', () => {
     it('prepareAttributes: vAttrs boşsa boş dizi; attrData falsy ise null filtrelenir', () => {
         const v = makeVariant({ platforms: { [CODE]: { prices: { salePrice: 100 }, upload: {}, mapping: {}, attributes: { A1: { attributeValueId: 'V1', attributeValue: 'Kırmızı' }, A2: null } } } });
         const item = m.toPlatformBatch(staged(v), PLATFORM_PROCESS.TRANSFER, [], [], mapping);
-        expect(item.attributes).toEqual([{ attributeId: 'A1', attributeValueId: 'V1', customAttributeValue: 'Kırmızı' }]);
+        // [BİLİNÇLİ DÜZELTME - eslesme-fiyat WP4 C-6/D-PZ-6] tek alan: kimlik varsa yalnız attributeValueId (eskiden ikisi birlikte).
+        expect(item.attributes).toEqual([{ attributeId: 'A1', attributeValueId: 'V1' }]);
     });
 });
 

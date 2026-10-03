@@ -164,7 +164,9 @@ export class ProductService {
             // artık tekrar eden sayfa/tavan FAILED olarak bildirilir.
             const rest = await paginatePage(async (page, limit) => {
                 pagesSeen = page;
-                const response = await this.connector.fetchProductsFromPlatform(baseUrl, { ...query, page, size: limit });
+                // [eslesme-fiyat WP4, C-5 / D-PZ-5] PascalCase `Page`/`Size` (küçük harf yok sayılıyor: aynı sayfa tekrar → FAILED);
+                // `Approved` verilmezse API'nin varsayılanı geçerli (onaylı+onaysız iki geçiş kararı canlı gözleme bırakıldı).
+                const response = await this.connector.fetchProductsFromPlatform(baseUrl, { ...query, Page: page, Size: limit });
                 const items = response?.data || []; // List API returns items in .data directly based on your mock
                 return Array.isArray(items) ? items : [];
             }, {

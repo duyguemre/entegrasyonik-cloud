@@ -42,13 +42,13 @@ export default class Pazarama implements IPlatform {
     }
 
     /**
-     * [INT-01 testConnection] Yan etkisiz tek okuma: ürün listesinin TEK kaydı (`page=1,size=1`). Çağrı OAuth2 token alımını
+     * [INT-01 testConnection] Yan etkisiz tek okuma: ürün listesinin TEK kaydı (`Page=1,Size=1`). Çağrı OAuth2 token alımını
      * (client_credentials) da zorlar; kimlik bilgisi reddi token uçundan (401/400) veya listeden (401/403) AUTH olarak gelir. Asla fırlatmaz.
      */
     public async testConnection(): Promise<TestConnectionResult> {
         return runConnectionProbe('pazarama', async () => {
             const url = this.params.integrationSettings?.urls?.productListUrl || 'product/products';
-            await this.service.get(url, { page: 1, size: 1 }, { operation: 'testConnection' });
+            await this.service.get(url, { Page: 1, Size: 1 }, { operation: 'testConnection' }); // [D-PZ-5] PascalCase
         });
     }
 

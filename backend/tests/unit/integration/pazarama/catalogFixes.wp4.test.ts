@@ -61,3 +61,26 @@ describe('Pazarama stok ucu + batch sonucu (C-3/C-4/C-9)', () => {
     await expect(svc.checkBatchProduct({ trackingId: 'B1', mode: PLATFORM_PROCESS.TRANSFER } as any)).resolves.toBeUndefined();
   });
 });
+
+describe('Pazarama özellik tek alan + isRequired (C-6/C-7)', () => {
+  const { ProductMapper } = require('@integration/modules/marketplace/pazarama/transformers/ProductTransformer');
+  const { CategoryMapper } = require('@integration/modules/marketplace/pazarama/transformers/CategoryTransformer');
+  const variant = (attributes: any) => ({ barcode: 'B1', stockcode: 'S1', stock: 1, images: [], product: { title: 'T' },
+    platforms: { pazarama: { prices: { salePrice: 10 }, attributes, mapping: {} } } });
+  const sp = (v: any) => ({ payload: v } as any);
+  const catAttrs = new CategoryMapper().toInternalAttributes([
+    { id: 'A1', name: 'Renk', isRequired: true, allowCustom: false, attributeValues: [{ id: 'V1', value: 'Kırmızı' }] },
+    { id: 'A2', name: 'Not', allowCustom: true, attributeValues: [] },
+  ]);
+
+  it('isRequired okunur; kimlik → yalnız attributeValueId, serbest → yalnız customAttributeValue, metin listedeyse kimliğe çevrilir', () => {
+    expect(catAttrs.find((a: any) => a._id === 'A1').required).toBe(true);
+    const m = new ProductMapper();
+    const item = m.toPlatformBatch(sp(variant({ A1: { attributeValue: 'kırmızı' }, A2: { attributeValueId: 'x', attributeValue: 'El yapımı' } })), PLATFORM_PROCESS.TRANSFER, catAttrs, [], { catId: 1, brandId: 2, settings: {} });
+    expect(item.attributes).toEqual([{ attributeId: 'A1', attributeValueId: 'V1' }, { attributeId: 'A2', attributeValueId: 'x' }]);
+    expect(() => m.toPlatformBatch(sp(variant({ A2: { attributeValue: 'x' } })), PLATFORM_PROCESS.TRANSFER, catAttrs, [], { catId: 1, brandId: 2, settings: {} })).toThrow(/zorunlu özellik eksik: Renk \(A1\)/);
+    expect(() => m.toPlatformBatch(sp(variant({ A1: { attributeValue: 'Mor' } })), PLATFORM_PROCESS.TRANSFER, catAttrs, [], { catId: 1, brandId: 2, settings: {} })).toThrow(/Renk \(A1\).*Mor/);
+    const free = m.toPlatformBatch(sp(variant({ A1: { attributeValueId: 'V1' }, A2: { attributeValue: 'El yapımı' } })), PLATFORM_PROCESS.TRANSFER, catAttrs, [], { catId: 1, brandId: 2, settings: {} });
+    expect(free.attributes[1]).toEqual({ attributeId: 'A2', customAttributeValue: 'El yapımı' });
+  });
+});
