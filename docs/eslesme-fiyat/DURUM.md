@@ -1,6 +1,6 @@
 # DURUM — devir dosyası (her commit'te güncellenir)
 
-Son güncelleme: 2026-10-03 (WP0+WP1+WP2 bitti, WP3 P0 bitti; kalan WP3 maddeleri bütçeye göre, WP4–WP9 yerelde) · Dal: `feature/eslesme-fiyat-yeniden-yapilandirma` · Son commit: bkz. `git log -1`.
+Son güncelleme: 2026-10-03 (WP0–WP2 bitti, WP3 P0 bitti, **WP4 P0 bitti**; sıradaki: WP5 yeni pencerede, sonra WP6 yeni pencerede) · Dal: `feature/eslesme-fiyat-yeniden-yapilandirma` · Son commit: bkz. `git log -1`.
 
 ## Bütçe ve çalışma kuralları (kullanıcı kararı 2026-10-03)
 - Bulut kredisi sınırı **120 USD** (sayaç kullanıcıda; "dur" dendiğinde o adım kapatılır, commit + push + bu dosya güncellenir).
@@ -9,6 +9,12 @@ Son güncelleme: 2026-10-03 (WP0+WP1+WP2 bitti, WP3 P0 bitti; kalan WP3 maddeler
 - Alt-ajan kullanımı az; büyük rapor dosyaları baştan sona okunmaz, `grep` ile ilgili bölüm.
 - WP'ler arasında onay beklenmez; her WP sonunda commit + push + 5 satırlık özet.
 - Canlıya yazma yok; DB/Redis yok; göçler yalnız yazılır.
+
+### Pencere planı (kullanıcı kararı 2026-10-03, token yönetimi)
+- **Her WP ayrı bir bulut oturumunda (yeni pencere)**: WP4 bu pencerede bitti → kullanıcı yeni pencerede **WP5**'i başlatır → o bitince yeni pencerede **WP6**.
+- Her pencere yalnız kendi WP'sini yapar; bitince commit + push + DURUM güncellemesi + 5 satırlık özet ve "WPx bitti" der, bir sonrakine geçmez.
+- WP7, WP8, WP9 ve WP3/WP4'ün kalan (P1/P2) maddeleri sonraki pencerelerde/yerelde (aşağıdaki tablo).
+- Pencere başına bütçe ~10 USD hedefi; kapsam P0 → P1 sırasıyla, bütçe biterse kalan madde tabloya yazılır.
 
 ## Girdi belgeleri (yeni oturum önce bunları okur, sırayla, yalnız gereken bölümleri)
 1. `docs/eslesme-fiyat/PLAN.md` §1–§3 (ilke, kararlar §2a, hedef yapı) ve §6 (iş paketleri).
@@ -24,16 +30,21 @@ Son güncelleme: 2026-10-03 (WP0+WP1+WP2 bitti, WP3 P0 bitti; kalan WP3 maddeler
 | WP1 Hata sözleşmesi + preflight (BE) | **TAMAM (bulut)** | `platform/core/errors/integrationIssues.ts` (katalog + `IssueError` + maskeleme); `modules/common/errors/{errorMap,registry}.ts` + TY/HB/N11/PZ/IS `errorMap.ts` iskeleti; `integration/catalog/preflight/readiness.ts` (D-VAL-1/2, saf, tek kaynak); Validator/Publisher/Sentinel `issues[]` (staging + `upload.<MODE>.issues`), ImportJobReport `issues[]` (okumada); RPC `preflightExport` + `explainChannelProduct` (yetenek kaydı, `catalog:read`, zod); `ADR-0038-taslak.md`. Paket sonu: 25 suite / 414 test yeşil; tsc + depcruise temiz (3 eski döngü uyarısı). | Yerelde: ADR taslağını `docs/adr/`'ye kopyala; `ExportStagedProducts` şemasında `errorMessage/errorType` yok → Mongoose strict `bulkWrite`'ta atıyor olabilir, gerçek DB'de doğrula. errorMap kuralları WP3/WP4'te fikstürle genişler. FE tüketimi WP2/WP8. |
 | WP2 Eşleme tek kaynak (BE+FE) | **TAMAM (bulut)** | BE: autoMatch P0-3 (ayrı değer ucu; boş eşleme yazılmaz) + P1-4 (yaprak = parentId) + `mode:'suggest'`; `AttributeMappings` `allowCustom/isMultiple/updatedBy{userId,name}/source/stale{reason,detectedAt}` + `mapping.{category,attribute,value}.save/delete/autoMatch/copy` denetimi; göç `0026` (integration_platformCategory + kısmi stale); `PlatformCatalog` (App) + göç `0030` + `catalog.platformRefresh` işi (7 gün; yenileme + bayatlık taraması tek işte, sıra garantili); descriptor `brandMapping` (id/name/attribute/none) + `getCatalog`; RPC `copyMappingsFromCategory` (mevcut yeteneğe bağlı). FE: `categoriesStore` kanal kategori kimliği/durumu AttributeMappings'ten (P0-1); HB değer yükleme (P0-2); `AttrValueField` dört durum + Tekrar dene + Eşlemeye git + i18n (P1-1/3), içeren arama (P1-2); 'Seçenek eşlemesinden doldur' AttributeMappings ile; marka eşlenebilir kanal manifestten (P1-10); kapsam 'Kısmi eşli' (P1-9); 'Kopyala' menüsü. Paket sonu BE 62 suite/948 test, FE vitest 24/24, vue-tsc 0. | Yerelde: göç 0026/0030 plan+up; `catalog.platformRefresh` gerçek Mongo/adaptörle (HB/PZ'de tenant'a özel katalog var mı); bayatlık bildirimi (bildirim kataloğu olayı) WP7/WP8; autoMatch öneri modu FE onay ekranı WP8; FE `fe-r4b-product-form-characterization` 'Tekil Ürün Bilgisi' testi dalda ÖNCEDEN kırmızı (değişiklikten bağımsız, stash ile doğrulandı); FE stil/desen mandallarında dalda önceden kalan ihlaller var (benim dosyalarım değil) → yerelde `ratchet:update` kararı. |
 | WP3 Hepsiburada P0 | **P0 TAMAM (bulut)** | K-13 `hbMerchantId` tek kaynak (SELLERID→MERCHANTID→APIKEY; import `merchant` ve ürün güncelleme artık aynı); K-16 host listesi (+mpfinance-external, api-asktoseller-merchant, shipping-external, hepsinin `-sit` eşleri; tenant `HB_ENV=sit` → tüm tabanlar SIT); D-HB-2: gönderimde kategori kimliği AttributeMappings'ten (yoksa içe aktarılmış `mapping.categoryId`), `Marka` = `Brands.title`, kategoriye özgü zorunlu özellik denetimi (temel kova hariç), değer ucu tekil `attribute/{id}/values?version=5&size=1000`, `lazyValues`/`base` işaretleri; D-HB-1: içe aktarım katalog (`all-products-of-merchant`) + listing birleşimi, Stager'a ham düz kayıt, yerel kategori eşlemeden. Paket sonu (characterization+unit+static+contract+conformance) 305/306 suite, 4162 test yeşil; tek kırmızı bilinen yerel madde `integrationPlaybook.static` (INTEGRATIONS_REGISTRY.md bulutta yok). | Bütçe kalırsa/yerelde: K-1 finans (`mpfinance` transactions; `accounting-external` o zaman kalkar), K-2 soru (asktoseller), K-6/K-7/K-8 yazma uçları (fatura/iptal/kargo; mock+SIT), K-9..K-12, K-14, K-15. Yerel canlı tur: `all-products-of-merchant` ve değer ucu (tekil `attribute`) yanıt fikstürleri → `importRecord.ts` alan adları doğrulanır; katalog belleği büyük mağazada (≤100k) gözlenir. |
-| WP4–WP9 | yerelde | — | PLAN §6. |
+| WP4 Diğer adaptörler | **P0 TAMAM (bulut)** | TY: marka `size=1000` + `brands[]` okuma (D-TY-4), özellik değerleri sayfalı + `attributeValueId/attributeValue` (C-2), `allowMultipleAttributeValues`→`multiple` (C-14), iade `size=200` (C-7), soru statüleri resmî enum (REPORTED/UNANSWERED→`AUTO_CLOSED`, C-4), ek kovalar marka/kategori 50, iade onay/red 5, soru cevap 500 (D-TY-2), descriptor bayat maddeleri (C-13); **K-D** `settings.shippingModel` (marketplace → dürüst `performed:false`; seller → `update-tracking-number` PUT) + ayar formu; `Message.status` şemaya `WAITING_APPROVAL/AUTO_CLOSED/PRE_APPROVAL`. N11: iade `IClaimPackage` mapper + 20'lik sayfalama (**D-N11-7 P0**; eskiden ham kayıt, OrderWorker işleyemiyordu), onay REST `rest/order/v1/update` Picking (C-7; `orderActions` limited). PZ: onay/ret `updateOrderStatusList` tüm kalemler (**D-PZ-9 P0**; `orderItemId=externalOrderId` fallback'i kalktı). IS: sipariş resmî alanları `orderItems/product*`, `customerFirstname`, `finalAmount`, `shippingTrackingCode` (**D-IS-5 P0**). Paket sonu (unit/integration + characterization transformers/stubs/common/TY + contract/catalog + conformance): 101 suite / 1143 test yeşil (1 TY karakterizasyonu yeni kovalara göre güncellendi); tsc 0, vue-tsc 0. | Kalan (sonraki pencere/yerel): N11 C-1 export gövdesi (attributes/shipmentTemplate/vatRate/productMainId — P0, büyük), D-N11-2 import `page/size`+`content[]`, C-3/C-5 `page/size`, C-8 `UnPacked`, C-9 kargo SOAP gövdesi; TY C-1 çoklu değer `attributeValueIds[]` (alan adı yerelde teyit), D-TY-3 storeFrontCode (yerel), C-6 fatura 409/mikro ihracat, C-11 `reasonId` sayısal, finans türleri; PZ D-PZ-1..8, 10..13; IS D-IS-1/2/3/6; BH D-BH-1..3. Yerelde canlı doğrulama: TY `update-tracking-number` (stage), N11 iade alan adları + `rest/order/v1/update`, PZ `updateOrderStatusList`. |
+| WP5 Fiyat | **sıradaki (yeni pencere)** | — | PLAN §3.4 + §6 WP5. |
+| WP6 Sipariş/iade/fatura/finans/mesaj | sonra (yeni pencere) | — | PLAN §6 WP6. Not: `Message.status` enum genişlemesi WP4'te yapıldı. |
+| WP7–WP9 | sonraki pencereler / yerel | — | PLAN §6. |
 
-## Yeni oturum için prompt (claude.ai/code → entegrasyonik-cloud → yeni oturum; dal: feature/eslesme-fiyat-yeniden-yapilandirma)
+## Yeni oturum için promptlar (claude.ai/code → entegrasyonik-cloud → yeni oturum; dal: feature/eslesme-fiyat-yeniden-yapilandirma)
 
+WP5 penceresi:
 ```
 Dal: feature/eslesme-fiyat-yeniden-yapilandirma (origin'den çek; başka dala geçme, merge/rebase yok).
-Önce docs/eslesme-fiyat/DURUM.md'yi oku ve oradaki "WP durumu" tablosundan devam et (şu an WP0 yarım).
-Kurallar DURUM.md "Bütçe ve çalışma kuralları" bölümünde: 120 USD sınırı, sıra WP0→WP1→WP2→WP3, testler yazılır ama
-koşturma kısıtlı (tam koşu yok), tsc her commit öncesi, canlıya yazma yok, DB/Redis yok, göçler yalnız yazılır,
-git add -A yok, *-linux.png commit'lenmez, docs/adr ve CLAUDE.md salt-okunur (USER_DECISIONS satırları
-docs/eslesme-fiyat/USER_DECISIONS_EKLER.md'ye). Her anlamlı adımda commit + push ve DURUM.md güncelle.
-"Dur" dediğimde o adımı kapat, commit + push, DURUM.md'yi güncelle ve 5 satırlık özet ver.
+Önce docs/eslesme-fiyat/DURUM.md'yi oku ("Pencere planı" ve "WP durumu"). Bu pencerede YALNIZ WP5 (Fiyat) yapılır; bitince "WP5 bitti" de, WP6'ya geçme.
+Kapsam: PLAN.md §3.4 ve §6 WP5 (P0 önce). Kurallar DURUM.md "Bütçe ve çalışma kuralları": testler yazılır, koşturma kısıtlı (tam koşu yok),
+tsc her commit öncesi (çıkış kodu), paket sonu koşusunda "Test Suites" satırına bak; canlıya yazma yok, DB/Redis yok, göçler yalnız yazılır;
+git add -A yok, *-linux.png commit'lenmez; docs/adr ve CLAUDE.md salt-okunur (USER_DECISIONS satırları docs/eslesme-fiyat/USER_DECISIONS_EKLER.md'ye).
+Her anlamlı adımda commit + push ve DURUM.md güncelle; WP sonunda 5 satırlık özet. "Dur" dersem o adımı kapat, commit + push, DURUM güncelle, 5 satır özet.
 ```
+
+WP6 penceresi: aynı metin; "WP5 (Fiyat)" yerine "WP6 (Sipariş/iade/fatura/finans/mesaj)", "PLAN.md §3.4" yerine "PLAN.md §3.1 tabloları, §4 (0027) ve 03-uyumluluk-analizi.md §3".

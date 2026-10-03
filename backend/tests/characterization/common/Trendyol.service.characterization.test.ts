@@ -125,7 +125,8 @@ describe('Trendyol Service - ResilientHttpClient politikasi', () => {
         expect(p.timeoutMs).toBe(30000);
         expect(p.maxConcurrent).toBe(10);
         expect(p.ratePerMin).toBe(200);
-        expect(p.groupRatePerMin).toEqual({ product_read: 1000, product_write: 200, inventory_price_write: 350, finance: 100 });
+        // [eslesme-fiyat WP4, D-TY-2] marka/kategori 50, iade onay/red 5, soru cevap 500 kovaları eklendi
+        expect(p.groupRatePerMin).toEqual({ product_read: 1000, product_write: 200, inventory_price_write: 350, finance: 100, brand_category_read: 50, claim_action: 5, qna_answer: 500 });
     });
     it('TY_HTTP_TIMEOUT_MS ve TY_RATE_PER_MIN env gecersiz kilar', () => {
         process.env.TY_HTTP_TIMEOUT_MS = '1234'; process.env.TY_RATE_PER_MIN = '77';
