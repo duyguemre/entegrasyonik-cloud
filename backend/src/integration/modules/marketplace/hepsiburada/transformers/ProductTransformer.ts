@@ -1,5 +1,5 @@
 import { ICategoryAttribute, IExportStagedProduct, IInternalAddress, IVariant, PLATFORM_PROCESS } from '@interfaces/index';
-import { integrationCode } from '../constants';
+import { integrationCode, hbMerchantId } from '../constants';
 import { randomUUID } from 'crypto';
 import { IInternalResult } from '@interfaces/index';
 import { normalizeAttrValue } from '@integration/catalog/attributePayload';
@@ -64,7 +64,7 @@ export class ProductMapper {
         // Hepsiburada Product Import Model (Old structure)
         const item: any = {
             categoryId: Number(mapping.catId),
-            merchant: mapping.settings?.APIKEY || mapping.settings?.USERNAME || "",
+            merchant: hbMerchantId(mapping.settings), // [K-13] tek kaynak (eskiden APIKEY→USERNAME)
             attributes: {
                 merchantSku: variant.stockcode || String(variant.barcode),
                 VaryantGroupID: variant.maincode || variant.stockcode,

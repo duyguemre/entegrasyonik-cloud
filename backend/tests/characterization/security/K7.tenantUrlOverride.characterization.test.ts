@@ -201,3 +201,22 @@ describe('K8 IntegrationService.get (member yanıtı)', () => {
     expect(out[3]).toEqual({ code: 'ptt', title: 'ptt' });
   });
 });
+
+describe('[eslesme-fiyat WP3, K-16] Hepsiburada servis host\'ları + SIT (yalnız tenant HB_ENV=sit)', () => {
+  beforeEach(() => { for (const k of MOCK_ENVS) delete process.env[k]; });
+  afterEach(() => jest.restoreAllMocks());
+
+  it('finans transactions → mpfinance-external, soru issues → api-asktoseller-merchant, lineitems → oms-external', async () => {
+    const spy = jest.spyOn(axios, 'get').mockResolvedValue({ status: 200, data: {} } as any);
+    const svc = new HbService(hbParams({}));
+    await svc.get('transactions/merchantid/x'); await svc.get('api/v1.0/issues'); await svc.get('lineitems/merchantid/x/id/1');
+    expect(spy.mock.calls.map((c: any) => new URL(c[0]).hostname)).toEqual(['mpfinance-external.hepsiburada.com', 'api-asktoseller-merchant.hepsiburada.com', 'oms-external.hepsiburada.com']);
+  });
+
+  it('HB_ENV=sit: tüm tabanlar -sit eşlerine gider ve platform (prod) urls yok sayılır; ayar yoksa prod', async () => {
+    const spy = jest.spyOn(axios, 'get').mockResolvedValue({ status: 200, data: {} } as any);
+    const sit = new HbService(hbParams({ HB_ENV: 'SIT' }, { BASEURL: 'https://mpop.hepsiburada.com' }));
+    await sit.get('product/api/categories/get-all-categories'); await sit.get('orders/merchantid/x'); await sit.get('listings/merchantid/x');
+    expect(spy.mock.calls.map((c: any) => new URL(c[0]).hostname)).toEqual(['mpop-sit.hepsiburada.com', 'oms-external-sit.hepsiburada.com', 'listing-external-sit.hepsiburada.com']);
+  });
+});

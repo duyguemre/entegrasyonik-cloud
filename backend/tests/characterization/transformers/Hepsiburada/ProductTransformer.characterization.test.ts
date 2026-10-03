@@ -111,11 +111,15 @@ describe('Hepsiburada ProductMapper.toPlatformBatch — karakterizasyon', () => 
         expect(item.attributes.A3).toBe('RAW3');
     });
 
-    it('merchant: APIKEY yoksa USERNAME\'e düşer, o da yoksa boş string', () => {
-        const item1 = m.toPlatformBatch(staged(makeVariant()), PLATFORM_PROCESS.TRANSFER, catAttrs, [], { ...mapping, settings: { USERNAME: 'user-1' } });
-        expect(item1.merchant).toBe('user-1');
-        const item2 = m.toPlatformBatch(staged(makeVariant()), PLATFORM_PROCESS.TRANSFER, catAttrs, [], { ...mapping, settings: {} });
-        expect(item2.merchant).toBe('');
+    // [eslesme-fiyat WP3, K-13 — BİLİNÇLİ DEĞİŞİKLİK] Eskiden merchant = APIKEY→USERNAME (sorgu yollarından farklı kaynak). Artık tek kaynak
+    // hbMerchantId: SELLERID → MERCHANTID → APIKEY; USERNAME merchantId değildir (Basic kullanıcı adı).
+    it('merchant: tek kaynak hbMerchantId (SELLERID → MERCHANTID → APIKEY); hiçbiri yoksa boş string', () => {
+        const pick = (settings: any) => m.toPlatformBatch(staged(makeVariant()), PLATFORM_PROCESS.TRANSFER, catAttrs, [], { ...mapping, settings }).merchant;
+        expect(pick({ SELLERID: 'uuid-1', APIKEY: 'key', USERNAME: 'user-1' })).toBe('uuid-1');
+        expect(pick({ MERCHANTID: 'uuid-2', APIKEY: 'key' })).toBe('uuid-2');
+        expect(pick({ APIKEY: 'key' })).toBe('key');
+        expect(pick({ USERNAME: 'user-1' })).toBe('');
+        expect(pick({})).toBe('');
     });
 });
 

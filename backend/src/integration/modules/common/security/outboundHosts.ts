@@ -26,9 +26,13 @@ import { LLM_HOSTS } from '@platform/llm/catalog';
 export const ALLOWED_OUTBOUND_HOSTS: Readonly<Record<string, readonly string[]>> = {
     trendyol: ['api.trendyol.com', 'apigw.trendyol.com', 'stageapigw.trendyol.com'],
     // oms-external: sipariş/paket (OMS) API'si — 2026-10-03 canlı salt-okuma ile DOĞRULANDI (orders/packages burada 200; mpop'ta 404).
+    // [eslesme-fiyat WP3, K-16] + mpfinance-external (finans), api-asktoseller-merchant (soru), shipping-external (kargo) ve hepsinin SIT eşleri
+    // (`-sit`; yalnız tenant `HB_ENV=sit` iken kullanılır). accounting-external K-1 finans yeniden yazımına kadar kalır (canlıda 404).
     hepsiburada: [
         'mpop.hepsiburada.com', 'listing-external.hepsiburada.com', 'accounting-external.hepsiburada.com', 'ticket-api.hepsiburada.com',
-        'oms-external.hepsiburada.com',
+        'oms-external.hepsiburada.com', 'mpfinance-external.hepsiburada.com', 'api-asktoseller-merchant.hepsiburada.com', 'shipping-external.hepsiburada.com',
+        'mpop-sit.hepsiburada.com', 'listing-external-sit.hepsiburada.com', 'oms-external-sit.hepsiburada.com', 'mpfinance-external-sit.hepsiburada.com',
+        'api-asktoseller-merchant-sit.hepsiburada.com', 'shipping-external-sit.hepsiburada.com',
     ],
     n11: ['api.n11.com'],
     pazarama: ['isortagim.pazarama.com', 'isortagimapi.pazarama.com', 'isortagimgiris.pazarama.com'],

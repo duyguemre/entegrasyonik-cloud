@@ -3,6 +3,7 @@ import { QuestionMapper } from '../transformers/QuestionTransformer';
 import { IMessage } from '@interfaces/index';
 import { carryIncomplete } from '@integration/contracts/IncompleteFetch';
 import { paginateOffset, readTotal } from '../api/paginateOffset';
+import { hbMerchantId } from '../constants';
 
 export class QuestionService {
     private mapper: QuestionMapper;
@@ -15,7 +16,7 @@ export class QuestionService {
     }
 
     public async fetchQuestions(query?: any): Promise<IMessage[]> {
-        const merchantId = this.params.integrationSettings.settings.SELLERID;
+        const merchantId = hbMerchantId(this.params.integrationSettings?.settings);
         // Hepsiburada hem ürün soruları hem sipariş mesajları için aynı endpoint'i kullanıyor olabilir mock tarafında
         // [INT-05 / F-02] ILK istek eskisiyle BIREBIR (sorgu aynen); yanit dolu/kesik gorunuyorsa sonraki sayfalar offset+limit ile (bkz. FinancialConnector).
         const raw = await paginateOffset(async (offset, limit) => {
@@ -28,7 +29,7 @@ export class QuestionService {
     }
 
     public async answerMessage(questionId: string, answerText: string): Promise<boolean> {
-        const merchantId = this.params.integrationSettings.settings.SELLERID;
+        const merchantId = hbMerchantId(this.params.integrationSettings?.settings);
         const response = await this.service.post(`questions/merchantid/${merchantId}/answers`, {
             questionId,
             answer: answerText

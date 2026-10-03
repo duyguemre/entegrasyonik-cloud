@@ -96,7 +96,7 @@ const HepsiburadaDescriptor: IntegrationDescriptor = {
         verified: false,
     },
     api: {
-        hosts: ['mpop.hepsiburada.com', 'listing-external.hepsiburada.com', 'accounting-external.hepsiburada.com', 'ticket-api.hepsiburada.com', 'oms-external.hepsiburada.com'],
+        hosts: ['mpop.hepsiburada.com', 'listing-external.hepsiburada.com', 'accounting-external.hepsiburada.com', 'ticket-api.hepsiburada.com', 'oms-external.hepsiburada.com', 'mpfinance-external.hepsiburada.com', 'api-asktoseller-merchant.hepsiburada.com', 'shipping-external.hepsiburada.com'],
         docs: [
             { url: 'https://developers.hepsiburada.com/hepsiburada/changelog', kind: 'changelog', official: true, monitor: 'manual', accessNote: 'WebFetch 403 (bot koruması) — otomatik izlenemedi, manuel turla doğrulanmalı' },
         ],

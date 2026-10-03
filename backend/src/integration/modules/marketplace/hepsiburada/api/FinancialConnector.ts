@@ -1,12 +1,13 @@
 import Service from '../services/Service';
 import { paginateOffset, readTotal } from './paginateOffset';
+import { hbMerchantId } from '../constants';
 
 export class FinancialConnector {
     constructor(private service: Service, private params: any) { }
 
     public async fetchTransactions(query: any): Promise<any[]> {
         const s = this.params.integrationSettings.settings || {};
-        const merchantId = s.MERCHANTID || s.merchantid || s.SELLERID || s.sellerid || s.APIKEY || s.apikey || "";
+        const merchantId = hbMerchantId(s);
         const urls = this.params.integrationSettings.urls || {};
         let url = urls.financialTransactionsUrl || `settlements/merchantid/${merchantId}`;
         

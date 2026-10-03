@@ -2,6 +2,7 @@ import { observeResponseSchema } from '@integration/modules/common/contract/obse
 import { HB_BATCH_STATUS } from '../contracts';
 import Service from '../services/Service';
 import { paginateOffset, readTotal } from './paginateOffset';
+import { hbMerchantId } from '../constants';
 
 export class ProductConnector {
     constructor(private service: Service, private params: any) { }
@@ -32,7 +33,7 @@ export class ProductConnector {
 
     public async fetchProductsFromPlatform(query: any): Promise<any> {
         const s = this.params.integrationSettings.settings || {};
-        const merchantId = s.MERCHANTID || s.merchantid || s.SELLERID || s.sellerid || s.APIKEY || s.apikey || "";
+        const merchantId = hbMerchantId(s);
         const urls = this.params.integrationSettings.urls || {};
         let url = urls.productListUrl || urls.listingUrl || `listings/merchantid/${merchantId}`;
         
@@ -63,7 +64,7 @@ export class ProductConnector {
 
     public async updatePrice(payload: any): Promise<any> {
         const s = this.params.integrationSettings.settings || {};
-        const merchantId = s.MERCHANTID || s.merchantid || s.SELLERID || s.sellerid || s.APIKEY || s.apikey || "";
+        const merchantId = hbMerchantId(s);
         const urls = this.params.integrationSettings.urls || {};
         
         let url = urls.priceUpdateUrl || "";
@@ -82,7 +83,7 @@ export class ProductConnector {
 
     public async updateStock(payload: any): Promise<any> {
         const s = this.params.integrationSettings.settings || {};
-        const merchantId = s.MERCHANTID || s.merchantid || s.SELLERID || s.sellerid || s.APIKEY || s.apikey || "";
+        const merchantId = hbMerchantId(s);
         const urls = this.params.integrationSettings.urls || {};
 
         let url = urls.stockUpdateUrl || "";
@@ -109,7 +110,7 @@ export class ProductConnector {
 
     public async checkUploadJobStatus(type: 'price' | 'stock' | 'update', jobId: string): Promise<any> {
         const s = this.params.integrationSettings.settings || {};
-        const merchantId = s.MERCHANTID || s.merchantid || s.SELLERID || s.sellerid || s.APIKEY || s.apikey || "";
+        const merchantId = hbMerchantId(s);
         const urls = this.params.integrationSettings.urls || {};
 
         let url: string;

@@ -4,7 +4,7 @@ import {
     IPlatformProductSummary, IValidationResult, IVariant, PLATFORM_PROCESS
 } from '@interfaces/index';
 import { integrationCode as CODE } from '../constants';
-import { integrationCode } from '../constants';
+import { integrationCode, hbMerchantId } from '../constants';
 import { ProductConnector } from '../api/ProductConnector';
 import { ProductMapper } from '../transformers/ProductTransformer';
 import { Service } from './Service';
@@ -157,7 +157,7 @@ export class ProductService {
 
         try {
             const payload = {
-                merchantId: this.params.integrationSettings?.settings?.APIKEY || this.params.integrationSettings?.settings?.USERNAME || "",
+                merchantId: hbMerchantId(this.params.integrationSettings?.settings), // [K-13] tek kaynak
                 items
             };
             const response = await this.connector.updateProduct(payload);

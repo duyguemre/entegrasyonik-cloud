@@ -3,7 +3,7 @@ import { HB_ORDERS_LIST } from '../contracts';
 import Service from '../services/Service';
 import { IPlatformResponse, ISendInvoicePayload } from '@interfaces/index';
 import { fromHttpError } from '@integration/modules/common/IntegrationError';
-import { integrationCode } from '../constants';
+import { integrationCode, hbMerchantId } from '../constants';
 import { paginateOffset, readTotal } from './paginateOffset';
 
 /**
@@ -21,7 +21,7 @@ export class OrderConnector {
 
     private getMerchantId(): string {
         const s = this.params.integrationSettings?.settings || {};
-        return s.MERCHANTID || s.merchantid || s.SELLERID || s.sellerid || s.APIKEY || s.apikey || "";
+        return hbMerchantId(s);
     }
 
     private orderListUrl(): string {
