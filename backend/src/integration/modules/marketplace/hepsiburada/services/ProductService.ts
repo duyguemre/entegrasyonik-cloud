@@ -10,6 +10,8 @@ import { ProductMapper } from '../transformers/ProductTransformer';
 import { Service } from './Service';
 import { IntegrationError } from '@integration/modules/common/IntegrationError';
 import { getIncomplete } from '@integration/contracts/IncompleteFetch';
+import { labelAttribute, missingRequiredAttributes } from '@integration/catalog/attributePayload';
+import type { ICategoryAttribute } from '@interfaces/index';
 
 // [INT-05 / F-02] Listing tarama/akış tavanları (aşılırsa sessiz kesilmez: uyarı + incomplete/FAILED).
 const STATUS_SCAN_MAX_PAGES = 20;        // updateProductStatuses: sayfa başına 500 => 10.000 listing
@@ -21,27 +23,64 @@ export class ProductService {
     private connector: ProductConnector;
     private mapper: ProductMapper;
 
-    constructor(private params: any, private service: Service) {
+    /** `categoryService` (opsiyonel): verilirse gönderimde kategori özellikleri okunur ve ZORUNLU özellik denetimi yapılır (K-5). */
+    constructor(private params: any, private service: Service, private categoryService?: { fetchCategoryAttributes(id: string): Promise<ICategoryAttribute[]> }) {
         this.connector = new ProductConnector(this.service, this.params);
         this.mapper = new ProductMapper();
+    }
+
+    /**
+     * [eslesme-fiyat WP3, D-HB-2 / K-4 / K-5] Kategori kimliği TEK KAYNAK `AttributeMappings` (mappingProvider; TY/PZ kalıbı), yoksa içe
+     * aktarılmış üründeki HB kimliği (`mapping.categoryId`). Marka = yerel `Brands.title` (HB ad ister), yoksa içe aktarılan HB metni.
+     * Kategori özellikleri okunur; kategoriye özgü ZORUNLU özellik eksikse ürün gönderilmez (alan bazlı mesaj → errorMap MAP_ATTR_MISSING).
+     * Eskiden kimlik yalnız import'ta dolan `mapping.categoryId`'den okunuyordu → yerel ürün `categoryId: NaN`, `Marka: "undefined"`.
+     */
+    private async resolveCategoryAndBrand(variant: any): Promise<{ catId: string; brandName: string }> {
+        const mp = this.params.mappingProvider;
+        const vMap = variant.platforms?.[integrationCode]?.mapping || {};
+        const localCat = variant.product?.category;
+        let catId: any = mp && localCat ? await mp.getPlatformCategoryId(String(localCat)) : undefined;
+        if (catId === undefined || catId === null || catId === '' || catId == -1) catId = vMap.categoryId;
+        if (catId === undefined || catId === null || catId === '' || catId == -1) throw new Error('Hepsiburada kategori eşlemesi bulunamadı.');
+
+        let brandName: string | undefined;
+        const localBrand = variant.product?.brand;
+        if (mp && localBrand && typeof mp.getLocalBrandTitle === 'function') {
+            const t = await mp.getLocalBrandTitle(String(localBrand));
+            if (t && t !== 'Bilinmeyen Marka') brandName = String(t);
+        }
+        brandName ??= vMap.brandName || (vMap.brandId !== undefined && vMap.brandId !== null && vMap.brandId !== '' ? String(vMap.brandId) : undefined);
+        if (!brandName) throw new Error('Hepsiburada marka adı bulunamadı (ürünün markasını seçin).');
+        return { catId: String(catId), brandName };
     }
 
     public async transferProducts(stagedProducts: IExportStagedProduct[]): Promise<IBatchProcessResult> {
         const items: any[] = [];
         const variantList: any[] = [];
         const failedVariants: any[] = [];
+        const attrCache = new Map<string, Promise<ICategoryAttribute[]>>();
+        const attrsOf = (catId: string) => {
+            if (!this.categoryService) return Promise.resolve([] as ICategoryAttribute[]);
+            let p = attrCache.get(catId);
+            if (!p) { p = this.categoryService.fetchCategoryAttributes(catId); attrCache.set(catId, p); }
+            return p;
+        };
 
         for (const sp of stagedProducts) {
             const variant = sp.payload;
             if (!variant) continue;
             try {
-                const mapping = variant.platforms?.[integrationCode]?.mapping;
-                const item = this.mapper.toPlatformBatch(sp, PLATFORM_PROCESS.TRANSFER, [], [], {
-                    catId: mapping?.categoryId,
-                    brandId: mapping?.brandId,
+                const { catId, brandName } = await this.resolveCategoryAndBrand(variant);
+                const catAttrs = await attrsOf(catId);
+                const item = this.mapper.toPlatformBatch(sp, PLATFORM_PROCESS.TRANSFER, catAttrs, [], {
+                    catId,
+                    brandId: brandName,
+                    brandName,
                     settings: this.params.integrationSettings?.settings
                 });
                 if (!item) throw new Error('Ürün dönüştürülemedi.');
+                const missing = missingRequiredAttributes(catAttrs, new Set(Object.keys(item.attributes || {})), (c) => !!c.base);
+                if (missing.length) throw new Error(`Hepsiburada zorunlu özellik eksik: ${missing.map((c) => labelAttribute(String(c._id), c.title)).join(', ')}`);
                 items.push(item);
                 variantList.push({ variantId: variant._id, barcode: variant.barcode });
             } catch (e: any) {

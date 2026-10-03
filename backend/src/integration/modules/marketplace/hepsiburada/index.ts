@@ -26,7 +26,7 @@ export default class Hepsiburada implements IPlatform {
     constructor(private params: any) {
         this.service = new Service(this.params);
         this.categoryService = new CategoryService(this.params, this.service);
-        this.productService = new ProductService(this.params, this.service);
+        this.productService = new ProductService(this.params, this.service, this.categoryService);
         this.orderService = new OrderService(this.params, this.service);
         this.claimService = new ClaimService(this.params, this.service);
         this.financialService = new FinancialService(this.params, this.service);

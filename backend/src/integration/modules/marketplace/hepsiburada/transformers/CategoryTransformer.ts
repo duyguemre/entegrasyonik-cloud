@@ -49,6 +49,9 @@ export class CategoryMapper {
         variantAttributes.forEach((attr: any) => {
             attr.varianter = true;
         });
+        // [eslesme-fiyat WP3, K-5] Temel kova (UrunAdi/Barcode/Marka/fiyat...) ürünün sabit alanlarından doldurulur; zorunlu özellik
+        // denetimi yalnız kategoriye özgü kovalara (attributes + variantAttributes) uygulanır (`base` işareti).
+        const baseIds = new Set(baseAttributes.map((a: any) => String(a.id)));
 
         const mergedAttributes = [
             ...baseAttributes,
@@ -65,7 +68,10 @@ export class CategoryMapper {
                 varianter: !!attr.varianter,
                 slicer: !!attr.slicer,
                 multiple: !!attr.multiValue,
-                values: [] // Values will be fetched by the service if needed
+                values: [], // Values will be fetched by the service if needed
+                // [Ek C P0-2] enum değerleri AYRI uçtan gelir: FE/eşleme ekranı bu bayrakla menü açılınca yükler.
+                lazyValues: attr.type === 'enum',
+                base: baseIds.has(String(attr.id)),
             } as ICategoryAttribute;
         }).sort((a, b) => a.title.localeCompare(b.title, "tr"));
     }

@@ -98,6 +98,10 @@ export interface ICategoryAttribute {
     slicer: boolean;
     multiple: boolean;
     values?: ICategoryAttributeValue[];
+    /** [eslesme-fiyat WP2/WP3] Değer listesi ayrı uçtan (menü açılınca) yüklenir (HB enum). */
+    lazyValues?: boolean;
+    /** [WP3] HB temel kova (ürünün sabit alanlarından dolar; kategori zorunlu özellik denetimine girmez). */
+    base?: boolean;
 }
 
 

@@ -28,7 +28,7 @@ export class ProductMapper {
         mode: PLATFORM_PROCESS,
         catAttrs: ICategoryAttribute[],
         addresses: IInternalAddress[],
-        mapping: { catId: any, brandId: any, settings: any }
+        mapping: { catId: any, brandId: any, settings: any, brandName?: string }
     ) {
         const variant = stagedProduct.payload;
         if (!variant) return null;
@@ -71,7 +71,9 @@ export class ProductMapper {
                 Barcode: String(variant.barcode),
                 UrunAdi: vMapping?.title || variant.product?.title || "",
                 UrunAciklamasi: vMapping?.description || variant.product?.description || "",
-                Marka: String(mapping.brandId), // This should be the brand title
+                // [eslesme-fiyat WP3, K-4] HB marka ADI ister (kimlik değil; marka listesi ucu yok): yerel `Brands.title` (brandName);
+                // yoksa içe aktarılmış üründeki HB marka metni (mapping.brandId = HB `brand` string).
+                Marka: String(mapping.brandName ?? mapping.brandId),
                 GarantiSuresi: warranty,
                 kg: desi,
                 tax_vat_rate: String(taxPercentage),

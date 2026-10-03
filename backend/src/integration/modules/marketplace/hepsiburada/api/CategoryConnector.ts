@@ -52,7 +52,9 @@ export class CategoryConnector {
 
     public async fetchCategoryAttributeValues(categoryId: string, attributeId: string, page = 0): Promise<any> {
         const urls = this.params.integrationSettings.urls || {};
-        let url = urls.categoryAttributeValuesUrl || `product/api/categories/${categoryId}/attributes/${attributeId}/values`;
+        // [eslesme-fiyat WP3, K-5] Doküman yolu TEKİL `attribute` (`/api/categories/{id}/attribute/{attributeId}/values`, version=5,
+        // size ≤1000); eski çoğul `attributes/.../values` dokümanda yok. Yerel canlı turda (03 §5) doğrulanacak; platform urls override kalır.
+        let url = urls.categoryAttributeValuesUrl || `product/api/categories/${categoryId}/attribute/${attributeId}/values?version=5&size=1000`;
         url = url.replace('<CATEGORYID>', categoryId).replace('<ATTRIBUTEID>', attributeId);
 
         // Append page parameter
