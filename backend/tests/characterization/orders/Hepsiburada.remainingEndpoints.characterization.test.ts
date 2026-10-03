@@ -11,13 +11,18 @@ import { CategoryConnector } from '@integration/modules/marketplace/hepsiburada/
 import { CategoryService } from '@integration/modules/marketplace/hepsiburada/services/CategoryService';
 
 const params = { clientId: 7, integrationSettings: { settings: { MERCHANTID: 'M-1', SELLERID: 'M-1' }, urls: {} } };
+// [eslesme-fiyat WP3, D-HB-1] getProductsAndPersist önce katalog ucunu (all-products-of-merchant) okur: sahte servis bu ucu AYRI yanıtlar
+// (boş katalog; sıradaki listing yanıtlarını tüketmez) ve `get` yalnız listing/diğer çağrıları kaydeder (sayfalama beklentileri aynen geçerli).
+const catalogGet = jest.fn(async (_url: string, _q?: any) => ({ data: { success: true, data: [], totalPages: 1 } }));
 const fakeService = (responses: any[]) => {
-    const get = jest.fn(async (_url: string, _q?: any) => {
+    const listingGet = jest.fn(async (_url: string, _q?: any) => {
         const next = responses.shift();
         if (next instanceof Error) throw next;
         return { data: next };
     });
-    return { service: { get } as any, get };
+    const get = listingGet;
+    const route = jest.fn(async (url: string, q?: any) => (String(url).includes('all-products-of-merchant') ? catalogGet(url, q) : listingGet(url, q)));
+    return { service: { get: route } as any, get };
 };
 let cap: LogCapture;
 beforeEach(() => { cap = captureLogs(); });

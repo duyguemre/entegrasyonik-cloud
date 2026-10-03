@@ -3,6 +3,7 @@ import { HB_BATCH_STATUS } from '../contracts';
 import Service from '../services/Service';
 import { paginateOffset, readTotal } from './paginateOffset';
 import { hbMerchantId } from '../constants';
+import { paginate } from '@integration/modules/common/adapter/paginate';
 
 export class ProductConnector {
     constructor(private service: Service, private params: any) { }
@@ -60,6 +61,25 @@ export class ProductConnector {
             return { items: Array.isArray(data?.items) ? data.items : [], total: t };
         }, { operation: 'fetchListingPages', clientId: this.params.clientId, ...opts });
         return { items, total };
+    }
+
+    /**
+     * [eslesme-fiyat WP3, D-HB-1] Katalog ürünleri (mpop `GET product/api/products/all-products-of-merchant/{merchantId}?page&size`,
+     * Spring zarfı `{success, data[], totalPages, number}`). `onPage` akış kipi; tavanda sessiz kesilmez (paginate incomplete işareti).
+     */
+    public async fetchCatalogPages(opts: { size?: number; maxPages: number; maxRecords?: number; onPage: (items: any[]) => Promise<void> }): Promise<any[]> {
+        const merchantId = hbMerchantId(this.params.integrationSettings?.settings);
+        const urls = this.params.integrationSettings?.urls || {};
+        const url = (urls.catalogProductsUrl || `product/api/products/all-products-of-merchant/${merchantId}`).replace('<MERCHANTID>', merchantId);
+        const size = opts.size ?? 100;
+        return paginate<any>(async ({ page }) => {
+            const res = await this.service.get(url, { page, size });
+            const body = res?.data;
+            const items = Array.isArray(body?.data) ? body.data : Array.isArray(body?.content) ? body.content : Array.isArray(body) ? body : [];
+            const totalPages = Number(body?.totalPages);
+            const next = Number.isFinite(totalPages) ? (page + 1 < totalPages ? page + 1 : null) : (items.length >= size ? page + 1 : null);
+            return { items, next };
+        }, { kind: 'cursor', maxPages: opts.maxPages, maxRecords: opts.maxRecords, limit: size, operation: 'fetchCatalogPages', integrationCode: 'hepsiburada', clientId: this.params.clientId, onPage: opts.onPage, collect: false });
     }
 
     public async updatePrice(payload: any): Promise<any> {

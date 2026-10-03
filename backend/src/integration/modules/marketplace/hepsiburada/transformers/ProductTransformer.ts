@@ -92,7 +92,7 @@ export class ProductMapper {
         const salePrice = p.price || 0;
         return {
             code: integrationCode,
-            maincode: p.merchantSku || p.barcode,
+            maincode: p.variantGroupId || p.merchantSku || p.barcode, // [WP3] VaryantGroupID varsa grup anahtarı
             title: p.productName || p.name,
             description: p.description,
             barcode: p.barcode,

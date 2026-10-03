@@ -12,6 +12,10 @@ import { IntegrationError } from '@integration/modules/common/IntegrationError';
 import { getIncomplete } from '@integration/contracts/IncompleteFetch';
 import { labelAttribute, missingRequiredAttributes } from '@integration/catalog/attributePayload';
 import type { ICategoryAttribute } from '@interfaces/index';
+import { compactCatalogProduct, toImportRecord, type HbCatalogCompact } from '../transformers/importRecord';
+import { eventLog } from '@platform/core/logger';
+
+const log = eventLog('adapter-hepsiburada', 'ProductService');
 
 // [INT-05 / F-02] Listing tarama/akış tavanları (aşılırsa sessiz kesilmez: uyarı + incomplete/FAILED).
 const STATUS_SCAN_MAX_PAGES = 20;        // updateProductStatuses: sayfa başına 500 => 10.000 listing
@@ -294,11 +298,15 @@ export class ProductService {
             // sonra DURUYORDU (sessiz eksik import); artık `dönen < limit` ile durur, tekrar eden sayfa/tavan FAILED olarak bildirilir.
             const limit = 100;
             let totalProcessed = 0;
+            // [eslesme-fiyat WP3, D-HB-1] 1) Katalog (ürün bilgisi) merchantSku → sıkıştırılmış kayıt; 2) listing akışı (fiyat/stok) sürücüdür,
+            // her kayıt katalogla birleştirilip Stager'a HAM düz kayıt olarak verilir (eskiden iç model veriliyordu). Katalog okunamazsa
+            // hata fırlar (sessiz ürün bilgisiz içe aktarım yok); katalogda bulunmayan listing kaydı yine akar (`catalogMatched:false`).
+            const catalog = await this.loadCatalogIndex();
             const { items: rest, total } = await this.connector.fetchListingPages(query, {
                 limit, maxPages: STREAM_MAX_PAGES, maxRecords: STREAM_MAX_RECORDS,
                 onPage: async (products: any[]) => {
-                    const normalized = products.map((p: any) => this.mapper.toInternalVariant(p, { choices: [] }));
-                    await callback(normalized);
+                    const records = products.map((p: any) => toImportRecord(p, catalog.get(String(p?.merchantSku ?? ''))));
+                    await callback(records);
                     totalProcessed += products.length;
                 },
             });
@@ -323,13 +331,31 @@ export class ProductService {
         }
     }
 
+    /** Katalog: merchantSku → sıkıştırılmış ürün bilgisi (bellekte yalnız gereken alanlar; tavan STREAM_MAX_RECORDS). */
+    private async loadCatalogIndex(): Promise<Map<string, HbCatalogCompact>> {
+        const index = new Map<string, HbCatalogCompact>();
+        const rest = await this.connector.fetchCatalogPages({
+            size: 100, maxPages: STREAM_MAX_PAGES, maxRecords: STREAM_MAX_RECORDS,
+            onPage: async (items: any[]) => { for (const raw of items) { const c = compactCatalogProduct(raw); if (c) index.set(c.merchantSku, c); } },
+        });
+        const incomplete = getIncomplete(rest);
+        if (incomplete) log.warn('HB_CATALOG_INCOMPLETE', `Hepsiburada katalog listesi tamamlanamadı (${incomplete.reason}); ${index.size} ürün bilgisi okundu.`, { tenantId: this.params.clientId });
+        return index;
+    }
+
+    /**
+     * [WP3, D-HB-1] Stager'ın ham kaydı (`toImportRecord`) → iç model. Yerel kategori AttributeMappings'ten (platform kategori → yerel);
+     * marka HB'de metin olduğundan yerel marka kimliği çözülmez (null; Validator "marka seçin" der — Ek A P1-7, marka adı varyant mapping'inde).
+     */
     public async convertToInternalModel(stagedProduct: any): Promise<IInternalConversionResult> {
         const variant = this.mapper.toInternalVariant(stagedProduct, { choices: [] });
+        const mp = this.params.mappingProvider;
+        const category = mp && stagedProduct?.categoryId ? (await mp.getLocalCategoryId(stagedProduct.categoryId)) ?? null : null;
         return {
             product: {
                 title: variant.title,
                 brand: null,
-                category: null,
+                category,
                 maincode: variant.maincode,
                 hasVariant: false
             },
@@ -341,13 +367,13 @@ export class ProductService {
         return {
             category: rawData.categoryId || 0,
             salePrice: rawData.price || 0,
-            marketPrice: rawData.price || 0,
+            marketPrice: rawData.listPrice || rawData.price || 0,
             quantity: rawData.stockCount || 0,
-            images: [],
+            images: Array.isArray(rawData.images) ? rawData.images : [],
             barcode: rawData.barcode || '',
             stockcode: rawData.merchantSku || '',
-            maincode: rawData.merchantSku || '',
-            productId: rawData.id || '',
+            maincode: rawData.variantGroupId || rawData.merchantSku || '',
+            productId: rawData.hbSku || rawData.id || '',
             platformCategoryId: rawData.categoryId || 0,
             requiredAttributes: []
         };
