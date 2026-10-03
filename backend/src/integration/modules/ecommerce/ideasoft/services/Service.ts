@@ -17,6 +17,8 @@ import { isValidStoreName } from '@platform/core/security/tenantSettingsGuard';
 // IntegrationError fırlar. Mock modunda sağlayıcı devre dışıdır.
 const KEY = ADAPTER_KEYS.find(k => k.code === 'ideasoft')!;
 
+export const IDEASOFT_DEFAULT_BASE_URL = 'https://<STORENAME>.myideasoft.com/admin-api';
+
 export default class Service extends AdapterHttpService {
     /** [C10c] mock AÇIKKEN yalnız mock uç listesindeki uçlar (kod içi varsayılan adapterKeys ∪ IDEASOFT_MOCKABLE_ENDPOINTS) çağrılabilir. */
     protected readonly enforceMockableEndpoints = true;
@@ -40,7 +42,9 @@ export default class Service extends AdapterHttpService {
                 integrationCode, operation: 'resolveBaseUrl', clientId: this.clientId,
             });
         }
-        return (this.params.integrationSettings?.urls?.baseUrl || 'https://<STORENAME>.ideasoft.com.tr')
+        // [eslesme-fiyat WP4, API_IDEASOFT K-1 / D-IS-1] varsayılan taban resmî Admin API: `https://{mağaza}.myideasoft.com/admin-api`
+        // (eskiden ön eksiz `*.ideasoft.com.tr` → tüm uçlar 404). Tenant `urls.baseUrl` verdiyse aynen kullanılır (yerelde DB kontrolü).
+        return (this.params.integrationSettings?.urls?.baseUrl || IDEASOFT_DEFAULT_BASE_URL)
             .replace('<STORENAME>', storeName);
     }
 
@@ -52,7 +56,21 @@ export default class Service extends AdapterHttpService {
     public getTokenUrl(): string {
         const mock = this.mockConfig();
         if (mock.enabled) return `${mock.baseUrl}/oauth/authorize`;
-        return this.params.integrationSettings?.urls?.tokenUrl || `${this.baseUrl}/oauth/authorize`;
+        // [D-IS-1] token ucu mağaza kökünde `POST /oauth/v2/token` (eskiden `<base>/oauth/authorize` — yetkilendirme sayfası değil).
+        return this.params.integrationSettings?.urls?.tokenUrl || `${this.storeRoot()}/oauth/v2/token`;
+    }
+
+    /** Mağaza kökü (Admin API ön eki `/admin-api` atılmış taban). */
+    public storeRoot(): string {
+        return this.baseUrl.replace(/\/+$/, '').replace(/\/admin-api$/, '');
+    }
+
+    /**
+     * [D-IS-1] OAuth yetkilendirme sayfası (`/panel/auth`; `/oauth/v2/auth` DEĞİL). Önyüz "Ideasoft'a bağlan" akışı bu adresi açar.
+     */
+    public getAuthorizeUrl(clientId: string, redirectUri: string, state: string): string {
+        const q = new URLSearchParams({ client_id: clientId, response_type: 'code', state, redirect_uri: redirectUri });
+        return `${this.storeRoot()}/panel/auth?${q.toString()}`;
     }
 
     public setTokenProvider(p: { ensureToken(force?: boolean): Promise<string> }): void {

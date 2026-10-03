@@ -21,14 +21,14 @@ export class OrderService {
             const urls = this.params.integrationSettings?.urls || {};
             const orderListUrl = urls.orderListUrl || 'orders';
 
-            const apiParams: any = { limit: 100, page: 1 };
-            if (query?.lastSyncTimestamp) {
-                apiParams.startDate = new Date(query.lastSyncTimestamp).toISOString().split('T')[0];
-            } else {
-                const yesterday = new Date();
-                yesterday.setDate(yesterday.getDate() - 1);
-                apiParams.startDate = yesterday.toISOString().split('T')[0];
-            }
+            // [eslesme-fiyat WP4, API_IDEASOFT K-4 / D-IS-6] resmî filtre `startUpdatedAt`/`endUpdatedAt` (yyyy-mm-dd); eskiden
+            // belgelenmemiş `startDate` gidiyordu (yok sayılınca her tur TÜM siparişler sayfalanırdı). Günlük çözünürlük nedeniyle
+            // başlangıç 1 gün geriden (çift kayıt tekilleştirmeyle zararsız); motor pencere daraltırsa `endDate` → `endUpdatedAt`.
+            const DAY = 24 * 60 * 60 * 1000;
+            const ymd = (d: Date) => d.toISOString().split('T')[0];
+            const since = query?.lastSyncTimestamp ? new Date(query.lastSyncTimestamp) : new Date(Date.now() - DAY);
+            const apiParams: any = { limit: 100, page: 1, startUpdatedAt: ymd(new Date(since.getTime() - DAY)) };
+            if (query?.endDate) apiParams.endUpdatedAt = ymd(new Date(query.endDate));
 
             const allOrders = await fetchAllPages(async page => observedItems(IDEASOFT_ORDERS_LIST, (await this.service.get(orderListUrl, { ...apiParams, page })).data, this.clientId), 'fetchOrders', this.clientId);
 

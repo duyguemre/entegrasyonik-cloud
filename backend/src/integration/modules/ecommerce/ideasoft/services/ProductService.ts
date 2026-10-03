@@ -241,7 +241,7 @@ export class ProductService {
                 title: parent?.name || platformProduct.name,
                 brand: brandId || null,
                 category: categoryId || stagedProduct.localCategoryId || null,
-                maincode: `${integrationCode}_${parent?.id}`,
+                maincode: this.transformer.mainCodeOf(platformProduct, parent), // [D-IS-2] parent yoksa kendi kimliği
                 hasVariant: parent?.hasOption === 1
             },
             variant: variant as IVariant
@@ -250,12 +250,13 @@ export class ProductService {
 
     public async getSummaryFromRaw(rawData: any): Promise<IPlatformProductSummary> {
         const platformCatId = rawData.categories?.[0]?.id || rawData.categoryId;
+        const pr = this.transformer.pricesOf(rawData); // [D-IS-3] taxIncluded/discount
         return {
             category: platformCatId,
-            salePrice: Number(rawData.price1 || rawData.salePrice || 0),
-            marketPrice: Number(rawData.price1 || rawData.marketPrice || 0),
+            salePrice: pr.salePrice || Number(rawData.salePrice || 0),
+            marketPrice: pr.marketPrice || Number(rawData.marketPrice || 0),
             quantity: Number(rawData.stockAmount || 0),
-            images: (rawData.images || []).map((img: any) => typeof img === 'string' ? img : img.url || ''),
+            images: (rawData.images || []).map((img: any) => typeof img === 'string' ? img : img.originalUrl || img.url || ''),
             barcode: rawData.barcode,
             stockcode: rawData.sku,
             maincode: rawData.sku,

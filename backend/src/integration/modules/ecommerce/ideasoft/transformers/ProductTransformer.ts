@@ -99,25 +99,53 @@ export class ProductTransformer {
         };
     }
 
+    /**
+     * [eslesme-fiyat WP4, API_IDEASOFT K-8 / D-IS-2] Ana ürün kodu: üst ürün (`parent.id`) varsa onun kimliği, YOKSA ürünün KENDİ kimliği.
+     * Eskiden parent'sız (basit) ürünlerin hepsi `ideasoft_undefined` tek ana ürününe çöküyordu (veri kaybı).
+     */
+    public mainCodeOf(platformProduct: any, parentProduct?: any): string {
+        const id = parentProduct?.id ?? platformProduct?.parent?.id ?? platformProduct?.id;
+        return `${integrationCode}_${id}`;
+    }
+
+    /**
+     * [D-IS-3] Fiyat: `price1` + `taxIncluded` (0 → KDV hariç; iç model brüt satış fiyatı tutar → KDV eklenir) + `discount`/`discountType`
+     * (indirim varsa `marketPrice` = indirimsiz, `salePrice` = indirimli). `discountType` 1 = yüzde, diğer = tutar varsayımı (kaynak
+     * şemada değer listesi yok; canlı örnekle doğrulanacak). `prices[0].value` eski yol olarak korunur.
+     */
+    public pricesOf(p: any): { salePrice: number; marketPrice: number; tax: number } {
+        const tax = Number(p?.tax) || 0;
+        let base = Number(p?.prices?.[0]?.value ?? p?.price1 ?? 0) || 0;
+        if (p?.taxIncluded !== undefined && p?.taxIncluded !== null && Number(p.taxIncluded) === 0) base = base * (1 + tax / 100);
+        const discount = Number(p?.discount) || 0;
+        let sale = base;
+        if (discount > 0) sale = Number(p?.discountType) === 1 ? base * (1 - discount / 100) : base - discount * (Number(p?.taxIncluded) === 0 ? 1 + tax / 100 : 1);
+        const r = (n: number) => Math.round(Math.max(n, 0) * 100) / 100;
+        return { salePrice: r(sale), marketPrice: r(Math.max(base, sale)), tax };
+    }
+
     public toInternalVariant(platformProduct: any, parentProduct: any): Partial<IVariant> {
-        const salePrice = platformProduct.prices?.[0]?.value || platformProduct.price1 || 0;
+        const { salePrice, marketPrice, tax } = this.pricesOf(platformProduct);
+        const images = (platformProduct.images || [])
+            .map((img: any) => (typeof img === 'string' ? img : img?.originalUrl || img?.url))
+            .filter((u: any) => typeof u === 'string' && u !== '');
         return {
             code: integrationCode,
-            maincode: `${integrationCode}_${parentProduct?.id}`,
+            maincode: this.mainCodeOf(platformProduct, parentProduct),
             title: parentProduct?.name || platformProduct.name,
             barcode: platformProduct.barcode,
             stockcode: platformProduct.sku,
             stock: Number(platformProduct.stockAmount || 0),
             prices: {
                 isPlatformBasedPrice: false,
-                price: salePrice * (100 / (100 + (platformProduct.tax || 0))),
+                price: salePrice * (100 / (100 + tax)),
                 salePrice,
-                marketPrice: salePrice
+                marketPrice
             },
-            images: [],
+            images,
             platforms: {
                 [integrationCode]: {
-                    prices: { salePrice, marketPrice: salePrice },
+                    prices: { salePrice, marketPrice },
                     infos: {},
                     upload: {},
                     mapping: { productId: platformProduct.id },

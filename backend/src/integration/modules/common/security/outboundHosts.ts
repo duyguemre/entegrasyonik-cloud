@@ -36,7 +36,7 @@ export const ALLOWED_OUTBOUND_HOSTS: Readonly<Record<string, readonly string[]>>
     ],
     n11: ['api.n11.com'],
     pazarama: ['isortagim.pazarama.com', 'isortagimapi.pazarama.com', 'isortagimgiris.pazarama.com'],
-    // Ideasoft: kod varsayılanı `<STORENAME>.ideasoft.com.tr`; yerel DB kopyasındaki `Integrations.urls` (2026-09-28) `<STORENAME>.myideasoft.com`.
+    // Ideasoft: kod varsayılanı (eslesme-fiyat WP4, D-IS-1) `<STORENAME>.myideasoft.com/admin-api`; eski varsayılan `.ideasoft.com.tr`; yerel DB kopyasındaki `Integrations.urls` (2026-09-28) `<STORENAME>.myideasoft.com`.
     ideasoft: ['*.ideasoft.com.tr', '*.myideasoft.com'],
     // Bizimhesap: kod varsayılanı `api.bizimhesap.com`; yerel DB kopyasındaki `Integrations.urls` `bizimhesap.com`.
     bizimhesap: ['api.bizimhesap.com', 'bizimhesap.com'],
