@@ -25,6 +25,9 @@
 
       <v-window-item :value="2">
         <EkFormSection title="Lojistik ve adres bilgileri" icon="mdi-truck-delivery-outline">
+          <v-select :items="shippingModels" item-title="title" item-value="value"
+            v-model="editingClientIntegration.settings.shippingModel" :label="$t('integrations.shippingModel')"
+            :hint="$t('integrations.shippingModelHint')" persistent-hint />
           <v-select :items="shipments" item-title="name" item-value="id"
             v-model="editingClientIntegration.settings.shippingId" label="Kargo Firması" />
           <v-text-field clearable type="tel" maxlength="16" counter
@@ -64,6 +67,7 @@
 <script setup lang="ts">
 import EkHelpHint from '@/components/page/EkHelpHint.vue'
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useStaticsStore } from '@/stores/staticsStore';
 import { useIntegrationStore } from '@/stores/integrationStore';
 import LoadingComponent from '@/components/LoadingComponent.vue'
@@ -84,6 +88,11 @@ const restApi = useRestApi()
 const loadingComponentRef: any = ref(null)
 const shipments: any = ref([])
 const addresses: any = ref([])
+const { t } = useI18n()
+const shippingModels = computed(() => [
+  { value: 'marketplace', title: t('integrations.shippingModelMarketplace') },
+  { value: 'seller', title: t('integrations.shippingModelSeller') },
+])
 
 const computedDefaultShipingDuration = computed(() => staticsStore.shippingDuration)
 const computedDefaultMaxPurchaseQuantity = computed(() => staticsStore.maxPurchaseQuantity)
@@ -111,6 +120,8 @@ onMounted(() => {
   retrievePlatformInfos()
   if (props.editingClientIntegration?.settings) {
     props.editingClientIntegration.settings.fastDeliveryType = props.editingClientIntegration.settings.fastDeliveryType || "-1"
+    // [eslesme-fiyat WP4, K-D] varsayılan: Trendyol anlaşmalı kargo
+    props.editingClientIntegration.settings.shippingModel = props.editingClientIntegration.settings.shippingModel || "marketplace"
   }
 })
 

@@ -115,3 +115,28 @@ describe('Trendyol WP4 — iade/soru (C-4, C-7, D-TY-2)', () => {
     expect(t.toInternalMessage({ id: 1, status: 'REPORTED', text: 'x' }).rawMetadata!.platformStatus).toBe('REPORTED');
   });
 });
+
+describe('Trendyol WP4 — kargo modeli (K-D)', () => {
+  const { OrderService } = require('@integration/modules/marketplace/trendyol/services/OrderService');
+  const { resolveShippingModel } = require('@integration/modules/marketplace/trendyol/constants');
+  const withModel = (shippingModel?: string) => ({ ...params, integrationSettings: { ...params.integrationSettings, settings: { SELLERID: '42', shippingModel } } });
+
+  it('varsayılan marketplace: bildirim yapılmaz, dürüst performed:false', async () => {
+    const svc = fakeService();
+    const r = await new OrderService(withModel(undefined), svc as any).sendOrderShipping({ orderId: 'P1', trackingCode: 'T1' } as any);
+    expect(r).toMatchObject({ success: true, performed: false });
+    expect(svc.put).not.toHaveBeenCalled();
+    expect(svc.post).not.toHaveBeenCalled();
+    expect(resolveShippingModel({})).toBe('marketplace');
+  });
+
+  it('seller: takip numarası update-tracking-number ucuna PUT; eksik takip no VALIDATION', async () => {
+    const svc = fakeService();
+    const os = new OrderService(withModel('seller'), svc as any);
+    const r = await os.sendOrderShipping({ orderId: 'P1', trackingCode: 'T1' } as any);
+    expect(r).toMatchObject({ success: true, performed: true });
+    expect(svc.put.mock.calls[0][0]).toBe('https://apigw.trendyol.com/integration/order/sellers/42/shipment-packages/P1/update-tracking-number');
+    expect(svc.put.mock.calls[0][1]).toEqual({ trackingNumber: 'T1' });
+    await expect(os.sendOrderShipping({ orderId: 'P1', trackingCode: '' } as any)).rejects.toMatchObject({ code: 'VALIDATION' });
+  });
+});

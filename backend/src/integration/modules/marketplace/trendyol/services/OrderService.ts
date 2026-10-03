@@ -3,6 +3,7 @@ import { IOrderPackage, IOrderRejectParams, IPlatformResponse, ISendInvoicePaylo
 import { OrderConnector } from '../api/OrderConnector';
 import { OrderMapper } from '../transformers/OrderTransformer';
 import Service from './Service';
+import { resolveShippingModel } from '../constants';
 import { IntegrationError } from '@integration/modules/common/IntegrationError';
 
 export class OrderService {
@@ -13,7 +14,7 @@ export class OrderService {
     constructor(private params: any, private service: Service) {
         this.clientId = params.clientId || "UnknownClient";
         this.connector = new OrderConnector(this.service, this.params);
-        this.mapper = new OrderMapper(this.clientId);
+        this.mapper = new OrderMapper(this.clientId, resolveShippingModel(params?.integrationSettings?.settings));
     }
 
     public static getInstance(params: any, service: Service): OrderService {
@@ -45,19 +46,19 @@ export class OrderService {
 
     public async sendOrderShipping(payload: ISendTrackingPayload): Promise<IPlatformResponse> {
         try {
-            // TODO: İleride 'MARKETPLACE' değeri ayardan okunabilir.
-            // Trendyol'da eğer kargo platform tarafından yönetiliyorsa (MARKETPLACE),
-            // kargo bildirim servisi kullanılmaz. Bu durumda no-op (başarılı) döneriz.
-            if (payload.meta?.shipmentMethod === 'MARKETPLACE') {
+            // [eslesme-fiyat WP4, K-D] Kargo modeli tenant ayarından (`settings.shippingModel`). Pazaryeri lojistiğinde satıcı
+            // bildirimi YOKTUR: sahte "iletildi" yerine dürüst `performed:false` döner (ADR-0006). Satıcı kargosunda takip
+            // numarası resmî `update-tracking-number` ucuna bildirilir (canlı doğrulama kullanıcıda).
+            const model = resolveShippingModel(this.params?.integrationSettings?.settings);
+            if (model === 'marketplace') {
                 return {
                     success: true,
-                    message: "Marketplace tarafından yönetilen sevkiyat. Bildirim atlanıyor.",
+                    performed: false,
+                    message: "Trendyol lojistiği: kargo Trendyol tarafından yönetilir, satıcı bildirimi gerekmez.",
                     rawResponse: { status: 'AUTOMATED_LOGISTICS_SKIP' }
                 };
             }
-
-            // Connector'dan gelen IPlatformResponse tipindeki cevabı döndür
-            return await this.connector.sendOrderShipping(payload);
+            return await this.connector.sendSellerTrackingNumber(payload);
         } catch (error: any) {
             if (IntegrationError.isIntegrationError(error)) throw error;
             if (error.message.includes(`[${this.clientId}]`)) throw error;

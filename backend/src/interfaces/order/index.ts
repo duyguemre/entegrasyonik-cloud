@@ -232,6 +232,8 @@ export interface ISendTrackingPayload {
 
 export interface IPlatformResponse {
     success: boolean;
+    /** [eslesme-fiyat WP4, K-D] false: kanal tarafında işlem YAPILMADI (ör. pazaryeri lojistiği; bildirim gerekmez). Yoksa yapıldı sayılır. */
+    performed?: boolean;
     message?: string;
     rawResponse?: any;
     platformId?: string;

@@ -283,6 +283,27 @@ export class OrderConnector {
         }
     }
 
+    /**
+     * [eslesme-fiyat WP4, K-D / 02-ekler/trendyol C-5] Satıcı kargosu (`shippingModel: seller`): takip numarası bildirimi
+     * `PUT order/sellers/{sellerId}/shipment-packages/{packageId}/update-tracking-number` `{trackingNumber}`.
+     * Uç resmî "kargo takip kodu bildirme" sayfasından; canlı/stage doğrulaması kullanıcıda (yazma — yalnız stage).
+     * DB `orderTrackingNumberUrl` verilirse o kullanılır.
+     */
+    public async sendSellerTrackingNumber(payload: ISendTrackingPayload): Promise<IPlatformResponse> {
+        const settings = this.params.integrationSettings;
+        const sellerId = settings?.settings?.SELLERID;
+        if (!payload.orderId) throw new IntegrationError('VALIDATION', 'Trendyol kargo bildirimi: paket kimliği (shipmentPackageId) yok.', { integrationCode, operation: 'sendSellerTrackingNumber', clientId: this.params.clientId });
+        if (!payload.trackingCode) throw new IntegrationError('VALIDATION', 'Trendyol kargo bildirimi: takip numarası yok.', { integrationCode, operation: 'sendSellerTrackingNumber', clientId: this.params.clientId });
+        const urlTemplate = settings.urls?.orderTrackingNumberUrl || "https://apigw.trendyol.com/integration/order/sellers/<SELLERID>/shipment-packages/<PACKAGEID>/update-tracking-number";
+        const url = urlTemplate.replace("<SELLERID>", sellerId).replace("<PACKAGEID>", String(payload.orderId));
+        try {
+            const response = await this.service.put(url, { trackingNumber: String(payload.trackingCode) });
+            return { success: true, performed: true, message: "Takip numarası Trendyol'a bildirildi.", platformId: String(payload.orderId), rawResponse: response.data };
+        } catch (error: any) {
+            throw fromHttpError(error, { integrationCode, operation: 'sendSellerTrackingNumber', clientId: this.params.clientId, idempotent: true });
+        }
+    }
+
     public async sendOrderInvoice(payload: ISendInvoicePayload): Promise<IPlatformResponse> {
         const settings = this.params.integrationSettings;
         const sellerId = settings?.settings?.SELLERID;

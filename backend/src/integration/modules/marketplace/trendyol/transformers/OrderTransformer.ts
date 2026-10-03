@@ -2,6 +2,7 @@ import { IOrderPackage, IOrder, ICustomer, IOrderItem, IAddress, ICustomerAddres
 import { integrationCode } from '../constants'; // 'trendyol'
 import { IntegrationError } from '@integration/modules/common/IntegrationError';
 import { buildInternalOrder } from '@integration/modules/common/adapter/buildInternalOrder';
+import { TrendyolShippingModel } from '../constants';
 import { reportUnknownEnum } from '@integration/modules/common/contract/reportUnknownEnum';
 import { eventLog } from '@platform/core/logger';
 
@@ -62,7 +63,7 @@ export class OrderMapper {
     /** Son `toInternalOrderPackages` çağrısında atlanan kayıtlar (test/izleme; PII yok). */
     public lastSkipped: SkippedOrderRecord[] = [];
 
-    constructor(private readonly clientId: string | number = 'UnknownClient') { }
+    constructor(private readonly clientId: string | number = 'UnknownClient', private readonly shippingModel: TrendyolShippingModel = 'marketplace') { }
 
     /**
      * Trendyol JSON verisini IOrderPackage yapısına dönüştürür.
@@ -198,8 +199,8 @@ export class OrderMapper {
                 },
 
                 fulfillment: [{
-                    // TODO: İleride bu değer integrationSettings üzerinden seçilebilir hale getirilebilir.
-                    shipmentMethod: 'MARKETPLACE',
+                    // [eslesme-fiyat WP4, K-D] tenant ayarı `shippingModel`: seller → satıcı kargosu (MANUAL), aksi pazaryeri lojistiği.
+                    shipmentMethod: this.shippingModel === 'seller' ? 'MANUAL' : 'MARKETPLACE',
                     status: (order.cargoTrackingNumber || order.trackingCode) ? 'SUCCESS' : 'PENDING',
                     carrierCode: order.cargoProviderName || "",
                     carrierName: order.cargoProviderName || "",
