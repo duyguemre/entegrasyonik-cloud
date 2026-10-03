@@ -16,7 +16,6 @@ import * as importJobs from '@operations/integrations/importJobs'
 import * as exportJobs from '@operations/integrations/exportJobs'
 import * as preflight from '@operations/integrations/preflight'
 import IntegrationFactory from '@integration/modules/IntegrationFactory'
-import { PlatformMappingProvider } from '@integration/modules/provider/PlatformMappingProvider'
 import { eventLog } from '@platform/core/logger';
 
 const log = eventLog('api', 'integration-service');
@@ -151,7 +150,13 @@ export default class IntegrationService extends BaseApi implements IService {
                 return or.length ? db.getVariantModel().find({ $or: or }).limit(limit).lean() : Promise.resolve([])
             },
             findProducts: (ids) => (ids.length ? db.getProductModel().find({ _id: { $in: ids } }).lean() : Promise.resolve([])),
-            mappingSource: (code) => new PlatformMappingProvider(db, clientId, code),
+            mappingSource: (code) => {
+                // Tembel yükleme: PlatformMappingProvider @Cache dekoratörü (Redis) modül yüklenirken bağlanır; RPC cephesini yükleyen
+                // testler/araçlar bunu çekmesin (getCatalog'daki desen).
+                // eslint-disable-next-line @typescript-eslint/no-require-imports -- TS6-01: node16 CJS, tembel yukleme (dinamik import yerine)
+                const { PlatformMappingProvider } = (require('../../../integration/modules/provider/PlatformMappingProvider') as typeof import('../../../integration/modules/provider/PlatformMappingProvider'))
+                return new PlatformMappingProvider(db, clientId, code)
+            },
             adapterValidate: async (code, variant) => (await factory.getInstance(code)).validate(variant),
         }
     }
