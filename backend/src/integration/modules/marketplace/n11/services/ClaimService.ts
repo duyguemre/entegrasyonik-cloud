@@ -2,9 +2,15 @@ import { IClaimRejectParams, IPlatformResponse } from '@interfaces/index';
 import { ReturnConnector } from '../api/AuxiliaryConnectors';
 import Service from './Service';
 import { IntegrationError } from '@integration/modules/common/IntegrationError';
+import { ClaimMapper } from '../transformers/ClaimMapper';
+import { paginatePage, readTotal } from '../api/paginatePage';
+
+/** [eslesme-fiyat WP4, D-N11-7] ReturnService sayfa boyutu: resmî depo okuması 20 kayıt/sayfa. */
+export const N11_CLAIM_PAGE_SIZE = 20;
 
 export class ClaimService {
     private connector: ReturnConnector;
+    private mapper = new ClaimMapper();
     private clientId: string;
 
     constructor(private params: any, private service: Service) {
@@ -12,21 +18,23 @@ export class ClaimService {
         this.connector = new ReturnConnector(this.service, this.params);
     }
 
-    public async fetchClaims(query?: Record<string, any>): Promise<any[]> {
+    /**
+     * [eslesme-fiyat WP4, D-N11-7 (P0)] ÖNCEKİ: yalnız ilk sayfa (100) ve HAM kayıt (mapper yok → OrderWorker işleyemiyordu).
+     * YENİ: 20'lik sayfalarla tüm sayfalar (ortak `paginate`: tekrar-sayfa koruması + tavanda `markIncomplete`) ve
+     * `ClaimMapper` ile `IClaimPackage`. Durum süzgeci `REQUESTED` korunur (motor yeni talepleri işler).
+     */
+    public async fetchClaims(_query?: Record<string, any>): Promise<any[]> {
         try {
-            const payload = {
-                'sch:searchData': {
-                    status: 'REQUESTED'
-                },
-                'sch:pagingData': {
-                    currentPage: 0,
-                    pageSize: 100
-                }
-            };
-            const response = await this.connector.claimReturnList(payload);
-            
-            const claims = response.claimReturnList?.claimReturn || [];
-            return Array.isArray(claims) ? claims : [claims];
+            const raw = await paginatePage(async (page, limit) => {
+                const response = await this.connector.claimReturnList({
+                    'sch:searchData': { status: 'REQUESTED' },
+                    'sch:pagingData': { currentPage: page, pageSize: limit },
+                });
+                const list = response?.claimReturnList?.claimReturn;
+                const items = list === undefined || list === null ? [] : Array.isArray(list) ? list : [list];
+                return { items, total: readTotal(response?.pagingData?.totalCount) };
+            }, { operation: 'fetchClaims', clientId: this.clientId, limit: N11_CLAIM_PAGE_SIZE });
+            return this.mapper.toInternalClaimPackages(raw);
         } catch (error: any) {
              if (IntegrationError.isIntegrationError(error)) throw error;
              throw new Error(`[${this.clientId}][N11ClaimService:fetchClaims] ${error.message}`);

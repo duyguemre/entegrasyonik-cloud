@@ -73,7 +73,7 @@ export default class N11 implements IPlatform {
 
     // Orders
     public async retrieveOrders(query?: Record<string, any>): Promise<IOrderPackage[]> { return this.orderService.fetchOrders(query); }
-    public async approveOrder(externalOrderId: string, params?: { meta?: any }): Promise<boolean | IPlatformResponse> { return this.orderService.updateOrderPackageStatus(externalOrderId, '', OrderInternalStatusEnum.APPROVED); }
+    public async approveOrder(externalOrderId: string, params?: { meta?: any }): Promise<boolean | IPlatformResponse> { return this.orderService.updateOrderPackageStatus(externalOrderId, String(params?.meta?.externalLineItemId ?? ''), OrderInternalStatusEnum.APPROVED, params?.meta); }
     public async rejectOrder(externalOrderId: string, params: IOrderRejectParams): Promise<boolean> { return this.orderService.rejectOrder(externalOrderId, params); }
     public async sendOrderShipping(payload: ISendTrackingPayload): Promise<IPlatformResponse> { return this.orderService.sendOrderShipping(payload); }
     public async sendOrderInvoice(payload: ISendInvoicePayload): Promise<IPlatformResponse> { return this.orderService.sendOrderInvoice(payload); }

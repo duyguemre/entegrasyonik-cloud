@@ -28,12 +28,10 @@ beforeEach(() => {
 afterEach(() => { jest.restoreAllMocks(); });
 
 describe('N11 approveOrder / rejectOrder (ADR-0006 adım 4 - BACKLOG C9 ters çevrildi)', () => {
-  it('[YENİ DAVRANIŞ] approveOrder artık IntegrationError(NOT_SUPPORTED) fırlatır, sahte true DÖNMEZ', async () => {
+  it('[eslesme-fiyat WP4, C-7] approveOrder kalem kimliği yoksa VALIDATION fırlatır, sahte true DÖNMEZ ve HTTP çağırmaz', async () => {
     const n11 = new N11(params);
-    await expect(n11.approveOrder('ORD-123')).rejects.toMatchObject({
-      name: 'IntegrationError', code: 'NOT_SUPPORTED', retryable: false,
-    });
-    expect(httpCallCount()).toBe(0); // hâlâ gerçek çağrı yapılmıyor (henüz uygulanmadı) ama artık dürüstçe hata veriyor
+    await expect(n11.approveOrder('ORD-123')).rejects.toMatchObject({ name: 'IntegrationError', code: 'VALIDATION' });
+    expect(httpCallCount()).toBe(0);
   });
 
   it('[YENİ DAVRANIŞ] rejectOrder artık IntegrationError(NOT_SUPPORTED) fırlatır (neden/parametre yok sayılır)', async () => {
@@ -50,12 +48,20 @@ describe('N11 approveOrder / rejectOrder (ADR-0006 adım 4 - BACKLOG C9 ters çe
     expect(httpCallCount()).toBe(0);
   });
 
-  it('[YENİ DAVRANIŞ] OrderService.updateOrderPackageStatus artık her hedef statü için NOT_SUPPORTED fırlatır ve HTTP çağırmaz', async () => {
+  it('[eslesme-fiyat WP4, C-7] updateOrderPackageStatus: APPROVED dışındaki her statü NOT_SUPPORTED ve HTTP çağırmaz', async () => {
     const svc = new OrderService(params, { rest: {}, soapRequest: jest.fn() } as any);
-    for (const s of Object.values(OrderInternalStatusEnum)) {
+    for (const s of Object.values(OrderInternalStatusEnum).filter((x) => x !== OrderInternalStatusEnum.APPROVED)) {
       await expect(svc.updateOrderPackageStatus('ORD-1', 'LI-1', s as any)).rejects.toMatchObject({ code: 'NOT_SUPPORTED' });
     }
     expect(httpCallCount()).toBe(0);
+  });
+
+  it('[eslesme-fiyat WP4, C-7] onay: yalnız Created kalemlerin orderLineId listesi REST PUT rest/order/v1/update Picking', async () => {
+    const put = jest.fn(async (..._a: any[]) => ({}));
+    const svc = new OrderService(params, { rest: { put }, soapRequest: jest.fn() } as any);
+    const meta = { lines: [{ orderLineId: 11, orderItemLineItemStatusName: 'Created' }, { orderLineId: 12, orderItemLineItemStatusName: 'Picking' }, { orderLineId: 13 }] };
+    await expect(svc.updateOrderPackageStatus('ORD-1', '', OrderInternalStatusEnum.APPROVED, meta)).resolves.toBe(true);
+    expect(put).toHaveBeenCalledWith('rest/order/v1/update', { lineId: [11, 13], status: 'Picking' }, { operation: 'updateOrderRest' });
   });
 
   it('[MEVCUT DAVRANIŞ - DEĞİŞMEDİ] KONTROL: gerçek çağrı yapan sendOrderShipping HTTP istemcisini çağırır ("0 çağrı" assertion boş değil)', async () => {

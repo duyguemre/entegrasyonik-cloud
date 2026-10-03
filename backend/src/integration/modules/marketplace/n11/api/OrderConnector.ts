@@ -17,6 +17,15 @@ export class OrderConnector {
         return data;
     }
 
+    /**
+     * [eslesme-fiyat WP4, 02-ekler/n11 C-7] REST `PUT rest/order/v1/update` `{lineId:[long], status:'Picking'}` — şimdilik
+     * yalnız Picking (onay); yalnız `Created` kalemler. Yazma ucu (canlıda guard bloklar; doğrulama yerelde).
+     */
+    public async updateOrderRest(lineIds: number[], status: 'Picking'): Promise<any> {
+        const url = this.params.integrationSettings.urls?.orderUpdateUrl || 'rest/order/v1/update';
+        return await this.service.rest.put(url, { lineId: lineIds, status }, { operation: 'updateOrderRest' });
+    }
+
     // SOAP Methods
     public async fetchOrdersFromPlatform(query: any): Promise<any> {
         const data = await this.service.soapRequest('orderService', 'sch:OrderListRequest', query, { idempotent: true });

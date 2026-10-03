@@ -37,19 +37,18 @@ const N11Descriptor: IntegrationDescriptor = {
             note: 'Siparişler önce REST (`rest/delivery/v1/shipmentPackages`) ile sayfalı çekilir (sayfa başına 100; tavan 50 sayfa / 5.000 kayıt, aşılırsa ya da sayfa tekrar ederse sonuç "eksik" işaretlenir ve son başarılı senkron zamanı ilerlemez). REST UNAVAILABLE/NOT_SUPPORTED olursa ya da yanıt biçimi beklenmedikse SOAP yedeğine düşülür; SOAP yolu sayfalanmaz. Kimliksiz kayıt atlanır; tamamı kimliksizse VALIDATION (şema kayması).',
             evidence: ['marketplace/n11/services/OrderService.ts fetchOrders'],
         },
-        // orderActions BİLİNÇLİ olarak not_supported: approveOrder VE rejectOrder ikisi de gerçek bir SOAP/REST
-        // çağrısı yapmadan IntegrationError('NOT_SUPPORTED') fırlatır (ADR-0006 Karar 2, BACKLOG C9 sahte başarı
-        // düzeltmesi). retrieveOrderRejectionReasons ayrı bir statik listeyle çalışır (aşağıda notProvided/limitations'ta).
+        // [eslesme-fiyat WP4, 02-ekler/n11 C-7] onay REST `rest/order/v1/update` (Picking) ile gerçek; red resmî uç doğrulanamadı →
+        // NOT_SUPPORTED (ADR-0006, sahte başarı yok). retrieveOrderRejectionReasons statik liste döner.
         orderActions: {
-            level: 'not_supported',
+            level: 'limited',
             methods: ['approveOrder', 'rejectOrder'],
-            note: 'N11 sipariş onay/paketleme ve red uç noktaları uygulanmadı; her ikisi de NOT_SUPPORTED fırlatır. `retrieveOrderRejectionReasons` ayrıca statik bir liste döner (throw etmez).',
+            note: 'Onay: `Created` kalemler REST `rest/order/v1/update` ile `Picking`e çekilir (canlı doğrulama yerelde). Red uç noktası doğrulanamadı; NOT_SUPPORTED fırlatır. `retrieveOrderRejectionReasons` statik bir liste döner (throw etmez).',
             evidence: ['marketplace/n11/services/OrderService.ts rejectOrder', 'marketplace/n11/services/OrderService.ts updateOrderPackageStatus'],
         },
         returns: {
             level: 'limited',
             methods: ['retrieveClaims', 'approveClaim', 'rejectClaim'],
-            note: 'Yalnızca yeni iade talepleri ve yalnızca ilk sayfa listelenir.',
+            note: 'Yalnızca yeni iade talepleri (REQUESTED) listelenir; 20 kayıtlık sayfalarla tüm sayfalar çekilir ve iç iade modeline eşlenir (alan adları canlıda doğrulanacak).',
             evidence: ['marketplace/n11/index.ts retrieveClaims'],
         },
         questions: {
@@ -85,7 +84,7 @@ const N11Descriptor: IntegrationDescriptor = {
     },
     limitations: [
         'Sipariş onaylama ve reddetme bu sürümde desteklenmez; işlem NOT_SUPPORTED hatası olarak bildirilir.',
-        'İade, soru ve hakediş listeleri ilk sayfa ile sınırlıdır.',
+        'Soru ve hakediş listeleri ilk sayfa ile sınırlıdır.',
         'Marka bilgisi ve ödeme emri sorgusu sağlanmıyor.',
         'Sipariş sayfalaması (currentPage/pageSize/totalElements) ve ürün sorgusu sayfa alanları canlı API ile doğrulanmadı; SOAP yedek yolu sayfalanmaz.',
         'SOAP servislerinin (ProductSellingService/ProductStockService dahil) gelecekteki kapanış takvimi doğrulanamadı (BACKLOG P2).',

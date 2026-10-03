@@ -173,13 +173,33 @@ export class OrderService {
 
     /**
      * [ADR-0006 adım 4] TERS ÇEVRİLDİ (BACKLOG C9 sahte başarı): ÖNCEKİ DAVRANIŞ hiçbir SOAP/REST
-     * çağrısı yapmadan `true` dönüyordu (N11.approveOrder bu metoda delege eder). Gerçek N11 sipariş
-     * onay/paketleme uç noktası uygulanana kadar NOT_SUPPORTED fırlatılır.
+     * çağrısı yapmadan `true` dönüyordu. [eslesme-fiyat WP4] Onay artık gerçek REST çağrısıdır; diğerleri NOT_SUPPORTED.
      */
-    public async updateOrderPackageStatus(orderNumber: string, externalLineItemId: string, targetStatus: OrderInternalStatusEnum): Promise<boolean> {
-        throw new IntegrationError('NOT_SUPPORTED', 'N11 sipariş paket statü güncelleme (onay) henüz gerçek olarak uygulanmadı.', {
-            integrationCode, operation: 'updateOrderPackageStatus', clientId: this.clientId,
-        });
+    public async updateOrderPackageStatus(orderNumber: string, externalLineItemId: string, targetStatus: OrderInternalStatusEnum, meta?: any): Promise<boolean> {
+        // [eslesme-fiyat WP4, 02-ekler/n11 C-7] Onay REST'te var: `Created` kalemlerin `orderLineId` listesi `Picking`'e çekilir.
+        // Diğer statüler resmî uçta yok → NOT_SUPPORTED kalır (sahte başarı yok).
+        if (targetStatus !== OrderInternalStatusEnum.APPROVED) {
+            throw new IntegrationError('NOT_SUPPORTED', `N11 sipariş statü güncelleme yalnız onay (Picking) için destekleniyor (${targetStatus}).`, {
+                integrationCode, operation: 'updateOrderPackageStatus', clientId: this.clientId,
+            });
+        }
+        const lines: any[] = Array.isArray(meta?.lines) ? meta.lines : [];
+        const fromLines = lines
+            .filter((l) => {
+                const st = l?.orderItemLineItemStatusName ?? l?.status;
+                return st === undefined || st === null || String(st).toLowerCase() === 'created';
+            })
+            .map((l) => Number(l?.orderLineId))
+            .filter((n) => Number.isFinite(n) && n > 0);
+        const fallback = Number(externalLineItemId || meta?.externalLineItemId);
+        const lineIds = fromLines.length ? fromLines : (Number.isFinite(fallback) && fallback > 0 ? [fallback] : []);
+        if (!lineIds.length) {
+            throw new IntegrationError('VALIDATION', `N11 sipariş onayı: onaylanacak kalem (orderLineId) bulunamadı (${orderNumber}).`, {
+                integrationCode, operation: 'updateOrderPackageStatus', clientId: this.clientId,
+            });
+        }
+        await this.connector.updateOrderRest(lineIds, 'Picking');
+        return true;
     }
 
     public async sendOrderInvoice(payload: ISendInvoicePayload): Promise<IPlatformResponse> {

@@ -38,15 +38,13 @@ describe('descriptor not_supported → adaptör GERÇEKTEN NOT_SUPPORTED fırlat
             .rejects.toMatchObject({ name: 'IntegrationError', code: 'NOT_SUPPORTED' });
     });
 
-    it('N11.orderActions (approveOrder + rejectOrder) her ikisi de NOT_SUPPORTED fırlatır', async () => {
+    it('N11.orderActions limited (eslesme-fiyat WP4 C-7): onay gerçek REST, red NOT_SUPPORTED fırlatır', async () => {
         const d = INTEGRATION_DESCRIPTORS.find((x) => x.code === 'n11')!;
         const cap = d.capabilities.orderActions!;
-        expect(cap.level).toBe('not_supported');
+        expect(cap.level).toBe('limited');
         expect(cap.methods.sort()).toEqual(['approveOrder', 'rejectOrder']);
 
         const adapter = new N11(fakeParams(d.auth.requiredSettings)) as any;
-        await expect(adapter.approveOrder('X'))
-            .rejects.toMatchObject({ name: 'IntegrationError', code: 'NOT_SUPPORTED' });
         await expect(adapter.rejectOrder('X', { reasonId: '1' } as any))
             .rejects.toMatchObject({ name: 'IntegrationError', code: 'NOT_SUPPORTED' });
     });
