@@ -55,6 +55,7 @@ modüllerinin her entegrasyonda güncel API ile uyumlu, idempotent ve izlenebili
 | K-K | **Tablo onaylı** (§3.6) | WP7 |
 | K-L | **Yan düzeltmeler bu dalda** (WP0) | WP0 |
 | Sıra | **WP0→WP9 onaylı, WP'ler arasında onay beklenmez**; her WP sonunda commit + push + özet | — |
+| Bütçe | **Bulut 120 USD sınırı**: sıra WP0→WP1→WP2→WP3 (HB P0); kalan WP'ler yerelde (20x Max). Devir: `DURUM.md` | — |
 
 ## 3. Hedef yapı (mimari; ADR gerekenler işaretli)
 
@@ -180,6 +181,9 @@ Pazaryeri limitleri: TY sipariş 30–100/dk/satıcı (tenant başına 1 çağr�
 Sıra gerekçesi: WP1 (hata/preflight) diğer tüm UI işlerinin ortak dili; WP2–WP4 ürün gönderim/çekim temeli; WP5 fiyat bağımsız; WP6–WP7 modüller/ölçek; WP8 UI toplu; her WP bağımsız commit'lenir, kullanıcı istediği yerde durdurabilir.
 
 ## 7. Test stratejisi
+
+**Koşturma kuralı (kullanıcı 2026-10-03):** testler kodla birlikte yazılır; paket içinde yalnız değişen dosyaya dokunan testler koşar, paket sonunda ilgili modül bir kez, tam koşu (`npm test`, `verify`, Playwright) yalnız WP9'da ve yerelde. `tsc --noEmit` her commit öncesi.
+
 - Karakterizasyon (önce): etkilenen her adaptör metodu/transformer ve FE store için.
 - Birim: `IntegrationIssue` kataloğu (her kodun reason/solution/link'i var), `effectiveChannelPrice` matrisi, `channel` kural motoru (yuvarlama/taban/tavan/KDV), preflight senaryoları (eksik kategori/marka/özellik/fiyat/KDV/görsel), durum tabloları (her kanal × her ham değer), `toInList` benzeri girdi sertleştirmeleri.
 - Sözleşme (mock yanıt): kanal başına istek gövdesi şeması (zod `assertContract`) + doküman alanlarıyla; **gerçek fikstürler** yerel canlı turdan (03 §5 L-1..L-21) PII temizlenerek `backend/tests/fixtures/<kanal>/` altına; conformance kiti bunları kullanır.
