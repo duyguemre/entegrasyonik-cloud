@@ -1,5 +1,6 @@
 import { IMessage, MessageStatus } from '@interfaces/index';
 import { integrationCode } from '../constants';
+import { reportUnknownEnum } from '@integration/modules/common/contract/reportUnknownEnum';
 
 export class MessageTransformer {
     /**
@@ -53,6 +54,7 @@ export class MessageTransformer {
              * Bu sayede UI'da "Bu soru halka açık mı?" gibi kontrolleri yapabilirsin.
              */
             rawMetadata: {
+                platformStatus: q.status,
                 public: q.public,
                 showUserName: q.showUserName,
                 hasPrivateInfo: q.answer?.hasPrivateInfo,
@@ -62,16 +64,25 @@ export class MessageTransformer {
         };
     }
 
+    /**
+     * [eslesme-fiyat WP4, 02-ekler/trendyol C-4] Resmî statüler: WAITING_FOR_ANSWER, ANSWERED, REPORTED, REJECTED, UNANSWERED.
+     * Yalnız WAITING_FOR_ANSWER cevaplanabilir; REPORTED/UNANSWERED kanal tarafında kapanmıştır (AUTO_CLOSED). Eski
+     * `WAITING_SELLER` değeri geriye uyumlu okunur. Bilinmeyen değer raporlanır ve güvenli varsayılan (WAITING_SELLER) korunur.
+     */
     private mapStatus(platformStatus: string): MessageStatus {
         switch (platformStatus) {
+            case 'WAITING_FOR_ANSWER':
             case 'WAITING_SELLER':
                 return 'WAITING_SELLER';
             case 'ANSWERED':
                 return 'ANSWERED';
             case 'REJECTED':
                 return 'REJECTED';
+            case 'REPORTED':
+            case 'UNANSWERED':
+                return 'AUTO_CLOSED';
             default:
-                // Bilinmeyen bir statüde her zaman aksiyon bekleyen moda çekmek en güvenlisi
+                reportUnknownEnum('trendyol.qna.list', 'status', platformStatus === undefined || platformStatus === '' ? 'MISSING' : String(platformStatus));
                 return 'WAITING_SELLER';
         }
     }

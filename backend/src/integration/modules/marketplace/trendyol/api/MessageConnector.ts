@@ -63,7 +63,7 @@ export class MessageConnector {
                 .replace("<SELLERID>", sellerId)
                 .replace("<QID>", externalMessageId);
 
-            const response = await this.service.post(url, { text: answerText });
+            const response = await this.service.post(url, { text: answerText }, { group: 'qna_answer' }); // [WP4 D-TY-2] 500/dk
             return response.status >= 200 && response.status < 300;
         } catch (error: any) {
             log.error('MESSAGECONNECTOR_TRENDYOL_MESAJ_CEVAPLAMA_HATASI', `Trendyol mesaj cevaplama hatası (${externalMessageId}):`, { err: error });

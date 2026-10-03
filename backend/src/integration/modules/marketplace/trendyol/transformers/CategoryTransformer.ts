@@ -40,14 +40,19 @@ export class CategoryMapper {
                 varianter: !!attr.varianter,
                 slicer: !!attr.slicer,
                 values: this.toInternalValues(attr.attributeValues ?? attr.values ?? []),
-                multiple: false
+                // [eslesme-fiyat WP4, C-14] V2 `allowMultipleAttributeValues` (eskiden sabit false).
+                multiple: !!attr.allowMultipleAttributeValues
             }))
             .sort((a, b) => a.title.localeCompare(b.title));
     }
 
-    /** Değer listesi (`[{id,name}]`) -> `[{id,title}]` (başlığa göre sıralı). */
+    /**
+     * Değer listesi -> `[{id,title}]` (başlığa göre sıralı). V1/gömülü şekil `{id,name}`; V2 değer ucu
+     * `{attributeValueId, attributeValue}` (eslesme-fiyat WP4, C-2 — eskiden `id` yoksa kayıt düşüyordu).
+     */
     public toInternalValues(rawValues: any[]): Array<{ id: string; title: string }> {
         return (rawValues || [])
+            .map((v: any) => (v && v.id === undefined && v.attributeValueId !== undefined ? { id: v.attributeValueId, name: v.attributeValue } : v))
             .filter(v => v && v.id !== undefined)
             .map((v: any) => ({ id: String(v.id), title: String(v.name ?? v.title ?? v.id) }))
             .sort((a, b) => a.title.localeCompare(b.title));

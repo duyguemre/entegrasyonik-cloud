@@ -1,7 +1,8 @@
 import { Types } from 'mongoose';
 
 export type MessageType = 'PRODUCT_QUESTION' | 'ORDER_QUESTION';
-export type MessageStatus = 'WAITING_SELLER' | 'ANSWERED' | 'REJECTED' | 'UNREAD' | 'READ' | 'WAITING_APPROVAL';
+// [eslesme-fiyat WP4/WP6] AUTO_CLOSED: kanal tarafında kapanmış, cevaplanamaz (TY REPORTED/UNANSWERED); PRE_APPROVAL: cevap kanal onayında.
+export type MessageStatus = 'WAITING_SELLER' | 'ANSWERED' | 'REJECTED' | 'UNREAD' | 'READ' | 'WAITING_APPROVAL' | 'AUTO_CLOSED' | 'PRE_APPROVAL';
 export type MessageDirection = 'INBOUND' | 'OUTBOUND';
 
 export interface IMessageContext {

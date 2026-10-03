@@ -24,7 +24,8 @@ export const MessageSchema = new Schema<IMessageDocument>(
         },
         status: {
             type: String,
-            enum: ['WAITING_SELLER', 'ANSWERED', 'REJECTED', 'UNREAD', 'READ'],
+            // [eslesme-fiyat WP4/WP6] tip ile hizalı (WAITING_APPROVAL tipte vardı, şemada yoktu); şema-only, göç yok (K05)
+            enum: ['WAITING_SELLER', 'ANSWERED', 'REJECTED', 'UNREAD', 'READ', 'WAITING_APPROVAL', 'AUTO_CLOSED', 'PRE_APPROVAL'],
             required: true,
             index: true
         },

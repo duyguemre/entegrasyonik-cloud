@@ -7,7 +7,7 @@ export class CategoryConnector {
 
     public async fetchCategoriesFromPlatform(): Promise<any> {
         const url = this.params.integrationSettings.urls.categoryListUrl;
-        return await this.service.get(url);
+        return await this.service.get(url, undefined, { group: 'brand_category_read' });
     }
 
     /**
@@ -16,12 +16,15 @@ export class CategoryConnector {
      */
     public async fetchAttributesFromPlatform(categoryId: string): Promise<any> {
         const { categoryAttributes } = resolveCategoryAttributeUrls(this.params.integrationSettings.urls, { clientId: this.params.clientId });
-        return await this.service.get(fillUrl(categoryAttributes, { categoryId }));
+        return await this.service.get(fillUrl(categoryAttributes, { categoryId }), undefined, { group: 'brand_category_read' });
     }
 
-    /** [C22] V2: değerler ayrı uç nokta `product/categories/{id}/attributes/{attributeId}/values` (gömülü gelmeyebilir). */
-    public async fetchAttributeValuesFromPlatform(categoryId: string, attributeId: string): Promise<any> {
+    /**
+     * [C22] V2: değerler ayrı uç nokta `product/categories/{id}/attributes/{attributeId}/values` (gömülü gelmeyebilir).
+     * [eslesme-fiyat WP4, 02-ekler/trendyol C-2] Uç SAYFALI (`page`, `size` ≤ 1000); çağıran `totalPages` döngüsünü kurar.
+     */
+    public async fetchAttributeValuesFromPlatform(categoryId: string, attributeId: string, page = 0, size = 1000): Promise<any> {
         const { categoryAttributeValues } = resolveCategoryAttributeUrls(this.params.integrationSettings.urls, { clientId: this.params.clientId });
-        return await this.service.get(fillUrl(categoryAttributeValues, { categoryId, attributeId }));
+        return await this.service.get(fillUrl(categoryAttributeValues, { categoryId, attributeId }), { page, size }, { group: 'brand_category_read' });
     }
 }

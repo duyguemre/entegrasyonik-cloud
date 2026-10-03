@@ -50,7 +50,7 @@ export const TRENDYOL_ORDER_V2 = {
 
 /**
  * [INT-05] İade listesi (GET .../claims) sayfalama güvenliği. size=50 sabit; resmi bir sayfa/pencere üst sınırı belgelenmemiş
- * (API_CONTRACTS:22), bu yüzden sipariş V2 ile tutarlı 50 sayfa (maxPageIndex 49 + 1) tavan alınır (= 2.500 iade/sorgu penceresi).
+ * (API_CONTRACTS:22), bu yüzden sipariş V2 ile tutarlı 50 sayfa (maxPageIndex 49 + 1) tavan alınır (= 10.000 iade/sorgu penceresi; WP4 C-7 ile size 200).
  * Aşılırsa sonuç PAGINATION_PAGE_CAP ile işaretlenir (imleç ilerlemez). Eşzamanlılık 3: X1 grup kotasını patlatmadan hız.
  */
 export const TRENDYOL_CLAIM_PAGING = { maxPages: TRENDYOL_ORDER_V2.maxPageIndex + 1, concurrency: 3 } as const;
@@ -189,3 +189,22 @@ export const TRENDYOL_FINANCE_GROUP = 'finance';
 export const TRENDYOL_FINANCE_RATE_PER_MIN = 100;
 /** Finans istekleri `storeFrontCode` basligini ZORUNLU tutar (resmi belge); bu entegrasyon yalnizca Turkiye magazasini kapsar. */
 export const TRENDYOL_STOREFRONT_CODE = 'TR';
+
+/**
+ * [eslesme-fiyat WP4, D-TY-2] Ek servis grubu kovaları (02-ekler/trendyol.md C-3/C-7, §soru): marka/kategori okuma 50/dk,
+ * iade onay/red 5/dk, soru cevaplama 500/dk. Gruplu çağrılar yalnız kendi kovasından geçer (genel 200/dk kovasını tüketmez).
+ * Kademe bağımsız resmî değerler; env düğmesi bilinçli eklenmedi (finans kovası ile aynı yaklaşım).
+ */
+export const TRENDYOL_EXTRA_GROUP_RATE_PER_MIN = {
+    brand_category_read: 50,
+    claim_action: 5,
+    qna_answer: 500,
+} as const;
+export type TrendyolExtraRateGroup = keyof typeof TRENDYOL_EXTRA_GROUP_RATE_PER_MIN;
+
+/** [D-TY-4] Marka listesi sayfa boyutu: resmî aralık 1000–2000 (500 geçersiz). */
+export const TRENDYOL_BRAND_PAGE_SIZE = 1000;
+/** [C-2] Özellik değerleri ucu sayfalı: `size` ≤ 1000; güvenlik tavanı 50 sayfa (50.000 değer). */
+export const TRENDYOL_ATTRIBUTE_VALUE_PAGING = { size: 1000, maxPages: 50 } as const;
+/** [C-7] İade listesi: resmî azami `size` 200 (eski 50). */
+export const TRENDYOL_CLAIM_PAGE_SIZE = 200;

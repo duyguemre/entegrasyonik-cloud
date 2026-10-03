@@ -136,8 +136,8 @@ const TrendyolDescriptor: IntegrationDescriptor = {
     },
     limitations: [
         'Kargo takip bilgisi otomatik değil, elle girilerek iletilir.',
-        'Sipariş satır kimliği yeniden adlandırması (`line.id`→`lineId`) adaptörde henüz uygulanmadı (BACKLOG R9, doğruluk riski).',
-        '`origin` (menşe) alanı ürün gönderiminde henüz eklenmedi (23.10.2026\'da zorunlu olacak, BACKLOG R6).',
+        // [eslesme-fiyat WP4, C-13] `lineId` (R9) ve `origin` (R6) uygulandı (OrderTransformer, ProductTransformer.resolveOrigin) — bayat maddeler kaldırıldı.
+        '`storeFrontCode` değeri (`TR`/`1`) resmî kaynaklarda çelişkili; yalnız finans ve buybox çağrılarında `TR` gönderilir (yerelde doğrulanacak).',
         'Buybox bilgisi yalnız okunur; rakip satıcı listesi ve fiyat önerisi Trendyol API\'sinde yok. Buybox alanları yerelde doğrulanmadı.',
     ],
     rateLimits: {
@@ -156,7 +156,7 @@ const TrendyolDescriptor: IntegrationDescriptor = {
             { url: 'https://developers.trendyol.com/v2.0/changelog/changelog', kind: 'changelog', official: true, monitor: 'auto' },
             { url: 'https://developers.trendyol.com/llms.txt', kind: 'reference', official: true, monitor: 'auto' },
             { url: 'https://developers.trendyol.com/docs/1-servis-limitleri', kind: 'reference', official: true, monitor: 'auto' },
-            { url: 'https://developers.trendyol.com/docs/api-status.md', kind: 'status', official: true, monitor: 'auto' },
+            { url: 'https://developers.trendyol.com/api-status', kind: 'status', official: true, monitor: 'auto' },
         ],
         lastVerifiedAt: '2026-09-28',
         verificationRef: 'docs/research/2026-09-28-trendyol-v2-migration-spec.md',

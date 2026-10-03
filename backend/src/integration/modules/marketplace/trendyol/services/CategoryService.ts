@@ -6,6 +6,7 @@ import commissionsMeta from '../commissions.meta.json'; // COM-01: kaynak/bayatl
 import { CategoryConnector } from '../api/CategoryConnector';
 import { CategoryMapper } from '../transformers/CategoryTransformer';
 import Service from './Service';
+import { TRENDYOL_ATTRIBUTE_VALUE_PAGING } from '../limits';
 import { ICategoryComission } from '@interfaces/index';
 
 export class CategoryService {
@@ -35,9 +36,17 @@ export class CategoryService {
         // 4. [C22 2026-09-28] V2: değerler ayrı uç noktada (`…/attributes/{attributeId}/values`). Gömülü liste boşsa
         //    yalnızca öznitelik gerçekten bu kategoride varsa ayrı çağrı yapılır.
         if (!attribute) return [];
-        const response = await this.connector.fetchAttributeValuesFromPlatform(categoryId, attributeId);
-        const data = response?.data;
-        const raw = Array.isArray(data) ? data : (data?.attributeValues ?? data?.values ?? data?.content ?? []);
+        // [eslesme-fiyat WP4, C-2] Sayfalı çekim: `totalPages` kadar (güvenlik tavanı maxPages); düz dizi yanıtı tek sayfadır.
+        const raw: any[] = [];
+        const { size, maxPages } = TRENDYOL_ATTRIBUTE_VALUE_PAGING;
+        for (let page = 0; page < maxPages; page++) {
+            const response = await this.connector.fetchAttributeValuesFromPlatform(categoryId, attributeId, page, size);
+            const data = response?.data;
+            const chunk = Array.isArray(data) ? data : (data?.content ?? data?.attributeValues ?? data?.values ?? []);
+            raw.push(...chunk);
+            const totalPages = Array.isArray(data) ? 1 : Number(data?.totalPages);
+            if (!Number.isFinite(totalPages) || page + 1 >= totalPages || chunk.length === 0) break;
+        }
         return this.mapper.toInternalValues(raw) as ICategoryAttributeValue[];
     }
 

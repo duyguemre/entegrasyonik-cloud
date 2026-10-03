@@ -1,6 +1,6 @@
 import { ADAPTER_KEYS } from '@integration/modules/adapterKeys';
 import { AdapterHttpService, type AuthConfig } from '@integration/modules/common/adapter/AdapterHttpService';
-import { trendyolGlobalRatePerMin, trendyolGroupRatePerMin, TRENDYOL_FINANCE_GROUP, TRENDYOL_FINANCE_RATE_PER_MIN } from '../limits';
+import { trendyolGlobalRatePerMin, trendyolGroupRatePerMin, TRENDYOL_FINANCE_GROUP, TRENDYOL_FINANCE_RATE_PER_MIN, TRENDYOL_EXTRA_GROUP_RATE_PER_MIN } from '../limits';
 
 // ADR-0033 INT-05: Trendyol Service, ortak `AdapterHttpService` tabanina gecti (ResilientHttpClient kurulumu, mock/gercek URL
 // cozumleme ve get/post/put sarmalayicilari tabandan). Davranis karakterizasyonla birebir
@@ -35,7 +35,7 @@ export default class Service extends AdapterHttpService {
                 // [C22] Global tavan tek yerde (../limits.ts; env TY_RATE_PER_MIN + katalog). Siparis cekme ayrica 30/dk (orderListPacer).
                 ratePerMin: trendyolGlobalRatePerMin(),
                 // [ADR-0030 X1] Servis grubu kovalari (urun okuma / urun yazma / stok-fiyat yazma) + finans; etiketsiz cagrilar genel kovada.
-                groupRatePerMin: { ...trendyolGroupRatePerMin(), [TRENDYOL_FINANCE_GROUP]: TRENDYOL_FINANCE_RATE_PER_MIN },
+                groupRatePerMin: { ...trendyolGroupRatePerMin(), [TRENDYOL_FINANCE_GROUP]: TRENDYOL_FINANCE_RATE_PER_MIN, ...TRENDYOL_EXTRA_GROUP_RATE_PER_MIN },
             },
         });
     }

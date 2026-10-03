@@ -6,7 +6,7 @@ import { integrationCode } from '../constants';
 import { TRENDYOL_CLAIMS_LIST_CONTRACT } from '../contracts/claims.list';
 import { eventLog } from '@platform/core/logger';
 import { markIncomplete } from '@integration/contracts/IncompleteFetch';
-import { TRENDYOL_CLAIM_PAGING } from '../limits';
+import { TRENDYOL_CLAIM_PAGING, TRENDYOL_CLAIM_PAGE_SIZE } from '../limits';
 
 const log = eventLog('adapter-trendyol', 'ClaimConnector');
 
@@ -20,7 +20,7 @@ export class ClaimConnector {
         const baseUrl = settings.urls.claimListUrl.replace("<SELLERID>", sellerId);
 
         const allClaims: any[] = [];
-        const params = new URLSearchParams({ page: '0', size: '50' });
+        const params = new URLSearchParams({ page: '0', size: String(TRENDYOL_CLAIM_PAGE_SIZE) }); // [WP4 C-7] resmî azami 200
 
         // ==========================================
         // TRENDYOL ÖZEL PARAMETRE MAPPING
@@ -138,7 +138,7 @@ export class ClaimConnector {
             // Kalem kimliği verilmemişse (eski çağıranlar) ESKİ boş gövde korunur ve uyarı basılır (Trendyol 400 dönebilir).
             const ids = (params?.claimItemIdList || []).map(String).filter(Boolean);
             if (ids.length === 0) log.warn('CLAIMCONNECTOR_APPROVECLAIM_CLAIMITEMIDLIST_VERILMEDI_BO', `approveClaim(${externalClaimId}): claimItemIdList verilmedi; boş gövde gönderiliyor (V2 gövdesi claimLineItemIdList ister).`);
-            const response = await this.service.put(url, ids.length ? { claimLineItemIdList: ids, params: {} } : {});
+            const response = await this.service.put(url, ids.length ? { claimLineItemIdList: ids, params: {} } : {}, { group: 'claim_action' }); // [WP4 D-TY-2] 5/dk
 
             return {
                 success: response.status >= 200 && response.status < 300,
@@ -170,7 +170,7 @@ export class ClaimConnector {
                 .replace("<CLAIMITEMIDLIST>", params.claimItemIdList.join(','))
                 .replace("<DESCRIPTION>", params.description || '');
 
-            const response = await this.service.post(url, {});
+            const response = await this.service.post(url, {}, { group: 'claim_action' }); // [WP4 D-TY-2] 5/dk
 
             return {
                 success: response.status === 200 || response.status === 204,
