@@ -123,3 +123,15 @@ describe('Sentinel.finalizeTracking — YENİ davranış (ADR-0004 Karar 6, Aşa
     expect(stockSyncOpCalls).toHaveLength(0);
   });
 });
+
+describe('Sentinel.finalizeTracking — eslesme-fiyat WP1: issues[]', () => {
+  it('FAILED sonuçta kanal mesajları issues[] olarak varyant op\'una yazılır; COMPLETED\'da issues yazılmaz', async () => {
+    setup('FAILED', { _id: 'e1', barcode: 'B1', stock: 7 });
+    await new Sentinel(provider).runOnce('1', 'trendyol', 'TRANSFER' as any, BATCH_ID);
+    expect(variantOpCalls[0].issues).toEqual([expect.objectContaining({ code: 'PLATFORM_REJECTED', platformMessage: 'ok', barcode: 'B1' })]);
+
+    setup('COMPLETED', { _id: 'e1', barcode: 'B1', stock: 7 });
+    await new Sentinel(provider).runOnce('1', 'trendyol', 'TRANSFER' as any, BATCH_ID);
+    expect(variantOpCalls[0].issues).toBeUndefined();
+  });
+});

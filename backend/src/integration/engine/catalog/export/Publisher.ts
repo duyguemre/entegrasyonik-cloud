@@ -10,6 +10,8 @@ import { IIntegrationEngineProvider } from '../provider/IIntegrationEngineProvid
 import { IPlatform, IExportStagedProduct } from '@interfaces/index';
 import { getSetting } from '@integration/config/ConfigResolver';
 import { eventLog } from '@platform/core/logger';
+import { issuesFromError, mapPlatformMessage } from '@integration/modules/common/errors/errorMap';
+import { errorRulesFor } from '@integration/modules/common/errors/registry';
 
 const log = eventLog('worker', 'Publisher');
 
@@ -158,12 +160,15 @@ export default class Publisher extends BaseWorker {
                 const matchValue = String(failed[matchKey] || failed.barcode || failed.stockCode || failed.stockcode || failed.sku || failed.productSellerCode || "");
                 const cleanErr = this.formatUserMessage(failed.reason);
                 const entry = stagingMap[matchValue.toLowerCase()] || stagingMap[matchValue];
+                // [eslesme-fiyat WP1, D-ERR-1] kanal gerekçesi → yapılandırılmış sorun (ham metin platformMessage'da)
+                const issues = [mapPlatformMessage(failed.reason, { integrationCode: this.integrationCode, barcode: matchValue }, errorRulesFor(this.integrationCode))];
 
                 variantBulkOps.push(
                     this.engineProvider.prepareVariantPlatformUpdateOp(matchValue, undefined, this.integrationCode, mode, 'FAILED', {
                         messages: [cleanErr],
                         updatedAt: now,
-                        matchKey: matchKey
+                        matchKey: matchKey,
+                        issues
                     })
                 );
 
@@ -173,6 +178,7 @@ export default class Publisher extends BaseWorker {
                             priorityScore: 0,
                             errorMessage: cleanErr,
                             errorType: "BUSINESS_ERROR",
+                            issues,
                             updatedAt: now
                         })
                     );
@@ -257,12 +263,15 @@ export default class Publisher extends BaseWorker {
         const isRetryable = error?.name === 'IntegrationError' && error?.retryable === true;
         const retryDelayMs = typeof error?.retryAfterMs === 'number' ? Math.min(error.retryAfterMs, 5 * 60 * 1000) : 60 * 1000;
 
+        // [eslesme-fiyat WP1] toplu hata → issue (AUTH/RATE_LIMITED/UNAVAILABLE doğrudan; diğerleri kanal kurallarıyla)
+        const batchIssues = (entry: any) => issuesFromError(error, { integrationCode: this.integrationCode, barcode: entry?.[matchKey] }, errorRulesFor(this.integrationCode));
         const stagingBulkOps = entries.map(entry =>
             this.engineProvider.prepareStagingUpdateOp(entry._id, this.workerName, isRetryable ? 'PENDING' : 'FAILED', {
                 priorityScore: isRetryable ? undefined : 0,
                 nextRunAt: isRetryable ? new Date(now.getTime() + retryDelayMs) : undefined,
                 errorMessage: isRetryable ? `Geçici hata, tekrar denenecek: ${cleanMessage}` : `Publisher hatası: ${cleanMessage}`,
                 errorType: isRetryable ? "TRANSIENT_ERROR" : "SYSTEM_ERROR",
+                issues: batchIssues(entry),
                 updatedAt: now
             })
         );
@@ -284,7 +293,8 @@ export default class Publisher extends BaseWorker {
                 batchProcessId: null,
                 messages: [`Sistem hatası: ${cleanMessage}`],
                 updatedAt: now,
-                matchKey: matchKey
+                matchKey: matchKey,
+                issues: batchIssues(entry)
             });
         });
 

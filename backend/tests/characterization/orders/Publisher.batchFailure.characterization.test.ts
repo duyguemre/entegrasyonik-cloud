@@ -85,6 +85,9 @@ describe('Publisher.runOnce - toplu hata yolu', () => {
     expect(stagingOps[0].errorMessage).toBe('Publisher hatası: 500 patladı');
     const variantOps = variantModel.bulkWrite.mock.calls[0][0];
     expect(variantOps.map((o: any) => [o.matchValue, o.status])).toEqual([['B1', 'FAILED'], ['B2', 'FAILED']]);
+    // [eslesme-fiyat WP1] kalıcı toplu hata yapılandırılmış sorun olarak da taşınır (kanal metni platformMessage'da)
+    expect(stagingOps[0].issues).toEqual([expect.objectContaining({ code: 'PLATFORM_REJECTED', integrationCode: 'trendyol', barcode: 'B1', platformMessage: '500 patladı' })]);
+    expect(variantOps[1].issues[0]).toMatchObject({ code: 'PLATFORM_REJECTED', barcode: 'B2' });
     expect(signalModel.updateOne).toHaveBeenCalledTimes(1);
     expect(signalModel.updateOne.mock.calls[0][0]).toEqual({ batchId: 'batch-1' });
     expect(signalModel.updateOne.mock.calls[0][1].$set.status).toBe('SENT');

@@ -8,6 +8,8 @@ import { getSetting } from '@integration/config/ConfigResolver';
 import { observeStockPublishLag } from '@operations/stock/markStockDirty';
 import { stagedLogPush } from '@operations/integration/stagedLogs';
 import { eventLog } from '@platform/core/logger';
+import { mapPlatformMessage } from '@integration/modules/common/errors/errorMap';
+import { errorRulesFor } from '@integration/modules/common/errors/registry';
 
 const log = eventLog('worker', 'Sentinel');
 
@@ -184,6 +186,10 @@ export default class Sentinel extends BaseWorker {
 
             const nextStatus = status === 'WAITING' ? 'WAITING' : (status === 'FAILED' ? 'FAILED' : 'COMPLETED');
             const entry = stagingMap[matchValue];
+            // [eslesme-fiyat WP1, D-ERR-1] yalnız FAILED'da: kanal gerekçeleri → yapılandırılmış sorunlar (boş gerekçe → tek PLATFORM_REJECTED)
+            const issues = nextStatus === 'FAILED'
+                ? (cleanMessages.filter(Boolean).length ? cleanMessages.filter(Boolean) : ['']).map((m: string) => mapPlatformMessage(m, { integrationCode: this.integrationCode, barcode: matchValue }, errorRulesFor(this.integrationCode)))
+                : undefined;
 
             if (entry) {
                 stagingBulkOps.push(
@@ -191,6 +197,7 @@ export default class Sentinel extends BaseWorker {
                         nextRunAt: new Date(Date.now() + this.syncCooldownMs),
                         completedAt: ['COMPLETED', 'FAILED'].includes(nextStatus) ? now : null,
                         message: `Pazaryeri yanıtı: ${status}. ${cleanMessages[0] || ''}`,
+                        issues,
                         updatedAt: now
                     })
                 );
@@ -200,6 +207,7 @@ export default class Sentinel extends BaseWorker {
                 this.engineProvider.prepareVariantPlatformUpdateOp(matchValue, undefined, this.integrationCode, mode, nextStatus, {
                     messages: cleanMessages,
                     updatedAt: now,
+                    issues,
                     matchKey: matchKey // Variant eşleşmesi için hangi anahtarın kullanılacağı (barcode/stockcode)
                 })
             );
