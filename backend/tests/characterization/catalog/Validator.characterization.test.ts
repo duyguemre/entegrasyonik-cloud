@@ -161,3 +161,38 @@ describe('Validator.runOnce — YENİ davranış (ADR-0004 Karar 6, Aşama C): s
     expect(stagingUpdateOpCalls[0].stock).toBe(42);
   });
 });
+
+describe('Validator.runOnce — hata yolu (eslesme-fiyat WP1 öncesi sabitlendi): errorMessage/errorType/messages metinleri', () => {
+  it('ürünün kategorisi yoksa FAILED + "Ürünün kategorisi bulunamadı." + VALIDATION_ERROR; varyant mesajı aynı metin', async () => {
+    productModel.findById = anyFn().mockReturnValue({ lean: async () => ({ ...PRODUCT, _id: 'P2', category: null }) });
+    setupModels([makeEntry({ mode: 'TRANSFER' })], [makeVariant({ productId: 'P2' })]);
+    await new Validator(provider).runOnce('1', 'trendyol', 'TRANSFER' as any, BATCH_ID);
+
+    expect(stagingUpdateOpCalls[0]).toMatchObject({ status: 'FAILED', errorMessage: 'Ürünün kategorisi bulunamadı.', errorType: 'VALIDATION_ERROR', priorityScore: 0 });
+    expect(variantUpdateOpCalls[0]).toMatchObject({ status: 'FAILED', messages: ['Ürünün kategorisi bulunamadı.'] });
+  });
+
+  it('ürünün markası yoksa "Ürünün markası bulunamadı."', async () => {
+    productModel.findById = anyFn().mockReturnValue({ lean: async () => ({ ...PRODUCT, _id: 'P3', brand: null }) });
+    setupModels([makeEntry({ mode: 'TRANSFER' })], [makeVariant({ productId: 'P3' })]);
+    await new Validator(provider).runOnce('1', 'trendyol', 'TRANSFER' as any, BATCH_ID);
+
+    expect(stagingUpdateOpCalls[0]).toMatchObject({ status: 'FAILED', errorMessage: 'Ürünün markası bulunamadı.' });
+  });
+
+  it('varyant ana tabloda yoksa "<barkod> değerine sahip varyant ana tabloda bulunamadı."', async () => {
+    setupModels([makeEntry({ mode: 'TRANSFER' })], []);
+    await new Validator(provider).runOnce('1', 'trendyol', 'TRANSFER' as any, BATCH_ID);
+
+    expect(stagingUpdateOpCalls[0]).toMatchObject({ status: 'FAILED', errorMessage: 'B1 değerine sahip varyant ana tabloda bulunamadı.' });
+  });
+
+  it('adaptör validate {result:false, reason} → reason düz metin; "[..]" önekleri atılır', async () => {
+    instance.validate = anyFn().mockResolvedValue({ result: false, reason: '[VALIDATION] Barkod eksik.' });
+    setupModels([makeEntry({ mode: 'TRANSFER' })], [makeVariant()]);
+    await new Validator(provider).runOnce('1', 'trendyol', 'TRANSFER' as any, BATCH_ID);
+
+    expect(stagingUpdateOpCalls[0]).toMatchObject({ status: 'FAILED', errorMessage: 'Barkod eksik.', errorType: 'VALIDATION_ERROR' });
+    expect(variantUpdateOpCalls[0].messages).toEqual(['Barkod eksik.']);
+  });
+});
