@@ -2,7 +2,7 @@ import { observeResponseSchema } from '@integration/modules/common/contract/obse
 import { PAZARAMA_ORDERS_LIST } from '../contracts';
 import Service from '../services/Service';
 import { IPlatformResponse, ISendInvoicePayload, ISendTrackingPayload } from '@interfaces/index';
-import { fromHttpError } from '@integration/modules/common/IntegrationError';
+import { IntegrationError, fromHttpError } from '@integration/modules/common/IntegrationError';
 import { integrationCode } from '../constants';
 import { paginatePage } from './paginatePage';
 
@@ -33,28 +33,43 @@ export class OrderConnector {
     // Pazarama'da ayrı bir reject servisi yoktur, updateOrderStatus (PUT) kullanılır.
     // Bu yüzden bu metod connector seviyesinde gereksizdir.
 
+    /**
+     * [eslesme-fiyat WP6, D-ORD-6 / Ek E F-P1-5] Kargo bildirimi TÜM aktif kalemler için (`updateOrderStatus` tek kalem gövdesi
+     * aldığından kalem başına sıralı istek). ESKİDEN yalnız ilk kalem; kalem yoksa `orderItemId = orderNumber` (kesin hatalı) —
+     * artık kalem kimliği yoksa ağa gitmeden VALIDATION. Yarıda hata → fırlatılır (yazma; körlemesine tekrar yok, ADR-0006).
+     */
     public async sendOrderShipping(payload: ISendTrackingPayload): Promise<IPlatformResponse> {
         const baseUrl = this.params.integrationSettings?.urls?.orderUpdateUrl || 'order/updateOrderStatus';
+        const fromLines = (payload.lineItems || []).map(l => l?.externalLineItemId).filter((v): v is string => v !== undefined && v !== null && String(v) !== '');
+        const itemIds = [...new Set((fromLines.length ? fromLines : [payload.meta?.orderItemId].filter(Boolean)).map(String))];
+        if (itemIds.length === 0) {
+            throw new IntegrationError('VALIDATION', `Pazarama kargo bildirimi: sipariş kalem kimliği (OrderItemId) yok (${payload.orderId}).`, {
+                integrationCode, operation: 'sendOrderShipping', clientId: this.params.clientId,
+            });
+        }
+        const responses: any[] = [];
         try {
-            // Pazarama Kargo Takip Durumunu Bildirme (PUT)
-            const body = {
-                orderNumber: payload.orderId, // Use externalOrderId
-                item: {
-                    orderItemId: payload.lineItems?.[0]?.externalLineItemId || payload.meta?.orderItemId || payload.orderId,
-                    status: 5, // Shipped
-                    deliveryType: payload.meta?.deliveryType || 1, // Default to Cargo (1)
-                    shippingTrackingNumber: String(payload.trackingCode),
-                    trackingUrl: payload.trackingUrl || "",
-                    cargoCompanyId: payload.carrierCode // Guid from DB/Platform
-                }
-            };
-
-            const response = await this.service.put(baseUrl, body, { operation: 'sendOrderShipping' });
+            for (const orderItemId of itemIds) {
+                // Pazarama Kargo Takip Durumunu Bildirme (PUT)
+                const body = {
+                    orderNumber: payload.orderId, // Use externalOrderId
+                    item: {
+                        orderItemId,
+                        status: 5, // Shipped
+                        deliveryType: payload.meta?.deliveryType || 1, // Default to Cargo (1)
+                        shippingTrackingNumber: String(payload.trackingCode),
+                        trackingUrl: payload.trackingUrl || "",
+                        cargoCompanyId: payload.carrierCode // Guid from DB/Platform
+                    }
+                };
+                const response = await this.service.put(baseUrl, body, { operation: 'sendOrderShipping' });
+                responses.push(response.data);
+            }
             return {
                 success: true,
                 message: "Kargo takip durumu bildirildi.",
                 platformId: payload.orderId,
-                rawResponse: response.data
+                rawResponse: responses.length === 1 ? responses[0] : responses
             };
         } catch (error: any) {
             // [ADR-0006 adım 2] IntegrationError sözleşmesi: generic Error yerine kod/retryable taşıyan tip.

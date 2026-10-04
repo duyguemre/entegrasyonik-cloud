@@ -11,6 +11,13 @@ export interface OrderActionDeps { repo: OrderPanelRepository; clientId: number 
 type BulkResults = { successCount: number; failedCount: number; successful: any[]; failed: any[] };
 const emptyResults = (): BulkResults => ({ successCount: 0, failedCount: 0, successful: [], failed: [] });
 
+/**
+ * [eslesme-fiyat WP6, Ek E F-P0-4] Satır kimliği = pazaryeri SATIR kimliği (`externalLineItemId`). ESKİDEN `externalItemId`
+ * (Pazarama'da ProductId, HB'de SKU) gidiyordu → PZ `updateOrderStatus` yanlış OrderItemId alıyordu (oversell telafisi dahil).
+ * TY'de iki alan aynıdır (lineId), davranış değişmez.
+ */
+const lineIdOf = (item: any): string => String(item.externalLineItemId || item.externalItemId);
+
 /** Evrensel reject parametreleri: satırlar (Trendyol/Amazon gibi) + lojistik paket meta'sı. */
 function rejectParamsOf(order: any, reasonId: any, reason: any): IOrderRejectParams {
     return {
@@ -18,7 +25,7 @@ function rejectParamsOf(order: any, reasonId: any, reason: any): IOrderRejectPar
         description: reason,
         source: 'SELLER',
         lineItems: order.items.map((item: any) => ({
-            externalLineId: item.externalItemId,
+            externalLineId: lineIdOf(item),
             quantity: item.quantity
         })),
         meta: order.meta

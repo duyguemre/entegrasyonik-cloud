@@ -319,7 +319,8 @@ export class OversellCompensationJob {
                 reasonId,
                 description: 'Stok yetersizliği nedeniyle otomatik iptal (zero-oversell telafi akışı).',
                 source: 'SELLER',
-                lineItems: [{ externalLineId: item.externalItemId, quantity: Number(item.quantity) || 0 }],
+                // [eslesme-fiyat WP6, F-P0-4] pazaryeri SATIR kimliği (PZ OrderItemId); eskiden externalItemId (= PZ ProductId)
+                lineItems: [{ externalLineId: String(item.externalLineItemId || item.externalItemId), quantity: Number(item.quantity) || 0 }],
                 meta: order.meta,
             };
             const result = await instance.rejectOrder(order.externalOrderId, rejectParams);

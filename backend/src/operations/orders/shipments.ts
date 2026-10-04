@@ -1,4 +1,4 @@
-import { OrderInternalStatusEnum, IPlatformResponse } from '@interfaces/index'
+import { OrderInternalStatusEnum, IPlatformResponse, ISendTrackingPayload } from '@interfaces/index'
 import IntegrationFactory from '@integration/modules/IntegrationFactory';
 import { ApplicationError } from '@platform/core/security/Security';
 import type { ShipmentPanelRepository } from '@database/repositories/tenant/ShipmentPanelRepository'
@@ -98,6 +98,10 @@ export async function createShipment(deps: ShipmentDeps, orderId: any, fulfillme
         };
     }
 
+    // [eslesme-fiyat WP6, K-D] `performed:false` = kanal tarafında işlem YAPILMADI (ör. Trendyol lojistiği). Yerel kayıt
+    // yine güncellenir ama kullanıcıya ve denetim izine "iletildi" denmez (ADR-0006 sahte başarı yok).
+    const notPerformed = platformResult.performed === false;
+
     // 3. DB GÜNCELLEME (Internal State - SONRA)
     const statusUpdate: any = {
         'dates.shippedDate': now
@@ -125,7 +129,7 @@ export async function createShipment(deps: ShipmentDeps, orderId: any, fulfillme
                 history: {
                     status: statusUpdate.internalStatus || order.internalStatus,
                     changedAt: new Date(),
-                    description: `Kargo bilgileri girildi (${fulfillmentData?.carrierName}: ${fulfillmentData?.trackingCode}) ve pazaryerine iletildi.`,
+                    description: `Kargo bilgileri girildi (${fulfillmentData?.carrierName}: ${fulfillmentData?.trackingCode}) ${notPerformed ? 've pazaryerine iletilmedi (kanal bildirim gerektirmiyor).' : 've pazaryerine iletildi.'}`,
                     actionBy: 'USER'
                 }
             }
@@ -135,7 +139,10 @@ export async function createShipment(deps: ShipmentDeps, orderId: any, fulfillme
 
     return {
         success: true,
-        message: 'Sevkiyat bilgileri başarıyla işlendi ve platforma iletildi.',
+        message: notPerformed
+            ? `Sevkiyat bilgileri kaydedildi; pazaryerine bildirim yapılmadı: ${platformResult.message || 'kanal bildirim gerektirmiyor.'}`
+            : 'Sevkiyat bilgileri başarıyla işlendi ve platforma iletildi.',
+        platformPerformed: !notPerformed,
         data: updatedOrder
     };
 }
@@ -201,6 +208,39 @@ export async function bulkCreateShipments(repo: ShipmentPanelRepository, orderId
 }
 
 /**
+ * [eslesme-fiyat WP6, D-ORD-6 / Ek E F-P0-3] Kargo bildirim sözleşmesi. ESKİDEN `lineItems`, `meta.orderItemId` ve
+ * `meta.currentExternalStatus` gönderilmiyordu: HB boş paket (`createPackage([])`), N11/PZ `orderItemId = orderNumber`, PZ 3→12
+ * geçişi atlanıyordu. Artık iptal/iade edilmemiş TÜM satırlar (`externalLineItemId` = pazaryeri satır kimliği), ilk satırın
+ * kimliği (eski tekil tüketiciler için), dış durum ve varsa paket numarası / kampanya kodu gider.
+ */
+export function buildShippingPayload(order: any, fulfillmentData: any, shipmentDate: Date): ISendTrackingPayload {
+    const activeLines = (order.items || []).filter((i: any) => i?.itemStatus !== 'CANCELLED' && i?.itemStatus !== 'RETURNED');
+    const lineItems = activeLines
+        .filter((i: any) => i?.externalLineItemId !== undefined && i?.externalLineItemId !== null && String(i.externalLineItemId) !== '')
+        .map((i: any) => ({ externalLineItemId: String(i.externalLineItemId), merchantSku: i.sku, quantity: Number(i.quantity) || 1 }));
+    const meta: Record<string, any> = {
+        shipmentMethod: order.fulfillment?.[0]?.shipmentMethod || 'MANUAL',
+        currentExternalStatus: order.externalStatus !== undefined && order.externalStatus !== null ? String(order.externalStatus) : undefined,
+        orderItemId: lineItems[0]?.externalLineItemId,
+    };
+    const packageNumber = order.meta?.packageNumber ?? order.meta?.PackageNumber ?? order.meta?.shipmentPackageId;
+    if (packageNumber !== undefined && packageNumber !== null && String(packageNumber) !== '') meta.packageNumber = String(packageNumber);
+    if (fulfillmentData?.campaignCode) meta.campaignNumber = String(fulfillmentData.campaignCode);
+    if (fulfillmentData?.deliveryType !== undefined) meta.deliveryType = fulfillmentData.deliveryType;
+    return {
+        orderId: order.externalOrderId,
+        remoteOrderId: String(order._id),
+        carrierCode: fulfillmentData?.carrierCode || fulfillmentData?.carrierName,
+        carrierName: fulfillmentData?.carrierName,
+        trackingCode: fulfillmentData?.trackingCode,
+        trackingUrl: fulfillmentData?.trackingUrl,
+        shipmentDate,
+        lineItems,
+        meta,
+    };
+}
+
+/**
  * Platform Entegrasyonu Bildirimi (Sync)
  * Kargo takip kodunu pazaryerine gönderir ve loglar.
  */
@@ -210,18 +250,7 @@ async function syncShipmentToPlatform(deps: ShipmentDeps, order: any, fulfillmen
         const instance = await factory.getInstance(order.integrationCode);
 
         if (instance && typeof instance.sendOrderShipping === 'function') {
-            const platformResult = await instance.sendOrderShipping({
-                orderId: order.externalOrderId,
-                remoteOrderId: String(order._id),
-                carrierCode: fulfillmentData?.carrierCode || fulfillmentData?.carrierName,
-                carrierName: fulfillmentData?.carrierName,
-                trackingCode: fulfillmentData?.trackingCode,
-                trackingUrl: fulfillmentData?.trackingUrl,
-                shipmentDate: shipmentDate,
-                meta: {
-                    shipmentMethod: order.fulfillment?.[0]?.shipmentMethod || 'MANUAL'
-                }
-            });
+            const platformResult = await instance.sendOrderShipping(buildShippingPayload(order, fulfillmentData, shipmentDate));
 
             // Platform hareketini logla
             await deps.repo.updateOrderById(order._id, {
@@ -231,7 +260,7 @@ async function syncShipmentToPlatform(deps: ShipmentDeps, order: any, fulfillmen
                         platform: order.integrationCode,
                         requestPayload: fulfillmentData,
                         responsePayload: platformResult.rawResponse,
-                        status: platformResult.success ? 'SUCCESS' : 'FAILED',
+                        status: !platformResult.success ? 'FAILED' : platformResult.performed === false ? 'SKIPPED' : 'SUCCESS',
                         requestId: platformResult.rawResponse?.batchRequestId || null,
                         createdAt: new Date()
                     }
