@@ -37,8 +37,8 @@ describe('yetenek kaydı (ADR-0019, K20)', () => {
     it('her bağ PricingService\'te gerçek bir metoda gider ve tel şeması iliştirilmiş', () => {
         const rpcs = CAPABILITIES.filter((c) => c.id.startsWith('pricing.')).flatMap((c) => c.bindings.map((b) => b.rpc!));
         expect(rpcs.sort()).toEqual([
-            'PricingService/applySuggestions', 'PricingService/deleteRule', 'PricingService/dismissSuggestions', 'PricingService/getBuyboxHistory', 'PricingService/getPriceHistory',
-            'PricingService/getRules', 'PricingService/listBuybox', 'PricingService/listCosts', 'PricingService/listSuggestions', 'PricingService/previewMargin',
+            'PricingService/applyChannelRule', 'PricingService/applySuggestions', 'PricingService/deleteRule', 'PricingService/dismissSuggestions', 'PricingService/getBuyboxHistory', 'PricingService/getPriceHistory',
+            'PricingService/getRules', 'PricingService/listBuybox', 'PricingService/listCosts', 'PricingService/listSuggestions', 'PricingService/previewChannelRule', 'PricingService/previewMargin',
             'PricingService/saveRule', 'PricingService/setPricingSettings', 'PricingService/setVariantCosts',
         ]);
         for (const r of rpcs) expect(typeof (PricingService.prototype as any)[r.split('/')[1]]).toBe('function');

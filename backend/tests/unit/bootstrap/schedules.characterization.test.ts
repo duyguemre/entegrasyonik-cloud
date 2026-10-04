@@ -53,6 +53,8 @@ const EXPECTED: Array<[string, number, number, string, string, 'worker' | 'any']
   ['alerts.evaluator', 60 * 1000, 60 * 1000, 'normal', 'always', 'worker'],
   // PRC-R1/PRC-CFG: buybox salt-okuma isi (features.competition kapaliyken DB/ag yok).
   ['pricing.buyboxRefresh', 60 * 1000, 50 * 1000, 'normal', 'always', 'worker'],
+  // [eslesme-fiyat WP5, K-A2] kanal fiyat kurali otomatik uygulama.
+  ['pricing.channelRules', 15 * 60 * 1000, 10 * 60 * 1000, 'normal', 'ifDue', 'worker'],
   // COM-08: komisyon sapma taramasi (gunluk, ifDue).
   ['finance.commissionDrift', DAY, 15 * MIN, 'normal', 'ifDue', 'worker'],
   // [eslesme-fiyat WP2] platform katalog yenileme + esleme bayatlik taramasi (haftalik, ifDue).
@@ -73,7 +75,7 @@ async function startFor(role: 'web' | 'worker' | 'all') {
 beforeEach(() => { captured.length = 0; stops.length = 0; jest.resetModules(); });
 
 describe('zamanlayici listesi ve tanimlari (birebir)', () => {
-  it('worker rolu: 13 is, tablo ile birebir ayni tanim ve sira (metrik/config isleri sona)', async () => {
+  it('worker rolu: 14 is, tablo ile birebir ayni tanim ve sira (metrik/config isleri sona)', async () => {
     await startFor('worker');
     const got = captured.map((c) => [c.def.name, c.def.everyMs, c.def.maxDurationMs, c.def.criticality, c.def.runOnStart ?? 'always']);
     const want = EXPECTED.map(([n, e, m, c, r]) => [n, e, m, c, r]);
@@ -116,7 +118,7 @@ describe('zamanlayici listesi ve tanimlari (birebir)', () => {
 });
 
 describe('rol x is matrisi (scheduleIdsForRole) ve durdurma', () => {
-  it('scheduleIdsForRole: web=2 rol-bagimsiz, worker=all=13; sira eski entegrasyonik.ts sirasi', () => {
+  it('scheduleIdsForRole: web=2 rol-bagimsiz, worker=all=14; sira eski entegrasyonik.ts sirasi', () => {
     const { scheduleIdsForRole } = require('@bootstrap/schedules');
     expect(scheduleIdsForRole('web')).toEqual(['observability.metrics-flush', 'config-head-poll']);
     expect(scheduleIdsForRole('worker')).toEqual(EXPECTED.map((e) => e[0]));

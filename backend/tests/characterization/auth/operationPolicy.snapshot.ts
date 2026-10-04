@@ -212,6 +212,8 @@ export const OPERATION_POLICY_SNAPSHOT: SnapshotPolicy = {
         listCosts: M, setVariantCosts: M, listBuybox: M, getBuyboxHistory: M, previewMargin: M,
         // PRC-R2: kural/öneri okuma member; kural yazma, tenant anahtarı ve öneri uygulama/ret admin (`pricing:manage`).
         getRules: M, listSuggestions: M, getPriceHistory: M, saveRule: A, deleteRule: A, setPricingSettings: A, applySuggestions: A, dismissSuggestions: A,
+        // eslesme-fiyat WP5: kanal fiyat kuralı önizleme (member) + onaylı uygulama (admin, pricing:manage).
+        previewChannelRule: M, applyChannelRule: A,
     },
     // §4 denetim günlüğü: kim-ne-zaman kaydı yönetim bilgisidir -> admin+ (owner dahil); yalnızca kendi tenant'ı
     AuditService: { getAuditLogs: A },

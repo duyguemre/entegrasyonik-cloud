@@ -7,6 +7,7 @@ import {
     applySuggestions, deleteRule, dismissSuggestions, getRulesState, listPriceHistory, listSuggestions, saveRule, setPricingSettings,
 } from '@operations/pricing/priceRules'
 import { createPricingEnv, type PricePublisher } from '@operations/pricing/createPricingEnv'
+import { applyChannelRule, previewChannelRule } from '@operations/pricing/channelRules'
 import { ExportBatchService } from '@integration/engine/catalog/export/ExportBatchService'
 
 /** RunOperation'ın eklediği sunucu alanları (kimlik/bağlam) — iş gövdesi `.strict()` şemalarına girmeden ayrılır. */
@@ -121,6 +122,19 @@ export default class PricingService extends BaseApi implements IService {
     async applySuggestions(): Promise<any> {
         const tid = this.tid()
         return applySuggestions(this.clientDB, tid, this.actor(), this.body(), this.env(true))
+    }
+
+    // ---- eslesme-fiyat WP5: kanal fiyat kuralı (type:'channel', K-A) ---------------------------------------------------------
+    /** SALT OKUMA: kanal kuralının kapsamındaki varyantlar için hesaplanan fiyat + gerekçe. */
+    async previewChannelRule(): Promise<any> {
+        const tid = this.tid()
+        return previewChannelRule(this.clientDB, tid, this.body(), this.env())
+    }
+
+    /** İNSAN ONAYLI uygulama: `rulePrice` yazar; etkin fiyatı değişen kanal otomatik fiyat yayınıyla gider (pricePending). */
+    async applyChannelRule(): Promise<any> {
+        const tid = this.tid()
+        return applyChannelRule(this.clientDB, tid, this.actor(), this.body(), this.env())
     }
 
     async dismissSuggestions(): Promise<any> {

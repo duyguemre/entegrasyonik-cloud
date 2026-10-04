@@ -15,12 +15,13 @@ import type { PricingEnv } from './priceRules';
 /** K19 platform anahtarı: `features.pricingRules` (varsayılan KAPALI; backoffice'ten anlık kapatılır). */
 export const PRICING_RULES_FLAG = 'pricingRules';
 
-export async function marginContextsFor(clientDB: any, tid: number, variants: any[]): Promise<Map<string, MarginContext>> {
+/** Kâr bağlamı; `code` verilmezse Trendyol (rekabet kuralı). [eslesme-fiyat WP5] kanal fiyat kuralı her kanal için çağırır. */
+export async function marginContextsFor(clientDB: any, tid: number, variants: any[], code: string = BUYBOX_CHANNEL): Promise<Map<string, MarginContext>> {
     const out = new Map<string, MarginContext>();
-    const deductions = resolveDeductionRules(BUYBOX_CHANNEL);
+    const deductions = resolveDeductionRules(code);
     for (let i = 0; i < variants.length; i += MAX_NET_PREVIEW_ITEMS) {
         const chunk = variants.slice(i, i + MAX_NET_PREVIEW_ITEMS);
-        const net = await getNetRevenuePreview(clientDB, tid, { items: chunk.map((v) => ({ variantId: String(v._id), integrationCode: BUYBOX_CHANNEL })) });
+        const net = await getNetRevenuePreview(clientDB, tid, { items: chunk.map((v) => ({ variantId: String(v._id), integrationCode: code })) });
         chunk.forEach((v, idx) => {
             const n: any = net.items[idx];
             out.set(String(v._id), {

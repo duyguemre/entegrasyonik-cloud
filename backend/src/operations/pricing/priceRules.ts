@@ -14,6 +14,9 @@ import { ownChannelPrice } from './buyboxState';
 import { DUAL_ENGINE_WARNING, PLATFORM_LIMITS, PRICING_CONSENT, parseRuleInput, type CompetitionParams } from './priceRule';
 import { evaluate, fuseCheck, VISIBLE_BLOCK_REASONS, type EvalResult, type HistoryEntry, type PauseReason } from './ruleEngine';
 import { effectiveChannelPrice } from '@platform/core/pricing/effectivePrice';
+import { CHANNEL_AUTO_APPLY_NOTICE, channelRuleDto, saveChannelRule } from './channelRules';
+import { loadSettings, tenantActive } from './pricingTenant';
+import { CHANNEL_RULE_CHANNELS } from './channelRule';
 
 const OBJECT_ID = /^[0-9a-fA-F]{24}$/;
 const OID = z.string().regex(OBJECT_ID);
@@ -32,7 +35,7 @@ export interface PricingEnv {
     competitionEnabled(tid: number): boolean;
     freshnessMin(tid: number): Promise<number>;
     /** Varyant başına kâr bağlamı (maliyet, KDV, komisyon, kesintiler) — yalnız bu tenant'ın DB'sinden. */
-    marginContexts(clientDB: any, tid: number, variants: any[]): Promise<Map<string, MarginContext>>;
+    marginContexts(clientDB: any, tid: number, variants: any[], code?: string): Promise<Map<string, MarginContext>>;
     /** Mevcut fiyat yayın hattı (ExportBatchService UPDATE_PRICE). */
     publish(clientDB: any, tid: number, barcodes: string[]): Promise<void>;
     notifyPaused(tid: number, params: { integ: string; ruleId: string; reason: PauseReason; day: string }): Promise<void>;
@@ -49,18 +52,8 @@ export function channelListPrice(v: any, code: string): number | null {
     return effectiveChannelPrice(v, code).marketPrice;
 }
 
-// ---- Tenant anahtarı + sorumluluk metni (K3, K19) ----------------------------------------------------------------------
-async function loadSettings(clientDB: any) {
-    return (await clientDB.getPricingSettingsModel().findOne({ _id: SETTINGS_ID }).lean()) ?? null;
-}
-
-/** Kurallar bu tenant'ta ÇALIŞABİLİR mi: platform açık + tenant açık + GÜNCEL metin sürümü kabul edilmiş. */
-function tenantActive(s: any, env: PricingEnv): { active: boolean; reason: string | null } {
-    if (!env.platformEnabled()) return { active: false, reason: 'platform_disabled' };
-    if (!s?.enabled) return { active: false, reason: 'tenant_disabled' };
-    if (s.consent?.version !== PRICING_CONSENT.version) return { active: false, reason: 'consent_required' };
-    return { active: true, reason: null };
-}
+// ---- Tenant anahtarı + sorumluluk metni (K3, K19) — loadSettings/tenantActive: ./pricingTenant ---------------------------------
+export { loadSettings, tenantActive };
 
 export const settingsInput = z.object({
     enabled: z.boolean(),
@@ -68,6 +61,9 @@ export const settingsInput = z.object({
     consentVersion: z.string().max(40).optional(),
     /** Açarken ZORUNLU: pazaryerinin kendi otomatik fiyat aracının kapatılması uyarısı okundu (K17). */
     dualEngineAcknowledged: z.boolean().optional(),
+    /** [eslesme-fiyat WP5, K-A2] kanal fiyat kuralının otomatik uygulanması (kill-switch); açarken `channelAutoApplyAcknowledged:true`. */
+    channelAutoApply: z.boolean().optional(),
+    channelAutoApplyAcknowledged: z.boolean().optional(),
 }).strict();
 
 export async function setPricingSettings(clientDB: any, tid: number, actor: string | null, raw: unknown, env: PricingEnv) {
@@ -87,9 +83,17 @@ export async function setPricingSettings(clientDB: any, tid: number, actor: stri
         if (!accepted) set.consent = { version: PRICING_CONSENT.version, acceptedAt: now, acceptedBy: actor ?? undefined };
         if (!prev?.dualEngineAcknowledgedAt) set.dualEngineAcknowledgedAt = now;
     }
+    if (p.data.channelAutoApply !== undefined) {
+        if (p.data.channelAutoApply && !prev?.channelAutoApplyAcknowledgedAt && p.data.channelAutoApplyAcknowledged !== true) {
+            throw AppError.of('VALIDATION', { message: 'Kanal fiyat kuralı otomatik uygulamasını açmak için bildirimi onaylayın.', details: [{ path: 'channelAutoApplyAcknowledged' }] });
+        }
+        set.channelAutoApply = p.data.channelAutoApply && p.data.enabled;
+        if (p.data.channelAutoApply && !prev?.channelAutoApplyAcknowledgedAt) set.channelAutoApplyAcknowledgedAt = now;
+    } else if (!p.data.enabled) set.channelAutoApply = false; // tenant anahtarı kapanınca otomatik uygulama da kapanır
     await clientDB.getPricingSettingsModel().updateOne({ _id: SETTINGS_ID }, { $set: set }, { upsert: true });
     env.audit(p.data.enabled ? 'pricing.settings.enabled' : 'pricing.settings.disabled', tid, actor, {
         consentVersion: (set.consent?.version ?? prev?.consent?.version) ?? null, consentDraft: PRICING_CONSENT.draft,
+        channelAutoApply: set.channelAutoApply ?? prev?.channelAutoApply ?? false,
     });
     if (!p.data.enabled) await expireOpen(clientDB, {}, 'tenant_disabled', now);
     return getRulesState(clientDB, tid, env);
@@ -97,6 +101,7 @@ export async function setPricingSettings(clientDB: any, tid: number, actor: stri
 
 // ---- Kural CRUD (`pricing.rules.*`) ---------------------------------------------------------------------------------------
 function ruleDto(r: any, counts?: { open: number; blocked: number }) {
+    if (r.type === 'channel') return channelRuleDto(r);
     const c = r.competition ?? {};
     return {
         id: String(r._id), type: r.type, name: r.name, enabled: !!r.enabled, version: r.version, integrationCode: r.integrationCode,
@@ -106,6 +111,7 @@ function ruleDto(r: any, counts?: { open: number; blocked: number }) {
             step: c.step, maxChangesPerDay: c.maxChangesPerDay, cooldownMin: c.cooldownMin, maxIncreasePercentPerDay: c.maxIncreasePercentPerDay,
             excludeIfOutOfStock: !!c.excludeIfOutOfStock,
         },
+        channel: null,
         pausedReason: r.pausedReason ?? null, pausedAt: iso(r.pausedAt), updatedAt: iso(r.updatedAt),
         suggestions: counts ?? { open: 0, blocked: 0 },
     };
@@ -134,7 +140,11 @@ export async function getRulesState(clientDB: any, tid: number, env: PricingEnv)
             enabled: !!s?.enabled,
             consent: { acceptedVersion: s?.consent?.version ?? null, acceptedAt: iso(s?.consent?.acceptedAt) },
             dualEngineAcknowledgedAt: iso(s?.dualEngineAcknowledgedAt),
+            channelAutoApply: s?.channelAutoApply === true,
+            channelAutoApplyAcknowledgedAt: iso(s?.channelAutoApplyAcknowledgedAt),
         },
+        channelAutoApplyNotice: CHANNEL_AUTO_APPLY_NOTICE,
+        channelRuleChannels: [...CHANNEL_RULE_CHANNELS],
         consent: { version: PRICING_CONSENT.version, draft: PRICING_CONSENT.draft, text: PRICING_CONSENT.text },
         dualEngineWarning: DUAL_ENGINE_WARNING,
         limits: PLATFORM_LIMITS,
@@ -143,7 +153,10 @@ export async function getRulesState(clientDB: any, tid: number, env: PricingEnv)
 }
 
 export async function saveRule(clientDB: any, tid: number, actor: string | null, raw: unknown, env: PricingEnv) {
-    const i = parseRuleInput(raw);
+    // [eslesme-fiyat WP5] `type:'channel'` kanal fiyat kuralı ayrı modülde (aynı koleksiyon, aynı yetenek/izin).
+    if ((raw as any)?.type === 'channel') return saveChannelRule(clientDB, tid, actor, raw, env);
+    const { type: _t, ...rest } = (raw ?? {}) as any;
+    const i = parseRuleInput(_t === undefined || _t === 'competition' ? rest : raw);
     const now = env.now();
     const model = clientDB.getPriceRuleModel();
     const scope = {

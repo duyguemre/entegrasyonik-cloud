@@ -13,6 +13,7 @@ import { AllocationSweepJob } from '@operations/stock/AllocationSweepJob';
 import { StockPublishTrigger } from '@operations/stock/StockPublishTrigger';
 import { createPricePublishTrigger } from '@operations/pricing/createPricePublishTrigger';
 import { PRICE_PUBLISH_JOB_NAME } from '@operations/pricing/PricePublishTrigger';
+import { CHANNEL_RULE_JOB_NAME, createChannelRuleJobDeps, runChannelRuleJob, type ChannelRuleJobDeps } from '@operations/pricing/channelRuleJob';
 import { OversellCompensationJob } from '@operations/stock/OversellCompensationJob';
 import { InternalReconciliationJob } from '@operations/stock/InternalReconciliationJob';
 import { ExternalReconciliationJob } from '@operations/stock/ExternalReconciliationJob';
@@ -151,6 +152,18 @@ export const SCHEDULES: readonly ScheduleSpec[] = [
         j ??= createBuyboxRefreshJob();
         const r = await j.runOnce();
         return { skipped: r.skipped, processed: r.observed, failed: r.failedTenants, note: `tenants=${r.tenants} calls=${r.calls} lost=${r.lost} notified=${r.notified} deferred=${r.deferred}` };
+      } });
+  } },
+  // [eslesme-fiyat WP5, K-A2] kanal fiyat kurali OTOMATIK uygulama (yalniz type:'channel' + kural autoApply + tenant channelAutoApply;
+  // platform anahtari features.pricingRules). Kanala yayin pricing.publish ile. Kendi DB'mize yazar -> LIVE_READONLY'de BASLAMAZ.
+  { id: CHANNEL_RULE_JOB_NAME, runsOn: 'worker', build: (impl?: ChannelRuleJobDeps) => {
+    let d: ChannelRuleJobDeps | undefined = impl;
+    return defineJob({
+      name: CHANNEL_RULE_JOB_NAME, everyMs: 15 * MIN, maxDurationMs: 10 * MIN, criticality: 'normal', runOnStart: 'ifDue',
+      run: async (ctx) => {
+        d ??= createChannelRuleJobDeps();
+        const r = await runChannelRuleJob(d, ctx.signal);
+        return { skipped: r.skipped || undefined, processed: r.applied, failed: r.failed, note: `tenants=${r.tenants} rules=${r.rules} blocked=${r.blocked} throttled=${r.throttled}` };
       } });
   } },
   // COM-08: komisyon sapma taramasi (gunluk, ifDue). NOTIFY_V2_ENABLED=false iken DB'ye dokunmadan doner (`notify_disabled`).

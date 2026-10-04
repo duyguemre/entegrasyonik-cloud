@@ -98,3 +98,17 @@ describe('no-auto-apply (K58, PRC-R3): insan onaysız fiyat yazma yolu YOK', () 
         expect(body).not.toMatch(/getVariantModel\(\)\.(update|bulkWrite|findOneAndUpdate)|env\.publish/);
     });
 });
+
+describe('[eslesme-fiyat WP5, K-A2] kanal fiyat kuralı otomatik uygulaması yalnız `channel` tipinde', () => {
+    it('kanal kuralı modülleri rekabet önerisi/uygulama yoluna ve doğrudan yayına erişmez; otomatik koşu yalnız type:channel + autoApply okur', () => {
+        for (const f of ['operations/pricing/channelRules.ts', 'operations/pricing/channelRule.ts', 'operations/pricing/channelRuleJob.ts']) {
+            expect([f, /applySuggestions|generateSuggestions|ExportBatchService|UPDATE_PRICE|\.publish\(|competition\./.test(code(f))]).toEqual([f, false]);
+        }
+        const src = code('operations/pricing/channelRules.ts');
+        expect(src).toMatch(/find\(\{ type: 'channel', enabled: true, 'channel\.autoApply': true/);
+        expect(src).toMatch(/settings\?\.channelAutoApply !== true/);
+    });
+    it('legal-K9: kanal kuralı liste fiyatını yapay yükseltemez (strateji yalnız keep|same)', () => {
+        expect(code('operations/pricing/channelRule.ts')).toMatch(/strategy: z\.enum\(\['keep', 'same'\]\)/);
+    });
+});

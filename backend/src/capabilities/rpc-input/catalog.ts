@@ -92,8 +92,14 @@ const PRICING_RPC_INPUT: Partial<Record<RpcRef, z.ZodType<any>>> = {
     // [PRC-R2] Kural/öneri/uygulama tel gövdeleri. K1/K4/K6 iş kuralları `operations/pricing/priceRule.ts`'te (sunucuda) ikinci kez doğrulanır;
     // burada da rakip/mağaza alanı TANINMAZ (strict).
     'PricingService/getRules': strictBody({}),
-    'PricingService/saveRule': strictBody({
-        id: objectIdStr.optional(), name: z.string().min(1).max(80), enabled: z.boolean(), integrationCode: z.literal('trendyol'),
+    'PricingService/saveRule': z.union([strictBody({
+        // [eslesme-fiyat WP5] kanal fiyat kuralı (iş kuralları operations/pricing/channelRule.ts `channelParams`'ta ikinci kez doğrulanır)
+        id: objectIdStr.optional(), type: z.literal('channel'), name: z.string().min(1).max(80), enabled: z.boolean(),
+        integrationCode: z.enum(['trendyol', 'hepsiburada', 'n11', 'pazarama', 'ideasoft']),
+        scope: strictBody({ productIds: z.array(objectIdStr).max(500).optional(), barcodes: z.array(barcodeStr).max(500).optional() }).optional(),
+        channel: z.record(z.string(), z.unknown()),
+    }), strictBody({
+        id: objectIdStr.optional(), type: z.literal('competition').optional(), name: z.string().min(1).max(80), enabled: z.boolean(), integrationCode: z.literal('trendyol'),
         scope: strictBody({ productIds: z.array(objectIdStr).max(500).optional(), barcodes: z.array(barcodeStr).max(500).optional() }).optional(),
         competition: strictBody({
             mode: z.enum(['below', 'above']), deltaAmount: z.number().finite().min(0).max(100_000).nullable().optional(),
@@ -102,9 +108,11 @@ const PRICING_RPC_INPUT: Partial<Record<RpcRef, z.ZodType<any>>> = {
             maxChangesPerDay: z.number().int().min(1).max(24), cooldownMin: z.number().int().min(15).max(1440),
             maxIncreasePercentPerDay: z.number().finite().min(0).max(10), excludeIfOutOfStock: z.boolean(),
         }),
-    }),
+    })]),
     'PricingService/deleteRule': strictBody({ id: objectIdStr }),
-    'PricingService/setPricingSettings': strictBody({ enabled: z.boolean(), consentVersion: z.string().max(40).optional(), dualEngineAcknowledged: z.boolean().optional() }),
+    'PricingService/setPricingSettings': strictBody({ enabled: z.boolean(), consentVersion: z.string().max(40).optional(), dualEngineAcknowledged: z.boolean().optional(), channelAutoApply: z.boolean().optional(), channelAutoApplyAcknowledged: z.boolean().optional() }),
+    'PricingService/previewChannelRule': strictBody({ id: objectIdStr, barcodes: z.array(barcodeStr).max(100).optional(), limit: z.number().int().min(1).max(200).optional() }),
+    'PricingService/applyChannelRule': strictBody({ id: objectIdStr, variantIds: z.array(objectIdStr).min(1).max(500).optional() }),
     'PricingService/listSuggestions': strictBody({
         status: z.enum(['open', 'blocked', 'applied', 'dismissed', 'expired']).optional(), ruleId: objectIdStr.optional(),
         barcodes: z.array(barcodeStr).max(100).optional(), buyboxLostOnly: z.boolean().optional(), limit: z.number().int().min(1).max(200).optional(), cursor: objectIdStr.optional(),

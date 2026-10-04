@@ -158,7 +158,9 @@ const compParams = z.object({
 });
 const ruleOut = z.object({
     id: z.string(), type: z.string(), name: z.string(), enabled: z.boolean(), version: z.number().int(), integrationCode: z.string(),
-    scope: z.object({ productIds: z.array(z.string()), barcodes: z.array(z.string()) }), competition: compParams,
+    // [eslesme-fiyat WP5] `type:'channel'` kuralında competition null, parametreler `channel`'da.
+    scope: z.object({ productIds: z.array(z.string()), barcodes: z.array(z.string()) }), competition: compParams.nullable(),
+    channel: z.record(z.string(), z.unknown()).nullable(),
     pausedReason: z.string().nullable(), pausedAt: z.string().nullable(), updatedAt: z.string().nullable(),
     suggestions: z.object({ open: z.number().int(), blocked: z.number().int() }),
 });
@@ -178,7 +180,12 @@ export const PRICING_R2_CAPABILITIES = [
         input: z.object({}).strict(),
         output: z.object({
             channel: z.string(), platformEnabled: z.boolean(), competitionEnabled: z.boolean(), active: z.boolean(), inactiveReason: z.string().nullable(),
-            settings: z.object({ enabled: z.boolean(), consent: z.object({ acceptedVersion: z.string().nullable(), acceptedAt: z.string().nullable() }), dualEngineAcknowledgedAt: z.string().nullable() }),
+            settings: z.object({
+                enabled: z.boolean(), consent: z.object({ acceptedVersion: z.string().nullable(), acceptedAt: z.string().nullable() }), dualEngineAcknowledgedAt: z.string().nullable(),
+                channelAutoApply: z.boolean(), channelAutoApplyAcknowledgedAt: z.string().nullable(),
+            }),
+            channelAutoApplyNotice: z.object({ tr: z.string(), en: z.string() }),
+            channelRuleChannels: z.array(z.string()),
             consent: z.object({ version: z.string(), draft: z.boolean(), text: z.object({ tr: z.string(), en: z.string() }) }),
             dualEngineWarning: z.object({ tr: z.string(), en: z.string() }),
             limits: z.object({ maxIncreasePercentPerDay: z.number(), maxIncreasePercent30d: z.number(), maxChangesPerDay: z.number(), minCooldownMin: z.number(), maxDropPercent: z.number() }),
@@ -260,6 +267,24 @@ export const PRICING_R2_CAPABILITIES = [
                 + '(strikethrough) price is never raised. Use ids from the suggestion list tool; never invent prices or ids. Describe the result as "price updated", not as a discount.',
             examples: ['Bu önerileri uygula', 'Açık önerilerin hepsini onayla', '8690001 için öneriyi uygula'],
         },
+        agent: NO_AGENT,
+    }),
+    // ---- eslesme-fiyat WP5 (K-A/K-A2): kanal fiyat kuralı — rakibe bakmaz; maliyet/komisyon/kargo/KDV/marj → kanal fiyatı ------------
+    c({
+        id: 'pricing.channel_rules.preview', domain: 'catalog', summary: { tr: 'Kanal fiyat kuralı önizlemesi (hesaplanan fiyat + gerekçe; fiyat değişmez)', en: 'Channel price rule preview (computed price + reasons; no price change)' },
+        effect: 'read', minTier: 'member', permission: 'catalog:read', pii: 'none',
+        bindings: [{ rpc: 'PricingService/previewChannelRule' }],
+        ui: onScreens([PRICING, 'previewChannelRule']),
+        mcp: deferred('later', 'Kanal kuralı önizlemesi önce ekranda; sohbet aracı WP8 sonrası.'),
+        agent: NO_AGENT,
+    }),
+    c({
+        id: 'pricing.channel_rules.apply', domain: 'catalog', summary: { tr: 'Kanal fiyat kuralını ONAYLA ve uygula (kural fiyatı yazılır, kanala otomatik yayın)', en: 'APPROVE and apply a channel price rule (rule price written, auto-published to the channel)' },
+        effect: 'write', minTier: 'admin', permission: 'pricing:manage', idempotency: 'natural', external: true, audit: 'always', pii: 'none',
+        bindings: [{ rpc: 'PricingService/applyChannelRule' }],
+        undo: { kind: 'none' },
+        ui: onScreens([PRICING, 'applyChannelRule']),
+        mcp: deferred('later', 'K4: kural değerlerini satıcı ekranda girer ve önizlemeyi görerek onaylar; sohbetten uygulama sonra değerlendirilir.'),
         agent: NO_AGENT,
     }),
 ];
