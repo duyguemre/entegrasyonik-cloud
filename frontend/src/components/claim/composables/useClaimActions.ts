@@ -8,12 +8,9 @@ export function useClaimActions(executeClaimAction: Function, snackbarStore: any
         show: false,
         type: 'REJECT' as 'REJECT' | 'APPROVE',
         claim: null as any,
-        reasons: [
-            { id: '1', title: 'Ürün Kırık Ulaştı (Lojistik)' },
-            { id: '2', title: 'Belirtilen Kusur Bulunamadı' },
-            { id: '3', title: 'İade Süresi Geçti' },
-            { id: '99', title: 'Diğer' }
-        ],
+        // [eslesme-fiyat WP6, K-G] Kanal kataloğu `ClaimService/getClaimRejectReasons`'tan yüklenir (ESKİDEN hiçbir kanala ait
+        // olmayan sabit 1/2/3/99 listesi pazaryerine gidiyordu).
+        reasons: [] as Array<{ id: string; title: string }>,
         selectedReason: null as any,
         loading: false
     });
@@ -23,12 +20,25 @@ export function useClaimActions(executeClaimAction: Function, snackbarStore: any
     /**
      * TALEP REDDİ EKRANINI AÇMA
      */
-    const openRejectAction = (item: any) => {
+    const openRejectAction = async (item: any) => {
         isBulk.value = false;
         actionDialog.value.type = 'REJECT';
         actionDialog.value.claim = item;
         actionDialog.value.selectedReason = null;
+        actionDialog.value.reasons = [];
         actionDialog.value.show = true;
+        actionDialog.value.loading = true;
+        try {
+            const res = await executeClaimAction('ClaimService/getClaimRejectReasons', { integrationCode: item?.integrationCode });
+            const list = res?.success && Array.isArray(res.data) ? res.data : [];
+            // Kanalın kataloğu yoksa (ör. N11 serbest metin) tek seçenek: "Diğer".
+            actionDialog.value.reasons = list.length ? list : [{ id: 'OTHER', title: 'Diğer' }];
+        } catch (error: any) {
+            actionDialog.value.show = false;
+            snackbarStore.addSnackbar({ text: error?.message || 'İade red nedenleri alınamadı.', color: 'error' });
+        } finally {
+            actionDialog.value.loading = false;
+        }
     };
 
     /**

@@ -83,6 +83,10 @@ export default class N11 implements IPlatform {
     public async approveClaim(externalClaimId: string, params?: { meta?: any }): Promise<IPlatformResponse> { return this.claimService.approveClaim(externalClaimId, params); }
     public async rejectClaim(externalClaimId: string, params: IClaimRejectParams): Promise<IPlatformResponse> { return this.claimService.rejectClaim(externalClaimId, params); }
     public async retrieveOrderRejectionReasons(): Promise<IClaimRejectionReason[]> { return this.orderService.retrieveOrderRejectionReasons(); }
+    // [eslesme-fiyat WP6, K-G] N11 sipariş reddi NOT_SUPPORTED → iptal kataloğu boş; iade reddinde `claimRejectReasonId` serbest
+    // metin (resmî katalog yok) → boş liste, UI "Diğer" ile açıklama ister.
+    public async retrieveOrderCancelReasons(): Promise<IClaimRejectionReason[]> { return []; }
+    public async retrieveClaimRejectReasons(): Promise<IClaimRejectionReason[]> { return []; }
 
     // Messages / QnA
     public async retrieveMessages(query?: any): Promise<IMessage[]> { return this.messageService.retrieveMessages(query); }

@@ -283,7 +283,8 @@ describe('OrderService.cancelOrder', () => {
       reasonId: '7',
       description: 'Stok yok',
       source: 'SELLER',
-      lineItems: [{ externalLineId: 'ITEM-1', quantity: 2 }, { externalLineId: 'ITEM-2', quantity: 1 }],
+      // [BİLİNÇLİ DEĞİŞİKLİK, eslesme-fiyat WP6 F-P0-4] pazaryeri SATIR kimliği (externalLineItemId); eskiden externalItemId.
+      lineItems: [{ externalLineId: 'LINE-1', quantity: 2 }, { externalLineId: 'LINE-2', quantity: 1 }],
       meta: { packageId: 'PKG-1' },
     });
 
@@ -305,10 +306,9 @@ describe('OrderService.cancelOrder', () => {
     expect(res).toEqual({ success: true, message: 'Sipariş başarıyla iptal edildi.', data: { _id: 'o1', updated: true } });
   });
 
-  it('[MEVCUT DAVRANIŞ] satır eşleştirmesi `externalItemId` -> externalLineId (approve ise `externalLineItemId` kullanır: alan adı tutarsızlığı)', async () => {
-    // BACKLOG: şüpheli - iptalde externalItemId, onayda externalLineItemId; şemada ikisi de var. Düzeltilince güncellenecek.
+  it('[DÜZELTİLDİ, eslesme-fiyat WP6 F-P0-4] satır eşleştirmesi `externalLineItemId` -> externalLineId (onayla tutarlı; yoksa externalItemId)', async () => {
     await makeService(req()).cancelOrder();
-    expect((instance.rejectOrder.mock.calls[0][1] as any).lineItems[0].externalLineId).toBe('ITEM-1');
+    expect((instance.rejectOrder.mock.calls[0][1] as any).lineItems[0].externalLineId).toBe('LINE-1');
   });
 
   it('[MEVCUT DAVRANIŞ] cancelData yoksa reason/reasonId doğrudan request\'ten okunur; reasonId yoksa String(undefined)="undefined" gider', async () => {

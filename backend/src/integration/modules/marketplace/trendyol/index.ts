@@ -1,7 +1,8 @@
-import { ICategoryAttributeValue, ICategory, ICategoryAttribute, IVariant, ICategoryComission, IBrand, IPlatform, IPlatformProductSummary, MappingKey, IValidationResult, IFetchProductsResult, IInternalConversionResult, IBatchProcessResult, IInternalResult, IBatchCheckPayload, IInternalPlatformInfos, IExportStagedProduct, IOrderPackage, IOrderRejectionReason, IPlatformResponse, ISendTrackingPayload, ISendInvoicePayload, IClaimRejectParams, IOrderRejectParams, IMessage, IFinancialTransaction, ICargoInvoice, IBuyboxObservation } from '@interfaces/index';
+import { ICategoryAttributeValue, ICategory, ICategoryAttribute, IVariant, ICategoryComission, IBrand, IPlatform, IPlatformProductSummary, MappingKey, IValidationResult, IFetchProductsResult, IInternalConversionResult, IBatchProcessResult, IInternalResult, IBatchCheckPayload, IInternalPlatformInfos, IExportStagedProduct, IOrderPackage, IOrderRejectionReason, IClaimRejectionReason, IPlatformResponse, ISendTrackingPayload, ISendInvoicePayload, IClaimRejectParams, IOrderRejectParams, IMessage, IFinancialTransaction, ICargoInvoice, IBuyboxObservation } from '@interfaces/index';
 
 // Temel Servis (HTTP/Client)
 import Service from './services/Service';
+import { TRENDYOL_UNSUPPLIED_REASONS } from './constants';
 import { runConnectionProbe, type TestConnectionResult } from '@integration/modules/common/adapter/testConnection';
 
 // Alt Servisler (İş mantığı koordinatörleri)
@@ -217,9 +218,20 @@ export default class Trendyol implements IPlatform {
         return await this._claimService.rejectClaim(externalClaimId, params);
     }
 
-    /** 4. İPTAL SEBEPLERİ: Pazaryerinin güncel kabul ettiği iptal nedenlerini çeker */
-    /** 4. İPTAL SEBEPLERİ: Trendyol'un kabul ettiği güncel iptal nedenlerini döner */
+    /**
+     * 4. SEBEP KATALOGLARI [eslesme-fiyat WP6, K-G]: iptal (tedarik edememe) ≠ iade reddi. `retrieveOrderRejectionReasons` geriye uyum
+     * için İPTAL kataloğudur (ESKİDEN iade-sebep kataloğunu dönüyordu).
+     */
     public async retrieveOrderRejectionReasons(): Promise<IOrderRejectionReason[]> {
+        return this.retrieveOrderCancelReasons();
+    }
+
+    public async retrieveOrderCancelReasons(): Promise<IOrderRejectionReason[]> {
+        return TRENDYOL_UNSUPPLIED_REASONS.map(r => ({ ...r }));
+    }
+
+    /** İade reddi sebepleri: canlı `order/claim-issue-reasons` (claimIssueReasonId). */
+    public async retrieveClaimRejectReasons(): Promise<IClaimRejectionReason[]> {
         return await this._claimService.retrieveOrderRejectionReasons();
     }
 

@@ -188,7 +188,7 @@ export const OPERATION_POLICY_SNAPSHOT: SnapshotPolicy = {
         anonymizeCustomer: A,
     },
     // §6: getClaimById (tekil detay, salt-okunur). `updateClaimStatus` KASITLI KAYITSIZ (doğrulamasız serbest statü; approve/reject akışlarını atlar).
-    ClaimService: { getClaims: M, getClaimById: M, approveClaim: M, bulkApproveClaim: M, rejectClaim: M },
+    ClaimService: { getClaims: M, getClaimById: M, approveClaim: M, bulkApproveClaim: M, rejectClaim: M, getClaimRejectReasons: M }, // eslesme-fiyat WP6 K-G: iade red sebep kataloğu (claims:read)
     ShipmentService: { createShipment: M, bulkCreateShipment: M, getShipments: M /* §6: salt-okunur sayfalı liste */ },
     InvoiceService: {
         getInvoices: M, createInvoice: M, bulkCreateInvoice: M, createManualInvoice: M,

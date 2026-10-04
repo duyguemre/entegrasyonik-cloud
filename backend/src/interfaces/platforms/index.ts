@@ -296,6 +296,13 @@ export interface IPlatform {
 
     /** 4. İPTAL SEBEPLERİ: Pazaryerinin güncel kabul ettiği iptal nedenlerini çeker */
     retrieveOrderRejectionReasons(): Promise<IOrderRejectionReason[]>;
+    /**
+     * [eslesme-fiyat WP6, K-G / D-ORD-5] İki AYRI katalog: sipariş iptali (tedarik edememe) ve iade reddi. ESKİDEN tek metot
+     * (`retrieveOrderRejectionReasons`) iki anlamda kullanılıyordu (TY iptalde iade-sebep kataloğu, PZ iade reddinde sipariş
+     * sebepleri). `retrieveOrderRejectionReasons` geriye uyum için İPTAL kataloğunun eş adıdır.
+     */
+    retrieveOrderCancelReasons?(): Promise<IOrderRejectionReason[]>;
+    retrieveClaimRejectReasons?(): Promise<IClaimRejectionReason[]>;
 
     retrievePlatformInfos(): Promise<IInternalPlatformInfos>
 
@@ -339,6 +346,8 @@ export interface IPlatform {
 export interface IOrderRejectionReason {
     id: string;      // Pazaryerinin anladığı kod (Örn: "25")
     title: string;   // Kullanıcının göreceği metin (Örn: "Stok Yetersizliği")
+    /** [eslesme-fiyat WP6, K-G] false: kod listesi resmî/canlı kaynakla DOĞRULANMADI (ikincil kaynak) — UI uyarı gösterir. */
+    verified?: boolean;
 }
 
 export interface IOrderRejectParams {

@@ -1,5 +1,5 @@
 import { carryIncomplete } from '@integration/contracts/IncompleteFetch';
-import { IOrderPackage, IOrderRejectParams, IPlatformResponse, ISendInvoicePayload, ISendTrackingPayload } from '@interfaces/index';
+import { IOrderPackage, IOrderRejectParams, IOrderRejectionReason, IPlatformResponse, ISendInvoicePayload, ISendTrackingPayload } from '@interfaces/index';
 import { OrderConnector } from '../api/OrderConnector';
 import { OrderMapper } from '../transformers/OrderTransformer';
 import { Service } from './Service';
@@ -68,6 +68,17 @@ export class OrderService {
             if (IntegrationError.isIntegrationError(error)) throw error;
             throw new Error(`[${this.clientId}][HepsiburadaOrderService:rejectOrder] ${error.message}`);
         }
+    }
+
+    /**
+     * [eslesme-fiyat WP6, K-G] HB satıcı iptal sebepleri: resmî kod listesi DOĞRULANMADI (API_HEPSIBURADA K-7: `cancelbymerchant`
+     * gövdesi `reasonId`, katalog yok) → `verified:false`; mevcut `cancel` ucu sebebi metin olarak alır. SIT'te doğrulanır.
+     */
+    public async retrieveOrderCancelReasons(): Promise<IOrderRejectionReason[]> {
+        return [
+            { id: 'OUT_OF_STOCK', title: 'Stokta yok', verified: false },
+            { id: 'Other', title: 'Diğer', verified: false },
+        ];
     }
 
     public async approveOrder(externalOrderId: string): Promise<boolean | IPlatformResponse> {

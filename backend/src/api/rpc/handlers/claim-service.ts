@@ -1,7 +1,7 @@
 import { IService } from '@interfaces/index'
 import { BaseApi } from '../BaseApi'
 import { ClaimPanelRepository } from '@database/repositories/tenant/ClaimPanelRepository'
-import { listClaims, rejectClaim, approveClaim, bulkApproveClaims, getClaimById } from '@operations/orders/claims'
+import { listClaims, rejectClaim, approveClaim, bulkApproveClaims, getClaimById, claimRejectReasons } from '@operations/orders/claims'
 import { eventLog } from '@platform/core/logger';
 
 const log = eventLog('api', 'claim-service');
@@ -27,6 +27,11 @@ export default class ClaimService extends BaseApi implements IService {
             log.error('CLAIM_GET_CLAIMS_FAILED', '[ClaimService] getClaims hatası', { err: error });
             throw error;
         }
+    }
+
+    /** [eslesme-fiyat WP6, K-G] İADE REDDİ SEBEPLERİ (kanal kataloğu; sipariş iptal sebeplerinden ayrı). */
+    async getClaimRejectReasons(): Promise<any> {
+        return claimRejectReasons(Number(this.currentClientId), this.request.integrationCode);
     }
 
     /** TALEP REDDİ (Marketplace Entegrasyonlu & Evrensel Parametreli) */

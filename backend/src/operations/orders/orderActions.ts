@@ -248,10 +248,15 @@ export async function markOrderPrinted(repo: OrderPanelRepository, orderId: any)
     return { success: true, message: 'Barkod basıldı olarak işaretlendi.', data: updatedOrder };
 }
 
-/** SİPARİŞ İPTAL NEDENLERİ (pazaryerine özgü). */
+/**
+ * SİPARİŞ İPTAL NEDENLERİ (pazaryerine özgü). [eslesme-fiyat WP6, K-G] İPTAL kataloğu (`retrieveOrderCancelReasons`; yoksa eski
+ * `retrieveOrderRejectionReasons`). İade reddi sebepleri ayrı: `claimRejectReasons` (operations/orders/claims).
+ */
 export async function orderRejectionReasons(clientId: number, integrationCode: any): Promise<any> {
     const factory = new IntegrationFactory(Number(clientId));
     const instance = await factory.getInstance(integrationCode);
-    const reasons = await instance.retrieveOrderRejectionReasons();
+    const reasons = typeof instance.retrieveOrderCancelReasons === 'function'
+        ? await instance.retrieveOrderCancelReasons()
+        : await instance.retrieveOrderRejectionReasons();
     return { success: true, message: 'İptal nedenleri başarıyla getirildi.', data: reasons };
 }

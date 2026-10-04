@@ -90,6 +90,10 @@ export default class Pazarama implements IPlatform {
     public async approveClaim(externalClaimId: string, params?: { meta?: any }): Promise<IPlatformResponse> { return this.claimService.approveClaim(externalClaimId, params); }
     public async rejectClaim(externalClaimId: string, params: IClaimRejectParams): Promise<IPlatformResponse> { return this.claimService.rejectClaim(externalClaimId, params); }
     public async retrieveOrderRejectionReasons(): Promise<IClaimRejectionReason[]> { return this.orderService.retrieveOrderRejectionReasons(); }
+    // [eslesme-fiyat WP6, K-G / Ek E F-P1-4] iptal: sipariş sebepleri (1-4; ret statü 13'e çeker); iade reddi: `RefundRejectType`
+    // 1-12 (ESKİDEN `ClaimService` listesine ULAŞILAMIYORDU, iade reddinde sipariş sebepleri gidiyordu).
+    public async retrieveOrderCancelReasons(): Promise<IClaimRejectionReason[]> { return this.orderService.retrieveOrderRejectionReasons(); }
+    public async retrieveClaimRejectReasons(): Promise<IClaimRejectionReason[]> { return this.claimService.retrieveOrderRejectionReasons(); }
 
     public async retrieveMessages(query?: any): Promise<IMessage[]> { return this.messageService.retrieveMessages(query); }
     public async answerMessage(externalMessageId: string, answerText: string): Promise<boolean> { return this.messageService.answerMessage(externalMessageId, answerText); }

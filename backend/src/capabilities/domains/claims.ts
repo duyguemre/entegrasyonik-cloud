@@ -26,4 +26,9 @@ export const CLAIMS_CAPABILITIES = [
         effect: 'write', minTier: 'member', permission: 'claims:write', external: true, bindings: [{ rpc: 'ClaimService/rejectClaim' }],
         ui: onScreens([CLM, 'reject']), mcp: nx('irreversible', 'Pazaryerinde iade reddi müşteriye bildirilir ve geri alınamaz; yalnız ekranda.'), agent: NO_AGENT,
     }),
+    c({
+        id: 'claims.reject_reasons.list', domain: 'claims', summary: { tr: 'İade reddi nedenlerini getir', en: 'Get claim rejection reasons' },
+        effect: 'read', minTier: 'member', permission: 'claims:read', external: true, bindings: [{ rpc: 'ClaimService/getClaimRejectReasons' }],
+        ui: onScreens([CLM, 'reject']), mcp: nx('ui_plumbing', 'İade red diyaloğunun başvuru verisi (kanal neden kataloğu); diyalog iç verisi.'), agent: NO_AGENT,
+    }),
 ];

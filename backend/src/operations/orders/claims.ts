@@ -275,3 +275,16 @@ export async function getClaimById(repo: ClaimPanelRepository, claimId: any): Pr
 
     return claim;
 }
+
+/**
+ * [eslesme-fiyat WP6, K-G / D-ORD-5] İADE REDDİ sebepleri (kanal kataloğu; sipariş iptal sebeplerinden AYRI). Kanal iade reddini
+ * desteklemiyorsa ya da katalog yoksa boş liste (UI serbest açıklamalı "Diğer" gösterir). ESKİDEN FE sabit, hiçbir kanala ait
+ * olmayan bir liste (1/2/3/99) gönderiyordu.
+ */
+export async function claimRejectReasons(clientId: number, integrationCode: any): Promise<any> {
+    if (typeof integrationCode !== 'string' || integrationCode.trim() === '') throw new ApplicationError('integrationCode zorunludur.', 400);
+    const factory = new IntegrationFactory(Number(clientId));
+    const instance: any = await factory.getInstance(integrationCode);
+    const reasons = typeof instance?.retrieveClaimRejectReasons === 'function' ? await instance.retrieveClaimRejectReasons() : [];
+    return { success: true, message: 'İade red nedenleri getirildi.', data: Array.isArray(reasons) ? reasons : [] };
+}

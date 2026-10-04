@@ -91,7 +91,10 @@ export default class Hepsiburada implements IPlatform {
     public async retrieveClaims(query?: Record<string, any>): Promise<any[]> { return this.claimService.fetchClaims(query); }
     public async approveClaim(externalClaimId: string, params?: { meta?: any }): Promise<IPlatformResponse> { return this.claimService.approveClaim(externalClaimId, params); }
     public async rejectClaim(externalClaimId: string, params: IClaimRejectParams): Promise<IPlatformResponse> { return this.claimService.rejectClaim(externalClaimId, params); }
-    public async retrieveOrderRejectionReasons(): Promise<IOrderRejectionReason[]> { return this.claimService.retrieveOrderRejectionReasons(); }
+    // [eslesme-fiyat WP6, K-G] iptal ≠ iade reddi. ESKİDEN iptal diyaloğu iade-red sebeplerini gösteriyor, bunlar `cancellationReason`a gidiyordu.
+    public async retrieveOrderRejectionReasons(): Promise<IOrderRejectionReason[]> { return this.retrieveOrderCancelReasons(); }
+    public async retrieveOrderCancelReasons(): Promise<IOrderRejectionReason[]> { return this.orderService.retrieveOrderCancelReasons(); }
+    public async retrieveClaimRejectReasons(): Promise<IOrderRejectionReason[]> { return this.claimService.retrieveOrderRejectionReasons(); }
 
     public async retrieveMessages(query?: any): Promise<IMessage[]> { return this.questionService.fetchQuestions(query); }
     public async answerMessage(externalMessageId: string, answerText: string): Promise<boolean> { return this.questionService.answerMessage(externalMessageId, answerText); }
