@@ -16,7 +16,10 @@ const ClaimItemSchema = new Schema({
     unitPrice: { type: Number, default: 0 },
 
     reason: { type: String },
-    description: { type: String }
+    description: { type: String },
+    // D-TY-6: kalem düzeyi durum (Trendyol kalem başına statü taşır; iade düzeyi durum bunlardan türetilir).
+    externalStatus: { type: String },
+    internalStatus: { type: String, enum: Object.values(ClaimInternalStatusEnum) }
 }, { _id: false });
 
 // ============================================================================

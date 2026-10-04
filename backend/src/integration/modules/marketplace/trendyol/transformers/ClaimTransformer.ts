@@ -4,6 +4,14 @@ import {
     IClaimItem
 } from '@interfaces/index';
 import { integrationCode } from '../constants'; // 'trendyol'
+import { aggregateClaimStatus } from '@platform/core/orders/claimStatus';
+import { reportUnknownEnum } from '@integration/modules/common/contract/reportUnknownEnum';
+
+const toDate = (v: unknown): Date | undefined => {
+    if (v === undefined || v === null || v === '') return undefined;
+    const d = new Date(v as any);
+    return isNaN(d.getTime()) ? undefined : d;
+};
 
 export class ClaimMapper {
     /**
@@ -41,7 +49,11 @@ export class ClaimMapper {
                 const itemsInLine = Array.isArray(item.claimItems) ? item.claimItems : [item];
 
                 itemsInLine.forEach((cItem: any) => {
+                    // D-TY-6: Trendyol statüyü KALEM başına verir (claimItemStatus); iade düzeyi durum aşağıda türetilir.
+                    const itemExternalStatus = cItem.claimItemStatus?.name || claim.status || 'Created';
                     claimItems.push({
+                        externalStatus: itemExternalStatus,
+                        internalStatus: this.mapClaimStatus(itemExternalStatus),
                         externalLineItemId: String(orderLine.id || cItem.orderLineItemId || ""),
                         externalItemId: String(cItem.id || ""),
                         productName: orderLine.productName || cItem.productName || "İade Ürünü",
@@ -63,11 +75,15 @@ export class ClaimMapper {
                 }, 0);
             }
 
-            // Trendyol'un döndüğü asıl iade statüsü
-            const primaryExternalStatus = claim.items?.[0]?.claimItems?.[0]?.claimItemStatus?.name || claim.status || 'Created';
-
-            // 3. ICLAIM (İADE) OBJESİ
-            const internalStatus = this.mapClaimStatus(primaryExternalStatus);
+            // İade düzeyi statü kalemlerden (eskiden yalnız İLK kalemden alınıyordu; kısmi kabul/ret kayboluyordu).
+            // Dış statü: birleşik durumu belirleyen ilk kalemin statüsü.
+            const internalStatus = claimItems.length
+                ? aggregateClaimStatus(claimItems.map(i => i.internalStatus!))
+                : this.mapClaimStatus(claim.status || 'Created');
+            const primaryExternalStatus = claimItems.find(i => i.internalStatus === internalStatus)?.externalStatus
+                || claim.status || 'Created';
+            // Platform zamanı (F-P1-9): son değişiklik; tarihçe ve çözüm zamanı tespit anı yerine bundan.
+            const externalUpdatedAt = toDate(claim.lastModifiedDate);
 
             const internalClaim: IClaim = {
                 integrationCode: integrationCode,
@@ -80,6 +96,7 @@ export class ClaimMapper {
                 totalRefundAmount: totalRefund,
                 currencyCode: claim.currencyCode || 'TRY',
                 claimedAt: new Date(claim.claimDate || claim.creationDate || Date.now()),
+                externalUpdatedAt,
 
                 items: claimItems,
 
@@ -92,7 +109,7 @@ export class ClaimMapper {
                 history: [
                     {
                         status: internalStatus,
-                        changedAt: new Date(),
+                        changedAt: externalUpdatedAt ?? toDate(claim.claimDate) ?? new Date(),
                         description: `İade talebi ${integrationCode} üzerinden sisteme aktarıldı. Güncel statü: ${primaryExternalStatus}`,
                         actionBy: 'SYSTEM'
                     }
@@ -125,8 +142,10 @@ export class ClaimMapper {
         if (s === 'rejected') return ClaimInternalStatusEnum.REJECTED;
         if (s === 'cancelled') return ClaimInternalStatusEnum.CANCELLED;
         if (s === 'unresolved' || s === 'disputed' || s === 'underreview') return ClaimInternalStatusEnum.DISPUTED;
-        if (s === 'Accepted' || s === 'completed' || s === 'resolved') return ClaimInternalStatusEnum.COMPLETED;
+        // Not: eski `s === 'Accepted'` dalı küçük harfe çevrilmiş değerle hiç eşleşmezdi (ölü dal); 'accepted' yukarıda APPROVED.
+        if (s === 'completed' || s === 'resolved') return ClaimInternalStatusEnum.COMPLETED;
 
+        reportUnknownEnum('trendyol.claims', 'claimItemStatus', externalStatus);
         return ClaimInternalStatusEnum.WAITING;
     }
 

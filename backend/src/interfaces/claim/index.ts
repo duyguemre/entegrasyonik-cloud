@@ -39,6 +39,9 @@ export interface IClaimItem {
     unitPrice: number;
     reason?: string;
     description?: string;
+    /** D-TY-6: kalem düzeyi pazaryeri durumu (kalem başına statü veren kanallarda; yoksa iade düzeyi geçerli). */
+    externalStatus?: string;
+    internalStatus?: ClaimInternalStatusEnum;
 }
 
 export interface IClaimFulfillment {
