@@ -23,7 +23,8 @@ export class FinancialMapper {
             
             return {
                 integrationCode: integrationCode,
-                externalId: String(item.trxId || item.id),
+                // [eslesme-fiyat WP6, D-FIN-1] eskiden kimliksiz satır 'undefined' anahtarıyla yazılıp birbirini eziyordu
+                externalId: (item.trxId || item.id) ? String(item.trxId || item.id) : '',
                 orderNumber: String(item.orderId || ""),
                 transactionType: this.mapToUniversalType(item.status),
                 platformType: item.status,

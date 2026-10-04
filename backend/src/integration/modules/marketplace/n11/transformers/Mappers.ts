@@ -479,7 +479,9 @@ export class FinancialMapper {
             const amount = parseFloat(s.settlementAmount || '0');
             return {
                 integrationCode: 'n11',
-                externalId: s.settlementDate || Date.now().toString(),
+                // [eslesme-fiyat WP6, D-FIN-1] N11 hakedişinde kimlik yok: belirlenimci bileşik anahtar (tarih|durum|tutar). Eskiden
+                // yalnız tarih (aynı gün farklı hakedişler eziliyordu) ya da `Date.now()` (her turda çift satır). Tarih yoksa boş → atlanır.
+                externalId: s.settlementDate ? `${s.settlementDate}|${s.status ?? ''}|${amount.toFixed(2)}` : '',
                 transactionDate: new Date(s.settlementDate),
                 transactionType: UniversalTransactionType.SALE,
                 platformType: s.status,

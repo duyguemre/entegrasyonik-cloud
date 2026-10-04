@@ -6,7 +6,8 @@ export class FinancialMapper {
         const items = Array.isArray(rawTransactions) ? rawTransactions : [];
         return items.map((item: any) => ({
             integrationCode,
-            externalId: String(item.id || ''),
+            // [eslesme-fiyat WP6, D-FIN-1] kimlik yoksa boş kalır → repository satırı atlar (eskiden '' ile satırlar birbirini eziyordu)
+            externalId: item.id !== undefined && item.id !== null && item.id !== '' ? String(item.id) : '',
             orderNumber: item.orderNumber || '',
             transactionType: this.mapTransactionType(item.transactionType),
             platformType: item.transactionType || 'Unknown',
