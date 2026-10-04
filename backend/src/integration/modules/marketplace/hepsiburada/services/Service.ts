@@ -37,9 +37,8 @@ export class Service extends AdapterHttpService {
         // Sipariş/paket/iade (OMS) uçları ayrı tabandadır: 2026-10-03 canlı salt-okuma ile doğrulandı (oms-external 200, mpop 404).
         if (/^\/?(orders|packages|claims|lineitems)\//i.test(path)) return urls.OMSBASEURL || host(HB_HOSTS.oms);
         if (path.includes('listings/')) return urls.LISTINGBASEURL || host(HB_HOSTS.listing);
-        // Finans: yeni `transactions` (mpfinance-external, K-1); eski `settlements` (accounting-external, canlıda 404) K-1 yeniden yazımına kadar.
+        // Finans (K-1): `transactions` → mpfinance-external. Eski `settlements` (accounting-external, canlıda 404) kaldırıldı.
         if (/^\/?transactions\//i.test(path)) return urls.FINANCEBASEURL || host(HB_HOSTS.finance);
-        if (path.includes('settlements/')) return urls.ACCOUNTINGBASEURL || host(HB_HOSTS.accounting);
         // Soru (Ask to Seller, K-2): `api/v1.0/issues`.
         if (/^\/?api\/v1\.0\/issues/i.test(path)) return urls.QUESTIONBASEURL || host(HB_HOSTS.questions);
         if (path.includes('ticket-api/')) return urls.TICKETBASEURL || host(HB_HOSTS.ticket);

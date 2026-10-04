@@ -117,28 +117,43 @@ describe('(A) karakterizasyon - getProductsAndPersist (streamProducts)', () => {
     });
 });
 
-describe('(A) karakterizasyon - FinancialConnector.fetchTransactions', () => {
-    it('tek GET settlements/merchantid/M-1; tarihler YYYY-MM-DD; items || data || []', async () => {
-        const { service, get } = fakeService([{ items: [{ id: 1 }] }]);
-        const r = await new FinancialConnector(service, params).fetchTransactions({ startDate: '2026-01-02T10:00:00Z', endDate: '2026-01-31T10:00:00Z' });
-        expect(get).toHaveBeenCalledWith('settlements/merchantid/M-1', { startDate: '2026-01-02', endDate: '2026-01-31' });
-        expect(r).toEqual([{ id: 1 }]);
+describe('[K-1 DÜZELTİLDİ] FinancialConnector.fetchTransactions — mpfinance `transactions` (eski settlements canlıda 404)', () => {
+    // ÖNCEKİ: tek GET settlements/merchantid/M-1 {startDate,endDate YYYY-MM-DD}, ilk istek limit/offset'siz.
+    // ŞİMDİ: GET transactions/merchantid/M-1; PascalCase Offset/Limit her istekte; tarih çifti ≤28 günlük dilimlere bölünür.
+    it('tek dilim: GET transactions/merchantid/M-1 {RecordDateStart, RecordDateEnd, Offset:0, Limit:100}; items okunur', async () => {
+        const { service, get } = fakeService([{ items: [{ transactionId: 'T1' }], totalCount: 1 }]);
+        const r = await new FinancialConnector(service, params).fetchTransactions({ startDate: '2026-01-02T10:00:00Z', endDate: '2026-01-20T10:00:00Z' });
+        expect(get).toHaveBeenCalledTimes(1);
+        expect(get).toHaveBeenCalledWith('transactions/merchantid/M-1', { RecordDateStart: '2026-01-02', RecordDateEnd: '2026-01-20', Offset: 0, Limit: 100 });
+        expect(r).toEqual([{ transactionId: 'T1' }]);
     });
-    it('gövde dizi ise aynen döner; gövde yoksa []', async () => {
-        expect(await new FinancialConnector(fakeService([[{ id: 2 }]]).service, params).fetchTransactions({})).toEqual([{ id: 2 }]);
-        expect(await new FinancialConnector(fakeService([undefined]).service, params).fetchTransactions({})).toEqual([]);
+    it('30 günlük pencere iki dilime bölünür (≤1 ay kısıtı); dilimler örtüşmez; TransactionTypes virgülle', async () => {
+        const { service, get } = fakeService([{ items: [{ transactionId: 'A' }] }, { items: [{ transactionId: 'B' }] }]);
+        const r = await new FinancialConnector(service, params).fetchTransactions({ startDate: '2026-01-01T00:00:00Z', endDate: '2026-01-30T00:00:00Z', transactionTypes: ['Payment', 'Commission'] });
+        expect(get.mock.calls.map(c => c[1])).toEqual([
+            { TransactionTypes: 'Payment,Commission', RecordDateStart: '2026-01-01', RecordDateEnd: '2026-01-28', Offset: 0, Limit: 100 },
+            { TransactionTypes: 'Payment,Commission', RecordDateStart: '2026-01-29', RecordDateEnd: '2026-01-30', Offset: 0, Limit: 100 },
+        ]);
+        expect(r.map((x: any) => x.transactionId)).toEqual(['A', 'B']);
     });
-    it('[F-02 DÜZELTİLDİ] İLK istek değişmedi ({} ; limit/offset yok); 100 kayıt dolu dönerse sonraki sayfa offset+limit ile istenir', async () => {
-        const { service, get } = fakeService([{ items: Array.from({ length: 100 }, (_, i) => ({ id: i })) }, { items: [{ id: 999 }] }]);
-        const r = await new FinancialConnector(service, params).fetchTransactions({});
-        expect(get.mock.calls.map(c => c[1])).toEqual([{}, { limit: 100, offset: 100 }]);
+    it('dilimler arası aynı transactionId tekilleşir; gövde dizi ise aynen; gövde yoksa []', async () => {
+        const dup = await new FinancialConnector(fakeService([{ items: [{ transactionId: 'X' }] }, { items: [{ transactionId: 'X' }, { transactionId: 'Y' }] }]).service, params)
+            .fetchTransactions({ startDate: '2026-01-01T00:00:00Z', endDate: '2026-01-30T00:00:00Z' });
+        expect(dup.map((x: any) => x.transactionId)).toEqual(['X', 'Y']);
+        expect(await new FinancialConnector(fakeService([[{ id: 2 }]]).service, params).fetchTransactions({ startDate: '2026-01-01', endDate: '2026-01-01' })).toEqual([{ id: 2 }]);
+        expect(await new FinancialConnector(fakeService([undefined]).service, params).fetchTransactions({ startDate: '2026-01-01', endDate: '2026-01-01' })).toEqual([]);
+    });
+    it('100 kayıt dolu dönerse sonraki sayfa Offset=100 ile istenir', async () => {
+        const { service, get } = fakeService([{ items: Array.from({ length: 100 }, (_, i) => ({ transactionId: i })) }, { items: [{ transactionId: 999 }] }]);
+        const r = await new FinancialConnector(service, params).fetchTransactions({ startDate: '2026-01-01', endDate: '2026-01-01' });
+        expect(get.mock.calls.map(c => [c[1].Offset, c[1].Limit])).toEqual([[0, 100], [100, 100]]);
         expect(r).toHaveLength(101);
         expect(getIncomplete(r)).toBeUndefined();
     });
-    it('[F-02 DÜZELTİLDİ] toplam alanı (totalCount) dönenden büyükse devam eder; sunucu offset yok sayarsa tekrar yakalanır + incomplete', async () => {
-        const same = Array.from({ length: 10 }, (_, i) => ({ id: i }));
+    it('sunucu Offset yok sayarsa tekrar yakalanır + incomplete (birleşik sonuca taşınır)', async () => {
+        const same = Array.from({ length: 10 }, (_, i) => ({ transactionId: i }));
         const { service, get } = fakeService([{ items: same, totalCount: 50 }, { items: same, totalCount: 50 }]);
-        const r = await new FinancialConnector(service, params).fetchTransactions({});
+        const r = await new FinancialConnector(service, params).fetchTransactions({ startDate: '2026-01-01', endDate: '2026-01-01' });
         expect(get).toHaveBeenCalledTimes(2);
         expect(r).toHaveLength(10);
         expect(getIncomplete(r)).toMatchObject({ incomplete: true, reason: 'PAGINATION_REPEATED_PAGE' });

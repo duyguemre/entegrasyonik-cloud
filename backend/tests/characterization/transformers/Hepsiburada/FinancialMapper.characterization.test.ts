@@ -79,3 +79,32 @@ describe('Hepsiburada FinancialMapper.toInternalTransactions — karakterizasyon
         expect(tx.meta).toBe(raw);
     });
 });
+
+// [eslesme-fiyat WP3, K-1] mpfinance `transactions` yanıt alanları (transactionId, transactionDate, paymentDate, type, amount sayı, currency).
+describe('Hepsiburada FinancialMapper — mpfinance transactions alanları (K-1)', () => {
+    const m = new FinancialMapper();
+
+    it('transactionId/transactionDate/paymentDate/type/amount okunur; pozitif tutar alacak', () => {
+        const raw = { transactionId: 'TX1', transactionDate: '2026-01-03T00:00:00Z', paymentDate: '2026-01-10T00:00:00Z', type: 'Payment', amount: 120.5, currency: 'TRY', orderNumber: 'O9', packageNumber: 'P1' };
+        const [tx] = m.toInternalTransactions([raw]);
+        expect(tx).toMatchObject({ externalId: 'TX1', orderNumber: 'O9', shipmentPackageId: 'P1', platformType: 'Payment', transactionType: UniversalTransactionType.SALE, credit: 120.5, debt: 0, netAmount: 120.5 });
+        expect(tx.transactionDate).toEqual(new Date('2026-01-03T00:00:00Z'));
+        expect(tx.payoutDate).toEqual(new Date('2026-01-10T00:00:00Z'));
+        expect(tx.meta.currency).toBe('TRY');
+    });
+
+    it('Commission (negatif tutar) → DEDUCTION, borç ve komisyon tutarı', () => {
+        const [tx] = m.toInternalTransactions([{ transactionId: 'TX2', type: 'Commission', amount: -15 }]);
+        expect(tx).toMatchObject({ transactionType: UniversalTransactionType.DEDUCTION, debt: 15, credit: 0, netAmount: -15, commissionAmount: 15 });
+    });
+
+    it.each([
+        ['Returns', UniversalTransactionType.RETURN],
+        ['VAT', UniversalTransactionType.DEDUCTION],
+        ['CargoFee', UniversalTransactionType.DEDUCTION],
+        ['CouponDiscount', UniversalTransactionType.COUPON],
+        ['Correction', UniversalTransactionType.CORRECTION],
+    ])('type "%s" → %s', (type, expected) => {
+        expect(m.toInternalTransactions([{ transactionId: 'Z', type }])[0].transactionType).toBe(expected);
+    });
+});

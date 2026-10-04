@@ -8,7 +8,7 @@
 // Eşleştirme `candidate.includes(entry)`'dir. Env semantiği (common/mock/MockMode.ts::resolveMockableEndpoints): `<PREFIX>_MOCKABLE_ENDPOINTS` bu listeyi GENİŞLETİR (birleşim);
 // yalnız-env kipi için listede `!` girişi verilir.
 // Trendyol/Pazarama/N11 bu alanı taşımaz: bu üçü için liste yalnız env'den gelir (boş liste => hiçbir uç mock sayılmaz).
-const MOCK_ENDPOINTS_HB = ['listings', 'product/api', 'orders/merchantid', 'packages/merchantid', 'claims', 'questions', 'settlements', 'suppliers', 'merchant-messages', 'ticket-api', 'rest/delivery/v1/shipmentPackages'] as const;
+const MOCK_ENDPOINTS_HB = ['listings', 'product/api', 'orders/merchantid', 'packages/merchantid', 'claims', 'questions', 'transactions', 'suppliers', 'merchant-messages', 'ticket-api', 'rest/delivery/v1/shipmentPackages'] as const;
 const MOCK_ENDPOINTS_IDEASOFT = ['products', 'orders', 'categories', 'brands', 'option-groups', 'product-variant-options', 'oauth'] as const;
 const MOCK_ENDPOINTS_BIZIMHESAP = ['products', 'orders'] as const;
 

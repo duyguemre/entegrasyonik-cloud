@@ -68,12 +68,12 @@ describe('K7 (1) Hepsiburada: tenant settings.urls ARTIK kullanılmaz (yalnız p
       ['oms-external.hepsiburada.com', 'oms-external.hepsiburada.com', 'oms-external.hepsiburada.com', 'mpop.hepsiburada.com', 'mpop.hepsiburada.com']);
   });
 
-  it('[K7 2026-09-28] ÖNCEKİ: listing/settlement/ticket tabanları tenant ile değişirdi. ŞİMDİ: varsayılan platform host\'ları', async () => {
+  it('[K7 2026-09-28] ÖNCEKİ: listing/finans/ticket tabanları tenant ile değişirdi. ŞİMDİ: varsayılan platform host\'ları (finans K-1: mpfinance-external)', async () => {
     const spy = jest.spyOn(axios, 'get').mockResolvedValue({ status: 200, data: {} } as any);
-    const svc = new HbService(hbParams({ urls: { LISTINGBASEURL: 'https://l.example', ACCOUNTINGBASEURL: 'https://a.example', TICKETBASEURL: 'https://t.example' } }));
-    await svc.get('listings/x'); await svc.get('settlements/x'); await svc.get('ticket-api/x');
+    const svc = new HbService(hbParams({ urls: { LISTINGBASEURL: 'https://l.example', FINANCEBASEURL: 'https://a.example', TICKETBASEURL: 'https://t.example' } }));
+    await svc.get('listings/x'); await svc.get('transactions/merchantid/x'); await svc.get('ticket-api/x');
     expect(spy.mock.calls.map((c: any) => new URL(c[0]).hostname)).toEqual(
-      ['listing-external.hepsiburada.com', 'accounting-external.hepsiburada.com', 'ticket-api.hepsiburada.com']);
+      ['listing-external.hepsiburada.com', 'mpfinance-external.hepsiburada.com', 'ticket-api.hepsiburada.com']);
   });
 
   it('[K7 2026-09-28] savunma derinliği: platform urls\'e (hatayla) yabancı host yazılsa bile istek AĞA ÇIKMAZ (VALIDATION, OUTBOUND_HOST_NOT_ALLOWED)', async () => {

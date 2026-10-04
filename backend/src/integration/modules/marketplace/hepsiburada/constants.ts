@@ -15,8 +15,6 @@ export const HB_HOSTS = {
     mpop: 'mpop.hepsiburada.com',
     listing: 'listing-external.hepsiburada.com',
     oms: 'oms-external.hepsiburada.com',
-    /** Eski finans tabanı (`settlements`, canlıda 404); K-1 finans yeniden yazımıyla (`mpfinance` `transactions`) kalkacak. */
-    accounting: 'accounting-external.hepsiburada.com',
     finance: 'mpfinance-external.hepsiburada.com',
     questions: 'api-asktoseller-merchant.hepsiburada.com',
     shipping: 'shipping-external.hepsiburada.com',

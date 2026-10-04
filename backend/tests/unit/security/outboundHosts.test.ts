@@ -25,7 +25,7 @@ describe('assertAllowedOutboundHost: gerçek platform host\'ları geçer', () =>
         ['trendyol', 'https://stageapigw.trendyol.com/integration/x'], // C22: STAGE
         ['hepsiburada', 'https://mpop.hepsiburada.com/product/api/categories/get-all-categories'],
         ['hepsiburada', 'https://listing-external.hepsiburada.com/listings/merchantid/x'],
-        ['hepsiburada', 'https://accounting-external.hepsiburada.com/x'],
+        ['hepsiburada', 'https://mpfinance-external.hepsiburada.com/transactions/merchantid/x'],
         ['hepsiburada', 'https://ticket-api.hepsiburada.com/x'],
         ['hepsiburada', 'https://oms-external.hepsiburada.com/orders/merchantid/x?limit=1&offset=0'], // 2026-10-03 canlı doğrulama: sipariş/paket (OMS)
         ['n11', 'https://api.n11.com/ws/ProductService.wsdl'],
