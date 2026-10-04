@@ -60,24 +60,23 @@
             </div>
             <div class="pdc-row__control">
               <div class="pdc-tax">
-                <div class="pdc-seg" role="radiogroup" aria-label="Sık kullanılan KDV oranları">
-                  <button v-for="r in COMMON_TAX" :key="r" type="button" role="radio" class="pdc-seg__btn"
-                    :class="{ 'is-on': Number(productInfoForm.taxPercentage) === r }" :aria-checked="Number(productInfoForm.taxPercentage) === r"
+                <!-- [eslesme-fiyat WP5, D-PRICE-2] yalnız geçerli oranlar (0/1/10/20); boş = AYARSIZ (sessiz varsayılan yok) -->
+                <div id="pdc-taxPercentage" class="pdc-seg" role="radiogroup" aria-label="KDV oranı" :aria-describedby="'pdc-taxPercentage-state'">
+                  <button v-for="r in VAT_RATES" :key="r" type="button" role="radio" class="pdc-seg__btn" :data-pdc="`vat-${r}`"
+                    :class="{ 'is-on': isCustom('taxPercentage') && Number(productInfoForm.taxPercentage) === r }"
+                    :aria-checked="isCustom('taxPercentage') && Number(productInfoForm.taxPercentage) === r"
                     @click="productInfoForm.taxPercentage = r">%{{ r }}</button>
                 </div>
-                <v-select id="pdc-taxPercentage" v-model.number="productInfoForm.taxPercentage" :items="taxList" item-value="_id"
-                  variant="outlined" clearable hide-details :placeholder="`Diğer · varsayılan %${defaults.taxPercentage}`"
-                  class="pdc-input pdc-tax__select" :aria-describedby="'pdc-taxPercentage-state'">
-                  <template #selection="{ item }">%{{ item.raw.title }}</template>
-                </v-select>
               </div>
               <p id="pdc-taxPercentage-state" class="pdc-state" :class="{ 'is-custom': isCustom('taxPercentage') }">
-                <template v-if="isCustom('taxPercentage')">
-                  <span class="pdc-state__tag">Özel değer</span>
-                  <span class="pdc-state__def">Varsayılan: %{{ defaults.taxPercentage }}</span>
-                  <button type="button" class="pdc-reset" @click="reset('taxPercentage')">Varsayılana dön</button>
+                <template v-if="isCustom('taxPercentage') && !VAT_RATES.includes(Number(productInfoForm.taxPercentage))">
+                  <v-icon icon="mdi-alert-outline" aria-hidden="true" />%{{ productInfoForm.taxPercentage }} artık geçerli değil — 0, 1, 10 ya da 20 seç.
                 </template>
-                <template v-else><v-icon icon="mdi-check" aria-hidden="true" />Varsayılan kullanılıyor: %{{ defaults.taxPercentage }}</template>
+                <template v-else-if="isCustom('taxPercentage')">
+                  <span class="pdc-state__tag">Seçildi</span>
+                  <button type="button" class="pdc-reset" @click="reset('taxPercentage')">Temizle</button>
+                </template>
+                <template v-else><v-icon icon="mdi-alert-outline" aria-hidden="true" />KDV seçilmedi — entegrasyon ayarında da yoksa ürün kanala gönderilmez.</template>
               </p>
             </div>
           </div>
@@ -108,7 +107,6 @@ const defaults = computed(() => ({
   shippingDuration: staticsStore.shippingDuration,
   desi: staticsStore.desi,
   warranty: staticsStore.warranty,
-  taxPercentage: staticsStore.taxPercentage,
 }))
 
 /** Boş = sayı yok; tam sayı ya da (desi gibi) ondalık — "1,5" da kabul. En fazla 16 karakter (eski sınır). */
@@ -132,15 +130,15 @@ const groups = computed(() => [
 ])
 const fields = computed(() => Object.values(fieldDefs.value))
 
-const COMMON_TAX = [1, 10, 20]
-const taxList = Array.from({ length: 29 }, (_, i) => ({ _id: i + 1, value: i + 1, title: i + 1 }))
+/** [eslesme-fiyat WP5] backend `VAT_RATES` ile aynı (platform/core/pricing/vat.ts). */
+const VAT_RATES = [0, 1, 10, 20]
 
 const isCustom = (key: Key) => {
   const v = props.productInfoForm?.[key]
   return !(v === null || v === undefined || v === '')
 }
 const customCount = computed(() => (['maxPurchaseQuantity', 'shippingDuration', 'desi', 'warranty', 'taxPercentage'] as Key[]).filter(isCustom).length)
-function reset(key: Key) { props.productInfoForm[key] = undefined }
+function reset(key: Key) { props.productInfoForm[key] = key === 'taxPercentage' ? null : undefined }
 </script>
 
 <style scoped>

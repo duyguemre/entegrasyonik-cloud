@@ -82,7 +82,14 @@
         <div v-for="row in rows" :key="row.code" class="cpe-tr" :class="{ 'is-custom': row.custom }" role="row" :data-cpe-row="row.code">
           <span class="cpe-ch" role="cell">
             <EkPlatformMark :name="row.title" :code="row.code" />
-            <span class="cpe-src" :class="row.custom ? 'is-custom' : 'is-base'">{{ row.custom ? 'Özel fiyat' : 'Ana fiyat' }}</span>
+            <!-- [eslesme-fiyat WP5] kaynak = backend effectiveChannelPrice sırası; kural fiyatında gerekçe ipucu -->
+            <EkTooltip v-if="row.source === 'rule'" :text="row.ruleReasons.join(' · ') || 'Kanal fiyat kuralı'">
+              <span class="cpe-src is-rule" tabindex="0" :data-cpe="`src-${row.code}`">Kural fiyatı</span>
+            </EkTooltip>
+            <span v-else class="cpe-src" :class="row.custom ? 'is-custom' : 'is-base'" :data-cpe="`src-${row.code}`">{{ SOURCE_TEXT[row.source] }}</span>
+            <span v-if="row.pending" class="cpe-pending" :data-cpe="`pending-${row.code}`">
+              <v-icon icon="mdi-clock-outline" aria-hidden="true" />Kanala gönderilmedi
+            </span>
           </span>
 
           <template v-if="row.custom">
@@ -120,6 +127,17 @@
             </EkTooltip>
           </span>
 
+          <p v-if="row.drift" class="cpe-drift" role="cell" :data-cpe="`drift-${row.code}`">
+            <v-icon icon="mdi-swap-horizontal" aria-hidden="true" />
+            <span>Kanaldaki fiyat <strong class="ek-num">{{ row.drift.observed === null ? '—' : money(row.drift.observed) }}</strong>,
+              Entegrasyonik'teki <strong class="ek-num">{{ row.drift.expected === null ? '—' : money(row.drift.expected) }}</strong>.
+              Pazaryerinde elle değiştirilmiş olabilir.</span>
+            <EkButton size="sm" tone="secondary" :disabled="!variantId || driftBusy === row.code" :data-cpe="`drift-push-${row.code}`"
+              @click="resolveDrift(row.code, 'pushLocal')">Yereli kanala gönder</EkButton>
+            <EkButton size="sm" tone="ghost" :disabled="!variantId || driftBusy === row.code" :data-cpe="`drift-accept-${row.code}`"
+              @click="resolveDrift(row.code, 'acceptChannel')">Kanal fiyatını al</EkButton>
+          </p>
+
           <p v-if="row.issues.length" class="cpe-issues" role="cell">
             <span v-for="(is, k) in row.issues" :key="k" class="cpe-issue" :class="`is-${is.level}`">
               <v-icon :icon="is.level === 'error' ? 'mdi-alert-circle-outline' : 'mdi-alert-outline'" aria-hidden="true" />{{ is.message }}
@@ -145,6 +163,7 @@ import { useIntegrationStore } from '@/stores/integrationStore'
 import {
   applyBulk, BULK_OPS, bulkPreview, channelRows, discountPct, makeCustom, resetToBase, type BulkField, type BulkOp,
 } from '../variants/channelPriceModel'
+import { useChannelRulesApi } from '@/composables/useChannelRulesApi'
 
 const props = defineProps<{
   platformPriceForm: any
@@ -168,6 +187,34 @@ const baseDiscount = computed(() => discountPct(Number(basePriceForm.value.saleP
 const customOf = (code: string) => props.platformPriceForm.platforms[code].prices
 
 const money = (v: number) => formatMoney(Number(v) || 0)
+const SOURCE_TEXT = { channel: 'Özel fiyat', rule: 'Kural fiyatı', base: 'Ana fiyat' } as const
+
+// ---- [eslesme-fiyat WP5, K-B] dış fiyat farkı: kullanıcı seçer (kanal → yerel otomatik yazma yok) ----
+const channelApi = useChannelRulesApi()
+const variantId = computed<string | null>(() => (props.platformPriceForm?._id ? String(props.platformPriceForm._id) : null))
+const driftBusy = ref<string | null>(null)
+async function resolveDrift(code: string, action: 'pushLocal' | 'acceptChannel') {
+  if (!variantId.value) return
+  driftBusy.value = code
+  try {
+    const r = await channelApi.resolveDrift(variantId.value, code, action)
+    if (!r.ok) { showToast({ tone: 'error', message: 'Fiyat farkı çözülemedi. Tekrar deneyin.' }); return }
+    // Yerel form durumu sunucuyla aynı hale getirilir (kayıt gerekmez; işlem sunucuda yapıldı).
+    const p = props.platformPriceForm.platforms?.[code]
+    if (p?.observed) p.observed.drift = false
+    if (action === 'acceptChannel' && p) {
+      const obs = p.observed ?? {}
+      for (const other of Object.keys(props.platformPriceForm.platforms)) if (other !== code && props.platformPriceForm.prices?.isPlatformBasedPrice !== true) delete props.platformPriceForm.platforms[other].prices
+      p.prices = { salePrice: obs.salePrice, marketPrice: obs.marketPrice ?? obs.salePrice }
+      props.platformPriceForm.prices.isPlatformBasedPrice = true
+    } else if (action === 'pushLocal') {
+      props.platformPriceForm.pricePending = { ...(props.platformPriceForm.pricePending ?? {}), [code]: { reason: 'resync' } }
+    }
+    showToast({ tone: 'success', message: action === 'pushLocal' ? 'Yerel fiyat kanala yeniden gönderilecek.' : 'Kanaldaki fiyat bu kanalın özel fiyatı oldu.' })
+  } finally {
+    driftBusy.value = null
+  }
+}
 /** 17.8 → "%17,8" (DS biçimleyici; oran 0..1). */
 const pct = (v: number) => formatPercent(v / 100)
 
@@ -373,6 +420,35 @@ defineExpose({ init })
   border-color: var(--ek-color-action-border);
   background: var(--ek-color-action-subtle);
   color: var(--ek-color-action-emphasis);
+}
+
+.cpe-src.is-rule {
+  border-color: var(--ek-color-info-border);
+  background: var(--ek-color-info-subtle);
+  color: var(--ek-color-info-emphasis);
+}
+
+.cpe-pending {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ek-space-1);
+  font-size: var(--ek-type-micro-size);
+  color: var(--ek-color-warning-emphasis);
+}
+
+.cpe-pending :deep(.v-icon) {
+  font-size: 14px;
+}
+
+.cpe-drift {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ek-space-2);
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: var(--ek-type-caption-size);
+  color: var(--ek-color-warning-emphasis);
 }
 
 .cpe-src.is-base {

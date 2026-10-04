@@ -2,9 +2,9 @@
  * frontend/src/components/productDefinitions/variants/channelPriceModel.ts
  *
  * FR2-PFORM madde 25 — kanal bazında fiyat ekranının saf mantığı (bileşen: crud/PlatformPriceComponent.vue).
- * Model DEĞİŞMEDİ: ana fiyat `variant.prices.{salePrice,marketPrice}`, kanala özel fiyat
- * `variant.platforms[kod].prices.{salePrice,marketPrice}`. Kanal dönüştürücüleri `platforms[kod].prices || prices`
- * kullanır (backend salt-okunur doğrulandı: trendyol/ProductTransformer) → özel fiyatı olmayan kanal ANA FİYATLA gider.
+ * Model: ana fiyat `variant.prices.{salePrice,marketPrice}`, kanala özel fiyat `variant.platforms[kod].prices.{salePrice,marketPrice}`.
+ * [eslesme-fiyat WP5] Kanala giden fiyat backend `effectiveChannelPrice` ile aynı sırada çözülür: kanal özel fiyatı (YALNIZ
+ * `prices.isPlatformBasedPrice === true` iken) → kanal fiyat kuralı sonucu (`platforms[kod].rulePrice`) → ana fiyat.
  */
 import { formatMoney } from '@entegrasyonik/ui/format'
 
@@ -24,11 +24,21 @@ export interface PriceIssue {
   message: string
 }
 
+export type PriceSourceKind = 'channel' | 'rule' | 'base'
+
 export interface ChannelPriceRow {
   code: string
   title: string
-  /** Kanala özel fiyat girilmiş mi (yoksa ana fiyat kullanılır). */
+  /** Kanala özel fiyat girilmiş mi (yoksa kural fiyatı ya da ana fiyat kullanılır). */
   custom: boolean
+  /** [eslesme-fiyat WP5] Kanala giden fiyatın kaynağı — backend `effectiveChannelPrice` ile aynı sıra. */
+  source: PriceSourceKind
+  /** Kanal fiyat kuralı gerekçeleri (kaynak `rule` iken). */
+  ruleReasons: string[]
+  /** Fiyat değişti ama kanala henüz gönderilmedi (otomatik yayın bekliyor). */
+  pending: boolean
+  /** Kanalda gözlenen fiyat bizimkinden farklı (dış değişiklik). */
+  drift: { observed: number | null; expected: number | null } | null
   /** Kanala giden (etkin) fiyatlar. */
   sale: number
   market: number
@@ -53,6 +63,15 @@ export function customPrices(variant: any, code: string): PricePair | undefined 
   return variant?.platforms?.[code]?.prices
 }
 
+/**
+ * [eslesme-fiyat WP5] Kanal özel fiyatı ETKİN mi: backend `effectiveChannelPrice` ile aynı kural — `prices.isPlatformBasedPrice === true`
+ * VE kanal nesnesinde satış fiyatı var. Bayrak kapalıyken eski (içe aktarmadan kalma) kanal nesnesi kanala GİTMEZ.
+ */
+export function isCustom(variant: any, code: string): boolean {
+  const own = customPrices(variant, code)
+  return variant?.prices?.isPlatformBasedPrice === true && !!own && own.salePrice !== null && own.salePrice !== undefined && (own.salePrice as any) !== ''
+}
+
 export function discountPct(sale: number, market: number): number | null {
   if (!(market > 0) || !(sale >= 0) || sale > market) return null
   return round2(((market - sale) / market) * 100)
@@ -71,18 +90,26 @@ export function channelRows(channels: readonly ChannelLike[], variant: any): Cha
   const base = basePrices(variant)
   return channels.map((c) => {
     const own = customPrices(variant, c.code)
-    const custom = !!own
-    const sale = custom ? num(own?.salePrice) : base.sale
-    const market = custom ? num(own?.marketPrice) : base.market
+    const custom = isCustom(variant, c.code)
+    const rule = variant?.platforms?.[c.code]?.rulePrice
+    const hasRule = !custom && rule && Number.isFinite(Number(rule.salePrice))
+    const source: PriceSourceKind = custom ? 'channel' : hasRule ? 'rule' : 'base'
+    const sale = custom ? num(own?.salePrice) : hasRule ? num(rule.salePrice) : base.sale
+    const market = custom ? num(own?.marketPrice) : hasRule ? num(rule.marketPrice ?? rule.salePrice) : base.market
     const abs = round2(sale - base.sale)
+    const obs = variant?.platforms?.[c.code]?.observed
     return {
       code: c.code,
       title: c.title || c.code,
       custom,
+      source,
+      ruleReasons: hasRule && Array.isArray(rule.reasons) ? rule.reasons : [],
+      pending: !!variant?.pricePending?.[c.code],
+      drift: obs?.drift === true ? { observed: Number.isFinite(Number(obs.salePrice)) ? Number(obs.salePrice) : null, expected: Number.isFinite(Number(obs.expectedSalePrice)) ? Number(obs.expectedSalePrice) : null } : null,
       sale,
       market,
       discountPct: discountPct(sale, market),
-      diff: custom ? { abs, pct: base.sale > 0 ? round2((abs / base.sale) * 100) : null } : null,
+      diff: source !== 'base' ? { abs, pct: base.sale > 0 ? round2((abs / base.sale) * 100) : null } : null,
       issues: priceIssues(sale, market),
     }
   })
@@ -94,6 +121,13 @@ export function makeCustom(variant: any, code: string): void {
   variant.platforms = variant.platforms || {}
   variant.platforms[code] = variant.platforms[code] || {}
   variant.platforms[code].prices = { salePrice: base.sale, marketPrice: base.market }
+  // [WP5] özel fiyat yalnız bayrakla etkin (backend effectiveChannelPrice); bayrak açılırken diğer kanallardaki eski etkisiz nesneler
+  // ana fiyata dönsün diye kaldırılır (aksi halde bayrakla birlikte canlanırlardı).
+  variant.prices = variant.prices || {}
+  if (variant.prices.isPlatformBasedPrice !== true) {
+    for (const other of Object.keys(variant.platforms)) if (other !== code && variant.platforms[other]?.prices) delete variant.platforms[other].prices
+    variant.prices.isPlatformBasedPrice = true
+  }
 }
 
 /** Özel fiyatı kaldırır → kanal ana fiyatı kullanır (kanalın diğer alanları — özellikler vb. — korunur). */
@@ -132,7 +166,7 @@ export function applyBulk(variant: any, codes: readonly string[], field: BulkFie
   let changed = 0
   let converted = 0
   for (const code of codes) {
-    if (!customPrices(variant, code)) { makeCustom(variant, code); converted++ }
+    if (!isCustom(variant, code)) { makeCustom(variant, code); converted++ }
     const prices = variant.platforms[code].prices
     const before = num(prices[field])
     const after = applyOp(before, op, value)

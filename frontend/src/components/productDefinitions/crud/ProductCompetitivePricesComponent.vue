@@ -24,11 +24,9 @@ import { ref, inject, computed, onBeforeMount, onBeforeUnmount, onMounted, onAct
 import useIntegrations from '@/composables/integrations';
 import { useI18n } from 'vue-i18n';
 import useFormRules from '@/composables/formrules';
-import usePriceCalculator from '@/composables/priceCalculator';
 import VCurrencyComponentVue from '@/components/VCurrencyComponent.vue';
 import HintComponent from '@/components/HintComponent.vue';
 import { EkDialog, EkFormGrid } from '@entegrasyonik/ui/components'
-const priceCalculator = usePriceCalculator()
 const isPlatformPrice = defineModel({ default: false })
 const formRules: any = useFormRules()
 const { t } = useI18n()

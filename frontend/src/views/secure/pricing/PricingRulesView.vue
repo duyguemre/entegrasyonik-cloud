@@ -139,9 +139,9 @@
               <div class="pr-toolbar__spacer" />
               <EkButton tone="primary" icon="mdi-plus" :disabled="banner === 'platform_off'" data-testid="add-rule" @click="openForm()">{{ t('pricingRules.rules.add') }}</EkButton>
             </div>
-            <EkEmptyState v-if="!rules.rules.length" variant="no-data" class="pr-panel" :title="t('pricingRules.rules.emptyTitle')" :message="t('pricingRules.rules.emptyText')" />
+            <EkEmptyState v-if="!competitionRules.length" variant="no-data" class="pr-panel" :title="t('pricingRules.rules.emptyTitle')" :message="t('pricingRules.rules.emptyText')" />
             <ul v-else class="pr-rules" :aria-label="t('pricingRules.rules.listLabel')">
-              <li v-for="r in rules.rules" :key="r.id" class="pr-panel pr-rule" :data-rule="r.id" :class="{ 'pr-rule--focus': r.id === focusRule }">
+              <li v-for="r in competitionRules" :key="r.id" class="pr-panel pr-rule" :data-rule="r.id" :class="{ 'pr-rule--focus': r.id === focusRule }">
                 <header class="pr-rule__head">
                   <h3 class="pr-rule__name">{{ r.name }}</h3>
                   <EkStatusChip :tone="r.pausedReason ? 'warning' : r.enabled ? 'success' : 'neutral'" dot
@@ -165,6 +165,10 @@
                 <p class="pr-muted ek-num">{{ t('pricingRules.rules.open', { n: r.suggestions.open }) }} · {{ t('pricingRules.rules.blocked', { n: r.suggestions.blocked }) }}</p>
               </li>
             </ul>
+            <!-- [eslesme-fiyat WP5, K-A/K-A2] kanal fiyat kuralları (rakibe bakmaz; maliyet/komisyon/marj → kanal fiyatı) -->
+            <ChannelRulesPanel :rules="rules.rules" :tenant-enabled="rules.active" :auto-apply="!!rules.settings.channelAutoApply"
+              :auto-notice-text="rules.channelAutoApplyNotice ?? null" :channels="rules.channelRuleChannels"
+              @changed="loadRules" @delete="askDelete" />
           </section>
 
           <!-- FİYAT GEÇMİŞİ (denetim) -->
@@ -176,7 +180,7 @@
               <template #cell-time="{ row }"><span class="ek-num">{{ formatDateTime(row.at) }}</span></template>
               <template #cell-change="{ row }"><span class="ek-num">{{ formatMoney(row.previousPrice) }} → {{ formatMoney(row.salePrice) }}</span></template>
               <template #cell-source="{ row }">
-                <EkStatusChip :tone="row.source === 'external' ? 'warning' : 'info'" :label="t(`pricingRules.history.source.${row.source}`)" />
+                <EkStatusChip :tone="row.source === 'external' ? 'warning' : 'info'" :label="te(`pricingRules.history.source.${row.source}`) ? t(`pricingRules.history.source.${row.source}`) : row.source" />
               </template>
               <template #cell-buybox="{ row }"><span class="ek-num">{{ formatMoney(row.buyboxPrice) }} · {{ formatDateTime(row.buyboxObservedAt) }}</span></template>
               <template #cell-rule="{ row }"><span class="ek-num">{{ row.ruleVersion ?? '—' }}</span></template>
@@ -266,6 +270,7 @@ import {
 import { useToast } from '@entegrasyonik/ui/composables/useToast'
 import { formatDateTime, formatMoney, formatNumber } from '@entegrasyonik/ui/format'
 import EkPageHeader from '@/components/page/EkPageHeader.vue'
+import ChannelRulesPanel from '@/components/pricing/ChannelRulesPanel.vue'
 import {
   emptyRuleForm, formFromRule, previewRows, reasonKey, selectableIds, stateBanner, usePricingRulesApi, validateRuleForm, warningKey,
   type ApplyOutcome, type FormError, type HistoryEntry, type PreviewRow, type PriceRule, type RuleForm, type RulesState, type Suggestion, type SuggestionStatus,
@@ -274,7 +279,7 @@ import {
 const props = defineProps<{ parameters?: any }>()
 defineEmits(['clear'])
 
-const { t, locale } = useI18n()
+const { t, te, locale } = useI18n()
 const api = usePricingRulesApi()
 const { showToast } = useToast()
 
@@ -291,6 +296,8 @@ const busy = ref(false)
 
 const limits = computed(() => rules.value?.limits ?? { maxIncreasePercentPerDay: 10, maxIncreasePercent30d: 25, maxChangesPerDay: 24, minCooldownMin: 15, maxDropPercent: 50 })
 const banner = computed(() => (rules.value ? stateBanner(rules.value) : 'needs_enable'))
+/** [eslesme-fiyat WP5] rekabet kuralları (kanal kuralları ayrı panelde; `competition` alanı yalnız bu tipte dolu). */
+const competitionRules = computed<PriceRule[]>(() => (rules.value?.rules ?? []).filter((r: any) => r.type !== 'channel'))
 const bannerTone = computed(() => ({ platform_off: 'neutral', competition_off: 'info', needs_enable: 'info', needs_consent: 'warning', active: 'success' } as const)[banner.value])
 const bannerIcon = computed(() => ({ platform_off: 'mdi-pause-circle-outline', competition_off: 'mdi-information-outline', needs_enable: 'mdi-power', needs_consent: 'mdi-file-sign', active: 'mdi-check-circle-outline' } as const)[banner.value])
 const isTr = computed(() => String(locale.value).startsWith('tr'))
@@ -452,7 +459,7 @@ async function saveForm() {
 }
 
 const deleteState = reactive({ open: false, id: '', name: '' })
-function askDelete(r: PriceRule) { Object.assign(deleteState, { open: true, id: r.id, name: r.name }) }
+function askDelete(r: { id: string; name: string }) { Object.assign(deleteState, { open: true, id: r.id, name: r.name }) }
 async function doDelete() {
   busy.value = true
   const r = await api.deleteRule(deleteState.id)

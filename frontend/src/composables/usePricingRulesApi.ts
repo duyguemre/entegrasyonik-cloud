@@ -33,7 +33,8 @@ export interface CompetitionParams {
 
 export interface PriceRule {
   id: string
-  type: 'competition'
+  /** [eslesme-fiyat WP5] `channel` kuralları ChannelRulesPanel'de (composables/useChannelRulesApi.ts). */
+  type: 'competition' | 'channel'
   name: string
   enabled: boolean
   version: number
@@ -60,7 +61,13 @@ export interface RulesState {
   competitionEnabled: boolean
   active: boolean
   inactiveReason: InactiveReason | null
-  settings: { enabled: boolean; consent: { acceptedVersion: string | null; acceptedAt: string | null }; dualEngineAcknowledgedAt: string | null }
+  settings: {
+    enabled: boolean; consent: { acceptedVersion: string | null; acceptedAt: string | null }; dualEngineAcknowledgedAt: string | null
+    /** [eslesme-fiyat WP5, K-A2] kanal fiyat kuralı otomatik uygulama anahtarı. */
+    channelAutoApply?: boolean; channelAutoApplyAcknowledgedAt?: string | null
+  }
+  channelAutoApplyNotice?: { tr: string; en: string }
+  channelRuleChannels?: string[]
   consent: { version: string; draft: boolean; text: { tr: string; en: string } }
   dualEngineWarning: { tr: string; en: string }
   limits: PlatformLimits
@@ -114,7 +121,7 @@ export interface HistoryEntry {
   at: string | null
   barcode: string | null
   variantId: string
-  source: 'suggestion' | 'external'
+  source: 'suggestion' | 'external' | 'manual' | 'bulk' | 'import' | 'rule_channel'
   previousPrice: number | null
   salePrice: number
   listPrice: number | null

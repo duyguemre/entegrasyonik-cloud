@@ -105,7 +105,6 @@ import { useChoicesStore } from '@/stores/choicesStore';
 
 import ProductSingleVariantComponent from '@/components/productDefinitions/variants/ProductSingleVariantComponent.vue';
 
-import usePriceCalculator from '@/composables/priceCalculator';
 import useFormRules from '@/composables/formrules';
 import useRestApi from '@/composables/restapi'
 import useBarcode from '@/composables/barcode';

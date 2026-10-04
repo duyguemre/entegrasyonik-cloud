@@ -90,7 +90,6 @@ import { useChoicesStore } from '@/stores/choicesStore';
 
 
 import useIntegrations from '@/composables/integrations';
-import usePriceCalculator from '@/composables/priceCalculator';
 import useFormRules from '@/composables/formrules';
 import useRestApi from '@/composables/restapi'
 import useBarcode from '@/composables/barcode';
@@ -129,7 +128,6 @@ const brandsStore = useBrandsStore()
 const categoriesStore = useCategoriesStore()
 const integrationStore = useIntegrationStore()
 const formRules: any = useFormRules()
-const priceCalculator = usePriceCalculator()
 const barcode = useBarcode()
 
 const generatedVariants: any = ref([])
