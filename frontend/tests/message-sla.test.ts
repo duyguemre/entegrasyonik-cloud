@@ -97,3 +97,16 @@ describe('sortAwaitingFirst (yalnız bu sayfa)', () => {
     expect(rows.map(r => r.id)).toEqual(['a', 'b', 'c', 'd', 'e'])
   })
 })
+
+// [eslesme-fiyat WP6, Ek E F-P1-6] Backend şemasıyla hizalı yeni durumlar bekleyen sayılmaz (kanal kapattı / ön onayda).
+import { MessageStatusEnum as WP6MessageStatus, MESSAGE_STATUS_LABELS as WP6_LABELS } from '@/types/MessageTypes'
+import { MESSAGE_STATUS_TONE as WP6_TONE } from '@/design/status-map'
+describe('WP6 mesaj durumları', () => {
+  it('AUTO_CLOSED / PRE_APPROVAL / WAITING_APPROVAL yanıt beklemiyor; etiket ve ton tanımlı', () => {
+    for (const s of [WP6MessageStatus.AUTO_CLOSED, WP6MessageStatus.PRE_APPROVAL, WP6MessageStatus.WAITING_APPROVAL]) {
+      expect(isAwaitingReply({ status: s })).toBe(false)
+      expect(WP6_LABELS[s]).toBeTruthy()
+      expect(WP6_TONE[s].labelKey).toMatch(/^status\.message\./)
+    }
+  })
+})

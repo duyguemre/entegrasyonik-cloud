@@ -4,7 +4,10 @@ export enum MessageStatusEnum {
     REJECTED = 'REJECTED',
     UNREAD = 'UNREAD',
     READ = 'READ',
-    WAITING_APPROVAL = 'WAITING_APPROVAL'
+    WAITING_APPROVAL = 'WAITING_APPROVAL',
+    // [eslesme-fiyat WP6, Ek E F-P1-6] backend şemasıyla hizalı (WP4: TY REPORTED/UNANSWERED → AUTO_CLOSED; HB ön onay)
+    AUTO_CLOSED = 'AUTO_CLOSED',
+    PRE_APPROVAL = 'PRE_APPROVAL'
 }
 
 export const MESSAGE_STATUS_LABELS: Record<MessageStatusEnum, string> = {
@@ -13,7 +16,9 @@ export const MESSAGE_STATUS_LABELS: Record<MessageStatusEnum, string> = {
     [MessageStatusEnum.REJECTED]: 'Reddedildi',
     [MessageStatusEnum.UNREAD]: 'Okunmadı',
     [MessageStatusEnum.READ]: 'Okundu',
-    [MessageStatusEnum.WAITING_APPROVAL]: 'Onay Bekliyor'
+    [MessageStatusEnum.WAITING_APPROVAL]: 'Onay Bekliyor',
+    [MessageStatusEnum.AUTO_CLOSED]: 'Kanal kapattı',
+    [MessageStatusEnum.PRE_APPROVAL]: 'Ön onayda'
 };
 
 export const MESSAGE_STATUS_COLORS: Record<MessageStatusEnum, string> = {
@@ -22,7 +27,9 @@ export const MESSAGE_STATUS_COLORS: Record<MessageStatusEnum, string> = {
     [MessageStatusEnum.REJECTED]: 'error',
     [MessageStatusEnum.UNREAD]: 'info',
     [MessageStatusEnum.READ]: 'slate-500',
-    [MessageStatusEnum.WAITING_APPROVAL]: 'indigo'
+    [MessageStatusEnum.WAITING_APPROVAL]: 'indigo',
+    [MessageStatusEnum.AUTO_CLOSED]: 'slate-500',
+    [MessageStatusEnum.PRE_APPROVAL]: 'indigo'
 };
 
 export enum MessageTypeEnum {

@@ -64,6 +64,8 @@ export const MESSAGE_STATUS_TONE: Record<MessageStatusEnum, StatusMapEntry> = {
   [MessageStatusEnum.UNREAD]: { tone: 'info', labelKey: 'status.message.unread' },
   [MessageStatusEnum.READ]: { tone: 'neutral', labelKey: 'status.message.read' },
   [MessageStatusEnum.WAITING_APPROVAL]: { tone: 'warning', labelKey: 'status.message.waitingApproval' },
+  [MessageStatusEnum.AUTO_CLOSED]: { tone: 'neutral', labelKey: 'status.message.autoClosed' },
+  [MessageStatusEnum.PRE_APPROVAL]: { tone: 'warning', labelKey: 'status.message.preApproval' },
 }
 
 // ---- Destek talebi durumu (TicketStatusEnum) ----

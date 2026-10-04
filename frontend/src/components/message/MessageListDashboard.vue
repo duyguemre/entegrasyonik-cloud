@@ -65,6 +65,8 @@ const STYLE: Record<MessageStatusEnum, { icon: string; tone: EkTone; hint: strin
   [MessageStatusEnum.ANSWERED]: { icon: 'mdi-check-all', tone: 'success', hint: 'Yanıt gönderildi' },
   [MessageStatusEnum.READ]: { icon: 'mdi-email-open-outline', tone: 'neutral', hint: 'Okundu, işlem yok' },
   [MessageStatusEnum.REJECTED]: { icon: 'mdi-close-circle-outline', tone: 'error', hint: 'Kanal reddetti' },
+  [MessageStatusEnum.AUTO_CLOSED]: { icon: 'mdi-timer-off-outline', tone: 'neutral', hint: 'Süre doldu, kanal kapattı' },
+  [MessageStatusEnum.PRE_APPROVAL]: { icon: 'mdi-clock-outline', tone: 'action', hint: 'Kanal ön onayında' },
 }
 
 const cells = computed<ListSummaryCell[]>(() =>

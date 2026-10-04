@@ -1100,7 +1100,9 @@
       "rejected": "Reddedildi",
       "unread": "Okunmadı",
       "read": "Okundu",
-      "waitingApproval": "Onay Bekliyor"
+      "waitingApproval": "Onay Bekliyor",
+      "autoClosed": "Kanal kapattı",
+      "preApproval": "Ön onayda"
     },
     "ticket": {
       "open": "Açık",
