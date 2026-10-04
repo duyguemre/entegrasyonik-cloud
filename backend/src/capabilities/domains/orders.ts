@@ -2,11 +2,13 @@
 // Tekli+toplu RPC varyantları TEK yeteneğin `bindings[]`'idir (ADR-0019 §1 "Yetenek ≠ RPC operasyonu").
 // `orders.list` (core) ve `orders.approve` (yazma, onaylı) LLM yüzeylerine açıktır (ADR-0034 BR-2).
 import { z } from 'zod';
+import { ORDER_INTERNAL_STATUSES } from '@platform/core/orders/orderStatus';
 import { defineCapability as c, nx, NO_AGENT, onScreens, noUi } from '../define';
 import { maskPerson, toIso } from '../derive/pii';
 
 const ORD = 'OrderListView';
-const ORDER_STATUSES = ['UNAPPROVED', 'AWAITING_APPROVAL', 'APPROVED', 'SHIPPED', 'DELIVERED', 'CANCELLED', 'RETURNED'] as const;
+// [WP6-kalan, D-ORD-4] tek kaynak: platform/core/orders/orderStatus.ts (PRE_APPROVAL, SPLIT dahil)
+const ORDER_STATUSES = ORDER_INTERNAL_STATUSES;
 /** Sayfa imleci `p<sayfa>` (OrderService sayfa tabanlıdır; imleç opak metin olarak istemciye/LLM'e verilir). */
 const PAGE_CURSOR = /^p[1-9][0-9]{0,3}$/;
 const pageOf = (cursor?: string): number => (cursor ? Number(cursor.slice(1)) : 1);

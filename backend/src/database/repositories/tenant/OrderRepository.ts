@@ -1,4 +1,5 @@
 import { DatabaseManagerInstance } from '@database/index';
+import { orderStatusWeight } from '@platform/core/orders/orderStatus';
 import { IOrder } from '@interfaces/order';
 import { getLogPrefix, LoggerType } from '@utils/Logger';
 import { eventLog } from '@platform/core/logger';
@@ -63,18 +64,8 @@ export class OrderRepository {
                 if (existingOrder && existingOrder.platformOperation?.lockedUntil) {
                     const lockedUntil = new Date(existingOrder.platformOperation.lockedUntil);
                     if (lockedUntil > now) {
-                        const statusWeights: Record<string, number> = {
-                            'UNAPPROVED': 0,
-                            'AWAITING_APPROVAL': 1,
-                            'APPROVED': 2,
-                            'SHIPPED': 4,
-                            'DELIVERED': 5,
-                            'CANCELLED': 10,
-                            'RETURNED': 10
-                        };
-
-                        const incomingWeight = statusWeights[order.internalStatus] ?? 0;
-                        const currentWeight = statusWeights[existingOrder.internalStatus] ?? 0;
+                        const incomingWeight = orderStatusWeight(order.internalStatus);
+                        const currentWeight = orderStatusWeight(existingOrder.internalStatus);
 
                         // Eğer statü ileriye gidiyorsa (örn: APPROVED -> SHIPPED), kilidi kır.
                         if (incomingWeight <= currentWeight) {
@@ -122,21 +113,11 @@ export class OrderRepository {
                         delete updatePayload.fulfillment;
                     }
 
-                    const statusWeights: Record<string, number> = {
-                        'UNAPPROVED': 0,
-                        'AWAITING_APPROVAL': 1,
-                        'APPROVED': 2,
-                        'SHIPPED': 4,
-                        'DELIVERED': 5,
-                        'CANCELLED': 10,
-                        'RETURNED': 10
-                    };
-
                     const incomingStatus = updatePayload.internalStatus;
                     const currentStatus = existingOrder.internalStatus;
 
-                    const targetStatusWeight = statusWeights[incomingStatus] ?? 0;
-                    const existingStatusWeight = statusWeights[currentStatus] ?? 0;
+                    const targetStatusWeight = orderStatusWeight(incomingStatus);
+                    const existingStatusWeight = orderStatusWeight(currentStatus);
 
                     // 1. İptal veya İade her zaman "en ileri" statüdür, üzerine yazmaya izin verilir.
                     if (['CANCELLED', 'RETURNED'].includes(incomingStatus)) {
@@ -194,7 +175,7 @@ export class OrderRepository {
                     // 2. Durum Değişimlerini Mühürle (İlk Tespit Anı)
                     // Eğer koruma statüyü sildiyse (delete updatePayload.internalStatus), 
                     // yeniWeight 0 olacaktır ve mühürleme yapılmayacaktır.
-                    const finalStatusWeight = statusWeights[updatePayload.internalStatus as string] ?? 0;
+                    const finalStatusWeight = orderStatusWeight(updatePayload.internalStatus as string);
 
                     // Onay Tarihi (APPROVED veya sonrası bir statüye ilk geçişte)
                     if (finalStatusWeight >= 2 && !updatePayload.dates.approvedDate && !existingOrder.dates?.approvedDate) {

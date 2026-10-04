@@ -60,12 +60,14 @@ export async function orderDashboardInsights(repo: OrderPanelRepository): Promis
         trend: { countChange: trendOf(today.count, yesterday.count), revenueChange: trendOf(today.revenue, yesterday.revenue) },
         statusDistribution: {
             UNAPPROVED: statusMap['UNAPPROVED'] ?? 0,
+            PRE_APPROVAL: statusMap['PRE_APPROVAL'] ?? 0,
             AWAITING_APPROVAL: statusMap['AWAITING_APPROVAL'] ?? 0,
             APPROVED: statusMap['APPROVED'] ?? 0,
             SHIPPED: statusMap['SHIPPED'] ?? 0,
             DELIVERED: statusMap['DELIVERED'] ?? 0,
             CANCELLED: statusMap['CANCELLED'] ?? 0,
             RETURNED: statusMap['RETURNED'] ?? 0,
+            SPLIT: statusMap['SPLIT'] ?? 0,
             total: Object.values(statusMap).reduce((a, b) => a + b, 0)
         },
         pending: {

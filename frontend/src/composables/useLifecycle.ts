@@ -38,7 +38,10 @@ export function useLifecycle() {
                     OrderInternalStatusEnum.SHIPPED,
                     OrderInternalStatusEnum.DELIVERED,
                     OrderInternalStatusEnum.CANCELLED,
-                    OrderInternalStatusEnum.RETURNED
+                    OrderInternalStatusEnum.RETURNED,
+                    // [WP6-kalan, D-ORD-4] bölünmüş paket kapanmıştır; ön onaydaki pakete satıcı dokunmaz
+                    OrderInternalStatusEnum.SPLIT,
+                    OrderInternalStatusEnum.PRE_APPROVAL
                 ].includes(status);
             case 'RESOLVE_DISCREPANCY':
                 return !!order.platformDiscrepancy?.hasDiscrepancy;

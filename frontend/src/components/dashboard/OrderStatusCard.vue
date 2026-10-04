@@ -84,12 +84,14 @@ const linkable = computed(() => canOpen('orderList'))
 
 const ORDER: OrderInternalStatusEnum[] = [
   OrderInternalStatusEnum.UNAPPROVED,
+  OrderInternalStatusEnum.PRE_APPROVAL,
   OrderInternalStatusEnum.AWAITING_APPROVAL,
   OrderInternalStatusEnum.APPROVED,
   OrderInternalStatusEnum.SHIPPED,
   OrderInternalStatusEnum.DELIVERED,
   OrderInternalStatusEnum.CANCELLED,
   OrderInternalStatusEnum.RETURNED,
+  OrderInternalStatusEnum.SPLIT,
 ]
 
 // Aynı tondaki ikinci durum, tonun koyu (`-emphasis`) adımıyla ayrışır; anlamı yine etiket taşır.

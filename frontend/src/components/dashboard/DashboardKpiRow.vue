@@ -57,7 +57,7 @@ const week = computed(() =>
 )
 
 /** Henüz sonuçlanmamış siparişler (teslim / iptal / iade dışındakiler). */
-const OPEN_STATUSES = ['UNAPPROVED', 'AWAITING_APPROVAL', 'APPROVED', 'SHIPPED']
+const OPEN_STATUSES = ['UNAPPROVED', 'PRE_APPROVAL', 'AWAITING_APPROVAL', 'APPROVED', 'SHIPPED']
 const openOrders = computed(() => OPEN_STATUSES.reduce((a, s) => a + (props.data?.statusDistribution?.[s] ?? 0), 0))
 
 type Trend = { direction: 'up' | 'down'; text: string }

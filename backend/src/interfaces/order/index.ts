@@ -13,7 +13,10 @@ export enum OrderInternalStatusEnum {
     SHIPPED = 'SHIPPED',       // Kargolandı
     DELIVERED = 'DELIVERED',   // Teslim Edildi
     CANCELLED = 'CANCELLED',   // İptal Edildi
-    RETURNED = 'RETURNED'      // İade Edildi (Tümü)
+    RETURNED = 'RETURNED',     // İade Edildi (Tümü)
+    // [eslesme-fiyat WP6-kalan, D-ORD-4] tablolar: platform/core/orders/orderStatus.ts
+    PRE_APPROVAL = 'PRE_APPROVAL', // Pazaryeri ön onayı bekleniyor (HB AwaitingPreApproval) — satıcı aksiyonu yok
+    SPLIT = 'SPLIT'            // Paket bölündü, yerini yeni paketler aldı (TY UnPacked) — kapanış, stok yönü değişmez
 }
 
 // ============================================================================

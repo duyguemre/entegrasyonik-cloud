@@ -108,6 +108,10 @@ export class OrderMapper {
             case 'open':
             case 'awaitingapproval':
                 return OrderInternalStatusEnum.AWAITING_APPROVAL;
+            // [WP6-kalan, D-ORD-4] ön onay bekleyen paket: satıcı aksiyonu açılmaz (eskiden bilinmeyen → AWAITING_APPROVAL
+            // ile onaylanabilir görünüyordu).
+            case 'awaitingpreapproval':
+                return OrderInternalStatusEnum.PRE_APPROVAL;
             case 'packaged':
             case 'unpacked':
                 return OrderInternalStatusEnum.APPROVED;

@@ -71,11 +71,11 @@ const view = computed(() => ({ data: insights.data.value, loading: loading.value
 const fmt = (v: number) => formatNumber(v ?? 0)
 
 const STATUS: Array<{ key: string; label: string; hint: string; icon: string; tone: EkTone; statuses: string[] }> = [
-  { key: 'waiting', label: 'Onay bekleyen', hint: 'Kanal ve satıcı onayı', icon: 'mdi-clock-outline', tone: 'warning', statuses: ['UNAPPROVED', 'AWAITING_APPROVAL'] },
+  { key: 'waiting', label: 'Onay bekleyen', hint: 'Kanal ve satıcı onayı', icon: 'mdi-clock-outline', tone: 'warning', statuses: ['UNAPPROVED', 'PRE_APPROVAL', 'AWAITING_APPROVAL'] },
   { key: 'approved', label: 'Kargoya hazır', hint: 'Kargolanmayı bekliyor', icon: 'mdi-package-variant-closed', tone: 'info', statuses: ['APPROVED'] },
   { key: 'shipped', label: 'Kargoda', hint: 'Teslimat yolunda', icon: 'mdi-truck-fast-outline', tone: 'action', statuses: ['SHIPPED'] },
   { key: 'delivered', label: 'Teslim edildi', hint: 'Tamamlanan siparişler', icon: 'mdi-check-circle-outline', tone: 'success', statuses: ['DELIVERED'] },
-  { key: 'closed', label: 'İptal / iade', hint: 'İptal ve iade edilenler', icon: 'mdi-undo-variant', tone: 'error', statuses: ['CANCELLED', 'RETURNED'] },
+  { key: 'closed', label: 'İptal / iade', hint: 'İptal ve iade edilenler', icon: 'mdi-undo-variant', tone: 'error', statuses: ['CANCELLED', 'RETURNED', 'SPLIT'] },
 ]
 
 const count = (statuses: string[]) => statuses.reduce((a, s) => a + (insights.data.value?.statusDistribution?.[s] ?? 0), 0)

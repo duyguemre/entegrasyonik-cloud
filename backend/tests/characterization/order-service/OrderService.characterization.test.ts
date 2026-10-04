@@ -606,7 +606,8 @@ describe('OrderService.getOrderDashboardInsights', () => {
     expect(res.totals).toEqual({ orderCount: 0, revenue: 0, returnCount: 0, returnAmount: 0 });
     expect(res.today).toEqual({ count: 0, revenue: 0 });
     expect(res.trend).toEqual({ countChange: 0, revenueChange: 0 });
-    expect(res.statusDistribution).toEqual({ UNAPPROVED: 0, AWAITING_APPROVAL: 0, APPROVED: 0, SHIPPED: 0, DELIVERED: 0, CANCELLED: 0, RETURNED: 0, total: 0 });
+    // [BİLİNÇLİ DEĞİŞİKLİK — WP6-kalan D-ORD-4] yeni iç durumlar PRE_APPROVAL ve SPLIT dağılımda
+    expect(res.statusDistribution).toEqual({ UNAPPROVED: 0, PRE_APPROVAL: 0, AWAITING_APPROVAL: 0, APPROVED: 0, SHIPPED: 0, DELIVERED: 0, CANCELLED: 0, RETURNED: 0, SPLIT: 0, total: 0 });
     expect(res.pending).toEqual({ invoiceCount: 0, shippingCount: 0, claimCount: 0, messageCount: 0 });
     expect(res.last7Days.map((d: any) => d.date)).toEqual([
       '2026-06-09', '2026-06-10', '2026-06-11', '2026-06-12', '2026-06-13', '2026-06-14', '2026-06-15',

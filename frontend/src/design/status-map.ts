@@ -43,6 +43,8 @@ export const ORDER_STATUS_TONE: Record<OrderInternalStatusEnum, StatusMapEntry> 
   [OrderInternalStatusEnum.DELIVERED]: { tone: 'success', labelKey: 'status.order.delivered' },
   [OrderInternalStatusEnum.CANCELLED]: { tone: 'danger', labelKey: 'status.order.cancelled' },
   [OrderInternalStatusEnum.RETURNED]: { tone: 'danger', labelKey: 'status.order.returned' },
+  [OrderInternalStatusEnum.PRE_APPROVAL]: { tone: 'warning', labelKey: 'status.order.preApproval' },
+  [OrderInternalStatusEnum.SPLIT]: { tone: 'neutral', labelKey: 'status.order.split' },
 }
 
 // ---- İade/talep durumu (ClaimInternalStatusEnum) ----
@@ -228,10 +230,12 @@ export const ORDER_STATUS_ORDER: OrderInternalStatusEnum[] = [
   OrderInternalStatusEnum.AWAITING_APPROVAL,
   OrderInternalStatusEnum.APPROVED,
   OrderInternalStatusEnum.UNAPPROVED,
+  OrderInternalStatusEnum.PRE_APPROVAL,
   OrderInternalStatusEnum.SHIPPED,
   OrderInternalStatusEnum.DELIVERED,
   OrderInternalStatusEnum.CANCELLED,
   OrderInternalStatusEnum.RETURNED,
+  OrderInternalStatusEnum.SPLIT,
 ]
 
 export const ORDER_STATUS_GUIDE: Record<OrderInternalStatusEnum, StatusGuide> = {
@@ -242,6 +246,8 @@ export const ORDER_STATUS_GUIDE: Record<OrderInternalStatusEnum, StatusGuide> = 
   [OrderInternalStatusEnum.DELIVERED]: { group: ORDER_GROUPS.closed, hint: 'Süreç tamamlandı' },
   [OrderInternalStatusEnum.CANCELLED]: { group: ORDER_GROUPS.closed, hint: 'Sipariş iptal edildi' },
   [OrderInternalStatusEnum.RETURNED]: { group: ORDER_GROUPS.closed, hint: 'Müşteri iade etti' },
+  [OrderInternalStatusEnum.PRE_APPROVAL]: { group: ORDER_GROUPS.platform, hint: 'Pazaryeri ön onayı bekleniyor; sizden işlem beklenmiyor' },
+  [OrderInternalStatusEnum.SPLIT]: { group: ORDER_GROUPS.closed, hint: 'Paket bölündü; yeni paketlerden takip edin' },
 }
 
 export const CLAIM_GROUPS = { open: 'Karar bekleyen', closed: 'Sonuçlanan' } as const

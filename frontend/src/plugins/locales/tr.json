@@ -1083,7 +1083,9 @@
       "shipped": "Kargoda",
       "delivered": "Teslim edildi",
       "cancelled": "İptal edildi",
-      "returned": "İade Edildi"
+      "returned": "İade Edildi",
+      "preApproval": "Pazaryeri ön onayı bekleniyor",
+      "split": "Paket bölündü"
     },
     "claim": {
       "waiting": "Yeni talep",

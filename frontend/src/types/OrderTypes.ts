@@ -5,7 +5,10 @@ export enum OrderInternalStatusEnum {
     SHIPPED = 'SHIPPED',
     DELIVERED = 'DELIVERED',
     CANCELLED = 'CANCELLED',
-    RETURNED = 'RETURNED'
+    RETURNED = 'RETURNED',
+    // [eslesme-fiyat WP6-kalan, D-ORD-4] backend platform/core/orders/orderStatus.ts ile aynı
+    PRE_APPROVAL = 'PRE_APPROVAL',
+    SPLIT = 'SPLIT'
 }
 
 
@@ -16,7 +19,9 @@ export const ORDER_INTERNAL_STATUS_LABELS: Record<OrderInternalStatusEnum, strin
     [OrderInternalStatusEnum.SHIPPED]: 'Kargoda',
     [OrderInternalStatusEnum.DELIVERED]: 'Teslim edildi',
     [OrderInternalStatusEnum.CANCELLED]: 'İptal edildi',
-    [OrderInternalStatusEnum.RETURNED]: 'İade Edildi'
+    [OrderInternalStatusEnum.RETURNED]: 'İade Edildi',
+    [OrderInternalStatusEnum.PRE_APPROVAL]: 'Pazaryeri ön onayı bekleniyor',
+    [OrderInternalStatusEnum.SPLIT]: 'Paket bölündü'
 };
 
 // DS-v2 Aşama 3: status-map.ts ORDER_STATUS_TONE ile AYNI anlam (Vuetify rol adları; hex/dekoratif `secondary` kalktı).
@@ -27,5 +32,7 @@ export const ORDER_INTERNAL_STATUS_COLORS: Record<OrderInternalStatusEnum, strin
     [OrderInternalStatusEnum.SHIPPED]: 'info',
     [OrderInternalStatusEnum.DELIVERED]: 'success',
     [OrderInternalStatusEnum.CANCELLED]: 'error',
-    [OrderInternalStatusEnum.RETURNED]: 'error'
+    [OrderInternalStatusEnum.RETURNED]: 'error',
+    [OrderInternalStatusEnum.PRE_APPROVAL]: 'warning',
+    [OrderInternalStatusEnum.SPLIT]: 'info'
 };

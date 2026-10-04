@@ -173,7 +173,8 @@ describe('OrderMapper.mapStatus — statü eşleme (BUGÜNKÜ davranış)', () =
         expect(internal('UnDelivered')).toBe('SHIPPED');
         expect(internal('Awaiting')).toBe('UNAPPROVED');
         expect(internal('Verified')).toBe('UNAPPROVED');
-        expect(internal('UnPacked')).toBe('UNAPPROVED');
+        // [BİLİNÇLİ DEĞİŞİKLİK — WP6-kalan D-ORD-4] UnPacked = bölünmüş paket → yeni iç durum SPLIT
+        expect(internal('UnPacked')).toBe('SPLIT');
     });
 
     it('[MEVCUT] resmi yazım "UnSupplied" (büyük S) tanınmıyordu -> UNAPPROVED (iptal edilmiş paket "onay bekliyor" görünürdü)', () => {

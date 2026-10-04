@@ -1,3 +1,5 @@
+import { ORDER_INTERNAL_STATUS_BUCKETS, OrderAllocationBucket } from '@platform/core/orders/orderStatus';
+
 /**
  * ADR-0004 — Zero-oversell: rezervasyon, çakışma ve stok yayını modeli (Karar 3, seviye tetiklemeli sürücü).
  * bkz. docs/adr/0004-zero-oversell-rezervasyon-modeli.md
@@ -24,7 +26,7 @@
  * kovalarla eşleşiyor) — bu yüzden yedek katman "tahmin" değil, mevcut kodun DOĞRULANMIŞ bir başka görünümü.
  */
 
-export type AllocationBucket = 'RESERVED' | 'COMMITTED' | 'RELEASED';
+export type AllocationBucket = OrderAllocationBucket;
 
 /** Pazaryeri kodu (küçük harf) -> ham durum değeri (string'e çevrilmiş) -> hedef kova. */
 const RAW_STATUS_BUCKETS: Record<string, Record<string, AllocationBucket>> = {
@@ -59,6 +61,8 @@ const RAW_STATUS_BUCKETS: Record<string, Record<string, AllocationBucket>> = {
         cancelledbymerchant: 'RELEASED',
         cancelledbycustomer: 'RELEASED',
         cancelled: 'RELEASED',
+        // [WP6-kalan, D-ORD-4] ön onay bekleyen paket (PRE_APPROVAL): sıfır-oversell için rezervasyon.
+        awaitingpreapproval: 'RESERVED',
     },
     pazarama: {
         '3': 'RESERVED', // AWAITING_APPROVAL
@@ -89,16 +93,8 @@ const SKIP_RAW_STATUSES: Record<string, ReadonlySet<string>> = {
     n11: new Set(['unpacked']), // OrderMapper.ts STATUS_RULES ile AYNI gerekçe (anlamı doğrulanamadı)
 };
 
-/** `OrderInternalStatusEnum` -> hedef kova (tüm adaptörlerin normalize ettiği ortak alan, yedek katman). */
-const INTERNAL_STATUS_BUCKETS: Record<string, AllocationBucket> = {
-    UNAPPROVED: 'RESERVED',
-    AWAITING_APPROVAL: 'RESERVED',
-    APPROVED: 'RESERVED',
-    SHIPPED: 'COMMITTED',
-    DELIVERED: 'COMMITTED',
-    RETURNED: 'COMMITTED',
-    CANCELLED: 'RELEASED',
-};
+/** `OrderInternalStatusEnum` -> hedef kova: tek kaynak `platform/core/orders/orderStatus.ts` (D-ORD-4; SPLIT kovasız → atlanır). */
+const INTERNAL_STATUS_BUCKETS: Readonly<Record<string, AllocationBucket>> = ORDER_INTERNAL_STATUS_BUCKETS;
 
 /**
  * Sipariş satırı için istenen tahsis kovasını türetir. Önce pazaryerine özgü ham durum tablosuna bakar;

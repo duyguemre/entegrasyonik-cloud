@@ -56,7 +56,9 @@ const STATUS_RULES: Record<string, StatusRule> = {
     verified: { internal: OrderInternalStatusEnum.UNAPPROVED, flag: 'paymentPending' },
     atcollectionpoint: { internal: OrderInternalStatusEnum.SHIPPED },
     undelivered: { internal: OrderInternalStatusEnum.SHIPPED },
-    unpacked: { internal: OrderInternalStatusEnum.UNAPPROVED, flag: 'unpacked' },
+    // [WP6-kalan, D-ORD-4] UnPacked = paket bölündü, yerini yeni paketler (createdBy:'split', originPackageIds) aldı → SPLIT
+    // (kapanış). Eskiden UNAPPROVED'dı: bölünen paket "onay bekliyor" listesinde kalıyordu. Stok yine ATLANIR (SKIP_RAW_STATUSES).
+    unpacked: { internal: OrderInternalStatusEnum.SPLIT, flag: 'unpacked' },
 };
 
 export class OrderMapper {

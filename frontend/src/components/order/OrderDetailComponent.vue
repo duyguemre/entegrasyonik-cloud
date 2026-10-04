@@ -224,7 +224,7 @@ const timelineSteps = computed<EkTimelineStep[]>(() => {
         { key: 'delivered', label: 'Teslim edildi', now: 'Teslimat bekleniyor', later: 'Teslimat', date: fmt(d.deliveredDate) },
     ];
     // Adım konumu: 0 alındı · 1 onay · 2 fatura/hazırlık · 3 kargo · 4 teslim.
-    const pos = s === OrderInternalStatusEnum.UNAPPROVED ? 0 : s === OrderInternalStatusEnum.AWAITING_APPROVAL ? 1
+    const pos = (s === OrderInternalStatusEnum.UNAPPROVED || s === OrderInternalStatusEnum.PRE_APPROVAL) ? 0 : s === OrderInternalStatusEnum.AWAITING_APPROVAL ? 1
         : s === OrderInternalStatusEnum.APPROVED ? (o.flags?.isInvoiceGenerated || o.invoice?.invoiceNumber ? 3 : 2)
         : s === OrderInternalStatusEnum.SHIPPED ? 4 : s === OrderInternalStatusEnum.DELIVERED ? 5 : -1;
     if (s === OrderInternalStatusEnum.CANCELLED || s === OrderInternalStatusEnum.RETURNED) {
@@ -365,6 +365,10 @@ const nextStep = computed<NextStep | null>(() => {
             return { tone: 'success', icon: 'mdi-check-circle-outline', eyebrow: 'Durum', title: 'Sipariş tamamlandı', text: 'Paket müşteriye ulaştı; başka bir işlem gerekmiyor.' };
         case S.CANCELLED:
             return { tone: 'neutral', icon: 'mdi-close-circle-outline', eyebrow: 'Durum', title: 'Sipariş iptal edildi', text: 'Bu sipariş üzerinde artık işlem yapılamaz.' };
+        case S.PRE_APPROVAL:
+            return { tone: 'warning', icon: 'mdi-timer-sand', title: 'Pazaryerinin ön onayı bekleniyor', text: 'Pazaryeri bu paketi henüz satıcı onayına açmadı. Ön onay verildiğinde onay adımı açılır; şu an sizin bir şey yapmanız gerekmiyor.' };
+        case S.SPLIT:
+            return { tone: 'neutral', icon: 'mdi-call-split', eyebrow: 'Durum', title: 'Paket bölündü', text: 'Pazaryeri bu paketi yeni paketlere böldü. Sipariş adımlarını yeni paketler üzerinden takip edin; bu paket üzerinde işlem yapılamaz.' };
         case S.RETURNED:
             return { tone: 'warning', icon: 'mdi-keyboard-return', eyebrow: 'Durum', title: 'Sipariş iade edildi', text: 'Müşteri siparişi iade etti. İade sürecini İadeler ekranından takip edebilirsiniz.' };
         default:
