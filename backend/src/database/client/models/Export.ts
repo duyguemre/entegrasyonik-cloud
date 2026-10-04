@@ -20,6 +20,8 @@ export const ExportStagedProductSchema = new Schema({
 
     title: { type: String, required: false },
     price: { type: Number, required: false },
+    // [eslesme-fiyat WP5] kanala gidecek liste (üstü çizili) fiyatı; `effectiveListPrice` (≥ satış). N11/HB eskiden satışa eşitti.
+    listPrice: { type: Number, required: false },
     stock: { type: Number, required: false },
     image: { type: String, required: false },
     category: { type: Object, required: false },

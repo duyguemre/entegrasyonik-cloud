@@ -1,6 +1,7 @@
 // PRC-R1: bir barkodun buybox durum geçişi — SAF (DB yok). Varyant üzerinde güncel durum (`competition.trendyol`), geçmiş
 // `BuyboxSnapshots`'ta seyreltilmiş tutulur (değişince ya da 6 saatte bir). "Buybox kaybedildi" = önceki gözlem `winning`, yeni `losing`.
 import type { IBuyboxObservation } from '@interfaces/index';
+import { effectiveChannelPrice } from '@platform/core/pricing/effectivePrice';
 
 export type CompetitionStatus = 'winning' | 'losing' | 'not_found';
 
@@ -60,8 +61,7 @@ export function shouldNotifyLost(t: Transition, prevNotifiedAt: Date | null | un
     return now.getTime() - new Date(prevNotifiedAt).getTime() >= cooldownMs;
 }
 
-/** Kanal fiyatımız: kanal bazlı fiyat açıksa `platforms.<kod>.prices.salePrice`, değilse `prices.salePrice` (COM-07 ile aynı kural). */
+/** Kanal fiyatımız: tek kaynak `effectiveChannelPrice` (kanal özel fiyatı → kanal kuralı → ana fiyat; eslesme-fiyat WP5). */
 export function ownChannelPrice(v: any, code: string): number | null {
-    const n = (x: unknown) => (typeof x === 'number' && Number.isFinite(x) ? x : null);
-    return v?.prices?.isPlatformBasedPrice ? n(v?.platforms?.[code]?.prices?.salePrice) : n(v?.prices?.salePrice);
+    return effectiveChannelPrice(v, code).salePrice;
 }

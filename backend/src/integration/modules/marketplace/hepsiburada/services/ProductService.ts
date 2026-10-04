@@ -14,6 +14,7 @@ import { labelAttribute, missingRequiredAttributes } from '@integration/catalog/
 import type { ICategoryAttribute } from '@interfaces/index';
 import { compactCatalogProduct, toImportRecord, type HbCatalogCompact } from '../transformers/importRecord';
 import { eventLog } from '@platform/core/logger';
+import { channelPricePair } from '@platform/core/pricing/effectivePrice';
 
 const log = eventLog('adapter-hepsiburada', 'ProductService');
 
@@ -384,7 +385,7 @@ export class ProductService {
         if (!variant.barcode || String(variant.barcode).trim() === "") {
             return { result: false, reason: "Barkod eksik.", errors: ["Barkod eksik."] };
         }
-        const vPrice = variant.platforms?.[integrationCode]?.prices || variant.prices;
+        const vPrice = channelPricePair(variant, integrationCode);
         if (!vPrice?.salePrice || vPrice.salePrice <= 0) {
             return { result: false, reason: "Fiyat geçersiz.", errors: ["Fiyat geçersiz."] };
         }

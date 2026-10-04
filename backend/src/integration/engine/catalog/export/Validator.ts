@@ -11,6 +11,7 @@ import { IntegrationIssue, IssueError, hasBlockingIssue, issuesToMessage, makeIs
 import { issuesFromError, mapPlatformMessage } from '@integration/modules/common/errors/errorMap';
 import { errorRulesFor } from '@integration/modules/common/errors/registry';
 import { checkChannelReadiness } from '@integration/catalog/preflight/readiness';
+import { effectiveChannelPrice, effectiveListPrice } from '@platform/core/pricing/effectivePrice';
 
 const log = eventLog('worker', 'Validator');
 
@@ -190,7 +191,9 @@ export default class Validator extends BaseWorker {
                             priorityScore: nextScore,
                             payload: variant, // TAZE PAYLOAD
                             title: variant.title || product.title,
-                            price: variant.platforms?.[this.integrationCode]?.prices?.salePrice || variant.prices?.salePrice,
+                            // [eslesme-fiyat WP5] tek kaynak: kanal özel fiyatı (bayrak) → kanal kuralı → ana fiyat; liste fiyatı ayrı alan.
+                            price: effectiveChannelPrice(variant, this.integrationCode).salePrice ?? undefined,
+                            listPrice: effectiveListPrice(effectiveChannelPrice(variant, this.integrationCode)) ?? undefined,
                             stock: variant.stock,
                             image: variant.images?.[0] || product.images?.[0],
                             category: variant.product.category,

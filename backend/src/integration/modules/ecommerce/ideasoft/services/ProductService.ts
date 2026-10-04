@@ -13,6 +13,7 @@ import { getIncomplete } from '@integration/contracts/IncompleteFetch';
 import { maxPages } from './paging';
 import { observeResponseSchema } from '@integration/modules/common/contract/observeResponseSchema';
 import { IDEASOFT_PRODUCTS_LIST } from '../contracts';
+import { channelPricePair } from '@platform/core/pricing/effectivePrice';
 
 /**
  * [DB-09 / ADR-0032 H1] Kanal dış kimliği tek anahtar `mapping` altında YAZILIR. Okuma geriye dönük olarak eski
@@ -136,8 +137,7 @@ export class ProductService {
     private async doUpdatePrice(variant: IVariant, urls: any): Promise<void> {
         const productId = platformProductId((variant as any).platforms?.[integrationCode]);
         if (!productId) throw new Error('Ürün ID bulunamadı');
-        const salePrice = (variant as any).platforms?.[integrationCode]?.prices?.salePrice
-            || (variant as any).prices?.salePrice || 0;
+        const salePrice = channelPricePair(variant, integrationCode).salePrice || 0;
         const updateUrl = (urls.updateUrl || 'products/<PRODUCTID>').replace('<PRODUCTID>', productId);
         await this.service.put(updateUrl, { price1: Math.round(Number(salePrice) * 100) / 100 });
     }

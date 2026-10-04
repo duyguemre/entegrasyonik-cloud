@@ -1,6 +1,7 @@
 import { IVariant, IInternalResult, ICategoryAttribute } from '@interfaces/index';
 import { integrationCode } from '../constants';
 import { normalizeAttrValue } from '@integration/catalog/attributePayload';
+import { channelPricePair } from '@platform/core/pricing/effectivePrice';
 
 export class ProductTransformer {
     private slugify(text: string): string {
@@ -57,8 +58,7 @@ export class ProductTransformer {
         const warranty = Number((variant as any).warranty || product.warranty || settings.warranty || 0);
         const stockTypeLabel = (variant as any).stockTypeLabel || settings.stockTypeLabel || 'Piece';
 
-        const salePrice = (variant as any).platforms?.[integrationCode]?.prices?.salePrice
-            || (variant as any).prices?.salePrice || 0;
+        const salePrice = channelPricePair(variant, integrationCode).salePrice || 0;
         const formattedPrice = Math.round(Number(salePrice) * 100) / 100;
 
         const variantAttrs = (variant as any).platforms?.[integrationCode]?.attributes || {};

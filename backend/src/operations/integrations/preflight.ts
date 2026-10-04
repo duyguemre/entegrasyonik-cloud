@@ -7,7 +7,7 @@
  * - `explainChannelProduct`: alan → kaynak zinciri (kategori ← AttributeMappings kaydı, fiyat ← kanal fiyatı ya da ana fiyat, ...).
  *
  * Bağımlılıklar enjekte edilir (RPC cephesi ClientDB + IntegrationFactory ile kurar); bu modül DB/ağ bilmez → bellek-içi test edilir.
- * Fiyat kural motoru zinciri (kural → kanal fiyatı) WP5'te eklenecek (`channel` kural tipi); bugün kaynak alanı gösterilir.
+ * Fiyat zinciri (WP5): `effectiveChannelPrice` kaynağı + `channel` kuralı gerekçeleri + bekleyen (kanala gönderilmemiş) durum.
  */
 import { PLATFORM_PROCESS } from '@interfaces/index';
 import { IntegrationIssue, hasBlockingIssue, makeIssue } from '@platform/core/errors/integrationIssues';
@@ -16,6 +16,7 @@ import { AttributeResolver, IAttributeResolverProvider } from '@integration/cata
 import { mapPlatformMessage } from '@integration/modules/common/errors/errorMap';
 import { errorRulesFor } from '@integration/modules/common/errors/registry';
 import { getIntegrationDescriptor } from '@integration/catalog/IntegrationDescriptorRegistry';
+import { describeEffectivePrice, effectiveChannelPrice, effectiveListPrice } from '@platform/core/pricing/effectivePrice';
 
 export const PREFLIGHT_MAX_VARIANTS = 200;
 
@@ -49,12 +50,13 @@ const imageCount = (variant: any) => (Array.isArray(variant?.images) ? variant.i
 const clone = <T>(v: T): T => JSON.parse(JSON.stringify(v ?? null));
 
 function priceOf(variant: any, code: string) {
-    const channel = variant?.platforms?.[code]?.prices;
-    const hasChannel = channel && channel.salePrice !== undefined && channel.salePrice !== null && channel.salePrice !== '';
-    const p = hasChannel ? channel : variant?.prices || {};
+    // [eslesme-fiyat WP5] tek kaynak: kanal özel fiyatı (bayrak) → kanal kuralı → ana fiyat.
+    const e = effectiveChannelPrice(variant, code);
     return {
-        salePrice: p.salePrice ?? null, marketPrice: p.marketPrice ?? p.salePrice ?? null,
-        source: hasChannel ? `variant.platforms.${code}.prices` : 'variant.prices',
+        salePrice: e.salePrice, marketPrice: effectiveListPrice(e), origin: e.source,
+        source: `variant.${e.field}`, ruleId: e.ruleId ?? null, ruleVersion: e.ruleVersion ?? null,
+        describe: describeEffectivePrice(e), reasons: e.source === 'rule' ? (variant?.platforms?.[code]?.rulePrice?.reasons ?? []) : [],
+        pending: variant?.pricePending?.[code] ?? null,
     };
 }
 
@@ -187,7 +189,8 @@ export async function explainChannelProduct(input: { variantId: string; integrat
     }
     const price = r.preview.price;
     fields.push({ field: 'price', value: price.salePrice, source: price.source,
-        chain: [price.source.startsWith('variant.platforms') ? `kanal fiyatı ← ${price.source}` : `ana fiyat ← variant.prices (kanal fiyatı tanımlı değil)`, `liste fiyatı: ${price.marketPrice ?? '-'}`] });
+        chain: [price.describe, ...price.reasons.map((x: string) => `kural: ${x}`), `liste fiyatı: ${price.marketPrice ?? '-'}`,
+            ...(price.pending ? [`kanala gönderilmedi (bekliyor, ${price.pending.reason ?? 'değişiklik'})`] : [])] });
     const vat = vatOf(variant, product, code);
     fields.push({ field: 'vatRate', value: vat.value, source: vat.source, chain: [`KDV ← ${vat.source}`] });
     fields.push({ field: 'title', value: r.preview.title, source: s.vMapping?.title ? `variant.platforms.${code}.mapping.title` : 'product.title', chain: [s.vMapping?.title ? 'kanala özel başlık' : 'ürün başlığı'] });

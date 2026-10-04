@@ -114,6 +114,7 @@ export class QueryBuilderOperations {
             payload?: any,    // Validator/Transform aşamasında kullanılır
             title?: string,
             price?: number,
+            listPrice?: number, // [eslesme-fiyat WP5]
             stock?: number,
             image?: string,
             trackingId?: string | null,
@@ -142,7 +143,7 @@ export class QueryBuilderOperations {
         const optionalFields = [
             'priorityScore', 'errorMessage', 'payload', 'productId',
             'trackingId', 'nextRunAt', 'completedAt', 'title',
-            'price', 'stock', 'image', 'category', 'brand',
+            'price', 'listPrice', 'stock', 'image', 'category', 'brand',
             'choices', 'stockcode', 'issues'
         ];
 

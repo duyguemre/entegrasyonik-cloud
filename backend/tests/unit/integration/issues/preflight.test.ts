@@ -5,7 +5,7 @@ import { explainChannelProduct, preflightExport, PreflightDeps } from '@operatio
 const PRODUCT = { _id: 'p1', title: 'Elbise', category: 'cat1', brand: 'br1', taxPercentage: 10 };
 const VARIANT = {
   _id: 'v1', productId: 'p1', barcode: 'B1', stock: 5, images: ['https://cdn/1.jpg'],
-  prices: { salePrice: 100, marketPrice: 120 }, choices: [{ choiceId: 'ch1', choiceValueId: 'cv1' }],
+  prices: { isPlatformBasedPrice: true, salePrice: 100, marketPrice: 120 }, choices /* WP5: kanal fiyatı bayrakla */: [{ choiceId: 'ch1', choiceValueId: 'cv1' }],
   platforms: { trendyol: { prices: { salePrice: 110, marketPrice: 130 }, upload: { TRANSFER: { status: 'FAILED', issues: [{ code: 'PLATFORM_REJECTED' }] } } } },
 };
 
@@ -37,7 +37,7 @@ describe('preflightExport', () => {
     const ch = res.items[0].channels[0];
     expect(ch.ready).toBe(true);
     expect(ch.issues).toEqual([]);
-    expect(ch.resolvedPreview).toMatchObject({ category: { localId: 'cat1', platformId: 411 }, brand: { platformId: 77 }, vatRate: 10, imageCount: 1, stock: 5, price: { salePrice: 110, source: 'variant.platforms.trendyol.prices' } });
+    expect(ch.resolvedPreview).toMatchObject({ category: { localId: 'cat1', platformId: 411 }, brand: { platformId: 77 }, vatRate: 10, imageCount: 1, stock: 5, price: { salePrice: 110, marketPrice: 130, origin: 'channel', source: 'variant.platforms.trendyol.prices' } });
     expect(ch.resolvedPreview.attributesFromMapping).toEqual(['47']);
     expect((VARIANT.platforms.trendyol as any).attributes).toBeUndefined(); // kuru çalıştırma
     expect(res.summary.trendyol).toEqual({ total: 1, ready: 1, blocked: 0, withWarnings: 0 });
@@ -76,6 +76,7 @@ describe('explainChannelProduct', () => {
     const f = Object.fromEntries(r.fields.map((x: any) => [x.field, x]));
     expect(f.category.chain[1]).toBe('kanal kategorisi Kadın>Elbise ← AttributeMappings (2026-10-01, Ayşe)');
     expect(f.price).toMatchObject({ value: 110, source: 'variant.platforms.trendyol.prices' });
+    expect(f.price.chain[0]).toBe('110.00 ← kanal özel fiyatı (platforms.trendyol.prices)');
     expect(f.brand.chain[1]).toContain('77');
     expect(f.vatRate).toMatchObject({ value: 10, source: 'product.taxPercentage' });
     expect(f.attributes.chain[1]).toBe('eşlemeden çözülen: 1 (47)');

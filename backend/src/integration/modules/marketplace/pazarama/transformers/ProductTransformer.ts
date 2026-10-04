@@ -4,6 +4,7 @@ import { randomUUID } from 'crypto';
 import { IInternalResult } from '@interfaces/index';
 import { IntegrationError } from '@integration/modules/common/IntegrationError';
 import { normalizeAttrValue, missingRequiredAttributes, labelAttribute, indexCategoryAttributes, findValueById, findValueByText } from '@integration/catalog/attributePayload';
+import { channelPricePair } from '@platform/core/pricing/effectivePrice';
 
 export class ProductMapper {
     public validate(variant: IVariant, mode: PLATFORM_PROCESS) {
@@ -17,7 +18,7 @@ export class ProductMapper {
         }
 
         if (mode !== PLATFORM_PROCESS.UPDATE_STOCK) {
-            const vPrice = variant.platforms[integrationCode]?.prices || variant.prices;
+            const vPrice = channelPricePair(variant, integrationCode);
             const sale = vPrice.salePrice;
             const market = vPrice.marketPrice || sale;
 
@@ -42,7 +43,7 @@ export class ProductMapper {
         const variant = stagedProduct.payload;
         if (!variant) return null;
 
-        const vPrice = variant.platforms[integrationCode]?.prices || variant.prices;
+        const vPrice = channelPricePair(variant, integrationCode);
         const salePrice = Math.round((vPrice.salePrice || 0) * 100) / 100;
         const marketPrice = Math.max(Math.round((vPrice.marketPrice || salePrice) * 100) / 100, salePrice);
         const vMapping = variant.platforms[integrationCode]?.mapping;

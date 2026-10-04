@@ -5,6 +5,7 @@ import { IInternalResult } from '@interfaces/index';
 import { IntegrationError } from '@integration/modules/common/IntegrationError';
 import { normalizeAttrValue, indexCategoryAttributes, findValueById, findValueByText, missingRequiredAttributes, labelAttribute } from '@integration/catalog/attributePayload';
 import { TRENDYOL_ORIGIN_PATTERN, TRENDYOL_ORIGIN_REQUIRED_FROM_MS, TRENDYOL_FIELD_LIMITS, TRENDYOL_VAT_RATES } from '../productConstants';
+import { channelPricePair } from '@platform/core/pricing/effectivePrice';
 
 /** `toPlatformBatch` eşleme bağlamı. `contentId` doluysa UPDATE onaylı-içerik gövdesi üretilir (aksi halde onaysız). */
 export interface IProductBatchMapping {
@@ -50,7 +51,7 @@ export class ProductMapper {
         }
 
         if (mode !== PLATFORM_PROCESS.UPDATE_STOCK) {
-            const vPrice = variant.platforms[integrationCode]?.prices || variant.prices;
+            const vPrice = channelPricePair(variant, integrationCode);
             const sale = vPrice.salePrice;
             const market = vPrice.marketPrice || sale;
 
@@ -86,7 +87,7 @@ export class ProductMapper {
         const variant = stagedProduct.payload;
         if (!variant) return null;
 
-        const vPrice = variant.platforms[integrationCode]?.prices || variant.prices;
+        const vPrice = channelPricePair(variant, integrationCode);
         const salePrice = Math.round((vPrice.salePrice || 0) * 100) / 100;
         const marketPrice = Math.max(Math.round((vPrice.marketPrice || salePrice) * 100) / 100, salePrice);
         const vMapping = variant.platforms[integrationCode]?.mapping;

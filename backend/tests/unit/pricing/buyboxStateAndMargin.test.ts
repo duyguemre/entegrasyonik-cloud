@@ -45,7 +45,8 @@ describe('buybox durum geçişi', () => {
     it('kanal fiyatı: kanal bazlı fiyat açıksa platform fiyatı', () => {
         expect(ownChannelPrice({ prices: { isPlatformBasedPrice: false, salePrice: 100 } }, 'trendyol')).toBe(100);
         expect(ownChannelPrice({ prices: { isPlatformBasedPrice: true, salePrice: 100 }, platforms: { trendyol: { prices: { salePrice: 120 } } } }, 'trendyol')).toBe(120);
-        expect(ownChannelPrice({ prices: { isPlatformBasedPrice: true, salePrice: 100 } }, 'trendyol')).toBeNull();
+        // [eslesme-fiyat WP5] bayrak açık ama kanal fiyatı yoksa ana fiyata düşer (effectiveChannelPrice; eskiden null → kural çalışmıyordu).
+        expect(ownChannelPrice({ prices: { isPlatformBasedPrice: true, salePrice: 100 } }, 'trendyol')).toBe(100);
     });
 });
 

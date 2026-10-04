@@ -7,6 +7,7 @@
  */
 import { PLATFORM_PROCESS } from '@interfaces/index';
 import { IntegrationIssue, makeIssue } from '@platform/core/errors/integrationIssues';
+import { effectiveChannelPrice } from '@platform/core/pricing/effectivePrice';
 
 export interface ChannelRules {
     barcodeMax?: number;
@@ -56,8 +57,8 @@ export function checkChannelReadiness({ variant, product, integrationCode, mode 
     if (!product?.brand) issues.push(makeIssue('PRODUCT_BRAND_MISSING', { ...ctx, field: 'brand' }));
 
     if (rules.priceRequired && mode !== PLATFORM_PROCESS.UPDATE_STOCK) {
-        const vPrice = variant?.platforms?.[integrationCode]?.prices || variant?.prices || {};
-        const sale = Number(vPrice.salePrice);
+        const vPrice = effectiveChannelPrice(variant, integrationCode);
+        const sale = Number(vPrice.salePrice ?? NaN);
         const market = Number(vPrice.marketPrice || vPrice.salePrice);
         if (!Number.isFinite(sale) || sale <= 0) issues.push(makeIssue('PRICE_INVALID', { ...ctx, field: 'prices.salePrice' }));
         else if (Number.isFinite(market) && sale > market) issues.push(makeIssue('PRICE_ABOVE_LIST', { ...ctx, field: 'prices.marketPrice' }));

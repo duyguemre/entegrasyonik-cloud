@@ -3,6 +3,7 @@ import { integrationCode, hbMerchantId } from '../constants';
 import { randomUUID } from 'crypto';
 import { IInternalResult } from '@interfaces/index';
 import { normalizeAttrValue } from '@integration/catalog/attributePayload';
+import { channelPricePair } from '@platform/core/pricing/effectivePrice';
 
 export class ProductMapper {
     public validate(variant: IVariant, mode: PLATFORM_PROCESS) {
@@ -15,7 +16,7 @@ export class ProductMapper {
             return { result: false, reason: "Barkod eksik." };
         }
 
-        const vPrice = variant.platforms[integrationCode]?.prices || variant.prices;
+        const vPrice = channelPricePair(variant, integrationCode);
         const sale = vPrice.salePrice;
 
         if (!sale || sale <= 0) return { result: false, reason: "Fiyat geçersiz." };
@@ -33,7 +34,7 @@ export class ProductMapper {
         const variant = stagedProduct.payload;
         if (!variant) return null;
 
-        const vPrice = variant.platforms[integrationCode]?.prices || variant.prices;
+        const vPrice = channelPricePair(variant, integrationCode);
         const salePrice = vPrice.salePrice || 0;
         
         // Hepsiburada expects price as string with comma

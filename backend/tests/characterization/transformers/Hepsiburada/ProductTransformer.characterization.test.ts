@@ -44,7 +44,8 @@ describe('Hepsiburada ProductMapper.validate — karakterizasyon', () => {
     });
 
     it('salePrice <= 0 veya yoksa "Fiyat geçersiz."; platform fiyatı öncelikli, yoksa variant.prices', () => {
-        const v = makeVariant({ platforms: { [CODE]: { prices: { salePrice: 0 }, upload: {}, attributes: {}, mapping: {} } } });
+        // [eslesme-fiyat WP5] kanal fiyatı yalnız `isPlatformBasedPrice:true` ile esas alınır (effectiveChannelPrice; bilinçli güncelleme).
+        const v = makeVariant({ prices: { isPlatformBasedPrice: true, salePrice: 50, marketPrice: 60 }, platforms: { [CODE]: { prices: { salePrice: 0 }, upload: {}, attributes: {}, mapping: {} } } });
         expect(m.validate(v, PLATFORM_PROCESS.UPDATE_STOCK)).toEqual({ result: false, reason: 'Fiyat geçersiz.' });
 
         const vFallback = makeVariant({ platforms: { [CODE]: { prices: undefined, upload: {}, attributes: {}, mapping: {} } }, prices: { salePrice: 50, marketPrice: 60, isPlatformBasedPrice: false, price: 40 } });

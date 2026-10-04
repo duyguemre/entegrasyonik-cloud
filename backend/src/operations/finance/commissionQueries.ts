@@ -8,6 +8,7 @@ import {
     averageRateByCategory, groupByBarcode, resolveCommission, summarizeActual, tenantOverrideRate,
     type ResolvedCommission, type SettlementRow, type CategoryRateSummary,
 } from './commissionSummary';
+import { effectiveChannelPrice } from '@platform/core/pricing/effectivePrice';
 
 const MAX_BARCODES = 200;
 const MAX_ORDER_ROWS = 1000;
@@ -171,8 +172,8 @@ export async function getNetRevenuePreview(clientDB: any, clientId: any, input: 
             const v = variantOf(i);
             const barcode: string | null = v?.barcode ?? i.barcode ?? null;
             const code = i.integrationCode.toLowerCase();
-            const platformPrice = v?.prices?.isPlatformBasedPrice ? num(v?.platforms?.[code]?.prices?.salePrice) : null;
-            const variantPrice = v ? (v.prices?.isPlatformBasedPrice ? platformPrice : num(v.prices?.salePrice)) : null;
+            // [eslesme-fiyat WP5] tek kaynak (kanal özel fiyatı → kanal kuralı → ana fiyat).
+            const variantPrice = v ? effectiveChannelPrice(v, code).salePrice : null;
             const gross = num(i.grossPrice) ?? variantPrice;
             const grossSource = num(i.grossPrice) !== null ? 'input' : variantPrice !== null ? 'variant' : 'unknown';
             const tax = v ? taxByProduct.get(String(v.productId)) ?? null : null;

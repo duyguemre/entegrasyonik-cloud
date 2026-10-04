@@ -49,12 +49,12 @@ describe('Pazarama ProductMapper.validate — karakterizasyon', () => {
     });
 
     it('TRANSFER modunda salePrice <=0 ise "Fiyat geçersiz."', () => {
-        const v = makeVariant({ platforms: { [CODE]: { prices: { salePrice: 0 }, upload: {}, attributes: {}, mapping: {} } } });
+        const v = makeVariant({ prices: { isPlatformBasedPrice: true, price: 80, salePrice: 100, marketPrice: 120 }, platforms: { [CODE]: { prices: { salePrice: 0 }, upload: {}, attributes: {}, mapping: {} } } });
         expect(m.validate(v, PLATFORM_PROCESS.TRANSFER)).toEqual({ result: false, reason: 'Fiyat geçersiz.' });
     });
 
     it('salePrice > marketPrice ise "Satış > Liste fiyatı hatası."', () => {
-        const v = makeVariant({ platforms: { [CODE]: { prices: { salePrice: 150, marketPrice: 100 }, upload: {}, attributes: {}, mapping: {} } } });
+        const v = makeVariant({ prices: { isPlatformBasedPrice: true, price: 80, salePrice: 100, marketPrice: 120 }, platforms: { [CODE]: { prices: { salePrice: 150, marketPrice: 100 }, upload: {}, attributes: {}, mapping: {} } } });
         expect(m.validate(v, PLATFORM_PROCESS.TRANSFER)).toEqual({ result: false, reason: 'Satış > Liste fiyatı hatası.' });
     });
 
@@ -104,8 +104,16 @@ describe('Pazarama ProductMapper.toPlatformBatch — karakterizasyon', () => {
         expect(item).toEqual({ barcode: '1234567890123' });
     });
 
+    it('[WP5] bayrak kapalıyken eski kanal nesnesi yok sayılır → ana fiyat gider', () => {
+        const v = makeVariant({ platforms: { [CODE]: { prices: { salePrice: 77, marketPrice: 88 }, upload: {}, attributes: {}, mapping: {} } } });
+        const item = m.toPlatformBatch(staged(v), PLATFORM_PROCESS.UPDATE_PRICE, [], [], mapping);
+        expect(item.salePrice).toBe(100);
+        expect(item.listPrice).toBe(120);
+    });
+
+    // [eslesme-fiyat WP5] kanal fiyatı yalnız `isPlatformBasedPrice:true` ile esas alınır (effectiveChannelPrice; bilinçli güncelleme).
     it('marketPrice: variant.marketPrice, salePrice\'tan KÜÇÜKSE salePrice\'a EŞİTLENİR (asla salePrice altına düşmez)', () => {
-        const v = makeVariant({ platforms: { [CODE]: { prices: { salePrice: 100, marketPrice: 50 }, upload: {}, attributes: {}, mapping: {} } } });
+        const v = makeVariant({ prices: { isPlatformBasedPrice: true, price: 80, salePrice: 100, marketPrice: 120 }, platforms: { [CODE]: { prices: { salePrice: 100, marketPrice: 50 }, upload: {}, attributes: {}, mapping: {} } } });
         const item = m.toPlatformBatch(staged(v), PLATFORM_PROCESS.TRANSFER, [], [], mapping);
         expect(item.listPrice).toBe(100);
         expect(item.salePrice).toBe(100);

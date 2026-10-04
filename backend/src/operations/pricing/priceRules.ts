@@ -13,6 +13,7 @@ import { BUYBOX_CHANNEL, ELIGIBLE_FILTER } from './BuyboxRefreshJob';
 import { ownChannelPrice } from './buyboxState';
 import { DUAL_ENGINE_WARNING, PLATFORM_LIMITS, PRICING_CONSENT, parseRuleInput, type CompetitionParams } from './priceRule';
 import { evaluate, fuseCheck, VISIBLE_BLOCK_REASONS, type EvalResult, type HistoryEntry, type PauseReason } from './ruleEngine';
+import { effectiveChannelPrice } from '@platform/core/pricing/effectivePrice';
 
 const OBJECT_ID = /^[0-9a-fA-F]{24}$/;
 const OID = z.string().regex(OBJECT_ID);
@@ -43,9 +44,9 @@ const istanbulDay = (d: Date) => new Intl.DateTimeFormat('en-CA', { timeZone: 'E
 const iso = (d: unknown) => (d ? new Date(d as any).toISOString() : null);
 const num = (v: unknown): number | null => (typeof v === 'number' && Number.isFinite(v) ? v : null);
 
-/** Kanal liste (üstü çizili) fiyatı: satış fiyatıyla aynı kaynaktan (kanal bazlı fiyat açıksa kanal, değilse ortak). */
+/** Kanal liste (üstü çizili) fiyatı: satış fiyatıyla aynı kaynaktan (`effectiveChannelPrice`, eslesme-fiyat WP5). */
 export function channelListPrice(v: any, code: string): number | null {
-    return v?.prices?.isPlatformBasedPrice ? num(v?.platforms?.[code]?.prices?.marketPrice) : num(v?.prices?.marketPrice);
+    return effectiveChannelPrice(v, code).marketPrice;
 }
 
 // ---- Tenant anahtarı + sorumluluk metni (K3, K19) ----------------------------------------------------------------------

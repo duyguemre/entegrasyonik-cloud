@@ -40,6 +40,8 @@ export interface IExportStagedProduct {
     // Opsiyonel Alanlar
     title?: string;
     price?: number;
+    /** [eslesme-fiyat WP5] kanala gidecek liste fiyatı (Validator, `effectiveListPrice`). */
+    listPrice?: number;
     stock?: number;
     image?: string;
     category?: Record<string, any>; // Veya daha spesifik bir interface

@@ -69,6 +69,8 @@ describe('Ideasoft ProductTransformer.buildIdeasoftVariant — karakterizasyon',
     it('mutlu yol: platform fiyatı öncelikli, options/brand/category eşlenir', () => {
         const variant: any = {
             title: 'Kırmızı - L', stockcode: 'SKU-V1', barcode: 'BAR-V1', stock: 15,
+            // [eslesme-fiyat WP5] kanal fiyatı yalnız `isPlatformBasedPrice:true` ile esas alınır (effectiveChannelPrice; bilinçli güncelleme).
+            prices: { isPlatformBasedPrice: true, salePrice: 10 },
             platforms: { ideasoft: { prices: { salePrice: 149.999 }, attributes: { '10': 'V100', '11': null } } },
         };
         const result = t.buildIdeasoftVariant(variant, product, '3', '4', [], {});

@@ -1,6 +1,7 @@
 import { IMessage, ICategoryAttribute, ICategoryAttributeValue, IFinancialTransaction, UniversalTransactionType, IExportStagedProduct } from '@interfaces/index';
 import { normalizeAttrValue, indexCategoryAttributes, findValueById, findValueByText, missingRequiredAttributes, labelAttribute } from '@integration/catalog/attributePayload';
 import { integrationCode } from '../constants';
+import { effectiveChannelPrice, effectiveListPrice, round2 } from '@platform/core/pricing/effectivePrice';
 
 /** [eslesme-fiyat WP4, 02-ekler/n11 C-1] N11'de marka ayrı servis değil, kategori özelliği "Marka" (attributeId 1, zorunlu, isCustomValue). */
 export const N11_BRAND_ATTRIBUTE_ID = '1';
@@ -22,6 +23,20 @@ export interface IN11SkuContext {
 }
 
 const filled = (v: any) => v !== undefined && v !== null && String(v).trim() !== '';
+
+/**
+ * [eslesme-fiyat WP5] N11 liste fiyatı: staging `listPrice` (Validator, `effectiveListPrice`) → yoksa payload'dan tek kaynak →
+ * yoksa satış. Liste < satış gönderilmez (N11 reddeder); 2 ondalık. WP4'te bilinçli olarak satışa eşit bırakılmıştı.
+ */
+export function n11ListPrice(sp: any, salePrice: number): number {
+    const sale = Number.isFinite(salePrice) ? round2(salePrice) : 0;
+    const staged = Number(sp?.listPrice);
+    const fromStage = Number.isFinite(staged) && staged > 0 ? staged : null;
+    const code = sp?.integrationCode || 'n11';
+    const fromPayload = sp?.payload ? effectiveListPrice(effectiveChannelPrice(sp.payload, code)) : null;
+    const list = fromStage ?? fromPayload ?? sale;
+    return Math.max(round2(list), sale);
+}
 
 export class ProductMapper {
     public mapToCreateProduct(sp: any) {
@@ -75,7 +90,7 @@ export class ProductMapper {
 
         const stockCode = sp.stockcode || variant.stockcode || sp.productId;
         const productMainId = variant.maincode || stockCode;
-        const salePrice = parseFloat(String(sp.price ?? variant.platforms?.[integrationCode]?.prices?.salePrice ?? variant.prices?.salePrice ?? 0));
+        const salePrice = round2(parseFloat(String(sp.price ?? effectiveChannelPrice(variant, integrationCode).salePrice ?? 0)));
         if (!(salePrice > 0)) errors.push('salePrice (fiyat): sıfırdan büyük olmalı');
         const quantity = parseInt(String(sp.stock ?? variant.stock ?? 0), 10);
         const rawImages: any[] = Array.isArray(variant.images) && variant.images.length ? variant.images : ((sp as any).images || []);
@@ -93,8 +108,8 @@ export class ProductMapper {
             barcode: sp.barcode || variant.barcode,
             quantity: Number.isFinite(quantity) ? quantity : 0,
             salePrice,
-            // Liste fiyatı ayrı kaynaktan beslenmesi WP5 (fiyat) kapsamı; bugün satış fiyatıyla aynı (eski davranış).
-            listPrice: salePrice,
+            // [eslesme-fiyat WP5] liste fiyatı ayrı kaynaktan (staging `listPrice` ← `effectiveListPrice`); ≥ satış; yoksa satış.
+            listPrice: n11ListPrice(sp, salePrice),
             currencyType: 'TL',
             vatRate,
             shipmentTemplate,
@@ -253,7 +268,7 @@ export class ProductMapper {
                     barcode: sp.barcode,
                     quantity: parseInt(sp.stock?.toString() || '0'),
                     salePrice: parseFloat(sp.price?.toString() || '0'),
-                    listPrice: parseFloat(sp.price?.toString() || '0'),
+                    listPrice: n11ListPrice(sp, parseFloat(sp.price?.toString() || '0')),
                     currencyType: 'TL',
                     images: (sp.images || []).map((img: string, idx: number) => ({ url: img, order: idx }))
                 }))
@@ -270,7 +285,7 @@ export class ProductMapper {
                     barcode: sp.barcode,
                     quantity: sp.stock !== undefined ? parseInt(sp.stock.toString()) : undefined,
                     salePrice: sp.price !== undefined ? parseFloat(sp.price.toString()) : undefined,
-                    listPrice: sp.price !== undefined ? parseFloat(sp.price.toString()) : undefined
+                    listPrice: sp.price !== undefined ? n11ListPrice(sp, parseFloat(sp.price.toString())) : undefined
                 }))
             }
         };
