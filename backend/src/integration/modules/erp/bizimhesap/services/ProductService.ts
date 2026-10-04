@@ -110,7 +110,7 @@ export class ProductService {
                 },
                 images: [],
                 choices: [],
-                platforms: { [integrationCode]: { prices: {}, infos: {}, upload: {}, mapping: {}, attributes: {} } },
+                platforms: { [integrationCode]: { infos: {}, upload: {}, mapping: {}, attributes: {} } }, // [WP5] boş `prices: {}` kalktı (Ek B P2-6)
                 onSale: raw.isActive === 1,
                 tempId: String(raw.id || '')
             } as any

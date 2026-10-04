@@ -184,7 +184,8 @@ export default class Importer extends BaseWorker {
                     });
 
                     try {
-                        await this.engineProvider.getVariantModel().insertMany(finalVariants, { ordered: false });
+                        const inserted: any[] = await this.engineProvider.getVariantModel().insertMany(finalVariants, { ordered: false });
+                        await this.recordImportPriceHistory(inserted);
                     } catch (err: any) {
                         const writeErrors = err.writeErrors || [];
                         writeErrors.forEach((e: any) => {
@@ -297,4 +298,25 @@ export default class Importer extends BaseWorker {
     }
 
     public async start() { log.debug('IMPORTER_RUNONCE_MODUNDA_CALISMAYA_HAZIR', 'runOnce modunda çalışmaya hazır.'); }
+
+    /**
+     * [eslesme-fiyat WP5, PLAN §3.4, Ek B P1-4] İçe aktarılan YENİ varyantların kanal fiyatı geçmişe `source:'import'` ile yazılır
+     * (K10 "son 30 gün en düşük" tabanı). Best-effort: hata içe aktarmayı bozmaz. Kısmi insertMany hatasında kayıt atlanır.
+     */
+    private async recordImportPriceHistory(inserted: any[]): Promise<void> {
+        const model = this.engineProvider.getPriceHistoryModel?.();
+        if (!model || !Array.isArray(inserted) || inserted.length === 0) return;
+        const now = new Date();
+        const docs: any[] = [];
+        for (const v of inserted) {
+            for (const [code, info] of Object.entries<any>(v?.platforms || {})) {
+                const sale = Number(info?.observed?.salePrice ?? v?.prices?.salePrice);
+                if (!Number.isFinite(sale) || sale <= 0) continue;
+                const list = Number(info?.observed?.marketPrice ?? v?.prices?.marketPrice);
+                docs.push({ integrationCode: code, variantId: v._id, barcode: v.barcode, at: now, salePrice: sale, listPrice: Number.isFinite(list) ? list : undefined, source: 'import' });
+            }
+        }
+        if (docs.length === 0) return;
+        try { await model.insertMany(docs, { ordered: false }); } catch (err: any) { console.error('[Importer] fiyat geçmişi yazılamadı:', err?.message); }
+    }
 }

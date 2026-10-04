@@ -9,6 +9,8 @@ export interface IIntegrationEngineProvider {
     getImportJobReportModel(): any;
     getImportStagedProductSummaryModel(): any;
     getVariantModel(): any
+    /** [eslesme-fiyat WP5] içe aktarılan fiyatın geçmiş kaydı (source 'import'); yoksa yazılmaz. */
+    getPriceHistoryModel?(): any
     getProductModel(): any
     getAttributeMappingModel(): any
     /** [WP12] Tenant kapsamlı, önbellekli eşleme sağlayıcısı (export özellik çözümleyicisi için). */

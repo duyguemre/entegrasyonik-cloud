@@ -145,7 +145,9 @@ describe('Pazarama ProductMapper.toInternalVariant — karakterizasyon', () => {
     it('platforms[code].prices HAM (komisyonsuz) kalır; üst düzey prices de BRÜT (COM-10: komisyon düşülmez)', () => {
         const p = { barcode: 'B1', stockCode: 'SKU-1', title: 'Ürün', vatRate: 18, salePrice: 100, listPrice: 120, id: 'ID-1', categoryId: 5, brandId: 6 };
         const v = m.toInternalVariant(p, { choices: [], slicer: {} });
-        expect(v.platforms[CODE].prices).toEqual({ salePrice: 100, marketPrice: 120 });
+        // [eslesme-fiyat WP5] bilinçli: içe aktarmada kanal fiyat nesnesi yazılmaz (bayrak false), kanal fiyatı `observed`'da.
+        expect(v.platforms[CODE].prices).toBeUndefined();
+        expect(v.platforms[CODE].observed).toEqual({ salePrice: 100, marketPrice: 120, source: 'import' });
         expect(v.prices.salePrice).toBe(100);
         expect(v.prices.price).toBeCloseTo(84.745, 2); // 100 * 100/118
         expect(v.platforms[CODE].mapping).toEqual({ id: 'ID-1', categoryId: 5, brandId: 6 });

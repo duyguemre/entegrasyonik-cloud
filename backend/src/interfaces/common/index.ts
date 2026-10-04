@@ -244,6 +244,7 @@ export interface IClientDB {
     getChoiceModel(): any
     getProductModel(): any
     getVariantModel(): any
+    getPriceHistoryModel(): any
     getStockMovementModel(): any
     getCommissionOverrideModel(): any
     getImageModel(): any

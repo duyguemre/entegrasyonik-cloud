@@ -157,7 +157,9 @@ export class ProductTransformer {
             images,
             platforms: {
                 [integrationCode]: {
-                    prices: { salePrice, marketPrice },
+                    // [eslesme-fiyat WP5, PLAN §3.4] içe aktarmada kanal fiyat NESNESİ yazılmaz (bayrak false; eski kayıt gönderimde yok sayılıyordu) →
+                    // kanalda görülen fiyat `observed` olarak saklanır (dış değişiklik karşılaştırma tabanı).
+                    observed: { salePrice, marketPrice, source: 'import' },
                     infos: {},
                     upload: {},
                     mapping: { productId: platformProduct.id },

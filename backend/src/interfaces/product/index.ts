@@ -65,10 +65,17 @@ export interface IVariantPrices {
 }
 
 export interface IPlatformInfo {
-    prices: {
+    /** Kanal özel fiyatı; YALNIZ `prices.isPlatformBasedPrice === true` iken esas alınır (eslesme-fiyat WP5, effectiveChannelPrice). */
+    prices?: {
         salePrice: number;
         marketPrice: number;
     };
+    /** [WP5] `channel` fiyat kuralının UYGULANMIŞ sonucu (kanal özel fiyatı yoksa gider). */
+    rulePrice?: { salePrice: number; marketPrice?: number | null; ruleId?: string; ruleVersion?: number; at?: Date; reasons?: string[] };
+    /** [WP5] kanalda gözlenen fiyat (içe aktarma / dış fiyat gözlemi); yerel fiyata YAZILMAZ (K-B). */
+    observed?: { salePrice?: number; marketPrice?: number; at?: Date; source?: string };
+    /** [WP5] otomatik fiyat yayınında son kuyruğa alınan gövde özeti. */
+    priceSync?: { hash: string; salePrice?: number | null; listPrice?: number | null; source?: string; queuedAt?: Date };
     upload: any,
     attributes: Array<{
         [attributeId: string]: {

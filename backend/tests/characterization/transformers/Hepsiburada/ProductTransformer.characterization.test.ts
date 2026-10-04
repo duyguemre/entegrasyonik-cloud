@@ -132,7 +132,9 @@ describe('Hepsiburada ProductMapper.toInternalVariant — karakterizasyon', () =
     it('platforms[code].prices.salePrice HAM (komisyon uygulanmamış) platform fiyatını taşır; üst düzey prices.salePrice de BRÜT (COM-10)', () => {
         const p = { barcode: 'B1', merchantSku: 'SKU-1', productName: 'Ürün', vatRate: 18, price: 100, listPrice: 120, hbSku: 'HB-1', status: 'Active', stockCount: 7 };
         const v = m.toInternalVariant(p, { choices: [], slicer: {} });
-        expect(v.platforms[CODE].prices).toEqual({ salePrice: 100, marketPrice: 120 });
+        // [eslesme-fiyat WP5] bilinçli: içe aktarmada kanal fiyat nesnesi yazılmaz (bayrak false), kanal fiyatı `observed`'da.
+        expect(v.platforms[CODE].prices).toBeUndefined();
+        expect(v.platforms[CODE].observed).toEqual({ salePrice: 100, marketPrice: 120, source: 'import' });
         expect(v.prices.salePrice).toBe(100);
         // price = 100 * (100/(100+18)) = 84.745...
         expect(v.prices.price).toBeCloseTo(84.745, 2);

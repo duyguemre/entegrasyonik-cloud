@@ -21,7 +21,8 @@ describe('COM-10: ic fiyat brut', () => {
             const v = (m as any).toInternalVariant(raw, { choices: [] });
             expect(v.prices.salePrice).toBe(118);
             expect(v.prices.price).toBeCloseTo(100);
-            expect(v.platforms[Object.keys(v.platforms)[0]].prices.salePrice).toBe(118);
+            // [eslesme-fiyat WP5] bilinçli: içe aktarmada kanal fiyat nesnesi yazılmaz (bayrak false), kanal fiyatı `observed`'da.
+            expect(v.platforms[Object.keys(v.platforms)[0]].observed.salePrice).toBe(118);
         });
     }
 });

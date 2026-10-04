@@ -43,7 +43,9 @@ describe('N11 ürün içe aktarımı (WP4 D-N11-2 / C-3)', () => {
     const n11: any = (a.variant as any).platforms.n11;
     expect(n11.mapping).toMatchObject({ id: 9001, categoryId: 1001, brandName: 'Acme' });
     expect(n11.attributes).toEqual({ '20': { attributeName: 'Renk', attributeValue: 'Kırmızı', attributeValueId: '7' } });
-    expect(n11.prices).toEqual({ salePrice: 120, marketPrice: 150 });
+    // [eslesme-fiyat WP5] bilinçli: içe aktarmada kanal fiyat nesnesi yazılmaz (bayrak false), kanal fiyatı `observed`'da.
+    expect(n11.prices).toBeUndefined();
+    expect(n11.observed).toEqual({ salePrice: 120, marketPrice: 150, source: 'import' });
 
     const b = await svc.convertToInternalModel({ rawData: rec });
     expect(b.product.category).toBe('LC9');

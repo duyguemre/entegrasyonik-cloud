@@ -51,6 +51,10 @@ export class IntegrationEngineProvider implements IIntegrationEngineProvider {
         return this.clientDB.getVariantModel();
     }
 
+    getPriceHistoryModel() {
+        return this.clientDB.getPriceHistoryModel();
+    }
+
     getProductModel() {
         return this.clientDB.getProductModel();
     }

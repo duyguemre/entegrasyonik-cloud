@@ -117,7 +117,9 @@ export class ProductMapper {
             choices: choicesResult.choices,
             platforms: {
                 [integrationCode]: {
-                    prices: { salePrice: p.salePrice, marketPrice: p.listPrice },
+                    // [eslesme-fiyat WP5, PLAN §3.4] içe aktarmada kanal fiyat NESNESİ yazılmaz (bayrak false; eski kayıt gönderimde yok sayılıyordu) →
+                    // kanalda görülen fiyat `observed` olarak saklanır (dış değişiklik karşılaştırma tabanı).
+                    observed: { salePrice: p.salePrice, marketPrice: p.listPrice, source: 'import' },
                     upload: {
                         TRANSFER: {
                             status: 'COMPLETED',
