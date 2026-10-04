@@ -49,7 +49,7 @@ beforeEach(() => {
     find: jest.fn(() => chain([])),
     aggregate: jest.fn(async () => []),
   };
-  cargoInvoiceModel = { find: jest.fn(() => chain([])) };
+  cargoInvoiceModel = { find: jest.fn(() => chain([])), aggregate: jest.fn(async () => []) };
   jest.spyOn(console, 'log').mockImplementation(() => undefined);
 });
 
@@ -97,6 +97,11 @@ describe('FinancialService.getTransactionData', () => {
     expect(findChain.sort).toHaveBeenCalledWith({ credit: 1, debt: -1 });
   });
 
+  it('[BİLİNÇLİ DEĞİŞİKLİK — WP6-kalan F-P1-8] sortBy anahtarı izin listesinde değilse 400 (eskiden her alan sıralanabiliyordu)', async () => {
+    await expect(makeService({ sortBy: [{ key: 'meta.x', order: 'asc' }] }).getTransactionData()).rejects.toMatchObject({ statusCode: 400 });
+    expect(financialModel.find).not.toHaveBeenCalled();
+  });
+
   it('[MEVCUT DAVRANIŞ] page/limit clampPage/clampLimit ile normalize edilir (limit varsayılanı 20, sınır 200)', async () => {
     await makeService({ page: 0, limit: 100000 }).getTransactionData();
     const findChain = financialModel.find.mock.results[0].value;
@@ -115,10 +120,13 @@ describe('FinancialService.getTransactionData', () => {
     });
   });
 
-  it('[MEVCUT DAVRANIŞ] aggregate sonucu varsa summary DOĞRUDAN result[0] olarak döner', async () => {
-    financialModel.aggregate.mockResolvedValue([{ _id: null, totalCredit: 100, totalDebt: 20, totalCargo: 5, netAmount: 75, transactionCount: 3 }]);
+  it('[BİLİNÇLİ DEĞİŞİKLİK — WP6-kalan F-P1-8] summary = result[0] + totalCargo CargoInvoices.amount toplamından (eskiden şemada olmayan $cargoAmount → hep 0)', async () => {
+    financialModel.aggregate.mockResolvedValue([{ _id: null, totalCredit: 100, totalDebt: 20, netAmount: 75, transactionCount: 3 }]);
+    cargoInvoiceModel.aggregate.mockResolvedValue([{ _id: null, total: 5 }]);
     const res = await makeService({}).getTransactionData();
     expect(res.summary).toEqual({ _id: null, totalCredit: 100, totalDebt: 20, totalCargo: 5, netAmount: 75, transactionCount: 3 });
+    const pipe = financialModel.aggregate.mock.calls[0][0] as any[];
+    expect(JSON.stringify(pipe)).not.toContain('cargoAmount');
   });
 
   it('[MEVCUT DAVRANIŞ] filtre ve sonuç sayısı console.log ile loglanır (mevcut debug logu; kod DEĞİŞTİRİLMEDİ)', async () => {
@@ -141,8 +149,9 @@ describe('FinancialService.getTransactionData', () => {
   it('[TENANT İZOLASYONU, PLATFORM_BASELINE B2] iki farklı tenant/clientDB ile çağrıldığında her biri YALNIZ kendi clientDB\'sinin modelini çağırır (çapraz-tenant sızıntısı yok)', async () => {
     const modelA = { countDocuments: jest.fn(async () => 0), find: jest.fn(() => chain([])), aggregate: jest.fn(async () => []) };
     const modelB = { countDocuments: jest.fn(async () => 0), find: jest.fn(() => chain([])), aggregate: jest.fn(async () => []) };
-    const clientDbA = { getFinancialTransactionModel: jest.fn(() => modelA), getCargoInvoiceModel: jest.fn() };
-    const clientDbB = { getFinancialTransactionModel: jest.fn(() => modelB), getCargoInvoiceModel: jest.fn() };
+    const cargo = { aggregate: jest.fn(async () => []) };
+    const clientDbA = { getFinancialTransactionModel: jest.fn(() => modelA), getCargoInvoiceModel: jest.fn(() => cargo) };
+    const clientDbB = { getFinancialTransactionModel: jest.fn(() => modelB), getCargoInvoiceModel: jest.fn(() => cargo) };
 
     await makeService({}, 1, clientDbA).getTransactionData();
     await makeService({}, 2, clientDbB).getTransactionData();
@@ -205,9 +214,9 @@ describe('FinancialService.getFinancialSummary (deprecated)', () => {
     expect((pipe[0] as any).$match).toEqual({ integrationCode: { $in: ['trendyol'] }, externalId: { $regex: 'TX\\(1\\)', $options: 'i' } });
   });
 
-  it('[MEVCUT DAVRANIŞ] sonuç varsa result[0] DOĞRUDAN döner', async () => {
+  it('[BİLİNÇLİ DEĞİŞİKLİK — WP6-kalan F-P1-8] sonuç varsa result[0] sıfır özetle tamamlanır + totalCargo CargoInvoices\'tan', async () => {
     financialModel.aggregate.mockResolvedValue([{ _id: null, totalCredit: 1 }]);
-    await expect(makeService({}).getFinancialSummary()).resolves.toEqual({ _id: null, totalCredit: 1 });
+    await expect(makeService({}).getFinancialSummary()).resolves.toEqual({ _id: null, totalCredit: 1, totalDebt: 0, totalCargo: 0, netAmount: 0, transactionCount: 0 });
   });
 
   it('[MEVCUT DAVRANIŞ] hata olduğu gibi yeniden fırlatılır', async () => {

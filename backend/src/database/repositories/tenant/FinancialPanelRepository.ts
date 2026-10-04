@@ -1,6 +1,9 @@
 import { IClientDB } from '@interfaces/index';
 
-/** Toplam kredi/borç/kargo/net + işlem sayısı gruplaması (tek grup). */
+/**
+ * Toplam kredi/borç/net + işlem sayısı gruplaması (tek grup). Kargo toplamı BURADA DEĞİL: FinancialTransactions'ta
+ * `cargoAmount` alanı yok (eskiden `$sum:"$cargoAmount"` → hep 0; F-P1-8) — `cargoTotal` CargoInvoices.amount'tan toplar.
+ */
 const totalsPipeline = (match: Record<string, any>) => [
     { $match: match },
     {
@@ -8,7 +11,6 @@ const totalsPipeline = (match: Record<string, any>) => [
             _id: null,
             totalCredit: { $sum: "$credit" },
             totalDebt: { $sum: "$debt" },
-            totalCargo: { $sum: "$cargoAmount" },
             netAmount: { $sum: "$netAmount" },
             transactionCount: { $sum: 1 }
         }
@@ -35,6 +37,15 @@ export class FinancialPanelRepository {
     /** Filtrelenmiş kayıtların toplamı (ham aggregate sonucu). */
     totals(match: Record<string, any>): Promise<any[]> {
         return this.db.getFinancialTransactionModel().aggregate(totalsPipeline(match));
+    }
+
+    /** Kargo faturası tutarlarının toplamı (CargoInvoices.amount; F-P1-8). Kayıt yoksa 0. */
+    async cargoTotal(match: Record<string, any>): Promise<number> {
+        const rows: any[] = await this.db.getCargoInvoiceModel().aggregate([
+            { $match: match },
+            { $group: { _id: null, total: { $sum: "$amount" } } }
+        ]);
+        return Number(rows[0]?.total ?? 0);
     }
 
     /** Kargo faturaları: en yeni önce, `maxRows` ile sınırlı (lean). */

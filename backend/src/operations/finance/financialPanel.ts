@@ -7,6 +7,48 @@ export const CARGO_INVOICES_MAX_ROWS = 5000
 
 const EMPTY_TOTALS = { totalCredit: 0, totalDebt: 0, totalCargo: 0, netAmount: 0, transactionCount: 0 }
 
+/** Ekstre sıralama izin listesi (F-P1-8; diğer modüllerdeki allowlist deseni). FE: externalId/netAmount/transactionDate/paymentOrderId. */
+export const FINANCE_SORT_FIELDS: readonly string[] = [
+    'transactionDate', 'payoutDate', 'netAmount', 'credit', 'debt', 'externalId', 'paymentOrderId',
+    'orderNumber', 'integrationCode', 'transactionType', 'createdAt'
+]
+
+function sortQueryOf(sortBy: any): Record<string, 1 | -1> {
+    const sortQuery: Record<string, 1 | -1> = {}
+    if (Array.isArray(sortBy) && sortBy.length > 0) {
+        for (const s of sortBy) {
+            const key = s?.key
+            if (typeof key !== 'string' || !FINANCE_SORT_FIELDS.includes(key)) {
+                throw new ApplicationError('sortBy.key geçersiz: ' + FINANCE_SORT_FIELDS.join(', ') + ' değerlerinden biri olmalıdır.', 400)
+            }
+            sortQuery[key] = s.order === 'asc' ? 1 : -1
+        }
+    } else {
+        sortQuery.transactionDate = -1
+    }
+    return sortQuery
+}
+
+/**
+ * Kargo toplamı için CargoInvoices filtresi: ekstre filtresinin kanal + tarih kısmı (işlem tipi/işlem no kargo faturasında yok).
+ * İşlem tipi filtresi kargo kesintisini (DEDUCTION) içermiyorsa kargo toplamı 0'dır (kart, seçili türlerle tutarlı kalır).
+ */
+function cargoFilterOf(txFilter: Record<string, any>): Record<string, any> | null {
+    const types: string[] | undefined = txFilter.transactionType?.$in
+    if (types && !types.includes('DEDUCTION')) return null
+    if (txFilter.externalId) return null
+    const f: Record<string, any> = {}
+    if (txFilter.integrationCode) f.integrationCode = txFilter.integrationCode
+    if (txFilter.transactionDate) f.transactionDate = txFilter.transactionDate
+    return f
+}
+
+async function withCargo(repo: FinancialPanelRepository, txFilter: Record<string, any>, totals: any | undefined) {
+    const cargoFilter = cargoFilterOf(txFilter)
+    const totalCargo = cargoFilter ? await repo.cargoTotal(cargoFilter) : 0
+    return { ...EMPTY_TOTALS, ...(totals ?? {}), totalCargo }
+}
+
 /** Ekstre/özet ortak filtresi: platform, işlem tipi, işlem no araması, tarih aralığı. */
 function transactionFilter(r: any): Record<string, any> {
     const { startDate, endDate, integrationCodes, transactionTypes, externalIdSearch } = r;
@@ -42,15 +84,8 @@ export async function queryTransactions(repo: FinancialPanelRepository, request:
     const { page: rawPage, limit: rawLimit, sortBy } = request;
     const filterQuery = transactionFilter(request);
 
-    // Sıralama
-    const sortQuery: any = {};
-    if (sortBy && sortBy.length > 0) {
-        sortBy.forEach((s: any) => {
-            sortQuery[s.key] = s.order === 'asc' ? 1 : -1;
-        });
-    } else {
-        sortQuery.transactionDate = -1;
-    }
+    // Sıralama (izin listesi; bilinmeyen anahtar 400)
+    const sortQuery = sortQueryOf(sortBy);
 
     const page = clampPage(rawPage); // [GV-01/MM-08]
     const limit = clampLimit(rawLimit, 20);
@@ -62,7 +97,7 @@ export async function queryTransactions(repo: FinancialPanelRepository, request:
         filterQuery,
         transactions,
         totalNumberOfRecords,
-        summary: summary[0] ?? { ...EMPTY_TOTALS }
+        summary: await withCargo(repo, filterQuery, summary[0])
     };
 }
 
@@ -92,8 +127,8 @@ export async function financialSummary(repo: FinancialPanelRepository, request: 
     // Tek bir grup olarak tüm filtrelenmiş kayıtların toplamı
     const result = await repo.totals(matchQuery);
 
-    // Sonuç yoksa sıfır değerleri döndür
-    return result[0] ?? { ...EMPTY_TOTALS };
+    // Sonuç yoksa sıfır değerleri döndür; kargo CargoInvoices'tan
+    return await withCargo(repo, matchQuery, result[0]);
 }
 
 /** Ödeme emri (vade) bazlı hareketler. */
