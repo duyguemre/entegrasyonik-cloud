@@ -1,0 +1,12 @@
+#!/bin/sh
+# K85: gonderilen commit'lerin yazar/isleyen/mesajinda yasakli adres gecmez.
+. "$(dirname "$0")/banned-email.sh"
+z=0000000000000000000000000000000000000000
+while read -r lref lsha rref rsha; do
+    [ "$lsha" = "$z" ] && continue
+    if [ "$rsha" = "$z" ]; then range="$lsha --not --remotes"; else range="$rsha..$lsha"; fi
+    if git log --format='%ae%n%ce%n%B' $range | has_banned; then
+        echo "HATA (K85): $rref icin gonderilen commit'lerde yasakli e-posta adresi var; push durduruldu." >&2
+        exit 1
+    fi
+done

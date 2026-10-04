@@ -1,0 +1,7 @@
+#!/bin/sh
+# K85: commit mesajinda (Co-Authored-By dahil) yasakli adres gecmez.
+. "$(dirname "$0")/banned-email.sh"
+if has_banned < "$1"; then
+    echo "HATA (K85): commit mesajinda yasakli e-posta adresi var." >&2
+    exit 1
+fi

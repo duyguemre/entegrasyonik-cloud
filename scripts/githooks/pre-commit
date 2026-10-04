@@ -1,0 +1,11 @@
+#!/bin/sh
+# K85: commit yazar/isleyen kimligi yasakli adres olamaz.
+. "$(dirname "$0")/banned-email.sh"
+if { git var GIT_AUTHOR_IDENT; git var GIT_COMMITTER_IDENT; git config user.email; } 2>/dev/null | has_banned; then
+    echo "HATA (K85): commit kimligi yasakli e-posta adresini kullaniyor. 'git config user.email' degistirin." >&2
+    exit 1
+fi
+if git diff --cached -U0 --no-color | grep '^+' | has_banned; then
+    echo "HATA (K85): eklenen degisikliklerde yasakli e-posta adresi var." >&2
+    exit 1
+fi

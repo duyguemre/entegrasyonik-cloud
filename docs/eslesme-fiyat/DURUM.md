@@ -2,6 +2,8 @@
 
 Son güncelleme: 2026-10-04 (WP0–WP6 + WP7a bitti, WP3 K-1 finans eklendi; **WP7b bitti (senkron durumu, syncNow, sync.* kataloğu, HB/IS webhook alıcıları); sıradaki WP7c (tercihen yerel)**; **WP7 üç pencereye bölündü: WP7a → WP7b → WP7c**, kalan bulut kredisi ~65 USD; yetmezse Salı'dan itibaren yerelde) · Dal: `feature/eslesme-fiyat-yeniden-yapilandirma` · Son commit: bkz. `git log -1`.
 
+> **K85 (ACİL, 2026-10-04):** ürün sahibinin işyeri e-posta adresi YASAK — dosyada, commit kimliğinde ve commit mesajında geçmez (adres hiçbir yere düz metin yazılmaz). Her oturum: `git config core.hooksPath scripts/githooks` ve commit öncesi `git config user.email` kontrolü. Koruma: `backend/tests/static/bannedEmail.static.test.ts`. Ayrıntı: `USER_DECISIONS_EKLER.md` K85.
+
 ## Kısa başlangıç (yeni pencerede tek satır yeterli)
 Kullanıcı yeni oturumda yalnız şunu yazar: **`docs/eslesme-fiyat/DURUM.md'den devam et`**. Oturum önce `git fetch origin feature/eslesme-fiyat-yeniden-yapilandirma` ile dalı GÜNCELLER (2026-10-04: bir pencere eski kopyadan başladı, push reddedildi), sonra bu dosyayı okur, "WP durumu" tablosunda durumu "sıradaki" olan ilk satırı (şu an **WP7c**) bulur ve aşağıdaki "Yeni oturum için promptlar" bölümündeki o pencerenin metnini kendi talimatı sayar. Pencere bitince tablo satırı TAMAM, bir sonraki "sıradaki" yapılır.
 
