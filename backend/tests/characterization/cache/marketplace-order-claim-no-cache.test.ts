@@ -114,8 +114,10 @@ describe.each(CASES)('$name', (c) => {
 
     it('aynı tenant, farklı sorgu (tarih aralığı): her çağrı güncel sorguyla bağlayıcıya gider (eski sonuç dönmez)', async () => {
         const svc = c.make(tenantA);
-        await svc[c.method]({ lastSyncTimestamp: '2025-01-01T00:00:00.000Z', beginDate: '2025-01-01' });
-        await svc[c.method]({ lastSyncTimestamp: '2025-06-01T00:00:00.000Z', beginDate: '2025-06-01' });
+        // [WP6-kalan] Pazarama sipariş aralığı 30 günlük dilimlere bölünür (WP4 D-PZ-8): tek pencereye sığan YAKIN tarihler.
+        const d1 = new Date(Date.now() - 5 * 864e5), d2 = new Date(Date.now() - 2 * 864e5);
+        await svc[c.method]({ lastSyncTimestamp: d1.toISOString(), beginDate: d1.toISOString().slice(0, 10) });
+        await svc[c.method]({ lastSyncTimestamp: d2.toISOString(), beginDate: d2.toISOString().slice(0, 10) });
         expect(mockPlatformCall).toHaveBeenCalledTimes(2);
     });
 
@@ -169,9 +171,11 @@ describe('[MEVCUT DAVRANIŞ — korunuyor] Hepsiburada/Pazarama fetchOrders sorg
 
     it('Pazarama: lastSyncTimestamp -> startDate ISO, endDate = şimdi; verilmezse son 24 saat', async () => {
         const svc = new PzOrderService(tenantA, service);
-        await svc.fetchOrders({ lastSyncTimestamp: '2025-05-01T00:00:00.000Z' });
+        // [WP6-kalan] 30 günlük dilim (WP4 D-PZ-8) → tek pencereye sığan yakın tarih.
+        const since = new Date(Date.now() - 3 * 864e5).toISOString();
+        await svc.fetchOrders({ lastSyncTimestamp: since });
         const q1 = mockPlatformCall.mock.calls[0][3];
-        expect(q1.startDate).toBe('2025-05-01T00:00:00.000Z');
+        expect(q1.startDate).toBe(since);
         expect(q1.endDate).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
 
         await svc.fetchOrders();
@@ -182,9 +186,11 @@ describe('[MEVCUT DAVRANIŞ — korunuyor] Hepsiburada/Pazarama fetchOrders sorg
 
     it('farklı lastSyncTimestamp artık YOK SAYILMAZ: her çağrıda dönüşüm çalışır ve bağlayıcıya ulaşır (eski cache-hit davranışı kalktı)', async () => {
         const svc = new PzOrderService(tenantA, service);
-        await svc.fetchOrders({ lastSyncTimestamp: '2025-05-01T00:00:00.000Z' });
-        await svc.fetchOrders({ lastSyncTimestamp: '2020-01-01T00:00:00.000Z' });
+        // [WP6-kalan] 30 günlük dilim (WP4 D-PZ-8) → tek pencereye sığan yakın tarihler.
+        const a = new Date(Date.now() - 3 * 864e5).toISOString(), b = new Date(Date.now() - 20 * 864e5).toISOString();
+        await svc.fetchOrders({ lastSyncTimestamp: a });
+        await svc.fetchOrders({ lastSyncTimestamp: b });
         expect(mockPlatformCall).toHaveBeenCalledTimes(2);
-        expect(mockPlatformCall.mock.calls[1][3].startDate).toBe('2020-01-01T00:00:00.000Z');
+        expect(mockPlatformCall.mock.calls[1][3].startDate).toBe(b);
     });
 });

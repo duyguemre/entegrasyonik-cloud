@@ -3,12 +3,6 @@ import Service from '../services/Service';
 export class MessageConnector {
     constructor(private service: Service, private params: any) { }
 
-    public async fetchMessages(query?: any): Promise<any> {
-        const baseUrl = this.params.integrationSettings?.urls?.qnaQuestionsUrl || 'QuestionAnswer/getApprovalAnswersByMerchant';
-        const response = await this.service.get(baseUrl, query || {});
-        return response?.data;
-    }
-
     public async fetchMessageDetail(questionId: string): Promise<any> {
         const urlTemplate = this.params.integrationSettings?.urls?.qnaQuestionIdUrl || 'QuestionAnswer/getApprovalAnswerById?questionId=<QUESTIONID>';
         const url = urlTemplate.replace('<QUESTIONID>', questionId);

@@ -97,49 +97,7 @@ export class ClaimConnector {
         }
     }
 
-    public async sendToReview(externalClaimId: string, reviewType: number, description: string, documents?: any[]): Promise<IPlatformResponse> {
-        const baseUrl = this.params.integrationSettings?.urls?.orderUpdateRefundUrl || 'order/updateRefund';
-        try {
-            const body: any = {
-                refundId: externalClaimId,
-                status: 9, // İncelemeye Gönderme (Review)
-                refundReviewType: reviewType,
-                description: description
-            };
-
-            if (documents) {
-                body.documentObjects = documents.map(doc => ({
-                    name: doc.name,
-                    bytes: doc.bytes
-                }));
-            }
-
-            const response = await this.service.post(baseUrl, body);
-            return {
-                success: response.data?.success === true || response.data?.success === undefined,
-                message: response.data?.message || "İncelemeye gönderildi.",
-                platformId: externalClaimId,
-                rawResponse: response.data
-            };
-        } catch (error: any) {
-            throw fromHttpError(error, {
-                integrationCode, operation: 'sendToReview', clientId: this.params.clientId, idempotent: false,
-            });
-        }
-    }
-
-    public async sendRevision(externalClaimId: string, description: string, documents?: any[]): Promise<IPlatformResponse> {
-        const baseUrl = this.params.integrationSettings?.urls?.orderRefundRevisionUrl || 'order/api/refund/revision';
-        const body: any = {
-            refundId: externalClaimId,
-            description,
-            documentObjects: documents || []
-        };
-        const response = await this.service.post(baseUrl, body);
-        return {
-            success: response.data?.success || true,
-            platformId: externalClaimId,
-            rawResponse: response.data
-        };
-    }
+    // [eslesme-fiyat WP6-kalan, D-PZ-10] `sendToReview` (updateRefund status:9) ve `sendRevision` (order/api/refund/revision)
+    // KALDIRILDI: IPlatform'a bağlı değildi (ulaşılamaz), alanları hiçbir dış kaynakta yok (02-ekler/pazarama C-16:
+    // "canlıda denenmemeli"). Kanıtlanırsa IPlatform metoduyla yeniden eklenir.
 }

@@ -46,13 +46,13 @@ const PazaramaDescriptor: IntegrationDescriptor = {
         returns: {
             level: 'supported',
             methods: ['retrieveClaims', 'approveClaim', 'rejectClaim'],
-            note: 'İade talepleri sayfa sayfa çekilir (en çok 50 sayfa/5000 kayıt), onaylanır, reddedilir, incelemeye gönderilir veya revize edilir.',
+            note: 'İade talepleri sayfa sayfa çekilir (en çok 50 sayfa/5000 kayıt), onaylanır ve reddedilir (incelemeye gönderme/revizyon uçları kanıtsız olduğundan desteklenmez).',
             evidence: ['marketplace/pazarama/index.ts approveClaim'],
         },
         questions: {
             level: 'supported',
             methods: ['retrieveMessages', 'answerMessage'],
-            note: 'Müşteri mesajları listelenir ve cevaplanır.',
+            note: 'Müşteri soruları arama ucundan (getApprovalAnswersByMerchantSearch) listelenir ve cevaplanır.',
             evidence: ['marketplace/pazarama/index.ts answerMessage'],
         },
         finance: {

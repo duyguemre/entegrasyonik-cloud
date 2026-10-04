@@ -64,16 +64,4 @@ export class ClaimService {
         ];
         return this.mapper.toInternalClaimRejectionReasons(pazaramaReasons);
     }
-
-    /**
-     * Pazarama Özel: İncelemeye Gönder
-     */
-    public async sendToReview(externalClaimId: string, reviewType: number, description: string, documents?: any[]): Promise<IPlatformResponse> {
-        try {
-            return await this.connector.sendToReview(externalClaimId, reviewType, description, documents);
-        } catch (error: any) {
-            if (IntegrationError.isIntegrationError(error)) throw error;
-            throw new Error(`[${this.clientId}][PazaramaClaimService:sendToReview] ${error.message}`);
-        }
-    }
 }
