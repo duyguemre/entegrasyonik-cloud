@@ -59,6 +59,12 @@ export function checkChannelReadiness({ variant, product, integrationCode, mode 
     if (!product?.category) issues.push(makeIssue('PRODUCT_CATEGORY_MISSING', { ...ctx, field: 'category' }));
     if (!product?.brand) issues.push(makeIssue('PRODUCT_BRAND_MISSING', { ...ctx, field: 'brand' }));
 
+    // [eslesme-fiyat WP5, K-B] kanalda gözlenen fiyat bizimkinden farklı (pazaryerinde elle değişmiş olabilir): uyarı + kullanıcı seçimi.
+    const observed = variant?.platforms?.[integrationCode]?.observed;
+    if (observed?.drift === true) {
+        issues.push(makeIssue('PRICE_EXTERNAL_DRIFT', { ...ctx, field: 'prices.salePrice', params: { observed: String(observed.salePrice ?? '-'), expected: String(observed.expectedSalePrice ?? '-') } }));
+    }
+
     if (rules.priceRequired && mode !== PLATFORM_PROCESS.UPDATE_STOCK) {
         const vPrice = effectiveChannelPrice(variant, integrationCode);
         const sale = Number(vPrice.salePrice ?? NaN);

@@ -113,6 +113,7 @@ const PRICING_RPC_INPUT: Partial<Record<RpcRef, z.ZodType<any>>> = {
     'PricingService/setPricingSettings': strictBody({ enabled: z.boolean(), consentVersion: z.string().max(40).optional(), dualEngineAcknowledged: z.boolean().optional(), channelAutoApply: z.boolean().optional(), channelAutoApplyAcknowledged: z.boolean().optional() }),
     'PricingService/previewChannelRule': strictBody({ id: objectIdStr, barcodes: z.array(barcodeStr).max(100).optional(), limit: z.number().int().min(1).max(200).optional() }),
     'PricingService/applyChannelRule': strictBody({ id: objectIdStr, variantIds: z.array(objectIdStr).min(1).max(500).optional() }),
+    'PricingService/resolvePriceDrift': strictBody({ variantId: objectIdStr, integrationCode, action: z.enum(['pushLocal', 'acceptChannel']) }),
     'PricingService/listSuggestions': strictBody({
         status: z.enum(['open', 'blocked', 'applied', 'dismissed', 'expired']).optional(), ruleId: objectIdStr.optional(),
         barcodes: z.array(barcodeStr).max(100).optional(), buyboxLostOnly: z.boolean().optional(), limit: z.number().int().min(1).max(200).optional(), cursor: objectIdStr.optional(),

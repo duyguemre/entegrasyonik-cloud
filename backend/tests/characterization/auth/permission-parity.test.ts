@@ -19,9 +19,9 @@ describe('WP-A1 parite: 174 operasyon, bugünkü kademe kararı == izin modeli k
   const pairs: Array<[string, string, string]> = [];
   for (const [svc, ops] of Object.entries(OPERATION_POLICY_SNAPSHOT)) for (const [op, tier] of Object.entries(ops)) pairs.push([svc, op, tier as string]);
 
-  it('317 operasyon = 213 tenant + 104 platformAdmin (hepsi aynı karar testinden geçer)', () => {
-    expect(pairs.filter(([, , t]) => t !== 'platformAdmin')).toHaveLength(213); // eslesme-fiyat WP5: +2 PricingService previewChannelRule (member) / applyChannelRule (admin); WP2: +1 copyMappingsFromCategory (member); WP1: +2 IntegrationService preflightExport/explainChannelProduct (member); MOB-04: +3 web push (member); PRC-R0/R1: +5 PricingService (member); PRC-R2: +8 PricingService (3 member + 5 admin); COM-08: +1 FinancialService/getCommissionDrift (member)
-    expect(pairs).toHaveLength(317); // eslesme-fiyat WP5: +2 kanal fiyat kuralı; WP1: +2, WP2: +1; COM-08: +1; MOB-06: +3 backoffice web push (platformAdmin); MOB-08: +BackofficeTenantService/getUsage; PRC-CFG: +3 BackofficeBillingService rekabet ayarı (platformAdmin); PRC-R2: +1 fiyat kuralları özeti (platformAdmin)
+  it('318 operasyon = 214 tenant + 104 platformAdmin (hepsi aynı karar testinden geçer)', () => {
+    expect(pairs.filter(([, , t]) => t !== 'platformAdmin')).toHaveLength(214); // eslesme-fiyat WP5: +3 PricingService previewChannelRule (member) / applyChannelRule (admin) / resolvePriceDrift (member); WP2: +1 copyMappingsFromCategory (member); WP1: +2 IntegrationService preflightExport/explainChannelProduct (member); MOB-04: +3 web push (member); PRC-R0/R1: +5 PricingService (member); PRC-R2: +8 PricingService (3 member + 5 admin); COM-08: +1 FinancialService/getCommissionDrift (member)
+    expect(pairs).toHaveLength(318); // eslesme-fiyat WP5: +3 kanal fiyat kuralı; WP1: +2, WP2: +1; COM-08: +1; MOB-06: +3 backoffice web push (platformAdmin); MOB-08: +BackofficeTenantService/getUsage; PRC-CFG: +3 BackofficeBillingService rekabet ayarı (platformAdmin); PRC-R2: +1 fiyat kuralları özeti (platformAdmin)
   });
 
   it('her operasyon ve her aktör için karar birebir aynı (fark listelenir)', () => {

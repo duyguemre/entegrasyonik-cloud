@@ -4,6 +4,7 @@ import { stockDirtyFields } from './markStockDirty';
 import { RedisService } from "@services/redis/RedisService";
 import IntegrationFactory from "@integration/modules/IntegrationFactory";
 import { allowNewWork, recordIntakeSkip } from "@integration/config/intakeGate";
+import { driftProjection, recordObservation } from '@operations/pricing/externalDrift';
 
 /**
  * ADR-0004 — Zero-oversell (Karar 8b, Aşama C): DIŞ mutabakat, günlük.
@@ -50,7 +51,7 @@ export class ExternalReconciliationJob {
     }
 
     private async runForClient(clientOrder: number): Promise<{ scannedChannels: number; markedDirty: number }> {
-        let scannedChannels = 0, markedDirty = 0;
+        let scannedChannels = 0, markedDirty = 0, priceDrift = 0;
 
         const clientDB = await DatabaseManagerInstance.getClientDB(clientOrder);
         if (!clientDB) return { scannedChannels, markedDirty };
@@ -82,9 +83,15 @@ export class ExternalReconciliationJob {
                             if (!matchValue) continue;
 
                             const variant: any = await variantModel.findOne({ [matchKey]: matchValue })
-                                .select(`_id platforms.${code}.stockSync`)
+                                .select(driftProjection(code)) // [eslesme-fiyat WP5] stok + fiyat gözlemi için (stockSync platforms.<kod> içinde)
                                 .lean();
                             if (!variant) continue; // pazaryerinde var, bizde yok -- bu job'un kapsamı DEĞİL.
+
+                            // [eslesme-fiyat WP5, K-B] dış fiyat gözlemi: aynı akıştan (ek çağrı yok); yerel fiyata YAZILMAZ, yalnız observed + uyarı.
+                            if (variant.platforms?.[code]?.upload?.TRANSFER?.status === 'COMPLETED') {
+                                try { if (await recordObservation(clientDB, variant, code, summary as any, new Date())) priceDrift++; }
+                                catch (obsErr) { console.error(`[ExternalReconciliationJob] Fiyat gözlemi hatası (channel=${code}):`, obsErr); }
+                            }
 
                             const lastPublishedQty = variant.platforms?.[code]?.stockSync?.lastPublishedQty;
                             const reportedQty = Number((summary as any).quantity);
@@ -104,6 +111,7 @@ export class ExternalReconciliationJob {
             }
         }
 
+        if (priceDrift > 0) console.warn(`[ExternalReconciliationJob] tenant ${clientOrder}: ${priceDrift} varyantta kanal fiyatı Entegrasyonik'tekinden farklı (dış değişiklik).`);
         return { scannedChannels, markedDirty };
     }
 }

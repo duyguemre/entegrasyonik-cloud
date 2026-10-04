@@ -184,6 +184,10 @@ export function useChannelRulesApi() {
     async apply(id: string, variantIds?: string[]): Promise<ApiResult<ChannelApplyOutcome>> {
       return toResult<ChannelApplyOutcome>(await restApi.post('PricingService/applyChannelRule', { id, ...(variantIds?.length ? { variantIds } : {}) }), (r) => isObj(r) && typeof r.applied === 'number')
     },
+    /** K-B dış fiyat farkı: yerel fiyatı kanala yeniden gönder (`pushLocal`) ya da kanaldaki fiyatı bu kanalın özel fiyatı yap (`acceptChannel`). */
+    async resolveDrift(variantId: string, integrationCode: string, action: 'pushLocal' | 'acceptChannel'): Promise<ApiResult<{ action: string; salePrice: number | null }>> {
+      return toResult(await restApi.post('PricingService/resolvePriceDrift', { variantId, integrationCode, action }), (r) => isObj(r) && typeof r.action === 'string')
+    },
     async setAutoApply(enabled: boolean, on: boolean, acknowledged: boolean): Promise<ApiResult<unknown>> {
       return toResult(await restApi.post('PricingService/setPricingSettings', { enabled, channelAutoApply: on, ...(on ? { channelAutoApplyAcknowledged: acknowledged } : {}) }), (r) => isObj(r) && Array.isArray(r.rules))
     },

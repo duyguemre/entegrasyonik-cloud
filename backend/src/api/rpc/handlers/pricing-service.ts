@@ -8,6 +8,7 @@ import {
 } from '@operations/pricing/priceRules'
 import { createPricingEnv, type PricePublisher } from '@operations/pricing/createPricingEnv'
 import { applyChannelRule, previewChannelRule } from '@operations/pricing/channelRules'
+import { resolvePriceDrift } from '@operations/pricing/externalDrift'
 import { ExportBatchService } from '@integration/engine/catalog/export/ExportBatchService'
 
 /** RunOperation'ın eklediği sunucu alanları (kimlik/bağlam) — iş gövdesi `.strict()` şemalarına girmeden ayrılır. */
@@ -135,6 +136,12 @@ export default class PricingService extends BaseApi implements IService {
     async applyChannelRule(): Promise<any> {
         const tid = this.tid()
         return applyChannelRule(this.clientDB, tid, this.actor(), this.body(), this.env())
+    }
+
+    /** K-B dış fiyat farkı çözümü (kullanıcı seçer): yereli kanala yeniden yaz | kanal fiyatını bu kanalın özel fiyatı olarak al. */
+    async resolvePriceDrift(): Promise<any> {
+        this.tid()
+        return resolvePriceDrift(this.clientDB, this.actor(), this.body())
     }
 
     async dismissSuggestions(): Promise<any> {

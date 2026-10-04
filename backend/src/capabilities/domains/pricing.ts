@@ -287,4 +287,13 @@ export const PRICING_R2_CAPABILITIES = [
         mcp: deferred('later', 'K4: kural değerlerini satıcı ekranda girer ve önizlemeyi görerek onaylar; sohbetten uygulama sonra değerlendirilir.'),
         agent: NO_AGENT,
     }),
+    c({
+        id: 'pricing.drift.resolve', domain: 'catalog', summary: { tr: 'Kanal fiyat farkını çöz (yereli kanala yaz / kanal fiyatını al)', en: 'Resolve a channel price drift (push local / accept channel price)' },
+        effect: 'write', minTier: 'member', permission: 'catalog:write', idempotency: 'natural', audit: 'always', pii: 'none',
+        bindings: [{ rpc: 'PricingService/resolvePriceDrift' }],
+        undo: { kind: 'none' },
+        ui: onScreens([PRODUCTS, 'resolvePriceDrift']),
+        mcp: deferred('later', 'K-B: fiyat farkı seçimi ürün ekranında; sohbet aracı WP8 sonrası.'),
+        agent: NO_AGENT,
+    }),
 ];
