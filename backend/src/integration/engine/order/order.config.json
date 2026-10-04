@@ -8,11 +8,17 @@
         "timeoutMs": 15000
     },
     "memoryManagement": {
-        "removeOnComplete": { "age": 86400, "count": 1000 },
-        "removeOnFail": { "count": 500 }
+        "removeOnComplete": {
+            "age": 86400,
+            "count": 1000
+        },
+        "removeOnFail": {
+            "count": 500
+        }
     },
     "claimSync": {
         "intervalMs": 900000,
+        "webhookHealthyIntervalMs": 1800000,
         "cursorOverlapMs": 3600000,
         "fullSweepIntervalMs": 86400000,
         "fullSweepWindowDays": 32

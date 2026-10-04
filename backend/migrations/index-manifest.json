@@ -64,6 +64,15 @@
     "Resources": [],
     "Clients": [
       {
+        "name": "integrations_webhookToken",
+        "fields": {
+          "integrations.webhookToken": 1
+        },
+        "options": {
+          "sparse": true
+        }
+      },
+      {
         "name": "uniq_clientId",
         "fields": {
           "clientId": 1

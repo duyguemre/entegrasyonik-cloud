@@ -29,7 +29,7 @@ export const PRODUCER_PAGE_SIZE = 500;
 type BulkItem = { name: string; data: IOrderJobData; opts: Record<string, any> };
 
 /** [WP7b, PLAN §3.6] Tür başına çekim aralıkları: backoffice'te yayımlanmış geçersiz kılma > katalog varsayılanı > JSON. */
-export interface SyncIntervals { orders: number; webhookReconcile: number; claims: number; finance: number; messages: number }
+export interface SyncIntervals { orders: number; webhookReconcile: number; claims: number; claimsWebhook: number; finance: number; messages: number }
 
 function settingMs(key: string, fallback: number): number {
     try {
@@ -45,6 +45,7 @@ export function resolveSyncIntervals(): SyncIntervals {
         orders: settingMs('order.orderSync.intervalMs', orderConfig.orderSync.intervalMs || 300000),
         webhookReconcile: settingMs('order.webhookHealthy.reconciliationIntervalMs', orderConfig.webhookHealthy?.reconciliationIntervalMs || 600000),
         claims: settingMs('order.claimSync.intervalMs', orderConfig.claimSync.intervalMs),
+        claimsWebhook: settingMs('order.claimSync.webhookHealthyIntervalMs', (orderConfig.claimSync as any).webhookHealthyIntervalMs || 1800000),
         finance: settingMs('order.financeSync.intervalMs', orderConfig.financeSync.intervalMs),
         messages: settingMs('order.messageSync.intervalMs', orderConfig.messageSync.intervalMs),
     };
@@ -201,7 +202,8 @@ export class OrderQueueProducer {
                 : 0;
             if (!lastOrderRunMs || (now.getTime() - lastOrderRunMs) >= orderIntervalMs) push('orders');
 
-            const claimSync = this.computeSourceWindow(now, integration.lastClaimSync, integration.lastClaimFullSweepAt, { ...orderConfig.claimSync, intervalMs: iv.claims }, staggerHour);
+            // [WP7b, PLAN §3.6] Webhook'lu (sağlıklı) kanalda iade mutabakatı 30 dk; webhook'suz 15 dk.
+            const claimSync = this.computeSourceWindow(now, integration.lastClaimSync, integration.lastClaimFullSweepAt, { ...orderConfig.claimSync, intervalMs: webhookHealth.healthy ? iv.claimsWebhook : iv.claims }, staggerHour);
             if (claimSync) push('claims', { claimSync });
             const financeSync = this.computeSourceWindow(now, integration.lastFinanceSync, integration.lastFinanceFullSweepAt, { ...orderConfig.financeSync, intervalMs: iv.finance }, staggerHour);
             if (financeSync) push('finance', { financeSync });
@@ -258,6 +260,9 @@ export class OrderQueueProducer {
         clientId: number | string,
         integrationCode: string,
         lastSyncTimestamp: Date | string,
+        /** [WP7b, F-11] HB claim olayları `claims` sinyali verir; iade penceresi `integration.lastClaimSync`'ten (yoksa 1 gün). */
+        kind: 'orders' | 'claims' = 'orders',
+        integration?: any,
     ): Promise<{ jobId: string; skipped: boolean }> {
         if (!RedisService.isReady()) {
             log.warn('ORDERQUEUEPRODUCER_WEBHOOK_REDIS_NOT_READY', 'Webhook tetiklemesi: Redis bağlı değil (isReady()=false); iş EKLENMEDİ (ADR-0005 Karar 2).');
@@ -271,20 +276,23 @@ export class OrderQueueProducer {
         }
 
         const WEBHOOK_DEDUPE_WINDOW_MS = 10000; // [ADR-0005 Karar 8] 10 sn tekilleştirme penceresi
-        const dedupId = `webhook_${clientId}_${integrationCode}`;
+        const dedupId = kind === 'orders' ? `webhook_${clientId}_${integrationCode}` : `webhook_${clientId}_${integrationCode}_${kind}`;
 
         const jobData: IOrderJobData = {
             clientId: Number(clientId),
             integrationCode,
             lastSyncTimestamp,
             isManualTrigger: false,
-            kind: 'orders',
+            kind,
             // [F-06] Webhook HTTP isteğinin id'si (varsa) işe taşınır -> istek -> kuyruk -> worker -> adaptör tek iz.
             correlationId: getRequestId() ?? newCorrelationId('wh'),
+            ...(kind === 'claims'
+                ? { claimSync: this.computeSourceWindow(new Date(), integration?.lastClaimSync, undefined, { ...orderConfig.claimSync, intervalMs: 0, fullSweepIntervalMs: undefined }, undefined) }
+                : {}),
         };
 
         // [WP7a] Kanal kuyruğuna; 10 sn TTL'li tekilleştirme (önceki 10 sn pencereli jobId ile aynı anlam, tamamlanan iş kimliği bloklamaz).
-        const job = await this.queue(orderQueueName(integrationCode)).add(`orders-${integrationCode}`, jobData, { deduplication: { id: dedupId, ttl: WEBHOOK_DEDUPE_WINDOW_MS } });
+        const job = await this.queue(orderQueueName(integrationCode)).add(`${kind}-${integrationCode}`, jobData, { deduplication: { id: dedupId, ttl: WEBHOOK_DEDUPE_WINDOW_MS } });
         return { jobId: String(job?.id ?? dedupId), skipped: false };
     }
 

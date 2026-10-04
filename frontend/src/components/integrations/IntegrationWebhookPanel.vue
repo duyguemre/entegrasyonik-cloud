@@ -1,7 +1,9 @@
 <!--
   frontend/src/components/integrations/IntegrationWebhookPanel.vue
 
-  C1.2 madde 5 — Trendyol anlık sipariş bildirimi (webhook) adresi: durum + oluştur/yenile (admin).
+  C1.2 madde 5 — anlık sipariş bildirimi (webhook) adresi: durum + oluştur/yenile (admin).
+  [eslesme-fiyat WP7b, F-11] Kanal `code` prop'u ile: trendyol | hepsiburada | ideasoft (`integrationWebhook.ts`). Metinler kanal adıyla
+  parametrik; HB için "olay adını HB ekler", IS için "API secret gerekli" notu (`integrationWebhook.channelNote.*`).
   Sözleşme (SALT OKU): `IntegrationService/generateWebhookToken { integrationCode }` (admin; backend
   `api/services/integration-service.ts` `generateWebhookToken`) → `{ integrationCode, webhookToken }`. HER çağrı YENİ
   anahtar üretir, eskisini geçersiz kılar ve `webhookHealthy=false` yapar. Alıcı rota: `/hooks/trendyol/:hookToken`
@@ -12,7 +14,7 @@
 <template>
   <EkCard
     :title="t('integrationWebhook.title')"
-    :subtitle="t('integrationWebhook.subtitle')"
+    :subtitle="tc('integrationWebhook.subtitle')"
     icon="mdi-webhook"
     icon-tone="info"
     :heading-level="2"
@@ -21,7 +23,7 @@
     <dl class="ek-webhook__facts">
       <div class="ek-webhook__fact">
         <dt>{{ t('integrationWebhook.channel') }}</dt>
-        <dd><EkPlatformMark name="Trendyol" code="trendyol" size="sm" /></dd>
+        <dd><EkPlatformMark :name="channelName" :code="code" size="sm" /></dd>
       </div>
       <div class="ek-webhook__fact">
         <dt>{{ t('integrationWebhook.status') }}</dt>
@@ -33,12 +35,17 @@
       </div>
     </dl>
 
+    <p v-if="channelNoteKey" class="ek-webhook__note">
+      <v-icon icon="mdi-information-outline" size="16" aria-hidden="true" />
+      <span>{{ t(channelNoteKey) }}</span>
+    </p>
+
     <div v-if="issued" class="ek-webhook__issued" role="status">
       <div class="ek-webhook__issued-head">
         <v-icon icon="mdi-check-circle-outline" size="18" aria-hidden="true" />
         <strong>{{ t('integrationWebhook.issuedTitle') }}</strong>
       </div>
-      <p class="ek-webhook__issued-text">{{ t('integrationWebhook.issuedHint') }}</p>
+      <p class="ek-webhook__issued-text">{{ tc('integrationWebhook.issuedHint') }}</p>
       <label :for="urlFieldId" class="ek-webhook__label">{{ t('integrationWebhook.urlLabel') }}</label>
       <div class="ek-webhook__url-row">
         <input
@@ -70,7 +77,7 @@
     <EkConfirmDialog
       v-model="confirmOpen"
       :title="hasWebhook ? t('integrationWebhook.confirmRenewTitle') : t('integrationWebhook.confirmCreateTitle')"
-      :description="hasWebhook ? t('integrationWebhook.confirmRenewText') : t('integrationWebhook.confirmCreateText')"
+      :description="hasWebhook ? tc('integrationWebhook.confirmRenewText') : tc('integrationWebhook.confirmCreateText')"
       :confirm-label="hasWebhook ? t('integrationWebhook.renew') : t('integrationWebhook.create')"
       :danger="hasWebhook"
       :loading="busy"
@@ -88,14 +95,21 @@ import useRestApi from '@/composables/restapi'
 import { useToast } from '@entegrasyonik/ui/composables/useToast'
 import { formatRelative } from '@entegrasyonik/ui/format'
 import { apiErrorStatus } from '@/composables/useIntegrationHealthApi'
-import { webhookUrl } from './integrationWebhook'
+import { webhookUrl, WEBHOOK_CHANNEL_NAMES, type WebhookChannel } from './integrationWebhook'
 import type { StatusTone } from '@/design/status-map'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
+  /** Kanal kodu (alıcısı olan: trendyol | hepsiburada | ideasoft). */
+  code?: WebhookChannel
   /** Sağlık yanıtındaki `webhook` alanı (`null` → adres hiç kurulmadı ya da bilinmiyor). */
   webhook: { healthy: boolean | null; lastReceivedAt: string | null } | null
   now?: Date
-}>()
+}>(), { code: 'trendyol' })
+
+const channelName = computed(() => WEBHOOK_CHANNEL_NAMES[props.code] ?? props.code)
+/** Kanal notu: HB olay adını URL sonuna kendisi ekler; IS imza için API secret ister; TY için not yok. */
+const channelNoteKey = computed(() => (props.code === 'trendyol' ? '' : `integrationWebhook.channelNote.${props.code}`))
+const tc = (key: string) => t(key, { channel: channelName.value })
 
 const emit = defineEmits<{ renewed: [] }>()
 
@@ -136,16 +150,16 @@ const lastReceivedText = computed(() => {
 
 async function generate() {
   busy.value = true
-  const res: any = await restApi.post('IntegrationService/generateWebhookToken', { integrationCode: 'trendyol' })
+  const res: any = await restApi.post('IntegrationService/generateWebhookToken', { integrationCode: props.code })
   busy.value = false
   confirmOpen.value = false
   const status = apiErrorStatus(res)
   if (status !== undefined || typeof res?.webhookToken !== 'string' || !res.webhookToken) {
-    showToast({ tone: 'error', message: status === 403 ? t('integrationWebhook.forbidden') : t('integrationWebhook.error') })
+    showToast({ tone: 'error', message: status === 403 ? t('integrationWebhook.forbidden') : tc('integrationWebhook.error') })
     return
   }
-  issuedUrl.value = webhookUrl('trendyol', res.webhookToken)
-  showToast({ tone: 'success', message: t('integrationWebhook.issuedToast') })
+  issuedUrl.value = webhookUrl(props.code, res.webhookToken)
+  showToast({ tone: 'success', message: tc('integrationWebhook.issuedToast') })
   emit('renewed')
   await nextTick()
   urlField.value?.focus()

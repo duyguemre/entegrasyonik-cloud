@@ -11,6 +11,7 @@ import { configureAdminApi } from '@api/admin';
 import { configureImageServices } from '@api/files/ImageApiManager';
 import { configureExportDownloadRoutes } from '@api/files/ExportDownloadApiManager';
 import { configureWebhookRoutes } from '@api/webhooks/WebhookApiManager';
+import { configureChannelWebhookRoutes } from '@api/webhooks/ChannelWebhookApiManager';
 import { configureBillingWebhookRoutes } from '@api/webhooks/BillingWebhookApiManager';
 import { configureMockCheckoutRoutes } from '@api/webhooks/MockCheckoutApiManager';
 import { configureNotificationUnsubscribeRoutes } from '@api/http/notificationUnsubscribe';
@@ -138,6 +139,7 @@ export default class Webserver {
         // JWT/oturum çerezine DEĞİL, `hookToken` eşleşmesine dayanır (kendi doğrulamasını `WebhookApiManager`
         // içinde kendisi yapar) -- ayrıntı ve gerekçe `WebhookApiManager.ts` başındaki not.
         configureWebhookRoutes(this.app);
+        configureChannelWebhookRoutes(this.app); // [WP7b, F-11] Hepsiburada + Ideasoft alıcıları (aynı yer, authenticate'ten ÖNCE)
 
         // ADR-0008 §4 (Aşama A): billing webhook rotası (`/api/billing/webhooks/:provider`). AYNI gerekçeyle
         // (JWT yok, sağlayıcı imza doğrulaması kendi içinde) Trendyol webhook'uyla aynı yerde, `authenticate`

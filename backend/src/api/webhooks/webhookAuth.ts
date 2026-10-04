@@ -1,4 +1,4 @@
-import { createHash, timingSafeEqual } from 'crypto';
+import { createHash, createHmac, timingSafeEqual } from 'crypto';
 import { decryptField, isEncrypted } from '@utils/FieldCrypto';
 
 // WP10: webhook doğrulama yardımcıları (Express'ten bağımsız, saf).
@@ -23,6 +23,9 @@ export function parseBasicAuth(header: unknown): { username: string; password: s
     if (i < 0) return null;
     return { username: decoded.slice(0, i), password: decoded.slice(i + 1) };
 }
+
+/** Şifreli (`enc:v1:`) ya da düz sır → düz metin; çözülemezse `undefined` (fail-closed'a bırakır). */
+export function plainSecret(v: unknown): string | undefined { return plain(v); }
 
 function plain(v: unknown): string | undefined {
     if (typeof v !== 'string' || !v) return undefined;
@@ -64,4 +67,24 @@ export function verifyWebhookHeaders(integration: any, headers: Record<string, u
     const okU = safeEqual(parsed.username, u);
     const okP = safeEqual(parsed.password, p);
     return okU && okP ? 'ok' : 'fail';
+}
+
+/**
+ * [eslesme-fiyat WP7b, F-11] Ideasoft imzası: `X-Ideashop-Hmac-Sha256` = Base64(HMAC-SHA256(ham gövde, client secret)).
+ * - HAM gövde baytları üzerinde (JSON ayrıştırılmadan ÖNCE; yeniden serileştirme imzayı bozar).
+ * - Başlık Base64 ya da hex kabul edilir (sağlayıcı sürüm farkına karşı; ikisi de aynı 32 baytı kodlar).
+ * - Karşılaştırma sabit-zamanlı: HMAC her zaman hesaplanır (erken dönüş yok); iki taraf SHA-256'ya indirilip `timingSafeEqual`.
+ * - Sır/gövde/başlık yoksa ya da bozuksa `false` (fail-closed). Boş gövde geçerli bir imzayla yine doğrulanır (boş mesaj HMAC'i).
+ */
+export function verifyHmacSha256(rawBody: Buffer | Uint8Array | undefined, header: unknown, secret: unknown): boolean {
+    const h = Array.isArray(header) ? header[0] : header;
+    const sig = typeof h === 'string' ? h.trim() : '';
+    const sec = typeof secret === 'string' ? secret : '';
+    const body = rawBody instanceof Uint8Array ? Buffer.from(rawBody) : Buffer.alloc(0);
+    const expected = createHmac('sha256', sec || 'x').update(body).digest(); // sır boşsa sonuç yine kullanılmaz (aşağıda false)
+    let provided: Buffer | null = null;
+    if (/^[A-Fa-f0-9]{64}$/.test(sig)) provided = Buffer.from(sig, 'hex');
+    else if (/^[A-Za-z0-9+/]{43}=$/.test(sig)) provided = Buffer.from(sig, 'base64');
+    const ok = !!provided && provided.length === expected.length && timingSafeEqual(provided, expected);
+    return ok && sec.length > 0;
 }

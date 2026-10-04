@@ -98,3 +98,25 @@ describe('webhook adresi', () => {
     expect(webhookPath('trendyol', 'a/b c')).toBe('/hooks/trendyol/a%2Fb%20c')
   })
 })
+
+// [eslesme-fiyat WP7b, F-11] Alıcısı olan kanallar ve kanal başına adres (HB: olay adını HB ekler; IS: HMAC imzalı).
+describe('webhook kanalları (WP7b)', () => {
+  it('trendyol, hepsiburada, ideasoft alıcısı var; n11 yok', async () => {
+    const m = await import('@/components/integrations/integrationWebhook')
+    expect([...m.WEBHOOK_CHANNELS]).toEqual(['trendyol', 'hepsiburada', 'ideasoft'])
+    expect(m.isWebhookChannel('n11')).toBe(false)
+    expect(m.webhookUrl('hepsiburada', 'abc', 'https://x.invalid/api/')).toBe('https://x.invalid/hooks/hepsiburada/abc')
+    expect(m.webhookUrl('ideasoft', 'abc', 'https://x.invalid/api/')).toBe('https://x.invalid/hooks/ideasoft/abc')
+    expect(m.WEBHOOK_CHANNEL_NAMES.hepsiburada).toBe('Hepsiburada')
+  })
+  it('webhook metinleri kanal adını parametre alır; kanal notları iki dilde var', async () => {
+    const tr = (await import('@/plugins/locales/tr.json')).default as any
+    const en = (await import('@/plugins/locales/en.json')).default as any
+    for (const d of [tr, en]) {
+      expect(JSON.stringify(d.integrationWebhook)).not.toContain('Trendyol')
+      expect(d.integrationWebhook.confirmCreateText).toContain('{channel}')
+      expect(typeof d.integrationWebhook.channelNote.hepsiburada).toBe('string')
+      expect(typeof d.integrationWebhook.channelNote.ideasoft).toBe('string')
+    }
+  })
+})

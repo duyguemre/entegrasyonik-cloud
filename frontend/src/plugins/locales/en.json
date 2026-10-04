@@ -319,7 +319,7 @@
   },
   "integrationWebhook": {
     "title": "Instant order notification (webhook)",
-    "subtitle": "Trendyol notifies this address when an order status changes; order sync starts without waiting for the scheduled pull.",
+    "subtitle": "{channel} notifies this address when an order status changes; order sync starts without waiting for the scheduled pull.",
     "channel": "Channel",
     "status": "Status",
     "lastReceived": "Last notification",
@@ -334,20 +334,24 @@
     },
     "onceNote": "For security, the address is shown only once when it is created and is not stored on this page. Generate a new one if you lose it.",
     "confirmCreateTitle": "Create a webhook address?",
-    "confirmCreateText": "You need to enter the new address in the webhook setting of the Trendyol seller panel. The address is shown only once.",
+    "confirmCreateText": "You need to enter the new address in the webhook setting of the {channel} seller panel. The address is shown only once.",
     "confirmRenewTitle": "Renew the webhook address?",
-    "confirmRenewText": "The current address stops working; you need to enter the new address in the Trendyol panel. Until then no instant notifications arrive; orders keep coming through the scheduled pull.",
+    "confirmRenewText": "The current address stops working; you need to enter the new address in the {channel} panel. Until then no instant notifications arrive; orders keep coming through the scheduled pull.",
     "issuedTitle": "New webhook address is ready",
-    "issuedHint": "Copy this address and paste it into the webhook setting of the Trendyol seller panel.",
+    "issuedHint": "Copy this address and paste it into the webhook setting of the {channel} seller panel.",
     "urlLabel": "Webhook address",
     "copy": "Copy",
     "hide": "Hide",
     "issuedNote": "This address will not be shown again. It is removed from the screen when you leave the page or press Hide.",
-    "issuedToast": "Webhook address created — update it in the Trendyol panel.",
+    "issuedToast": "Webhook address created — update it in the {channel} panel.",
     "copied": "Address copied to clipboard.",
     "copyFailed": "Could not copy — the address is selected, you can copy it manually.",
     "forbidden": "Only the store owner or an administrator can create the webhook address.",
-    "error": "Could not create the webhook address — make sure your Trendyol integration is set up and try again."
+    "error": "Could not create the webhook address — make sure your {channel} integration is set up and try again.",
+    "channelNote": {
+      "hepsiburada": "Hepsiburada appends the event name to this address itself (e.g. …/createOrder); enter only this address in the panel. Order events trigger an order pull, claim events a return pull.",
+      "ideasoft": "Ideasoft notifications are signed: this channel's API key/secret must be saved, otherwise notifications are rejected. Create the subscription (order/* topics) to this address in the Ideasoft admin panel."
+    }
   },
   "shell": {
     "favorites": {

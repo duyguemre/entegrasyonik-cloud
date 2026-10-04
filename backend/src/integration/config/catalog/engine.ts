@@ -281,6 +281,13 @@ export const ORDER_ENGINE_SETTINGS: SettingDef<number>[] = [
         since: '2026-09-29',
     }),
     durationSetting({
+        key: 'order.claimSync.webhookHealthyIntervalMs', group: 'order.support', scope: 'engine', unit: 'ms', default: 1800000,
+        danger: 'caution', applies: 'next_cycle', consumers: ['engine/order/OrderQueueProducer.ts (jobsForClient)'],
+        label: { tr: 'İade çekim aralığı (webhook sağlıklı)', en: 'Claim pull interval (webhook healthy)' },
+        help: { tr: 'Kanalın webhook\'u sağlıklıyken iade mutabakat sıklığı (PLAN §3.6: 30 dk; webhook\'suz 15 dk).', en: 'Claim reconciliation cadence while the channel webhook is healthy (PLAN §3.6: 30 min; 15 min without webhook).' },
+        since: '2026-10-04',
+    }),
+    durationSetting({
         key: 'order.claimSync.cursorOverlapMs', group: 'order.support', scope: 'engine', unit: 'ms', default: 3600000,
         danger: 'safe', applies: 'next_cycle', consumers: ['engine/order/OrderQueueProducer.ts:100 (computeSourceWindow)'], advanced: true,
         label: { tr: 'İade imleç örtüşmesi', en: 'Claim cursor overlap' },

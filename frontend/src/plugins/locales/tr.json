@@ -1503,7 +1503,7 @@
   },
   "integrationWebhook": {
     "title": "Anlık sipariş bildirimi (webhook)",
-    "subtitle": "Trendyol sipariş durumu değiştiğinde bu adrese haber verir; sipariş eşitlemesi zamanlanmış çekimi beklemeden başlar.",
+    "subtitle": "{channel} sipariş durumu değiştiğinde bu adrese haber verir; sipariş eşitlemesi zamanlanmış çekimi beklemeden başlar.",
     "channel": "Kanal",
     "status": "Durum",
     "lastReceived": "Son bildirim",
@@ -1518,20 +1518,24 @@
     },
     "onceNote": "Güvenlik için adres yalnızca oluşturulduğu anda bir kez gösterilir ve bu sayfada saklanmaz. Adresi kaybederseniz yeni adres üretin.",
     "confirmCreateTitle": "Webhook adresi oluşturulsun mu?",
-    "confirmCreateText": "Oluşturulan adresi Trendyol satıcı panelindeki webhook ayarına girmeniz gerekir. Adres yalnızca bir kez gösterilir.",
+    "confirmCreateText": "Oluşturulan adresi {channel} satıcı panelindeki webhook ayarına girmeniz gerekir. Adres yalnızca bir kez gösterilir.",
     "confirmRenewTitle": "Webhook adresi yenilensin mi?",
-    "confirmRenewText": "Mevcut adres geçersiz olur, Trendyol panelinde yeni adresi girmeniz gerekir. Yeni adres girilene kadar anlık bildirim gelmez; siparişler zamanlanmış çekimle gelmeye devam eder.",
+    "confirmRenewText": "Mevcut adres geçersiz olur, {channel} panelinde yeni adresi girmeniz gerekir. Yeni adres girilene kadar anlık bildirim gelmez; siparişler zamanlanmış çekimle gelmeye devam eder.",
     "issuedTitle": "Yeni webhook adresi hazır",
-    "issuedHint": "Bu adresi kopyalayıp Trendyol satıcı panelindeki webhook ayarına yapıştırın.",
+    "issuedHint": "Bu adresi kopyalayıp {channel} satıcı panelindeki webhook ayarına yapıştırın.",
     "urlLabel": "Webhook adresi",
     "copy": "Kopyala",
     "hide": "Gizle",
     "issuedNote": "Bu adres bir daha gösterilmez. Sayfadan ayrıldığınızda ya da Gizle'ye bastığınızda ekrandan silinir.",
-    "issuedToast": "Webhook adresi oluşturuldu — Trendyol panelinde güncelleyin.",
+    "issuedToast": "Webhook adresi oluşturuldu — {channel} panelinde güncelleyin.",
     "copied": "Adres panoya kopyalandı.",
     "copyFailed": "Panoya kopyalanamadı — adres seçildi, elle kopyalayabilirsiniz.",
     "forbidden": "Webhook adresini yalnızca mağaza sahibi veya yöneticisi oluşturabilir.",
-    "error": "Webhook adresi oluşturulamadı — Trendyol entegrasyonunuzun kurulu olduğundan emin olup tekrar deneyin."
+    "error": "Webhook adresi oluşturulamadı — {channel} entegrasyonunuzun kurulu olduğundan emin olup tekrar deneyin.",
+    "channelNote": {
+      "hepsiburada": "Hepsiburada her olay için adresin sonuna olay adını kendisi ekler (ör. …/createOrder); panele yalnız bu adresi girin. Sipariş olayları sipariş çekimini, iade olayları iade çekimini tetikler.",
+      "ideasoft": "Ideasoft bildirimleri imzalıdır: bu kanalın API anahtarı/secret bilgisi kayıtlı olmalıdır, aksi halde bildirimler reddedilir. Aboneliği (order/* konuları) Ideasoft yönetim panelinden bu adrese açın."
+    }
   },
   "integrationHealth": {
     "section": "Entegrasyonlar",

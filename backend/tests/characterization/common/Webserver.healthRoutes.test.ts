@@ -30,6 +30,7 @@ async function bootWebserver(): Promise<{ routes: Route[] }> {
       jest.doMock('../../../src/api/rpc/ApiManager', () => ({ configureApis: () => undefined }));
       jest.doMock('../../../src/api/files/ImageApiManager', () => ({ configureImageServices: () => undefined }));
       jest.doMock('../../../src/api/webhooks/WebhookApiManager', () => ({ configureWebhookRoutes: () => undefined })); // [ADR-0005 Karar 8] fakeApp'te app.post yok; ApiManager/ImageApiManager ile AYNI nedenle mock'lanır
+      jest.doMock('../../../src/api/webhooks/ChannelWebhookApiManager', () => ({ configureChannelWebhookRoutes: () => undefined })); // [eslesme-fiyat WP7b F-11] app.put/post + express.raw; fakeApp'te yok -> AYNI nedenle mock
       jest.doMock('../../../src/api/http/agentRoutes', () => ({ configureAgentRoutes: () => undefined, getAgentBroker: () => undefined })); // [ADR-0034 BR-1] app.delete/post; fakeApp'te yok -> AYNI nedenle mock
       jest.doMock('../../../src/api/oauth', () => ({ configureOAuthPublicRoutes: () => undefined, configureOAuthConsentRoutes: () => undefined })); // [ADR-0035 MCP-1] app.use([..])/post; fakeApp'te yok -> AYNI nedenle mock
       jest.doMock('../../../src/api/http/mcpRoutes', () => ({ configureMcpRoutes: () => undefined })); // [ADR-0035 MCP-2] app.get/put/delete/post; fakeApp'te yok -> AYNI nedenle mock

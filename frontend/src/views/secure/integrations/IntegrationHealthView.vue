@@ -5,7 +5,7 @@
   Sözleşme: `docs/API_TENANT_SURFACE.md` §3 — `IntegrationService/getIntegrationHealth` (admin, owner dahil).
   Düzen: başlık → durum şeridi (generatedAt + Yenile) → özet KPI satırı (`EkMetricCard`) → entegrasyon başına kart
   (`IntegrationHealthCard`, sorunlu olan önce) → kaynak notu (§3 uyarı c: aktif "bağlantıyı test et" YOK)
-  → C1.2: Trendyol webhook adresi (durum + oluştur/yenile, `IntegrationWebhookPanel`; yalnız kanal kuruluysa).
+  → C1.2 / WP7b: webhook adresi kanal başına (trendyol, hepsiburada, ideasoft; durum + oluştur/yenile, `IntegrationWebhookPanel`; yalnız kanal kuruluysa).
   Kartın yuvarlak oku ilgili mevcut ayar sekmesini açar (türüne göre; menüde yoksa ok gösterilmez).
   403 → yetki durumu (EkEmptyState), diğer hatalar → EkErrorState (yeniden dene). Uydurma veri YOK.
 -->
@@ -123,10 +123,12 @@
         </p>
       </section>
 
-      <!-- C1.2 madde 5 — webhook adresi yalnız Trendyol için (backend alıcı rotası yalnız `/hooks/trendyol`). -->
+      <!-- C1.2 madde 5 / WP7b F-11 — webhook adresi: alıcısı olan her kurulu kanal için bir panel (trendyol, hepsiburada, ideasoft). -->
       <IntegrationWebhookPanel
-        v-if="webhookItem"
-        :webhook="webhookItem.webhook"
+        v-for="item in webhookItems"
+        :key="item.integrationCode"
+        :code="item.integrationCode"
+        :webhook="item.webhook"
         :now="now"
         @renewed="load(true)"
       />
@@ -142,7 +144,7 @@ import EkPageHeader from '@/components/page/EkPageHeader.vue'
 import { EkButton, EkMetricCard, EkEmptyState, EkErrorState } from '@entegrasyonik/ui/components'
 import IntegrationHealthCard from '@/components/integrationHealth/IntegrationHealthCard.vue'
 import IntegrationWebhookPanel from '@/components/integrations/IntegrationWebhookPanel.vue'
-import { WEBHOOK_CHANNELS } from '@/components/integrations/integrationWebhook'
+import { isWebhookChannel, type WebhookChannel } from '@/components/integrations/integrationWebhook'
 import { useMenuStore } from '@/stores/site/menu'
 import { useToast } from '@entegrasyonik/ui/composables/useToast'
 import { formatDateTime, formatNumber, formatPercent } from '@entegrasyonik/ui/format'
@@ -167,7 +169,7 @@ const now = ref(new Date())
 
 const items = computed(() => sortByUrgency(data.value?.integrations ?? []))
 const summary = computed(() => (data.value ? summarizeHealth(data.value.integrations) : null))
-const webhookItem = computed(() => items.value.find((it) => (WEBHOOK_CHANNELS as readonly string[]).includes(it.integrationCode)) ?? null)
+const webhookItems = computed(() => items.value.filter((it): it is IntegrationHealthItem & { integrationCode: WebhookChannel } => isWebhookChannel(it.integrationCode)))
 const callsDescription = computed(() => {
   const s = summary.value
   if (!s) return ''

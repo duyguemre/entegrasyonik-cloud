@@ -217,7 +217,7 @@ describe('§3.6 sync.* ayar kataloğu', () => {
     });
     it('üretici aralıkları (geçersiz kılma yokken) = PLAN §3.6 / order.config.json', () => {
         const { resolveSyncIntervals } = require('../../../src/integration/engine/order/OrderQueueProducer');
-        expect(resolveSyncIntervals()).toEqual({ orders: 300000, webhookReconcile: 600000, claims: 900000, finance: 21600000, messages: 600000 });
+        expect(resolveSyncIntervals()).toEqual({ orders: 300000, webhookReconcile: 600000, claims: 900000, claimsWebhook: 1800000, finance: 21600000, messages: 600000 });
     });
     it('syncNow soğuma ayarı: pencere ve retryAfter ayardan; 60 sn altı yok sayılır', async () => {
         const mk = (cooldownMs: number, modified = 1) => ({

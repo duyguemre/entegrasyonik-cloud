@@ -62,3 +62,6 @@ ClientSchema.index({ order: 1 }, { unique: true, name: 'uniq_order' });
 ClientSchema.index({ clientId: 1 }, { unique: true, name: 'uniq_clientId' });
 // PURGED mezar taşı kayıtlarında dbConfig olmayabilir: kısmi indeks yalnızca dbname'i string olan kayıtları kapsar
 ClientSchema.index({ 'dbConfig.dbname': 1 }, { unique: true, name: 'uniq_dbConfig_dbname', partialFilterExpression: { 'dbConfig.dbname': { $type: 'string' } } });
+// [eslesme-fiyat WP7b, F-11] Webhook alıcısı belirteçle tenant arar (`Clients.findOne({'integrations.webhookToken': …})`): çok-anahtarlı (dizi),
+// seyrek (belirteci olmayan entegrasyon/tenant girmez). Kuruluş: göç 0032 (yalnız yazıldı; Protokol 12 insan onayı).
+ClientSchema.index({ 'integrations.webhookToken': 1 }, { name: 'integrations_webhookToken', sparse: true });

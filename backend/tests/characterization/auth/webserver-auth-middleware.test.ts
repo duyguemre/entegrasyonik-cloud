@@ -48,6 +48,7 @@ async function bootWebserver(): Promise<Captured> {
       // bu testin ilgisi `order`/`uses` sırasıdır, webhook rota kaydı KAPSAM DIŞI (ayrıntı: WebhookApiManager
       // kendi testinde, tests/characterization/webhooks/Trendyol.webhook.test.ts).
       jest.doMock('../../../src/api/webhooks/WebhookApiManager', () => ({ configureWebhookRoutes: jest.fn() }));
+      jest.doMock('../../../src/api/webhooks/ChannelWebhookApiManager', () => ({ configureChannelWebhookRoutes: () => undefined })); // [eslesme-fiyat WP7b F-11] app.put/post + express.raw; fakeApp'te yok -> AYNI nedenle mock
       // ADR-0008 §4: billing webhook rotası da AYNI nedenle mock'lanır (`app.post(...)` çağırır, fakeApp'te
       // `express.raw` yok) -- kendi testi tests/characterization/webhooks/Billing.webhook.test.ts'te.
       jest.doMock('../../../src/api/webhooks/BillingWebhookApiManager', () => ({ configureBillingWebhookRoutes: jest.fn() }));

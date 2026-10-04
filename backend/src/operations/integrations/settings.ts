@@ -7,6 +7,7 @@ import { stripTenantUrlFields, isTenantUrlLikeKey, hasInvalidStoreName } from '@
 import { AuditLogger } from '@services/audit/AuditLogger';
 import type { ClientIntegrationKind, ClientIntegrationRepository } from '@database/repositories/tenant/ClientIntegrationRepository';
 import type { IntegrationCatalogRepository } from '@database/repositories/app/IntegrationCatalogRepository';
+import { isWebhookChannel } from '@integration/contracts/webhookChannels';
 
 /**
  * ADR-0024 D6 (P3-INT): tenant kanal ayarları (okuma maskeli, yazma sır-koruyucu/şifreli) ve platform kataloğu listesi.
@@ -154,6 +155,8 @@ export function sortMarketplaces(repo: ClientIntegrationRepository, sortedCodes:
  */
 export async function rotateWebhookToken(catalog: IntegrationCatalogRepository, clientId: any, integrationCode: any): Promise<any> {
     if (!integrationCode) throw new Error('integrationCode zorunlu');
+    // [WP7b, F-11] Yalnız alıcısı olan kanallar (trendyol | hepsiburada | ideasoft); aksi halde belirteç üretilmez (ölü URL verilmez).
+    if (!isWebhookChannel(integrationCode)) throw new ApplicationError('Bu kanal için webhook alıcısı yok.', 400, 'NOT_SUPPORTED');
     const webhookToken = randomBytes(32).toString('hex');
     const updated: any = await catalog.rotateWebhookToken(clientId, integrationCode, webhookToken);
     if (!updated) throw new Error('Entegrasyon bulunamadı');
