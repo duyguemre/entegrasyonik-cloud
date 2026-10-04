@@ -146,6 +146,13 @@ export const INTEGRATIONS_CAPABILITIES = [
         ui: noUi('Backend-only: FE "Bağlantıyı test et" düğmesi bulut önyüz oturumunda eklenecek (docs/API_TENANT_SURFACE.md §Bağlantı testi).'),
         mcp: deferred('later', 'Yan etkisiz bağlantı doğrulaması (dakikada 3/tenant+entegrasyon); sır dönmez. Toolset genişlemesinde (integrations) değerlendirilir.'), agent: NO_AGENT,
     }),
+    c({
+        id: 'integrations.sync.now', domain: 'integrations', summary: { tr: 'Şimdi senkronize et (sipariş/iade/mesaj/finans)', en: 'Sync now (orders/claims/messages/finance)' },
+        effect: 'write', minTier: 'member', permission: 'integrations:sync', external: true, bindings: [{ rpc: 'IntegrationService/syncNow' }],
+        ui: onScreens(MP),
+        mcp: deferred('later', 'Kullanıcı tetiklemeli senkron (pazaryerinden okur, yerel yazar); 5 dk soğumalı. Onay akışı (Aşama D) ile değerlendirilir.'), agent: NO_AGENT,
+        review: 'eslesme-fiyat WP7b F-10: tenant×entegrasyon×tür 5 dk soğuma (Mongo koşullu $set, çok pod güvenli), jobId 5 dk pencereli; kill-switch drain/off ve LIVE_READONLY merkezî kancalarla 503/423; needsAttention iken 502 AUTH.',
+    }),
     // NOT: 'IntegrationService/checkProductStatus' (ProductListView.vue/BizimhesapComponent.vue'nun FE çağrısı)
     // BİLİNÇLİ OLARAK kayıtsız: FE_CALLS_WITHOUT_BACKEND'de (gerçek servis metodu YOK). Ölü RPC'ye yetenek bağı açılmaz.
     c({

@@ -5,6 +5,7 @@ import { getLogPrefix, LoggerType } from '@utils/Logger';
 import { eventLog } from '@platform/core/logger';
 import { guardOrderRequiredFields } from './orderRequiredGuard';
 import { recordOrdersIngested } from '@platform/runtime/metrics/redMetrics';
+import { LEGACY_CURSOR_KIND, syncFailureUpdate, syncSuccessUpdate, type SyncKind } from '@platform/core/sync/syncState';
 
 const log = eventLog('worker', 'OrderRepository');
 
@@ -261,14 +262,17 @@ export class OrderRepository {
      * updateLastSyncTimestamp
      * Senkronizasyon zamanını merkezi DB'de (ApplicationDB) günceller.
      */
-    public async updateLastSyncTimestamp(clientId: number, integrationCode: string, syncDate: Date): Promise<void> {
+    public async updateLastSyncTimestamp(clientId: number, integrationCode: string, syncDate: Date, completedAt: Date = new Date()): Promise<void> {
         try {
             const appDb = await DatabaseManagerInstance.getApplicationDB();
             const ClientModel = appDb.getClientModel();
 
+            // [eslesme-fiyat WP7b, PLAN §3.5] Eski imleç alanı KALIR + `sync.orders` durumu; [F-07] üst seviye
+            // `Clients.lastSuccessfulOrderSync` artık entegrasyonların en yenisi ($max; yalnız provizyonda yazılıyordu).
+            const sync = syncSuccessUpdate('orders', completedAt, syncDate);
             await ClientModel.updateOne(
                 { clientId: clientId, "integrations.integrationCode": integrationCode },
-                { $set: { "integrations.$.lastSuccessfulOrderSync": syncDate } }
+                { $set: { "integrations.$.lastSuccessfulOrderSync": syncDate, ...sync.$set }, $unset: sync.$unset, $max: { lastSuccessfulOrderSync: completedAt } }
             );
             if (!this.logPrefix) {
                 this.logPrefix = getLogPrefix(this.workerName, clientId, integrationCode);
@@ -291,9 +295,14 @@ export class OrderRepository {
             const appDb = await DatabaseManagerInstance.getApplicationDB();
             const ClientModel = appDb.getClientModel();
 
+            // [WP7b] Senkron imleci olan alanlarda (`lastClaimSync`/`lastMessageSync`/`lastFinanceSync`) `sync.<kind>` de yazılır.
+            const kind = LEGACY_CURSOR_KIND[field];
+            const sync = kind ? syncSuccessUpdate(kind, new Date(), date) : undefined;
             await ClientModel.updateOne(
                 { clientId: clientId, "integrations.integrationCode": integrationCode },
-                { $set: { [`integrations.$.${field}`]: date } }
+                sync
+                    ? { $set: { [`integrations.$.${field}`]: date, ...sync.$set }, $unset: sync.$unset }
+                    : { $set: { [`integrations.$.${field}`]: date } }
             );
             if (!this.logPrefix) {
                 this.logPrefix = getLogPrefix(this.workerName, clientId, integrationCode);
@@ -301,6 +310,22 @@ export class OrderRepository {
             log.info('ORDERREPOSITORY_GUNCELLENDI', `${field} Güncellendi: ${date}`);
         } catch (error) {
             log.error('ORDERREPOSITORY_GUNCELLEME_HATASI', `${field} Güncelleme Hatası:`, { err: error });
+        }
+    }
+
+    /**
+     * [eslesme-fiyat WP7b, PLAN §3.5] Başarısız/eksik koşuyu `sync.<kind>` altına yazar (`lastAttemptAt` + `lastError {code, at}`);
+     * `lastSuccessAt` ve imleç DEĞİŞMEZ. Ham hata mesajı yazılmaz (yalnız kod). Hata yutulur (best-effort, imleç yazımı gibi).
+     */
+    public async recordSyncFailure(clientId: number, integrationCode: string, kind: SyncKind, code: unknown, at: Date = new Date()): Promise<void> {
+        try {
+            const appDb = await DatabaseManagerInstance.getApplicationDB();
+            await appDb.getClientModel().updateOne(
+                { clientId: clientId, "integrations.integrationCode": integrationCode },
+                syncFailureUpdate(kind, code, at)
+            );
+        } catch (error) {
+            log.error('ORDERREPOSITORY_SYNC_HATA_YAZMA_HATASI', `sync.${kind} hata durumu yazılamadı:`, { err: error });
         }
     }
 }

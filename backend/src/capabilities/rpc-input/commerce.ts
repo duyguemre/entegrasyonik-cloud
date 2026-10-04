@@ -47,6 +47,8 @@ export const COMMERCE_RPC_INPUT: Partial<Record<RpcRef, z.ZodType<any>>> = {
 
     // --- Entegrasyon iş başlatma ---
     'IntegrationService/requestFetchFromPlatform': strictBody({ integrationCode, query: looseObject.optional() }),
+    // [eslesme-fiyat WP7b, F-10] Şimdi senkronize et: tek tür; tenant gövdeden SEÇİLEMEZ.
+    'IntegrationService/syncNow': strictBody({ integrationCode, kind: z.enum(['orders', 'claims', 'messages', 'finance']).optional() }),
     'IntegrationService/batchCreator': strictBody({
         mode: reqText(50),
         scope: z.number().int().min(0).max(2).optional(),

@@ -98,16 +98,22 @@ describe('worker-runner (BullMQ tüketicisi)', () => {
 });
 
 describe('OrderRepository.updateLastSyncTimestamp', () => {
-  it('[MEVCUT DAVRANIŞ] ClientModel.updateOne filtresi clientId+integrationCode; $set lastSuccessfulOrderSync', async () => {
+  // [eslesme-fiyat WP7b — BİLİNÇLİ GÜNCELLEME] ÖNCEKİ: yalnız `$set integrations.$.lastSuccessfulOrderSync`. ŞİMDİ: eski alan KALIR +
+  // `sync.orders` durumu (PLAN §3.5) + F-07 üst seviye `lastSuccessfulOrderSync` `$max` (yalnız provizyonda yazılıyordu).
+  it('[WP7b] ClientModel.updateOne filtresi clientId+integrationCode; eski alan + sync.orders + üst seviye $max', async () => {
     const updateOne = (jest.fn() as any).mockResolvedValue({});
     (DatabaseManagerInstance.getApplicationDB as any).mockResolvedValue({ getClientModel: () => ({ updateOne }) });
     const d = new Date('2026-03-01T00:00:00.000Z');
+    const done = new Date('2026-03-01T00:05:00.000Z');
 
-    await new OrderRepository().updateLastSyncTimestamp(7, 'trendyol', d);
+    await new OrderRepository().updateLastSyncTimestamp(7, 'trendyol', d, done);
 
     expect(updateOne).toHaveBeenCalledWith(
       { clientId: 7, 'integrations.integrationCode': 'trendyol' },
-      { $set: { 'integrations.$.lastSuccessfulOrderSync': d } },
+      expect.objectContaining({
+        $set: expect.objectContaining({ 'integrations.$.lastSuccessfulOrderSync': d, 'integrations.$.sync.orders.lastSuccessAt': done }),
+        $max: { lastSuccessfulOrderSync: done },
+      }),
     );
   });
 

@@ -25,6 +25,14 @@ export interface IntegrationHealthItem {
   enabled: boolean
   credentialsConfigured: boolean | null
   lastSuccessfulSyncAt: string | null
+  /** [eslesme-fiyat WP7b] Tür başına senkron durumu (eski backend'de yok → isteğe bağlı). */
+  sync?: Partial<Record<'orders' | 'claims' | 'messages' | 'finance' | 'products' | 'catalog', {
+    lastSuccessAt: string | null
+    lastAttemptAt: string | null
+    lastError: { code: string; at: string } | null
+  }>>
+  /** [WP7a F-04 / WP7b] Art arda AUTH vb. nedeniyle iş üretimi durdu. */
+  needsAttention?: { reason: string; since: string | null } | null
   webhook: { healthy: boolean | null; lastReceivedAt: string | null } | null
   lastError: { at: string; code: string; httpStatus: number | null; operation: string } | null
   circuit: { state: CircuitState; observedAt: string; stale: boolean } | null

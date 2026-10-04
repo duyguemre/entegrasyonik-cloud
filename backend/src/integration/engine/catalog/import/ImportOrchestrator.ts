@@ -10,6 +10,7 @@ import { IntegrationEngineProvider } from '../provider/IntegrationEngineProvider
 import { StatisticsTracker } from '@services/statistics/StatisticsTracker';
 import { getSetting } from '@integration/config/ConfigResolver';
 import { eventLog } from '@platform/core/logger';
+import { syncFailureUpdate, syncSuccessUpdate } from '@platform/core/sync/syncState';
 import { runWithJobContext, getRequestId } from '@platform/core/context';
 import { safeErrorCode } from '@operations/notifications/safeError';
 import { inFlightBlocked, anyIntakeRestricted, recordIntakeSkip } from '@integration/config/intakeGate';
@@ -105,6 +106,7 @@ export class ImportOrchestrator {
             if (updatedJob) {
                 if (updatedJob.status !== job.status) integrationEventBus.emit(EVENTS.PROCESS_NEXT_IMPORT_JOB);
                 this.sendNotification(updatedJob);
+                if (updatedJob.status !== job.status) void this.recordProductsSync(applicationDB, updatedJob);
 
                 StatisticsTracker.track({
                     clientId:       Number(job.clientId),
@@ -126,6 +128,21 @@ export class ImportOrchestrator {
         } finally {
             this.activeImportJobIds.delete(jobIdStr);
             await applicationDB.getImportJobModel().updateOne({ _id: job._id }, { $set: { lockedBy: null, updatedAt: new Date() } });
+        }
+    }
+
+    /** [eslesme-fiyat WP7b, PLAN §3.5] Ürün içe aktarımı bitince `Clients.integrations[].sync.products` (best-effort; yalnız son durum geçişinde). */
+    private static async recordProductsSync(applicationDB: any, job: any): Promise<void> {
+        const done = job.status === 'COMPLETED' ? 'ok' : job.status === 'FAILED' ? 'fail' : undefined;
+        if (!done) return;
+        try {
+            const now = new Date();
+            await applicationDB.getClientModel().updateOne(
+                { clientId: Number(job.clientId), 'integrations.integrationCode': job.integrationCode },
+                done === 'ok' ? syncSuccessUpdate('products', now) : syncFailureUpdate('products', safeErrorCode(job.errorCode), now),
+            );
+        } catch (err) {
+            log.error('IMPORTORCHESTRATOR_SYNC_DURUM_HATASI', 'sync.products yazılamadı (best-effort).', { err });
         }
     }
 

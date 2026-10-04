@@ -21,6 +21,7 @@ import { getIncomplete, IncompleteInfo, isWindowOverflowError } from '@integrati
 import { NotificationService } from '@services/notification/NotificationService';
 import { eventLog } from '@platform/core/logger';
 import { getRequestId } from '@platform/core/context/requestContext';
+import { errorCodeFromMessage, type SyncKind } from '@platform/core/sync/syncState';
 
 const log = eventLog('worker', 'OrderWorker');
 
@@ -340,6 +341,17 @@ export class OrderWorker {
             if (insertedExternalIds.length > 0) {
                 cursorUpdates.push(orderRepo.updateSourceSyncCursor(clientId, integrationCode, 'lastOrderDetectedAt', syncStartAt));
             }
+            // [eslesme-fiyat WP7b, PLAN §3.5] Denenip başarısız/eksik kalan türler `sync.<kind>.lastError` olarak yazılır
+            // (sipariş çekim hatası işi FAIL ettirir → OrderErrorHandler yazar; burada yalnız eksik çekim).
+            const failCode = (r: PromiseSettledResult<unknown>, incomplete: unknown) =>
+                r.status === 'rejected' ? ((r.reason as any)?.code ?? errorCodeFromMessage((r.reason as any)?.message)) : (incomplete ? 'INCOMPLETE' : undefined);
+            const failures: Array<[SyncKind, string | undefined]> = [
+                ['orders', ordersAttempted && orderIncomplete ? 'INCOMPLETE' : undefined],
+                ['claims', claimAttempted ? failCode(claimsResult, claimIncomplete) : undefined],
+                ['finance', financeAttempted ? failCode(financialsResult, financeIncomplete) : undefined],
+                ['messages', messageAttempted ? failCode(messagesResult, undefined) : undefined],
+            ];
+            for (const [kind, code] of failures) if (code) cursorUpdates.push(orderRepo.recordSyncFailure(clientId, integrationCode, kind, code));
             await Promise.all(cursorUpdates);
 
             log.info('ORDERWORKER_SENKRONIZASYON_TAMAMLANDI_SIPARIS_IADE', `Senkronizasyon tamamlandı. ` +

@@ -139,7 +139,9 @@ describe('OrderErrorHandler — AUTH duraklatma + DLQ (F-04)', () => {
         dlqInsertOne.mockResolvedValue(undefined);
         await new OrderErrorHandler().handleFailedJob(job() as any, new Error('[AUTH] reddedildi'));
         expect(clientModel.findOneAndUpdate).toHaveBeenCalledWith({ clientId: 5, 'integrations.integrationCode': 'trendyol' }, { $inc: { 'integrations.$.authFailureCount': 1 } }, expect.anything());
-        expect(clientModel.updateOne).not.toHaveBeenCalled();
+        // [WP7b] Tek updateOne = sync.orders.lastError (needsAttention YAZILMAZ).
+        expect(clientModel.updateOne).not.toHaveBeenCalledWith(expect.anything(), { $set: expect.objectContaining({ 'integrations.$.needsAttention': expect.anything() }) });
+        expect(clientModel.updateOne.mock.calls.map((c: any) => Object.keys(c[1].$set))).toEqual([['integrations.$.sync.orders.lastAttemptAt', 'integrations.$.sync.orders.lastError']]);
         expect(notify).not.toHaveBeenCalled();
         expect(dlqInsertOne).toHaveBeenCalledWith(expect.objectContaining({ originalJobId: 'q1', queueName: 'order-sync-trendyol', dlqType: 'FATAL_ERROR' }));
     });

@@ -2828,5 +2828,30 @@
     "fillFromMappingsNone": "Eşlemeden doldurulacak değer bulunamadı",
     "fillFromMappingsNoCategory": "Ürünün kategorisi bulunamadı — önce kategori seçin",
     "fillFromMappingsUnmapped": "{count} seçenek hiçbir kanal özelliğine eşlenmemiş"
+  },
+  "integrationSync": {
+    "lastSync": "Son senkron",
+    "lastError": "Son deneme hatası: {code}",
+    "kindLabel": "Senkron türü",
+    "syncNow": "Şimdi senkronize et",
+    "kind": {
+      "orders": "Siparişler",
+      "claims": "İadeler",
+      "messages": "Mesajlar",
+      "finance": "Finans"
+    },
+    "queued": "{kind} senkronu sıraya alındı; aynı tür 5 dakika sonra yeniden tetiklenebilir.",
+    "queuedToast": "{kind} senkronu başlatıldı.",
+    "needsAttention": "Pazaryeri kimlik bilgileri art arda reddedildi; otomatik senkron durdu. API bilgilerini güncelleyip kaydedin.",
+    "error": {
+      "cooldown": "Bu tür için manuel senkron 5 dakikada bir yapılabilir.",
+      "paused": "Bu entegrasyon geçici olarak durduruldu.",
+      "readonly": "Salt-okuma kipinde manuel senkron kapalı.",
+      "auth": "Kimlik bilgileri reddedildi; ayarları güncelleyin.",
+      "queue": "Kuyruk şu an kullanılamıyor; biraz sonra deneyin.",
+      "notConfigured": "Bu kanal etkin değil ya da kurulmadı.",
+      "forbidden": "Bu işlem için yetkiniz yok.",
+      "generic": "Senkron başlatılamadı."
+    }
   }
 }

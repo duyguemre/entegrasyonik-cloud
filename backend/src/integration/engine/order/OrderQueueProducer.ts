@@ -267,6 +267,32 @@ export class OrderQueueProducer {
     }
 
     /**
+     * [eslesme-fiyat WP7b, F-10] Kullanıcı tetiklemeli tek tür senkron ("Şimdi senkronize et"). Kapılar (kill-switch, LIVE_READONLY,
+     * soğuma) çağıranda (`operations/integrations/syncNow`). Pencere: türün imlecinden (− örtüşme) şimdiye; tam süpürme YAPILMAZ.
+     * `jobId` çağırandan (`manual_<c>_<kod>_<kind>_<5 dk pencere>`): aynı pencerede ikinci ekleme yeni iş açmaz. `isManualTrigger: true`.
+     * Redis hazır değilse iş eklenmez (`skipped: true`, hata fırlatmaz).
+     */
+    public async enqueueManualSync(args: { clientId: number; integrationCode: string; kind: OrderSyncKind; jobId: string; integration: any; now: Date }): Promise<{ jobId: string; skipped: boolean }> {
+        if (!RedisService.isReady()) return { jobId: '', skipped: true };
+        const { clientId, integrationCode, kind, jobId, integration, now } = args;
+        const forced = (cfg: any) => ({ ...cfg, intervalMs: 0, fullSweepIntervalMs: undefined });
+        const windowOf = (cursor: any, cfg: any) => this.computeSourceWindow(now, cursor, undefined, forced(cfg), undefined);
+        const data: IOrderJobData = {
+            clientId: Number(clientId),
+            integrationCode,
+            lastSyncTimestamp: integration?.lastSuccessfulOrderSync || this.getFallbackDate(),
+            isManualTrigger: true,
+            kind,
+            correlationId: getRequestId() ?? newCorrelationId('man'),
+            ...(kind === 'claims' ? { claimSync: windowOf(integration?.lastClaimSync, orderConfig.claimSync) } : {}),
+            ...(kind === 'finance' ? { financeSync: windowOf(integration?.lastFinanceSync, orderConfig.financeSync) } : {}),
+            ...(kind === 'messages' ? { messageSync: windowOf(integration?.lastMessageSync, orderConfig.messageSync) } : {}),
+        };
+        const job = await this.queue(orderQueueName(integrationCode)).add(`${kind}-${integrationCode}`, data, { jobId });
+        return { jobId: String(job?.id ?? jobId), skipped: false };
+    }
+
+    /**
      * [ADR-0005 Karar 7] Bir kaynağın (iade/finans/mesaj) bu turda "sırası gelip gelmediğini" hesaplar.
      * - Günlük tam süpürme (fullSweepIntervalMs varsa): son süpürmeden `fullSweepIntervalMs` geçtiyse VE
      *   şu anki UTC saat `staggerHour`'a eşitse -> tam pencere (fullSweepWindowDays gün) döner.

@@ -15,6 +15,9 @@ import * as lookup from '@operations/integrations/platformLookup'
 import * as importJobs from '@operations/integrations/importJobs'
 import * as exportJobs from '@operations/integrations/exportJobs'
 import * as preflight from '@operations/integrations/preflight'
+import { syncNow } from '@operations/integrations/syncNow'
+import { allowNewWork } from '@integration/config/intakeGate'
+import { config } from '@config'
 import IntegrationFactory from '@integration/modules/IntegrationFactory'
 import { eventLog } from '@platform/core/logger';
 
@@ -133,6 +136,25 @@ export default class IntegrationService extends BaseApi implements IService {
             applicationDB: this.applicationDB,
             clientDB: this.clientDB,
             clientId: Number(this.currentClientId),
+        })
+    }
+
+    /**
+     * [eslesme-fiyat WP7b, F-10] "Şimdi senkronize et": tek tür (orders|claims|messages|finance) için iş; tenant × entegrasyon × tür
+     * başına 5 dk soğuma (429 + retryAfterSec), kill-switch / LIVE_READONLY / needsAttention kapıları (operations/integrations/syncNow).
+     */
+    async syncNow(): Promise<any> {
+        return syncNow({ integrationCode: this.request.integrationCode, kind: this.request.kind }, {
+            clientModel: this.applicationDB.getClientModel(),
+            clientId: Number(this.currentClientId),
+            allowNewWork,
+            liveReadonly: config.liveReadonly.enabled,
+            enqueue: (args) => {
+                // Tembel yükleme: OrderQueueProducer BullMQ/Redis modüllerini çeker; RPC cephesini yükleyen testler/araçlar çekmesin.
+                // eslint-disable-next-line @typescript-eslint/no-require-imports -- TS6-01: node16 CJS, tembel yukleme (dinamik import yerine)
+                const { OrderQueueProducer } = (require('../../../integration/engine/order/OrderQueueProducer') as typeof import('../../../integration/engine/order/OrderQueueProducer'))
+                return new OrderQueueProducer().enqueueManualSync(args)
+            },
         })
     }
 

@@ -1,12 +1,14 @@
 import { CLIENT_INTEGRATION_HOT_PROJECTION } from '@database/projections';
 import { maskIntegrationItem, SENSITIVE_MASK } from '../../platform/core/security/integrationSecrets';
 import { redactMessage } from '../../integration/modules/common/IntegrationError';
+import { readSyncState, type SyncKind, type SyncKindState } from '@platform/core/sync/syncState';
 
 /**
  * TENANT entegrasyon sağlığı (FRONTEND_GAP_ANALYSIS N7 / API_TENANT_SURFACE §3) — YALNIZCA OKUMA.
  *
  * Kaynaklar (hiçbiri bu modülde yazılmaz):
- *  - ApplicationDB `Clients.integrations[]`      : `lastSuccessfulOrderSync`, `webhookHealthy`, `webhookLastReceivedAt`, `status`
+ *  - ApplicationDB `Clients.integrations[]`      : `sync.<kind>` (WP7b; yoksa eski `lastSuccessfulOrderSync`/`last*Sync`), `webhookHealthy`,
+ *                                                  `webhookLastReceivedAt`, `status`, `needsAttention`
  *                                                  (motorun GERÇEK imleci; tenant DB'deki `syncMetadata.lastOrderSync` HİÇBİR yerde
  *                                                  yazılmıyor ve varsayılanı epoch 0'dır -> bilerek KULLANILMAZ)
  *  - ApplicationDB `IntegrationCallMetrics`      : son 24 sa çağrı sayıları, son hata (`IntegrationError.code`), devre kesici durumu
@@ -36,7 +38,12 @@ export interface IntegrationHealthDto {
     type: string | null;
     enabled: boolean;
     credentialsConfigured: boolean | null;
+    /** Sipariş senkronunun son başarılı anı (`sync.orders.lastSuccessAt`; geri uyum alanı). */
     lastSuccessfulSyncAt: Date | null;
+    /** [WP7b, PLAN §3.5] Tür başına senkron durumu (imleç DTO'ya çıkmaz; hata yalnız kod). */
+    sync: Record<SyncKind, Omit<SyncKindState, 'cursor'>>;
+    /** [WP7a F-04 / WP7b] Art arda AUTH vb. nedeniyle iş üretimi durdu mu. */
+    needsAttention: { reason: string; since: Date | null } | null;
     webhook: { healthy: boolean | null; lastReceivedAt: Date | null } | null;
     lastError: { at: Date; code: string; httpStatus: number | null; operation: string } | null;
     circuit: { state: 'closed' | 'open' | 'half_open'; observedAt: Date; stale: boolean } | null;
@@ -184,13 +191,18 @@ export async function buildIntegrationHealth(deps: IntegrationHealthDeps): Promi
         else if (c.error > 0 && lt?.status === 'error') health = 'degraded';
         else health = 'healthy';
 
+        const syncState = readSyncState(reg);
         const webhookKnown = reg && (reg.webhookHealthy !== undefined || reg.webhookLastReceivedAt);
         return {
             integrationCode: code,
             type: (typeof reg?.type === 'string' ? reg.type : typeByCode.get(code)) ?? null,
             enabled,
             credentialsConfigured,
-            lastSuccessfulSyncAt: toDate(reg?.lastSuccessfulOrderSync),
+            lastSuccessfulSyncAt: syncState.orders.lastSuccessAt,
+            sync: Object.fromEntries(Object.entries(syncState).map(([k, v]) => [k, { lastSuccessAt: v.lastSuccessAt, lastAttemptAt: v.lastAttemptAt, lastError: v.lastError }])) as IntegrationHealthDto['sync'],
+            needsAttention: reg?.needsAttention && typeof reg.needsAttention === 'object'
+                ? { reason: typeof reg.needsAttention.reason === 'string' ? reg.needsAttention.reason.slice(0, 40) : 'UNKNOWN', since: toDate(reg.needsAttention.since) }
+                : null,
             webhook: webhookKnown ? { healthy: typeof reg.webhookHealthy === 'boolean' ? reg.webhookHealthy : null, lastReceivedAt: toDate(reg.webhookLastReceivedAt) } : null,
             lastError,
             circuit,

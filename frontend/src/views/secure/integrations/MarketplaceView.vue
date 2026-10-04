@@ -57,6 +57,8 @@
                 message="Yukarıdaki listeden bir pazar yeri seçerek ayarları yönetmeye başlayabilirsiniz." />
             </v-card-text>
           </v-form>
+          <!-- [eslesme-fiyat WP7b, F-10] Son senkron · Şimdi senkronize et (yalnız canlı kanal). -->
+          <IntegrationSyncBar v-if="isLive(editingClientIntegration.code)" :code="editingClientIntegration.code" />
           <!-- FE-LOCAL-1048: kapsam ikincil bilgi — ayar formunun ALTINDA, katlanır sakin satır. -->
           <IntegrationCapabilityChips v-if="isLive(editingClientIntegration.code)" :code="editingClientIntegration.code"
             category="marketplace" :show-health-link="!!healthLink" @open-health="openHealth" />
@@ -96,6 +98,7 @@ import EkViewSwitch, { type EkViewMode } from '@/components/page/EkViewSwitch.vu
 import ListDashSection from '@/components/page/ListDashSection.vue'
 import IntegrationComingSoonPanel from '@/components/integrations/IntegrationComingSoonPanel.vue'
 import IntegrationCapabilityChips from '@/components/integrations/IntegrationCapabilityChips.vue'
+import IntegrationSyncBar from '@/components/integrations/IntegrationSyncBar.vue'
 import { useIntegrationScreen } from '@/components/integrations/useIntegrationScreen'
 
 // C1.2 — canlı küme `getCatalog` manifestosundan (yedek: `FALLBACK_LIVE_CODES`, bkz. `integrationCatalog.ts`).

@@ -1205,5 +1205,30 @@
     "fillFromMappingsNone": "No value found to fill from mappings",
     "fillFromMappingsNoCategory": "Product category not found — select a category first",
     "fillFromMappingsUnmapped": "{count} options are not mapped to any channel attribute"
+  },
+  "integrationSync": {
+    "lastSync": "Last sync",
+    "lastError": "Last attempt failed: {code}",
+    "kindLabel": "Sync type",
+    "syncNow": "Sync now",
+    "kind": {
+      "orders": "Orders",
+      "claims": "Returns",
+      "messages": "Messages",
+      "finance": "Finance"
+    },
+    "queued": "{kind} sync queued; the same type can be triggered again in 5 minutes.",
+    "queuedToast": "{kind} sync started.",
+    "needsAttention": "The marketplace rejected the credentials repeatedly; automatic sync is paused. Update and save the API credentials.",
+    "error": {
+      "cooldown": "Manual sync for this type is limited to once every 5 minutes.",
+      "paused": "This integration is temporarily paused.",
+      "readonly": "Manual sync is disabled in read-only mode.",
+      "auth": "Credentials were rejected; update the settings.",
+      "queue": "The queue is unavailable right now; try again shortly.",
+      "notConfigured": "This channel is not enabled or not set up.",
+      "forbidden": "You do not have permission for this action.",
+      "generic": "Could not start the sync."
+    }
   }
 }

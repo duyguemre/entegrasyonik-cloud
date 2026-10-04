@@ -5,6 +5,7 @@ import { IDeadLetterQueue, IOrderJobData } from '@interfaces/order';
 import { eventLog } from '@platform/core/logger';
 import { NotificationService } from '@services/notification/NotificationService';
 import { LEGACY_ORDER_QUEUE } from '@integration/contracts/orderQueues';
+import { syncFailureUpdate } from '@platform/core/sync/syncState';
 
 const log = eventLog('worker', 'OrderErrorHandler');
 
@@ -52,6 +53,7 @@ export class OrderErrorHandler {
         const jobId = String(job.id);
         try {
             if (this.errorCodeOf(failedReason) === 'AUTH') await this.recordAuthFailure(job);
+            await this.recordSyncFailure(job, failedReason);
 
             const jobData = job.data as IOrderJobData;
             log.info('ORDERERRORHANDLER_HATA_ANALIZI_JOB_CLIENT', `Hata Analizi -> Job: ${jobId}, Client: ${jobData.clientId}`);
@@ -88,6 +90,22 @@ export class OrderErrorHandler {
             );
         } catch (err) {
             log.error('ORDERERRORHANDLER_AUTH_SAYAC_SIFIRLAMA_HATASI', 'AUTH sayacı sıfırlanamadı (best-effort).', { err });
+        }
+    }
+
+    /** [WP7b, PLAN §3.5] Başarısız iş → `sync.<kind>.{lastAttemptAt, lastError{code, at}}` (kind yoksa eski birleşik iş = orders). Ham mesaj yazılmaz. */
+    private async recordSyncFailure(job: Job, failedReason: string): Promise<void> {
+        const data = job.data as IOrderJobData;
+        const clientId = Number(data?.clientId);
+        if (!clientId || !data?.integrationCode) return;
+        try {
+            const appDB = await DatabaseManagerInstance.getApplicationDB();
+            await appDB.getClientModel().updateOne(
+                { clientId, 'integrations.integrationCode': data.integrationCode },
+                syncFailureUpdate(data.kind ?? 'orders', this.errorCodeOf(failedReason), new Date()),
+            );
+        } catch (err) {
+            log.error('ORDERERRORHANDLER_SYNC_DURUM_HATASI', 'sync hata durumu yazılamadı (best-effort).', { err });
         }
     }
 

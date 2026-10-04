@@ -69,6 +69,7 @@ beforeEach(() => {
   orderRepo = {
     saveOrders: anyFn().mockResolvedValue({ insertedExternalIds: [], updatedExternalIds: [] }),
     updateLastSyncTimestamp: anyFn().mockResolvedValue(undefined),
+    recordSyncFailure: anyFn().mockResolvedValue(undefined),
     updateSourceSyncCursor: anyFn().mockResolvedValue(undefined),
   };
   customerRepo = {
