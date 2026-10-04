@@ -2,6 +2,7 @@ import { IService } from '@interfaces/index'
 import { BaseApi } from '../BaseApi'
 import { StatsOperations } from '@operations/reports/StatsOperations'
 import { findStockChanges, recordManualStockMovements, stockDirtyFields } from '@operations/stock/markStockDirty'
+import { productPriceRange } from '@platform/core/pricing/effectivePrice'
 import { applyDotSet, diffChannelPrices, loadPriceSnapshots, markPriceChanges, PRICE_DIFF_PROJECTION, preserveEngineChannelFields, PriceChange } from '@operations/pricing/pricePending'
 import { stripEngineOwnedVariantFields } from './product-service'
 import { ObjectId } from 'mongodb'
@@ -190,52 +191,10 @@ export default class VariantService extends BaseApi implements IService {
     }
 
     async updateProductPrices(productId: any): Promise<any> {
-        const findMinimumSalePrice = (platforms: any) => {
-            const res = Object.values(platforms).reduce((min: any, platform: any) =>
-                platform.prices && platform.prices.salePrice && platform.prices.salePrice < min ? platform.prices.salePrice : min, Infinity);
-            if (res == Infinity) return 0
-            return Number(res)
-        }
-        const findMaximumSalePrice = (platforms: any) => {
-            return Number(Object.values(platforms).reduce((max: any, platform: any) =>
-                platform.prices && platform.prices.salePrice && platform.prices.salePrice > max ? platform.prices.salePrice : max, 0))
-        }
-
-
-        const getOverallMinMaxPrices = (variants: any) => {
-            let minSalePrice = Infinity
-            let maxSalePrice = 0
-            if (variants.length == 0) {
-                return { minSalePrice: 0, maxSalePrice: 0 }
-            }
-
-            for (const variant of variants) {
-                var saleMin = 0
-                var saleMax = 0
-
-                const platforms = variant.platforms
-
-                if (variant.prices?.isPlatformBasedPrice == false) {
-                    saleMin = variant.prices.salePrice
-                    saleMax = variant.prices.salePrice
-                } else {
-                    saleMin = findMinimumSalePrice(platforms)
-                    saleMax = findMaximumSalePrice(platforms)
-                }
-
-                if (saleMin < minSalePrice) minSalePrice = saleMin
-                if (saleMax > maxSalePrice) maxSalePrice = saleMax
-            }
-            minSalePrice === Infinity ? 0 : minSalePrice
-            return {
-                minSalePrice,
-                maxSalePrice
-            }
-        }
-
+        // [eslesme-fiyat WP5, Ek B P2-8] tek formül (platform/core/pricing/effectivePrice.ts productPriceRange)
         const variants = await this.variants.listByProduct(toObjectId(productId))
 
-        const prices = getOverallMinMaxPrices(variants)
+        const prices = productPriceRange(variants)
 
         // 2. Product belgesini güncelle
         await this.products.setPrices(productId, prices);

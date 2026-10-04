@@ -338,25 +338,25 @@ describe('VariantService.updateProductPrices [BULGU: Infinity sızıntısı]', (
     expect(productModel.updateOne.mock.calls[0][1]).toEqual({ $set: { prices: { minSalePrice: 20, maxSalePrice: 30 } } });
   });
 
-  it('[MEVCUT DAVRANIŞ - BULGU] isPlatformBasedPrice=true/undefined AMA `platforms` alanı YOKSA TypeError fırlatır (Object.values(undefined))', async () => {
-    // BACKLOG: şüpheli - "sabit fiyat" (isPlatformBasedPrice===false) dışındaki HER varyantın `platforms` alanına
-    // sahip olduğu varsayılıyor; olmayan/eksik `platforms` çöküşe yol açar.
-    variantModel.find.mockReturnValue({ lean: jest.fn(async () => [{ prices: { salePrice: 10 } }]) }); // isPlatformBasedPrice YOK, platforms YOK
-    await expect(makeService().updateProductPrices(new ObjectId())).rejects.toThrow(TypeError);
+  // [eslesme-fiyat WP5, Ek B P2-8] iki BULGU düzeldi (bilinçli güncelleme): tek formül `productPriceRange` (etkin kanal fiyatları).
+  it('[WP5] platforms alanı yoksa ana fiyat kullanılır (eskiden TypeError)', async () => {
+    variantModel.find.mockReturnValue({ lean: jest.fn(async () => [{ prices: { salePrice: 10 } }]) });
+    await makeService().updateProductPrices(new ObjectId());
+    expect(productModel.updateOne.mock.calls[0][1]).toEqual({ $set: { prices: { minSalePrice: 10, maxSalePrice: 10 } } });
   });
 
-  it('[MEVCUT DAVRANIŞ - BULGU] "Infinity sızıntısı": minSalePrice hesabı Infinity\'de kalırsa SONUÇTA Infinity olarak YAZILIR (ternary sonucu hiçbir yere ATANMAMIŞ ölü kod; product-service.ts\'in AKSİNE düzeltilmemiş)', async () => {
-    // BACKLOG: kritik olabilir - `minSalePrice === Infinity ? 0 : minSalePrice` satırı bir STATEMENT olarak
-    // yazılmış ama sonucu HİÇBİR DEĞİŞKENE atanmamış (dead code); bu yüzden minSalePrice bulunamadığında
-    // (salePrice tanımsız/NaN) Product.prices.minSalePrice alanına gerçekten `Infinity` yazılır (JSON'da `null`
-    // olur, karşılaştırma sorgularını bozabilir). `ProductService.updateProductStockAndPrices` AYNI riski satır
-    // içinde (`minPrice === Infinity ? 0 : minPrice`) DOĞRU ele alıyor — iki servis arasında TUTARSIZLIK var.
+  it('[WP5] fiyat bulunamazsa min 0 yazılır (eskiden Infinity sızıyordu); bayrak kapalıyken eski kanal nesnesi aralığa girmez', async () => {
+    variantModel.find.mockReturnValue({ lean: jest.fn(async () => [
+      { prices: { isPlatformBasedPrice: false, salePrice: undefined } },
+      { prices: { isPlatformBasedPrice: false, salePrice: 40 }, platforms: { trendyol: { prices: { salePrice: 5 } } } },
+    ]) });
+    await makeService().updateProductPrices(new ObjectId());
+    expect(productModel.updateOne.mock.calls[0][1]).toEqual({ $set: { prices: { minSalePrice: 40, maxSalePrice: 40 } } });
     variantModel.find.mockReturnValue({ lean: jest.fn(async () => [{ prices: { isPlatformBasedPrice: false, salePrice: undefined } }]) });
     await makeService().updateProductPrices(new ObjectId());
-    const written = productModel.updateOne.mock.calls[0][1].$set.prices;
-    expect(written.minSalePrice).toBe(Infinity);
-    expect(written.maxSalePrice).toBe(0);
+    expect(productModel.updateOne.mock.calls[1][1]).toEqual({ $set: { prices: { minSalePrice: 0, maxSalePrice: 0 } } });
   });
+
 
   it('[MEVCUT DAVRANIŞ] hata olduğu gibi yeniden fırlatılır', async () => {
     const err = new Error('find fail');

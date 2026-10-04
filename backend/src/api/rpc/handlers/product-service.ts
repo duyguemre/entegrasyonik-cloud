@@ -15,6 +15,7 @@ import { VariantRepository } from '@database/repositories/tenant/VariantReposito
 import { ImageRepository } from '@database/repositories/tenant/ImageRepository';
 import { StatisticsRepository } from '@database/repositories/tenant/StatisticsRepository';
 import { findStockChanges, recordManualStockMovements, stockDirtyFields } from '@operations/stock/markStockDirty';
+import { productPriceRange } from '@platform/core/pricing/effectivePrice';
 import { diffChannelPrices, loadPriceSnapshots, markPriceChanges, preserveEngineChannelFields, PriceChange } from '@operations/pricing/pricePending';
 
 /** exportExcel: varyantların tek seferde çekildiği ürün grubu boyutu (bellek üst sınırı = grup × ürün başına varyant). */
@@ -297,15 +298,8 @@ export default class ProductService extends BaseApi implements IService {
         const totalStock = stockAgg[0]?.totalStock ?? 0;
 
         const variants = await this.variants.listByProduct(productId);
-        let minPrice = Infinity, maxPrice = 0;
-        variants.forEach((v: any) => {
-            const p = v.prices || {};
-            const sale = p.isPlatformBasedPrice ? Math.min(...Object.values(v.platforms || {}).map((pl: any) => pl.prices?.salePrice || Infinity)) : p.salePrice;
-            if (sale < minPrice) minPrice = sale;
-            if (sale > maxPrice) maxPrice = sale;
-        });
-
-        await this.products.setStockAndPrices(productId, totalStock, { minSalePrice: minPrice === Infinity ? 0 : minPrice, maxSalePrice: maxPrice });
+        // [eslesme-fiyat WP5, Ek B P2-8] VariantService ile aynı tek formül (etkin kanal fiyatları).
+        await this.products.setStockAndPrices(productId, totalStock, productPriceRange(variants));
     }
 
 

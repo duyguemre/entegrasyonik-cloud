@@ -103,3 +103,21 @@ export function describeEffectivePrice(e: EffectivePrice): string {
     if (e.source === 'rule') return `${v} ← kanal fiyat kuralı${e.ruleId ? ` ${e.ruleId}` : ''}${e.ruleVersion ? ` s${e.ruleVersion}` : ''} (${e.field})`;
     return `${v} ← ana fiyat (prices; kanal özel fiyatı/kuralı yok)`;
 }
+
+/**
+ * [eslesme-fiyat WP5, Ek B P2-8] Ürün özeti fiyat aralığı (`Products.prices.min/maxSalePrice`) TEK formül: her varyantın kanallardaki
+ * ETKİN satış fiyatları (kanalı yoksa ana fiyat). Eskiden ProductService ve VariantService iki farklı formülle hesaplıyordu.
+ */
+export function productPriceRange(variants: ReadonlyArray<any>): { minSalePrice: number; maxSalePrice: number } {
+    let min = Infinity, max = 0;
+    for (const v of variants || []) {
+        const codes = Object.keys(v?.platforms ?? {});
+        const values = codes.length ? codes.map((c) => effectiveChannelPrice(v, c).salePrice) : [finite(v?.prices?.salePrice)];
+        for (const x of values) {
+            if (x === null || !(x > 0)) continue;
+            if (x < min) min = x;
+            if (x > max) max = x;
+        }
+    }
+    return { minSalePrice: min === Infinity ? 0 : round2(min), maxSalePrice: round2(max) };
+}
