@@ -78,6 +78,8 @@ export const INTEGRATION_ISSUES = {
     PRICE_INVALID: { severity: 'error', module: 'price', reason: 'Satış fiyatı geçersiz (boş ya da 0).', solution: 'Satış fiyatı gir.', screen: SCR.PRODUCTS },
     PRICE_ABOVE_LIST: { severity: 'error', module: 'price', reason: 'Satış fiyatı liste fiyatından yüksek.', solution: 'Liste fiyatını satış fiyatına eşit ya da yüksek yap.', screen: SCR.PRODUCTS },
     VAT_INVALID: { severity: 'error', module: 'price', reason: 'KDV oranı geçersiz.', solution: 'KDV oranını gir (0, 1, 10 ya da 20).', screen: SCR.PRODUCTS },
+    VAT_MISSING: { severity: 'warning', module: 'price', reason: 'KDV oranı üründe ve kanal eşlemesinde girilmemiş; entegrasyon ayarında da yoksa ürün gönderilmez.', solution: 'Ürüne KDV oranı gir (0, 1, 10 ya da 20).', screen: SCR.PRODUCTS },
+    VAT_ZERO_CHECK: { severity: 'warning', module: 'price', reason: 'Ürünün KDV oranı %0 görünüyor; eski kayıtlarda 0 "girilmemiş" anlamına geliyordu.', solution: 'KDV oranını kontrol et; %0 doğruysa bu uyarıyı yok say.', screen: SCR.PRODUCTS },
     STOCK_INVALID: { severity: 'error', module: 'stock', reason: 'Stok geçersiz (boş ya da negatif).', solution: 'Stok adedini düzelt.', screen: SCR.PRODUCTS },
     // --- bağlantı / kanal ---
     AUTH_FAILED: { severity: 'error', module: 'auth', reason: 'Kanal kimlik bilgilerini reddetti.', solution: 'Entegrasyon ayarlarında API bilgilerini kontrol et.', screen: SCR.MARKETPLACE },

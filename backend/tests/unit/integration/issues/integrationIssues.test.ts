@@ -72,12 +72,12 @@ describe('errorMap', () => {
 });
 
 describe('checkChannelReadiness (D-VAL-1/2)', () => {
-  const product = { _id: 'P1', title: 'Ürün', category: { id: 1 }, brand: { id: 2 } };
+  const product = { _id: 'P1', title: 'Ürün', category: { id: 1 }, brand: { id: 2 }, taxPercentage: 20 }; // [WP5] KDV ayarlı
   const variant = (over: any = {}) => ({ _id: 'V1', barcode: 'B-1', stockcode: 'S1', images: ['https://x/1.jpg'], prices: { salePrice: 10, marketPrice: 12 }, platforms: {}, ...over });
   const codes = (v: any, mode = 'TRANSFER', code = 'trendyol', p: any = product) => checkChannelReadiness({ variant: v, product: p, integrationCode: code, mode }).map((i) => i.code);
 
   it('geçerli varyant → sorun yok', () => expect(codes(variant())).toEqual([]));
-  it('kategori/marka eksik sırası korunur', () => expect(codes(variant(), 'TRANSFER', 'trendyol', { _id: 'P1' })).toEqual(['PRODUCT_CATEGORY_MISSING', 'PRODUCT_BRAND_MISSING']));
+  it('kategori/marka eksik sırası korunur', () => expect(codes(variant(), 'TRANSFER', 'trendyol', { _id: 'P1' })).toEqual(['PRODUCT_CATEGORY_MISSING', 'PRODUCT_BRAND_MISSING', 'VAT_MISSING']));
   it('TY barkod >40 ve geçersiz karakter', () => {
     expect(codes(variant({ barcode: 'A'.repeat(41) }))).toEqual(['BARCODE_INVALID']);
     expect(codes(variant({ barcode: 'A/B' }))).toEqual(['BARCODE_INVALID']);
@@ -88,7 +88,11 @@ describe('checkChannelReadiness (D-VAL-1/2)', () => {
     expect(codes(variant({ images: Array(9).fill('https://x/a.jpg') }))).toEqual(['IMAGE_TOO_MANY']);
     expect(codes(variant({ images: [{ url: 'http://x/a.jpg' }] }))).toEqual(['IMAGE_NOT_HTTPS']);
     expect(codes(variant(), 'TRANSFER', 'trendyol', { ...product, taxPercentage: 18 })).toEqual(['VAT_INVALID']);
-    expect(codes(variant(), 'TRANSFER', 'trendyol', { ...product, taxPercentage: 0 })).toEqual([]);
+    // [eslesme-fiyat WP5, D-PRICE-2] 0 geçerli oran ama üründe 0 → doğrulama uyarısı; ayarsız → VAT_MISSING (uyarı; adaptör ayarı da yoksa durdurur)
+    expect(codes(variant(), 'TRANSFER', 'trendyol', { ...product, taxPercentage: 0 })).toEqual(['VAT_ZERO_CHECK']);
+    expect(codes(variant({ platforms: { trendyol: { mapping: { taxPercentage: 0 } } } }), 'TRANSFER', 'trendyol', { ...product, taxPercentage: null })).toEqual([]);
+    expect(codes(variant(), 'TRANSFER', 'hepsiburada', { ...product, taxPercentage: null })).toEqual(['VAT_MISSING']);
+    expect(codes(variant(), 'UPDATE_PRICE', 'hepsiburada', { ...product, taxPercentage: null })).toEqual([]);
   });
   it('fiyat: TY/HB/PZ\'de denetlenir, UPDATE_STOCK\'ta denetlenmez; N11/Ideasoft\'ta denetlenmez', () => {
     expect(codes(variant({ prices: { salePrice: 0 } }))).toEqual(['PRICE_INVALID']);

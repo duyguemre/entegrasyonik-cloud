@@ -8,6 +8,7 @@
 import { PLATFORM_PROCESS } from '@interfaces/index';
 import { IntegrationIssue, makeIssue } from '@platform/core/errors/integrationIssues';
 import { effectiveChannelPrice } from '@platform/core/pricing/effectivePrice';
+import { resolveVatRate, VAT_RATES } from '@platform/core/pricing/vat';
 
 export interface ChannelRules {
     barcodeMax?: number;
@@ -27,10 +28,12 @@ export const CHANNEL_RULES: Readonly<Record<string, ChannelRules>> = {
     // Trendyol ürün V2: barcode ≤40 (`. - _`), title ≤100, productMainId ≤40, stockCode ≤100, images ≤8 HTTPS, vatRate 0/1/10/20.
     trendyol: { barcodeMax: 40, barcodePattern: /^[A-Za-z0-9._-]+$/, stockcodeMax: 100, maincodeMax: 40, titleMax: 100, imagesMax: 8, imagesHttps: true, vatRates: [0, 1, 10, 20], priceRequired: true },
     // Hepsiburada katalog: Image1..Image10.
-    hepsiburada: { imagesMax: 10, priceRequired: true },
-    pazarama: { priceRequired: true },
+    hepsiburada: { imagesMax: 10, priceRequired: true, vatRates: VAT_RATES },
+    pazarama: { priceRequired: true, vatRates: VAT_RATES },
     // N11: stockCode ≤255.
-    n11: { stockcodeMax: 255 },
+    n11: { stockcodeMax: 255, vatRates: VAT_RATES },
+    // [eslesme-fiyat WP5] Ideasoft: KDV artık açıkça istenir (eski varsayılan %18 kalktı).
+    ideasoft: { vatRates: VAT_RATES },
 };
 
 /** İçerik (başlık/görsel/kod) gönderen modlar; fiyat/stok güncellemesinde içerik denetlenmez. */
@@ -86,8 +89,12 @@ export function checkChannelReadiness({ variant, product, integrationCode, mode 
     if (insecure > 0) issues.push(makeIssue('IMAGE_NOT_HTTPS', { ...ctx, field: 'images', params: { count: insecure } }));
 
     if (rules.vatRates) {
-        const raw = [vMapping?.taxPercentage, product?.taxPercentage].find((v) => v !== undefined && v !== null && v !== '');
-        if (raw !== undefined && !rules.vatRates.includes(Number(raw))) issues.push(makeIssue('VAT_INVALID', { ...ctx, field: 'taxPercentage' }));
+        // [eslesme-fiyat WP5, D-PRICE-2] tek çözümleyici (adaptörlerle aynı). Tenant kanal ayarı burada görülmez → ayarsız KDV UYARI;
+        // ayarda da yoksa adaptör ürünü gönderMEZ (sessiz 20/18 varsayılanı kalktı). Üründe 0 → doğrulama uyarısı (eski şema varsayılanı).
+        const vat = resolveVatRate(variant, integrationCode, undefined, product);
+        if (vat.value !== null && (vat.invalid || !rules.vatRates.includes(vat.value))) issues.push(makeIssue('VAT_INVALID', { ...ctx, field: 'taxPercentage' }));
+        else if (vat.value === null) issues.push(makeIssue('VAT_MISSING', { ...ctx, field: 'taxPercentage' }));
+        else if (vat.value === 0 && vat.source === 'product') issues.push(makeIssue('VAT_ZERO_CHECK', { ...ctx, field: 'taxPercentage' }));
     }
     return issues;
 }

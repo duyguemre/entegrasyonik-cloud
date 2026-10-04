@@ -2,6 +2,7 @@ import { IMessage, ICategoryAttribute, ICategoryAttributeValue, IFinancialTransa
 import { normalizeAttrValue, indexCategoryAttributes, findValueById, findValueByText, missingRequiredAttributes, labelAttribute } from '@integration/catalog/attributePayload';
 import { integrationCode } from '../constants';
 import { effectiveChannelPrice, effectiveListPrice, round2 } from '@platform/core/pricing/effectivePrice';
+import { resolveVatRate } from '@platform/core/pricing/vat';
 
 /** [eslesme-fiyat WP4, 02-ekler/n11 C-1] N11'de marka ayrı servis değil, kategori özelliği "Marka" (attributeId 1, zorunlu, isCustomValue). */
 export const N11_BRAND_ATTRIBUTE_ID = '1';
@@ -81,9 +82,11 @@ export class ProductMapper {
         const shipmentTemplate = [vMap.shippingId, settings.shippingId].find(filled);
         if (!filled(shipmentTemplate)) errors.push('shipmentTemplate (kargo şablonu): N11 ayarlarında kargo şablonu seçilmemiş');
 
-        const vatRaw = [vMap.taxPercentage, variant.taxPercentage, variant.product?.taxPercentage, settings.taxPercentage].find(filled);
-        const vatRate = vatRaw === undefined ? 20 : Number(vatRaw);
-        if (!(N11_VAT_RATES as readonly number[]).includes(vatRate)) errors.push(`vatRate (KDV): %${vatRaw} N11'de geçersiz (izinli: ${N11_VAT_RATES.join(', ')})`);
+        // [eslesme-fiyat WP5, D-PRICE-2] tek çözümleyici; ayarsız KDV'de 20 varsayımı KALKTI (alan bazlı hata).
+        const vat = resolveVatRate(variant, integrationCode, settings);
+        const vatRate = vat.value ?? 0;
+        if (vat.value === null) errors.push('vatRate (KDV): ürün, kanal eşlemesi ya da N11 ayarında KDV oranı yok');
+        else if (!(N11_VAT_RATES as readonly number[]).includes(vatRate)) errors.push(`vatRate (KDV): %${vat.value} N11'de geçersiz (izinli: ${N11_VAT_RATES.join(', ')})`);
 
         const preparingDay = Number([vMap.shippingDuration, vMap.preparingDay, settings.shippingDuration].find(filled) ?? N11_DEFAULT_PREPARING_DAY);
         const maxPurchase = [vMap.maxPurchaseQuantity, settings.maxPurchaseQuantity].find(filled);

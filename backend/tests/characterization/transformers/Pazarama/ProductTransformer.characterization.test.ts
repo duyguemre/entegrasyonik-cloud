@@ -16,7 +16,8 @@ function makeVariant(overrides: any = {}) {
         choiceId: '-', choiceValueId: '-', choiceValueTitle: '-',
         // `toPlatformBatch` isim/açıklama/vergi için `variant.product?.*` alanına bakar (variant.title/description
         // DEĞİL) — bkz. ProductTransformer.ts satır 53-64.
-        product: { title: 'Test', description: 'Açıklama', taxPercentage: 18 },
+        // [eslesme-fiyat WP5, D-PRICE-2] bilinçli güncelleme: KDV {0,1,10,20}; sessiz 20/18 varsayılanı yok (ayarsız → VALIDATION).
+        product: { title: 'Test', description: 'Açıklama', taxPercentage: 20 },
         platforms: {
             [CODE]: {
                 prices: { salePrice: 100, marketPrice: 120 }, upload: {},
@@ -85,7 +86,7 @@ describe('Pazarama ProductMapper.toPlatformBatch — karakterizasyon', () => {
         expect(item).toMatchObject({
             barcode: '1234567890123', name: 'Test', displayName: 'Test', description: 'Açıklama', code: '1234567890123',
             groupCode: 'MAIN-1', stockCode: 'SKU-001', brandId: '200', categoryId: '100', stockCount: 5,
-            salePrice: 100, listPrice: 120, vatRate: 18, desi: 1, currencyType: 'TRY',
+            salePrice: 100, listPrice: 120, vatRate: 20 /* WP5: fikstür KDV */, desi: 1, currencyType: 'TRY',
         });
         expect(item.images).toEqual([{ imageurl: 'https://img.example.com/1.jpg' }, { imageurl: 'https://img.example.com/2.jpg' }]);
     });
@@ -119,11 +120,14 @@ describe('Pazarama ProductMapper.toPlatformBatch — karakterizasyon', () => {
         expect(item.salePrice).toBe(100);
     });
 
-    it('vatRate: vMapping.taxPercentage > product.taxPercentage > mapping.settings.taxPercentage > 20 varsayılan', () => {
-        const v = makeVariant({ product: { taxPercentage: 8 }, platforms: { [CODE]: { prices: { salePrice: 100 }, upload: {}, attributes: {}, mapping: {} } } });
-        expect(m.toPlatformBatch(staged(v), PLATFORM_PROCESS.TRANSFER, [], [], mapping).vatRate).toBe(8);
+    // [eslesme-fiyat WP5, D-PRICE-2] bilinçli güncelleme: KDV {0,1,10,20}; sessiz 20/18 varsayılanı yok (ayarsız → VALIDATION).
+    it('vatRate: vMapping.taxPercentage > product.taxPercentage > mapping.settings.taxPercentage; hiçbiri yoksa VALIDATION (eski 20 varsayılanı kalktı)', () => {
+        const v = makeVariant({ product: { taxPercentage: 10 }, platforms: { [CODE]: { prices: { salePrice: 100 }, upload: {}, attributes: {}, mapping: {} } } });
+        expect(m.toPlatformBatch(staged(v), PLATFORM_PROCESS.TRANSFER, [], [], mapping).vatRate).toBe(10);
+        const v0 = makeVariant({ product: { taxPercentage: 0 }, platforms: { [CODE]: { prices: { salePrice: 100 }, upload: {}, attributes: {}, mapping: {} } } });
+        expect(m.toPlatformBatch(staged(v0), PLATFORM_PROCESS.TRANSFER, [], [], mapping).vatRate).toBe(0); // eskiden || zinciri 0'ı 20 yapıyordu
         const vNone = makeVariant({ product: undefined, platforms: { [CODE]: { prices: { salePrice: 100 }, upload: {}, attributes: {}, mapping: {} } } });
-        expect(m.toPlatformBatch(staged(vNone), PLATFORM_PROCESS.TRANSFER, [], [], mapping).vatRate).toBe(20);
+        expect(() => m.toPlatformBatch(staged(vNone), PLATFORM_PROCESS.TRANSFER, [], [], mapping)).toThrow(/KDV oranı ayarlı değil/);
         expect(m.toPlatformBatch(staged(vNone), PLATFORM_PROCESS.TRANSFER, [], [], { ...mapping, settings: { taxPercentage: 1 } }).vatRate).toBe(1);
     });
 

@@ -28,7 +28,7 @@ describe('COM-10: ic fiyat brut', () => {
 
 describe('COM-10: import -> export tur testi (fiyat degismez)', () => {
     // Ice aktarilan varyant baska bir kanala yayinlanirken platform fiyati yok -> ust duzey prices kullanilir.
-    const imported = (m: any) => { const v = m.toInternalVariant(raw, { choices: [] }); return { ...v, platforms: {}, images: ['https://x/y.jpg'], product: { title: 'T', description: 'D' } }; };
+    const imported = (m: any) => { const v = m.toInternalVariant(raw, { choices: [] }); return { ...v, platforms: {}, images: ['https://x/y.jpg'], product: { title: 'T', description: 'D', taxPercentage: 20 /* WP5: KDV açıkça */ } }; };
     const pub = (m: any, mode: any = PLATFORM_PROCESS.UPDATE) => m.toPlatformBatch({ payload: imported(m) } as any, mode, [], [], mapping);
     it('pazarama: yayin salePrice 118', () => { expect(pub(pz).salePrice).toBe(118); });
     it('hepsiburada: yayin fiyati 118,00', () => { expect(JSON.stringify(pub(hb))).toContain('118,00'); });

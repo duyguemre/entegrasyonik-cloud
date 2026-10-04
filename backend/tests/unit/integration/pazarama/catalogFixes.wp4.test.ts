@@ -65,7 +65,7 @@ describe('Pazarama stok ucu + batch sonucu (C-3/C-4/C-9)', () => {
 describe('Pazarama özellik tek alan + isRequired (C-6/C-7)', () => {
   const { ProductMapper } = require('@integration/modules/marketplace/pazarama/transformers/ProductTransformer');
   const { CategoryMapper } = require('@integration/modules/marketplace/pazarama/transformers/CategoryTransformer');
-  const variant = (attributes: any) => ({ barcode: 'B1', stockcode: 'S1', stock: 1, images: [], product: { title: 'T' },
+  const variant = (attributes: any) => ({ barcode: 'B1', stockcode: 'S1', stock: 1, images: [], product: { title: 'T', taxPercentage: 20 /* WP5 */ },
     platforms: { pazarama: { prices: { salePrice: 10 }, attributes, mapping: {} } } });
   const sp = (v: any) => ({ payload: v } as any);
   const catAttrs = new CategoryMapper().toInternalAttributes([

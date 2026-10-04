@@ -49,9 +49,12 @@ describe('Trendyol ürün yerel doğrulaması (WP5)', () => {
         expect(() => build({}, { ...mapping, brandId: 'abc' })).toThrow(/brandId/);
     });
 
-    it('%0 KDV korunur (eskiden || zinciri 0 değerini 20 yapıyordu); tanımsızsa 20', () => {
+    // [eslesme-fiyat WP5, D-PRICE-2] bilinçli güncelleme: tanımsız KDV artık 20 VARSAYILMAZ → alan bazlı VALIDATION; ayar varsa ayar.
+    it('%0 KDV korunur (eskiden || zinciri 0 değerini 20 yapıyordu); tanımsızsa VALIDATION (sessiz 20 yok), ayar varsa ayar', () => {
         expect((build({ product: { title: 't', description: 'd', taxPercentage: 0 } }) as any).vatRate).toBe(0);
-        expect((build({ product: { title: 't', description: 'd' } }) as any).vatRate).toBe(20);
+        expect(() => build({ product: { title: 't', description: 'd' } })).toThrow(/vatRate: KDV oranı ayarlı değil/);
+        expect((build({ product: { title: 't', description: 'd' } }, { ...mapping, settings: { taxPercentage: 10 } }) as any).vatRate).toBe(10);
+        expect((build({ product: { title: 't', description: 'd' } }, mapping, P.UPDATE_VARIANT) as any).vatRate).toBeUndefined();
     });
 
     it('onaylı içerik güncellemesinde yalnız mevcut alanlar denetlenir (barkodsuz gövde geçerli)', () => {

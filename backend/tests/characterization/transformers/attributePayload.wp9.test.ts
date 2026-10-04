@@ -12,7 +12,7 @@ import { PLATFORM_PROCESS } from '@interfaces/index';
 
 const variantFor = (code: string, attributes: any) => ({
     _id: 'v1', barcode: '1234567890123', stockcode: 'SKU', maincode: 'M', stock: 3, images: ['https://x/1.jpg'],
-    prices: { salePrice: 100, marketPrice: 120 }, product: { title: 'T', description: 'D', taxPercentage: 18 },
+    prices: { salePrice: 100, marketPrice: 120 }, product: { title: 'T', description: 'D', taxPercentage: 20 }, /* WP5: KDV {0,1,10,20} */
     platforms: { [code]: { prices: { salePrice: 100, marketPrice: 120 }, upload: {}, attributes, mapping: {} } },
 }) as any;
 const staged = (payload: any) => ({ payload }) as any;
@@ -83,7 +83,7 @@ describe('Pazarama özellik yükü (WP9)', () => {
 
 describe('Ideasoft özellik yükü (WP9)', () => {
     const m = new IdeaMapper();
-    const build = (attrs: any) => m.buildIdeasoftVariant(variantFor('ideasoft', attrs), { title: 'T' }, 1, 2, [], {}).optionGroups;
+    const build = (attrs: any) => m.buildIdeasoftVariant(variantFor('ideasoft', attrs), { title: 'T', taxPercentage: 20 }, 1, 2, [], {}).optionGroups;
     it('FE nesnesi: seçenek kimliği attributeValueId olur (eskiden nesnenin kendisi gidiyordu)', () => {
         expect(build({ '10': { attributeName: 'Beden', attributeValue: 'M', attributeValueId: '55' } })).toEqual([{ id: '10', options: [{ id: '55' }] }]);
     });

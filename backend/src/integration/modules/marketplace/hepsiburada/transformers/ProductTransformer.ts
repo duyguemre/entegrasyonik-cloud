@@ -4,6 +4,18 @@ import { randomUUID } from 'crypto';
 import { IInternalResult } from '@interfaces/index';
 import { normalizeAttrValue } from '@integration/catalog/attributePayload';
 import { channelPricePair } from '@platform/core/pricing/effectivePrice';
+import { resolveVatRate } from '@platform/core/pricing/vat';
+import { IntegrationError } from '@integration/modules/common/IntegrationError';
+
+/** [eslesme-fiyat WP5, D-PRICE-2] KDV tek çözümleyici; ayarsız/geçersiz KDV ile içerik gönderilmez (sessiz varsayılan yok). */
+function requireVat(variant: any, code: string, settings: any, product?: any): number {
+    const r = resolveVatRate(variant, code, settings, product);
+    const ctx = { integrationCode: code, operation: 'resolveVatRate', clientId: settings?.clientId ?? 'unknown' };
+    const head = `ürün doğrulaması başarısız (barkod ${String(variant?.barcode ?? '?').slice(0, 40)}): vatRate:`;
+    if (r.value === null) throw new IntegrationError('VALIDATION', `${head} KDV oranı ayarlı değil (ürün, kanal eşlemesi ya da entegrasyon ayarı).`, ctx);
+    if (r.invalid) throw new IntegrationError('VALIDATION', `${head} %${r.value} geçersiz (izinli: 0, 1, 10, 20).`, ctx);
+    return r.value;
+}
 
 export class ProductMapper {
     public validate(variant: IVariant, mode: PLATFORM_PROCESS) {
@@ -58,7 +70,7 @@ export class ProductMapper {
             if (norm) attributes[attrId] = norm.valueId ?? norm.text;
         });
 
-        const taxPercentage = Number(vMapping?.taxPercentage || variant.product?.taxPercentage || mapping.settings?.taxPercentage || 20);
+        const taxPercentage = requireVat(variant, integrationCode, mapping.settings); // [WP5] `||` zinciri 0'ı 20'ye çeviriyordu
         const desi = String(vMapping?.desi || variant.product?.desi || 1);
         const warranty = Number(vMapping?.warranty || variant.product?.warranty || 24);
 

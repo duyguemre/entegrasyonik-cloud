@@ -17,7 +17,9 @@ export const ProductSchema = new mongoose.Schema({
     shelf: { type: String, required: false, default: '-' },
     warrantyDuration: { type: Number, required: false, default: 0 },
     description: { type: String, required: false },
-    taxPercentage: { type: Number, required: false, default: 0 },
+    // [eslesme-fiyat WP5, D-PRICE-2] null/yok = AYARSIZ, 0 = %0 KDV. Eski `default: 0` kalktı (0 hem ayarsız hem %0 demekti);
+    // eski kayıtlar için göç YOK (K05) — hazırlık denetimi üründe 0 görünce VAT_ZERO_CHECK uyarısı verir.
+    taxPercentage: { type: Number, required: false, default: null }, // izinli küme RPC zod'da (eski %18 kayıtlar save'de kırılmasın)
     prices: {
         type: {
             minSalePrice: { type: Number, required: true, default: 0 },

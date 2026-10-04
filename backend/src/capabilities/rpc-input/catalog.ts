@@ -4,6 +4,7 @@
 import { z } from 'zod';
 import { allowList, idStr, integrationCode, isSafeKey, reqText, strictBody, text } from './common';
 import type { RpcRef } from '../types';
+import { round2 } from '@platform/core/pricing/effectivePrice';
 
 /** Mongo ObjectId (24 hex) dizgesi. */
 export const objectIdStr = z.string().regex(/^[0-9a-fA-F]{24}$/, 'geçersiz kimlik');
@@ -30,13 +31,47 @@ const safeKeys = (obj: Record<string, unknown>, ctx: z.RefinementCtx) => {
 };
 export const looseEntity = <T extends z.ZodRawShape>(shape: T) => z.object(shape).passthrough().superRefine(safeKeys);
 const numLike = z.union([z.number(), z.string().max(32)]);
-const variantDocOf = (idRequired: boolean) => looseEntity({ _id: idRequired ? idStr : idStr.optional(), stockcode: text(200).nullish(), barcode: text(200).nullish(), stock: numLike.nullish() });
+
+/**
+ * [eslesme-fiyat WP5, Ek B P1-5 / D-PRICE-1] Para: sonlu sayı (ya da "12.5" biçiminde nokta-ondalık dize), 0 ≤ x ≤ 10.000.000;
+ * 2 ondalığa YUVARLANARAK yazılır (zod çıktısı servise gider). NaN/negatif/Infinity/"12,5"/metin reddedilir (eskiden olduğu gibi `$set`).
+ */
+export const MONEY_MAX = 10_000_000;
+export const money = z.union([z.number(), z.string().trim().regex(/^\d+(\.\d+)?$/, 'geçersiz tutar').max(32)])
+    .transform((v) => Number(v))
+    .pipe(z.number().finite('geçersiz tutar').min(0, 'tutar negatif olamaz').max(MONEY_MAX, 'tutar çok büyük'))
+    .transform(round2);
+/** [D-PRICE-2] KDV: 0/1/10/20 ya da boş (null = ayarsız). Sayısal dize kabul edilir (FE seçim kutusu). */
+export const vatRate = z.preprocess(
+    (v) => (v === '' ? null : typeof v === 'string' && v.trim() !== '' && Number.isFinite(Number(v)) ? Number(v) : v),
+    z.union([z.literal(0), z.literal(1), z.literal(10), z.literal(20)], { errorMap: () => ({ message: 'KDV oranı 0, 1, 10 ya da 20 olmalı' }) }).nullish(),
+);
+/** Form alanı: boş dize = değer yok (FE boş giriş). */
+const moneyField = z.preprocess((v) => (v === '' ? null : v), money.nullish());
+const pricePair = looseEntity({ salePrice: moneyField, marketPrice: moneyField });
+const variantPrices = looseEntity({ isPlatformBasedPrice: z.boolean().nullish(), salePrice: moneyField, marketPrice: moneyField });
+/** `platforms.<kod>` iç nesnesi serbest (özellik/eşleme alanları) ama `prices` doğrulanır; kanal anahtarı güvenli olmalı. */
+const variantPlatforms = z.record(z.string().refine(isSafeKey, 'geçersiz kanal anahtarı'), looseEntity({ prices: pricePair.nullish() }).nullable());
+const variantDocOf = (idRequired: boolean) => looseEntity({
+    _id: idRequired ? idStr : idStr.optional(), stockcode: text(200).nullish(), barcode: text(200).nullish(), stock: numLike.nullish(),
+    prices: variantPrices.nullish(), platforms: variantPlatforms.nullish(),
+});
 const variantDoc = variantDocOf(false);
 const variantList = z.array(variantDoc).max(5000);
-const productInfoOf = (idRequired: boolean) => looseEntity({ _id: idRequired ? idStr : idStr.optional(), tempId: text(64).optional(), title: text(1000).optional(), hasVariant: z.boolean().optional(), variants: variantList });
+const productInfoOf = (idRequired: boolean) => looseEntity({ _id: idRequired ? idStr : idStr.optional(), tempId: text(64).optional(), title: text(1000).optional(), hasVariant: z.boolean().optional(), taxPercentage: vatRate, variants: variantList });
 const productInfo = productInfoOf(false);
 const variantScope = z.number().int().min(0).max(2);
-const batchForm = allowList({ stock: numLike.optional(), shelf: text(200).optional(), prices: z.record(z.string(), z.unknown()) });
+// [WP5] toplu fiyat: ana `salePrice/marketPrice/isPlatformBasedPrice` + kanal kodu → {salePrice, marketPrice} (eskiden z.unknown()).
+const batchPrices = z.record(z.string().refine(isSafeKey, 'geçersiz alan anahtarı'), z.union([money, z.boolean(), pricePair]).nullish())
+    .superRefine((o, ctx) => {
+        for (const [k, v] of Object.entries(o)) {
+            const bad = (k === 'isPlatformBasedPrice' && v != null && typeof v !== 'boolean')
+                || ((k === 'salePrice' || k === 'marketPrice') && v != null && typeof v !== 'number')
+                || (!['isPlatformBasedPrice', 'salePrice', 'marketPrice'].includes(k) && v != null && (typeof v !== 'object'));
+            if (bad) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'geçersiz fiyat alanı', path: [k] });
+        }
+    });
+const batchForm = allowList({ stock: numLike.optional(), shelf: text(200).optional(), prices: batchPrices });
 
 // [PRC-R0/R1] PricingService tel gövdeleri (iş kuralı sınırları operations/pricing/*'ta ikinci kez doğrulanır).
 const barcodeStr = z.string().min(1).max(128);

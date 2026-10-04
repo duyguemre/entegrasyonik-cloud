@@ -13,6 +13,8 @@ function makeVariant(overrides: any = {}) {
         prices: { isPlatformBasedPrice: false, price: 80, salePrice: 100, marketPrice: 120 },
         images: ['https://img.example.com/1.jpg', { url: 'https://img.example.com/2.jpg' }],
         choices: [], taxPercentage: 18, onSale: true, tempId: 't1', uniqueId: 'u1',
+        // [eslesme-fiyat WP5, D-PRICE-2] bilinçli güncelleme: KDV {0,1,10,20}; sessiz 20/18 varsayılanı yok (ayarsız → VALIDATION).
+        product: { taxPercentage: 20 },
         choiceId: '-', choiceValueId: '-', choiceValueTitle: '-',
         platforms: {
             [CODE]: {
@@ -86,13 +88,13 @@ describe('Hepsiburada ProductMapper.toPlatformBatch — karakterizasyon', () => 
 
     it('vMapping alanları (title/description/taxPercentage/desi/warranty) varsa öncelikli, yoksa variant.product\'a, o da yoksa mapping.settings/sabit varsayılana düşer', () => {
         const v = makeVariant({
-            product: { title: 'Ürün Başlığı', description: 'Ürün Açıklaması', taxPercentage: 8, desi: 3, warranty: 12 },
+            product: { title: 'Ürün Başlığı', description: 'Ürün Açıklaması', taxPercentage: 10, desi: 3, warranty: 12 },
             platforms: { [CODE]: { prices: { salePrice: 100 }, upload: {}, attributes: {}, mapping: { title: 'Mapping Başlığı' } } },
         });
         const item = m.toPlatformBatch(staged(v), PLATFORM_PROCESS.TRANSFER, catAttrs, [], mapping);
         expect(item.attributes.UrunAdi).toBe('Mapping Başlığı'); // mapping > product
         expect(item.attributes.UrunAciklamasi).toBe('Ürün Açıklaması'); // mapping'de yok -> product
-        expect(item.attributes.tax_vat_rate).toBe('8');
+        expect(item.attributes.tax_vat_rate).toBe('10');
         expect(item.attributes.kg).toBe('3');
         expect(item.attributes.GarantiSuresi).toBe(12);
     });

@@ -9,14 +9,14 @@ describe('Ideasoft ProductTransformer.buildIdeasoftProduct — karakterizasyon',
     it('mutlu yol: alan eşlemeleri ve sabit değerler', () => {
         const product = {
             title: 'Test Ürün', maincode: 'MC-1', description: 'Açıklama', totalStock: 10,
-            minPrice: 99.9, taxPercentage: 8, desi: 2, warranty: 24, stockTypeLabel: 'Adet',
+            minPrice: 99.9, taxPercentage: 10, desi: 2, warranty: 24, stockTypeLabel: 'Adet',
             platformBrandId: '5', platformCategoryId: '7', images: ['img1.jpg'],
         };
         const result = t.buildIdeasoftProduct(product, {});
         expect(result).toMatchObject({
             name: 'Test Ürün', fullname: 'Test Ürün', sku: 'MC-1', barcode: 'MC-1',
             detail: { details: 'Açıklama' }, stockAmount: 10, price1: 99.9,
-            currency: { id: 3 }, taxIncluded: 1, tax: 8, warranty: 24, volumetricWeight: 2,
+            currency: { id: 3 }, taxIncluded: 1, tax: 10, warranty: 24, volumetricWeight: 2,
             stockTypeLabel: 'Adet', customShippingDisabled: 1, hasOption: 1, hasGift: 0,
             status: 1, categoryShowcaseStatus: 0, brand: { id: 5 }, categories: [{ id: 7 }],
             images: ['img1.jpg'],
@@ -25,9 +25,11 @@ describe('Ideasoft ProductTransformer.buildIdeasoftProduct — karakterizasyon',
         expect(result.sku).toBe(result.barcode);
     });
 
-    it('varsayılanlar: taxPercentage/desi/warranty/stockTypeLabel product\'ta yoksa settings\'e, o da yoksa sabit varsayılana düşer (18/1/0/"Piece")', () => {
-        const result = t.buildIdeasoftProduct({ title: 'X', maincode: 'X1' }, {});
-        expect(result.tax).toBe(18);
+    // [eslesme-fiyat WP5, D-PRICE-2] bilinçli güncelleme: KDV {0,1,10,20}; sessiz 20/18 varsayılanı yok (ayarsız → VALIDATION).
+    it('varsayılanlar: desi/warranty/stockTypeLabel product\'ta yoksa settings\'e, o da yoksa sabit varsayılana düşer (1/0/"Piece"); KDV yoksa VALIDATION', () => {
+        expect(() => t.buildIdeasoftProduct({ title: 'X', maincode: 'X1' }, {})).toThrow(/KDV oranı ayarlı değil/);
+        const result = t.buildIdeasoftProduct({ title: 'X', maincode: 'X1', taxPercentage: 20 }, {});
+        expect(result.tax).toBe(20);
         expect(result.volumetricWeight).toBe(1);
         expect(result.warranty).toBe(0);
         expect(result.stockTypeLabel).toBe('Piece');
@@ -46,17 +48,17 @@ describe('Ideasoft ProductTransformer.buildIdeasoftProduct — karakterizasyon',
     });
 
     it('description yoksa detail.details boş string olur', () => {
-        const result = t.buildIdeasoftProduct({ title: 'Z', maincode: 'Z1' }, {});
+        const result = t.buildIdeasoftProduct({ title: 'Z', maincode: 'Z1', taxPercentage: 20 }, {});
         expect(result.detail).toEqual({ details: '' });
     });
 
     it('slug: Türkçe karakterler ASCII\'ye çevrilir, boşluklar/tire dışı karakterler "-" olur, baş/son "-" kırpılır', () => {
-        const result = t.buildIdeasoftProduct({ title: 'Çöğüşı Ürün Adı!', maincode: 'S1' }, {});
+        const result = t.buildIdeasoftProduct({ title: 'Çöğüşı Ürün Adı!', maincode: 'S1', taxPercentage: 20 }, {});
         expect(result.slug).toBe('cogusi-urun-adi');
     });
 
     it('brand/categories id\'leri Number() ile zorlanır (string "5" -> 5)', () => {
-        const result = t.buildIdeasoftProduct({ title: 'A', maincode: 'A1', platformBrandId: '42', platformCategoryId: '99' }, {});
+        const result = t.buildIdeasoftProduct({ title: 'A', maincode: 'A1', platformBrandId: '42', platformCategoryId: '99', taxPercentage: 20 }, {});
         expect(result.brand).toEqual({ id: 42 });
         expect(result.categories).toEqual([{ id: 99 }]);
     });
@@ -64,7 +66,7 @@ describe('Ideasoft ProductTransformer.buildIdeasoftProduct — karakterizasyon',
 
 describe('Ideasoft ProductTransformer.buildIdeasoftVariant — karakterizasyon', () => {
     const t = new ProductTransformer();
-    const product = { title: 'Ana Ürün', taxPercentage: 18, desi: 1, warranty: 0 };
+    const product = { title: 'Ana Ürün', taxPercentage: 20, desi: 1, warranty: 0 }; // [eslesme-fiyat WP5, D-PRICE-2] bilinçli güncelleme: KDV {0,1,10,20}; sessiz 20/18 varsayılanı yok (ayarsız → VALIDATION).
 
     it('mutlu yol: platform fiyatı öncelikli, options/brand/category eşlenir', () => {
         const variant: any = {
@@ -124,10 +126,12 @@ describe('Ideasoft ProductTransformer.buildIdeasoftVariant — karakterizasyon',
         expect(result.stockTypeLabel).toBe('Ayar Etiketi'); // product.stockTypeLabel ('Ürün Etiketi') DEĞİL
     });
 
-    it('taxPercentage/desi/warranty: variant -> product -> settings -> sabit varsayılan (18/1/0) zinciri', () => {
+    // [eslesme-fiyat WP5, D-PRICE-2] bilinçli güncelleme: KDV {0,1,10,20}; sessiz 20/18 varsayılanı yok (ayarsız → VALIDATION).
+    it('taxPercentage: kanal eşlemesi -> product -> settings (yoksa VALIDATION); desi/warranty: variant -> product -> settings -> sabit (1/0)', () => {
         const variant: any = { title: 'V', platforms: {} };
-        const result = t.buildIdeasoftVariant(variant, { title: 'P' }, 1, 1, [], {});
-        expect(result.tax).toBe(18);
+        expect(() => t.buildIdeasoftVariant(variant, { title: 'P' }, 1, 1, [], {})).toThrow(/KDV oranı ayarlı değil/);
+        const result = t.buildIdeasoftVariant(variant, { title: 'P' }, 1, 1, [], { taxPercentage: 20 });
+        expect(result.tax).toBe(20);
         expect(result.volumetricWeight).toBe(1);
         expect(result.warranty).toBe(0);
 
@@ -136,7 +140,7 @@ describe('Ideasoft ProductTransformer.buildIdeasoftVariant — karakterizasyon',
         expect(resultFromProduct.volumetricWeight).toBe(3);
         expect(resultFromProduct.warranty).toBe(6);
 
-        const variantOverride: any = { title: 'V', taxPercentage: 1, desi: 1, warranty: 1, platforms: {} };
+        const variantOverride: any = { title: 'V', desi: 1, warranty: 1, platforms: { ideasoft: { mapping: { taxPercentage: 1 } } } };
         const resultFromVariant = t.buildIdeasoftVariant(variantOverride, { title: 'P', taxPercentage: 10, desi: 3, warranty: 6 }, 1, 1, [], {});
         expect(resultFromVariant.tax).toBe(1);
         expect(resultFromVariant.volumetricWeight).toBe(1);

@@ -6,6 +6,8 @@ import { IntegrationError } from '@integration/modules/common/IntegrationError';
 import { normalizeAttrValue, indexCategoryAttributes, findValueById, findValueByText, missingRequiredAttributes, labelAttribute } from '@integration/catalog/attributePayload';
 import { TRENDYOL_ORIGIN_PATTERN, TRENDYOL_ORIGIN_REQUIRED_FROM_MS, TRENDYOL_FIELD_LIMITS, TRENDYOL_VAT_RATES } from '../productConstants';
 import { channelPricePair } from '@platform/core/pricing/effectivePrice';
+import { resolveVatRate } from '@platform/core/pricing/vat';
+
 
 /** `toPlatformBatch` eşleme bağlamı. `contentId` doluysa UPDATE onaylı-içerik gövdesi üretilir (aksi halde onaysız). */
 export interface IProductBatchMapping {
@@ -181,6 +183,8 @@ export class ProductMapper {
         }
         else if (mode === PLATFORM_PROCESS.UPDATE_VARIANT) {
             item.vatRate = this.getVatRate(vMapping, variant, mapping);
+            // [WP5] kısmi güncelleme: ayarsız KDV null olarak GÖNDERİLMEZ (eski 20 varsayımı da yok); kanaldaki oran korunur.
+            if (item.vatRate === null || item.vatRate === undefined) delete item.vatRate;
             item.stockCode = variant.stockcode;
             item.shipmentAddressId = shipmentAddressId != 0 ? shipmentAddressId : 0;
             item.returningAddressId = returningAddressId != 0 ? returningAddressId : 0;
@@ -239,7 +243,8 @@ export class ProductMapper {
             if (item.quantity !== undefined && !(Number.isInteger(item.quantity) && item.quantity >= 0)) errs.push('quantity: 0 veya pozitif tam sayı olmalı');
             if (item.salePrice !== undefined && !(item.salePrice > 0)) errs.push('salePrice: 0’dan büyük olmalı');
             if (item.listPrice !== undefined && item.salePrice !== undefined && item.listPrice < item.salePrice) errs.push('listPrice: salePrice’tan küçük olamaz');
-            if (!TRENDYOL_VAT_RATES.includes(item.vatRate)) errs.push(`vatRate: ${TRENDYOL_VAT_RATES.join(', ')} değerlerinden biri olmalı (${String(item.vatRate)})`);
+            if (item.vatRate === null || item.vatRate === undefined) errs.push('vatRate: KDV oranı ayarlı değil (ürün, kanal eşlemesi ya da entegrasyon ayarı)');
+            else if (!TRENDYOL_VAT_RATES.includes(item.vatRate)) errs.push(`vatRate: ${TRENDYOL_VAT_RATES.join(', ')} değerlerinden biri olmalı (${String(item.vatRate)})`);
             if (has(item.stockCode) && String(item.stockCode).length > TRENDYOL_FIELD_LIMITS.stockCode) errs.push(`stockCode: en fazla ${TRENDYOL_FIELD_LIMITS.stockCode} karakter`);
             if (has(item.lotNumber) && String(item.lotNumber).length > TRENDYOL_FIELD_LIMITS.lotNumber) errs.push(`lotNumber: en fazla ${TRENDYOL_FIELD_LIMITS.lotNumber} karakter`);
         }
@@ -277,10 +282,10 @@ export class ProductMapper {
         return Number(vMapping?.desi || variant.product?.desi || mapping.settings?.desi || 1);
     }
     private getVatRate(vMapping: any, variant: IVariant, mapping: any) {
-        // 0 (%0 KDV) GEÇERLİ bir orandır: `||` zinciri 0'ı düşürüp 20'ye çeviriyordu (yanlış KDV) → `??` ile yalnız yoksa 20.
-        const raw = [vMapping?.taxPercentage, variant.product?.taxPercentage, mapping.settings?.taxPercentage]
-            .find(v => v !== undefined && v !== null && v !== '');
-        return raw === undefined ? 20 : Number(raw);
+        // 0 (%0 KDV) GEÇERLİ bir orandır. [eslesme-fiyat WP5, D-PRICE-2] yoksa 20 varsayımı KALKTI: ayarsız KDV → ürün hatası.
+        // Ayarsız → null; toplu alan doğrulaması (assertContract) TEK VALIDATION'da raporlar.
+        void vMapping;
+        return resolveVatRate(variant, integrationCode, mapping.settings).value as number;
     }
 
     private toNumericIfPossible(v: any) {

@@ -50,7 +50,7 @@ describe('HB transferProducts (WP3)', () => {
 
   it('içe aktarılmış ürün: mapping.categoryId ve HB marka metni (mapping.brandId) yedek olarak kullanılır', async () => {
     const { ps, importProducts } = setup({ platformCat: undefined });
-    const v = variant({ product: { title: 'X' }, platforms: { [CODE]: { prices: { salePrice: 10 }, mapping: { categoryId: 777, brandId: 'Nike' }, attributes: {} } } });
+    const v = variant({ product: { title: 'X', taxPercentage: 10 /* WP5: KDV açıkça */ }, platforms: { [CODE]: { prices: { salePrice: 10 }, mapping: { categoryId: 777, brandId: 'Nike' }, attributes: {} } } });
     await ps.transferProducts([{ payload: v } as any]);
     expect(importProducts.mock.calls[0][0][0]).toMatchObject({ categoryId: 777, attributes: { Marka: 'Nike' } });
   });

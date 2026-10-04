@@ -2,6 +2,18 @@ import { IVariant, IInternalResult, ICategoryAttribute } from '@interfaces/index
 import { integrationCode } from '../constants';
 import { normalizeAttrValue } from '@integration/catalog/attributePayload';
 import { channelPricePair } from '@platform/core/pricing/effectivePrice';
+import { resolveVatRate } from '@platform/core/pricing/vat';
+import { IntegrationError } from '@integration/modules/common/IntegrationError';
+
+/** [eslesme-fiyat WP5, D-PRICE-2] KDV tek çözümleyici; ayarsız/geçersiz KDV ile içerik gönderilmez (sessiz varsayılan yok). */
+function requireVat(variant: any, code: string, settings: any, product?: any): number {
+    const r = resolveVatRate(variant, code, settings, product);
+    const ctx = { integrationCode: code, operation: 'resolveVatRate', clientId: settings?.clientId ?? 'unknown' };
+    const head = `ürün doğrulaması başarısız (barkod ${String(variant?.barcode ?? '?').slice(0, 40)}): vatRate:`;
+    if (r.value === null) throw new IntegrationError('VALIDATION', `${head} KDV oranı ayarlı değil (ürün, kanal eşlemesi ya da entegrasyon ayarı).`, ctx);
+    if (r.invalid) throw new IntegrationError('VALIDATION', `${head} %${r.value} geçersiz (izinli: 0, 1, 10, 20).`, ctx);
+    return r.value;
+}
 
 export class ProductTransformer {
     private slugify(text: string): string {
@@ -14,7 +26,7 @@ export class ProductTransformer {
     }
 
     public buildIdeasoftProduct(product: any, settings: any): any {
-        const taxPct = Number(product.taxPercentage || settings.taxPercentage || 18);
+        const taxPct = requireVat({ product }, integrationCode, settings, product); // [WP5] varsayılan 18 (eski oran) KALKTI
         const desi = Number(product.desi || settings.desi || 1);
         const warranty = Number(product.warranty || settings.warranty || 0);
         const stockTypeLabel = product.stockTypeLabel || settings.stockTypeLabel || 'Piece';
@@ -53,7 +65,7 @@ export class ProductTransformer {
         categoryAttributes: ICategoryAttribute[],
         settings: any
     ): any {
-        const taxPct = Number((variant as any).taxPercentage || product.taxPercentage || settings.taxPercentage || 18);
+        const taxPct = requireVat(variant, integrationCode, settings, product); // [WP5] varsayılan 18 (eski oran) KALKTI
         const desi = Number((variant as any).desi || product.desi || settings.desi || 1);
         const warranty = Number((variant as any).warranty || product.warranty || settings.warranty || 0);
         const stockTypeLabel = (variant as any).stockTypeLabel || settings.stockTypeLabel || 'Piece';
