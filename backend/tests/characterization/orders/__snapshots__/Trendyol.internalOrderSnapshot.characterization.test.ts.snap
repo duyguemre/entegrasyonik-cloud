@@ -89,6 +89,7 @@ exports[`Trendyol internal order snapshot awaiting 1`] = `
         "deliveredDate": undefined,
         "estimatedDeliveryDate": undefined,
         "externalUpdatedAt": undefined,
+        "invoiceDate": undefined,
         "orderDate": 2026-05-05T05:05:05.000Z,
         "shippedDate": undefined,
       },
@@ -124,6 +125,7 @@ exports[`Trendyol internal order snapshot awaiting 1`] = `
       "invoice": {
         "invoiceLink": undefined,
         "invoiceMethod": "MARKETPLACE",
+        "invoiceNumber": undefined,
         "invoiceProvider": "TRENDYOL",
         "invoicedAt": undefined,
         "status": "PENDING",
@@ -277,6 +279,7 @@ exports[`Trendyol internal order snapshot cancelled 1`] = `
         "deliveredDate": undefined,
         "estimatedDeliveryDate": undefined,
         "externalUpdatedAt": undefined,
+        "invoiceDate": undefined,
         "orderDate": 2026-01-10T08:00:00.000Z,
         "shippedDate": undefined,
       },
@@ -312,6 +315,7 @@ exports[`Trendyol internal order snapshot cancelled 1`] = `
       "invoice": {
         "invoiceLink": undefined,
         "invoiceMethod": "MARKETPLACE",
+        "invoiceNumber": undefined,
         "invoiceProvider": "TRENDYOL",
         "invoicedAt": undefined,
         "status": "PENDING",
@@ -471,6 +475,7 @@ exports[`Trendyol internal order snapshot full-invoiced 1`] = `
         "deliveredDate": 2026-01-10T10:00:00.000Z,
         "estimatedDeliveryDate": 2026-01-11T08:00:00.000Z,
         "externalUpdatedAt": 2026-01-10T11:00:00.000Z,
+        "invoiceDate": undefined,
         "orderDate": 2026-01-10T05:00:00.000Z,
         "shippedDate": 2026-01-10T09:00:00.000Z,
       },
@@ -506,8 +511,9 @@ exports[`Trendyol internal order snapshot full-invoiced 1`] = `
       "invoice": {
         "invoiceLink": "http://inv",
         "invoiceMethod": "MARKETPLACE",
+        "invoiceNumber": undefined,
         "invoiceProvider": "TRENDYOL",
-        "invoicedAt": 2026-05-05T05:05:05.000Z,
+        "invoicedAt": undefined,
         "status": "SUCCESS",
       },
       "items": [
@@ -738,6 +744,7 @@ exports[`Trendyol internal order snapshot unknown 1`] = `
         "deliveredDate": undefined,
         "estimatedDeliveryDate": undefined,
         "externalUpdatedAt": undefined,
+        "invoiceDate": undefined,
         "orderDate": 2026-01-10T08:00:00.000Z,
         "shippedDate": undefined,
       },
@@ -773,6 +780,7 @@ exports[`Trendyol internal order snapshot unknown 1`] = `
       "invoice": {
         "invoiceLink": undefined,
         "invoiceMethod": "MARKETPLACE",
+        "invoiceNumber": undefined,
         "invoiceProvider": "TRENDYOL",
         "invoicedAt": undefined,
         "status": "PENDING",
@@ -909,6 +917,7 @@ exports[`Trendyol internal order snapshot unsupplied 1`] = `
         "deliveredDate": undefined,
         "estimatedDeliveryDate": undefined,
         "externalUpdatedAt": undefined,
+        "invoiceDate": undefined,
         "orderDate": 2026-05-05T05:05:05.000Z,
         "shippedDate": undefined,
       },
@@ -944,6 +953,7 @@ exports[`Trendyol internal order snapshot unsupplied 1`] = `
       "invoice": {
         "invoiceLink": undefined,
         "invoiceMethod": "MARKETPLACE",
+        "invoiceNumber": undefined,
         "invoiceProvider": "TRENDYOL",
         "invoicedAt": undefined,
         "status": "PENDING",

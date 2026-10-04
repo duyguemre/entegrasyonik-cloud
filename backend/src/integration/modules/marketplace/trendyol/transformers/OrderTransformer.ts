@@ -182,6 +182,7 @@ export class OrderMapper {
                     estimatedDeliveryDate: order.estimatedDeliveryEndDate ? new Date(order.estimatedDeliveryEndDate) : undefined,
                     shippedDate: order.shippedDate ? new Date(order.shippedDate) : undefined,
                     deliveredDate: order.deliveredDate ? new Date(order.deliveredDate) : undefined,
+                    invoiceDate: trendyolInvoicedAt(order),
                     externalUpdatedAt: order.lastModifiedDate ? new Date(order.lastModifiedDate) : undefined
                 },
 
@@ -210,13 +211,7 @@ export class OrderMapper {
                     desi: Number(order.cargoDeci || 0)
                 }],
 
-                invoice: {
-                    invoiceMethod: 'MARKETPLACE',
-                    invoiceProvider: 'TRENDYOL',
-                    status: order.invoiceLink ? 'SUCCESS' : 'PENDING',
-                    invoiceLink: order.invoiceLink || undefined,
-                    invoicedAt: order.status === 'Invoiced' ? new Date() : undefined
-                },
+                invoice: trendyolInvoice(order),
 
                 items: rawLines.map((line: any, idx: number): IOrderItem => {
                     const lineId = lineIds[idx] as string; // yukarıda doğrulandı (undefined olsaydı kayıt atlanırdı)
@@ -338,6 +333,34 @@ export class OrderMapper {
             isDefaultBilling: false
         };
     }
+}
+
+/**
+ * [eslesme-fiyat WP6-kalan, D-ORD-3 / Ek E F-P2-6] Faturalanma anı PLATFORM zamanından: `packageHistories[]`'teki
+ * `Invoiced` girdisinin `createdDate`'i. Eskiden `status==='Invoiced'` iken her senkronda `new Date()` yazılıyordu (tarih
+ * her turda kayıyordu). Girdi yoksa tarih uydurulmaz.
+ */
+export function trendyolInvoicedAt(order: any): Date | undefined {
+    const hist = Array.isArray(order?.packageHistories) ? order.packageHistories : [];
+    const entry = hist.find((h: any) => String(h?.status ?? '').toLowerCase() === 'invoiced');
+    if (!entry?.createdDate) return undefined;
+    const d = new Date(entry.createdDate);
+    return isNaN(d.getTime()) ? undefined : d;
+}
+
+/**
+ * [eslesme-fiyat WP6-kalan] Fatura özeti platformdan: bağlantı (`invoiceLink`) varsa SUCCESS; numara yanıtta varsa
+ * (`invoiceNumber`; canlı alan adı yerelde teyit edilecek) alınır; faturalanma anı `trendyolInvoicedAt`.
+ */
+export function trendyolInvoice(order: any) {
+    return {
+        invoiceMethod: 'MARKETPLACE' as const,
+        invoiceProvider: 'TRENDYOL',
+        status: (order?.invoiceLink ? 'SUCCESS' : 'PENDING') as 'SUCCESS' | 'PENDING',
+        invoiceLink: order?.invoiceLink || undefined,
+        invoiceNumber: order?.invoiceNumber ? String(order.invoiceNumber) : undefined,
+        invoicedAt: trendyolInvoicedAt(order),
+    };
 }
 
 /**

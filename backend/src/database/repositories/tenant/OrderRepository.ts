@@ -104,6 +104,11 @@ export class OrderRepository {
 
                     // B. FATURA VE KARGO KORUMASI
                     if (existingOrder.invoice?.status === 'SUCCESS') delete updatePayload.invoice;
+                    // [eslesme-fiyat WP6-kalan, Ek E F-P2-6] Platform "henüz fatura yok" (PENDING) diyorsa yerelde işlenmiş
+                    // durum (MANUAL_COMPLETED / FAILED: kullanıcı girişi ya da iletim reddi) senkronla ezilmez.
+                    else if (updatePayload.invoice?.status === 'PENDING' && existingOrder.invoice?.status && existingOrder.invoice.status !== 'PENDING') {
+                        delete updatePayload.invoice;
+                    }
 
                     // Mevcut kargo bilgisinin geçerliliğini (boş olmama ve SUCCESS statüsü) kontrol et
                     const hasValidExistingTracking = existingOrder.fulfillment?.some((f: any) =>
@@ -174,7 +179,7 @@ export class OrderRepository {
                     if (!updatePayload.dates) updatePayload.dates = {};
 
                     // 1. Mevcut Tarihleri Koru (Pazar yerinden gelen GERÇEK verileri ezme)
-                    const dateFields: (keyof IOrder['dates'])[] = ['orderDate', 'shippedDate', 'deliveredDate', 'approvedDate', 'cancelledDate'];
+                    const dateFields: (keyof IOrder['dates'])[] = ['orderDate', 'shippedDate', 'deliveredDate', 'approvedDate', 'cancelledDate', 'invoiceDate'];
                     dateFields.forEach(field => {
                         // Sipariş tarihi (orderDate) asla güncellenmez, bir kere set edilir.
                         if (field === 'orderDate' && existingOrder.dates?.orderDate) {
