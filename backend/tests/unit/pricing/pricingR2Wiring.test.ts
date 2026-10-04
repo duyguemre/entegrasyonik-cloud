@@ -114,6 +114,11 @@ describe('göç 0022 (ÇALIŞTIRILMADI; yalnız biçim)', () => {
         expect(m.kind).toBe('index');
         for (const t of m.TARGETS) for (const i of t.indexes) {
             const { name, ...rest } = i.options;
+            // [eslesme-fiyat WP5] PriceHistory TTL'i göç 0031 ile 400 güne çıktı (şema beyanı 0031'i izler; 0022 tarihsel 90 g kalır).
+            if (name === 'ttl_at_90d' && t.defaultCollection === 'PriceHistory') {
+                expect(manifest.tenant.PriceHistory.find((e: any) => e.name === name)).toEqual({ name, fields: i.fields, options: { expireAfterSeconds: 400 * 24 * 3600 } });
+                continue;
+            }
             expect(manifest.tenant[t.defaultCollection].find((e: any) => e.name === name)).toEqual({ name, fields: i.fields, options: rest });
         }
         const cur = m.TARGETS.find((t: any) => t.key === 'priceSuggestions').indexes.find((i: any) => i.options.name === 'ruleId_variantId_current');

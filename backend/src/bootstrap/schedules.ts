@@ -11,6 +11,8 @@ import { flushMetricsOnce } from '@platform/runtime/metrics/metricsFlush';
 import { productionMetricRollupModel } from '@platform/runtime/metrics/prodDeps';
 import { AllocationSweepJob } from '@operations/stock/AllocationSweepJob';
 import { StockPublishTrigger } from '@operations/stock/StockPublishTrigger';
+import { createPricePublishTrigger } from '@operations/pricing/createPricePublishTrigger';
+import { PRICE_PUBLISH_JOB_NAME } from '@operations/pricing/PricePublishTrigger';
 import { OversellCompensationJob } from '@operations/stock/OversellCompensationJob';
 import { InternalReconciliationJob } from '@operations/stock/InternalReconciliationJob';
 import { ExternalReconciliationJob } from '@operations/stock/ExternalReconciliationJob';
@@ -69,6 +71,10 @@ export const SCHEDULES: readonly ScheduleSpec[] = [
   { id: 'stock.publish', runsOn: 'worker', build: (impl?: Runnable) => defineJob({
     name: 'stock.publish', everyMs: 30 * 1000, maxDurationMs: 25 * 1000, criticality: 'critical', runOnStart: 'always',
     run: redisSkip(impl ?? new StockPublishTrigger()) }) },
+  // [eslesme-fiyat WP5, K-B] otomatik fiyat yayını (yerel → kanal; 60 sn dirty, PLAN §3.6). Kanala yazar → LIVE_READONLY'de BAŞLAMAZ.
+  { id: PRICE_PUBLISH_JOB_NAME, runsOn: 'worker', build: (impl?: Runnable) => defineJob({
+    name: PRICE_PUBLISH_JOB_NAME, everyMs: MIN, maxDurationMs: 50 * 1000, criticality: 'normal', runOnStart: 'always',
+    run: redisSkip(impl ?? createPricePublishTrigger()) }) },
   { id: 'stock.oversellCompensation', runsOn: 'worker', build: (impl?: Runnable) => defineJob({
     name: 'stock.oversellCompensation', everyMs: 5 * MIN, maxDurationMs: 4 * MIN, criticality: 'critical', runOnStart: 'always',
     run: redisSkip(impl ?? new OversellCompensationJob()) }) },

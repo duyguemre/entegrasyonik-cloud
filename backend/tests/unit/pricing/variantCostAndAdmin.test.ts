@@ -102,7 +102,7 @@ describe('setVariantCosts (PRC-R0 tek yazma noktası)', () => {
         expect(coveragePercent(0, 0)).toBe(0);
     });
     it('genel varyant/ürün kaydı maliyet ve rekabet alanlarını süzer (bayat form ezemez)', () => {
-        expect(PRICING_OWNED_VARIANT_FIELDS).toEqual(['costPrice', 'costUpdatedAt', 'competition']);
+        expect(PRICING_OWNED_VARIANT_FIELDS).toEqual(['costPrice', 'costUpdatedAt', 'competition', 'pricePending', 'priceDirty']); // + WP5 otomatik yayın işaretleri
         expect(stripEngineOwnedVariantFields({ _id: 1, stock: 3, costPrice: 9, costUpdatedAt: 'x', competition: {} })).toEqual({ _id: 1, stock: 3 });
     });
 });

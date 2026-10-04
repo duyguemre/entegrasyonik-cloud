@@ -37,7 +37,7 @@ function chain(rows: any) {
 }
 
 const BATCH_ID = 'batch-1';
-const PRODUCT = { _id: 'P1', title: 'Ürün 1', category: { id: 'c1' }, brand: { id: 'b1' } };
+const PRODUCT = { _id: 'P1', title: 'Ürün 1', category: { id: 'c1' }, brand: { id: 'b1' }, taxPercentage: 20 }; // WP5: KDV ayarlı (yoksa VAT_MISSING uyarısı)
 
 function makeEntry(over: any = {}) {
   return { _id: 'e1', barcode: 'B1', mode: 'UPDATE_STOCK', targetPublishQty: null, ...over };

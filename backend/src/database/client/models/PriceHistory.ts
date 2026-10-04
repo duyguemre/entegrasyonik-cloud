@@ -5,8 +5,12 @@ import { Schema } from "mongoose";
  * uygulandı), `external` (Entegrasyonik dışında değiştiği gözlendi). Yasal pencere 10 gün; ≥30 gün tutulur (TTL 90 gün). Liste/üstü çizili
  * fiyat da kayda geçer (K9 kanıtı). Sıklık/soğuma/salınım (K12) ve artış sınırı (K8) bu kayıttan hesaplanır. Rakip kimliği YOK.
  */
-export const PRICE_HISTORY_SOURCES = ['suggestion', 'external'] as const;
-export const PRICE_HISTORY_TTL_SECONDS = 90 * 24 * 3600;
+// [eslesme-fiyat WP5, PLAN §3.4, Ek B P1-4] kaynaklar genişledi: manual (form), bulk (toplu), import, rule_channel (kanal fiyat kuralı);
+// tüm kanallar (yalnız Trendyol değil). TTL 90 g → 400 g (K10 "son 30 gün en düşük" + yıllık kanıt); indeks değişikliği göç 0031 ile.
+export const PRICE_HISTORY_SOURCES = ['manual', 'bulk', 'import', 'rule_channel', 'suggestion', 'external'] as const;
+export const PRICE_HISTORY_TTL_SECONDS = 400 * 24 * 3600;
+/** Göç 0031 öncesi indeks adı korunur (`collMod` adı değiştiremez); ad tarihsel, süre 400 gündür. */
+export const PRICE_HISTORY_TTL_INDEX = 'ttl_at_90d';
 
 export const PriceHistorySchema = new Schema({
     integrationCode: { type: String, required: true },
@@ -26,4 +30,4 @@ export const PriceHistorySchema = new Schema({
 }, { collection: 'PriceHistory', versionKey: false, autoIndex: false, strict: true });
 
 PriceHistorySchema.index({ integrationCode: 1, variantId: 1, at: -1 }, { name: 'integ_variant_at' });
-PriceHistorySchema.index({ at: 1 }, { name: 'ttl_at_90d', expireAfterSeconds: PRICE_HISTORY_TTL_SECONDS });
+PriceHistorySchema.index({ at: 1 }, { name: PRICE_HISTORY_TTL_INDEX, expireAfterSeconds: PRICE_HISTORY_TTL_SECONDS });

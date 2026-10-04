@@ -59,6 +59,12 @@ export const VariantSchema = new mongoose.Schema({
     stockVersion: { type: Number, required: false, default: 0 },
     // Kanal sayısı kadar indeks açmamak için TEK bayrak (ADR-0004 Karar 1); kanal bazlı detay platforms.<code>.stockSync.dirty'de.
     stockDirty: { type: Boolean, required: false, default: false },
+    // [eslesme-fiyat WP5, K-B] otomatik fiyat yayını: TEK bayrak (indeks 0028 `priceDirty_true`) + kanal başına ayrıntı
+    // `pricePending.<kod> = { since, reason }`. Yalnız operations/pricing/pricePending.ts işaretler, PricePublishTrigger temizler.
+    // Kanal alt alanları (şemasız `platforms`): `rulePrice` (channel kuralı sonucu), `priceSync` (son kuyruğa alınan gövde özeti),
+    // `observed` (kanalda gözlenen fiyat, dış değişiklik uyarısı). Göç gerekmez (strict:false / Mixed).
+    priceDirty: { type: Boolean, required: false },
+    pricePending: { type: Object, required: false },
     choices: [{                         // Array içinde alt nesneler
         choiceId: { type: String, required: true }, // Özellik adı (Örn: 'Color', 'Size')
         choiceValueId: { type: String, required: true } // Özellik değeri (Örn: 'Red', 'L')
@@ -91,6 +97,8 @@ VariantSchema.index({ 'allocations.key': 1 });
 // DB-11 / DBR-04: StockPublishTrigger `Variants.find({stockDirty:true})` (30 sn x tenant) icin kismi indeks (yalniz kirli belgeler).
 // Uygulama: backend/migrations/0008-variants-stockdirty-partial-tenant.js (onayli goc). Ad ve tanim goc ile BIREBIR.
 VariantSchema.index({ stockDirty: 1 }, { name: 'stockDirty_true', partialFilterExpression: { stockDirty: true } });
+// [eslesme-fiyat WP5] PricePublishTrigger taraması. Uygulama: backend/migrations/0028-variants-price-dirty-tenant.js (ÇALIŞTIRILMADI).
+VariantSchema.index({ priceDirty: 1 }, { name: 'priceDirty_true', partialFilterExpression: { priceDirty: true } });
 
 VariantSchema.pre('insertMany', function (next, docs) {
     for (const doc of docs) {

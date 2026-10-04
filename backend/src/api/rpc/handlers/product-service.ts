@@ -15,6 +15,7 @@ import { VariantRepository } from '@database/repositories/tenant/VariantReposito
 import { ImageRepository } from '@database/repositories/tenant/ImageRepository';
 import { StatisticsRepository } from '@database/repositories/tenant/StatisticsRepository';
 import { findStockChanges, recordManualStockMovements, stockDirtyFields } from '@operations/stock/markStockDirty';
+import { diffChannelPrices, loadPriceSnapshots, markPriceChanges, preserveEngineChannelFields, PriceChange } from '@operations/pricing/pricePending';
 
 /** exportExcel: varyantların tek seferde çekildiği ürün grubu boyutu (bellek üst sınırı = grup × ürün başına varyant). */
 const EXPORT_BATCH_PRODUCTS = 500;
@@ -41,7 +42,8 @@ export const ENGINE_OWNED_VARIANT_FIELDS: ReadonlyArray<string> = ['reserved', '
  * [PRC-R0/R1] Maliyet ve rekabet alanlarının TEK yazma yolu vardır: maliyet `PricingService/setVariantCosts` (doğrulama + `costUpdatedAt`),
  * `competition` buybox okuma işi. Genel varyant/ürün kaydında gövdeden gelirse yok sayılır (bayat form maliyeti ezmesin, tarih atlanmasın).
  */
-export const PRICING_OWNED_VARIANT_FIELDS: ReadonlyArray<string> = ['costPrice', 'costUpdatedAt', 'competition'];
+// [eslesme-fiyat WP5] `pricePending`/`priceDirty` yalnız pricePending.ts / PricePublishTrigger yazar.
+export const PRICING_OWNED_VARIANT_FIELDS: ReadonlyArray<string> = ['costPrice', 'costUpdatedAt', 'competition', 'pricePending', 'priceDirty'];
 export function stripEngineOwnedVariantFields(variant: any): any {
     const copy: any = { ...(variant || {}) };
     for (const f of ENGINE_OWNED_VARIANT_FIELDS) delete copy[f];
@@ -196,6 +198,9 @@ export default class ProductService extends BaseApi implements IService {
         const stockChanges = await findStockChanges(this.variants.queryModel(), variants);
         const stockChanged = { has: (id: string) => stockChanges.has(id) };
         const dirtyNow = stockDirtyFields();
+        // [eslesme-fiyat WP5, K-B] fiyat farkı → pricePending + geçmiş; motorun kanal alt alanları korunur
+        const prior = await loadPriceSnapshots(this.variants.queryModel(), variants.map((v: any) => v?._id));
+        const priceChanges: PriceChange[] = [];
         const bulkOperations = variants.map((original: any) => {
             // [N6 / ADR-0004] FE'nin bayat okuması rezervasyon alanlarını ezemez (bkz. stripEngineOwnedVariantFields)
             const v = stripEngineOwnedVariantFields(original);
@@ -203,6 +208,11 @@ export default class ProductService extends BaseApi implements IService {
             v.variantHash = this.hashChoices(resp.maincode, v.choices);
             if (v._id) {
                 if (stockChanged.has(String(v._id))) Object.assign(v, dirtyNow);
+                const before = prior.get(String(v._id));
+                if (before) {
+                    if (v.platforms) v.platforms = preserveEngineChannelFields(v.platforms, before.platforms);
+                    priceChanges.push(...diffChannelPrices(before, { ...before, ...v }));
+                }
                 return { updateOne: { filter: { _id: new ObjectId(v._id) }, update: { $set: v } } };
             }
             return { insertOne: { document: v } };
@@ -210,6 +220,7 @@ export default class ProductService extends BaseApi implements IService {
 
         await this.variants.bulkWrite(bulkOperations);
         recordManualStockMovements(this.clientDB, stockChanges.values(), this.request); // [ADR-0021 D14] hareket defteri (asenkron)
+        await markPriceChanges(this.clientDB, priceChanges, { reason: 'manual', historySource: 'manual', actor: this.request?.principal?.sub ?? null });
 
         const res = await this.copyTempImages(resp._id, productInfo.tempId);
         if (res) await this.updateTempImageDocuments(resp._id, productInfo.tempId);

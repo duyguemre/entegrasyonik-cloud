@@ -1393,6 +1393,17 @@
         }
       },
       {
+        "name": "priceDirty_true",
+        "fields": {
+          "priceDirty": 1
+        },
+        "options": {
+          "partialFilterExpression": {
+            "priceDirty": true
+          }
+        }
+      },
+      {
         "name": "productId_1",
         "fields": {
           "productId": 1
@@ -2435,7 +2446,7 @@
           "at": 1
         },
         "options": {
-          "expireAfterSeconds": 7776000
+          "expireAfterSeconds": 34560000
         }
       }
     ],

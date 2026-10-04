@@ -2,6 +2,7 @@ import { IService } from '@interfaces/index'
 import { BaseApi } from '../BaseApi'
 import { StatsOperations } from '@operations/reports/StatsOperations'
 import { findStockChanges, recordManualStockMovements, stockDirtyFields } from '@operations/stock/markStockDirty'
+import { applyDotSet, diffChannelPrices, loadPriceSnapshots, markPriceChanges, PRICE_DIFF_PROJECTION, preserveEngineChannelFields, PriceChange } from '@operations/pricing/pricePending'
 import { stripEngineOwnedVariantFields } from './product-service'
 import { ObjectId } from 'mongodb'
 import crypto from 'crypto'
@@ -133,8 +134,18 @@ export default class VariantService extends BaseApi implements IService {
                 } catch { stockChanges = [] }
             }
         }
+        // [eslesme-fiyat WP5, K-B] fiyat alanı değişiyorsa önce görüntü al → sonra etkin kanal fiyatı değişenleri işaretle (pricePending + geçmiş)
+        const touchesPrice = Object.keys(set).some((k) => k.startsWith('prices.') || /^platforms\.[^.]+\.prices\./.test(k))
+        let priorPrices: any[] = []
+        if (touchesPrice) {
+            try { priorPrices = await this.variants.queryModel().find(this.variantScopeFilter(), PRICE_DIFF_PROJECTION).limit(5000).lean() } catch { priorPrices = [] }
+        }
         const result = await this.variants.updateMany(this.variantScopeFilter(), set)
         if (stockChanges.length > 0) recordManualStockMovements(this.clientDB, stockChanges, this.request)
+        if (priorPrices.length > 0) {
+            const changes: PriceChange[] = priorPrices.flatMap((p) => diffChannelPrices(p, applyDotSet(p, set)))
+            await markPriceChanges(this.clientDB, changes, { reason: 'bulk', historySource: 'bulk', actor: this.request?.principal?.sub ?? null })
+        }
         await this.afterVariantWrite(this.request.productId)
         return result
     }
@@ -239,6 +250,9 @@ export default class VariantService extends BaseApi implements IService {
         const stockChanges = await findStockChanges(this.variants.queryModel(), incoming)
         const stockChanged = { has: (id: string) => stockChanges.has(id) }
         const dirtyNow = stockDirtyFields()
+        // [eslesme-fiyat WP5, K-B] fiyat farkı için önceki görüntü; motorun kanal alt alanları (rulePrice/observed/priceSync) korunur
+        const prior = await loadPriceSnapshots(this.variants.queryModel(), incoming.map((v: any) => v?._id))
+        const priceChanges: PriceChange[] = []
         const bulkOperations = incoming.map((original: any) => {
             const v = stripEngineOwnedVariantFields(original)
             const id = v._id
@@ -246,11 +260,17 @@ export default class VariantService extends BaseApi implements IService {
             delete v.productId
             if (maincode !== undefined && Array.isArray(v.choices)) v.variantHash = hashChoices(maincode, v.choices)
             if (stockChanged.has(String(id))) Object.assign(v, dirtyNow)
+            const before = prior.get(String(id))
+            if (before) {
+                if (v.platforms) v.platforms = preserveEngineChannelFields(v.platforms, before.platforms)
+                priceChanges.push(...diffChannelPrices(before, { ...before, ...v }))
+            }
             return { updateOne: { filter: { _id: toObjectId(id), productId }, update: { $set: v } } }
         })
 
         const result = await this.variants.bulkWrite(bulkOperations)
         recordManualStockMovements(this.clientDB, stockChanges.values(), this.request) // [ADR-0021 D14] hareket defteri (asenkron)
+        await markPriceChanges(this.clientDB, priceChanges, { reason: 'manual', historySource: 'manual', actor: this.request?.principal?.sub ?? null })
         await this.afterVariantWrite(productId)
         return result
     }

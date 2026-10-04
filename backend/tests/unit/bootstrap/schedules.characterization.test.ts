@@ -37,6 +37,8 @@ const MIN = 60 * 1000, HOUR = 60 * MIN, DAY = 24 * HOUR;
 const EXPECTED: Array<[string, number, number, string, string, 'worker' | 'any']> = [
   ['stock.allocationSweep', 15 * MIN, 5 * MIN, 'critical', 'always', 'worker'],
   ['stock.publish', 30 * 1000, 25 * 1000, 'critical', 'always', 'worker'],
+  // [eslesme-fiyat WP5, K-B] otomatik fiyat yayını (60 sn dirty).
+  ['pricing.publish', 60 * 1000, 50 * 1000, 'normal', 'always', 'worker'],
   ['stock.oversellCompensation', 5 * MIN, 4 * MIN, 'critical', 'always', 'worker'],
   ['stock.internalReconciliation', HOUR, 30 * MIN, 'normal', 'always', 'worker'],
   ['stock.externalReconciliation', DAY, 2 * HOUR, 'normal', 'ifDue', 'worker'],
@@ -71,7 +73,7 @@ async function startFor(role: 'web' | 'worker' | 'all') {
 beforeEach(() => { captured.length = 0; stops.length = 0; jest.resetModules(); });
 
 describe('zamanlayici listesi ve tanimlari (birebir)', () => {
-  it('worker rolu: 12 is, tablo ile birebir ayni tanim ve sira (metrik/config isleri sona)', async () => {
+  it('worker rolu: 13 is, tablo ile birebir ayni tanim ve sira (metrik/config isleri sona)', async () => {
     await startFor('worker');
     const got = captured.map((c) => [c.def.name, c.def.everyMs, c.def.maxDurationMs, c.def.criticality, c.def.runOnStart ?? 'always']);
     const want = EXPECTED.map(([n, e, m, c, r]) => [n, e, m, c, r]);
@@ -114,7 +116,7 @@ describe('zamanlayici listesi ve tanimlari (birebir)', () => {
 });
 
 describe('rol x is matrisi (scheduleIdsForRole) ve durdurma', () => {
-  it('scheduleIdsForRole: web=2 rol-bagimsiz, worker=all=12; sira eski entegrasyonik.ts sirasi', () => {
+  it('scheduleIdsForRole: web=2 rol-bagimsiz, worker=all=13; sira eski entegrasyonik.ts sirasi', () => {
     const { scheduleIdsForRole } = require('@bootstrap/schedules');
     expect(scheduleIdsForRole('web')).toEqual(['observability.metrics-flush', 'config-head-poll']);
     expect(scheduleIdsForRole('worker')).toEqual(EXPECTED.map((e) => e[0]));
