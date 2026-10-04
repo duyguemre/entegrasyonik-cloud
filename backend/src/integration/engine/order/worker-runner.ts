@@ -3,12 +3,12 @@ import { RedisService } from '@services/redis/RedisService'; // Merkezi Redis se
 import { OrderWorker } from './OrderWorker';
 import { IntegrationError } from '@integration/modules/common/IntegrationError';
 import orderConfig from './order.config.json';
-import { getSetting } from '@integration/config/ConfigResolver';
+import { getSetting, getSettingWithPublishedOverrides } from '@integration/config/ConfigResolver';
 import { eventLog } from '@platform/core/logger';
 import { runWithJobContext } from '@platform/core/context';
 import { QueueMetricsCollector } from '@services/metrics/QueueMetricsCollector';
 import { allowInFlightWork, recordIntakeSkip } from '@integration/config/intakeGate';
-import { LEGACY_ORDER_QUEUE, ORDER_QUEUE_NAMES, concurrencyFor } from '@integration/contracts/orderQueues';
+import { LEGACY_ORDER_QUEUE, ORDER_QUEUE_NAMES, ORDER_QUEUE_PREFIX, concurrencyFor } from '@integration/contracts/orderQueues';
 
 /** [ADR-0030 X6] Kill-switch `off` iken kuyruktaki iş bu kadar ertelenir (deneme hakkı tüketilmez, iş silinmez). */
 export const INTAKE_OFF_DEFER_MS = 30_000;
@@ -138,6 +138,21 @@ function startOne(queueName: string, concurrency: number, hooks: OrderJobHooks):
 }
 
 /**
+ * [eslesme-fiyat WP7b, PLAN §3.6] Kanal kuyruğu eşzamanlılığı backoffice ayarından (`sync.queue.concurrency`, entegrasyon kapsamı;
+ * yayımlanmış geçersiz kılma > katalog varsayılanı = CHANNEL_CONCURRENCY). Okunamazsa/geçersizse sabit tablo. Yeniden başlatmada etkin.
+ */
+export function queueConcurrency(queueName: string): number {
+    const fallback = concurrencyFor(queueName);
+    const code = queueName.startsWith(ORDER_QUEUE_PREFIX) ? queueName.slice(ORDER_QUEUE_PREFIX.length) : '';
+    try {
+        const v = getSettingWithPublishedOverrides<number>('sync.queue.concurrency', code && code !== 'other' ? { integrationCode: code } : {});
+        return Number.isInteger(v) && v >= 1 && v <= 20 ? v : fallback;
+    } catch {
+        return fallback;
+    }
+}
+
+/**
  * BullMQ Worker'larını başlatır.
  * [eslesme-fiyat WP7a, F-01] İlk Worker eski `order-sync-queue`'yu BOŞALTIR (yeni iş eklenmez; ayar `order.workerConcurrency`),
  * ardından kanal başına `order-sync-<kod>` Worker'ları kanal eşzamanlılığıyla (orderQueues.CHANNEL_CONCURRENCY).
@@ -148,7 +163,7 @@ export function startOrderWorkerConsumer(hooks: OrderJobHooks = {}) {
 
     // [ADR-0020 Aşama A] Eski kuyruk eşzamanlılığı tek çözümleyiciden (5).
     const legacy = startOne(LEGACY_ORDER_QUEUE, getSetting<number>('order.workerConcurrency'), hooks);
-    currentWorkers = [legacy, ...ORDER_QUEUE_NAMES.map(name => startOne(name, concurrencyFor(name), hooks))];
+    currentWorkers = [legacy, ...ORDER_QUEUE_NAMES.map(name => startOne(name, queueConcurrency(name), hooks))];
     QueueMetricsCollector.startAutoFlush(); // kova yazımı (60 sn, unref'd, idempotent)
     return legacy;
 }

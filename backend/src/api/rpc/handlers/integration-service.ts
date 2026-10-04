@@ -17,6 +17,7 @@ import * as exportJobs from '@operations/integrations/exportJobs'
 import * as preflight from '@operations/integrations/preflight'
 import { syncNow } from '@operations/integrations/syncNow'
 import { allowNewWork } from '@integration/config/intakeGate'
+import { getSettingWithPublishedOverrides } from '@integration/config/ConfigResolver'
 import { config } from '@config'
 import IntegrationFactory from '@integration/modules/IntegrationFactory'
 import { eventLog } from '@platform/core/logger';
@@ -149,6 +150,7 @@ export default class IntegrationService extends BaseApi implements IService {
             clientId: Number(this.currentClientId),
             allowNewWork,
             liveReadonly: config.liveReadonly.enabled,
+            cooldownMs: (() => { try { return getSettingWithPublishedOverrides<number>('sync.manual.cooldownMs') } catch { return undefined } })(),
             enqueue: (args) => {
                 // Tembel yükleme: OrderQueueProducer BullMQ/Redis modüllerini çeker; RPC cephesini yükleyen testler/araçlar çekmesin.
                 // eslint-disable-next-line @typescript-eslint/no-require-imports -- TS6-01: node16 CJS, tembel yukleme (dinamik import yerine)

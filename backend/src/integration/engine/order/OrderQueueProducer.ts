@@ -8,6 +8,7 @@ import { EntitlementService } from '@services/billing/EntitlementService';
 import { eventLog } from '@platform/core/logger';
 import { getRequestId, newCorrelationId } from '@platform/core/context';
 import { allowNewWork, recordIntakeSkip } from '@integration/config/intakeGate';
+import { getSettingWithPublishedOverrides } from '@integration/config/ConfigResolver';
 import type { JobOutcome } from '@platform/runtime/scheduler';
 import { LEGACY_ORDER_QUEUE, ORDER_QUEUE_NAMES, orderQueueName, orderDedupId, sliceDelayMs, type OrderSyncKind } from '@integration/contracts/orderQueues';
 
@@ -26,6 +27,28 @@ const CLIENT_PROJECTION = {
 export const PRODUCER_PAGE_SIZE = 500;
 
 type BulkItem = { name: string; data: IOrderJobData; opts: Record<string, any> };
+
+/** [WP7b, PLAN §3.6] Tür başına çekim aralıkları: backoffice'te yayımlanmış geçersiz kılma > katalog varsayılanı > JSON. */
+export interface SyncIntervals { orders: number; webhookReconcile: number; claims: number; finance: number; messages: number }
+
+function settingMs(key: string, fallback: number): number {
+    try {
+        const v = getSettingWithPublishedOverrides<number>(key);
+        return typeof v === 'number' && Number.isFinite(v) && v > 0 ? v : fallback;
+    } catch {
+        return fallback;
+    }
+}
+
+export function resolveSyncIntervals(): SyncIntervals {
+    return {
+        orders: settingMs('order.orderSync.intervalMs', orderConfig.orderSync.intervalMs || 300000),
+        webhookReconcile: settingMs('order.webhookHealthy.reconciliationIntervalMs', orderConfig.webhookHealthy?.reconciliationIntervalMs || 600000),
+        claims: settingMs('order.claimSync.intervalMs', orderConfig.claimSync.intervalMs),
+        finance: settingMs('order.financeSync.intervalMs', orderConfig.financeSync.intervalMs),
+        messages: settingMs('order.messageSync.intervalMs', orderConfig.messageSync.intervalMs),
+    };
+}
 
 export class OrderQueueProducer {
     /** Kanal kuyrukları tembel kurulur (yapıcı Redis'e bağlanmaz; webhook modülü yüklenirken de kurulur). */
@@ -81,6 +104,7 @@ export class OrderQueueProducer {
             const applicationDB = await DatabaseManagerInstance.getApplicationDB();
             const clientModel = applicationDB.getClientModel();
             const now = new Date();
+            const intervals = resolveSyncIntervals(); // [WP7b] tur başına bir kez (yayımlanmış ayar bir sonraki turda etkin)
 
             let lastId: any = undefined;
             let scanned = 0;
@@ -94,7 +118,7 @@ export class OrderQueueProducer {
 
                 const bulk = new Map<string, BulkItem[]>();
                 for (const client of page) {
-                    for (const item of await this.jobsForClient(client, now, clientModel)) {
+                    for (const item of await this.jobsForClient(client, now, clientModel, intervals)) {
                         const qn = orderQueueName(item.data.integrationCode);
                         (bulk.get(qn) ?? bulk.set(qn, []).get(qn)!).push(item);
                     }
@@ -124,7 +148,7 @@ export class OrderQueueProducer {
     }
 
     /** Bir client için bu turda eklenecek işler (saf hesap + webhook düşürme yan etkisi). */
-    private async jobsForClient(client: any, now: Date, clientModel: any): Promise<BulkItem[]> {
+    private async jobsForClient(client: any, now: Date, clientModel: any, iv: SyncIntervals = resolveSyncIntervals()): Promise<BulkItem[]> {
         // [ADR-0008 §3(b), BAYRAK KORUMALI (`ENTITLEMENT_GUARD_ENABLED`, varsayılan `false`)] Bayrak
         // KAPALIYKEN (varsayılan) bu blok HİÇBİR ŞEY yapmaz. Açıkken aboneliği `engine` boyutunda erişime kapalı
         // tenant için YENİ sipariş senkron işi KUYRUĞA ALINMAZ ("tenant'ı kuyruğa almadan ÖNCE", ADR §3 (b)).
@@ -171,19 +195,17 @@ export class OrderQueueProducer {
 
             // [PLAN §3.6] Sipariş: webhook sağlıklı → mutabakat 10 dk, webhook'suz → 5 dk. İmleç `başlangıç − örtüşme` yazıldığı için
             // son koşu ≈ imleç + örtüşme; eksik çekimde imleç ilerlemez → hemen yeniden sırası gelir (kalan kuyruk).
-            const orderIntervalMs = webhookHealth.healthy
-                ? (orderConfig.webhookHealthy?.reconciliationIntervalMs || 600000)
-                : (orderConfig.orderSync.intervalMs || 300000);
+            const orderIntervalMs = webhookHealth.healthy ? iv.webhookReconcile : iv.orders;
             const lastOrderRunMs = integration.lastSuccessfulOrderSync
                 ? new Date(integration.lastSuccessfulOrderSync).getTime() + orderConfig.orderSync.cursorOverlapMs
                 : 0;
             if (!lastOrderRunMs || (now.getTime() - lastOrderRunMs) >= orderIntervalMs) push('orders');
 
-            const claimSync = this.computeSourceWindow(now, integration.lastClaimSync, integration.lastClaimFullSweepAt, orderConfig.claimSync, staggerHour);
+            const claimSync = this.computeSourceWindow(now, integration.lastClaimSync, integration.lastClaimFullSweepAt, { ...orderConfig.claimSync, intervalMs: iv.claims }, staggerHour);
             if (claimSync) push('claims', { claimSync });
-            const financeSync = this.computeSourceWindow(now, integration.lastFinanceSync, integration.lastFinanceFullSweepAt, orderConfig.financeSync, staggerHour);
+            const financeSync = this.computeSourceWindow(now, integration.lastFinanceSync, integration.lastFinanceFullSweepAt, { ...orderConfig.financeSync, intervalMs: iv.finance }, staggerHour);
             if (financeSync) push('finance', { financeSync });
-            const messageSync = this.computeSourceWindow(now, integration.lastMessageSync, undefined, orderConfig.messageSync, undefined);
+            const messageSync = this.computeSourceWindow(now, integration.lastMessageSync, undefined, { ...orderConfig.messageSync, intervalMs: iv.messages }, undefined);
             if (messageSync) push('messages', { messageSync });
         }
         return out;

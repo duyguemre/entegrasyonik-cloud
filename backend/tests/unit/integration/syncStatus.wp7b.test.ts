@@ -202,3 +202,33 @@ describe('health.ts — sync.* ve needsAttention (PLAN §3.5)', () => {
         expect(it0.needsAttention).toEqual({ reason: 'AUTH', since: NOW });
     });
 });
+
+describe('§3.6 sync.* ayar kataloğu', () => {
+    it('anahtarlar katalogda; kanal eşzamanlılığı varsayılanı PLAN §3.5 tablosu; soğuma 5 dk', () => {
+        const { getSettingDef } = require('../../../src/integration/config/catalog');
+        const conc = getSettingDef('sync.queue.concurrency');
+        expect(conc.default).toEqual({ _: 1, trendyol: 5, hepsiburada: 3, n11: 3, pazarama: 3, ideasoft: 2, bizimhesap: 1 });
+        expect(conc.scope).toBe('integration');
+        expect(getSettingDef('sync.manual.cooldownMs').default).toBe(300000);
+    });
+    it('işçi eşzamanlılığı ayardan (geçersiz kılma yokken = sabit tablo)', () => {
+        const { queueConcurrency } = require('../../../src/integration/engine/order/worker-runner');
+        expect(['trendyol', 'hepsiburada', 'ideasoft', 'bizimhesap', 'other'].map((c) => queueConcurrency(`order-sync-${c}`))).toEqual([5, 3, 2, 1, 1]);
+    });
+    it('üretici aralıkları (geçersiz kılma yokken) = PLAN §3.6 / order.config.json', () => {
+        const { resolveSyncIntervals } = require('../../../src/integration/engine/order/OrderQueueProducer');
+        expect(resolveSyncIntervals()).toEqual({ orders: 300000, webhookReconcile: 600000, claims: 900000, finance: 21600000, messages: 600000 });
+    });
+    it('syncNow soğuma ayarı: pencere ve retryAfter ayardan; 60 sn altı yok sayılır', async () => {
+        const mk = (cooldownMs: number, modified = 1) => ({
+            clientModel: { findOne: jest.fn(() => ({ lean: async () => ({ integrations: [{ integrationCode: 'n11', status: true, type: 'marketplace', sync: { orders: { manualRequestedAt: NOW } } }] }) })), updateOne: jest.fn(async () => ({ modifiedCount: modified })) },
+            clientId: 7, allowNewWork: () => true, liveReadonly: false, now: () => NOW, cooldownMs,
+            enqueue: jest.fn(async (a: any) => ({ jobId: a.jobId, skipped: false })),
+        }) as any;
+        const r = await syncNow({ integrationCode: 'n11' }, mk(600000));
+        expect(r.nextAllowedAt).toEqual(new Date(NOW.getTime() + 600000));
+        expect(r.jobId).toBe(manualSyncJobId(7, 'n11', 'orders', NOW.getTime(), 600000));
+        await expect(syncNow({ integrationCode: 'n11' }, mk(600000, 0))).rejects.toMatchObject({ details: { retryAfterSec: 600 } });
+        expect((await syncNow({ integrationCode: 'n11' }, mk(1000))).nextAllowedAt).toEqual(new Date(NOW.getTime() + SYNC_NOW_COOLDOWN_MS));
+    });
+});

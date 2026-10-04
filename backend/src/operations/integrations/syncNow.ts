@@ -7,7 +7,7 @@ import { ORDER_SYNC_KINDS, readSyncState, type SyncKind } from '@platform/core/s
  *  1. Kill-switch (`allowNewWork`) ve LIVE_READONLY → merkezî RPC kancaları zaten reddeder (yetenek `external` + `write`);
  *     burada da savunma olarak denetlenir (RPC dışı çağıran için).
  *  2. Entegrasyon tenant'ta kayıtlı ve etkin olmalı; `needsAttention` (art arda AUTH) iken iş eklenmez (kimlik güncellenmeli).
- *  3. Soğuma: tenant × entegrasyon × tür başına 5 dk. Mongo'da koşullu `$set` (atomik, çok pod güvenli): ilk yazan kazanır,
+ *  3. Soğuma: tenant × entegrasyon × tür başına 5 dk (`sync.manual.cooldownMs`). Mongo'da koşullu `$set` (atomik, çok pod güvenli): ilk yazan kazanır,
  *     diğerleri 429 RATE_LIMITED + `retryAfterSec`.
  *  4. Kuyruk: jobId `manual_<client>_<kod>_<kind>_<5 dk pencere>` (aynı pencerede ikinci ekleme yeni iş açmaz).
  * Tenant = doğrulanmış principal (`clientId`); gövde tenant SEÇEMEZ.
@@ -24,6 +24,8 @@ export interface SyncNowDeps {
     /** Kuyruğa ekler; Redis hazır değilse `{ skipped: true }` döner (hata fırlatmaz). */
     enqueue: (args: { clientId: number; integrationCode: string; kind: ManualSyncKind; jobId: string; integration: any; now: Date }) => Promise<{ jobId: string; skipped: boolean }>;
     now?: () => Date;
+    /** [WP7b, §3.6] `sync.manual.cooldownMs` (yoksa 5 dk). */
+    cooldownMs?: number;
 }
 
 export interface SyncNowResult {
@@ -37,8 +39,8 @@ export interface SyncNowResult {
     lastSuccessAt: Date | null;
 }
 
-export function manualSyncJobId(clientId: number, integrationCode: string, kind: string, nowMs: number): string {
-    return `manual_${clientId}_${integrationCode}_${kind}_${Math.floor(nowMs / SYNC_NOW_COOLDOWN_MS)}`;
+export function manualSyncJobId(clientId: number, integrationCode: string, kind: string, nowMs: number, windowMs: number = SYNC_NOW_COOLDOWN_MS): string {
+    return `manual_${clientId}_${integrationCode}_${kind}_${Math.floor(nowMs / windowMs)}`;
 }
 
 export async function syncNow(input: { integrationCode: string; kind?: ManualSyncKind }, deps: SyncNowDeps): Promise<SyncNowResult> {
@@ -46,6 +48,7 @@ export async function syncNow(input: { integrationCode: string; kind?: ManualSyn
     const clientId = Number(deps.clientId);
     const integrationCode = String(input?.integrationCode ?? '');
     const kind: ManualSyncKind = input?.kind ?? 'orders';
+    const cooldownMs = Number.isInteger(deps.cooldownMs) && (deps.cooldownMs as number) >= 60000 ? (deps.cooldownMs as number) : SYNC_NOW_COOLDOWN_MS;
     if (!Number.isInteger(clientId)) throw new ApplicationError('Tenant bulunamadı.', 400, 'VALIDATION');
     if (!(ORDER_SYNC_KINDS as readonly string[]).includes(kind)) throw new ApplicationError('Geçersiz senkron türü.', 400, 'VALIDATION');
 
@@ -66,7 +69,7 @@ export async function syncNow(input: { integrationCode: string; kind?: ManualSyn
 
     // Atomik soğuma: yalnız son manuel istek 5 dk'dan eskiyse (ya da hiç yoksa) yazılır.
     const field = `sync.${kind}.manualRequestedAt`;
-    const threshold = new Date(now.getTime() - SYNC_NOW_COOLDOWN_MS);
+    const threshold = new Date(now.getTime() - cooldownMs);
     const res: any = await deps.clientModel.updateOne(
         {
             clientId,
@@ -76,11 +79,11 @@ export async function syncNow(input: { integrationCode: string; kind?: ManualSyn
     );
     if (!res?.modifiedCount) {
         const last = integration?.sync?.[kind]?.manualRequestedAt ? new Date(integration.sync[kind].manualRequestedAt).getTime() : now.getTime();
-        const retryAfterSec = Math.max(1, Math.ceil((last + SYNC_NOW_COOLDOWN_MS - now.getTime()) / 1000));
-        throw new ApplicationError(`Bu tür için manuel senkron 5 dakikada bir yapılabilir; ${Math.ceil(retryAfterSec / 60)} dk sonra tekrar deneyin.`, 429, 'RATE_LIMITED', { retryAfterSec });
+        const retryAfterSec = Math.max(1, Math.ceil((last + cooldownMs - now.getTime()) / 1000));
+        throw new ApplicationError(`Bu tür için manuel senkron ${Math.round(cooldownMs / 60000)} dakikada bir yapılabilir; ${Math.ceil(retryAfterSec / 60)} dk sonra tekrar deneyin.`, 429, 'RATE_LIMITED', { retryAfterSec });
     }
 
-    const jobId = manualSyncJobId(clientId, integrationCode, kind, now.getTime());
+    const jobId = manualSyncJobId(clientId, integrationCode, kind, now.getTime(), cooldownMs);
     const queued = await deps.enqueue({ clientId, integrationCode, kind, jobId, integration, now });
     if (queued.skipped) {
         // Kuyruk yok (Redis) → soğuma geri alınır ki kullanıcı Redis dönünce hemen deneyebilsin.
@@ -98,7 +101,7 @@ export async function syncNow(input: { integrationCode: string; kind?: ManualSyn
         kind,
         integrationCode,
         requestedAt: now,
-        nextAllowedAt: new Date(now.getTime() + SYNC_NOW_COOLDOWN_MS),
+        nextAllowedAt: new Date(now.getTime() + cooldownMs),
         lastSuccessAt: state.lastSuccessAt,
     };
 }
