@@ -162,6 +162,11 @@ exports[`Trendyol internal order snapshot awaiting 1`] = `
         "statusFlag": "paymentPending",
       },
       "orderNumber": "9",
+      "platformFields": {
+        "commercial": false,
+        "micro": false,
+        "packageId": "9",
+      },
       "shippingAddress": {
         "addressLine1": "Adres Bilgisi Yok",
         "addressLine2": "",
@@ -351,6 +356,11 @@ exports[`Trendyol internal order snapshot cancelled 1`] = `
         "statusReason": "Musteri vazgecti",
       },
       "orderNumber": "TY-2",
+      "platformFields": {
+        "commercial": false,
+        "micro": false,
+        "packageId": "5",
+      },
       "shippingAddress": {
         "addressLine1": "Adres Bilgisi Yok",
         "addressLine2": "",
@@ -611,6 +621,13 @@ exports[`Trendyol internal order snapshot full-invoiced 1`] = `
         "taxAmount": 5,
       },
       "orderNumber": "TY-1",
+      "platformFields": {
+        "commercial": true,
+        "invoiceStatus": "ISSUED",
+        "micro": true,
+        "packageId": "123",
+        "paymentMethod": "CC",
+      },
       "shippingAddress": {
         "addressLine1": "A1",
         "addressLine2": "A2",
@@ -777,6 +794,11 @@ exports[`Trendyol internal order snapshot unknown 1`] = `
         "statusFlag": "unknownStatus",
       },
       "orderNumber": "10",
+      "platformFields": {
+        "commercial": false,
+        "micro": false,
+        "packageId": "10",
+      },
       "shippingAddress": {
         "addressLine1": "Adres Bilgisi Yok",
         "addressLine2": "",
@@ -939,6 +961,11 @@ exports[`Trendyol internal order snapshot unsupplied 1`] = `
         "status": "UnSupplied",
       },
       "orderNumber": "pk",
+      "platformFields": {
+        "commercial": false,
+        "micro": false,
+        "packageId": "pk",
+      },
       "shippingAddress": {
         "addressLine1": "Adres Bilgisi Yok",
         "addressLine2": "",

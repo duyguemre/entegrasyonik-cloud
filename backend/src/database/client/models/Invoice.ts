@@ -61,3 +61,10 @@ export const InvoiceSchema = new Schema<IInvoiceDocument>({
     timestamps: true,
     strict: true
 });
+
+// [eslesme-fiyat WP6, D-ORD-1 / Ek E F-P1-2(b)] Sipariş başına tek SATIŞ faturası (upsert filtresinin DB güvencesi). Kısmi: yalnız
+// `type:'SALES'` + dolu `externalOrderId` (siparişsiz manuel ve çoklu kısmi iade faturaları kapsam dışı). Uygulama: göç 0027.
+InvoiceSchema.index(
+    { integrationCode: 1, externalOrderId: 1, type: 1 },
+    { unique: true, name: 'uniq_integration_externalOrder_sales', partialFilterExpression: { type: 'SALES', externalOrderId: { $gt: '' } } }
+);

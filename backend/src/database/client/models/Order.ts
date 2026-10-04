@@ -1,5 +1,5 @@
 import { Schema } from 'mongoose';
-import { IAddress, IFinancials, IFulfillment, IOrderDocument, IOrderInvoiceSummary, IOrderItem, OrderInternalStatusEnum } from '@interfaces/order';
+import { IAddress, IFinancials, IFulfillment, IOrderDocument, IOrderHistoryEntry, IOrderInvoiceSummary, IOrderItem, IOrderPlatformFields, OrderInternalStatusEnum } from '@interfaces/order';
 
 // ============================================================================
 // 1. ADRES & İLETİŞİM (Evrensel Format - CRM Uyumlu)
@@ -124,7 +124,42 @@ export const FulfillmentSchema = new Schema<IFulfillment>({
     desi: { type: Number },
     labelUrl: { type: String },
     barcodeData: { type: String },
-    errorCode: { type: String } // Kargo API hataları için
+    errorCode: { type: String }, // Kargo API hataları için
+    // [eslesme-fiyat WP6, Ek E F-P1-3] `shipments.ts` yazıyordu ama şemada yoktu (strict → sessizce düşüyordu).
+    shippedAt: { type: Date }
+}, { _id: false });
+
+// ============================================================================
+// 5b. DENETİM İZİ VE NORMALİZE PLATFORM ALANLARI [eslesme-fiyat WP6, K-F / D-ORD-2, D-ORD-3]
+// ============================================================================
+/**
+ * `Orders.history[]`: kim / ne zaman / ne. ESKİDEN iptal/onay/kargo/fatura akışları `$push history` yapıyordu ama alan şemada
+ * yoktu (strict) → denetim izi sessizce kayboluyordu (Ek E F-P1-3). Göç GEREKMEZ (eski kayıtta alan yok = boş iz; K05).
+ */
+export const OrderHistorySchema = new Schema<IOrderHistoryEntry>({
+    status: { type: String },
+    changedAt: { type: Date, default: Date.now },
+    description: { type: String },
+    actionBy: { type: String, enum: ['USER', 'SYSTEM', 'PLATFORM'], default: 'SYSTEM' },
+    userId: { type: String },
+    action: { type: String },
+}, { _id: false });
+
+/**
+ * Pazaryeri ham yanıtından (`meta`) normalize edilen tipli alanlar (fatura/ödeme yöntemi/bölünmüş paket için). `meta` KALIR.
+ * Yalnız kaynağı belgeli alanlar doldurulur; bilinmeyen alan boş kalır (uydurma yok).
+ */
+export const OrderPlatformFieldsSchema = new Schema<IOrderPlatformFields>({
+    paymentMethod: { type: String },
+    commercial: { type: Boolean },
+    micro: { type: Boolean },
+    invoiceNumber: { type: String },
+    invoiceStatus: { type: String },
+    taxAmount: { type: Number },
+    cargoAmount: { type: Number },
+    channel: { type: String },
+    splitFrom: { type: [String], default: undefined },
+    packageId: { type: String },
 }, { _id: false });
 
 // ============================================================================
@@ -197,6 +232,9 @@ export const OrderSchema = new Schema<IOrderDocument>({
     },
 
     meta: { type: Schema.Types.Mixed },
+    // [eslesme-fiyat WP6, K-F] denetim izi + normalize platform alanları (bkz. şema yorumları)
+    history: { type: [OrderHistorySchema], default: undefined },
+    platformFields: { type: OrderPlatformFieldsSchema },
     platformOperation: {
         status: { type: String, enum: ['PENDING', 'COMPLETED', 'FAILED'] },
         message: { type: String },

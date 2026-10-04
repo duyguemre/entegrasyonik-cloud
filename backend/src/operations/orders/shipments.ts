@@ -130,7 +130,8 @@ export async function createShipment(deps: ShipmentDeps, orderId: any, fulfillme
                     status: statusUpdate.internalStatus || order.internalStatus,
                     changedAt: new Date(),
                     description: `Kargo bilgileri girildi (${fulfillmentData?.carrierName}: ${fulfillmentData?.trackingCode}) ${notPerformed ? 've pazaryerine iletilmedi (kanal bildirim gerektirmiyor).' : 've pazaryerine iletildi.'}`,
-                    actionBy: 'USER'
+                    actionBy: 'USER',
+                    action: 'SHIP'
                 }
             }
         },

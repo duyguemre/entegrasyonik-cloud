@@ -186,6 +186,35 @@ export interface IFulfillment {
     labelUrl?: string;
     barcodeData?: string;
     errorCode?: string;
+    shippedAt?: Date;
+}
+
+/** [eslesme-fiyat WP6, K-F / D-ORD-2] Sipariş denetim izi satırı (kim/ne zaman/ne). */
+export interface IOrderHistoryEntry {
+    status?: string;
+    changedAt?: Date;
+    description?: string;
+    actionBy?: 'USER' | 'SYSTEM' | 'PLATFORM';
+    userId?: string;
+    /** Makine okunur eylem: CANCEL, APPROVE, SHIP, INVOICE, INVOICE_FAILED ... */
+    action?: string;
+}
+
+/**
+ * [eslesme-fiyat WP6, K-F / D-ORD-3] Ham `meta`dan normalize edilen tipli alanlar. `splitFrom`: Trendyol bölünmüş paketin
+ * köken paket kimlikleri (`originPackageIds`, F-P1-13); `packageId`: kanal paket kimliği.
+ */
+export interface IOrderPlatformFields {
+    paymentMethod?: string;
+    commercial?: boolean;
+    micro?: boolean;
+    invoiceNumber?: string;
+    invoiceStatus?: string;
+    taxAmount?: number;
+    cargoAmount?: number;
+    channel?: string;
+    splitFrom?: string[];
+    packageId?: string;
 }
 
 export interface IPlatformAction {
@@ -297,6 +326,8 @@ export interface IOrder {
     };
 
     meta?: Record<string, any>;
+    history?: IOrderHistoryEntry[];
+    platformFields?: IOrderPlatformFields;
     platformOperation?: {
         status: 'PENDING' | 'COMPLETED' | 'FAILED';
         message: string;

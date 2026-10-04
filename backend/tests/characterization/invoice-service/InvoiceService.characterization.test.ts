@@ -312,7 +312,7 @@ describe('InvoiceService.createInvoice', () => {
     await expect(makeService({ orderId: 'x' }).createInvoice()).rejects.toThrow('Sipariş bulunamadı.');
   });
 
-  it('[MEVCUT DAVRANIŞ] mutlu yol: invoiceData verilirse upsert edilir, platforma iletilir (success), sonra Order.dates.invoicedAt + invoice + flags.isInvoiceGenerated=true set edilir + history push', async () => {
+  it('[MEVCUT DAVRANIŞ] mutlu yol: invoiceData verilirse upsert edilir, platforma iletilir (success), sonra Order.dates.invoiceDate + invoice + flags.isInvoiceGenerated=true set edilir + history push', async () => {
     jest.useFakeTimers().setSystemTime(new Date('2026-05-01T10:00:00Z'));
     const res = await makeService({ orderId: 'o1', invoiceData: { invoiceNumber: 'INV-9', ettn: 'ETTN-9' } }).createInvoice();
 
@@ -343,10 +343,16 @@ describe('InvoiceService.createInvoice', () => {
       message: 'Fatura oluşturuldu ancak pazaryerine iletilemedi: Pazaryeri: geçersiz belge.',
       data: { invoice: expect.anything() },
     });
-    // syncInvoiceToPlatform YİNE DE platformActions LOG kaydı yazar (status FAILED); yalnızca KÖK
-    // sipariş güncellemesi (2. çağrı, dates.invoicedAt/invoice/flags.isInvoiceGenerated) YAPILMAZ.
-    expect(orderModel.findByIdAndUpdate).toHaveBeenCalledTimes(1);
+    // syncInvoiceToPlatform YİNE DE platformActions LOG kaydı yazar (status FAILED); başarı güncellemesi
+    // (dates.invoiceDate/invoice SUCCESS/flags.isInvoiceGenerated) YAPILMAZ.
+    // [BİLİNÇLİ DEĞİŞİKLİK, eslesme-fiyat WP6 F-P1-2(e)] 2. çağrı artık başarısızlığı işler: invoice.status FAILED + denetim izi
+    // (eskiden sipariş özetinde hiç iz kalmıyordu); isInvoiceGenerated DOKUNULMAZ.
+    expect(orderModel.findByIdAndUpdate).toHaveBeenCalledTimes(2);
     expect(orderModel.findByIdAndUpdate.mock.calls[0][1]).toMatchObject({ $push: { platformActions: { status: 'FAILED' } } });
+    const failUpd = orderModel.findByIdAndUpdate.mock.calls[1][1];
+    expect(failUpd.$set['invoice.status']).toBe('FAILED');
+    expect(failUpd.$set['flags.isInvoiceGenerated']).toBeUndefined();
+    expect(failUpd.$push.history.action).toBe('INVOICE_FAILED');
   });
 
   it('[MEVCUT DAVRANIŞ] platform entegrasyonu sendOrderInvoice DESTEKLEMİYORSA (metod yok) sessizce success:true sayılır ve akış NORMAL devam eder (platforma HİÇ bildirim gitmez)', async () => {
@@ -443,7 +449,8 @@ describe('InvoiceService.resolveAndReissueInvoice', () => {
     const [id, update] = orderModel.findByIdAndUpdate.mock.calls[0];
     expect(id).toBe('o1');
     expect(update.$set).toMatchObject({ internalStatus: 'CANCELLED', 'financials.grandTotal': 0, 'financials.subTotal': 0 });
-    expect(update.$unset).toEqual({ invoice: '', 'dates.invoicedAt': '', platformDiscrepancy: '' });
+    // [BİLİNÇLİ DEĞİŞİKLİK, eslesme-fiyat WP6 F-P1-2(c)] şemadaki alan `dates.invoiceDate` (eski `invoicedAt` şemada yoktu).
+    expect(update.$unset).toEqual({ invoice: '', 'dates.invoiceDate': '', platformDiscrepancy: '' });
     expect(res).toEqual({ success: true, message: 'Tüm ürünler iptal edildiği için fatura iptal edildi.', data: { _id: 'o1', updated: true } });
     expect(instance.sendOrderInvoice).not.toHaveBeenCalled();
   });

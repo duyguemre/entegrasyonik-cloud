@@ -44,7 +44,7 @@ function cancelUpdate(reason: any, lockTime: Date, message: string, description:
             platformOperation: { status: 'PENDING', message, lockedUntil: lockTime }
         },
         $push: {
-            history: { status: OrderInternalStatusEnum.CANCELLED, changedAt: new Date(), description, actionBy: 'USER' }
+            history: { status: OrderInternalStatusEnum.CANCELLED, changedAt: new Date(), description, actionBy: 'USER', action: 'CANCEL' }
         }
     };
 }
@@ -166,7 +166,7 @@ export async function approveOrder({ repo, clientId }: OrderActionDeps, orderId:
         {
             $set: updateFields,
             $push: {
-                history: { status: OrderInternalStatusEnum.APPROVED, changedAt: new Date(), description: 'Sipariş kullanıcı tarafından onaylandı.', actionBy: 'USER' }
+                history: { status: OrderInternalStatusEnum.APPROVED, changedAt: new Date(), description: 'Sipariş kullanıcı tarafından onaylandı.', actionBy: 'USER', action: 'APPROVE' }
             }
         },
         { new: true }
@@ -207,7 +207,7 @@ export async function bulkApproveOrders({ repo, clientId }: OrderActionDeps, ord
                     platformOperation: { status: 'PENDING', message: 'Sipariş toplu işlem ile onaylanıyor...', lockedUntil: lockTime }
                 },
                 $push: {
-                    history: { status: OrderInternalStatusEnum.APPROVED, changedAt: new Date(), description: 'Toplu onay işlemiyle onaylandı.', actionBy: 'USER' }
+                    history: { status: OrderInternalStatusEnum.APPROVED, changedAt: new Date(), description: 'Toplu onay işlemiyle onaylandı.', actionBy: 'USER', action: 'APPROVE' }
                 }
             });
 

@@ -191,17 +191,25 @@ export async function createInvoice(deps: InvoiceDeps, orderId: any, invoiceData
         const platformResult = await syncInvoiceToPlatform(deps, order, newInvoice);
 
         if (!platformResult.success) {
+            // [eslesme-fiyat WP6, Ek E F-P1-2(e)] ESKİDEN fatura kaydı APPROVED kalıyor, siparişte iz yoktu. Artık fatura FAILED
+            // (yeniden deneme aynı kaydı upsert eder), sipariş özeti FAILED + hata, denetim izinde satır.
+            const failMessage = String(platformResult.message || 'Pazaryeri bildirimi başarısız.').slice(0, 500);
+            await repo.updateInvoices({ _id: newInvoice?._id }, { $set: { status: 'FAILED', statusMessage: failMessage, errorCode: 'PLATFORM_SYNC_FAILED' } });
+            await repo.updateOrderById(orderId, {
+                $set: { 'invoice.status': 'FAILED', 'invoice.errorCode': 'PLATFORM_SYNC_FAILED', 'invoice.invoiceNumber': newInvoice?.invoiceNumber },
+                $push: { history: { status: order.internalStatus, changedAt: new Date(), description: `Fatura pazaryerine iletilemedi: ${failMessage}`, actionBy: 'USER', action: 'INVOICE_FAILED' } }
+            });
             return {
                 success: false,
                 message: `Fatura oluşturuldu ancak pazaryerine iletilemedi: ${platformResult.message}`,
-                data: { invoice: newInvoice }
+                data: { invoice: newInvoice ? { ...(newInvoice.toObject?.() ?? newInvoice), status: 'FAILED' } : newInvoice }
             };
         }
 
         // 3. Order Kök Şeması Güncelleme (SONRA)
         // KRİTİK: Eğer sipariş zaten Kargolandı veya Teslim Edildi statüsündeyse, statüsünü geriye çekme.
         const statusUpdate: any = {
-            'dates.invoicedAt': issueDate,
+            'dates.invoiceDate': issueDate,
             invoice: {
                 invoiceMethod: newInvoice.invoiceMethod,
                 status: 'SUCCESS',
@@ -222,7 +230,8 @@ export async function createInvoice(deps: InvoiceDeps, orderId: any, invoiceData
                         status: statusUpdate.internalStatus || order.internalStatus,
                         changedAt: new Date(),
                         description: 'Fatura oluşturuldu ve pazaryerine başarıyla iletildi.',
-                        actionBy: 'USER'
+                        actionBy: 'USER',
+                        action: 'INVOICE'
                     }
                 }
             },
@@ -306,7 +315,7 @@ export async function resolveAndReissueInvoice(repo: InvoicePanelRepository, ord
                 'financials.grandTotal': 0,
                 'financials.subTotal': 0
             },
-            $unset: { invoice: "", 'dates.invoicedAt': "", platformDiscrepancy: "" }
+            $unset: { invoice: "", 'dates.invoiceDate': "", platformDiscrepancy: "" }
         }, { new: true });
 
         return { success: true, message: 'Tüm ürünler iptal edildiği için fatura iptal edildi.', data: updatedOrder };
@@ -321,12 +330,23 @@ export async function resolveAndReissueInvoice(repo: InvoicePanelRepository, ord
             internalStatus: OrderInternalStatusEnum.APPROVED,
             'flags.isInvoiceGenerated': false
         },
-        $unset: { invoice: "", 'dates.invoicedAt': "", platformDiscrepancy: "" }
+        $unset: { invoice: "", 'dates.invoiceDate': "", platformDiscrepancy: "" }
     });
 
     await repo.updateInvoices({ orderId: order._id, status: { $ne: 'CANCELLED' } }, { $set: { status: 'CANCELLED', cancellationDate: new Date() } });
 
     return await reissue();
+}
+
+/** [eslesme-fiyat WP6] Fatura bildirimine eklenen kargo bilgisi: son takip kodlu kayıt (yoksa yok). */
+export function invoiceShipmentMeta(order: any): Record<string, any> {
+    const meta: Record<string, any> = { platformOrder: order.meta };
+    const shipped = [...(order.fulfillment || [])].reverse().find((f: any) => f?.trackingCode && String(f.trackingCode).trim() !== '');
+    if (shipped) {
+        meta.trackingNumber = String(shipped.trackingCode);
+        if (shipped.carrierCode) meta.deliveryCompanyId = String(shipped.carrierCode);
+    }
+    return meta;
 }
 
 /**
@@ -345,9 +365,11 @@ async function syncInvoiceToPlatform(deps: InvoiceDeps, order: any, invoice: any
                 invoiceAmount: order.financials?.grandTotal || 0,
                 pdfUrl: invoice.pdfUrl || invoice.invoiceLink,
                 documentType: invoice.documentType as 'E_ARSIV' | 'E_FATURA',
-                currency: order.currency || 'TRY',
+                // [eslesme-fiyat WP6, Ek E F-P1-2(d)] ESKİDEN `order.currency` (şemada olmayan alan → hep TRY) ve kargo bilgisi yoktu
+                // (Pazarama `deliveryCompanyId/trackingNumber` null gidiyordu).
+                currency: order.financials?.currencyCode || 'TRY',
                 // [eslesme-fiyat WP4, D-PZ-11] adaptörün ham sipariş alanlarına (ör. Pazarama GUID `OrderId`) erişimi; ayrı anahtar.
-                meta: { platformOrder: order.meta }
+                meta: invoiceShipmentMeta(order)
             });
 
             // Platform hareketini logla

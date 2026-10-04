@@ -1,4 +1,4 @@
-import { IOrderPackage, IOrder, ICustomer, IOrderItem, IAddress, ICustomerAddress, OrderInternalStatusEnum } from '@interfaces/index';
+import { IOrderPackage, IOrder, ICustomer, IOrderItem, IAddress, ICustomerAddress, OrderInternalStatusEnum, IOrderPlatformFields } from '@interfaces/index';
 import { integrationCode } from '../constants'; // 'trendyol'
 import { IntegrationError } from '@integration/modules/common/IntegrationError';
 import { buildInternalOrder } from '@integration/modules/common/adapter/buildInternalOrder';
@@ -240,6 +240,9 @@ export class OrderMapper {
 
                 flags: { isAllocated: false, isInvoiceGenerated: !!order.invoiceLink, isMetricsProcessed: false },
 
+                // [eslesme-fiyat WP6, K-F / D-ORD-3, F-P1-13] normalize alanlar (yalnız yanıtta olanlar; `meta` aynen kalır).
+                platformFields: trendyolPlatformFields(order),
+
                 meta: {
                     packageId: order.shipmentPackageId ?? order.id ?? order.packageId,
                     giftBox: !!order.giftBox || !!order.giftBoxRequested,
@@ -335,4 +338,25 @@ export class OrderMapper {
             isDefaultBilling: false
         };
     }
+}
+
+/**
+ * [eslesme-fiyat WP6, K-F / D-ORD-3] Trendyol paket yanıtından tipli alanlar. Bölünmüş paket (`createdBy: 'split'`) köken paket
+ * kimliklerini `originPackageIds`'te taşır → `splitFrom` (F-P1-13: paketler arası ilişki; her paket yine ayrı Order).
+ * Fatura numarası yanıtta varsa (`invoiceNumber`) alınır; yoksa boş (uydurma yok).
+ */
+export function trendyolPlatformFields(order: any): IOrderPlatformFields {
+    const origin = Array.isArray(order?.originPackageIds) ? order.originPackageIds.map((v: any) => String(v)).filter(Boolean) : [];
+    const packageId = order?.shipmentPackageId ?? order?.id ?? order?.packageId;
+    const out: IOrderPlatformFields = {
+        commercial: !!order?.commercial,
+        micro: !!order?.micro,
+    };
+    if (order?.paymentMethod) out.paymentMethod = String(order.paymentMethod);
+    if (packageId !== undefined && packageId !== null) out.packageId = String(packageId);
+    if (origin.length) out.splitFrom = origin;
+    if (order?.invoiceNumber) out.invoiceNumber = String(order.invoiceNumber);
+    if (order?.invoiceLink) out.invoiceStatus = 'ISSUED';
+    if (order?.storeFrontCode) out.channel = String(order.storeFrontCode);
+    return out;
 }

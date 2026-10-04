@@ -92,6 +92,8 @@ export class OrderRepository {
 
                 // Eğer kilit süresi dolduysa veya hiç yoksa, işlemi yaparken platformOperation alanını sıfırla (sync tamamlandı).
                 updatePayload.platformOperation = null;
+                // [eslesme-fiyat WP6, K-F] Denetim izi senkronla ASLA ezilmez ($set dışı; yalnız aşağıdaki $push).
+                delete updatePayload.history;
 
                 if (existingOrder) {
                     // A. MÜŞTERİ KORUMASI (CRM Bütünlüğü)
@@ -221,13 +223,14 @@ export class OrderRepository {
                     }
                 }
 
+                const historyEntry = syncHistoryEntry(existingOrder, updatePayload, now);
                 return {
                     updateOne: {
                         filter: {
                             integrationCode: order.integrationCode,
                             externalOrderId: order.externalOrderId
                         },
-                        update: { $set: updatePayload },
+                        update: historyEntry ? { $set: updatePayload, $push: { history: historyEntry } } : { $set: updatePayload },
                         upsert: true
                     }
                 };
@@ -314,4 +317,23 @@ export class OrderRepository {
             log.error('ORDERREPOSITORY_GUNCELLEME_HATASI', `${field} Güncelleme Hatası:`, { err: error });
         }
     }
+}
+
+/**
+ * [eslesme-fiyat WP6, K-F / D-ORD-2] Senkronla gelen durum değişimi denetim izine `PLATFORM` olarak yazılır: ilk kayıt ve iç
+ * durumun gerçekten değiştiği (koruma kurallarından sonra kalan) güncellemeler. Durum aynıysa satır eklenmez (her turda şişmez).
+ */
+export function syncHistoryEntry(existingOrder: any, updatePayload: any, now: Date): Record<string, any> | null {
+    const next = updatePayload.internalStatus;
+    if (!next) return null;
+    if (existingOrder && existingOrder.internalStatus === next) return null;
+    return {
+        status: next,
+        changedAt: updatePayload.dates?.externalUpdatedAt || now,
+        description: existingOrder
+            ? `Pazaryeri durumu: ${updatePayload.externalStatus ?? '?'} (${existingOrder.internalStatus} → ${next})`
+            : `Sipariş pazaryerinden alındı (${updatePayload.externalStatus ?? '?'})`,
+        actionBy: 'PLATFORM',
+        action: existingOrder ? 'SYNC_STATUS' : 'SYNC_CREATE',
+    };
 }
