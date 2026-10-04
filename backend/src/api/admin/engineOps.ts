@@ -10,8 +10,11 @@ import { escapeRegex } from '@utils/search';
 import exportConfig from '../../integration/engine/catalog/export/export.config.json';
 import importConfig from '../../integration/engine/catalog/import/import.config.json';
 
-export const ENGINE_QUEUES = ['order-sync-queue'] as const;
-export type EngineQueueName = typeof ENGINE_QUEUES[number];
+import { LEGACY_ORDER_QUEUE, ORDER_QUEUE_NAMES } from '../../integration/contracts/orderQueues';
+
+/** [eslesme-fiyat WP7a, F-01] Sipariş kanal kuyrukları (`order-sync-<kod>`) + boşaltılan eski `order-sync-queue` (ilk sırada). */
+export const ENGINE_QUEUES: readonly string[] = [LEGACY_ORDER_QUEUE, ...ORDER_QUEUE_NAMES];
+export type EngineQueueName = string;
 export const QUEUE_COUNT_TYPES = ['wait', 'active', 'delayed', 'failed', 'completed', 'paused'] as const;
 export const MAX_LIMIT = 200;
 export const DEFAULT_LIMIT = 50;

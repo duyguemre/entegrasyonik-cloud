@@ -56,6 +56,13 @@ export interface IOrderJobData {
     claimSync?: ISourceSyncWindow;
     financeSync?: ISourceSyncWindow;
     messageSync?: ISourceSyncWindow;
+    /**
+     * [eslesme-fiyat WP7a, F-01] İş türü: kanal kuyruğundaki her iş TEK türü çeker (orders | claims | messages | finance).
+     * Yoksa eski birleşik iş (sipariş + sırası gelen kaynaklar) — eski `order-sync-queue` boşaltması ve geri uyum.
+     */
+    kind?: 'orders' | 'claims' | 'messages' | 'finance';
+    /** [WP7a, F-12] RATE_LIMITED nedeniyle `moveToDelayed` ile kaç kez ertelendi (tavan aşılınca normal hata akışı). */
+    rateLimitDeferrals?: number;
     /** [F-06] Kuyruğa eklenirken üretilen/taşınan correlation id (HTTP webhook'ta istek id'si); worker aynı id ile devam eder. */
     correlationId?: string;
 }

@@ -17,7 +17,10 @@ describe('order-sync-queue -> QueueMetricsCollector.recordOutcome', () => {
     QueueMetricsCollector.resetForTests();
     QueueMetricsCollector.setSink(async (b) => { out.push(b); });
     (Worker as any).mockReset();
-    (Worker as any).mockImplementation(() => ({ on: (e: string, f: any) => { handlers[e] = f; }, close: (jest.fn() as any).mockResolvedValue(undefined) }));
+    // [WP7a] Kanal başına Worker kurulur; metrik testi İLK (eski `order-sync-queue`) Worker'ın kancalarını kullanır.
+    for (const k of Object.keys(handlers)) delete handlers[k];
+    let first = true;
+    (Worker as any).mockImplementation(() => { const mine = first; first = false; return { on: (e: string, f: any) => { if (mine) handlers[e] = f; }, close: (jest.fn() as any).mockResolvedValue(undefined) }; });
   });
   afterEach(async () => { await closeOrderWorkerConsumer(); QueueMetricsCollector.setSink(undefined); QueueMetricsCollector.resetForTests(); jest.restoreAllMocks(); });
 

@@ -9,7 +9,7 @@ const queueInstances: any[] = [];
 const workerProcessors: any[] = [];
 jest.mock('bullmq', () => ({
   Queue: jest.fn().mockImplementation(() => {
-    const q: any = { add: jest.fn(async () => undefined), getJobs: jest.fn(async () => []) };
+    const q: any = { add: jest.fn(async () => undefined), addBulk: jest.fn(async () => []), getJobs: jest.fn(async () => []) };
     queueInstances.push(q);
     return q;
   }),
@@ -37,7 +37,10 @@ import { effectiveIntake, allowNewWork, allowInFlightWork, inFlightBlocked } fro
 import { metricsRegistry } from '@platform/runtime/metrics/MetricsRegistry';
 
 const factoryCtor = IntegrationFactory as unknown as jest.Mock<any>;
-const lean = (r: any) => ({ lean: jest.fn(async () => r) });
+const lean = (r: any) => { const c: any = { sort: () => c, limit: () => c, lean: jest.fn(async () => r) }; return c; };
+// [eslesme-fiyat WP7a] Üretici kanal kuyruğuna addBulk ile yazar; eklenen işlerin entegrasyon kodları.
+const addedCodes = () => queueInstances.flatMap((q: any) => (q.addBulk?.mock.calls ?? []).flatMap(([items]: any[]) => items.map((i: any) => i.data.integrationCode)));
+const anyAdd = () => queueInstances.some((q: any) => q.add.mock.calls.length > 0 || (q.addBulk?.mock.calls.length ?? 0) > 0);
 
 beforeEach(() => {
   queueInstances.length = 0; workerProcessors.length = 0; orderWorkerProcess.mockClear();
@@ -75,23 +78,23 @@ describe('OrderQueueProducer - kill-switch', () => {
 
   it.each(['drain', 'off'])('%s: kapalı entegrasyon için iş eklenmez, diğeri etkilenmez; metrik artar; açılınca eklenir', async (intake) => {
     setTargetIntake('trendyol', intake as any);
-    const p = new OrderQueueProducer(); const q = queueInstances[0];
+    const p = new OrderQueueProducer();
     await p.scheduleJobs();
-    expect(q.add.mock.calls.map((c: any[]) => c[0])).toEqual(['fetch-orders-n11']);
+    expect(new Set(addedCodes())).toEqual(new Set(['n11']));
     expect(metricsRegistry.incCounter).toHaveBeenCalledWith('integration_intake_skipped', expect.objectContaining({ consumer: 'OrderQueueProducer', integration: 'trendyol' }));
 
-    q.add.mockClear(); setTargetIntake('trendyol', 'on');
+    queueInstances.forEach((q: any) => q.addBulk.mockClear()); setTargetIntake('trendyol', 'on');
     await p.scheduleJobs();
-    expect(q.add).toHaveBeenCalledTimes(2);
+    expect(new Set(addedCodes())).toEqual(new Set(['n11', 'trendyol']));
   });
 
   it('global off: hiçbir iş eklenmez; webhook tetiklemesi de atlanır', async () => {
     setTargetIntake('_engine', 'off');
-    const p = new OrderQueueProducer(); const q = queueInstances[0];
+    const p = new OrderQueueProducer();
     await p.scheduleJobs();
-    expect(q.add).not.toHaveBeenCalled();
+    expect(anyAdd()).toBe(false);
     expect(await p.enqueueWebhookTriggeredSync(1, 'trendyol', new Date())).toEqual({ jobId: '', skipped: true });
-    expect(q.add).not.toHaveBeenCalled();
+    expect(anyAdd()).toBe(false);
   });
 });
 

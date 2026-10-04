@@ -45,6 +45,9 @@ export function resetOrderWindowOverflowState(): void {
     overflowState.clear();
 }
 
+/** [WP7a] İş türü → istatistik işlem tipi (başarısız iş kaydı için). */
+const KIND_OPERATION = { orders: 'ORDER_SYNC', claims: 'CLAIM_SYNC', messages: 'MESSAGE_SYNC', finance: 'FINANCIAL_SYNC' } as const;
+
 export class OrderWorker {
     public async process(jobData: IOrderJobData): Promise<IOrchestratorResult> {
         const { integrationCode, lastSyncTimestamp } = jobData;
@@ -58,6 +61,9 @@ export class OrderWorker {
         // "sırası gelen" kaynaklar için pencere hesaplar ve jobData'ya ekler; alan YOKSA o kaynağın sırası bu
         // turda GELMEMİŞTİR -> dış çağrı YAPILMAZ (kota tasarrufu). Sipariş bu gatinge dahil DEĞİLDİR (60 sn
         // zaten en sık kaynak, her turda çekilir).
+        // [eslesme-fiyat WP7a, F-01] İş türü (kind) başına ayrı iş: `kind` VARSA sipariş çekimi yalnız kind='orders' işinde yapılır;
+        // iade/mesaj/finans işleri sipariş ucuna HİÇ dokunmaz (sipariş imleci de ilerlemez). `kind` YOKSA (eski kuyruk/eski iş) davranış birebir.
+        const ordersAttempted = !jobData.kind || jobData.kind === 'orders';
         const claimAttempted = !!jobData.claimSync;
         const financeAttempted = !!jobData.financeSync;
         const messageAttempted = !!jobData.messageSync;
@@ -68,7 +74,9 @@ export class OrderWorker {
             const integration = await factory.getInstance(integrationCode);
 
             const [ordersResult, claimsResult, messagesResult, financialsResult] = await Promise.allSettled([
-                this.fetchOrdersAdaptive(integration, lastSyncTimestamp, clientId, integrationCode),
+                ordersAttempted
+                    ? this.fetchOrdersAdaptive(integration, lastSyncTimestamp, clientId, integrationCode)
+                    : Promise.resolve({ packages: [] as IOrderPackage[] } as { packages: IOrderPackage[]; incomplete?: IncompleteInfo; windowEnd?: Date }),
                 claimAttempted
                     ? integration.retrieveClaims({ startDate: jobData.claimSync!.startDate, endDate: jobData.claimSync!.endDate! })
                     : Promise.resolve([]),
@@ -294,7 +302,7 @@ export class OrderWorker {
             if (orderIncomplete) {
                 log.warn('ORDER_SYNC_INCOMPLETE', 'Siparis cekimi eksik kaldi; lastSuccessfulOrderSync ILERLETILMEDI.', { tenantId: clientId, integrationCode, reason: orderIncomplete.reason, collected: orderIncomplete.collected });
                 this.notifyWindowOverflow(clientId, integrationCode, orderIncomplete.reason, orderIncomplete.collected, false);
-            } else {
+            } else if (ordersAttempted) {
                 const cursorTime = windowEnd ? windowEnd.getTime() : syncStartAt.getTime();
                 await orderRepo.updateLastSyncTimestamp(clientId, integrationCode, new Date(cursorTime - overlap));
             }
@@ -342,9 +350,8 @@ export class OrderWorker {
             const durationMs = Date.now() - syncStartAt.getTime();
             // [ADR-0005 adım 3] Denenmeyen (gating ile atlanan) kaynaklar için log kaydı OLUŞTURULMAZ
             // (SUCCESS/FAILED ayrımı yalnızca gerçekten çekilmeye çalışılan kaynaklar için anlamlıdır).
-            const logs: Array<IOperationLogInput> = [
-                { ...this.buildLog('ORDER_SYNC', ordersResult, syncStartAt, durationMs), clientId, integrationCode, inserted: insertedExternalIds.length, updated: updatedExternalIds.length, fetched: packages.length },
-            ];
+            const logs: Array<IOperationLogInput> = [];
+            if (ordersAttempted) logs.push({ ...this.buildLog('ORDER_SYNC', ordersResult, syncStartAt, durationMs), clientId, integrationCode, inserted: insertedExternalIds.length, updated: updatedExternalIds.length, fetched: packages.length });
             if (claimAttempted) logs.push({ ...this.buildLog('CLAIM_SYNC', claimsResult, syncStartAt, durationMs), clientId, integrationCode, inserted: insertedClaimExternalIds.length, updated: updatedClaimExternalIds.length, fetched: rawClaimPackages.length });
             if (messageAttempted) logs.push({ ...this.buildLog('MESSAGE_SYNC', messagesResult, syncStartAt, durationMs), clientId, integrationCode, fetched: messages.length });
             if (financeAttempted) logs.push({ ...this.buildLog('FINANCIAL_SYNC', financialsResult, syncStartAt, durationMs), clientId, integrationCode, fetched: financials.length });
@@ -355,7 +362,7 @@ export class OrderWorker {
         } catch (error: any) {
             StatisticsTracker.track({
                 clientId, integrationCode,
-                operationType: 'ORDER_SYNC',
+                operationType: KIND_OPERATION[jobData.kind ?? 'orders'],
                 status: 'FAILED',
                 errorMessage: error?.message || String(error),
                 durationMs: Date.now() - syncStartAt.getTime(),

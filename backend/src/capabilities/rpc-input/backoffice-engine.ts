@@ -3,7 +3,8 @@ import { z } from 'zod';
 import { strictBody } from './common';
 import type { RpcRef } from '../types';
 
-const queue = z.enum(['order-sync-queue']);
+// [eslesme-fiyat WP7a] Sipariş kuyrukları: eski `order-sync-queue` + kanal başına `order-sync-<kod>` (orderQueues.ts ile aynı küme).
+const queue = z.enum(['order-sync-queue', 'order-sync-trendyol', 'order-sync-hepsiburada', 'order-sync-n11', 'order-sync-pazarama', 'order-sync-ideasoft', 'order-sync-bizimhesap', 'order-sync-other']);
 const cursor = z.string().min(1).max(100);
 const limit = z.number().int().min(1).max(200);
 const reason = z.string().min(1).max(500);

@@ -131,16 +131,20 @@ describe('Kaostest A — ExportOrchestrator: N11 worker hatası Trendyol\'u ve d
 });
 
 describe('Kaostest B — OrderOrchestrator: N11 job\'unun hata-işleme hatası Trendyol job\'unun "completed" olayını etkilemiyor', () => {
-  it('errorHandler.handleJobFailure N11 job\'u için REDDEDER; Trendyol job\'unun BAĞIMSIZ "completed" olayı YİNE DE normal işlenir', async () => {
+  // [eslesme-fiyat WP7a] ÖNCEKİ: QueueEvents 'failed'/'completed'. ŞİMDİ: Worker olay kancaları (onFailed/onCompleted); worker-runner
+  // kanca hatalarını ayrıca yakalar. İzolasyon iddiası aynı: bir işin hata-işleme hatası diğer işlerin olaylarını etkilemez.
+  it('errorHandler.handleFailedJob N11 job\'u için REDDEDER; Trendyol job\'unun BAĞIMSIZ "completed" olayı YİNE DE normal işlenir', async () => {
     jest.resetModules();
     jest.useFakeTimers();
     try {
-      FakeQueueEvents.instances.length = 0;
       const { OrderOrchestrator } = require('@integration/engine/order/OrderOrchestrator');
       const { OrderErrorHandler } = require('@integration/engine/order/OrderErrorHandler');
+      const { startOrderWorkerConsumer } = require('@integration/engine/order/worker-runner');
+      let hooks: any;
+      (startOrderWorkerConsumer as any).mockReset().mockImplementation((h: any) => { hooks = h; });
 
-      const handleJobFailure = jest.fn(async () => { throw new Error('DLQ yazımı başarısız (kaostest kasıtlı hatası)'); });
-      (OrderErrorHandler as any).mockReset().mockImplementation(() => ({ handleJobFailure }));
+      const handleFailedJob = jest.fn(async () => { throw new Error('DLQ yazımı başarısız (kaostest kasıtlı hatası)'); });
+      (OrderErrorHandler as any).mockReset().mockImplementation(() => ({ handleFailedJob, handleCompletedJob: jest.fn(async () => undefined) }));
 
       jest.spyOn(console, 'log').mockImplementation(() => undefined);
       jest.spyOn(console, 'warn').mockImplementation(() => undefined);
@@ -149,24 +153,20 @@ describe('Kaostest B — OrderOrchestrator: N11 job\'unun hata-işleme hatası T
 
       OrderOrchestrator.start();
       await flush();
-      await flush();
 
-      expect(FakeQueueEvents.instances).toHaveLength(1);
-      const qe = FakeQueueEvents.instances[0];
+      expect(FakeQueueEvents.instances).toHaveLength(0);
+      const n11Failed = hooks.onFailed({ id: 'n11-job-1', data: { integrationCode: 'n11' } }, new Error('[UNAVAILABLE] N11 SOAP servis 500'));
+      await expect(n11Failed).rejects.toThrow('DLQ yazımı başarısız'); // izole: worker-runner bu reddi ayrıca yakalar
 
-      // N11 job'u başarısız oldu -> errorHandler.handleJobFailure reddediyor (kaostest kasıtlı hatası)
-      const n11Failed = qe.emit('failed', { jobId: 'n11-job-1', failedReason: '[UNAVAILABLE] N11 SOAP servis 500' });
-      await expect(n11Failed).rejects.toThrow('DLQ yazımı başarısız'); // callback'in kendi promise'i reddediyor, ama bu İZOLE bir olay
-
-      // Trendyol job'u TAMAMEN BAĞIMSIZ bir "completed" olayı yayınlıyor -> normal işleniyor, ETKİLENMEDİ
-      await qe.emit('completed', { jobId: 'trendyol-job-1', returnvalue: { clientId: '9', marketplace: 'trendyol', processedOrderCount: 3, insertedIds: ['o1', 'o2', 'o3'] } });
+      await hooks.onCompleted({ id: 'trendyol-job-1', data: { integrationCode: 'trendyol' }, returnvalue: { clientId: '9', marketplace: 'trendyol', processedOrderCount: 3, insertedIds: ['o1', 'o2', 'o3'] } });
       expect(cap.lines).toContainEqual(expect.objectContaining({ code: 'ORDERORCHESTRATOR_JOB_BASARIYLA_TAMAMLANDI_CLIENT', msg: expect.stringContaining('Job trendyol-job-1 başarıyla tamamlandı. Client: 9, Sipariş: 3') }));
 
-      // İkinci, BAŞKA bir tenant'ın "failed" olayı da (n11 hatasından TAMAMEN bağımsız) kendi hata işleyicisini normal çağırıyor
-      handleJobFailure.mockClear();
-      (handleJobFailure as any).mockResolvedValueOnce(undefined);
-      await qe.emit('failed', { jobId: 'hepsiburada-job-1', failedReason: 'transient' });
-      expect(handleJobFailure).toHaveBeenCalledWith('hepsiburada-job-1', 'transient');
+      handleFailedJob.mockClear();
+      (handleFailedJob as any).mockResolvedValueOnce(undefined);
+      const hbJob = { id: 'hepsiburada-job-1', data: { integrationCode: 'hepsiburada' } };
+      const err = new Error('transient');
+      await hooks.onFailed(hbJob, err);
+      expect(handleFailedJob).toHaveBeenCalledWith(hbJob, err);
     } finally {
       jest.useRealTimers();
       jest.restoreAllMocks();

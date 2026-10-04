@@ -217,8 +217,8 @@ export const ORDER_ENGINE_SETTINGS: SettingDef<number>[] = [
     durationSetting({
         key: 'order.syncIntervalMs', group: 'order.sync', scope: 'engine', unit: 'ms', default: 60000,
         danger: 'caution', applies: 'restart', consumers: ['engine/order/OrderQueueProducer.ts:283', 'engine/order/OrderOrchestrator.ts:61'],
-        label: { tr: 'Sipariş senkron aralığı', en: 'Order sync interval' },
-        help: { tr: 'Siparişlerin ne sıklıkla pazaryerinden çekileceği.', en: 'How often orders are pulled from the marketplace.' },
+        label: { tr: 'Sipariş üretici tur aralığı', en: 'Order producer tick interval' },
+        help: { tr: 'Sipariş üreticisinin sırası gelen işleri kontrol etme sıklığı (çekim aralıkları tür başına ayrı: order.orderSync.intervalMs vb.).', en: 'How often the order producer checks for due jobs (pull intervals are per kind: order.orderSync.intervalMs etc.).' },
         since: '2026-09-29',
         knownDriftNote: 'ADR-0020 K10: `OrderOrchestrator.ts:61` ölü yedek 600000 (10 dk); `OrderQueueProducer.ts:283` ölü yedek 60000 (JSON ile aynı). AYNI anahtar için İKİ FARKLI kod yedeği olması kendi başına bir tutarsızlıktır. JSON değeri 60000 her iki tüketicide de kazanır.',
     }),
@@ -316,7 +316,7 @@ export const ORDER_ENGINE_SETTINGS: SettingDef<number>[] = [
         since: '2026-09-29',
     }),
     durationSetting({
-        key: 'order.financeSync.fullSweepIntervalMs', group: 'order.support', scope: 'engine', unit: 'ms', default: 86400000,
+        key: 'order.financeSync.fullSweepIntervalMs', group: 'order.support', scope: 'engine', unit: 'ms', default: 604800000, // [WP7a, PLAN §3.6] günlük → haftalık
         danger: 'caution', applies: 'restart', consumers: ['engine/order/OrderQueueProducer.ts:101,215 (computeSourceWindow)'], advanced: true,
         label: { tr: 'Finans tam tarama aralığı', en: 'Finance full sweep interval' },
         help: { tr: 'Tam finans taramasının ne sıklıkla yapılacağı.', en: 'How often a full finance sweep runs.' },
@@ -330,7 +330,7 @@ export const ORDER_ENGINE_SETTINGS: SettingDef<number>[] = [
         since: '2026-09-29',
     }),
     durationSetting({
-        key: 'order.messageSync.intervalMs', group: 'order.support', scope: 'engine', unit: 'ms', default: 300000,
+        key: 'order.messageSync.intervalMs', group: 'order.support', scope: 'engine', unit: 'ms', default: 600000, // [WP7a, PLAN §3.6] 5 → 10 dk
         danger: 'safe', applies: 'restart', consumers: ['engine/order/OrderQueueProducer.ts:102 (computeSourceWindow)'],
         label: { tr: 'Soru senkron aralığı', en: 'Question sync interval' },
         help: { tr: 'Müşteri sorularının ne sıklıkla senkronize edileceği.', en: 'How often customer questions are synced.' },
@@ -344,6 +344,13 @@ export const ORDER_ENGINE_SETTINGS: SettingDef<number>[] = [
         since: '2026-09-29',
     }),
     durationSetting({
+        key: 'order.orderSync.intervalMs', group: 'order.sync', scope: 'engine', unit: 'ms', default: 300000,
+        danger: 'caution', applies: 'next_cycle', consumers: ['engine/order/OrderQueueProducer.ts (jobsForClient)'],
+        label: { tr: 'Sipariş çekim aralığı (webhook\'suz)', en: 'Order pull interval (no webhook)' },
+        help: { tr: 'Webhook\'u olmayan ya da sağlıksız kanalda siparişlerin ne sıklıkla çekileceği (PLAN §3.6: 5 dk; üretici turu 60 sn).', en: 'How often orders are pulled on channels without a healthy webhook (PLAN §3.6: 5 min; producer tick 60 s).' },
+        since: '2026-10-04',
+    }),
+    durationSetting({
         key: 'order.orderSync.cursorOverlapMs', group: 'order.sync', scope: 'engine', unit: 'ms', default: 300000,
         danger: 'safe', applies: 'next_cycle', consumers: ['engine/order/OrderWorker.ts:264'], advanced: true,
         label: { tr: 'Sipariş imleç örtüşmesi', en: 'Order cursor overlap' },
@@ -351,7 +358,7 @@ export const ORDER_ENGINE_SETTINGS: SettingDef<number>[] = [
         since: '2026-09-29',
     }),
     durationSetting({
-        key: 'order.webhookHealthy.reconciliationIntervalMs', group: 'order.sync', scope: 'engine', unit: 'ms', default: 300000,
+        key: 'order.webhookHealthy.reconciliationIntervalMs', group: 'order.sync', scope: 'engine', unit: 'ms', default: 600000, // [WP7a, PLAN §3.6] 5 → 10 dk
         danger: 'safe', applies: 'restart', consumers: ['engine/order/OrderQueueProducer.ts:86'],
         label: { tr: 'Webhook sağlıklıyken mutabakat aralığı', en: 'Reconciliation interval while webhook healthy' },
         help: { tr: 'Webhook sağlıklı çalışırken yine de kontrol amaçlı mutabakat sıklığı.', en: 'Reconciliation cadence even while webhooks are healthy.' },

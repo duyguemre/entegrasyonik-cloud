@@ -23,12 +23,19 @@ const currentRole = (): AppRole => { const r = (process.env.APP_ROLE || '').trim
 
 /** BullMQ `failed` kümesi (son 500) -> yalnız (tid, bitiş zamanı). Redis yoksa null. İş yükü/hata metni okunmaz. */
 export const productionFailedBullJobs: FailedBullJobs = async () => {
-    const q = productionQueueProvider(ENGINE_QUEUES[0])
-    if (!q) return null
-    try {
-        const jobs = await q.getJobs(['failed'], 0, 499, false)
-        return jobs.map((j) => { const n = Number(j.data?.clientId); return { tid: Number.isInteger(n) && n > 0 ? n : null, finishedOn: j.finishedOn } })
-    } catch { return null }
+    // [WP7a] Tüm sipariş kuyrukları (kanal başına + eski); kuyruk başına son 500.
+    const all: Array<{ tid: number | null; finishedOn?: number }> = []
+    let any = false
+    for (const name of ENGINE_QUEUES) {
+        const q = productionQueueProvider(name)
+        if (!q) continue
+        try {
+            const jobs = await q.getJobs(['failed'], 0, 499, false)
+            any = true
+            for (const j of jobs) { const n = Number(j.data?.clientId); all.push({ tid: Number.isInteger(n) && n > 0 ? n : null, finishedOn: j.finishedOn }) }
+        } catch { /* bu kuyruk atlanır */ }
+    }
+    return any ? all : null
 }
 
 export function productionAttentionSources(applicationDB: any): AttentionSources {

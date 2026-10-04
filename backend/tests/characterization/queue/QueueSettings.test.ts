@@ -24,17 +24,19 @@ describe('order.config.json - memoryManagement (ADR-0005 Karar 3)', () => {
         expect(orderConfig.syncIntervalMs).toBe(60000);
     });
 
-    it('[YENİ DAVRANIŞ, ADR-0005 Karar 7] kaynak başına polling aralıkları: iade 15dk, finans 6sa, mesaj 5dk', () => {
+    it('[eslesme-fiyat WP7a, PLAN §3.6] kaynak başına polling aralıkları: sipariş 5 dk (webhook sağlıklı 10 dk), iade 15dk, finans 6sa, mesaj 10 dk (önceden 5 dk)', () => {
+        expect(orderConfig.orderSync.intervalMs).toBe(5 * 60 * 1000);
+        expect(orderConfig.webhookHealthy.reconciliationIntervalMs).toBe(10 * 60 * 1000);
         expect(orderConfig.claimSync.intervalMs).toBe(15 * 60 * 1000);
         expect(orderConfig.financeSync.intervalMs).toBe(6 * 60 * 60 * 1000);
-        expect(orderConfig.messageSync.intervalMs).toBe(5 * 60 * 1000);
+        expect(orderConfig.messageSync.intervalMs).toBe(10 * 60 * 1000);
     });
 
     it('[YENİ DAVRANIŞ, ADR-0005 Karar 7] günlük tam süpürme pencereleri: iade 32 gün, finans 30 gün', () => {
         expect(orderConfig.claimSync.fullSweepWindowDays).toBe(32);
         expect(orderConfig.financeSync.fullSweepWindowDays).toBe(30);
         expect(orderConfig.claimSync.fullSweepIntervalMs).toBe(24 * 60 * 60 * 1000);
-        expect(orderConfig.financeSync.fullSweepIntervalMs).toBe(24 * 60 * 60 * 1000);
+        expect(orderConfig.financeSync.fullSweepIntervalMs).toBe(7 * 24 * 60 * 60 * 1000); // [WP7a, PLAN §3.6] finans tam süpürme haftalık
     });
 
     it('[YENİ DAVRANIŞ, ADR-0005 adım 2] sipariş imleç örtüşmesi 5 dk (300000ms)', () => {

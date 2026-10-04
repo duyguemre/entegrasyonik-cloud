@@ -35,6 +35,8 @@ const MIN = 60 * 1000, HOUR = 60 * MIN, DAY = 24 * HOUR;
 
 /** [ad, everyMs, maxDurationMs, criticality, runOnStart, roleGate] -- roleGate: 'worker' => yalniz worker/all, 'any' => her rol. */
 const EXPECTED: Array<[string, number, number, string, string, 'worker' | 'any']> = [
+  // [eslesme-fiyat WP7a, F-02] sipariş üreticisi (önceden OrderOrchestrator setInterval; artık lease + JobState).
+  ['order.produce', 60 * 1000, 50 * 1000, 'critical', 'always', 'worker'],
   ['stock.allocationSweep', 15 * MIN, 5 * MIN, 'critical', 'always', 'worker'],
   ['stock.publish', 30 * 1000, 25 * 1000, 'critical', 'always', 'worker'],
   // [eslesme-fiyat WP5, K-B] otomatik fiyat yayını (60 sn dirty).

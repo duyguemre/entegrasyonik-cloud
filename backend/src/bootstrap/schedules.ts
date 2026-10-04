@@ -40,6 +40,8 @@ import { AUDIT_IP_MASK_JOB_NAME, runAuditIpMaskProd } from '@operations/retentio
 import { COMMISSION_DRIFT_JOB_NAME, createCommissionDriftDeps, runCommissionDrift, type CommissionDriftJobDeps } from '@operations/finance/commissionDriftJob';
 import { PLATFORM_CATALOG_JOB_NAME, createPlatformCatalogDeps } from '@operations/catalog/platformCatalogJob';
 import { runPlatformCatalogCycle, type PlatformCatalogDeps } from '@operations/catalog/platformCatalog';
+import { OrderQueueProducer } from '@integration/engine/order/OrderQueueProducer';
+import { getSetting } from '@integration/config/ConfigResolver';
 import { runsWorker } from './roles';
 
 const log = logger.child({ module: 'bootstrap.schedules' });
@@ -66,6 +68,15 @@ export interface ScheduleSpec {
 
 /** Siralama = eski `entegrasyonik.ts` baslatma sirasi. */
 export const SCHEDULES: readonly ScheduleSpec[] = [
+  // [eslesme-fiyat WP7a, F-02] Sipariş üreticisi: önceden her worker pod'da kilitsiz setInterval (OrderOrchestrator) idi; artık dağıtık
+  // lease + JobState (tek pod, örtüşmesiz, backoffice'te görünür). Tur 60 sn; tür başına çekim aralıkları order.config.json (PLAN §3.6).
+  // Pazaryerinden OKUR ama yine de LIVE_READONLY'de başlamaz (önceki davranış: Order orkestratörü o kipte hiç başlamıyordu).
+  { id: 'order.produce', runsOn: 'worker', build: (impl?: { scheduleJobs(): Promise<JobOutcome> }) => {
+    let p = impl;
+    return defineJob({
+      name: 'order.produce', everyMs: getSetting<number>('order.syncIntervalMs'), maxDurationMs: 50 * 1000, criticality: 'critical', runOnStart: 'always',
+      run: async () => { p ??= new OrderQueueProducer(); return p.scheduleJobs(); } });
+  } },
   { id: 'stock.allocationSweep', runsOn: 'worker', build: (impl?: Runnable) => defineJob({
     name: 'stock.allocationSweep', everyMs: 15 * MIN, maxDurationMs: 5 * MIN, criticality: 'critical', runOnStart: 'always',
     run: redisSkip(impl ?? new AllocationSweepJob()) }) },

@@ -1,4 +1,5 @@
 import type { IApplicationDB } from '@interfaces/index'
+import { LEGACY_ORDER_QUEUE, ORDER_QUEUE_NAMES } from '@integration/contracts/orderQueues'
 import { RedisService } from '@services/redis/RedisService'
 import { ExportSignalRepository } from '@database/repositories/app/ExportSignalRepository'
 import { PlatformImportJobStatsRepository } from '@database/repositories/app/PlatformImportJobStatsRepository'
@@ -83,14 +84,17 @@ export async function buildSystemHealth(
         version: redisInfoRaw.match(/redis_version:([^\r\n]*)/)?.[1]?.trim() || 'Unknown'
     }
 
-    const waitCount = await redisClient.llen('bull:order-sync-queue:wait').catch(() => 0)
+    // [eslesme-fiyat WP7a] Tüm sipariş kuyrukları (eski + kanal başına) toplanır.
+    let waitCount = 0
     let activeCount = 0
-    try {
-        activeCount = await redisClient.llen('bull:order-sync-queue:active').catch(() => 0)
-        if (activeCount === 0) {
-            activeCount = await redisClient.zcard('bull:order-sync-queue:active').catch(() => 0)
-        }
-    } catch (e) { }
+    for (const name of [LEGACY_ORDER_QUEUE, ...ORDER_QUEUE_NAMES]) {
+        waitCount += Number(await redisClient.llen(`bull:${name}:wait`).catch(() => 0)) || 0
+        try {
+            let a = Number(await redisClient.llen(`bull:${name}:active`).catch(() => 0)) || 0
+            if (a === 0) a = Number(await redisClient.zcard(`bull:${name}:active`).catch(() => 0)) || 0
+            activeCount += a
+        } catch (e) { }
+    }
 
     // Diğer kuyrukların da bilgisini ekliyoruz
     const exportActiveCount = await exportsRepo.countLocked(trafficFilter)

@@ -1,12 +1,7 @@
-import { QueueEvents } from 'bullmq';
-import { OrderQueueProducer } from './OrderQueueProducer';
+import { Job } from 'bullmq';
 import { OrderErrorHandler } from './OrderErrorHandler';
-// Not: Aşağıdaki modüller mimarindeki diğer bileşenleri temsil eder
-import { RedisService } from '@services/redis/RedisService'; // Yeni merkezi servis
 import { startOrderWorkerConsumer } from './worker-runner';
-import { getSetting } from '@integration/config/ConfigResolver';
 import { eventLog } from '@platform/core/logger';
-import { runWithJobContext } from '@platform/core/context';
 
 const log = eventLog('engine', 'OrderOrchestrator');
 
@@ -20,10 +15,14 @@ interface IOrderWorkerResult {
     insertedIds: string[];
 }
 
+/**
+ * [eslesme-fiyat WP7a] Sipariş orkestratörü YALNIZ tüketicileri (kanal kuyrukları + eski kuyruk boşaltma) başlatır.
+ *  - ÖNCEKİ: her worker/all pod'da kilitsiz `setInterval(scheduleJobs, 60 sn)` (örtüşebilir, JobState'e yazmaz) ve QueueEvents
+ *    'failed' dinleyicisi HER pod'da `handleJobFailure` → aynı iş için pod sayısı kadar DLQ denemesi (F-02, F-04).
+ *  - ŞİMDİ: üretici zamanlayıcıda (`bootstrap/schedules.ts` → `order.produce`; dağıtık lease + JobState + backoffice görünür);
+ *    başarısız/başarılı iş sonrası işlem Worker olayında (yalnız işi işleyen pod; `OrderErrorHandler.handleFailedJob/handleCompletedJob`).
+ */
 export class OrderOrchestrator {
-    private readonly QUEUE_NAME = 'order-sync-queue';
-    private queueEvents: QueueEvents;
-    private producer: OrderQueueProducer;
     private errorHandler: OrderErrorHandler;
 
     static start() {
@@ -32,98 +31,37 @@ export class OrderOrchestrator {
     }
 
     private constructor() {
-        this.producer = new OrderQueueProducer();
         this.errorHandler = new OrderErrorHandler();
-
-        // Worker'ları bloke etmemek ve Redis event'lerini dinlemek için QueueEvents kullanıyoruz.
-        // Bağlantı konfigürasyonunu doğrudan merkezi RedisService üzerinden alıyoruz.
-        this.queueEvents = new QueueEvents(this.QUEUE_NAME, {
-            connection: RedisService.getConnectionConfig(),
-        });
     }
 
     /**
-     * Orchestrator'ı başlatır: Hem event listener'ları kurar hem de scheduler'ı tetikler.
+     * Orchestrator'ı başlatır: tüketicileri olay kancalarıyla ayağa kaldırır.
      */
     public async start(): Promise<void> {
         log.info('ORDERORCHESTRATOR_BASLATILIYOR', 'Başlatılıyor...');
 
-        this.setupEventListeners();
-        await this.startScheduler();
+        startOrderWorkerConsumer({
+            onFailed: (job, err) => {
+                log.warn('ORDERORCHESTRATOR_JOB_BASARISIZ_OLDU_NEDEN', `Job ${job?.id} başarısız oldu. Neden: ${err?.message}`);
+                return this.errorHandler.handleFailedJob(job, err);
+            },
+            onCompleted: (job) => this.onCompleted(job),
+        });
 
-        // Singleton/Single-pod yapısında worker'ı burada ayağa kaldırıyoruz.
-        // Worker-runner da kendi içinde RedisService.getConnectionConfig() kullanmalı.
-        startOrderWorkerConsumer();
-
-        log.info('ORDERORCHESTRATOR_BASARIYLA_BASLATILDI_EVENT_LER', 'Başarıyla başlatıldı. Event\'ler dinleniyor.');
+        log.info('ORDERORCHESTRATOR_BASARIYLA_BASLATILDI_EVENT_LER', 'Başarıyla başlatıldı. Kuyruklar dinleniyor.');
     }
 
-    /**
-     * CentralDB'den tenant'ları okuyup kuyruğa iş atan Producer'ı zamanlar.
-     */
-    private async startScheduler(): Promise<void> {
-        // [ADR-0020 Aşama A] JSON'dan (`order.config.json`) doğrudan okuma yerine tek çözümleyici; DEĞER AYNI
-        // (60000 — ölü `||` yedek 600000, YALNIZ BURADA vardı, artık hiçbir yerde YOK, bkz. ADR K10 ve
-        // katalogdaki `knownDriftNote`).
-        const syncInterval = getSetting<number>('order.syncIntervalMs');
-
-        // İlk çalışma — [BACKLOG "%0-kapsamlı orkestrasyon sınıfları" madde 2, 2026-09-27 — düzeltme]
-        // artık periyodik (setInterval) tekrar çağrılarla AYNI hata işleme deseniyle (bkz.
-        // `runScheduleJobsSafely`) korunuyor: reddederse loglanır ama `startScheduler()`/`start()`
-        // REDDETMEZ, `startOrderWorkerConsumer()` YİNE DE çağrılır.
-        await this.runScheduleJobsSafely();
-
-        // Node.js Event Loop içerisinde periyodik zamanlama
-        setInterval(async () => {
-            log.info('ORDERORCHESTRATOR_PERIYODIK_SIPARIS_SENKRONIZASYONU_TETI', 'Periyodik sipariş senkronizasyonu tetikleniyor...');
-            await this.runScheduleJobsSafely();
-        }, syncInterval);
-    }
-
-    /**
-     * `producer.scheduleJobs()`'u çağırır ve olası hatayı yutar/loglar. İLK (döngü öncesi) çağrı ile
-     * periyodik (setInterval içindeki) tekrar çağrılar artık BU ORTAK metot üzerinden AYNI korumayı
-     * paylaşır (BACKLOG "%0-kapsamlı orkestrasyon sınıfları" madde 2, 2026-09-27 — önceden yalnızca
-     * periyodik çağrı try/catch'liydi, ilk çağrı korumasızdı).
-     */
-    private async runScheduleJobsSafely(): Promise<void> {
+    private async onCompleted(job: Job): Promise<void> {
         try {
-            // [F-06] Zamanlama turu kendi correlation id'sini alır; kuyruğa eklenen her iş ayrıca kendi id'sini taşır.
-            await runWithJobContext({ source: 'engine', operation: 'order.schedule' }, () => this.producer.scheduleJobs());
-        } catch (error) {
-            log.error('ORDERORCHESTRATOR_SCHEDULER_CALISIRKEN_HATA_OLUSTU', 'Scheduler çalışırken hata oluştu:', { err: error });
-        }
-    }
-
-    /**
-     * BullMQ global event'lerini dinleyerek başarılı/başarısız işlerin post-processing adımlarını yönetir.
-     */
-    private setupEventListeners(): void {
-        // BAŞARILI İŞLER
-        this.queueEvents.on('completed', async ({ jobId, returnvalue }) => {
-            try {
-                // TypeScript casting hatasını önlemek için 'as unknown as' köprüsü kullanıldı
-                const result = returnvalue as unknown as IOrderWorkerResult;
-
-                log.info('ORDERORCHESTRATOR_JOB_BASARIYLA_TAMAMLANDI_CLIENT', `Job ${jobId} başarıyla tamamlandı. Client: ${result.clientId}, Sipariş: ${result.processedOrderCount}`);
-
-                if (result.processedOrderCount > 0) {
-                    await this.triggerDownstreamWorkflows(result.clientId, result.marketplace, result.insertedIds);
-                }
-            } catch (error) {
-                log.error('ORDERORCHESTRATOR_COMPLETED_EVENT_ISLENIRKEN_HATA', `Completed event işlenirken hata (Job: ${jobId}):`, { err: error });
+            const result = job.returnvalue as unknown as IOrderWorkerResult;
+            log.info('ORDERORCHESTRATOR_JOB_BASARIYLA_TAMAMLANDI_CLIENT', `Job ${job.id} başarıyla tamamlandı. Client: ${result?.clientId}, Sipariş: ${result?.processedOrderCount}`);
+            await this.errorHandler.handleCompletedJob(job);
+            if (result?.processedOrderCount > 0) {
+                await this.triggerDownstreamWorkflows(result.clientId, result.marketplace, result.insertedIds);
             }
-        });
-
-        // BAŞARISIZ İŞLER
-        this.queueEvents.on('failed', async ({ jobId, failedReason }) => {
-            log.warn('ORDERORCHESTRATOR_JOB_BASARISIZ_OLDU_NEDEN', `Job ${jobId} başarısız oldu. Neden: ${failedReason}`);
-            await this.errorHandler.handleJobFailure(jobId, failedReason);
-        });
-
-        this.queueEvents.on('error', (error) => {
-            log.error('ORDERORCHESTRATOR_QUEUEEVENTS_REDIS_BAGLANTI_HATASI', 'QueueEvents Redis bağlantı hatası:', { err: error });
-        });
+        } catch (error) {
+            log.error('ORDERORCHESTRATOR_COMPLETED_EVENT_ISLENIRKEN_HATA', `Completed event işlenirken hata (Job: ${job?.id}):`, { err: error });
+        }
     }
 
     /**

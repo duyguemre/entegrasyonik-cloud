@@ -1,5 +1,6 @@
 // ADR-0017 Asama C / NB8: uretim baglantisi. Modeller/Redis tembel cozulur; `ALERT_EVALUATOR_ENABLED=false` iken (runOnce erken doner) hicbir DB/Redis cagrisi yok.
 import { Queue } from 'bullmq';
+import { LEGACY_ORDER_QUEUE, ORDER_QUEUE_NAMES } from '@integration/contracts/orderQueues';
 import { config } from '@config';
 import { DatabaseManagerInstance } from '@database/DatabaseManager';
 import { RedisService } from '@services/redis/RedisService';
@@ -30,7 +31,7 @@ export function parseShadowUntil(raw: string | undefined): Date | undefined {
     return Number.isNaN(d.getTime()) ? undefined : d;
 }
 
-let queue: Queue | undefined;
+let queues: Queue[] | undefined;
 /** R9: bu surecte hazirlik hatasinin ilk gorulme ani (iyilesince sifirlanir). */
 let notReadySince: number | null = null;
 const HOUR_MS = 3_600_000;
@@ -62,10 +63,17 @@ export function createRuleSources(): RuleSources {
         },
         async queueBacklog() {
             if (!RedisService.isReady()) return null;
-            queue ??= new Queue('order-sync-queue', { connection: RedisService.getConnectionConfig() });
-            const counts = await queue.getJobCounts('wait');
-            const oldest = (await queue.getJobs(['wait'], 0, 0, true))[0];
-            return { wait: counts.wait ?? 0, oldestWaitSec: oldest?.timestamp ? Math.max(0, Math.floor((Date.now() - oldest.timestamp) / 1000)) : null };
+            // [eslesme-fiyat WP7a] Tüm sipariş kuyrukları: bekleyen toplamı + en eski bekleyen iş.
+            queues ??= [LEGACY_ORDER_QUEUE, ...ORDER_QUEUE_NAMES].map((n) => new Queue(n, { connection: RedisService.getConnectionConfig() }));
+            let wait = 0;
+            let oldestTs: number | undefined;
+            for (const q of queues) {
+                const counts = await q.getJobCounts('wait');
+                wait += counts.wait ?? 0;
+                const oldest = (await q.getJobs(['wait'], 0, 0, true))[0];
+                if (oldest?.timestamp && (oldestTs === undefined || oldest.timestamp < oldestTs)) oldestTs = oldest.timestamp;
+            }
+            return { wait, oldestWaitSec: oldestTs ? Math.max(0, Math.floor((Date.now() - oldestTs) / 1000)) : null };
         },
         async deadDeliveries(sinceMs) {
             return (await app()).getNotificationDeliveryModel().countDocuments({ status: 'dead', createdAt: { $gte: new Date(sinceMs) } }).maxTimeMS(QUERY_MAX_TIME_MS);

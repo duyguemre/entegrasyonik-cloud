@@ -337,6 +337,24 @@
           "status": 1
         },
         "options": {}
+      },
+      {
+        "name": "ttl_createdAt",
+        "fields": {
+          "createdAt": 1
+        },
+        "options": {
+          "expireAfterSeconds": 2592000
+        }
+      },
+      {
+        "name": "uniq_originalJobId",
+        "fields": {
+          "originalJobId": 1
+        },
+        "options": {
+          "unique": true
+        }
       }
     ],
     "IntegrationOperationLogs": [

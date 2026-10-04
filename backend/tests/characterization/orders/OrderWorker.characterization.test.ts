@@ -459,3 +459,33 @@ describe('OrderWorker.process - ADR-0004 Aşama B (PostOrderOperations tetikleme
     await expect(new OrderWorker().process(JOB)).resolves.toEqual(expect.objectContaining({ processedOrderCount: 1 }));
   });
 });
+
+// [eslesme-fiyat WP7a, F-01] İş türü (kind) başına ayrı iş: kind YOKSA eski birleşik davranış (yukarıdaki testler); kind VARSA yalnız o tür.
+describe('[WP7a] OrderWorker kind başına iş', () => {
+  const now = new Date();
+  const win = { due: true, startDate: new Date(now.getTime() - 3600_000), endDate: now, isFullSweep: false } as any;
+
+  it("kind='claims': sipariş ucu ÇAĞRILMAZ, sipariş imleci yazılmaz; yalnız iade çekilir ve lastClaimSync ilerler; log yalnız CLAIM_SYNC", async () => {
+    await new OrderWorker().process({ clientId: 1, integrationCode: 'trendyol', lastSyncTimestamp: now, kind: 'claims', claimSync: win } as any);
+    expect(integration.retrieveOrders).not.toHaveBeenCalled();
+    expect(integration.retrieveClaims).toHaveBeenCalledTimes(1);
+    expect(orderRepo.updateLastSyncTimestamp).not.toHaveBeenCalled();
+    expect(orderRepo.updateSourceSyncCursor).toHaveBeenCalledWith(1, 'trendyol', 'lastClaimSync', expect.any(Date));
+    const ops = (StatisticsTracker.trackMany as any).mock.calls.at(-1)[0].map((l: any) => l.operationType);
+    expect(ops).toEqual(['CLAIM_SYNC']);
+  });
+
+  it("kind='orders': yalnız sipariş çekilir ve imleç ilerler", async () => {
+    await new OrderWorker().process({ clientId: 1, integrationCode: 'trendyol', lastSyncTimestamp: now, kind: 'orders' } as any);
+    expect(integration.retrieveOrders).toHaveBeenCalled();
+    expect(integration.retrieveClaims).not.toHaveBeenCalled();
+    expect(integration.retrieveFinancials).not.toHaveBeenCalled();
+    expect(orderRepo.updateLastSyncTimestamp).toHaveBeenCalledTimes(1);
+  });
+
+  it("kind='finance' işi hata verirse FAILED kaydı FINANCIAL_SYNC tipiyle düşer (sipariş değil)", async () => {
+    (IntegrationFactory as any).mockImplementation(() => ({ getInstance: anyFn().mockRejectedValue(new Error('factory down')) }));
+    await expect(new OrderWorker().process({ clientId: 1, integrationCode: 'trendyol', lastSyncTimestamp: now, kind: 'finance', financeSync: win } as any)).rejects.toThrow('factory down');
+    expect((StatisticsTracker.track as any).mock.calls.at(-1)[0]).toMatchObject({ operationType: 'FINANCIAL_SYNC', status: 'FAILED' });
+  });
+});

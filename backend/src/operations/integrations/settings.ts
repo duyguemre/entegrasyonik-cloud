@@ -1,5 +1,6 @@
 import { randomBytes } from 'crypto';
 import IntegrationFactory from '@integration/modules/IntegrationFactory';
+import { clearIntegrationAttention } from '@database/repositories/app/integrationAttention';
 import { SENSITIVE_MASK, isSecretField, maskClientIntegrationsDoc, encryptSecrets, maskIntegrationItem, resolveSecretsForWrite } from '@platform/core/security/integrationSecrets';
 import { ApplicationError } from '@platform/core/security/Security';
 import { stripTenantUrlFields, isTenantUrlLikeKey, hasInvalidStoreName } from '@platform/core/security/tenantSettingsGuard';
@@ -85,6 +86,8 @@ async function resolveSettingsForWrite({ repo, auditRequest }: SettingsDeps, typ
  */
 export function dropFactoryCache(clientId: any, code: unknown): void {
     try { IntegrationFactory.invalidate(Number(clientId), String(code ?? '')); } catch { /* best-effort */ }
+    // [eslesme-fiyat WP7a, F-04] Kimlik/ayar güncellendi → art arda AUTH duraklatması kalkar (üretici sonraki turda yeniden dener).
+    void clearIntegrationAttention(clientId, code);
 }
 
 /**

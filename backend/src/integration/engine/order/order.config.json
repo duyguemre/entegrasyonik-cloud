@@ -20,20 +20,21 @@
     "financeSync": {
         "intervalMs": 21600000,
         "cursorOverlapMs": 86400000,
-        "fullSweepIntervalMs": 86400000,
+        "fullSweepIntervalMs": 604800000,
         "fullSweepWindowDays": 30
     },
     "messageSync": {
-        "intervalMs": 300000,
+        "intervalMs": 600000,
         "cursorOverlapMs": 900000
     },
     "orderSync": {
+        "intervalMs": 300000,
         "cursorOverlapMs": 300000,
         "maxNarrowings": 5,
         "minWindowMs": 3600000
     },
     "webhookHealthy": {
-        "reconciliationIntervalMs": 300000
+        "reconciliationIntervalMs": 600000
     },
     "webhookHealthCheck": {
         "detectionWithoutWebhookWindowMs": 1800000

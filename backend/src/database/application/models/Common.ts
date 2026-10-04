@@ -53,3 +53,7 @@ export const DeadLetterQueueSchema = new mongoose.Schema<IDeadLetterQueue>({
 
 // Performans için Compound Index: Belirli bir client'ın hatalarını hızlıca bulmak için
 DeadLetterQueueSchema.index({ clientId: 1, status: 1 });
+// [eslesme-fiyat WP7a, F-04 / göç 0029] Aynı iş DLQ'ya bir kez (yarış/çok pod); kayıtlar 30 gün sonra düşer (TTL `createdAt`;
+// `failedAt_1` zaten var — aynı anahtara TTL seçeneği çakışırdı). Göç: migrations/0029-dlq-unique-ttl-app.js (ÇALIŞTIRILMADI).
+DeadLetterQueueSchema.index({ originalJobId: 1 }, { unique: true, name: 'uniq_originalJobId' });
+DeadLetterQueueSchema.index({ createdAt: 1 }, { expireAfterSeconds: 30 * 24 * 3600, name: 'ttl_createdAt' });
