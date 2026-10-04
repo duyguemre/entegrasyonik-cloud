@@ -149,12 +149,9 @@ export class ClaimConnector {
         } catch (error: any) {
             const errorMsg = error.response?.data?.message || error.message;
             log.error('CLAIMCONNECTOR_TRENDYOL_IADE_ONAY_HATASI', `Trendyol iade onay hatası (${externalClaimId}):`, { detail: errorMsg });
-            return {
-                success: false,
-                message: errorMsg,
-                platformId: externalClaimId,
-                rawResponse: error.response?.data
-            };
+            // [eslesme-fiyat WP6, Ek E F-P1-10] ESKİDEN `{success:false}` dönülüyordu → zaman aşımı (sonucu belirsiz) ile kesin ret
+            // ayırt edilemiyordu. Artık IntegrationError: yazma, idempotent DEĞİL → zaman aşımı UNKNOWN_OUTCOME (körlemesine tekrar yok).
+            throw fromHttpError(error, { integrationCode, operation: 'approveClaim', clientId: this.params.clientId, idempotent: false });
         }
     }
 
@@ -181,12 +178,8 @@ export class ClaimConnector {
         } catch (error: any) {
             const errorMsg = error.response?.data?.message || error.message;
             log.error('CLAIMCONNECTOR_TRENDYOL_CLAIM_REDDI_HATASI', `Trendyol claim reddi hatası (${externalClaimId}):`, { detail: errorMsg });
-            return {
-                success: false,
-                message: errorMsg,
-                platformId: externalClaimId,
-                rawResponse: error.response?.data
-            };
+            // [eslesme-fiyat WP6, Ek E F-P1-10] bkz. approveClaim: IntegrationError (UNKNOWN_OUTCOME / ret ayrımı korunur).
+            throw fromHttpError(error, { integrationCode, operation: 'rejectClaim', clientId: this.params.clientId, idempotent: false });
         }
     }
 }
