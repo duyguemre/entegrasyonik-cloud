@@ -5,7 +5,7 @@ Son güncelleme: 2026-10-05 (**YERELE GEÇİLDİ** — kalan işler aşağıdaki
 > **K85 (ACİL, 2026-10-04):** ürün sahibinin işyeri e-posta adresi YASAK — dosyada, commit kimliğinde ve commit mesajında geçmez (adres hiçbir yere düz metin yazılmaz). Her oturum: `git config core.hooksPath scripts/githooks` ve commit öncesi `git config user.email` kontrolü. Koruma: `backend/tests/static/bannedEmail.static.test.ts`. Ayrıntı: `USER_DECISIONS_EKLER.md` K85.
 
 ## Kısa başlangıç (YEREL, 2026-10-05'ten itibaren; her pencere yeni oturum)
-Kullanıcı yerel Claude Code'da (proje kökü `ENTEGRASYONIK_FACTORY`) yeni oturumda yalnız şunu yazar: **`docs/eslesme-fiyat/DURUM.md'den devam et (yerel)`**. Oturum:
+Kullanıcı yerel Claude Code'da (proje kökü `ENTEGRASYONIK_FACTORY`) yeni oturumda yalnız **`/devam`** yazar (`.claude/commands/devam.md`; ilk seferde komut henüz yerelde yoksa: **`buluttan çek ve devam et`**). Oturum:
 1. Dal yerelde yoksa ya da buluttan yeni commit varsa: `scripts/cloud-sync.sh pull feature/eslesme-fiyat-yeniden-yapilandirma` (docs/CLOUD_BRIEFS.md adım 4; bulut deposu geçmişsiz kopyadır — `git merge` ile birleştirilmez). Yerel dal adı: `feature/eslesme-fiyat-yeniden-yapilandirma`.
 2. `git config core.hooksPath scripts/githooks` ve `git config user.email` kontrolü (K85; yasaklı adres ise DUR, kullanıcıya söyle).
 3. Bu dosyanın **"Yerel pencere planı"** tablosunda durumu "sıradaki" olan İLK satırı bulur, yalnız onu yapar; bitince satırı TAMAM, bir sonrakini "sıradaki" yapar, commit eder, 5 satırlık özet + "Lx bitti" der ve DURUR (bir sonrakine geçmez; kullanıcı oturumu sıfırlayıp aynı cümleyi yazar).
